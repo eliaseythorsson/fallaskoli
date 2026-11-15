@@ -1,0 +1,8 @@
+# Pinned exactly. An unpinned `islenska`/`reynir` is what let the v5 build
+# silently change a grammatical analysis between sessions: Greynir 3.8.0
+# reparsed "Kennarinn útskýrði fyrir okkur" from þolfall to þágufall without
+# anything failing. Bumping either of these is a deliberate act that must be
+# followed by `./build.sh --accept` and a read of the parse-diff report.
+islenska==1.3.2
+reynir==3.8.0
+tokenizer==3.6.4

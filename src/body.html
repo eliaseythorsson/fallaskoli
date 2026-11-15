@@ -1,0 +1,235 @@
+<body>
+<canvas id="confetti"></canvas>
+<div class="wrap">
+
+<header class="topbar">
+  <div class="brand">
+    <h1>Fallaskóli</h1>
+    <p>Hér er skóli, um skóla, frá skóla, til skóla.</p>
+  </div>
+  <div class="stats" aria-label="Staðan í dag">
+    <div class="stat xp"><b id="s-xp">0</b><span>XP</span></div>
+    <div class="stat"><b id="s-acc">—</b><span>Rétt í dag</span></div>
+    <div class="stat"><b id="s-run">0</b><span>Rétt í röð</span></div>
+    <div class="stat flame"><b id="s-days">0</b><span>Dagar í röð</span></div>
+  </div>
+</header>
+<div class="levelbar"><i id="lvlbar" style="width:0%"></i></div>
+<div class="levelmeta">
+  <span id="lvlname">Stig 1</span>
+  <span id="crest"></span>
+  <span class="diff" id="diffmeter"></span>
+  <span id="lvlnext"></span>
+</div>
+<div id="notice"></div>
+
+<!-- The four tabs are the dividers of a ring binder: one colour each, and the
+     colour is the only decoration they carry. `data-view` names the section
+     underneath; app.js `VIEWS` is the same list. -->
+<nav class="tabs" role="tablist" aria-label="Hlutar forritsins">
+  <button role="tab" aria-selected="true" data-view="practice">Æfa</button>
+  <button role="tab" aria-selected="false" data-view="lessons">Lesefni</button>
+  <button role="tab" aria-selected="false" data-view="progress">Merki<span class="tablong"> og framvinda</span></button>
+  <button role="tab" aria-selected="false" data-view="class">Skólastofan</button>
+  <button role="tab" aria-selected="false" data-view="settings">Stillingar<span class="tablong"> og námsefni</span></button>
+</nav>
+
+<!-- ================= 1. Æfa: taflan ================================== -->
+<section class="view" id="view-practice">
+  <div class="blackboard">
+    <div class="boardhead">
+      <span id="boarddate"></span>
+      <span class="tally" id="tally"></span>
+    </div>
+    <div id="duelbar"></div>
+    <div id="drillbar"></div>
+    <div id="runbar"></div>
+    <div id="task"></div>
+    <div class="tray" aria-hidden="true"><i class="chalk"></i><i class="chalk y"></i><i class="sponge"></i></div>
+  </div>
+</section>
+
+<!-- ================= 1b. Lesefni (v6.7) ============================== -->
+<section class="view" id="view-lessons" hidden>
+  <div class="lsnwrap">
+    <nav class="lsnindex" id="lsnindex" aria-label="Síður í Lesefni"></nav>
+    <div class="lsnbody" id="lsnbody"></div>
+  </div>
+</section>
+
+<!-- ================= 2. Merki og framvinda =========================== -->
+<section class="view" id="view-progress" hidden>
+  <div class="overview">
+    <div id="mycard"></div>
+    <div class="grid2" id="tiles"></div>
+  </div>
+
+  <div class="panepick" id="panepick" role="tablist" aria-label="Merki og framvinda">
+    <button type="button" role="tab" data-pane="badges" aria-selected="true">Merki</button>
+    <button type="button" role="tab" data-pane="stats" aria-selected="false">Framvinda</button>
+    <button type="button" role="tab" data-pane="words" aria-selected="false">Orðasafn</button>
+  </div>
+
+  <div class="pane" id="pane-badges">
+    <h2 class="sec first">Merkin þín</h2>
+    <p class="sub" id="badgesub"></p>
+    <div class="viewpick" id="badgeviews"></div>
+    <div id="badgegrid"></div>
+  </div>
+
+  <div class="pane" id="pane-stats" hidden>
+    <h2 class="sec first">Styrkleikar eftir efni</h2>
+    <p class="sub">Hvert efni hefur sitt eigið stig og sína eigin þyngd. Að ganga vel í nafnorðum
+      gerir sagnirnar ekki erfiðari.</p>
+    <div id="skillgrid"></div>
+
+    <h2 class="sec">Villumynstur</h2>
+    <p class="sub">Hver villa er flokkuð: ruglast þolfall og þágufall, gleymist hljóðvarp, fær sterk
+      sögn veika þátíð? <b>Undanfarið</b> eru síðustu 16 skiptin sem spurning prófaði mynstrið.
+      Það sem fer oft úrskeiðis núna kemur oftar fyrir í æfingunum þangað til það lagast.</p>
+    <div class="chartbox" id="diaglist"></div>
+
+    <h2 class="sec">Hvar liggja mistökin?</h2>
+    <p class="sub">Hlutfall réttra svara í hverjum reit beygingartöflunnar.</p>
+    <div class="chartbox" style="overflow-x:auto"><div id="heat"></div></div>
+
+    <h2 class="sec">Orð sem þarf að æfa</h2>
+    <div class="chartbox"><div id="wordlist"></div></div>
+
+    <h2 class="sec">Svör á dag</h2>
+    <p class="sub">Súlur eru svör, línan er hlutfall réttra svara. Síðustu 30 dagar.</p>
+    <div class="chartbox"><div id="chart1"></div>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--lupine)"></i>Svör</span>
+        <span><i class="swatch" style="background:var(--moss)"></i>Rétt hlutfall</span>
+        <span><i class="swatch" style="background:var(--line)"></i>Dagsmarkmið</span>
+      </div></div>
+
+    <h2 class="sec">XP yfir tíma</h2>
+    <div class="chartbox"><div id="chart2"></div></div>
+
+    <h2 class="sec">Tími við æfingar</h2>
+    <p class="sub" id="timesub"></p>
+    <div class="chartbox"><div id="chart3"></div></div>
+
+    <h2 class="sec">Ný orð á dag</h2>
+    <p class="sub">Orð sem þú hafðir aldrei hitt á áður. Safnið sjálft er undir <b>Orðasafn</b> hér fyrir ofan.</p>
+    <div class="chartbox"><div id="chart4"></div></div>
+
+    <h2 class="sec">Ný merki á dag</h2>
+    <p class="sub">Reiknað út úr dagsetningunum sem merkin bera, svo þetta gildir líka afturvirkt.</p>
+    <div class="chartbox"><div id="chart5"></div></div>
+  </div>
+
+  <div class="pane" id="pane-words" hidden>
+    <h2 class="sec first">Orðasafnið þitt</h2>
+    <p class="sub" id="collsub"></p>
+    <div id="collhealth"></div>
+    <div id="collection"></div>
+  </div>
+</section>
+
+<!-- ================= 3. Skólastofan ================================== -->
+<section class="view" id="view-class" hidden>
+  <h2 class="sec first">Stigatafla</h2>
+  <p class="sub">Þeir í hópnum þínum sem hafa valið að vera með. <b>Vikan</b> telur XP frá mánudegi og byrjar
+    upp á nýtt í hverri viku; hinir hnapparnir telja allt frá upphafi. Stigið er hæsta stig sem
+    hver hefur náð. <b>Orðaforði</b> telur orðin í safninu og gefur meira fyrir orð sem þú kannt
+    vel — en orð í hættu telur ekkert fyrr en því hefur verið bjargað. <b>Mínútur</b> sýna aðeins þá
+    sem hafa kveikt á þeim sérstaklega.</p>
+  <div id="sharecard"></div>
+  <div id="board"></div>
+
+  <h2 class="sec">Einvígi</h2>
+  <p class="sub">Skoraðu á einhvern í hópnum: þið fáið bæði sömu 10, 20 eða 30 spurningarnar um sama
+    efnið, og svarið hvort í sínu lagi. Sá sem hefur fleiri rétt vinnur einvígismerki — en bæði fá XP.
+    Þyngdin er mitt á milli stigs ykkar beggja í efninu. Hvort ykkar sem svarar ekki innan sólarhrings
+    frá áskoruninni tapar. Aðeins þeir sem eru á stigatöflunni geta skorað á og fengið áskoranir.</p>
+  <div id="duelroom"></div>
+
+  <h2 class="sec">Bekkjarfélagar</h2>
+  <p class="sub">Merki sem aðrir hafa unnið, sjaldgæfustu fremst. Leynimerki sem þú hefur ekki fundið
+    sérðu sem <b>orðróm</b>: nafnið og táknið, en ekki hvernig það vinnst — það þarftu að finna út.
+    ★ merkir þann sem fann merkið fyrstur hér. Nafnið er það sem hver valdi sér; ekkert annað sést.</p>
+  <div id="roster"></div>
+</section>
+
+<!-- ================= 4. Stillingar og námsefni ======================= -->
+<section class="view" id="view-settings" hidden>
+  <h2 class="sec first">Námsefni</h2>
+  <p class="sub">Kveiktu á því sem á við hverju sinni. Kóðinn vísar í aðalnámskrá.
+    Ef umsjónarmaður hefur slökkt á einhverju er það sýnt en ekki hægt að kveikja á því.</p>
+  <div id="policyeditor"></div>
+  <p class="sub warn" id="curwarn"></p>
+
+  <h2 class="sec">Stillingar</h2>
+  <div class="setrow">
+    <label for="goalin">Dagsmarkmið, svör á dag</label>
+    <div class="answer">
+      <input type="text" id="goalin" inputmode="numeric" style="flex:0 0 90px;font-size:16px">
+      <button class="ghost" id="goalsave">Vista dagsmarkmið</button>
+    </div>
+  </div>
+  <div class="filters">
+    <label><input type="checkbox" id="set-gloss"> Sýna skýringar á málfræðihugtökum þegar bendillinn stoppar á þeim</label>
+    <label><input type="checkbox" id="set-decay"> Láta XP fjara hægt út eftir langt hlé (mest eitt stig)</label>
+  </div>
+
+  <h2 class="sec">Færa milli tækja</h2>
+  <p class="sub">Framvindan er geymd í þessum vafra. Til að flytja hana í annað tæki: afritaðu hana hér,
+    sendu þér textann (t.d. í tölvupósti) og límdu hann inn í hinu tækinu.</p>
+  <div class="answer">
+    <button class="ghost" id="export">Afrita framvindu</button>
+    <button class="ghost" id="importopen">Líma inn framvindu</button>
+    <label class="ghost filelabel">Lesa inn skrá<input type="file" id="importfile" accept="application/json" hidden></label>
+  </div>
+  <div id="transfer" hidden>
+    <textarea id="transfertext" rows="5" spellcheck="false" placeholder="Límdu framvinduna hér…"></textarea>
+    <div class="answer">
+      <button class="ghost" id="transfercopy">Afrita textann</button>
+      <button class="ghost" id="transferload">Lesa inn</button>
+      <button class="ghost" id="transferclose">Loka</button>
+    </div>
+  </div>
+  <p class="sub" id="importnote"></p>
+
+  <!-- Server only; ui/account.js fills both. Empty when opened from a file. -->
+  <div id="account"></div>
+  <div id="admin"></div>
+  <!-- Error reports kept in this browser (no server). ui/reports.js. -->
+  <div id="reports" class="adminbox"></div>
+
+  <h2 class="sec">Byrja upp á nýtt</h2>
+  <p class="sub">Eyðir XP, merkjum og orðasafni í þessum vafra. Þetta er ekki hægt að taka til baka.</p>
+  <div class="answer"><button class="ghost danger" id="reset">Núllstilla allt</button></div>
+
+  <!-- What used to be the Gögn tab. Almost nobody needs it, and the licences
+       have to stay reachable, so it is folded away here rather than removed.
+       app.js fills it the first time it is opened. -->
+  <details class="about" id="about">
+    <summary>Um forritið: gögn, heimildir og leyfi</summary>
+    <h2 class="sec first">Hvaðan gögnin koma</h2>
+    <p class="note" id="datanote"></p>
+    <h2 class="sec">Orðaforði</h2>
+    <p class="sub" id="vocabsub"></p>
+    <div class="chips" id="classchips"></div>
+    <h2 class="sec">Sama orðið í fleiri orðflokkum</h2>
+    <p class="sub">Þessi orð eru til í fleiri en einum orðflokki og eru æfð sitt í hvoru lagi.</p>
+    <div class="chips" id="homchips"></div>
+    <h2 class="sec">Setningabankinn</h2>
+    <p class="sub" id="sentsub"></p>
+    <div class="chartbox" style="overflow-x:auto" id="senttable"></div>
+    <h2 class="sec">Leyfi, heimildir og þakkir</h2>
+    <div id="licenses"></div>
+  </details>
+</section>
+
+<footer>
+  Beygingar: <b>Beygingarlýsing íslensks nútímamáls</b>, Stofnun Árna Magnússonar í íslenskum fræðum (CC BY-SA 4.0),
+  sótt með <b>BinPackage</b> (Miðeind ehf., MIT). Þáttun setninga: <b>GreynirEngine</b> (Miðeind ehf., MIT).
+  Tíðni orða: OpenSubtitles-tíðnilisti (hermitdave/FrequencyWords). Leturgerðir: <b>Bricolage Grotesque</b>, <b>Public Sans</b> og <b>IBM Plex Mono</b> (SIL OFL 1.1), innbyggðar í skrána.
+  Orðskýringar úr <b>Íslenskri nútímamálsorðabók</b> (CC BY 4.0) þegar útdrátturinn er kominn inn.
+  Full leyfisskrá og þakkir eru neðst undir <b>Stillingar og námsefni</b>. Forritið er ekki markaðssett og engin gjaldtaka er af því.
+</footer>
+</div>
+<script>

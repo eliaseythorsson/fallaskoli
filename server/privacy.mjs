@@ -1,0 +1,194 @@
+/* The privacy notice — `/personuvernd`.
+ *
+ * Written for the person it is about: a teenager. Short sentences, "þú", and
+ * the short version first. It is generated rather than typed into a file for
+ * one reason: the numbers in it (how long an unused account lives, how long a
+ * backup lives) are the SAME constants the server acts on, so the notice
+ * cannot promise one thing while the retention sweep does another.
+ *
+ * Who runs this server is not something the program can know. It is told, in
+ * three environment variables (docs/HOSTING.md):
+ *
+ *   FALLASKOLI_CONTROLLER   the person responsible, by name
+ *   FALLASKOLI_CONTACT      how to reach them (an email address)
+ *   FALLASKOLI_HOSTING      who hosts the machine and where it stands
+ *
+ * Until the first two are set the page says so in red and `/health` reports
+ * `privacy: false` — a notice with nobody's name on it is not a notice.
+ *
+ * The page is self-contained: no script, no font, no request to anybody.
+ */
+
+export const RETENTION = {
+  pendingDays: 30,      // an unanswered request for access
+  inactiveMonths: 18,   // an account nobody has logged in to
+  backupDays: 30,       // the longest a deleted account can survive in a backup
+  sessionDays: 30,
+};
+
+/** The age below which a parent or guardian has to consent. Icelandic law says
+    13 today (Act 90/2018, Art. 10(5)) and a bill before Alþingi says 15; this
+    server asks for a guardian below 16, which satisfies both and GDPR's own
+    default. Change it here and the form and the notice follow. */
+export const CONSENT_AGE = 16;
+
+export function privacyConfig(env = process.env) {
+  const controller = String(env.FALLASKOLI_CONTROLLER || "").trim();
+  const contact = String(env.FALLASKOLI_CONTACT || "").trim();
+  const hosting = String(env.FALLASKOLI_HOSTING || "").trim();
+  const num = (v, d) => (Number(v) > 0 ? Math.round(Number(v)) : d);
+  return {
+    controller, contact, hosting,
+    ready: !!(controller && contact),
+    pendingDays: num(env.FALLASKOLI_PENDING_DAYS, RETENTION.pendingDays),
+    inactiveMonths: num(env.FALLASKOLI_INACTIVE_MONTHS, RETENTION.inactiveMonths),
+    backupDays: num(env.FALLASKOLI_BACKUP_DAYS, RETENTION.backupDays),
+  };
+}
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+export const PRIVACY_VERSION = "2026-11-11";
+
+export function privacyPage(cfg) {
+  const missing = (what) => `<mark>[vantar: ${what}]</mark>`;
+  const who = cfg.controller ? esc(cfg.controller) : missing("nafn ábyrgðaraðila");
+  const how = cfg.contact
+    ? (/^[^@\s]+@[^@\s]+$/.test(cfg.contact)
+      ? `<a href="mailto:${esc(cfg.contact)}">${esc(cfg.contact)}</a>` : esc(cfg.contact))
+    : missing("netfang eða sími");
+  const host = cfg.hosting
+    ? esc(cfg.hosting)
+    : "Fyrirtækið sem leigir okkur netþjóninn.";
+
+  return `<!DOCTYPE html>
+<html lang="is"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Persónuvernd — Fallaskóli</title>
+<style>
+  body{font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;color:#121922;background:#F8FAFB;margin:0}
+  main{max-width:42rem;margin:0 auto;padding:28px 20px 60px}
+  h1{font-size:30px;line-height:1.2;margin:0 0 6px}
+  h2{font-size:20px;margin:34px 0 6px}
+  .short{background:#fff;border:1px solid #C7D1DA;border-radius:10px;padding:14px 18px;margin:18px 0}
+  .short p{margin:6px 0}
+  li{margin:6px 0}
+  mark{background:#FADFDB;color:#8a1f17;padding:1px 4px;border-radius:4px}
+  .sub{color:#55657A;font-size:15px}
+  a{color:#3346C7}
+  table{border-collapse:collapse;width:100%;background:#fff}
+  td,th{border:1px solid #C7D1DA;padding:8px 10px;text-align:left;vertical-align:top;font-size:15.5px}
+  th{background:#E7ECF0}
+</style></head><body><main>
+<p class="sub"><a href="/">← Til baka í Fallaskóla</a></p>
+<h1>Persónuvernd í Fallaskóla</h1>
+<p class="sub">Síðast breytt ${PRIVACY_VERSION}</p>
+
+<div class="short">
+  <p><b>Stutta útgáfan</b></p>
+  <p>Fallaskóli geymir eins lítið um þig og hægt er: notandanafn, gælunafn,
+     lykilorð (sem enginn getur lesið) og hvernig þér gengur að æfa þig.</p>
+  <p>Það sem þú skrifar í svörin er <b>ekki</b> geymt — bara hvort svarið var rétt —
+     nema þú sendir sjálf(ur) villutilkynningu með 🚩.</p>
+  <p>Enginn annar notandi sér neitt um þig nema þú kveikir sjálf(ur) á stigatöflunni.</p>
+  <p>Engar auglýsingar, engin rakning, ekkert selt. Þú getur sótt gögnin þín eða
+     eytt aðganginum hvenær sem er.</p>
+</div>
+
+<h2>Hver ber ábyrgð?</h2>
+<p>${who} rekur þennan Fallaskóla og ber ábyrgð á gögnunum (er „ábyrgðaraðili“).
+   Ef þú hefur spurningu eða vilt að eitthvað sé lagað eða því eytt:
+   ${how}.</p>
+
+<h2>Hvað er geymt um þig?</h2>
+<table>
+<tr><th>Hvað</th><th>Til hvers</th></tr>
+<tr><td>Notandanafn og gælunafn sem þú velur</td>
+    <td>Til að þú getir skráð þig inn. Gælunafnið er það sem aðrir sjá ef þú ert
+        á stigatöflunni. Notaðu ekki fullt nafn.</td></tr>
+<tr><td>Lykilorðið — aðeins sem tætigildi („hash“)</td>
+    <td>Til að kanna að lykilorðið sé rétt. Lykilorðið sjálft er hvergi til og
+        enginn getur lesið það, ekki heldur umsjónarmaður.</td></tr>
+<tr><td>Framvindan þín: XP, stig, merki, hvaða orð og beygingar þú hefur æft,
+        hve mörg svör voru rétt og röng hvern dag og hve lengi þú æfðir þig</td>
+    <td>Til að forritið muni hvar þú ert stödd/staddur, velji spurningar við hæfi
+        og framvindan fylgi þér milli tækja.</td></tr>
+<tr><td>Stillingarnar þínar</td><td>Til að þær haldist.</td></tr>
+<tr><td>Dagurinn sem þú skráðir þig og dagurinn sem þú varst síðast inni</td>
+    <td>Til að hægt sé að eyða aðgangi sem enginn notar lengur.</td></tr>
+<tr><td>Villutilkynningar sem þú sendir með 🚩: það sem þú skrifar, spurningin
+        sjálf, svarið þitt og rétta svarið</td>
+    <td>Svo umsjónarmaður geti skoðað hvort spurningin sé röng og lagað hana.
+        Aðeins umsjónarmaður sér þær. Þær eyðast með aðganginum þínum og fylgja
+        með þegar þú sækir gögnin þín.</td></tr>
+<tr><td>Hver samþykkti aðganginn og hvenær</td>
+    <td>Þú sjálf(ur) ef þú ert ${CONSENT_AGE} ára eða eldri. Annars nafn foreldris
+        eða forsjáraðila sem samþykkti. Lögin krefjast þess að hægt sé að sýna
+        fram á samþykkið.</td></tr>
+</table>
+<p>IP-talan þín (númer nettengingarinnar) sést á meðan þú ert tengd(ur), eins og
+   á öllum vefsíðum. Hún er notuð í stutta stund til að stöðva þá sem reyna að
+   giska á lykilorð og er ekki skráð með aðganginum þínum.</p>
+<p>Fallaskóli biður <b>ekki</b> um netfang, kennitölu, símanúmer, fæðingardag
+   eða mynd.</p>
+
+<h2>Af hverju má Fallaskóli geyma þetta?</h2>
+<p>Vegna þess að það var samþykkt — af þér, eða af foreldri eða forsjáraðila ef
+   þú ert yngri en ${CONSENT_AGE} ára. Það er heimildin samkvæmt
+   persónuverndarlögum (lög nr. 90/2018 og evrópska persónuverndarreglugerðin, GDPR).
+   Samþykkið má draga til baka hvenær sem er með því að eyða aðganginum, og
+   það kostar ekkert og þarf enga skýringu.</p>
+
+<h2>Hver sér hvað?</h2>
+<ul>
+  <li><b>Þú</b> sérð allt sem er geymt um þig.</li>
+  <li><b>Aðrir í hópnum þínum</b> sjá ekkert um þig nema þú kveikir á
+      stigatöflunni undir <i>Stillingar og námsefni → Aðgangurinn minn</i>. Þá sjá þeir
+      gælunafnið, stig, XP, merkin þín og titilinn sem þú velur. Mínútur sjást
+      aðeins ef þú kveikir sérstaklega á þeim. Þú getur slökkt aftur hvenær sem er.
+      Notendur í öðrum hópum sjá þig aldrei.</li>
+  <li><b>Umsjónarmaður</b> sér notendalistann og getur skoðað framvinduna þína ef
+      þess þarf, til dæmis til að laga villu. Hann sér aldrei lykilorðið.</li>
+  <li><b>Hýsingaraðili</b> geymir gögnin fyrir okkur og má ekki nota þau í neitt
+      annað („vinnsluaðili“). ${host}</li>
+  <li><b>Enginn annar.</b> Gögnin eru ekki seld, ekki afhent og ekki notuð í
+      auglýsingar. Síðan sækir ekkert frá öðrum fyrirtækjum — hvorki letur,
+      greiningartól né samfélagsmiðlahnappa.</li>
+</ul>
+
+<h2>Hve lengi?</h2>
+<ul>
+  <li>Á meðan aðgangurinn þinn er til.</li>
+  <li>Aðgangi sem enginn hefur skráð sig inn á í <b>${cfg.inactiveMonths} mánuði</b>
+      er eytt sjálfkrafa, með allri framvindu.</li>
+  <li>Beiðni um aðgang sem er ekki samþykkt innan <b>${cfg.pendingDays} daga</b> er eytt.</li>
+  <li>Þegar aðgangi er eytt hverfur hann strax af þjóninum. Öryggisafrit sem
+      innihalda hann eyðast innan <b>${cfg.backupDays} daga</b>.</li>
+</ul>
+
+<h2>Réttindin þín</h2>
+<p>Allt þetta er undir <i>Stillingar og námsefni → Aðgangurinn minn</i>:</p>
+<ul>
+  <li><b>Sjá og sækja</b> allt sem er geymt um þig, í einni skrá.</li>
+  <li><b>Leiðrétta</b> gælunafnið og skipta um lykilorð.</li>
+  <li><b>Ráða</b> hvort þú sést á stigatöflunni.</li>
+  <li><b>Eyða</b> aðganginum og öllu sem honum fylgir.</li>
+</ul>
+<p>Foreldri eða forsjáraðili barns yngra en ${CONSENT_AGE} ára getur beðið um
+   það sama fyrir barnið með því að hafa samband við ábyrgðaraðila hér að ofan.</p>
+<p>Ef þér finnst ekki farið rétt með gögnin þín getur þú kvartað til
+   Persónuverndar: <a href="https://www.personuvernd.is" rel="noopener">personuvernd.is</a>.</p>
+
+<h2>Vefkökur</h2>
+<p>Ein kaka, <code>fallaskoli</code>, sem man að þú ert skráð(ur) inn. Hún gildir
+   í ${RETENTION.sessionDays} daga eða þar til þú skráir þig út. Hún er nauðsynleg
+   til að forritið virki og þess vegna er ekki spurt um leyfi fyrir henni. Engar
+   aðrar kökur eru notaðar.</p>
+
+<h2>Ef eitthvað fer úrskeiðis</h2>
+<p>Ef gögn leka eða komast í rangar hendur lætur ábyrgðaraðili Persónuvernd vita
+   innan 72 klukkustunda og þig (eða forsjáraðila þinn) eins fljótt og hægt er,
+   ef það gæti skipt þig máli.</p>
+</main></body></html>`;
+}

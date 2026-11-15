@@ -1,0 +1,45 @@
+# ── Built output ─────────────────────────────────────────────────────────────
+# `node tools/build.mjs` writes dist/fallaskoli-v<version>.html; `tools/pack.mjs`
+# writes dist/*.zip. Built files are never committed: every release is a git tag,
+# and the HTML for any tag can be rebuilt from it (or downloaded from the GitHub
+# release it is attached to).
+/dist/
+
+# ── Personal data — NEVER commit ─────────────────────────────────────────────
+# Accounts, password hashes, sessions and children's progress.
+/server/data/
+/_prufa/
+# Anything a hosted server or a local run might drop beside the code.
+*.sqlite
+*.sqlite3
+*.db
+.env
+.env.*
+!.env.example
+
+# ── Dependencies and caches ─────────────────────────────────────────────────
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# ── Old ways of keeping history (git does this now) ─────────────────────────
+/_backup/
+/_to_delete/
+*.tgz
+*.orig
+*.tmp
+*.bak
+
+# ── Editors and operating systems ───────────────────────────────────────────
+.DS_Store
+._*
+Icon?
+*.swp
+.idea/
+.vscode/
+# Copies a file-sync service leaves behind ("package 2.json", "index 2.js").
+* 2.*
+* 2

@@ -1,0 +1,225 @@
+{
+ "levels": {
+  "1": 212,
+  "2": 179,
+  "3": 157,
+  "4": 105,
+  "5": 80
+ },
+ "classes": {
+  "nafnorð": {
+   "possible": 16,
+   "seen": 16,
+   "reachable": 16,
+   "cells": 80,
+   "filled": 78,
+   "reachableCells": 80,
+   "twiceAnywhere": 16,
+   "oncePerLevel": {
+    "1": 16,
+    "2": 16,
+    "3": 16,
+    "4": 15,
+    "5": 15
+   },
+   "twicePerLevel": {
+    "1": 16,
+    "2": 16,
+    "3": 16,
+    "4": 14,
+    "5": 15
+   },
+   "tokens": 1283,
+   "missing": []
+  },
+  "lýsingarorð": {
+   "possible": 120,
+   "seen": 59,
+   "reachable": 59,
+   "cells": 600,
+   "filled": 131,
+   "reachableCells": 295,
+   "twiceAnywhere": 39,
+   "oncePerLevel": {
+    "1": 21,
+    "2": 25,
+    "3": 37,
+    "4": 21,
+    "5": 27
+   },
+   "twicePerLevel": {
+    "1": 10,
+    "2": 11,
+    "3": 8,
+    "4": 9,
+    "5": 6
+   },
+   "tokens": 210,
+   "missing": [
+    "FSB-KVK-EFFT",
+    "FSB-HK-ÞGFFT",
+    "FSB-HK-EFFT",
+    "FVB-KK-ÞFFT",
+    "FVB-KK-EFFT",
+    "FVB-KVK-NFFT",
+    "FVB-KVK-ÞFFT",
+    "FVB-KVK-ÞGFFT",
+    "FVB-KVK-EFFT",
+    "FVB-HK-ÞFFT",
+    "FVB-HK-ÞGFFT",
+    "FVB-HK-EFFT",
+    "MST-KK-NFFT",
+    "MST-KK-ÞGFET",
+    "MST-KK-ÞGFFT",
+    "MST-KK-EFET",
+    "MST-KK-EFFT",
+    "MST-KVK-NFFT",
+    "MST-KVK-ÞFFT",
+    "MST-KVK-ÞGFFT",
+    "MST-KVK-EFET",
+    "MST-KVK-EFFT",
+    "MST-HK-NFFT",
+    "MST-HK-ÞFFT",
+    "MST-HK-ÞGFET",
+    "MST-HK-ÞGFFT",
+    "MST-HK-EFET",
+    "MST-HK-EFFT",
+    "ESB-KK-ÞFFT",
+    "ESB-KK-ÞGFET",
+    "ESB-KK-ÞGFFT",
+    "ESB-KK-EFET",
+    "ESB-KK-EFFT",
+    "ESB-KVK-NFFT",
+    "ESB-KVK-ÞFET",
+    "ESB-KVK-ÞFFT",
+    "ESB-KVK-ÞGFET",
+    "ESB-KVK-ÞGFFT",
+    "ESB-KVK-EFET",
+    "ESB-KVK-EFFT"
+   ]
+  },
+  "sagnorð": {
+   "possible": 53,
+   "seen": 30,
+   "reachable": 30,
+   "cells": 265,
+   "filled": 94,
+   "reachableCells": 150,
+   "twiceAnywhere": 21,
+   "oncePerLevel": {
+    "1": 14,
+    "2": 17,
+    "3": 19,
+    "4": 23,
+    "5": 21
+   },
+   "twicePerLevel": {
+    "1": 13,
+    "2": 10,
+    "3": 12,
+    "4": 16,
+    "5": 16
+   },
+   "tokens": 1016,
+   "missing": [
+    "GM-FH-ÞT-2P-FT",
+    "GM-VH-NT-1P-FT",
+    "MM-FH-NT-1P-ET",
+    "MM-FH-NT-2P-ET",
+    "MM-FH-NT-2P-FT",
+    "MM-FH-NT-3P-FT",
+    "MM-FH-ÞT-1P-ET",
+    "MM-FH-ÞT-1P-FT",
+    "MM-FH-ÞT-2P-ET",
+    "MM-FH-ÞT-2P-FT",
+    "MM-VH-NT-1P-ET",
+    "MM-VH-NT-1P-FT",
+    "MM-VH-NT-2P-ET",
+    "MM-VH-NT-2P-FT",
+    "MM-VH-NT-3P-ET",
+    "MM-VH-NT-3P-FT",
+    "MM-VH-ÞT-1P-ET",
+    "MM-VH-ÞT-1P-FT",
+    "MM-VH-ÞT-2P-ET",
+    "MM-VH-ÞT-2P-FT",
+    "MM-VH-ÞT-3P-FT",
+    "GM-BH-ST",
+    "LHNT"
+   ]
+  },
+  "fornafn": {
+   "possible": 32,
+   "seen": 25,
+   "reachable": 25,
+   "cells": 160,
+   "filled": 87,
+   "reachableCells": 125,
+   "twiceAnywhere": 25,
+   "oncePerLevel": {
+    "1": 11,
+    "2": 16,
+    "3": 19,
+    "4": 21,
+    "5": 20
+   },
+   "twicePerLevel": {
+    "1": 6,
+    "2": 12,
+    "3": 16,
+    "4": 15,
+    "5": 16
+   },
+   "tokens": 647,
+   "missing": [
+    "KK-EFET",
+    "KVK-NFFT",
+    "KVK-ÞFFT",
+    "HK-ÞFFT",
+    "HK-ÞGFFT",
+    "HK-EFET",
+    "EFET"
+   ]
+  },
+  "töluorð": {
+   "possible": 24,
+   "seen": 10,
+   "reachable": 10,
+   "cells": 120,
+   "filled": 36,
+   "reachableCells": 50,
+   "twiceAnywhere": 9,
+   "oncePerLevel": {
+    "1": 8,
+    "2": 7,
+    "3": 8,
+    "4": 7,
+    "5": 6
+   },
+   "twicePerLevel": {
+    "1": 6,
+    "2": 4,
+    "3": 5,
+    "4": 2,
+    "5": 2
+   },
+   "tokens": 61,
+   "missing": [
+    "KK-NFET",
+    "KK-ÞFET",
+    "KK-ÞGFET",
+    "KK-EFET",
+    "KVK-NFET",
+    "KVK-ÞFET",
+    "KVK-ÞGFET",
+    "KVK-EFET",
+    "KVK-EFFT",
+    "HK-NFET",
+    "HK-ÞFET",
+    "HK-ÞGFET",
+    "HK-EFET",
+    "HK-EFFT"
+   ]
+  }
+ },
+ "tokens": 3217
+}

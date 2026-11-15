@@ -1,0 +1,55 @@
+# Fallaskóli on Fly.io — docs/HOSTING.md walks through every line of this.
+#
+# Change the FIRST line (the name must be unique on Fly; it becomes
+# <name>.fly.dev) and the three FALLASKOLI_ lines under [env]. Nothing else has
+# to change.
+
+app = "fallaskoli-CHANGE-ME"
+
+# Where the machine stands. Amsterdam: inside the EEA, and close to Iceland.
+# Other EEA choices: "arn" (Stockholm), "fra" (Frankfurt), "cdg" (Paris).
+primary_region = "ams"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # Who is responsible for this server. These three lines are printed in the
+  # privacy notice (/personuvernd) — until the first two are filled in, the
+  # notice says in red that they are missing.
+  FALLASKOLI_CONTROLLER = "Elías Sæbjörn Eyþórsson"
+  FALLASKOLI_CONTACT = "elias.eythorsson@gmail.com"
+  FALLASKOLI_HOSTING = "Fly.io, Inc. hýsir þjóninn í gagnaveri í Amsterdam í Hollandi. Fly.io er bandarískt fyrirtæki, bundið af vinnslusamningi og vottað samkvæmt EU–US Data Privacy Framework."
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # The machine goes to sleep when nobody is practising and wakes on the next
+  # visit (a second or two). You pay for the minutes it is awake. To keep it
+  # awake always (about 4 USD a month): auto_stop_machines = "off" and
+  # min_machines_running = 1.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "30s"
+    timeout = "5s"
+    method = "GET"
+    path = "/health"
+
+# The data: one small disk, mounted where FALLASKOLI_DATA points. Fly takes a
+# snapshot of it every day and keeps each for the number of days below — the
+# same number the privacy notice promises a deleted account is gone within
+# (FALLASKOLI_BACKUP_DAYS, 30 unless changed).
+[mounts]
+  source = "fallaskoli_data"
+  destination = "/data"
+  snapshot_retention = 30
+
+# ONE machine, always. The data is files on one disk; a second machine would
+# have a second, empty disk. Never `fly scale count 2`.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

@@ -1,0 +1,24 @@
+# The image is assembled from a short list of files (see Dockerfile). Everything
+# that must never be in it is named here as well, so a careless COPY cannot
+# take it along.
+server/data
+node_modules
+# dist/ holds the built HTML the image needs; keep the zips and staging out.
+dist/*.zip
+dist/*/
+tests
+docs
+*.py
+*.json
+!package.json
+freq_raw.txt
+.git
+.github
+_backup
+_to_delete
+_grammar-audit
+# Older builds (they now live in dist/ and in git tags). Only the current one
+# is served; the server picks it by the version in package.json.
+
+# Test data from test-together.sh (testers, passwords, progress).
+_prufa

@@ -1,0 +1,443 @@
+{
+ "built": "2026-11-12T20:14:29.782Z",
+ "from": "islensk_nutimamalsordabok_2026-02.xml",
+ "format": 2,
+ "read": 56382,
+ "matched": 6510,
+ "outside": 46536,
+ "noDef": 147,
+ "noLemma": 0,
+ "secondChance": {
+  "variant": 200,
+  "pluralOnly": 31
+ },
+ "rejected": {
+  "wrongClass": 291,
+  "ambiguous": 0,
+  "noClass": 0,
+  "collision": 101
+ },
+ "examples": {
+  "wrongClass": [
+   {
+    "lemma": "afl",
+    "ino": "kk",
+    "lexicon": [
+     "hk"
+    ]
+   },
+   {
+    "lemma": "armur",
+    "ino": "lo",
+    "lexicon": [
+     "kk"
+    ]
+   },
+   {
+    "lemma": "augnablik",
+    "ino": "ao",
+    "lexicon": [
+     "hk"
+    ]
+   },
+   {
+    "lemma": "aumur",
+    "ino": "kvk",
+    "lexicon": [
+     "lo"
+    ]
+   },
+   {
+    "lemma": "á",
+    "ino": "kvk",
+    "lexicon": [
+     "fs"
+    ]
+   },
+   {
+    "lemma": "áberandi",
+    "ino": "lo",
+    "lexicon": [
+     "ao"
+    ]
+   },
+   {
+    "lemma": "ákæra",
+    "ino": "so",
+    "lexicon": [
+     "kvk"
+    ]
+   },
+   {
+    "lemma": "ár",
+    "ino": "kvk",
+    "lexicon": [
+     "ao"
+    ]
+   },
+   {
+    "lemma": "ár",
+    "ino": "hk",
+    "lexicon": [
+     "ao"
+    ]
+   },
+   {
+    "lemma": "ári",
+    "ino": "kk",
+    "lexicon": [
+     "ao"
+    ]
+   },
+   {
+    "lemma": "átta",
+    "ino": "kvk",
+    "lexicon": [
+     "so"
+    ]
+   },
+   {
+    "lemma": "átta",
+    "ino": "to",
+    "lexicon": [
+     "so"
+    ]
+   }
+  ],
+  "ambiguous": [],
+  "noClass": []
+ },
+ "unmatched": {
+  "total": 54,
+  "byKind": {
+   "absent": 50,
+   "wrongClass": 4
+  },
+  "words": [
+   {
+    "lemma": "jógi",
+    "cls": "kk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "norðurpóll",
+    "cls": "kk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "aðalfulltrúi",
+    "cls": "kk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "liðsfélagi",
+    "cls": "kk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "sumarskóli",
+    "cls": "kk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "fylkisstjóri",
+    "cls": "kk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "mótsstaður",
+    "cls": "kk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "aðalsalur",
+    "cls": "kk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "fylgjandi",
+    "cls": "kk",
+    "why": "ÍNO says lo",
+    "kind": "wrongClass"
+   },
+   {
+    "lemma": "heiðursorða",
+    "cls": "kvk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "hafmær",
+    "cls": "kvk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "starfsregla",
+    "cls": "kvk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "rauðka",
+    "cls": "kvk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "ríkislögregla",
+    "cls": "kvk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "rannsóknarstöð",
+    "cls": "kvk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "ská",
+    "cls": "kvk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "föstudagskvöld",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "myndver",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "laugardagskvöld",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "draumalið",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "viðvörunarkerfi",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "lokaár",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "lyfjaeftirlit",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "lokaatriði",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "endamark",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "björgunarlið",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "rafkerfi",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "sunnudagskvöld",
+    "cls": "hk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "móttekinn",
+    "cls": "lo",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "örfár",
+    "cls": "lo",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "jafnmikill",
+    "cls": "lo",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "þrennur",
+    "cls": "lo",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "fjölmargur",
+    "cls": "lo",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "fern",
+    "cls": "lo",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "krökkur",
+    "cls": "lo",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "allmargur",
+    "cls": "lo",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "hringsnúa",
+    "cls": "so",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "nærri",
+    "cls": "fs",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "næst",
+    "cls": "fs",
+    "why": "ÍNO says ao",
+    "kind": "wrongClass"
+   },
+   {
+    "lemma": "nær",
+    "cls": "fs",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "eftir",
+    "cls": "st",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "nær",
+    "cls": "st",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "erfitt",
+    "cls": "ao",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "lítið",
+    "cls": "ao",
+    "why": "ÍNO says lo",
+    "kind": "wrongClass"
+   },
+   {
+    "lemma": "sárt",
+    "cls": "ao",
+    "why": "ÍNO says lo",
+    "kind": "wrongClass"
+   },
+   {
+    "lemma": "sterkt",
+    "cls": "ao",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "þungt",
+    "cls": "ao",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "hlýtt",
+    "cls": "ao",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "óljóst",
+    "cls": "ao",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "veikt",
+    "cls": "ao",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "grunnt",
+    "cls": "ao",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "jæja",
+    "cls": "uh",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "ókei",
+    "cls": "uh",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   },
+   {
+    "lemma": "síki",
+    "cls": "kk",
+    "why": "no ÍNO entry with this headword",
+    "kind": "absent"
+   }
+  ]
+ }
+}

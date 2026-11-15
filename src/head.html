@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fallaskóli — íslensk málfræði</title>
+<style>
+/* The three typefaces are INSIDE this file (v6.3): tools/build.mjs replaces the
+   next line with @font-face rules carrying the font data itself. Until then
+   the page fetched them from Google's font service, which told Google the
+   address of every child who opened it. Now the page asks nobody for anything. */
+/*@@FONTS@@*/
+/* ---------- the classroom (v6.2) ------------------------------------------
+   Three surfaces and no more: the DESK (squared paper, behind everything), the
+   SHEET (white paper — every card, table and chart) and the BOARD (the green
+   board in the Æfa tab, where the question is written in chalk).
+
+   The colour names are the ones the program has always used, because the
+   scripts write `var(--lupine)` and friends straight into the charts. What
+   they stand for now: lupine is ballpoint blue, moss a tick, rust the red pen,
+   sulphur and marker the highlighter.
+
+   `.blackboard` re-declares the same names as chalk colours further down, so every
+   component drawn inside the board turns into chalk without a second rule —
+   and `.blackboard .verdict` declares the paper values again, because the verdict
+   is a note stuck on the board, not something written on it. */
+:root,.blackboard .verdict{
+  --paper:#E7ECF0; --paper-2:#F8FAFB; --sheet:#FFFFFF;
+  --ink:#121922; --slate:#55657A; --line:#C7D1DA; --grid:#D7DFE6;
+  --lupine:#3346C7; --lupine-soft:#E3E7FB; --moss:#1B7A55; --moss-soft:#DBEFE5;
+  --rust:#C4372C; --rust-soft:#FADFDB; --sulphur:#B8860B; --sulphur-soft:#FFF4BF;
+  --on-accent:#FFFFFF;
+}
+:root{
+  --marker:#FFE65A;
+  --board:#22392F; --board-deep:#172A22; --chalk:#F3F1E7; --chalk-dim:#A9BAAF;
+  --chalk-yellow:#F2D96B; --wood:#D2B48A; --wood-deep:#B4925F;
+  --radius:4px;
+  --display:"Bricolage Grotesque",system-ui,sans-serif;
+  --body:"Public Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background-color:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  /* rúðustrikað: the desk is a sheet of squared paper */
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;background-position:-1px -1px}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px 90px}
+
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:flex-end;gap:14px 28px;flex-wrap:wrap;padding:22px 0 14px}
+.brand{margin-right:auto;min-width:0}
+.brand h1{font-family:var(--display);font-weight:800;font-size:32px;letter-spacing:-.03em;margin:0;line-height:1}
+/* The tagline is the school declined through its four cases, the way every
+   child in the country has chanted a noun: hér er …, um …, frá …, til …. */
+.brand p{margin:6px 0 0;font-size:13px;color:var(--slate)}
+.stats{display:flex;gap:6px;flex-wrap:wrap}
+.stat{background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);padding:6px 12px 5px;line-height:1.2;min-width:74px}
+.stat b{font-family:var(--mono);font-size:18px;font-weight:600;display:block}
+.stat span{font-size:11.5px;color:var(--slate)}
+.stat.flame b{color:var(--sulphur)}
+.stat.xp b{color:var(--lupine)}
+.levelbar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.levelbar i{display:block;height:6px;background:var(--lupine);transition:width .4s ease}
+.levelmeta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--slate);margin-top:6px;gap:10px;flex-wrap:wrap}
+#lvlname{color:var(--ink);font-weight:600}
+.diff{display:flex;align-items:center;gap:4px}
+.diff span{margin-right:3px}
+.diff i{width:14px;height:6px;background:var(--line);display:inline-block;border-radius:1px}
+.diff i.on{background:var(--lupine)}
+
+/* ---------- tabs: the dividers of a ring binder ----------
+   One colour per divider, carried as a strip along its top edge. The open one
+   is inked in; the rule under the row is the edge of the page they stick out
+   over. */
+nav.tabs{display:flex;gap:4px;margin:22px 0 26px;border-bottom:2px solid var(--ink)}
+nav.tabs button{--tab:var(--slate);font-family:var(--body);font-size:14px;font-weight:600;line-height:1.25;
+  background:var(--sheet);color:var(--ink);cursor:pointer;
+  border:1px solid var(--line);border-bottom:none;border-top:4px solid var(--tab);
+  border-radius:6px 6px 0 0;padding:9px 16px 10px}
+nav.tabs button[data-view="practice"]{--tab:#2F7D5C}
+nav.tabs button[data-view="progress"]{--tab:var(--marker)}
+nav.tabs button[data-view="class"]{--tab:var(--lupine)}
+nav.tabs button[data-view="settings"]{--tab:var(--slate)}
+nav.tabs button:hover{background:var(--paper-2);border-color:var(--slate);border-top-color:var(--tab)}
+nav.tabs button[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink);border-top-color:var(--tab)}
+nav.tabs button:focus-visible{outline:2px solid var(--lupine);outline-offset:2px}
+.view[hidden],.pane[hidden]{display:none}
+body.gated .stats,body.gated .levelbar,body.gated .levelmeta,body.gated nav.tabs,body.gated #runbar,body.gated #duelbar{display:none}
+
+/* ---------- task card ---------- */
+.card{padding:14px 0 0}
+.eyebrow{font-size:14px;color:var(--slate);margin:0 0 12px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.eyebrow b{color:var(--lupine);font-weight:600}
+.sentence{font-family:var(--display);font-weight:500;font-size:clamp(21px,3.6vw,30px);line-height:1.4;letter-spacing:-.01em;margin:0}
+.blank{display:inline-block;min-width:5ch;border-bottom:2px solid var(--lupine);color:var(--lupine);text-align:center}
+.target{background:var(--sulphur-soft);border-bottom:3px solid var(--sulphur);padding:0 4px;border-radius:2px 2px 0 0}
+.gloss{font-style:italic;color:var(--slate);margin:10px 0 0;font-size:14px}
+.prompt-row{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.lemma-box{flex:1 1 240px;min-width:0}
+.lemma-label{font-size:13px;color:var(--slate)}
+.lemma{font-family:var(--mono);font-size:23px;font-weight:600;letter-spacing:-.02em;margin-top:2px}
+.lemma small{font-family:var(--body);font-size:12px;font-weight:400;color:var(--slate);margin-left:8px}
+.lemma .plus{color:var(--slate);font-weight:400;margin:0 6px}
+
+/* ---------- 4x4 map ---------- */
+.map{border-collapse:collapse;font-family:var(--mono);font-size:11.5px;flex:0 0 auto}
+.map th{font-weight:500;color:var(--slate);padding:3px 6px;text-align:center;font-size:11px}
+.map th.row{text-align:right;padding-right:8px}
+.map td{width:22px;height:16px;border:1px solid var(--line);background:var(--sheet);padding:0}
+.map td.on{background:var(--lupine);border-color:var(--lupine);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.map caption{caption-side:bottom;font-family:var(--body);font-size:11px;color:var(--slate);padding-top:6px}
+
+/* ---------- inputs ---------- */
+.answer{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+input[type=text]{flex:1 1 220px;font-family:var(--mono);font-size:19px;padding:12px 14px;border:1px solid var(--line);background:var(--sheet);color:var(--ink);border-radius:var(--radius)}
+input[type=text]:focus{outline:2px solid var(--lupine);outline-offset:-1px;border-color:var(--lupine)}
+button.go,label.go{font-family:var(--body);font-weight:700;font-size:15px;background:var(--ink);color:var(--sheet);border:1px solid var(--ink);padding:12px 22px;cursor:pointer;border-radius:var(--radius)}
+button.go:hover,label.go:hover{background:var(--lupine);border-color:var(--lupine);color:var(--on-accent)}
+button.go:focus-visible,button.ghost:focus-visible{outline:2px solid var(--lupine);outline-offset:2px}
+button.ghost,label.ghost{font-family:var(--body);font-size:14px;background:var(--sheet);border:1px solid var(--line);padding:11px 16px;cursor:pointer;color:var(--ink);border-radius:var(--radius)}
+button.ghost:hover,label.ghost:hover{border-color:var(--ink)}
+.keys{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+.keys button{font-family:var(--mono);font-size:14px;width:32px;height:30px;cursor:pointer;background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.keys button:hover{background:var(--lupine-soft);border-color:var(--lupine)}
+textarea{width:100%;font-family:var(--body);font-size:16px;padding:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--sheet);resize:vertical}
+textarea:focus{outline:2px solid var(--lupine);outline-offset:-1px}
+
+/* ---------- multiple choice (greining) ---------- */
+.qrow{margin-top:16px}
+.qrow>label{display:block;font-size:13px;color:var(--slate);margin-bottom:5px}
+.opts{display:flex;gap:5px;flex-wrap:wrap}
+.opts button{font-family:var(--body);font-size:14px;padding:8px 13px;background:var(--sheet);border:1px solid var(--line);border-radius:99px;cursor:pointer;color:var(--ink)}
+.opts button:hover{border-color:var(--lupine)}
+.opts button[aria-pressed="true"]{background:var(--lupine);border-color:var(--lupine);color:var(--on-accent);font-weight:600}
+.opts button.right{background:var(--moss-soft);border-color:var(--moss);color:var(--moss);font-weight:600}
+.opts button.wrongpick{background:var(--rust-soft);border-color:var(--rust);color:var(--rust);text-decoration:line-through}
+.opts button:disabled{cursor:default}
+
+/* ---------- verdict ---------- */
+.verdict{margin-top:18px;padding:15px 17px;border-left:5px solid var(--line);background:var(--sheet);color:var(--ink);border-radius:2px}
+.verdict.bad{border-left-color:var(--rust);background:var(--rust-soft)}
+.verdict.good{border-left-color:var(--moss);background:var(--moss-soft)}
+.verdict.ok{border-left-color:var(--moss);background:var(--moss-soft)}
+.verdict.no{border-left-color:var(--rust);background:var(--rust-soft)}
+.verdict.neutral{border-left-color:var(--lupine);background:var(--lupine-soft)}
+/* Accepted, with something to mind: a spelling slip or the wrong row of the
+   instructions. Yellow rather than green or red, because the answer counted —
+   see core/leniency.js. `--sulphur` is the colour the program already uses for
+   "look here", on the highlighted word in an analysis question. */
+.verdict.near{border-left-color:var(--sulphur);background:var(--sulphur-soft)}
+.verdict.near .xpop{color:var(--sulphur)}
+.verdict h3{margin:0 0 6px;font-family:var(--display);font-size:19px;font-weight:600}
+/* The mark a teacher leaves in the margin: a tick or a cross in a ring drawn
+   by hand, which is why the ring is not quite round. */
+.verdict.ok h3::before,.verdict.no h3::before,.verdict.near h3::before{
+  display:inline-block;width:26px;height:26px;line-height:22px;text-align:center;margin-right:9px;
+  font-family:var(--body);font-size:15px;font-weight:700;vertical-align:1px;
+  border:2px solid currentColor;border-radius:52% 46% 50% 48%/47% 52% 46% 51%;transform:rotate(-6deg)}
+.verdict.ok h3::before{content:"✓";color:var(--moss)}
+.verdict.no h3::before{content:"✗";color:var(--rust)}
+.verdict.near h3::before{content:"~";color:var(--sulphur)}
+.verdict p{margin:0 0 4px;font-size:14px}
+.forms{font-family:var(--mono);font-weight:600}
+.xpop{font-family:var(--mono);font-weight:600;color:var(--lupine);float:right}
+.streakline{font-size:12px;color:var(--slate);margin-top:8px}
+.why{margin-top:10px;padding:9px 12px;background:var(--sheet);border:1px dashed var(--line);font-size:13px}
+/* The label is the box's first <b>; bold inside the text stays inline (v6.10). */
+.why > b:first-child{font-family:var(--body);font-size:11.5px;color:var(--slate);display:block;margin-bottom:2px}
+.mapline{display:none}
+
+/* ---------- tables ---------- */
+table.decl{border-collapse:collapse;width:100%;margin-top:8px;font-family:var(--mono);font-size:14px}
+table.decl th{font-family:var(--body);font-size:11.5px;color:var(--slate);font-weight:500;padding:6px 8px;text-align:left;border-bottom:1px solid var(--line)}
+table.decl th.rowh{width:130px}
+table.decl input.given{background:var(--sheet);color:var(--slate);border-style:dashed}
+table.decl th.rowh span{font-weight:400;text-transform:none;letter-spacing:0;font-size:11px}
+table.decl td{padding:3px;border-bottom:1px solid var(--line)}
+table.decl input{width:100%;font-family:var(--mono);font-size:15px;padding:8px;border:1px solid transparent;background:var(--sheet);border-radius:var(--radius)}
+table.decl input:focus{outline:2px solid var(--lupine);outline-offset:-2px}
+table.decl input.ok{background:var(--moss-soft);color:var(--moss);font-weight:600}
+table.decl input.no{background:var(--rust-soft);color:var(--rust);text-decoration:line-through}
+.fix{font-family:var(--mono);font-size:12px;color:var(--moss);display:block;padding:2px 8px 4px}
+.cellrow{display:flex;align-items:center;gap:8px}
+.cellrow input{flex:1 1 auto;min-width:0}
+.helpernoun{font-family:var(--mono);font-size:14px;color:var(--slate);white-space:nowrap;padding-right:6px}
+
+/* ---------- stats ---------- */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:20px}
+.tile{background:var(--sheet);border:1px solid var(--line);padding:13px 15px;border-radius:var(--radius)}
+.tile b{font-family:var(--mono);font-size:26px;font-weight:600;display:block;letter-spacing:-.02em}
+.tile span{font-size:11.5px;color:var(--slate)}
+.tile small{display:block;font-size:12px;color:var(--slate);margin-top:4px}
+h2.sec{font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:-.01em;margin:34px 0 4px}
+h2.sec.first{margin-top:0}
+p.sub{margin:0 0 12px;font-size:13.5px;color:var(--slate);max-width:74ch}
+.chartbox{background:var(--sheet);border:1px solid var(--line);padding:16px 12px 8px;border-radius:var(--radius)}
+svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:16px;font-size:11px;color:var(--slate);padding:6px 4px 0;flex-wrap:wrap}
+.swatch{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+table.heat{border-collapse:collapse;font-family:var(--mono);font-size:11px}
+table.heat th{font-family:var(--body);font-size:11.5px;color:var(--slate);font-weight:500;padding:4px 8px}
+table.heat th.row{text-align:right}
+table.heat td{width:74px;height:38px;border:1px solid var(--line);text-align:center}
+
+/* ---------- badges ---------- */
+.badgegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+/* --rar / --rar-ink / --rar-wash are written onto each tile by ui/panels.js
+   from the badge's rarity tier, so the colour of a badge IS its category. The
+   fallbacks keep an un-tiered tile looking exactly as it did before v5.6. */
+.badge{--rar:var(--line);--rar-ink:#fff;--rar-wash:var(--paper-2);
+  background:var(--paper-2);border:1px solid var(--line);padding:14px 10px;text-align:center;border-radius:var(--radius)}
+.badge .ico{font-size:30px;line-height:1.2}
+.badge .nm{font-family:var(--display);font-weight:600;font-size:13px;margin-top:4px}
+.badge .ds{font-size:11px;color:var(--slate);margin-top:3px;line-height:1.35}
+.badge .dt{font-family:var(--mono);font-size:11.5px;color:var(--slate);margin-top:6px}
+.badge.locked{background:var(--sheet);border-style:dashed;border-color:var(--rar);color:var(--line)}
+.badge.locked .ico{opacity:.28;filter:grayscale(1)}
+.badge.locked .nm{color:var(--slate);font-family:var(--mono);font-weight:400}
+.badge.earned{border-color:var(--rar);background:var(--rar-wash);
+  box-shadow:inset 0 3px 0 0 var(--rar)}
+.badge .times{display:inline-block;font-family:var(--mono);font-size:11.5px;background:var(--ink);color:var(--paper-2);border-radius:99px;padding:1px 7px;margin-top:5px}
+
+/* ---------- modal + confetti ---------- */
+/* `inset` is Safari 14.1. The long-hand beside it is understood by everything
+   and costs one declaration — without it, on Safari 14.0 the scrim behind a
+   badge window has no size at all: the window floats over a page that is still
+   clickable, and the confetti canvas collapses to nothing. */
+#confetti{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;pointer-events:none;z-index:60}
+.scrim{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;background:rgba(15,23,32,.45);display:flex;align-items:center;justify-content:center;z-index:70;padding:20px}
+.modal{background:var(--sheet);border:2px solid var(--ink);border-radius:8px;max-width:380px;width:100%;padding:28px;text-align:center;animation:pop .3s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.modal.sheetmodal{max-width:640px;text-align:left;padding:0;max-height:min(86vh,900px);display:flex;flex-direction:column;animation:none}
+.sheethead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.sheethead h3{margin:0;font-size:20px}
+.sheetx{background:none;border:1px solid var(--line);border-radius:99px;width:32px;height:32px;cursor:pointer;font-size:14px;color:var(--ink)}
+.sheetx:hover{border-color:var(--ink)}
+.sheetbody{padding:16px 20px 20px;overflow:auto}
+.modal .sheetbody p{text-align:left;color:var(--ink);margin:0 0 12px}
+.privacytext h1{font-family:var(--display);font-size:22px;margin:0 0 10px}
+.privacytext h2{font-size:16px;margin:18px 0 6px}
+.privacytext{font-size:14px;line-height:1.55}
+.modal .ico{font-size:56px;line-height:1}
+.modal .kicker{font-size:11.5px;color:var(--sulphur);margin-top:8px;font-weight:700}
+.modal h3{font-family:var(--display);font-size:24px;margin:6px 0 4px}
+.modal p{font-size:14px;color:var(--slate);margin:0 0 18px}
+/* The line a deferred badge carries: which day it belongs to and why it arrived
+   a day late. Set apart from the description so the child reads two things, not
+   one long one. See `whenLine` in ui/dom.js. */
+.modal .modalwhen{font-size:12.5px;line-height:1.5;border-top:1px solid var(--line);
+  padding-top:11px;margin-top:-4px}
+.modal .modalwhen b{color:var(--ink)}
+/* The badges won at the same moment that the ceiling kept out of the queue —
+   see `badgeWindows` in core/rarity.js. Quieter than the badge itself on
+   purpose: it is a note, not a second celebration. */
+.modal .modalalso{font-size:12.5px;line-height:1.5;border-top:1px solid var(--line);
+  padding-top:11px;margin-top:-4px;color:var(--slate)}
+.modal .modalalso b{color:var(--ink)}
+
+/* ---------- words tab ---------- */
+code{font-family:var(--mono);font-size:12px;background:var(--sheet);border:1px solid var(--line);padding:1px 5px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.chip{font-family:var(--mono);font-size:12px;border:1px solid var(--line);background:var(--sheet);padding:3px 9px;border-radius:99px}
+.chip i{font-style:normal;color:var(--slate);font-size:11.5px;margin-left:5px}
+.chip.locked{opacity:.45}
+.note{font-size:13px;color:var(--slate);line-height:1.6}
+.danger{color:var(--rust);border-color:var(--rust)}
+.pickw{cursor:pointer;border-bottom:2px dotted var(--line);padding:0 2px}
+.pickw:hover{background:var(--lupine-soft)}
+.pickw.sel{background:var(--lupine);color:var(--on-accent)}
+.pickw.right{background:var(--moss-soft);color:var(--moss);border-bottom-color:var(--moss);font-weight:600}
+.pickw.wrongpick{background:var(--rust-soft);color:var(--rust)}
+/* v6.11: the new question shapes (ui/render-more.js) */
+.pickw.missed{border-bottom:3px solid var(--moss);color:var(--moss)}
+.cue{font-size:.8em;color:var(--slate);font-family:var(--mono)}
+.choicegloss{background:var(--sulphur-soft);border-radius:6px;padding:6px 10px}
+.sortrows{display:flex;flex-direction:column;gap:10px;margin:14px 0}
+.sortrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sortw{min-width:9ch;font-weight:600}
+.deflist{margin:4px 0 0 18px;padding:0}
+.bonus{margin-top:14px;padding:12px 14px;border:1px dashed var(--line);border-radius:10px;background:var(--sheet)}
+.bonus h4{margin:0 0 6px;font-size:15px}
+.bonus p{margin:0 0 8px;font-size:14px}
+.bonus textarea{width:100%;box-sizing:border-box;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px}
+.bonus .answer{margin-top:6px}
+table.decl th.rowh{width:150px;text-transform:none;letter-spacing:0;font-size:13px}
+.filters{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.filters label{font-size:13px;color:var(--slate);display:flex;gap:8px;align-items:flex-start;line-height:1.4}
+.filters input{margin-top:3px}
+#csv,#defs{height:120px;font-family:var(--mono);font-size:12px}
+footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--slate);max-width:92ch}
+footer a{color:var(--lupine)}
+
+/* ---------- hugtakahjálp ---------- */
+.gl{border-bottom:1px dotted var(--lupine);cursor:help;color:inherit}
+.gl:hover,.gl:focus{background:var(--lupine-soft);outline:none}
+.tip{position:absolute;z-index:80;background:var(--paper-2);border:1px solid var(--ink);
+  box-shadow:0 6px 22px rgba(15,23,32,.16);padding:14px 16px;font-size:13px;line-height:1.5;
+  /* The explanation must not swallow a click meant for what is underneath it.
+     A tooltip opened near the top of the page could lie over the tab bar, and
+     every press on "Merkin þín" then went into the tooltip and nowhere else.
+     Only the links inside it take the pointer; core/../ui/dom.js keeps the
+     window open on hover by measuring where the pointer is instead of asking
+     the browser whether the element is hovered. */
+  pointer-events:none}
+.tip a{pointer-events:auto}
+.tip[hidden]{display:none}
+.tip h4{font-family:var(--display);font-size:15px;margin:0 0 5px}
+.tip p{margin:0 0 10px;color:var(--ink)}
+.tip .tiplinks{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;
+  border-top:1px solid var(--line);padding-top:8px}
+.tip .tiplinks span{font-size:11px;color:var(--slate)}
+.tip a{font-size:12px;color:var(--lupine);text-decoration:none;border-bottom:1px solid var(--lupine-soft)}
+.tip a:hover{border-bottom-color:var(--lupine)}
+.dfn{border-bottom:1px dotted var(--moss);cursor:help}
+.dfn:hover,.dfn:focus{border-bottom-color:var(--moss);background:rgba(30,122,87,.10);outline:none}
+/* A definition that would answer the question is shown but not openable —
+   see CLASS_IS_THE_ANSWER in ui/render.js. No dotted rule and no help cursor,
+   because nothing happens when you point at it, and a control that looks
+   interactive and is not is worse than no control. */
+.dfnlocked{border-bottom:none;cursor:default}
+.defline{font-size:13px;color:var(--slate);margin-top:4px;font-style:italic;line-height:1.45}
+.defline.none .dfn,.defline.none .dfnlocked{opacity:.75;font-style:normal;font-size:12px}
+.defline.grammar{font-style:normal}
+.defline .deflabel{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:999px;
+  background:var(--paper);border:1px solid var(--line);font-size:11.5px;font-style:normal;
+  color:var(--slate)}
+.tip .tipex{margin:0 0 8px;font-size:12px;color:var(--slate)}
+.tip .tipsrc{margin:0 0 8px;font-size:11.5px;color:var(--slate)}
+.tip h4 i{font-family:var(--body);font-style:normal;font-size:11px;font-weight:400;color:var(--slate);margin-left:6px}
+table.helperpara{border-collapse:collapse;margin:4px 0 8px}
+table.helperpara th{text-align:left;font-family:var(--body);font-size:11.5px;color:var(--slate);font-weight:500;padding:2px 12px 2px 0}
+table.helperpara td{padding:2px 0}
+/* The rarity chip is filled with its tier colour, so the category is legible
+   from across the room; `--rar-ink` is the text colour chosen alongside the
+   fill in core/rarity.js, which is why the near-white tier stays readable. The
+   dark hairline gives the light fills an edge without needing a second colour
+   per tier. */
+/* `width:fit-content` with `max-width:100%` keeps the pill as narrow as its text
+   until the text is wider than the tile, and then lets it wrap instead of
+   running out over the neighbouring badge. "Goðsagnakennt · ~0.05%" does not fit
+   on one line in a 132px tile and must not pretend to. */
+.rar{display:block;width:-webkit-fit-content;width:fit-content;max-width:100%;margin:5px auto 0;
+  font-size:11.5px;font-weight:600;letter-spacing:.02em;line-height:1.35;
+  background:var(--rar);color:var(--rar-ink);border:1px solid rgba(15,23,32,.22);
+  border-radius:2px;padding:2px 6px;text-align:center}
+/* An estimate is dashed, a measurement is solid. The colour is the same,
+   because the category is the same — it is the certainty that differs. */
+.rar.est{border-style:dashed;opacity:.88}
+.badge.locked .rar{opacity:.6}
+.badge.meta{outline:1px solid rgba(217,162,27,.55);outline-offset:-3px}
+.rosteruser{border:1px solid var(--line);padding:10px 12px;margin-bottom:8px;background:var(--paper-2)}
+.rosterhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+.chip.badgechip{cursor:help}
+
+/* ---------- somebody else's badges, by rarity ----------------------------
+   The chip carries the tier's own colour as a left bar and a wash, so a row of
+   them reads as a rarity gradient from left to right without anyone having to
+   read a word. An estimate is dashed here as it is everywhere else. */
+.rosterchips{align-items:flex-start}
+.chip.rarchip{border-color:var(--rar);background:var(--rar-wash);
+  border-left:4px solid var(--rar);padding-left:8px;font-family:var(--body);font-size:12px}
+.chip.rarchip.est{border-style:dashed;border-left-style:solid}
+
+/* the badge-shaped door onto the rest */
+.otherbadges{position:relative;cursor:pointer;border-style:dashed;background:var(--sheet);
+  font-family:var(--body);font-size:12px;min-height:26px;display:inline-flex;
+  align-items:center;gap:5px}
+.otherbadges:focus-visible{outline:2px solid var(--lupine);outline-offset:2px}
+.otherbadges>i{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--slate);
+  border-left:1px solid var(--line);padding-left:6px}
+.othergrid{display:none;position:absolute;z-index:40;left:0;top:calc(100% + 6px);
+  width:min(420px,86vw);background:var(--paper-2);border:1px solid var(--ink);
+  box-shadow:0 6px 22px rgba(15,23,32,.16);padding:10px 12px;cursor:default}
+.otherbadges:hover .othergrid,.otherbadges:focus-within .othergrid,
+.otherbadges.open .othergrid{display:block}
+.otherhead{display:block;font-size:11.5px;
+  color:var(--slate);margin-bottom:7px}
+.othergridin{display:flex;flex-wrap:wrap;gap:5px;max-height:44vh;overflow-y:auto}
+
+/* ---------- the two ways of looking at your own badges ------------------- */
+.viewpick,.boardpick{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 14px}
+.viewpick button,.boardpick button{font-family:var(--body);font-size:13px;padding:7px 13px;
+  background:var(--sheet);border:1px solid var(--line);border-radius:99px;cursor:pointer;color:var(--slate)}
+.viewpick button:hover,.boardpick button:hover{border-color:var(--lupine);color:var(--ink)}
+.viewpick button[aria-pressed="true"],.boardpick button[aria-pressed="true"]{
+  background:var(--ink);border-color:var(--ink);color:var(--paper-2);font-weight:600}
+.viewpick button:focus-visible,.boardpick button:focus-visible{
+  outline:2px solid var(--lupine);outline-offset:2px}
+h3.bgroup.tiergroup{border-left:4px solid var(--rar);padding-left:9px;background:var(--rar-wash);
+  padding-top:5px;padding-bottom:5px}
+h3.bgroup.tiergroup .tierdot{color:var(--rar);font-size:15px}
+h3.bgroup.tiergroup i{margin-left:auto;padding-right:9px}
+.rarmove{font-style:normal;margin-left:5px;font-weight:700}
+
+/* ---------- the leaderboard ---------------------------------------------- */
+.lsnstatus{font-size:13px;color:var(--slate);margin:22px 0 4px}
+.lsnstatus .lsndone{color:var(--moss);font-weight:600}
+.lsnend{height:1px}
+table.board{border-collapse:collapse;width:100%;font-size:14px}
+table.board td{padding:8px 10px 8px 0;border-top:1px solid var(--line)}
+table.board th.right,table.board td.right{text-align:right;padding-right:0}
+table.board td.mono,table.board td.place{font-family:var(--mono);font-size:13px}
+table.board td.place{color:var(--slate);width:46px}
+table.board tr.meRow{background:var(--lupine-soft)}
+table.board tr.meRow td{font-weight:600}
+table.board th.th{font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--slate);
+  text-align:left;padding:0 10px 8px 0;white-space:nowrap}
+table.board th.right{text-align:right;padding-right:0}
+table.board th.primary{color:var(--ink)}
+table.board th.primary .sortmark{color:var(--lupine);font-size:11px}
+table.board td.primary{font-weight:700;color:var(--ink);font-size:14px;padding-left:12px}
+table.board td.sec,table.board th.sec{color:var(--slate);padding-left:14px;width:64px}
+table.board tr:not(.gaprow):hover td{background:var(--paper-2)}
+table.board tr.meRow:hover td{background:transparent}
+table.board.boardIn{animation:boardIn .22s ease-out}
+table.board.loading{opacity:.45;transition:opacity .15s}
+@keyframes boardIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){table.board.boardIn{animation:none}}
+.youtag{font-style:normal;font-size:11.5px;
+  color:var(--lupine);border:1px solid var(--lupine);border-radius:99px;padding:1px 6px}
+b.legendary,#crest.legendary,.legendary{color:#D9A21B}
+#crest{font-weight:600;letter-spacing:.04em}
+.faint{opacity:.7}
+.licgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:6px}
+.liccard{border:1px solid var(--line);padding:10px 12px;background:var(--paper-2);font-size:13px}
+.lichead{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+/* `white-space:nowrap` kept the licence tag on one line and pushed it off the
+   right edge of a 360px screen — "CC BY-SA 4.0" is wider than the space left
+   beside a long package name. It may wrap; nothing depends on it not doing. */
+.licl{font-size:11.5px;color:var(--slate)}
+.licwho{font-size:12px;color:var(--slate);margin-top:2px}
+.licwhat{margin-top:5px;line-height:1.45}
+.liccard a{font-size:11px;color:var(--lupine);word-break:break-all;text-decoration:none;display:inline-block;margin-top:5px}
+.helpnote{font-size:12px;color:var(--slate);margin:8px 0 0;font-style:italic}
+
+/* ---------- stig eftir efni ---------- */
+.skillgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:10px}
+.skillcard{background:var(--paper-2);border:1px solid var(--line);padding:13px 14px}
+.skillcard.off{opacity:.5;border-style:dashed}
+.skhead{display:flex;align-items:baseline;gap:7px}
+.skico{font-size:16px}
+.sknm{font-family:var(--display);font-weight:600;font-size:14px;margin-right:auto}
+.skcur{font-family:var(--mono);font-size:11px;color:var(--slate);border:1px solid var(--line);padding:0 4px}
+.sklvl{font-size:12px;margin-top:5px;color:var(--ink)}
+.sklvl i{font-style:normal;font-size:11px;
+  padding:1px 6px;margin-left:5px}
+.tagstrong{background:var(--moss-soft);color:var(--moss)}
+.tagweak{background:var(--rust-soft);color:var(--rust)}
+.skbar{height:3px;background:var(--line);margin:7px 0 5px}
+.skbar i{display:block;height:3px;background:var(--lupine)}
+.skmeta{font-size:11px;color:var(--slate)}
+.skmeta.faint{opacity:.7;font-size:11.5px}
+.chip em.cls{font-style:normal;color:var(--lupine);font-size:11px;margin-left:4px}
+
+/* ---------- námsefnisrofar ---------- */
+.curriculum{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px}
+.curline{display:flex;gap:9px;align-items:flex-start;background:var(--paper-2);
+  border:1px solid var(--line);padding:10px 12px;font-size:13px;cursor:pointer}
+.curline:hover{border-color:var(--lupine)}
+.curline input{margin-top:3px}
+.curline small{color:var(--slate);font-size:11px;line-height:1.35}
+.curico{font-size:15px}
+.curcode{font-family:var(--mono);font-style:normal;font-size:11px;color:var(--slate)}
+
+/* ---------- the curriculum policy editor (v5.8) ----------
+   One widget, two users: the child in Framvinda and the administrator in Gögn.
+   A switch the administrator has turned off is shown DISABLED rather than
+   hidden — a child should be able to see that þágufall exists and that somebody
+   else decided today is not the day for it. Hiding it would look like a bug. */
+.polsw{display:flex;gap:9px;align-items:flex-start;background:var(--paper-2);
+  border:1px solid var(--line);padding:10px 12px;cursor:pointer;border-radius:var(--radius);
+  font-size:13px;line-height:1.4}
+.polsw:hover{border-color:var(--lupine)}
+.polsw input{margin-top:3px;flex:0 0 auto;min-width:16px;min-height:16px}
+.polsw small{color:var(--slate);font-size:11px;line-height:1.35}
+.polsw.small{padding:7px 10px}
+.polsw.capped{opacity:.55;cursor:not-allowed;background:var(--paper)}
+.polsw.capped:hover{border-color:var(--line)}
+.capnote{color:var(--rust)}
+.polgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}
+.polgroup{margin:12px 0 18px}
+.polhead{font-family:var(--display);font-size:14px;font-weight:600;margin:0 0 6px}
+.polactions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px;align-items:center}
+.poluser{font-family:var(--body);font-size:13px;padding:9px 12px;border:1px solid var(--line);
+  background:var(--sheet);border-radius:var(--radius);color:var(--ink)}
+p.sub.warn{color:var(--rust)}
+.filelabel{display:inline-flex;align-items:center;cursor:pointer}
+#transfer{margin-top:10px}
+#transfertext{width:100%;font-family:var(--mono);font-size:12px;padding:10px;border:1px solid var(--line);border-radius:var(--radius);background:var(--sheet);box-sizing:border-box}
+.clausemark{border-bottom:3px solid var(--lupine);padding-bottom:1px}
+
+/* ---------- innskráning og umsjón ---------- */
+.loginbox{max-width:420px}
+.loginbox .lbl{display:block;font-size:13px;color:var(--slate);margin:10px 0 4px}
+.loginbox input{width:100%;font-size:16px;padding:11px 12px;min-height:44px;
+  border:1px solid var(--line);border-radius:9px;background:var(--paper);
+  font-family:var(--body);color:var(--ink)}
+.loginbox input:focus{outline:2px solid var(--lupine);outline-offset:1px}
+.adminbox{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:14px 0;
+  background:var(--paper)}
+h3.sec2{font-family:var(--display);font-size:15px;font-weight:600;margin:22px 0 8px}
+table.admintable{border-collapse:collapse;width:100%;font-size:13px;margin-top:10px}
+table.admintable th{text-align:left;font-size:11px;
+  color:var(--slate);font-weight:600;padding:4px 10px 4px 0}
+table.admintable td{padding:8px 10px 8px 0;border-top:1px solid var(--line);vertical-align:top}
+.adminacts{display:flex;flex-wrap:wrap;gap:6px}
+.adminacts button{min-height:36px;font-size:12px;padding:6px 10px}
+.pill{display:inline-block;font-size:11px;padding:3px 9px;border-radius:99px;
+  border:1px solid var(--line);white-space:nowrap}
+.pill-active{color:var(--moss);border-color:var(--moss)}
+.pill-pending{color:var(--rust);border-color:var(--rust)}
+.pill-blocked{color:var(--slate)}
+
+/* ---------- merkjahópar ---------- */
+h3.bgroup{font-family:var(--display);font-size:14px;font-weight:600;margin:22px 0 8px;
+  display:flex;align-items:baseline;gap:8px}
+h3.bgroup i{font-family:var(--mono);font-style:normal;font-size:11px;color:var(--slate)}
+.badgegrid.inner{margin-bottom:6px}
+.notice{background:var(--sulphur-soft);border:1px solid var(--sulphur);padding:9px 13px;
+  font-size:13px;margin-top:10px}
+th.th{text-align:left;font-size:11.5px;
+  color:var(--slate);padding:4px 8px}
+
+.badge.mystery{background:var(--sheet);border-style:dashed;border-color:var(--line)}
+.badge.mystery .ico{opacity:.5}
+.badge.mystery .nm{font-family:var(--mono);font-weight:400;font-size:12px;color:var(--slate)}
+
+/* ---------- orðasafn ---------- */
+.collgroup{background:var(--paper-2);border:1px solid var(--line);padding:12px 14px;margin-bottom:8px}
+.collgroup.empty{opacity:.55;border-style:dashed}
+.collhead{display:flex;align-items:baseline;gap:10px}
+.collhead b{font-family:var(--display);font-size:14px}
+.collcount{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--slate)}
+.collbar{height:3px;background:var(--line);margin:7px 0 9px}
+.collbar i{display:block;height:3px;background:var(--moss)}
+.collnone{margin:6px 0 0;font-size:12px;color:var(--slate);font-style:italic}
+.collnote{margin:8px 0 0;font-size:11px;color:var(--slate)}
+.chip.word{cursor:default}
+.chip.word i{font-style:normal;font-size:11px;margin-left:5px;color:var(--slate)}
+.chip.word.new{border-color:var(--lupine);background:var(--lupine-soft)}
+.chip.word.good{border-color:var(--moss);color:var(--moss)}
+.chip.word.mid{border-color:var(--sulphur)}
+.chip.word.poor{border-color:var(--rust);color:var(--rust)}
+/* Word rarity (v5.6): the tier colour rides on the chip as a small lozenge,
+   and only from "Sjaldgæft" upwards. Common and uncommon words carry no mark at
+   all — a grey diamond beside every one of six thousand words is not
+   information, it is wallpaper. The chip's own border still shows how well the
+   child knows the word; the two never share a colour channel. */
+.chip.word.rar-sjaldgaeft::after,.chip.word.rar-mjogsjaldgaeft::after,
+.chip.word.rar-sogulegt::after,.chip.word.rar-godsagnakennt::after{
+  content:"";display:inline-block;width:7px;height:7px;margin-left:6px;
+  background:var(--rar);vertical-align:middle;transform:rotate(45deg)}
+.chip.word.rare{box-shadow:inset 0 0 0 2px var(--rar-wash)}
+
+.tabletitle{font-family:var(--mono);font-weight:600;font-size:22px}
+.tabletitle .tlemma{display:block}
+.tabletitle .tspec{display:block;font-family:var(--body);font-size:14px;font-weight:400;
+  color:var(--slate);margin-top:4px}
+.tabletitle .tsep{margin:0 7px;opacity:.5}
+
+.lookup{display:inline-flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-top:3px}
+.lookup span{font-size:11px;color:var(--slate)}
+.lookup a{font-size:11px;color:var(--lupine);text-decoration:none;border-bottom:1px solid var(--lupine-soft)}
+.lookup a:hover{border-bottom-color:var(--lupine)}
+
+/* ---------- merkjadagsetningar ---------- */
+.badge{position:relative}
+.bdate{font-family:var(--mono);font-size:11px;color:var(--slate);margin-top:6px;letter-spacing:.02em}
+.badge.earned{cursor:help}
+.badge.earned:focus-visible{outline:2px solid var(--lupine);outline-offset:2px}
+
+/* ---------- krafa í sagnaeyðufyllingu ---------- */
+.spec-box{flex:1 1 200px;min-width:0}
+.specline{font-size:15px;line-height:1.5;margin-top:2px}
+.forms.mk{letter-spacing:.02em}
+.mkdash{color:var(--line);padding:0 1px}
+
+
+/* ---------- names, titles and shelves (v6.1) -----------------------------
+   One name looks the same wherever it appears (ui/panels.js `whoHTML`). The
+   frame is the level band — earned by the best level ever reached and never
+   taken back — and it is a rule under the name rather than a colour OF the
+   name, because the gold of "Öll merkin" already owns the text colour. */
+.who{font-weight:700;padding:1px 0 1px;border-bottom:3px solid var(--band,transparent)}
+.who.b1{--band:transparent}
+.who.b2{--band:#A9713A}
+.who.b3{--band:#8C9AA6}
+.who.b4{--band:var(--sulphur)}
+.who.b5{--band:var(--ink);background:var(--ink);color:var(--paper-2);padding:1px 7px;border-radius:2px}
+.who.b6{--band:transparent;padding:1px 7px;border-radius:2px;color:#fff;
+  background:linear-gradient(100deg,#1E7A57,#2E6FBF 55%,#7A3FBF)}
+.who.b5.legendary,.who.b6.legendary{color:#F3C54B}
+.whotitle{font-size:11px;color:var(--slate);letter-spacing:.04em;margin-left:7px;white-space:nowrap}
+.shelf{display:inline-flex;gap:2px;margin-left:8px;vertical-align:-2px}
+.shelfico{font-size:16px;line-height:1;cursor:help}
+.shelfico.rumour{filter:grayscale(.2);border-bottom:2px dotted var(--lupine)}
+
+.mycard{background:var(--sheet);border:1px solid var(--ink);border-radius:10px;overflow:hidden;padding:0 0 12px}
+.mycard>:not(.mystrip){margin-left:18px;margin-right:18px}
+.mycard>.mystrip{margin:0 0 14px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  background:var(--ink);color:#fff;padding:8px 18px;border-bottom:5px solid var(--band,var(--slate))}
+.mystrip b{font-family:var(--display);font-weight:800;letter-spacing:-.01em}
+.mystrip span{font-size:12px;opacity:.8}
+.mycard.b2{--band:#A9713A}.mycard.b3{--band:#8C9AA6}.mycard.b4{--band:var(--sulphur)}
+.mycard.b5{--band:var(--ink)}.mycard.b6{--band:#7A3FBF}
+.myhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.myname{font-family:var(--display);font-size:20px}
+.myname .whotitle{font-family:var(--body);font-size:12px}
+.mymeta{font-family:var(--mono);font-size:11px;color:var(--slate)}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0 12px}
+.slot{border:1px dashed var(--line);background:var(--sheet);padding:12px 8px;text-align:center;border-radius:var(--radius);min-width:0}
+.slot.filled{border-style:solid;border-color:var(--lupine);background:var(--lupine-soft)}
+.slot .ico{display:block;font-size:28px;line-height:1.2}
+.slot:not(.filled) .ico{color:var(--line)}
+.slot .nm{display:block;font-family:var(--display);font-size:12px;font-weight:600;margin-top:3px;
+  overflow-wrap:anywhere}
+.slot:not(.filled) .nm{font-family:var(--mono);font-weight:400;color:var(--slate)}
+.myrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.myrow label{font-size:11.5px;color:var(--slate)}
+.myrow .sub{margin:0;flex:1 1 220px;font-size:13px;color:var(--slate)}
+.feed .sub{font-size:13px;color:var(--slate)}
+
+/* the pin on a badge you own, and the medal on one you keep winning */
+.badge .pin{position:absolute;top:4px;right:4px;width:26px;height:26px;padding:0;border:1px solid transparent;
+  background:none;border-radius:99px;cursor:pointer;font-size:13px;line-height:1;opacity:.28;filter:grayscale(1)}
+.badge .pin:hover,.badge .pin:focus-visible{opacity:.8;border-color:var(--line);background:var(--sheet);outline:none}
+.badge .pin[aria-pressed="true"]{opacity:1;filter:none;background:var(--sheet);border-color:var(--lupine)}
+.badge .pin.full{border-color:var(--rust);opacity:1}
+.badge .times.medal{background:var(--sheet);color:var(--ink);border:1px solid var(--ink)}
+.badge .times.medal.m1{border-color:#A9713A}
+.badge .times.medal.m2{border-color:#8C9AA6}
+.badge .times.medal.m3{border-color:var(--sulphur);background:var(--sulphur-soft)}
+
+/* a rumour: somebody has it, you do not know how */
+.chip.rarchip.rumour{border-style:dotted;border-left-style:solid}
+.q{font-style:normal;font-family:var(--mono);font-size:11.5px;color:var(--lupine);font-weight:600}
+.firstmark{font-style:normal;color:var(--sulphur);font-size:11px;font-weight:700}
+.medalmark{font-style:normal;font-size:11px}
+.rumourcount{color:var(--lupine);font-weight:600}
+.rosteruser.me{border-color:var(--lupine)}
+.rosterwho{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:0 2px;min-width:0}
+.cmpbtn{margin-top:9px;padding:6px 11px;font-size:12px}
+.cmp{margin-top:10px}
+.cmpgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.cmpcol{background:var(--sheet);border:1px solid var(--line);padding:9px 11px;min-width:0}
+.cmpcol:first-child{border-color:var(--lupine)}
+.cmpcol h4{font-family:var(--display);font-size:13px;margin:0 0 2px;display:flex;justify-content:space-between;gap:8px}
+.cmpcol h4 i{font-family:var(--mono);font-style:normal;font-size:11px;color:var(--slate)}
+.cmpcol .chips{margin-top:7px}
+
+.feed{background:var(--lupine-soft);border:1px solid var(--lupine);padding:10px 13px;margin-bottom:10px;font-size:13px}
+.feed.empty{background:var(--paper-2);border-color:var(--line);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.feed.empty .sub{margin:0}
+.feed>b{font-family:var(--display);font-size:14px}
+.feed ul{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:3px 16px}
+.feed li.mine{color:var(--slate)}
+.feedwho{font-weight:700}
+.feedbadge{white-space:nowrap}
+.feedbadge.rumour{border-bottom:2px dotted var(--lupine)}
+
+.weekline{font-size:13px;margin:0 0 10px;padding:8px 11px;background:var(--paper-2);border-left:3px solid var(--lupine)}
+.weekline .champ{white-space:nowrap}
+table.board tr.gaprow td{font-family:var(--mono);font-size:11px;color:var(--slate);text-align:center;
+  padding:4px 0;border-top:1px dashed var(--line)}
+#boardall{margin-top:10px;padding:7px 12px;font-size:12px}
+table.board td.mono{white-space:nowrap}
+
+
+/* ================= taflan (v6.2) =========================================
+   The Æfa tab is a school board: green, framed in birch, with a ledge for the
+   chalk. Everything `ui/render.js` draws into `#task` lands on it.
+
+   The colour names are re-declared here as chalk — see the note at the top of
+   this sheet. Soft colours become thin washes of the same chalk, so a right
+   answer in a table is a green smudge and not a white box. */
+.blackboard{
+  --ink:var(--chalk); --slate:var(--chalk-dim); --line:rgba(243,241,231,.30);
+  --paper:rgba(243,241,231,.06); --paper-2:rgba(243,241,231,.05); --sheet:rgba(243,241,231,.08);
+  --lupine:var(--chalk-yellow); --lupine-soft:rgba(242,217,107,.16);
+  --moss:#93E0B4; --moss-soft:rgba(147,224,180,.16);
+  --rust:#FFA193; --rust-soft:rgba(255,161,147,.17);
+  --sulphur:var(--chalk-yellow); --sulphur-soft:rgba(242,217,107,.18);
+  --on-accent:var(--board-deep);
+  position:relative;color:var(--chalk);
+  background-color:var(--board);
+  /* where the sponge has been: two pale smears and a slant of light */
+  background-image:radial-gradient(ellipse 60% 40% at 18% 12%,rgba(255,255,255,.055),transparent 70%),
+    radial-gradient(ellipse 50% 45% at 88% 86%,rgba(255,255,255,.04),transparent 70%),
+    linear-gradient(172deg,rgba(255,255,255,.03),transparent 45%);
+  border:10px solid var(--wood);border-bottom:none;border-radius:6px 6px 0 0;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.4),inset 0 3px 14px rgba(0,0,0,.28);
+  padding:16px 26px 26px;margin-bottom:38px}
+.boardhead{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap;
+  padding-bottom:12px;border-bottom:1px dashed var(--line);font-size:13px;color:var(--chalk-dim)}
+#boarddate{font-family:var(--display);font-size:16px;font-weight:600;color:var(--chalk)}
+#boarddate i{font-style:normal;font-weight:400;color:var(--chalk-dim);margin-left:10px}
+.tally{display:inline-flex;align-items:center;gap:10px}
+.tallymarks{display:inline-flex;gap:7px;flex-wrap:wrap}
+.tallymarks svg{width:21px;height:20px;display:block}
+.tallymarks line{stroke:var(--chalk);stroke-width:1.7;stroke-linecap:round}
+.tallymarks line.todo{stroke:rgba(243,241,231,.2)}
+.tallymarks.met line{stroke:var(--chalk-yellow)}
+
+/* the ledge, the chalk and the sponge */
+.tray{position:absolute;left:-10px;right:-10px;top:100%;height:16px;border-radius:0 0 4px 4px;
+  background:linear-gradient(var(--wood) 0,var(--wood) 5px,var(--wood-deep) 5px);
+  box-shadow:0 8px 14px rgba(18,25,34,.22)}
+.tray i{position:absolute;bottom:11px;display:block}
+.tray .chalk{left:34px;width:38px;height:7px;border-radius:2px;background:var(--chalk);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.tray .chalk.y{left:84px;width:24px;background:var(--chalk-yellow);transform:rotate(-3deg)}
+.tray .sponge{right:38px;width:52px;height:13px;border-radius:2px;
+  background:linear-gradient(#8B6B43 0,#8B6B43 5px,#30363B 5px)}
+
+.blackboard textarea{color:var(--ink)}
+.blackboard input::placeholder,.blackboard textarea::placeholder{color:rgba(243,241,231,.45)}
+.blackboard table.decl input{border:1px solid rgba(243,241,231,.16)}
+.blackboard input:disabled,.blackboard textarea:disabled{opacity:1;-webkit-text-fill-color:currentColor}
+.blackboard button.go,.blackboard label.go{background:var(--chalk);border-color:var(--chalk);color:var(--board-deep)}
+.blackboard button.go:hover,.blackboard label.go:hover{background:var(--chalk-yellow);border-color:var(--chalk-yellow);color:var(--board-deep)}
+.blackboard button.go:disabled{opacity:.6;cursor:default}
+.blackboard button.ghost{background:none;color:var(--chalk)}
+.blackboard button.ghost:hover{border-color:var(--chalk)}
+.blackboard button.ghost:disabled{opacity:.45;cursor:default}
+.blackboard .opts button,.blackboard .keys button{color:var(--chalk)}
+.blackboard .opts button:hover,.blackboard .keys button:hover{border-color:var(--chalk-yellow)}
+.blackboard .loginbox input{background:var(--sheet);border-radius:var(--radius)}
+.blackboard .helpnote a{color:var(--chalk-yellow)}
+/* a note on paper, held to the board */
+.blackboard .verdict{box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.blackboard .verdict.neutral{background:var(--sheet)}
+.blackboard .verdict .why{background:var(--paper-2)}
+
+/* ================= merki og framvinda =================================== */
+/* A rarity wash is a transparent tint, and the desk behind it is squared
+   paper. Each tinted thing gets the sheet underneath, or the squares show
+   through the badge. */
+.badge.earned,.badge.locked,.badge.mystery,h3.bgroup.tiergroup,.chip.rarchip,.slot,.cmpcol{
+  background-image:linear-gradient(var(--rar-wash,transparent),var(--rar-wash,transparent));
+  background-color:var(--sheet)}
+.badge{border-radius:6px}
+.defline .lookup{margin-left:10px}
+.overview{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start;margin-bottom:26px}
+.overview .grid2{grid-template-columns:1fr 1fr;gap:10px;margin:0}
+.overview .tile b{font-size:23px}
+/* Merki / Framvinda / Orðasafn: a line of words with the open one run over in
+   highlighter. Deliberately not a second row of binder dividers. */
+.panepick{display:flex;gap:6px 26px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:0 0 22px}
+.panepick button{font-family:var(--display);font-size:18px;font-weight:600;background:none;border:none;
+  color:var(--slate);cursor:pointer;padding:8px 2px 9px;margin-bottom:-1px;border-bottom:1px solid transparent}
+.panepick button:hover{color:var(--ink)}
+.panepick button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink);
+  background:linear-gradient(transparent 52%,var(--marker) 52%,var(--marker) 86%,transparent 86%)}
+.panepick button:focus-visible{outline:2px solid var(--lupine);outline-offset:2px}
+
+/* ================= skólastofan ========================================== */
+#board{background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.emptyroom b{font-family:var(--display);font-size:18px;font-weight:600}
+.emptyroom .sub{margin:4px 0 0}
+#roster>.emptyroom{background:var(--sheet);border:1px dashed var(--line);border-radius:var(--radius);padding:14px 16px}
+
+/* ================= stillingar og námsefni =============================== */
+.setrow>label{display:block;font-size:14px;font-weight:600}
+.setrow .answer{margin-top:6px}
+.filters label{font-size:14px;color:var(--ink)}
+/* What the Gögn tab used to hold. Folded, at the very bottom. */
+details.about{margin-top:44px;border-top:1px solid var(--line)}
+details.about>summary{cursor:pointer;font-size:14px;color:var(--slate);padding:14px 0;min-height:44px}
+details.about>summary:hover{color:var(--ink)}
+details.about>summary:focus-visible{outline:2px solid var(--lupine);outline-offset:2px}
+details.about[open]>summary{color:var(--ink);font-weight:600;margin-bottom:10px}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ================= sími og spjaldtölva =================================
+   Skráin er opnuð með tvísmelli á tölvu í dag, en sama skrá á að vera nothæf
+   í símanum þegar hún kemur á vefþjón. Þrennt skiptir mestu: ekkert má fara
+   út fyrir skjábreiddina, allt sem er ýtt á þarf að vera minnst 44px, og
+   innsláttarsvið verða að vera 16px eða stærri — annars þysjar iOS inn í hvert
+   sinn sem barnið byrjar að skrifa.                                       */
+
+/* ================= fingur, ekki mús =====================================
+   Þangað til í v5.7 réðst stærð á því sem ýtt er á af BREIDD skjásins: reglurnar
+   fyrir 44px þumalfleti stóðu allar inni í `max-width:600px`. iPad er 744–1080
+   px breiður, svo hann fékk enga þeirra — flipar voru 33px, íslensku stafirnir
+   30px og hnapparnir í nýju valröðunum 31px, allt á tæki sem er eingöngu snert.
+   Breidd segir ekkert um hvort bendill er fingur eða mús; `pointer: coarse`
+   segir það. Reglurnar hér gilda því á spjaldtölvu, síma og snertiskjá á
+   fartölvu, og breyta engu fyrir mús.                                       */
+@media (pointer:coarse){
+  nav.tabs button{min-height:44px}
+  button.go,button.ghost,.opts button,.viewpick button,.boardpick button,
+  .adminacts button,.keys button,.otherbadges{min-height:44px}
+  .cmpbtn,#boardall,#titlepick,.panepick button,label.ghost,label.go{min-height:44px}
+  .badge .pin{width:40px;height:40px;font-size:16px;opacity:.45}
+  .keys button{min-width:42px;font-size:17px}
+  .opts button{padding:10px 14px}
+  input[type=text],textarea,.loginbox input{min-height:44px;font-size:16px}
+  table.decl input{min-height:44px;font-size:16px}
+  .filters input[type=checkbox],.curline input[type=checkbox]{width:20px;height:20px}
+  /* Hover does not exist here, so the definition drawer in "Merki annarra" is
+     opened by a tap instead — ui/panels.js adds .open. The wider target above
+     is what makes that tap land. */
+  .otherbadges{padding-top:8px;padding-bottom:8px}
+  /* v6.7 */
+  .lessonlink{display:inline-flex;align-items:center;min-height:40px;padding:0 4px}
+  .lsnitem{min-height:44px;align-items:center}
+  .duelsize button,.duelform select,button.go.small{min-height:44px}
+  .lsncheck summary{min-height:40px;display:flex;align-items:center}
+}
+
+@media (max-width:820px){
+  .wrap{padding:0 14px 96px}
+  .chartbox{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  .chartbox svg{min-width:520px;display:block}
+}
+
+@media (max-width:600px){
+  html{-webkit-text-size-adjust:100%}
+  .wrap{padding:0 12px 110px}
+
+  /* hausinn: nafn í línu, tölur í eigin röð sem má skruna */
+  .topbar{gap:10px;padding:14px 0 10px}
+  .brand{flex:1 1 100%;margin-right:0}
+  .brand h1{font-size:26px}
+  .brand p{font-size:12px}
+  .stats{flex:1 1 100%;gap:4px;flex-wrap:nowrap}
+  .stat{flex:1 1 0;text-align:center;min-width:0;padding:5px 2px 4px}
+  .stat b{font-size:16px}
+  .stat span{font-size:11px;display:block;line-height:1.15}
+  .levelmeta{font-size:11.5px}
+
+  /* flipar: allir fjórir sjást alltaf. Löngu nöfnin brotna í tvær línur í
+     stað þess að ýta síðasta flipanum út af skjánum — flipi sem þarf að skruna
+     að er flipi sem enginn finnur. */
+  nav.tabs{gap:3px;margin:14px 0 16px}
+  nav.tabs button{flex:1 1 auto;min-width:0;min-height:48px;padding:6px 5px 7px;font-size:12.5px;
+    border-top-width:4px}
+
+  .sentence{font-size:21px;line-height:1.45}
+  .prompt-row{gap:14px;margin-top:14px;padding-top:14px}
+  .map{display:none}                 /* beygingarkortið er of breitt */
+  .mapline{display:block;flex:1 1 100%;margin:0;font-size:14px;color:var(--slate)}  /* …svo það sem það segir stendur í texta */
+  .mapline b{color:var(--ink,inherit)}
+
+  /* svarsvæði: fullbreiður innsláttur, hnappar undir og þumalvænir */
+  .answer{flex-wrap:wrap;gap:8px}
+  .answer input[type=text]{flex:1 1 100%;font-size:16px;min-height:46px}
+  .answer button,.go,.ghost{min-height:46px;flex:1 1 auto}
+  textarea{font-size:16px}
+
+  /* fjölvalshnappar: nógu stórir fyrir fingur, ekki þéttir */
+  .opts{gap:6px}
+  .opts button{min-height:44px;padding:9px 12px;font-size:14px}
+  .qrow{margin-bottom:12px}
+  .qrow label{font-size:11px}
+
+  /* íslensku stafirnir: fastir við neðri kant, alltaf innan handar */
+  .keys{position:sticky;bottom:0;background:var(--board);padding:8px 0 10px;
+    z-index:5;border-top:1px solid var(--line);margin-top:10px}
+  .keys button{min-width:40px;min-height:44px;font-size:17px}
+
+  /* töflur */
+  table.decl th.rowh{width:auto;font-size:12px}
+  table.decl input{font-size:16px;min-height:44px}
+  .heat{font-size:11.5px}
+  .heat th.row{font-size:11px;white-space:nowrap}
+
+  /* merki: tvær súlur í stað fjögurra */
+  .badgegrid.inner{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px}
+  .badge{padding:10px 8px}
+  .badge .nm{font-size:12px}
+  .badge .ds{font-size:11.5px}
+  .bdate{font-size:11px}
+
+
+  .blackboard{border-width:7px;padding:12px 14px 18px;margin-bottom:32px}
+  .tray{left:-7px;right:-7px}
+  #boarddate{font-size:14px}
+  .overview{grid-template-columns:1fr}
+  .overview .grid2{grid-template-columns:1fr 1fr!important}
+  .overview .tile{padding:10px 12px}
+  .panepick{gap:4px 20px}
+  .panepick button{font-size:17px}
+  #board{padding:10px 10px}
+  .tip{font-size:14px;max-width:calc(100vw - 24px)}
+  .chips{gap:5px}
+  .grid2{grid-template-columns:1fr!important}
+  footer{font-size:11.5px}
+}
+
+@media (max-width:380px){
+  .sentence{font-size:18px}
+  .badgegrid.inner{grid-template-columns:1fr!important}
+}
+
+/* ---------- accounts, consent and the admin page (v6.3) ------------------ */
+.loginbox input[type=checkbox],.loginbox input[type=radio]{width:auto;min-height:0;padding:0;margin:3px 8px 0 0;flex:0 0 auto}
+.loginbox select,.polactions select,.morerow select{font:inherit;font-size:16px;padding:9px 10px;min-height:40px;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--sheet);color:var(--ink);max-width:100%}
+.loginbox select{width:100%}
+.consentbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:14px 0 4px;background:var(--paper-2)}
+/* block, not flex: a label holding text AND a link would have each piece laid
+   out as its own column */
+.consentbox label{display:block;padding-left:26px;font-size:14px;line-height:1.45;margin:6px 0;color:var(--ink)}
+.consentbox label input[type=checkbox],.consentbox label input[type=radio]{float:left;margin:3px 0 0 -26px}
+.consentbox label.lbl{padding-left:0}
+.consentbox .sub{margin:8px 0 2px}
+.sharecard{border:1px solid var(--lupine);background:var(--lupine-soft);border-radius:12px;padding:14px 16px;margin:0 0 16px}
+.sharecard>b{font-family:var(--display);font-size:17px}
+.sharecard .sub{margin:4px 0 0;color:var(--ink)}
+.sharecard .answer{margin-top:10px}
+input.pwin{flex:1 1 220px;max-width:320px;font-family:var(--body);font-size:16px;padding:10px 12px;min-height:42px;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--sheet);color:var(--ink)}
+input.numin{width:60px;flex:0 0 60px;font-family:var(--mono);font-size:16px;padding:8px;min-height:40px;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--sheet);color:var(--ink)}
+a.ghost{text-decoration:none;display:inline-flex;align-items:center;font-family:var(--body);font-size:14px;
+  background:var(--sheet);border:1px solid var(--line);padding:11px 16px;color:var(--ink);border-radius:var(--radius)}
+a.ghost:hover{border-color:var(--ink)}
+.adminacts a.ghost{min-height:36px;font-size:12px;padding:6px 10px}
+code.secret{font-family:var(--mono);font-size:15px;font-weight:600;background:var(--sulphur-soft);padding:2px 7px;border-radius:4px;
+  user-select:all;white-space:nowrap}
+.pillrow{margin-top:4px;display:flex;gap:4px;flex-wrap:wrap}
+tr.adminmore td{background:var(--paper-2)}
+.morerow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:6px 0}
+.morerow>b{font-size:13px}
+.moreform{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1 1 100%}
+.moreform label{font-size:13px;display:flex;align-items:center;gap:6px}
+.moreform input[type=text]{flex:1 1 200px;max-width:300px;font-family:var(--body);font-size:16px;padding:8px 10px}
+details.adminnew{margin-top:12px}
+details.adminnew>summary,#ad-trail>summary{cursor:pointer;font-weight:600;font-size:14px;padding:6px 0}
+.groupchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:99px;padding:5px 12px;
+  background:var(--sheet);font-size:13px}
+.groupchip i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--slate)}
+.groupchip button{min-height:28px;font-size:11px;padding:2px 8px}
+
+/* ---- v6.6: the rescue drill strip, word health ---- */
+.drillstrip{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 0;padding:10px 12px;
+  border:1px dashed var(--line);border-left:4px solid var(--lupine);border-radius:var(--radius);background:var(--lupine-soft)}
+.drillstrip.offer{border-left-color:var(--rust);background:var(--rust-soft)}
+.drillstrip.win{border-left-color:var(--moss);background:var(--moss-soft)}
+.drillstrip.endure{border-left-color:var(--sulphur);background:var(--sulphur-soft)}
+.drillico{font-size:22px;line-height:1}
+.drilltext{flex:1 1 260px;display:flex;flex-direction:column;gap:3px;font-size:13.5px}
+.drilltext em{font-style:normal;font-family:var(--mono);color:var(--lupine)}
+.drillnums{font-family:var(--mono);font-size:12.5px}
+.drillneed{font-size:12px;color:var(--slate)}
+.drilldots{display:inline-flex;gap:3px;flex-wrap:wrap;margin:2px 0}
+.drilldots i{width:10px;height:10px;border-radius:50%;border:1px solid var(--line);display:block}
+.drilldots i.ok{background:var(--moss);border-color:var(--moss)}
+.drilldots i.no{background:var(--rust);border-color:var(--rust)}
+.drilldots i.opt{opacity:.45;border-style:dashed}
+.drillstrip button{padding:8px 14px;min-height:40px}
+.healthcard{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:6px 0 14px}
+.atrisk{border:1px solid var(--rust);background:var(--rust-soft);padding:10px 12px;border-radius:var(--radius);margin:0 0 16px}
+.atrisk h3{margin:0 0 4px;font-family:var(--display);font-size:15px}
+.atrisk p{margin:0 0 8px;font-size:12.5px;color:var(--slate)}
+.atrisk .chips{margin-top:4px}
+button.chip.drillme{cursor:pointer;border-color:var(--rust);color:var(--rust);background:var(--sheet);
+  min-height:40px;padding:6px 12px}
+button.chip.drillme:hover{background:var(--rust);color:#fff}
+button.chip.drillme i{font-style:normal;font-size:11px;margin-left:5px}
+.chip.word.weak{border-color:var(--rust);background:var(--rust-soft);color:var(--rust);font-weight:600}
+.chip.word.weak::before{content:"⚠ ";font-size:10px}
+.chip.word .saved{margin-left:4px;font-size:11px}
+.board td.health{color:var(--slate)}
+
+/* ---- v6.7: Lesefni ---- */
+nav.tabs button[data-view="lessons"]{--tab:var(--rust)}
+.lsnwrap{display:grid;grid-template-columns:230px 1fr;gap:22px;align-items:start}
+.lsnindex{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;padding-right:4px}
+.lsnindex .sub{margin:0 0 8px}
+.lsngroup{margin:0 0 12px}
+.lsngroup h4{margin:0 0 4px;font-family:var(--body);font-size:11.5px;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.04em}
+.lsnitem{display:flex;justify-content:space-between;gap:6px;width:100%;text-align:left;background:none;border:0;border-left:3px solid transparent;
+  padding:5px 8px;font-family:var(--body);font-size:13.5px;color:var(--ink);cursor:pointer;min-height:40px;align-items:center}
+.lsnitem:hover{background:var(--paper-2);border-left-color:var(--line)}
+.lsnitem.on{background:var(--sheet);border-left-color:var(--rust);font-weight:600}
+.lsnitem i{font-style:normal;color:var(--moss);font-size:12px}
+.lsnpage{background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);padding:22px 26px;max-width:760px;line-height:1.6;font-size:15.5px}
+.lsntitle{font-family:var(--display);font-size:26px;font-weight:600;letter-spacing:-.01em;margin:4px 0 6px;line-height:1.2}
+.lsnlead{font-size:16.5px;color:var(--slate);margin:0 0 14px}
+.lsnh{font-family:var(--display);font-size:18px;font-weight:600;margin:22px 0 4px}
+.lsnpage p{margin:8px 0}
+.lsnlist{margin:6px 0 6px 20px;padding:0}
+.lsnlist li{margin:3px 0}
+.lsnex,.lsntip,.lsnwarn{margin:12px 0;padding:9px 13px;border-radius:var(--radius);font-size:14.5px}
+.lsnex{background:var(--paper-2);border:1px dashed var(--line)}
+.lsnex ul{margin:2px 0 0 18px;padding:0}
+.lsntip{background:var(--moss-soft);border-left:4px solid var(--moss)}
+.lsnwarn{background:var(--sulphur-soft);border-left:4px solid var(--sulphur)}
+.lsnlabel{display:block;font-size:11.5px;color:var(--slate);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.lsntable{margin:14px 0;overflow-x:auto}
+.lsntable figcaption{font-size:12.5px;color:var(--slate);margin-top:4px}
+.lsntable .lsnsrc{font-size:11px;color:var(--slate);margin:2px 0 0}
+.lsncheck details{border:1px solid var(--line);border-radius:var(--radius);padding:7px 11px;margin:6px 0;background:var(--paper-2)}
+.lsncheck summary{cursor:pointer;font-weight:500}
+.lsncheck details[open] p{color:var(--moss);font-weight:600}
+.lsnrel{font-size:14px}
+.lessonlink{background:none;border:0;padding:0 4px;margin:0 0 0 6px;font:inherit;font-size:12px;
+  color:var(--rust);cursor:pointer;font-weight:500;display:inline-flex;align-items:center;min-height:40px;
+  text-decoration:underline dotted;text-underline-offset:3px;vertical-align:middle}
+.lsnrel .lessonlink,.lessonhint .lessonlink,.tiplesson .lessonlink{margin:0 6px 0 0;font-size:inherit}
+.lessonlink:hover{color:var(--ink)}
+.lessonhint{font-size:13.5px;margin:10px 0 0}
+.tiplesson{margin:6px 0 2px;font-size:13px}
+@media (max-width:820px){
+  .lsnwrap{grid-template-columns:1fr}
+  .lsnindex{position:static;max-height:none;display:flex;flex-wrap:wrap;gap:4px 14px}
+  .lsngroup{flex:1 1 200px}
+  .lsnpage{padding:16px 16px}
+}
+
+/* ---- v6.7: duels ---- */
+.drillstrip.duel{border-left-color:var(--lupine);background:var(--lupine-soft)}
+.drillstrip.duel.offer{border-left-color:var(--sulphur);background:var(--sulphur-soft)}
+.drillstrip.duel.win{border-left-color:var(--moss);background:var(--moss-soft)}
+.drillstrip.duel.endure{border-left-color:var(--slate);background:var(--paper-2)}
+.drillstrip.duel .drilldots i.due{opacity:.6}
+#duelbar .drillstrip + .drillstrip{margin-top:8px}
+.duelmore{font-size:12.5px;color:var(--chalk-dim);margin:6px 0 0}
+.duelform{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin:6px 0 14px;padding:12px;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--sheet)}
+.duelform label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--slate)}
+.duelform select{font:inherit;font-size:14px;padding:7px 8px;min-height:38px;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);color:var(--ink)}
+.duelsize{display:flex;gap:4px}
+.duelsize button{min-width:46px;min-height:38px;border:1px solid var(--line);background:var(--paper-2);border-radius:var(--radius);font-family:var(--mono);cursor:pointer}
+.duelsize button[aria-pressed="true"]{background:var(--lupine);border-color:var(--lupine);color:var(--on-accent)}
+.duelform #duelmsg{flex-basis:100%;margin:0}
+button.go.small{padding:4px 10px;min-height:30px;font-size:12.5px}
+table.board.duels td{font-size:13.5px}
+.dueltag{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--rust);border:1px solid var(--rust-soft);
+  background:var(--rust-soft);border-radius:99px;padding:1px 6px;margin-left:4px}
+@media (max-width:600px){
+  /* v6.7: five tabs on a phone — the long names lose their second half. */
+  .tablong{display:none}
+  nav.tabs button{white-space:nowrap;padding-left:4px;padding-right:4px}
+}
+
+/* ---------- error reports (v6.8, ui/reports.js) -------------------------- */
+#reports:empty{display:none}
+.reportflag{background:none;border:1px solid transparent;border-radius:99px;padding:0 6px;margin:0 0 0 4px;
+  font-size:13px;line-height:1.6;cursor:pointer;opacity:.55;filter:grayscale(.6);transition:opacity .15s,filter .15s,border-color .15s}
+.reportflag:hover,.reportflag:focus-visible{opacity:1;filter:none;border-color:var(--line)}
+.rpwhich{display:grid;gap:8px;margin:0 0 14px}
+.rpwhich label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.rpwhich input{margin-top:13px}
+.rpwhich label span,.rpwhich.single span{flex:1;display:block;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13.5px;background:var(--paper-2)}
+.rpwhich input:checked + span{border-color:var(--lupine);background:var(--lupine-soft)}
+.rpq{color:var(--slate)}
+.rpkinds{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin:0 0 14px}
+.rpkind{display:flex;gap:8px;align-items:stretch;cursor:pointer;font-size:13.5px}
+.rpkind input{margin-top:12px}
+.rpkind span{flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+.rpkind input:checked + span{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.rpkind small{display:block;color:var(--slate);font-size:12px;line-height:1.35;margin-top:2px}
+.rplabel{display:block;font-weight:600;font-size:14px;margin:0 0 6px}
+.rplabel small{font-weight:400;color:var(--slate)}
+.sheetbody textarea{width:100%;font-family:var(--body);font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius);resize:vertical}
+.sheetbody .answer{margin-top:14px}
+.rpfilter{align-items:center}
+.rpfilter #rpdownload{margin-left:auto}
+.rpitem{border-top:1px solid var(--line);padding:8px 0}
+.rpitem summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:14px}
+.rpsum{flex:1 1 220px;color:var(--ink)}
+.rpmeta{font-size:12px;color:var(--slate)}
+.rpst{font-size:11px;font-weight:700;border-radius:99px;padding:1px 8px;background:var(--paper);color:var(--slate)}
+.rpst.st-ny{background:var(--sulphur-soft);color:#7A5900}
+.rpst.st-villa{background:var(--rust-soft);color:var(--rust)}
+.rpst.st-lagad{background:var(--moss-soft);color:var(--moss)}
+.rpbody{padding:10px 0 4px 4px}
+.rpnote{font-size:15px;border-left:3px solid var(--lupine);padding:4px 10px;margin:0 0 10px;background:var(--paper-2)}
+.rpdl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:13.5px;margin:0 0 10px}
+.rpdl dt{color:var(--slate)}
+.rpdl dd{margin:0}
+.rpwrong{color:var(--rust)}
+.rppre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;background:var(--paper-2);border:1px solid var(--line);padding:10px;max-height:340px;overflow:auto}
+table.rptok tr.on td{background:var(--sulphur-soft);font-weight:600}
+.rpactions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.rpactions input[type=text]{flex:1 1 220px;font-family:var(--body);font-size:16px;padding:7px 10px}
+.rpactions select{font:inherit;font-size:16px;padding:5px}
+
+/* ---------- Málbeiting (v6.9): villuveiðar, setningasmiðja, umritun ---------- */
+.hunt{font-size:clamp(17px,2.4vw,20px);line-height:1.75;margin:4px 0 0}
+.hunt.plain .huntline{margin:0 0 10px;font-family:var(--display);font-weight:500}
+.hunt.plain .huntline + .huntline{padding-top:10px;border-top:1px dashed var(--line)}
+.huntw{cursor:pointer;border-bottom:2px dotted var(--line);padding:0 1px;border-radius:2px}
+.huntw:hover,.huntw:focus-visible{background:var(--lupine-soft);color:var(--ink);outline:none}
+.huntw.sel{background:var(--sulphur-soft);border-bottom:2px solid var(--sulphur);color:var(--ink)}
+.huntw.right{background:var(--moss-soft);color:var(--moss);border-bottom:2px solid var(--moss);font-weight:600}
+.huntw.missed{background:var(--rust-soft);color:var(--rust);border-bottom:2px solid var(--rust);font-weight:600}
+.huntw.wrongpick{text-decoration:line-through;color:var(--rust)}
+.huntedits{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.huntedit{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.huntedit .arrow{color:var(--slate)}
+.huntedit input[type=text]{flex:0 1 260px;font-size:17px;padding:8px 10px}
+.huntedit .undo{padding:6px 10px}
+ul.huntlist{list-style:none;padding:0;margin:8px 0 0}
+ul.huntlist li{margin:0 0 9px}
+ul.huntlist .mk{display:inline-block;width:1.4em;font-weight:700}
+ul.huntlist .mk.ok{color:var(--moss)} ul.huntlist .mk.no{color:var(--rust)}
+.huntwhy{font-size:13px;color:var(--slate);margin-left:1.4em;display:inline-block}
+.wcards{display:flex;flex-wrap:wrap;align-items:center;gap:8px 6px;margin:4px 0 0}
+.wcard{font-family:var(--display);font-weight:600;font-size:clamp(18px,2.6vw,23px);background:var(--sheet);border:1px solid var(--ink);border-bottom-width:3px;border-radius:6px;padding:5px 12px 4px;line-height:1.2;text-align:center}
+.wcard small{display:block;font-family:var(--body);font-weight:400;font-size:11.5px;color:var(--slate)}
+.wcard.right{border-color:var(--moss);background:var(--moss-soft)}
+.wcard.wrongpick{border-color:var(--rust);background:var(--rust-soft)}
+.wdash{color:var(--slate)}
+
+/* ---------- practice sessions (v6.10, ui/session.js) ---------- */
+.topics{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:6px 0 0}
+.topic{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;cursor:pointer;
+  font-family:var(--body);color:var(--ink);background:var(--sheet);border:1px solid var(--line);
+  border-radius:6px;padding:11px 13px 12px;min-height:96px}
+.topic:hover{border-color:var(--chalk-yellow)}
+.topic[aria-pressed="true"]{border:2px solid var(--chalk-yellow);background:var(--lupine-soft);padding:10px 12px 11px}
+.topic.mine{border-style:dashed}
+.topicico{font-size:22px;line-height:1}
+.topicnm{font-family:var(--display);font-weight:600;font-size:17px}
+.topicnm small{font-family:var(--body);font-weight:400;font-size:12px;color:var(--slate)}
+.topicds{font-size:12.5px;color:var(--slate);line-height:1.35}
+.topicflag{font-size:11.5px;color:var(--rust);font-weight:600}
+.runsize{display:flex;align-items:center;gap:8px;margin-top:18px;flex-wrap:wrap}
+.runsize span{color:var(--slate);font-size:14px}
+.sizeb{font-family:var(--display);font-weight:600;font-size:17px;min-width:56px;padding:8px 12px;cursor:pointer;
+  background:none;color:var(--ink);border:1px solid var(--line);border-radius:var(--radius)}
+.sizeb[aria-pressed="true"]{border:2px solid var(--chalk-yellow);background:var(--lupine-soft)}
+.runnote{font-size:13.5px;color:var(--slate);margin:16px 0 0;max-width:80ch}
+.runnote.warn{color:var(--rust)}
+.runhist{margin-top:12px;font-size:13px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.runchip{display:inline-block;font-size:12.5px;border:1px solid var(--line);border-radius:12px;padding:2px 9px;background:var(--sheet)}
+@media (max-width:600px){
+  /* v6.10: eleven tall cards put "Byrja lotu" far below the screen. Two
+     columns, no description, and the start button stays in reach. */
+  .topics{grid-template-columns:1fr 1fr;gap:6px}
+  .topic{min-height:0;padding:8px 10px}
+  .topic[aria-pressed="true"]{padding:7px 9px}
+  .topicds{display:none}
+  .topicnm{font-size:15px}
+  .runpick .answer{position:sticky;bottom:0;z-index:5;background:var(--paper);padding:8px 0;margin-bottom:-8px}
+}
+.drillstrip.runstrip{border-left-color:var(--chalk-yellow);background:var(--paper-2)}
+.drilldots i.now{border-color:var(--chalk-yellow);box-shadow:0 0 0 2px rgba(242,217,107,.35)}
+.drilldots i.due{opacity:.55}
+.diagline{margin:8px 0 0;font-size:13.5px}
+.summary .sumhead{display:flex;gap:12px;flex-wrap:wrap;margin:4px 0 10px}
+.sumscore{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:8px 16px;min-width:110px}
+.sumscore b{display:block;font-family:var(--display);font-size:34px;line-height:1.1}
+.sumscore b small{font-size:18px;color:var(--slate)}
+.sumscore span{font-size:12.5px;color:var(--slate)}
+.sumscore.xp b{color:var(--chalk-yellow)}
+.sumdots{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 10px}
+.sumdots i{width:14px;height:14px;border-radius:50%;border:1px solid var(--line);display:block}
+.sumdots i.ok{background:var(--moss);border-color:var(--moss)}
+.sumdots i.no{background:var(--rust);border-color:var(--rust)}
+.sumdots i.opt{opacity:.5;border-style:dashed}
+.sumbadges{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 6px}
+.sumsec{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}
+.sumsec h3{font-family:var(--display);font-size:18px;font-weight:600;margin:0 0 6px}
+.sumsec ul{margin:0;padding-left:20px}
+.sumsec li{margin:0 0 4px;font-size:14.5px}
+.sumsec.remember{background:var(--sulphur-soft);border:1px solid var(--line);border-left:5px solid var(--chalk-yellow);
+  border-radius:4px;padding:12px 16px 10px}
+.rememberh{font-family:var(--display);font-size:20px;margin:0 0 6px;color:var(--chalk-yellow)}
+.sumsec .rule{font-size:15.5px;margin:0 0 6px}
+.exlist{font-size:13.5px}
+.nextrow{margin-top:6px}
+.diagtable{width:100%;border-collapse:collapse;font-size:13.5px}
+.diagtable th{text-align:left;font-weight:500;color:var(--slate);border-bottom:1px solid var(--line);padding:4px 8px 4px 0}
+.diagtable td{padding:6px 8px 6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.diagtable .diagex{display:block;font-size:12px;font-family:var(--mono)}
+.diagtable details summary{cursor:pointer;font-size:12px;color:var(--slate)}
+.diagtable details p{margin:4px 0;font-size:13px}
+.diagtable tr.activep td:first-child b{color:var(--rust)}
+.trend{font-size:11.5px;margin-left:4px;white-space:nowrap}
+.trend.up{color:var(--moss)} .trend.down{color:var(--rust)}
+.ratebar{display:inline-block;width:60px;height:6px;background:var(--line);border-radius:3px;vertical-align:middle;margin-right:6px;overflow:hidden}
+.ratebar i{display:block;height:6px;background:var(--rust)}
+.small{font-size:12.5px}
+button.ghost.small{padding:5px 10px;font-size:13px}
+</style>
+</head>

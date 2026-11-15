@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A hand-built miniature of the ÍNO (LMF) format, holding exactly the four
+     words the owner reported in v5.7 plus two controls. It is not a sample OF
+     the real file — it is a reconstruction of the SHAPES that caused the three
+     faults, which is what a regression test needs:
+
+       sá      a verb in ÍNO, a pronoun in this vocabulary   -> must NOT attach
+       slá     a noun in ÍNO, a verb in this vocabulary      -> must NOT attach
+       skepna  two senses; the example belongs to the first  -> must pair
+       allur   a pronoun whose "definition" is its class     -> attaches, and
+                                                                the renderer
+                                                                hides it
+       hestur  an ordinary noun                              -> attaches
+       ljós    a noun and an adjective, separately           -> both attach, to
+                                                                their own word
+-->
+<LexicalResource>
+<Lexicon>
+
+<LexicalEntry id="e_sa_verb">
+  <feat att="partOfSpeech" val="verb"/>
+  <Lemma><feat att="writtenForm" val="sá"/></Lemma>
+  <Sense>
+    <SemanticDefinition><text language="isl">dreifa fræi, sáðkorni, í jörð</text></SemanticDefinition>
+    <SenseExample><text language="isl">hún sáði gulrótafræjum í beðið</text></SenseExample>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_sla_noun">
+  <feat att="partOfSpeech" val="noun"/>
+  <Lemma><feat att="writtenForm" val="slá"/></Lemma>
+  <WordForm>
+    <feat att="writtenForm" val="slá"/>
+    <feat att="grammaticalGender" val="f"/>
+  </WordForm>
+  <Sense>
+    <SemanticDefinition><text language="isl">lárétt stöng, t.d. til að loka vegi og sem fimleikaáhald</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_skepna">
+  <feat att="partOfSpeech" val="noun"/>
+  <Lemma><feat att="writtenForm" val="skepna"/></Lemma>
+  <WordForm>
+    <feat att="writtenForm" val="skepna"/>
+    <feat att="grammaticalGender" val="f"/>
+  </WordForm>
+  <Sense>
+    <SemanticDefinition><text language="isl">dýr</text></SemanticDefinition>
+    <SenseExample><text language="isl">mér þykir gaman að umgangast skepnur</text></SenseExample>
+  </Sense>
+  <Sense>
+    <SemanticDefinition><text language="isl">hnjóðsyrði um mann, óþokki</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_allur">
+  <feat att="partOfSpeech" val="pronoun"/>
+  <Lemma><feat att="writtenForm" val="allur"/></Lemma>
+  <Sense>
+    <SemanticDefinition><text language="isl">óákveðið fornafn</text></SemanticDefinition>
+    <SenseExample><text language="isl">hann bauð allri fjölskyldunni í mat</text></SenseExample>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_hestur">
+  <feat att="partOfSpeech" val="noun"/>
+  <Lemma><feat att="writtenForm" val="hestur"/></Lemma>
+  <WordForm>
+    <feat att="writtenForm" val="hestur"/>
+    <feat att="grammaticalGender" val="m"/>
+  </WordForm>
+  <Sense>
+    <SemanticDefinition><text language="isl">stórt húsdýr sem hægt er að ríða á</text></SemanticDefinition>
+    <SenseExample><text language="isl">hesturinn hljóp yfir túnið</text></SenseExample>
+    <Sense>
+      <SemanticDefinition><text language="isl">fimleikaáhald</text></SemanticDefinition>
+      <SenseExample><text language="isl">hann stökk yfir hestinn</text></SenseExample>
+    </Sense>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_ljos_noun">
+  <feat att="partOfSpeech" val="noun"/>
+  <Lemma><feat att="writtenForm" val="ljós"/></Lemma>
+  <WordForm>
+    <feat att="writtenForm" val="ljós"/>
+    <feat att="grammaticalGender" val="n"/>
+  </WordForm>
+  <Sense>
+    <SemanticDefinition><text language="isl">það sem gerir okkur kleift að sjá</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_ljos_adj">
+  <feat att="partOfSpeech" val="adjective"/>
+  <Lemma><feat att="writtenForm" val="ljós"/></Lemma>
+  <Sense>
+    <SemanticDefinition><text language="isl">bjartur að lit</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_utan">
+  <feat att="partOfSpeech" val="noun"/>
+  <Lemma><feat att="writtenForm" val="glimmerlingur"/></Lemma>
+  <WordForm>
+    <feat att="writtenForm" val="glimmerlingur"/>
+    <feat att="grammaticalGender" val="m"/>
+  </WordForm>
+  <Sense>
+    <SemanticDefinition><text language="isl">orð sem er ekki í orðaforða forritsins</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+<!-- v6.9: shapes that were dropped before, each one from the owner's list of
+     words with no meaning. -->
+
+<LexicalEntry id="e_milli">
+  <feat att="partOfSpeech" val="preposition/adverb"/>
+  <Lemma><feat att="writtenForm" val="milli"/></Lemma>
+  <Sense>
+    <SemanticDefinition><text language="isl">á svæðinu sem aðskilur tvennt</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_thridji">
+  <feat att="partOfSpeech" val="ordinal numeral"/>
+  <Lemma><feat att="writtenForm" val="þriðji"/></Lemma>
+  <Sense>
+    <SemanticDefinition><text language="isl">sá sem kemur næst á eftir öðrum</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_blindandi">
+  <feat att="partOfSpeech" val="adjective/adverb"/>
+  <Lemma><feat att="writtenForm" val="blindandi"/></Lemma>
+  <Sense>
+    <SemanticDefinition><text language="isl">án þess að sjá</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_bokmenntir">
+  <feat att="partOfSpeech" val="noun"/>
+  <Lemma><feat att="writtenForm" val="bókmenntir"/></Lemma>
+  <WordForm>
+    <feat att="writtenForm" val="bókmenntir"/>
+    <feat att="grammaticalGender" val="f"/>
+  </WordForm>
+  <Sense>
+    <SemanticDefinition><text language="isl">ritverk sem hafa listrænt gildi</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_skritinn">
+  <feat att="partOfSpeech" val="adjective"/>
+  <Lemma>
+    <feat att="writtenForm" val="skrítinn"/>
+    <feat att="writtenForm" val="skrýtinn"/>
+  </Lemma>
+  <Sense>
+    <SemanticDefinition><text language="isl">undarlegur, óvenjulegur</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+<LexicalEntry id="e_kongulo">
+  <feat att="partOfSpeech" val="noun"/>
+  <Lemma><feat att="writtenForm" val="kónguló"/></Lemma>
+  <WordForm>
+    <feat att="writtenForm" val="kónguló"/>
+    <feat att="grammaticalGender" val="f"/>
+  </WordForm>
+  <Sense>
+    <SemanticDefinition><text language="isl">áttfætt smádýr sem spinnur vef</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+<LexicalEntry id="e_kongulo2">
+  <feat att="partOfSpeech" val="noun"/>
+  <Lemma><feat att="writtenForm" val="könguló"/></Lemma>
+  <WordForm>
+    <feat att="writtenForm" val="könguló"/>
+    <feat att="grammaticalGender" val="f"/>
+  </WordForm>
+  <Sense>
+    <SemanticDefinition><text language="isl">sjá kónguló</text></SemanticDefinition>
+  </Sense>
+</LexicalEntry>
+
+</Lexicon>
+</LexicalResource>

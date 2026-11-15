@@ -1,0 +1,33 @@
+# Pushing a tag like v6.13.0 builds that exact commit and attaches the HTML
+# file to a GitHub release. This replaces keeping fallaskoli-v6.x.html files
+# side by side: every old version is one click away under Releases.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Tag matches package.json
+        run: |
+          v="$(node -p 'require("./package.json").version')"
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME but package.json says $v"; exit 1; }
+      - run: node --test tests/*.test.js
+      - run: node tools/build.mjs
+      - run: node tools/pack.mjs
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.html dist/*.zip --title "$GITHUB_REF_NAME" --notes "See CHANGES.md."

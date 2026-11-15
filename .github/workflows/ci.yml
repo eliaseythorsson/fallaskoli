@@ -1,0 +1,52 @@
+# Runs on every push and every pull request. A branch is merged into main only
+# when this is green (turn on branch protection: Settings → Branches → main →
+# "Require status checks to pass" → `test`).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      - name: No personal data or built files in the commit
+        run: |
+          bad=$(git ls-files | grep -E '^(server/data/|_prufa/|dist/|_backup/|_to_delete/)|(^|/)fallaskoli-v[0-9.]+\.html$|\.env$' || true)
+          if [ -n "$bad" ]; then echo "These must not be committed:"; echo "$bad"; exit 1; fi
+
+      # The generated data (data/*.js, lexicon.json, sentences.json …) is
+      # committed. The Python half of ./build.sh regenerates it; this checks
+      # that what is committed is what was last accepted.
+      - name: Data manifest
+        run: node tools/manifest.mjs
+
+      - name: Unit tests
+        run: node --test tests/*.test.js
+
+      - name: Bundle
+        run: node tools/build.mjs
+
+      # The two real-browser checks from ./build.sh steps 7–8. Not yet
+      # required: remove `continue-on-error` once they have passed here.
+      - name: Browser test (Chromium)
+        continue-on-error: true
+        run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/browser-test.mjs
+      - name: Server + app test (Chromium)
+        continue-on-error: true
+        run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/server-test.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fallaskoli-html
+          path: dist/*.html
+          retention-days: 14

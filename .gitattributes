@@ -1,0 +1,19 @@
+# Normalise line endings; shell scripts must stay LF or they break on Linux/Docker.
+* text=auto eol=lf
+*.sh text eol=lf
+*.command text eol=lf
+# Binary assets
+*.woff2 binary
+*.png binary
+*.jpg binary
+*.ico binary
+# Large generated data: don't try to show line diffs in PRs, and merge
+# conflicts in them are resolved by re-running ./build.sh, never by hand.
+data/data_bundle.js -diff linguist-generated
+data/ino.json -diff linguist-generated
+lexicon.json -diff linguist-generated
+sentences.json linguist-generated
+freq_lemmas.json -diff linguist-generated
+data/manifest.json linguist-generated
+islensk_nutimamalsordabok_2026-02.xml -diff
+freq_raw.txt -diff

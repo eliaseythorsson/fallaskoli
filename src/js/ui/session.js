@@ -1,0 +1,280 @@
+/* Practice sessions (v6.10): the Æfa tab's picker, the strip above a session
+   in progress, and the summary at the end. Rules live in app.js (the run
+   itself) and core/diagnosis.js (what went wrong and why); this file draws.
+
+   A session is one category (or all of them mixed, or the child's own error
+   patterns), 10, 15 or 20 questions, and a summary: what went right, the one
+   thing to remember, and what comes next. */
+
+import { SKILLS, skillName, skillById } from "../core/skills.js";
+import { skillLevel } from "../core/progress.js";
+import { effectivePolicy } from "../core/state.js";
+import { QUESTION_TYPES } from "../core/policy.js";
+import { TASKS } from "../tasks/index.js";
+import { lessonById } from "../core/lessons.js";
+import { weakWords } from "../core/wordhealth.js";
+import { activePatterns, standings, patternById, focusTypes } from "../core/diagnosis.js";
+import { $, esc, fmt, openSheet } from "./dom.js";
+
+export const RUN_SIZES = [10, 15, 20];
+
+/* Two topics that are not a skill. */
+export const MIXED = { id: "blandad", nm: "Blandað", ico: "🎲", ds: "Allt sem er kveikt á, í bland" };
+export const MINE = { id: "villur", nm: "Villurnar mínar", ico: "🎯",
+  ds: "Spurningar sem prófa einmitt það sem hefur farið úrskeiðis hjá þér" };
+
+export function topicName(id) {
+  if (id === MIXED.id) return MIXED.nm;
+  if (id === MINE.id) return MINE.nm;
+  return skillName(id);
+}
+const topicIco = (id) => (id === MIXED.id ? MIXED.ico : id === MINE.id ? MINE.ico : (skillById(id) || {}).ico || "");
+
+const typeName = (id) => (QUESTION_TYPES.find((q) => q.id === id) || {}).nm || id;
+const pct = (a, b) => (b ? Math.round((100 * a) / b) : 0);
+
+/** Which skill each question type belongs to (the reverse analysis to all
+    three of its skills). */
+const typesOfSkill = (id) => TASKS.filter((t) => t.skill === id || (t.anyOf || []).includes(id)).map((t) => t.id);
+
+/** The topics this child can pick: the switched-on skills, then the two others. */
+export function topics(app) {
+  const P = effectivePolicy(app.S);
+  const list = SKILLS.filter((s) => P.skill(s.id)).map((s) => ({ ...s, skill: true }));
+  if (list.length > 1) list.push({ ...MIXED });
+  if (activePatterns(app.S, 3, (p) => usable(app, [p.id])).length) list.push({ ...MINE });
+  return list;
+}
+
+/** Can a session aimed at these patterns draw any question at all? */
+export function usable(app, ids) {
+  const P = effectivePolicy(app.S);
+  const want = focusTypes(ids);
+  return TASKS.some((t) => want.has(t.id) && P.type(t.id) &&
+    (t.anyOf ? t.anyOf.some((x) => P.skill(x)) : P.skill(t.skill)));
+}
+
+/* ---------- the picker ----------------------------------------------------- */
+
+export function renderPicker(app) {
+  const list = topics(app);
+  const el = $("task");
+  if (!list.length) {
+    el.innerHTML = `<div class="card"><p class="eyebrow"><span>Ekkert efni valið</span></p>
+      <p class="sentence">Kveiktu á að minnsta kosti einu námsefni undir Stillingar og námsefni.</p>
+      <div class="answer"><button type="button" class="go" id="tosettings">Opna stillingar og námsefni</button></div></div>`;
+    $("tosettings").onclick = () => app.openView("settings");
+    return;
+  }
+  const set = app.S.settings || {};
+  let topic = list.some((t) => t.id === set.runTopic) ? set.runTopic : list[0].id;
+  let size = RUN_SIZES.includes(set.runSize) ? set.runSize : 10;
+  const act = activePatterns(app.S, 3, (p) => usable(app, [p.id]));
+  const flagFor = (s) => {
+    if (!s.skill) return "";
+    const types = new Set(typesOfSkill(s.id));
+    const hit = act.filter((p) => p.types.some((x) => types.has(x)));
+    return hit.length ? `<span class="topicflag" title="${esc(hit.map((p) => p.nm).join(", "))}">⚠ ${hit.length === 1 ? "1 villumynstur" : hit.length + " villumynstur"}</span>` : "";
+  };
+  const card = (s) => {
+    const lvl = s.skill ? skillLevel(((app.S.skills[s.id]) || {}).xp || 0).level : null;
+    const ds = s.id === MINE.id ? act.map((p) => p.nm).join(" · ") : s.ds;
+    return `<button type="button" class="topic${s.id === MINE.id ? " mine" : ""}" data-topic="${esc(s.id)}" aria-pressed="${s.id === topic}">
+      <span class="topicico" aria-hidden="true">${s.ico}</span>
+      <span class="topicnm">${esc(s.nm)}${lvl ? ` <small>stig ${lvl}</small>` : ""}</span>
+      <span class="topicds">${esc(ds)}</span>${flagFor(s)}</button>`;
+  };
+  const recent = (app.S.runs || []).slice(-4).reverse();
+  el.innerHTML = `<div class="card runpick">
+    <p class="eyebrow"><span>Ný æfingalota</span><b>veldu efni og fjölda spurninga</b></p>
+    <div class="topics" role="group" aria-label="Efni">${list.map(card).join("")}</div>
+    <div class="runsize" role="group" aria-label="Fjöldi spurninga">
+      <span>Spurningar:</span>${RUN_SIZES.map((n) =>
+        `<button type="button" class="sizeb" data-size="${n}" aria-pressed="${n === size}">${n}</button>`).join("")}
+    </div>
+    <div class="answer"><button type="button" class="go" id="runstart">Byrja lotu →</button></div>
+    ${act.length ? `<p class="runnote">🔎 Villumynstur sem fylgst er með: ${act.map((p) =>
+      `<b>${esc(p.nm)}</b> <span class="faint">(${p.misses} af síðustu ${p.seen})</span>`).join(", ")}.
+      Spurningar um þau koma oftar þangað til þau lagast.</p>` : ""}
+    ${recent.length ? `<div class="runhist"><span class="faint">Síðustu lotur:</span> ${recent.map((r) =>
+      `<span class="runchip">${topicIco(r.topic)} ${esc(topicName(r.topic))} · ${r.j ? `${r.c}/${r.j} rétt${r.j < r.n ? ` · ${r.n} spurn.` : ""}` : `${r.n} svör`}</span>`).join("")}</div>` : ""}
+    ${app.runNotice ? `<p class="runnote warn">${esc(app.runNotice)}</p>` : ""}
+  </div>`;
+  app.runNotice = null;
+  el.querySelectorAll(".topic").forEach((b) => {
+    b.onclick = () => {
+      topic = b.dataset.topic;
+      el.querySelectorAll(".topic").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    };
+    b.ondblclick = () => app.startRun(topic, size);
+  });
+  el.querySelectorAll(".sizeb").forEach((b) => {
+    b.onclick = () => {
+      size = +b.dataset.size;
+      el.querySelectorAll(".sizeb").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    };
+  });
+  $("runstart").onclick = () => app.startRun(topic, size,
+    topic === MINE.id ? act.map((p) => p.id) : null);
+  $("runstart").focus();
+}
+
+/* ---------- the strip above a session -------------------------------------- */
+
+export function renderRunBar(app) {
+  const el = $("runbar");
+  if (!el) return;
+  const r = app.run;
+  if (!r || app.drill || app.duelRun) { el.innerHTML = ""; return; }
+  const dots = [];
+  for (let i = 0; i < r.n; i++) {
+    const it = r.items[i];
+    const cls = !it ? (i === r.i ? "now" : "due") : it.ok === true ? "ok" : it.ok === false ? "no" : "opt";
+    dots.push(`<i class="${cls}"></i>`);
+  }
+  const shown = Math.min(r.n, r.i + (app.cur && app.cur.inRun && !app.cur.closed ? 1 : 0)) || 1;
+  el.innerHTML = `<div class="drillstrip runstrip" role="status">
+    <span class="drillico">${topicIco(r.topic)}</span>
+    <div class="drilltext"><b>${esc(topicName(r.topic))}${r.focus && r.focus.length === 1 ? `: ${esc(patternById(r.focus[0]).nm)}` : ""}</b>
+      <span class="drillnums">Spurning ${shown} af ${r.n}${r.j ? ` · ${r.c} rétt` : ""}</span>
+      <span class="drilldots" aria-hidden="true">${dots.join("")}</span></div>
+    <button type="button" class="ghost" id="runstop">Hætta</button></div>`;
+  $("runstop").onclick = () => app.quitRun();
+}
+
+/** "Hætta?" — what is answered is kept and summed up. */
+export function confirmQuit(app, onYes) {
+  const r = app.run;
+  const sheet = openSheet("Hætta í lotunni?", `
+    <p>${r.i ? `Þú hefur svarað ${r.i} af ${r.n}. Þú færð samantekt á því sem búið er.`
+      : "Engu hefur verið svarað enn, svo lotan fellur niður."}</p>
+    <div class="answer"><button type="button" class="go" id="runquit-yes">Já, hætta</button>
+      <button type="button" class="ghost" id="runquit-no">Halda áfram</button></div>`);
+  sheet.el.querySelector("#runquit-no").onclick = () => sheet.close();
+  sheet.el.querySelector("#runquit-yes").onclick = () => { sheet.close(); onYes(); };
+}
+
+/* ---------- the summary ----------------------------------------------------- */
+
+/* v6.11: no line at all when there is nothing to show — an example with an
+   empty right answer printed a bare "Rétt:". */
+const exLine = (ex) => !ex || !String(ex.right || "").trim() ? "" : String(ex.said || "").trim()
+  ? `<li>Þú: <span class="forms">${esc(ex.said)}</span> → rétt: <span class="forms">${esc(ex.right)}</span></li>`
+  : `<li>Rétt: <span class="forms">${esc(ex.right)}</span></li>`;
+
+const trendHTML = (t) => (t === "betra" ? `<span class="trend up" title="á uppleið">▲ betra</span>`
+  : t === "verra" ? `<span class="trend down" title="á niðurleið">▼ verra</span>`
+  : t === "jafnt" ? `<span class="trend">● svipað</span>` : `<span class="trend faint">nýtt</span>`);
+
+export function renderSummary(app) {
+  const d = app.runDone;
+  const el = $("task");
+  const rep = d.report;
+  const allRight = d.j > 0 && d.c === d.j;
+
+  /* What went right */
+  const good = [];
+  if (allRight) good.push(`<li><b>Allt rétt</b> — ${d.j} af ${d.j}.</li>`);
+  rep.mended.forEach((p) => good.push(`<li><b>${esc(p.nm)}</b>: engin villa í ${p.chances} spurningum — það hefur oft farið úrskeiðis áður. Vel gert!</li>`));
+  rep.clean.slice(0, 3).forEach((p) => good.push(`<li>Allt rétt um <b>${esc(p.ok || p.nm)}</b> (${p.chances} spurningar).</li>`));
+  if (!allRight) {
+    const byType = {};
+    d.items.forEach((it) => {
+      if (it.ok === null) return;
+      const k = (byType[it.type] ||= { c: 0, n: 0 }); k.n++; if (it.ok) k.c++;
+    });
+    Object.entries(byType).filter(([, v]) => v.c === v.n && v.n >= 2)
+      .forEach(([id, v]) => good.push(`<li>${esc(typeName(id))}: ${v.c} af ${v.n} rétt.</li>`));
+  }
+  if (!good.length && d.c) good.push(`<li>${d.c} ${d.c === 1 ? "rétt svar" : "rétt svör"} — og hvert rangt svar segir okkur hvað á að æfa næst.</li>`);
+  const ungraded = !d.j && d.i > 0;
+  if (!good.length && ungraded) good.push(`<li>Þú svaraðir ${d.i} ${d.i === 1 ? "spurningu" : "spurningum"} með eigin orðum.</li>`);
+  if (!good.length) good.push(`<li>Þú kláraðir lotuna. Það er fyrsta skrefið.</li>`);
+
+  /* The one thing to remember. A session with nothing graded (Orðaforði) has
+     no errors of its own, so an old pattern is not dragged in (v6.10). */
+  const f = ungraded ? null : rep.focus;
+  const remember = ungraded
+    ? `<p>Í þessari lotu var ekkert metið rétt eða rangt. Berðu útskýringarnar þínar saman við orðabókina — það er æfingin.</p>`
+    : !f
+    ? `<p>Engin villumynstur fundust. Haltu áfram svona — og prófaðu þyngra efni næst.</p>`
+    : `<h4 class="rememberh">${esc(f.nm)}</h4>
+       ${f.fromBefore ? `<p class="faint">Engin villa í þessari lotu! En þetta er það sem hefur oftast farið úrskeiðis undanfarið:</p>` : ""}
+       <p class="rule">${fmt(f.rule)}</p>
+       ${f.ex && f.ex.some((x) => exLine(x)) ? `<ul class="exlist">${f.ex.map(exLine).join("")}</ul>` : ""}`;
+
+  /* What comes next */
+  const next = [];
+  if (f && usable(app, [f.id])) next.push(`<button type="button" class="go" data-next="focus">🎯 Æfa: ${esc(f.nm)} · 10 spurningar</button>`);
+  const page = f && f.lesson ? lessonById(f.lesson) : null;
+  if (page) next.push(`<button type="button" class="ghost lessonlink" data-lesson="${esc(page.id)}">📖 Lesa: ${esc(page.nm)}</button>`);
+  const weak = weakWords(app.S, app.lex).find((w) => w.drillable);
+  if (weak) next.push(`<button type="button" class="ghost" data-next="drill" data-key="${esc(weak.key)}">🛟 Bjarga orðinu <em>${esc(weak.lemma)}</em></button>`);
+  next.push(`<button type="button" class="${next.length ? "ghost" : "go"}" data-next="again">↻ Önnur lota: ${esc(topicName(d.topic))} · ${d.n}</button>`);
+  next.push(`<button type="button" class="ghost" data-next="pick">Velja annað efni</button>`);
+
+  /* The diagnosis */
+  const diag = rep.found.length ? `<table class="diagtable"><thead><tr><th>Villumynstur</th>
+      <th>Í lotunni</th><th>Undanfarið</th></tr></thead><tbody>${rep.found.map((p) => `<tr>
+      <td><b>${esc(p.nm)}</b>${p.ex.length ? `<span class="faint diagex">${p.ex.slice(0, 2).map((x) =>
+        x.said ? `${esc(x.said)} → ${esc(x.right)}` : esc(x.right)).join(" · ")}</span>` : ""}</td>
+      <td>${p.count} ${p.count === 1 ? "villa" : "villur"}${p.chances > p.count ? ` af ${p.chances}` : ""}</td>
+      <td>${p.standing.misses} af síðustu ${p.standing.seen} ${trendHTML(p.standing.trend)}</td></tr>`).join("")}</tbody></table>`
+    : `<p class="faint">Engar villur til að greina í þessari lotu.</p>`;
+
+  const mins = Math.max(1, Math.round((d.ms || 0) / 60000));
+  el.innerHTML = `<div class="card summary">
+    <p class="eyebrow"><span>${d.early ? "Lotu hætt" : "Lotu lokið"} · ${topicIco(d.topic)} ${esc(topicName(d.topic))}</span><b>${mins} mín.</b></p>
+    <div class="sumhead">
+      <div class="sumscore"><b>${d.j ? `${d.c}<small>/${d.j}</small>` : d.i}</b><span>${d.j ? `rétt · ${pct(d.c, d.j)}%` : "svör"}</span></div>
+      <div class="sumscore xp"><b>+${d.xp}</b><span>XP</span></div>
+      <div class="sumscore"><b>${d.badges.length}</b><span>${d.badges.length === 1 ? "nýtt merki" : "ný merki"}</span></div>
+    </div>
+    <div class="sumdots" aria-hidden="true">${d.items.map((it) => `<i class="${it.ok === true ? "ok" : it.ok === false ? "no" : "opt"}"></i>`).join("")}</div>
+    ${d.badges.length ? `<div class="sumbadges">${d.badges.map((b) => `<span class="runchip">${b.ico} ${esc(b.nm)}</span>`).join("")}</div>` : ""}
+    <section class="sumsec"><h3>✓ Það sem gekk vel</h3><ul>${good.join("")}</ul></section>
+    <section class="sumsec remember"><h3>💡 Eitt atriði til að muna</h3>${remember}</section>
+    <section class="sumsec"><h3>→ Hvað næst?</h3><div class="answer nextrow">${next.join("")}</div></section>
+    <section class="sumsec"><h3>🔎 Villugreining</h3>${diag}
+      <p class="faint small">Fylgst er með villumynstrum í öllum æfingum. Spurningar sem prófa
+        þau koma oftar þangað til þau lagast. Yfirlitið er undir <b>Merki og framvinda → Framvinda</b>.</p></section>
+  </div>`;
+
+  el.querySelectorAll("[data-next]").forEach((b) => {
+    b.onclick = () => {
+      const what = b.dataset.next;
+      if (what === "focus") app.startRun(MINE.id, 10, [f.id]);
+      else if (what === "again") app.startRun(d.topic, d.n, d.focus);
+      else if (what === "drill") { app.runDone = null; app.startDrill(b.dataset.key); }
+      else { app.runDone = null; app.next(); }
+    };
+  });
+  const first = el.querySelector(".nextrow button");
+  if (first) first.focus();
+}
+
+/* ---------- Framvinda: every pattern, for the long view ------------------ */
+
+export function renderDiagnosisPanel(app) {
+  const el = $("diaglist");
+  if (!el) return;
+  const list = standings(app.S).filter((p) => p.n > 0 && p.w > 0);
+  if (!list.length) {
+    el.innerHTML = `<p class="faint">Engar villur greindar enn. Þegar eitthvað fer úrskeiðis
+      er það flokkað hér — til dæmis ef þolfall og þágufall ruglast.</p>`;
+    return;
+  }
+  el.innerHTML = `<table class="diagtable wide"><thead><tr><th>Villumynstur</th><th>Undanfarið</th>
+    <th>Alls</th><th></th></tr></thead><tbody>${list.map((p) => `<tr class="${p.active ? "activep" : ""}">
+    <td><b>${esc(p.nm)}</b>${p.active ? ` <span class="topicflag">⚠ algengt núna</span>` : ""}
+      <details><summary>Regla</summary><p>${fmt(p.rule)}</p>${p.lesson && lessonById(p.lesson)
+        ? `<button type="button" class="lessonlink" data-lesson="${esc(p.lesson)}">📖 ${esc(lessonById(p.lesson).nm)}</button>` : ""}</details></td>
+    <td><span class="ratebar"><i style="width:${Math.round(100 * p.rate)}%"></i></span>
+      ${p.misses} af ${p.seen} ${trendHTML(p.trend)}</td>
+    <td>${p.w} af ${p.n}</td>
+    <td>${p.active && usable(app, [p.id]) ? `<button type="button" class="ghost small" data-practise="${esc(p.id)}">Æfa</button>` : ""}</td>
+    </tr>`).join("")}</tbody></table>`;
+  el.querySelectorAll("[data-practise]").forEach((b) => {
+    b.onclick = () => app.startRun(MINE.id, 10, [b.dataset.practise]);
+  });
+}
