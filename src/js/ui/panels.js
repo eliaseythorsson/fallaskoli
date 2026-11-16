@@ -740,7 +740,7 @@ function wordChip(w, stats) {
 export function renderSettings(app) {
   const S = app.S;
   $("goalin").value = S.goal;
-  $("set-decay").checked = S.settings.decay !== false;
+  $("set-decay").checked = S.settings.decay === true;
   $("set-gloss").checked = S.settings.glossary !== false;
   /* Item 53: the box shows what is in force, the guess included, so ticking
      it always does what it looks like it will. */
