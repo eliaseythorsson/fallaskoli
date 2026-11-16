@@ -23,6 +23,8 @@ const INCLUDE = [
   "parse_guard.py", "parse_overrides.py", "vocab_filter.py",
   "build_freq.py", "build_lexicon.py", "build_sentences.py", "build_bundle.py",
   "exercises.py", "build_exercises.py",
+  /* the hand-written content and its reader (critique item 82) */
+  "content", "content_io.py",
   "freq_raw.txt", "freq_raw.sha256", "freq_lemmas.json",
   "lexicon.json", "sentences.json", "data",
   `dist/${name}.html`,

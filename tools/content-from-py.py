@@ -142,6 +142,9 @@ def cell(kind, v):
     if kind == "bool":
         assert isinstance(v, bool), v
         return "já" if v else "nei"
+    if kind == "flag":
+        assert isinstance(v, bool), v
+        return "já" if v else ""
     if kind == "word":
         assert isinstance(v, tuple) and all(isinstance(x, str) and "|" not in x and "," not in x for x in v), v
         return ok("|".join(v))
@@ -236,6 +239,7 @@ def kind_setningar():
         "setningin sjálf, heil og eðlileg",
         "nafnorðið (uppflettimynd) sem má skipta út fyrir annað nafnorð; autt ef ekkert",
         "hvaða nafnorð mega koma í staðinn: merkingarflokkar (noun_classes.py) aðskildir með |, eða „none“",
+        "já: setningin er aldrei notuð sem eyðuverkefni (fallið fer eftir merkingu); annars autt",
         "frjáls athugasemd, forritið les hana ekki")
     simple("s", "S", rel, "Setningabankinn",
            ["Hver lína er ein setning. Greynir greinir hana þegar forritið er smíðað (./build.sh)",
@@ -243,8 +247,14 @@ def kind_setningar():
             "er skrifað hér í höndunum. Setningu sem greinist ekki, eða er of stutt fyrir þyngdina,",
             "er hafnað þegar forritið er smíðað. Reglurnar um þyngd og „þörf“ eru í sentences.py",
             "(á ensku)."],
-           [("þyngd", "int"), ("setning", "text"), ("orð", "opt"), ("þörf", "opt"), ("athugasemd", "str")],
-           lambda e: {"þyngd": e[0], "setning": e[1], "orð": e[2], "þörf": e[3], "athugasemd": ""})
+           [("þyngd", "int"), ("setning", "text"), ("orð", "opt"), ("þörf", "opt"), ("ekki eyða", "flag"),
+            ("athugasemd", "str")], nofill_cells)
+
+
+def nofill_cells(e):
+    assert len(e) == 4 or (len(e) == 5 and e[4] == {"nofill": True}), e
+    return {"þyngd": e[0], "setning": e[1], "orð": e[2], "þörf": e[3], "ekki eyða": len(e) == 5,
+            "athugasemd": ""}
 
 
 def kind_villuveidar():

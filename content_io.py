@@ -28,6 +28,7 @@ Field types (what a column's cells are turned into):
   str     text, may be empty
   opt     text, or None when the field is empty
   bool    "já" or "nei"
+  flag    "já", or empty for no
   word    lemma|class|mark — a tuple of the parts between the bars
   words   several of those, separated by commas: a list of tuples
   list    words or phrases separated by commas: a list of strings;
@@ -83,6 +84,10 @@ def _parse(kind, cell, where):
     if kind == "bool":
         if cell not in ("já", "nei"):
             bad("á að vera „já“ eða „nei“ / expected já or nei")
+        return cell == "já"
+    if kind == "flag":
+        if cell not in ("já", ""):
+            bad("á að vera „já“ eða autt / expected já or nothing")
         return cell == "já"
     if kind == "word":
         if not cell:
