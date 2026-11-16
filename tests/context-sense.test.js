@@ -7,7 +7,7 @@
    letters → "flutningskerfi póstþjónustunnar", *diskur* in the dishwasher →
    "geisladiskur". Now every item whose answer has more than one sense names
    the one it means (content/ordafordi/samhengi.tsv `merking`; samhengi-rammar.tsv
-   `lag=2`), or "-" for none; build_exercises.py refuses an item without, and
+   `lag=2`), or "-" for none; pipeline/build_exercises.py refuses an item without, and
    the item carries the chosen definition as `d`.
 
    These tests hold the same rule from the files, so that a new item with a
@@ -30,7 +30,7 @@ const INO = ino.entries || ino;
 const LEX = new Map(JSON.parse(read("data/lexicon.json")).w.map((w) => [w.o + "|" + w.c, w]));
 const GENDERS = ["kk", "kvk", "hk"];
 
-/** ÍNO's senses of the noun `lemma` ("orð" or "orð:kyn"), as build_exercises.py reads them. */
+/** ÍNO's senses of the noun `lemma` ("orð" or "orð:kyn"), as pipeline/build_exercises.py reads them. */
 function senses(lemma) {
   const [o, g] = lemma.split(":");
   const w = (g ? [g] : GENDERS).map((c) => LEX.get(o + "|" + c)).find(Boolean);
