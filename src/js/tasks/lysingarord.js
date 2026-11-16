@@ -20,7 +20,7 @@ import { explainDegree } from "./explain.js";
 import { nounSentence, adjectiveSentence, showable } from "./frames.js";
 import { built } from "./effects.js";
 import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, cellWanted,
-         topByRank, wordWeight, cellEase, cap1, caseWord } from "./shared.js";
+         topByRank, wordWeight, cellEase, nearBand, cap1, caseWord } from "./shared.js";
 
 /* ================= Beygingartafla ======================================== */
 
@@ -252,8 +252,13 @@ function adjSlot(lex, view, rng, want, { pred = null, frames = true } = {}) {
     }
     return null;
   }
-  if (bank.length && (!frames || rng() < 0.55)) {
-    const r = pick(bank, rng);
+  /* The bank slots near the band, as every sentence question chooses
+     (critique item 13). Until v6.13 these were all the bank's slots at every
+     band — about 97 questions in 100 — so a beginner met as many level-5
+     sentences as level-1 ones. */
+  const near = nearBand(bank, (r) => r.s.lvl, b, 12);
+  if (near.length && (!frames || rng() < 0.55)) {
+    const r = pick(near, rng);
     return { s: r.s, i: r.i, w: r.w, m: r.t.m, lvl: r.s.lvl };
   }
   if (!frames) return null;
@@ -266,7 +271,7 @@ function adjSlot(lex, view, rng, want, { pred = null, frames = true } = {}) {
     const made = adjectiveSentence(lex, w, m, w.forms[m][0], { maxLvl: b + 1, levelOk: (n) => P.level(n), rng });
     if (made && headSettles(lex, made.s, made.i)) return { s: made.s, i: made.i, w, m, lvl: made.lvl };
   }
-  if (bank.length) { const r = pick(bank, rng); return { s: r.s, i: r.i, w: r.w, m: r.t.m, lvl: r.s.lvl }; }
+  if (near.length) { const r = pick(near, rng); return { s: r.s, i: r.i, w: r.w, m: r.t.m, lvl: r.s.lvl }; }
   return null;
 }
 
@@ -337,12 +342,10 @@ export const TYPES = [
     tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
     bands: [1, 2, 3, 4, 5],
     build: tableAdj },
-  /* The three below read the band in one place only: the rank cap on the
-     adjectives tried in a FRAME (`adjSlot`), which lets in a few more words at
-     each step up to 6. Almost every question comes from the bank instead
-     (about 97 in 100), and those are the same at every band — so the steps
-     are real and very faint. The critique (item 13) counts these three as
-     ignoring difficulty, and for a pupil they do. */
+  /* The three below choose a bank sentence near the band (`adjSlot`), and
+     the rank cap on the adjectives tried in a frame lets in more words at
+     each step. Until v6.13 only the cap read the band, and the critique
+     (item 13) rightly counted these three as ignoring difficulty. */
   { id: "lo_beyging", skill: "lysingarord", weight: 8, renderer: "gap",
     tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
     bands: [1, 2, 3, 4, 5, 6],

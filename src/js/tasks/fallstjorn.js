@@ -6,23 +6,25 @@
      fs_sogn     a noun written in the case its verb governs
      fs_operson  the subject of an impersonal verb ("___ (ég) langar í ís")
 
-   The last three are hand-written items (data/exercises.js). */
+   The last three are hand-written items (data/exercises.js), each with its
+   level: they are chosen near the pupil's band (shared.js `itemsForBand`). */
 
 import { EX } from "../../../data/exercises.js";
 import { wordKey } from "../core/state.js";
 import { built, FX } from "./effects.js";
 import { nounCloze } from "./cloze.js";
-import { pairOf, pick, shuffle, levelFor, tokenKey, tokensOf, cap1, caseWord, textSentence, fresh,
-         lexWord, headsTimePhrase } from "./shared.js";
+import { pairOf, pick, shuffle, levelFor, sentPool, tokenKey, tokensOf, cap1, caseWord, textSentence,
+         itemsForBand, lexWord, headsTimePhrase } from "./shared.js";
 
 const CASEWORD = { þf: "ÞF", þgf: "ÞG", ef: "EF" };
 
 /* ================= Which case ============================================ */
 
-export function taskGovern(lex, view, rng) {
-  const P = view.policy;
+/* Every verb and preposition in these sentences whose case the build
+   confirmed. */
+function governed(lex, sentences) {
   const cands = [];
-  lex.sentences.filter((s) => P.level(s.lvl)).forEach((s) =>
+  sentences.forEach((s) =>
     s.tok.forEach((t, i) => {
       /* Verbs: only government the guard confirmed against government.py, and
          only when it is unambiguous (a single governed case). */
@@ -37,6 +39,18 @@ export function taskGovern(lex, view, rng) {
       }
     })
   );
+  return cands;
+}
+
+export function taskGovern(lex, view, rng) {
+  const P = view.policy;
+  /* From the sentences at the pupil's difficulty, like every other sentence
+     question (shared.js `sentPool`). Until v6.13 it drew from the whole bank
+     at every band, so a beginner met level-5 sentences as often as level-1
+     ones (critique item 13). The whole bank stays the fallback: the window
+     never leaves a pupil without a question. */
+  let cands = governed(lex, sentPool(lex, view, "fallstjorn"));
+  if (!cands.length) cands = governed(lex, lex.sentences.filter((s) => P.level(s.lvl)));
   if (!cands.length) return null;
   const c = pick(cands, rng);
   const fall = c.fall || CASEWORD[c.t.g[0]];
@@ -96,7 +110,9 @@ const motionPairs = () => {
     if (!by.has(k)) by.set(k, {});
     by.get(k)[x.motion ? "go" : "stay"] = x;
   }
-  return (MOTION_PAIRS = [...by.values()].filter((p) => p.go && p.stay));
+  /* A pair is as hard as its harder sentence (item 13: chosen by band). */
+  return (MOTION_PAIRS = [...by.values()].filter((p) => p.go && p.stay)
+    .map((p) => ({ ...p, lvl: Math.max(p.go.lvl, p.stay.lvl) })));
 };
 
 /** One half of the pair: the question of one sentence. */
@@ -122,7 +138,7 @@ function motionHalf(x) {
 export function fsMotion(lex, view, rng) {
   const P = view.policy;
   if (!P.attr("fall", "ÞF") || !P.attr("fall", "ÞGF")) return null;
-  const pr = pick(fresh(view, (y) => y.go.t + y.stay.t, motionPairs()), rng);
+  const pr = pick(itemsForBand(view, "fallstjorn", motionPairs(), (y) => y.go.t + y.stay.t), rng);
   const [a, b] = shuffle([pr.go, pr.stay], rng).map(motionHalf);
   const part = (h) => ({ ...h, options: shuffle([h.right, h.wrong], rng) });
   const [A, B] = [part(a), part(b)];
@@ -131,7 +147,7 @@ export function fsMotion(lex, view, rng) {
     type: "choice", skill: "fallstjorn", s: A.s, i: A.i,
     title: "Hreyfing eða kyrrstaða?", question: A.question,
     options: A.options, answer: A.answer, why: A.why,
-    base: 9, lvl: levelFor(P, 1), cell: "stjórn:" + x.prep, word: lexWord(lex, x.noun, x.g),
+    base: 9, lvl: levelFor(P, pr.lvl), cell: "stjórn:" + x.prep, word: lexWord(lex, x.noun, x.g),
     m: A.m, paradigm: A.paradigm, optMarks: A.optMarks,
     tags: ["motion", "gov:fs"], miss: A.miss,
   }, B), [FX.exSeen(pr.go.t + pr.stay.t)]);
@@ -142,7 +158,7 @@ export function fsVerb(lex, view, rng) {
   const P = view.policy;
   const items = EX.verbCase.filter((x) => P.mark(x.m));
   if (!items.length) return null;
-  const x = pick(fresh(view, (y) => y.t + y.noun, items), rng);
+  const x = pick(itemsForBand(view, "fallstjorn", items, (y) => y.t + y.noun), rng);
   const { s, i } = textSentence(x.t);
   return built({
     type: "gap", skill: "fallstjorn", s, i, cue: x.cue, answers: x.a, m: x.m,
@@ -150,7 +166,7 @@ export function fsVerb(lex, view, rng) {
     title: "Sögnin ræður fallinu", lemmaLabel: "nafnorð",
     hint: `Hvaða falli stýrir sögnin *${x.verb}*?`,
     why: `Sögnin *${x.verb}* stýrir **${caseWord(x.case)}i**: *${x.a[0]}*. Prófaðu: *${x.verb} ${{ ÞF: "mig", ÞGF: "mér", EF: "mín" }[x.case]}*.`,
-    base: 11, lvl: levelFor(P, x.case === "EF" ? 3 : 2), cell: "stjórn:" + x.verb,
+    base: 11, lvl: levelFor(P, x.lvl), cell: "stjórn:" + x.verb,
     word: lexWord(lex, x.noun, x.g), tags: ["gov:so"], cap: false,
   }, [FX.exSeen(x.t + x.noun)]);
 }
@@ -160,7 +176,7 @@ export function fsImpers(lex, view, rng) {
   const P = view.policy;
   const items = EX.impersonal.filter((x) => P.mark(x.m));
   if (!items.length) return null;
-  const x = pick(fresh(view, (y) => y.t, items), rng);
+  const x = pick(itemsForBand(view, "fallstjorn", items, (y) => y.t), rng);
   const { s, i } = textSentence(x.t);
   return built({
     type: "gap", skill: "fallstjorn", s, i, cue: x.cue, answers: x.a.map(cap1), m: x.m,
@@ -168,7 +184,7 @@ export function fsImpers(lex, view, rng) {
     title: "Frumlag í réttu falli", lemmaLabel: "fornafn",
     hint: "Sumar sagnir vilja ekki frumlag í nefnifalli.",
     why: `*${x.verb}*: ${x.why}`,
-    base: 11, lvl: levelFor(P, 2), cell: "stjórn:" + x.verb, word: lexWord(lex, x.l, x.c),
+    base: 11, lvl: levelFor(P, x.lvl), cell: "stjórn:" + x.verb, word: lexWord(lex, x.l, x.c),
     tags: ["impers"], cap: true, missOther: ["opersonuleg"],
   }, [FX.exSeen(x.t)]);
 }
@@ -176,7 +192,7 @@ export function fsImpers(lex, view, rng) {
 export const TYPES = [
   { id: "govern", skill: "fallstjorn", weight: 8, renderer: "govern",
     tags: ["case:EF", "case:ÞF", "case:ÞGF", "gov:fs", "gov:so"],
-    bands: [1],
+    bands: [1, 2, 3, 4, 5, 6, 7],
     build: taskGovern, drill: taskGovernWord },
   { id: "fs_fsno", skill: "fallstjorn", weight: 6, renderer: "fill",
     tags: ["case:EF", "case:ÞF", "case:ÞGF", "form", "noun", "num"],
@@ -184,14 +200,14 @@ export const TYPES = [
     build: fsPrepNoun },
   { id: "fs_hreyf", skill: "fallstjorn", weight: 5, renderer: "choice",
     tags: ["case:ÞF", "case:ÞGF", "gov:fs", "motion", "noun", "num"],
-    bands: [1],
+    bands: [1, 2, 3],
     build: fsMotion },
   { id: "fs_sogn", skill: "fallstjorn", weight: 6, renderer: "gap",
     tags: ["case:EF", "case:ÞF", "case:ÞGF", "form", "gov:so", "noun", "num"],
-    bands: [1],
+    bands: [1, 3, 4],
     build: fsVerb },
   { id: "fs_operson", skill: "fallstjorn", weight: 5, renderer: "gap",
     tags: ["case:NF", "case:ÞF", "case:ÞGF", "form", "impers", "noun", "num"],
-    bands: [1],
+    bands: [1, 3, 4],
     build: fsImpers },
 ];

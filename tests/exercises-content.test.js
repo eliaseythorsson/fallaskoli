@@ -150,8 +150,10 @@ test("item 25: the contrast sets are there — each member is a right answer som
 
 test("item 25: the question is built with a multi-word conjunction, capitalised at the start", () => {
   const seen = new Set();
+  /* Every band in turn: since v6.13 the items are chosen by level (item 13),
+     and the multi-word ones are level 3-4. */
   for (let k = 0; k < 600; k++) {
-    const t = show(ctx(), obConj);
+    const t = show(ctx(1 + (k % 5)), obConj);
     assert.ok(t && t.options.length === 4);
     assert.ok(t.options.includes(t.answer));
     if (t.i === 0) t.options.forEach((o) => assert.match(o, /^\p{Lu}/u, o));
