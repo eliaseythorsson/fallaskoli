@@ -1,6 +1,6 @@
 {
  "levels": {
-  "1": 274,
+  "1": 292,
   "2": 207,
   "3": 192,
   "4": 133,
@@ -35,7 +35,7 @@
     "6": 15,
     "7": 12
    },
-   "tokens": 2078,
+   "tokens": 2103,
    "missing": []
   },
   "lýsingarorð": {
@@ -134,7 +134,7 @@
     "6": 20,
     "7": 16
    },
-   "tokens": 2182,
+   "tokens": 2200,
    "missing": [
     "GM-FH-ÞT-2P-FT",
     "GM-VH-NT-1P-FT",
@@ -163,11 +163,11 @@
    "seen": 30,
    "reachable": 30,
    "cells": 224,
-   "filled": 140,
+   "filled": 141,
    "reachableCells": 210,
    "twiceAnywhere": 29,
    "oncePerLevel": {
-    "1": 16,
+    "1": 17,
     "2": 16,
     "3": 20,
     "4": 23,
@@ -184,7 +184,7 @@
     "6": 20,
     "7": 16
    },
-   "tokens": 1200,
+   "tokens": 1209,
    "missing": [
     "HK-ÞFFT",
     "EFET"
@@ -235,5 +235,5 @@
    ]
   }
  },
- "tokens": 5871
+ "tokens": 5923
 }
