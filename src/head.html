@@ -1507,5 +1507,44 @@ table.classpat td.cpcell.unread{background:var(--paper-2);color:var(--slate)}
 .cpflag{color:var(--rust);margin-right:3px}
 .cptrend{font-size:10.5px}
 .cptrend.betra{color:var(--moss)} .cptrend.verra{color:var(--rust)}
+/* ---------- a live class round (v6.13, item 64; ui/live.js) ---------------
+   The projector is a full-screen blackboard, so the question on the wall
+   looks as it does on every pupil's board, and reads from the back row. */
+.liveboard{position:fixed;inset:0;top:0;right:0;bottom:0;left:0;z-index:900;overflow:auto;margin:0;border-radius:0;
+  padding:18px 4vw 48px;font-size:clamp(17px,1.6vw,26px)}
+body.liveon{overflow:hidden}
+.liveboard .lbbar{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.liveboard .lbmain{max-width:1100px;margin:0 auto}
+.liveboard button.big{font-size:1.15em;padding:16px 34px}
+.lbtitle{font-family:var(--display);font-size:2.4em;line-height:1.1;margin:.3em 0;color:var(--ink)}
+.lbsub{color:var(--slate);margin:.2em 0}
+.lbbig{font-size:1.35em;margin:.5em 0}
+.lbcount{font-size:1.3em;font-weight:700}
+.lbclockrow{display:flex;align-items:center;gap:24px;margin:16px 0}
+.lbclock{font-family:var(--mono);font-size:3em;font-weight:700;min-width:2.2ch}
+.drillstrip .lbclock{font-size:1em}
+.lbtop{list-style:none;padding:0;margin:16px 0;font-size:1.2em}
+.lbtop li{display:flex;gap:12px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line)}
+.lbrank{font-family:var(--mono);min-width:2.5ch}
+.lbname{flex:1;font-weight:700}
+.lbnums{font-family:var(--mono);color:var(--slate)}
+.lbok{color:var(--moss)}
+.lbno{color:var(--rust)}
+.lbwhy{color:var(--slate)}
+.lbrule{margin:20px 0;padding:14px 18px;border-left:6px solid var(--lupine);background:var(--lupine-soft)}
+.lbrule h2{margin:0 0 6px;font-size:1.3em}
+.lberr{color:var(--rust)}
+/* The card on the wall answers nothing: no Athuga, no hint, no keypad. */
+.livecard button.go,.livecard button.ghost,.livecard .keys,.livecard .reportflag,
+.livecard .lessonlink,.livecard .workedex{display:none}
+/* The pupil's card after answering: hidden, verdict and all, until the
+   question closes on every screen (ui/live.js `coverCard`). */
+#task .livewaitmsg{display:none}
+#task.livewait > :not(.livewaitmsg){display:none}
+#task.livewait > .livewaitmsg{display:block;padding:28px 12px;text-align:center;font-size:1.15em}
+#task.livedone #check{display:none}
+.drillstrip.live{border-left-color:var(--lupine);background:var(--lupine-soft)}
+.drillstrip.live.offer{border-left-color:var(--moss);background:var(--moss-soft)}
+.drillstrip.live .lbrule{margin:8px 0 0;font-size:.95em}
 </style>
 </head>

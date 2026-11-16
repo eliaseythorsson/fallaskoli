@@ -35,6 +35,7 @@
 import { SKILLS } from "./skills.js";
 import { skillLevel, skillNeed } from "./progress.js";
 import { clamp } from "./difficulty.js";
+import { narrowPolicy } from "./policy.js";
 
 export const DUEL = {
   sizes: [10, 15, 20],      // as practice sessions (ui/session.js RUN_SIZES)
@@ -305,9 +306,16 @@ function duelHost(duel, deps) {
   const sess = newSession(S);
   const D = duelDifficulty(duel.level);
   Object.keys(sess.diff).forEach((k) => { sess.diff[k] = D; });
+  /* v6.13 (items 64, 67): a live class round or a team duel is set by a
+     teacher, on a node of the curriculum map or a year as well as a whole
+     category. `types` narrows the plan to the node's question types, and
+     `allowed` holds it to the server's default ceiling. A duel between two
+     pupils carries neither, and is built exactly as before. */
+  const base = createPolicy(duel.allowed || null, S.policy);
   return {
     S, sess, forcedNoun: null,
-    policy: createPolicy(null, S.policy),
+    policy: Array.isArray(duel.types) && duel.types.length
+      ? narrowPolicy(base, { types: duel.types }) : base,
     /* The day is part of the view; a duel has none of its own. A fixed one,
        so that a duel built a minute before midnight and one built a minute
        after are the same duel. */

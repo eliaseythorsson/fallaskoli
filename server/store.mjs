@@ -62,6 +62,7 @@ export function createStore(root) {
     duels: path.join(root, "duels.json"),
     reports: path.join(root, "reports.json"),
     assignments: path.join(root, "assignments.json"),
+    teamDuels: path.join(root, "teamduels.json"),
     calibration: path.join(root, "calibration.json"),
     calibrationQuota: path.join(root, "calibration-quota.json"),
     samples: path.join(root, "samples.json"),
@@ -138,6 +139,7 @@ export function createStore(root) {
   const duelsFile = smallFile(file.duels, []);
   const reportsFile = smallFile(file.reports, []);
   const assignmentsFile = smallFile(file.assignments, []);
+  const teamDuelsFile = smallFile(file.teamDuels, []);
   const calibrationFile = smallFile(file.calibration, {});
   const quotaFile = smallFile(file.calibrationQuota, {});
   const samplesFile = smallFile(file.samples, { list: [], seen: 0 });
@@ -285,6 +287,13 @@ export function createStore(root) {
     assignments: () => assignmentsFile.read(),
     updateAssignments: (fn) => assignmentsFile.update(fn),
 
+    /* ---------- team duels (v6.13, item 67; core/teamduel.js) ----------
+     * One class against another, or two halves of one: the teams (user
+     * ids), each pupil's key and each pupil's result as numbers. Pruned on
+     * every read and write, as duels are. */
+    teamDuels: () => teamDuelsFile.read(),
+    updateTeamDuels: (fn) => teamDuelsFile.update(fn),
+
     /* ---------- calibration and the answer sample (v6.13, server/calibrate.mjs) ----------
      * Three files, and the difference between them is the point:
      *
@@ -360,6 +369,19 @@ export function createStore(root) {
         }
         return hit ? list : null;
       });
+      /* Team duels: off their team, with their key and result. A team that
+         is left empty simply has nobody who played. */
+      await this.updateTeamDuels((list) => {
+        let hit = false;
+        for (const d of list) {
+          for (const s of ["a", "b"]) {
+            if (d.teams && d.teams[s].includes(uid)) { d.teams[s] = d.teams[s].filter((x) => x !== uid); hit = true; }
+          }
+          for (const k of ["keys", "res", "started"]) if (d[k] && uid in d[k]) { delete d[k][uid]; hit = true; }
+          if (d.by === uid) { d.by = null; hit = true; }
+        }
+        return hit ? list : null;
+      });
       /* Today's contribution count (calibration). The counts themselves and
          the answer sample carry no id and cannot be traced back: they stay. */
       await this.updateCalibrationQuota((q) => {
@@ -391,6 +413,7 @@ export function createStore(root) {
         groups: await this.groups(), audit: await this.audit(),
         rarity: await this.rarityHistory(), duels: await this.duels(),
         reports: await this.reports(), assignments: await this.assignments(),
+        teamDuels: await this.teamDuels(),
         calibration: await this.calibration(), samples: await this.samples(),
         dataset: await this.dataset(), datasetStatus: await this.datasetStatus(),
         states: st,
@@ -413,6 +436,7 @@ export function createStore(root) {
         await writeJSON(file.duels, all.duels || []);
         await writeJSON(file.reports, all.reports || []);
         await writeJSON(file.assignments, all.assignments || []);
+        await writeJSON(file.teamDuels, all.teamDuels || []);
         await writeJSON(file.calibration, all.calibration || {});
         await writeJSON(file.samples, all.samples || { list: [], seen: 0 });
         await fs.rm(file.calibrationQuota, { force: true });

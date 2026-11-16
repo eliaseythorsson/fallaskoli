@@ -21,6 +21,8 @@
 
 import { ASSIGN } from "../src/js/core/assignment.js";
 import { SAMPLE } from "../src/js/core/classifiercheck.js";
+import { TEAM } from "../src/js/core/teamduel.js";
+import { LIVE } from "../src/js/core/live.js";
 import { CLASS_GOAL } from "../src/js/core/classgoal.js";
 
 export const RETENTION = {
@@ -39,6 +41,10 @@ export const CONSENT_AGE = 16;
 /** How long an assignment and its results are kept after its deadline: the
     same number core/assignment.js prunes by, so the notice cannot drift. */
 const ASSIGN_KEEP_DAYS = ASSIGN.keepDays;
+/* v6.13 (items 64, 67): a live round is forgotten this many minutes after
+   it ends; a team duel is erased this many days after it is over. */
+const LIVE_KEEP_MIN = Math.round(LIVE.keepMs / 60000);
+const TEAM_KEEP_DAYS = TEAM.keepDays;
 
 export function privacyConfig(env = process.env) {
   const controller = String(env.FALLASKOLI_CONTROLLER || "").trim();
@@ -60,8 +66,6 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
 /* 2026-11-16 (v6.13, items 37 and 65): the group's teacher or guardian sees
    the error patterns and assignment results of the learners in the group. A
    new recipient, so the version moves (docs/PRIVACY.md §3). */
-export const PRIVACY_VERSION = "2026-11-19";
-
 /* 2026-11-17 (v6.13, items 17 and 38): right and wrong answers are counted
    anonymously to set the difficulty of the questions, and a group's teacher
    may switch on an anonymous sample of wrong word forms. New processing, so
@@ -84,6 +88,14 @@ export const CALIBRATION_NOTICE = "2026-11-17";
    see is more — the mastery mark of every curriculum node, the reviews
    waiting there and the cells missed — so the version moves and the notice
    says it (docs/PRIVACY.md §1a). */
+
+/* 2026-11-20 (v6.13, items 64 and 67): a live class round on the projector
+   names only pupils who are on the leaderboard and keeps nothing after it
+   ends; in a team duel the group's teacher sees each pupil's result, the
+   other pupils and the other class only the teams' means. A new thing the
+   teacher sees, so the version moves (docs/PRIVACY.md §1d, §3). The notes for
+   2026-11-17, -18 and -19 stand above; this is the latest. */
+export const PRIVACY_VERSION = "2026-11-20";
 
 export function privacyPage(cfg) {
   const missing = (what) => `<mark>[vantar: ${what}]</mark>`;
@@ -133,9 +145,12 @@ export function privacyPage(cfg) {
   <p>Enginn annar nemandi sér neitt um þig nema þú kveikir sjálf(ur) á stigatöflunni.</p>
   <p>Ef kennarinn setur hópnum sameiginlegt markmið sjá allir í hópnum eina samtölu fyrir
      vikuna, og þín svör teljast með. Enginn sér hvað þú lagðir til.</p>
-  <p>Kennari eða forsjáraðili hópsins þíns sér hvernig þér gengur í villumynstrum og
-     verkefnum, svo hann geti hjálpað þér — en aldrei það sem þú skrifar. Hann getur líka
-     skoðað færnikortið þitt.</p>
+  <p>Kennari eða forsjáraðili hópsins þíns sér hvernig þér gengur í villumynstrum,
+     verkefnum og bekkjareinvígjum, svo hann geti hjálpað þér — en aldrei það sem þú skrifar.
+     Hann getur líka skoðað færnikortið þitt.</p>
+  <p>Í lifandi umferð í kennslustund svarar allur hópurinn sömu spurningum á sama tíma.
+     Á skjávarpanum sést gælunafnið þitt aðeins ef þú ert á stigatöflunni — annars heitir
+     þú þar „Leikmaður“ og númer. Ekkert af umferðinni er geymt eftir að henni lýkur.</p>
   <p>Engar auglýsingar, engin rakning, ekkert selt. Þú getur sótt gögnin þín eða
      eytt aðganginum hvenær sem er.</p>
 </div>
@@ -188,6 +203,16 @@ export function privacyPage(cfg) {
         <b>ekki</b> geymd</td>
     <td>Svo úrslitin séu rétt hjá ykkur báðum og enginn geti sent inn stig sem hann vann
         ekki fyrir.</td></tr>
+<tr><td>Bekkjareinvígi: í hvaða liði þú ert og hve mörg svör voru rétt hjá þér. Svörin
+        þín eru send á þjóninn til að hann meti þau, en þau eru <b>ekki</b> geymd</td>
+    <td>Svo meðaltal liðanna sé rétt. Kennari hópsins þíns sér niðurstöðuna þína. Aðrir
+        nemendur — og kennari hins hópsins, ef keppt er við annan hóp — sjá aðeins meðaltal
+        liðanna. Bekkjareinvígi eyðist ${TEAM_KEEP_DAYS} dögum eftir að því lýkur.</td></tr>
+<tr><td>Á meðan lifandi umferð stendur yfir: hve mörg svör voru rétt hjá þér og stigin
+        þín. Þetta er aðeins í minni þjónsins og er aldrei skrifað niður. Svörin þín eru
+        metin á þjóninum og ekki geymd</td>
+    <td>Til að sýna stöðuna eftir hverja spurningu. Allt um umferðina gleymist
+        ${LIVE_KEEP_MIN} mínútum eftir að henni lýkur.</td></tr>
 <tr><td>Dagurinn sem þú skráðir þig og dagurinn sem þú varst síðast inni</td>
     <td>Til að hægt sé að eyða aðgangi sem enginn notar lengur.</td></tr>
 <tr><td>Villutilkynningar sem þú sendir með 🚩: það sem þú skrifar, spurningin
@@ -220,7 +245,9 @@ export function privacyPage(cfg) {
       stigatöflunni undir <i>Stillingar og námsefni → Aðgangurinn minn</i>. Þá sjá þeir
       gælunafnið, stig, XP, merkin þín og titilinn sem þú velur. Mínútur sjást
       aðeins ef þú kveikir sérstaklega á þeim. Þú getur slökkt aftur hvenær sem er.
-      Notendur í öðrum hópum sjá þig aldrei.</li>
+      Notendur í öðrum hópum sjá þig aldrei. Í lifandi umferð á skjávarpanum sést
+      gælunafnið þitt aðeins ef þú ert á stigatöflunni; annars heitir þú þar „Leikmaður“
+      og númer.</li>
   <li><b>Allur hópurinn, ef kennarinn setur sameiginlegt markmið</b> — sér eina samtölu
       fyrir vikuna: hve mörg rétt svör hópurinn hefur gefið, eða hve margir hafa lokið
       tilteknum fjölda lota. Þín svör teljast með, líka þótt þú sért ekki á stigatöflunni,
@@ -230,7 +257,8 @@ export function privacyPage(cfg) {
   <li><b>Kennari eða forsjáraðili hópsins þíns</b> — sá sem umsjónarmaður hefur gert
       að forsjáraðila í hópnum — sér gælunafnið þitt, villumynstrin þín (hve oft svar
       var rangt af síðustu svörum sem prófa hvert mynstur, eins og þú sérð sjálf(ur)
-      undir <i>Framvinda</i>) og niðurstöður verkefna sem hann setur. Hann getur líka
+      undir <i>Framvinda</i>), niðurstöður verkefna sem hann setur og hve mörg svör voru
+      rétt hjá þér í bekkjareinvígi. Hann getur líka
       opnað færnikortið þitt, sama kort og þú sérð undir <i>Framvinda</i>: hvert
       efnisatriði, hve gott vald þú hefur á því, hve margt bíður upprifjunar þar og
       hvaða málfræðiatriði hafa farið úrskeiðis (til dæmis „þágufall, fleirtala“).

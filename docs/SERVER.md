@@ -475,6 +475,29 @@ That account then has a part of its own at the top of **Skólastofan**:
   patterns across the top (the class's worst first), the share of recent
   answers that went wrong in each cell, and a *CSV* download for a
   spreadsheet.
+- **Lifandi umferð** — a round of 5, 10 or 15 questions on the projector,
+  answered by the whole class at once on their own devices, 20–90 seconds a
+  question. The teacher opens it (*Opna á skjávarpanum*), the pupils press
+  *Vera með* on the strip that appears above their question, and the teacher
+  starts. After each question the wall shows how many got it right, the answer
+  and the top five; at the end the podium and the class's commonest error with
+  its rule. Pupils who have not chosen to be on the leaderboard appear on the
+  wall as *Leikmaður 1, 2 …*. A round lives in the server's memory only — see
+  below.
+- **Bekkjareinvígi** — the group split into two even teams, or the group
+  against another group (whose teacher must accept). Each pupil plays it on
+  their own within 1–7 days; the team with the higher mean of right answers
+  wins.
+
+**A live round and the server.** A round is held in the server's memory and
+never written to disk, so **restarting the server, or deploying a new version,
+ends every round that is running** — the teacher simply starts a new one. Do
+upgrades outside lessons. The screens follow the round over a long-lived
+connection (*server-sent events*). Caddy (§2.8) passes these on as they come,
+and so does Fly.io; nginx does too, because the server sends
+`X-Accel-Buffering: no`. If you put some other proxy in front, it must not
+buffer `text/event-stream` responses. One round of 30 pupils is about 35 open
+connections; the server allows 40 rounds and 800 connections at once.
 
 A guardian sees **only their own group**. You, the administrator, see the same
 part for every group (a group picker appears). What a teacher sees, and what
@@ -657,6 +680,8 @@ So that you know what you are putting on the internet, without varnish:
 | `Beðið eftir samþykki` | Correct behaviour — admit them on the **Gögn** tab |
 | The login clears itself and nothing happens, no error | The password was right — the browser threw away the login cookie because the server marked it "https only" while you are on plain `http`. Safari does this; Chrome does not. Fixed in `server/server.mjs`: stop the server with `Ctrl` + `C` and start it again. If it persists, try the same login in Chrome to confirm that is what you are looking at |
 | The child cannot see his progress | Did he log into the right account? See 1.7 |
+| The projector says *Tengist…* and nothing moves, or the pupils' screens lag a question behind | Something between the browser and the server holds the live round's events back. Caddy and Fly.io do not; another proxy must not buffer `text/event-stream` (4.2) |
+| A live round vanished in the middle of a lesson | The server was restarted (a deploy, a crash, the machine slept). Rounds live in memory only: start a new one |
 | `command not found: node` | Node is not installed, or the window was opened before it was |
 | `permission denied: ./build.sh` | The file lost its right to run (this happens when it is downloaded). Type `chmod +x build.sh` once, then try again |
 | `pip: command not found` | An old copy of `build.sh`. The one in this folder no longer uses that command |
