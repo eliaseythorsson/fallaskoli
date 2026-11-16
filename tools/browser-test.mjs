@@ -1757,6 +1757,16 @@ await page.setViewport({ width: 1100, height: 900 });
     }));
     ok(!after.run && after.summary, `${vp.nm}: "Já, hætta" did not end in a summary`);
     ok(!after.insession && after.header && after.tabs, `${vp.nm}: the header and tabs did not come back for the summary`);
+    /* The regression that server-test.mjs hit after item 47: no session runs
+       now, so every tab must take a real mouse click (not just be "visible"),
+       and the class must not linger on any other view. */
+    for (const v of ["settings", "progress", "practice"]) {
+      await tap(`nav.tabs button[data-view="${v}"]`);
+      ok(await page.evaluate((v) => !document.body.classList.contains("insession") &&
+        document.querySelector(`nav.tabs button[data-view="${v}"]`).getAttribute("aria-selected") === "true" &&
+        !document.getElementById("view-" + v).hidden, v),
+        `${vp.nm}: with no session running, a click on the ${v} tab did not open it`);
+    }
 
     /* A 📖 link mid-session opens Lesefni with the tabs back (the way out);
        Æfa returns to the slim line. */

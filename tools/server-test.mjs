@@ -96,6 +96,22 @@ async function login(page, username) {
   await startPractice(page, 20000);
 }
 
+/* v6.13 (item 47): while a session runs the header and tabs give way to one
+   slim line (body.insession), and login() above starts a long one. A child
+   gets to the tabs by leaving the session with the × (and answering the
+   question it asks), so the checks do the same, with real clicks, and then
+   click the tab for real. Where no session runs, the tab is clicked at once —
+   which is what proves the tabs are reachable when nothing is going on. */
+async function openTab(page, view) {
+  if (await page.evaluate(() => document.body.classList.contains("insession"))) {
+    await page.click("#runstop");
+    await page.waitForSelector("#runquit-yes", { timeout: 5000 });
+    await page.click("#runquit-yes");
+    await page.waitForFunction("!document.body.classList.contains('insession')", { timeout: 5000 });
+  }
+  await page.click(`nav.tabs button[data-view="${view}"]`);
+}
+
 /* ---------- 1. The gate holds against anyone not logged in ---------- */
 {
   const { ctx, page } = await fresh();
@@ -160,7 +176,7 @@ async function login(page, username) {
   const bidur = await mkUser("bidur", "learner", "pending");
   const { ctx, page } = await fresh();
   await login(page, "umsjon");
-  await page.click('nav.tabs button[data-view="settings"]');
+  await openTab(page, "settings");
   await page.waitForSelector("#admin-users table.admintable", { timeout: 10000 });
 
   const text = await page.$eval("#admin", (e) => e.innerText);
@@ -195,7 +211,7 @@ async function login(page, username) {
 {
   const { ctx, page } = await fresh();
   await login(page, "barn");
-  await page.click('nav.tabs button[data-view="settings"]');
+  await openTab(page, "settings");
   await new Promise((r) => setTimeout(r, 500));
   ok(await page.$eval("#admin", (e) => e.innerText.trim().length) === 0,
     "a child can see the admin page");
@@ -249,7 +265,7 @@ async function login(page, username) {
 
   const { ctx, page } = await fresh();
   await login(page, "stiga");
-  await page.click('nav.tabs button[data-view="class"]');
+  await openTab(page, "class");
   await page.waitForSelector("#board table.board tr", { timeout: 10000 });
 
   /* v6.1: the board opens on the week. Both seeds earned their XP in March,
@@ -411,7 +427,7 @@ async function login(page, username) {
 {
   const { ctx, page } = await fresh();
   await login(page, "barn");
-  await page.click('nav.tabs button[data-view="progress"]');
+  await openTab(page, "progress");
   await page.evaluate(() => document.querySelector('[data-bview="group"]')?.click());
   await new Promise((r) => setTimeout(r, 400));
 
@@ -439,7 +455,7 @@ async function login(page, username) {
   await page.reload({ waitUntil: "domcontentloaded" });
   await startPractice(page, 20000);
   await page.waitForFunction("window.FALLASKOLI.badgeStats !== null", { timeout: 15000 });
-  await page.click('nav.tabs button[data-view="progress"]');
+  await openTab(page, "progress");
   await page.evaluate(() => document.querySelector('[data-bview="group"]')?.click());
   await new Promise((r) => setTimeout(r, 400));
 
@@ -522,7 +538,7 @@ async function login(page, username) {
   ok(made && made.status === "active" && made.consent && made.consent.by === "Foreldri Foreldrisson",
     "the invited child is not in, or the guardian's consent was not recorded");
 
-  await page.click('nav.tabs button[data-view="class"]');
+  await openTab(page, "class");
   await page.waitForSelector("#share-on", { timeout: 8000 });
   const seenBefore = await page.evaluate(() => fetch("/roster").then((r) => r.json()));
   ok(!seenBefore.some((r) => r.name === "Boðsbarn"), "a new user is on the roster without having chosen it");
@@ -531,7 +547,7 @@ async function login(page, username) {
   const seenAfter = await page.evaluate(() => fetch("/roster").then((r) => r.json()));
   ok(seenAfter.some((r) => r.name === "Boðsbarn"), "pressing 'Vera með' did not put the user on the roster");
 
-  await page.click('nav.tabs button[data-view="settings"]');
+  await openTab(page, "settings");
   await page.waitForSelector("#ac-del", { timeout: 8000 });
   ok(await page.$('#account a[href$="/account/export"]') !== null, "no way to fetch one's own data");
   ok(outside.length === 0, "the page asked somebody else for something: " + outside.join(", "));
@@ -579,7 +595,7 @@ async function login(page, username) {
   await app.store.putState(ub.id, blank());
   const A = await fresh(), B = await fresh();
   await login(A.page, "einvigia");
-  await A.page.click('nav.tabs button[data-view="class"]');
+  await openTab(A.page, "class");
   await A.page.waitForSelector("#duelroom .duelform #duelwho", { timeout: 15000 });
   await A.page.select("#duelwho", ub.id);
   await A.page.select("#dueltopic", "nafnord");
@@ -608,7 +624,7 @@ async function login(page, username) {
     await new Promise((r) => setTimeout(r, 800));
     return { sig, n, left: !!app.duelRun };
   }, right);
-  await A.page.click('nav.tabs button[data-view="practice"]');
+  await openTab(A.page, "practice");
   const pa = await play(A.page, 8);
   const pb = await play(B.page, 5);
   ok(pa.n === 10 && pb.n === 10, `the duel has ${pa.n} and ${pb.n} questions, not 10`);
@@ -635,7 +651,7 @@ async function login(page, username) {
 
   await A.page.evaluate(() => window.FALLASKOLI.save(true));
   await new Promise((r) => setTimeout(r, 600));
-  await A.page.click('nav.tabs button[data-view="class"]');
+  await openTab(A.page, "class");
   await A.page.evaluate(() => document.querySelector('[data-metric="duels"]').click());
   await A.page.waitForFunction(() => document.querySelector('[data-metric="duels"]')?.getAttribute("aria-pressed") === "true",
     { timeout: 8000 });

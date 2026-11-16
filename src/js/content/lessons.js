@@ -1055,7 +1055,7 @@ export const LESSONS = [
         "**Þátíð**: aðeins sagnirnar sem beygjast í persónu breytast. *Strákurinn hlær* → *Strákurinn hló*.",
         "**Fleirtala**: frumlagið fer í fleirtölu og allt sem lagar sig að því fylgir: sögnin, lýsingarorð og fornöfn. *Hönd mín er köld* → *Hendur mínar eru kaldar*.",
         "**Þolmynd**: andlagið verður frumlag og fer í nefnifall. Sögnin verður *vera* + lýsingarháttur þátíðar. *Amma bakaði köku* → *Kaka var bökuð (af ömmu)*. Andlag í þágufalli heldur fallinu: *Ég hjálpaði kennaranum* → *Kennaranum var hjálpað*.",
-        "**Orðaröð**: sögnin sem beygist er alltaf **í öðru sæti** í aðalsetningu. Ef annað en frumlagið stendur fremst fer frumlagið aftur fyrir sögnina. *Ég sá hest* → *Í gær sá ég hest*.",
+        "**Orðaröð**: í fullyrðingarsetningu er sögnin sem beygist **í öðru sæti**. Ef annað en frumlagið stendur fremst fer frumlagið aftur fyrir sögnina. *Ég sá hest* → *Í gær sá ég hest*.",
       ] },
       { ex: [
         "Ég **fer** í sund. → Á morgun **fer ég** í sund.",

@@ -462,7 +462,7 @@ export function transformOpener(lex, s, opener = "Í gær") {
     kind: "opener", s, opener,
     instruction: `Byrjaðu setninguna á **${opener} …**`,
     answers: combinations(slots),
-    why: "Í íslenskri aðalsetningu stendur sögnin sem beygist alltaf í öðru sæti. " +
+    why: "Í íslenskri fullyrðingarsetningu er sögnin sem beygist í öðru sæti. " +
       `Þegar *${opener.toLowerCase()}* er komið fremst fer frumlagið aftur fyrir sögnina: ` +
       `*${opener} ${verbs.get(vi).forms[0]} ${subj.map((x) => x[0]).join(" ")}*.` +
       (changes.length ? ` Sögnin fer líka í ${when}: ${verbLine(s, changes)}` : ""),

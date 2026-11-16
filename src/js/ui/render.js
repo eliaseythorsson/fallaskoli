@@ -1090,6 +1090,20 @@ function toggleHunt(t, key) {
   if (inp) { inp.focus(); inp.select(); }
 }
 
+/* The instruction under Villuveiðar. Generated sentences carry a planted case
+   or agreement error, and say so. A hand-banked item (`hunt.source === "bank"`,
+   tasks/malbeiting.js) may hold any kind of error — spelling, word choice,
+   word order — so it must not claim "í falli eða samræmi"; it only says there
+   is something wrong and what to do about it. */
+export function huntHint(t, n) {
+  if (t.hunt.source === "bank")
+    return `Í setningunum ${n === 1 ? "er ein villa" : `eru ${n} villur, ein í hvorri`}. ` +
+      "Finndu orðið sem er rangt, smelltu á það og skrifaðu það rétt.";
+  return `Í setningunum ${n === 1 ? "er ein villa" : `eru ${n} villur, ein í hvorri`} í falli eða samræmi.
+      Smelltu á orðið sem er rangt og skrifaðu það rétt. Ef tvö orð passa ekki saman
+      er nóg að breyta öðru þeirra.`;
+}
+
 RENDER.villur = function (app) {
   const t = app.cur;
   const n = t.hunt.errors;
@@ -1097,9 +1111,7 @@ RENDER.villur = function (app) {
   <div class="card">
     <p class="eyebrow"><span>Villuveiðar</span>${skillTag(t)}<b>þyngd ${t.lvl}</b></p>
     ${huntTextHTML(t)}
-    <p class="gloss">Í setningunum ${n === 1 ? "er ein villa" : `eru ${n} villur, ein í hvorri`} í falli eða samræmi.
-      Smelltu á orðið sem er rangt og skrifaðu það rétt. Ef tvö orð passa ekki saman
-      er nóg að breyta öðru þeirra.</p>
+    <p class="gloss">${huntHint(t, n)}</p>
     <div id="huntedits" class="huntedits"></div>
     <div class="keys" id="keys"></div>
     <div class="answer"><button class="go" id="check">Athuga</button></div>
