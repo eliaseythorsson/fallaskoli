@@ -69,6 +69,10 @@ const browser = await puppeteer.launch({
 
 const PHONE = { name: "390", width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 };
 const DESK = { name: "1280", width: 1280, height: 900, isMobile: false, hasTouch: false, deviceScaleFactor: 1 };
+/* The pointers once more where there is least room: a small phone, and a
+   phone on its side. */
+const SMALL = { name: "360", width: 360, height: 640, isMobile: true, hasTouch: true, deviceScaleFactor: 1 };
+const SIDE = { name: "740x360", width: 740, height: 360, isMobile: true, hasTouch: true, deviceScaleFactor: 1 };
 
 /* The same fixed seed as tools/browser-test.mjs, for the same reason: the
    same questions on every run, so a failure can be met again. */
@@ -623,6 +627,41 @@ for (const s of SKIPS) {
     ok(await page.$("#tour") === null, `${W}: it came back after a reload`);
   } catch (e) {
     problems.push(`${W}: ${e.message}`);
+  }
+  await ctx.close();
+}
+
+/* ============ 2b. the cards and the pointers where there is least room ======== */
+for (const vp of [SMALL, SIDE]) {
+  const W = `[${vp.name}]`;
+  const { ctx, page } = await pupil(vp);
+  try {
+    await page.waitForSelector("#tour .tourcard", { timeout: 8000 });
+    await sleep(350);
+    await noSideways(page, `${W} welcome`);
+    await shot(page, vp, "1-welcome");
+    /* Every control of the welcome can be reached: the card scrolls if it
+       is taller than the window (`clickHandle` scrolls to each, and fails
+       if something lies over it). */
+    ok(await page.evaluate(() => {
+      const sc = document.querySelector("#tour .tourscrim");
+      return sc.scrollHeight <= sc.clientHeight || getComputedStyle(sc).overflowY === "auto";
+    }), `${W} a welcome taller than the window cannot be scrolled`);
+    await click(page, "#tour .touryear.wide");                 // "Ég veit það ekki"
+    await waitCard(page, "Finnum réttan");
+    await sleep(350);
+    await noSideways(page, `${W} introduction`);
+    await click(page, "#tour-pass");
+    for (const id of TOUR_STEPS) {
+      await waitStep(page, id);
+      await pointerOK(page, vp, id);
+      if (id !== "line") await click(page, "#tour-next");
+    }
+    await click(page, "#tour-next");
+    await sleep(200);
+    ok(await tourGone(page) && (await tourRec(page))?.st === "done", `${W} the first run cannot be finished at this size`);
+  } catch (e) {
+    problems.push(`${W} ${e.message}`);
   }
   await ctx.close();
 }

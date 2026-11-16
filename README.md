@@ -77,8 +77,8 @@ What the build does, in order:
    `--accept` records it. This is what stops a parser upgrade from quietly
    changing a grammatical analysis.
 6. `node --test tests/*.test.js`, then `tools/build.mjs` bundles `src/` into
-   the HTML file, then `tools/browser-test.mjs` and `tools/server-test.mjs`
-   drive it in a real Chromium.
+   the HTML file, then `tools/browser-test.mjs`, `tools/tour-test.mjs` (the
+   guided first run) and `tools/server-test.mjs` drive it in a real Chromium.
 
 `node tools/pack.mjs` writes `dist/fallaskoli-v6.12-src.zip` with everything.
 
@@ -168,6 +168,18 @@ src/js/core/examples.js  the worked example on the first card of a type a
                       pupil has not met (item 41; the texts are in
                       content/examples.js, every form checked against BÍN
                       by tests/examples.test.js), and `S.seenTypes`
+src/js/core/placement.js  the guided first run's rules (item 84): the
+                      placement round — 12–15 questions, one skill after
+                      another, one level that goes up after a right answer
+                      and down after a wrong one — the level it then writes
+                      for each skill (`setSkillLevel`, source "placement"),
+                      the year preset it suggests, and `S.tour`, the record
+                      that the first run is done or skipped. ui/tour.js
+                      draws it: the welcome and the year, the round (an
+                      ordinary session on the board), what it found, and
+                      four pointers at Dagsins lota, Lesefni, the skill map
+                      and the slim session line. A pupil with no answers
+                      meets it once; Stillingar has "Sýna kynninguna aftur"
 src/js/core/mix.js    the mix rule for a session: ≥3 kinds of question, none
                       over ~40%, tables ≤30%, analysis ≤35%
 src/js/core/curriculum.js  the curriculum map as data: the official

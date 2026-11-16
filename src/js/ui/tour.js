@@ -80,7 +80,7 @@ export const TEXT = {
     title: "Finnum réttan byrjunarstað",
     lead: (n) => `Nú koma ${n} stuttar spurningar úr ýmsum áttum.`,
     body: "Þetta er ekki próf og þú færð enga einkunn. Þetta er bara til að finna réttan byrjunarstað.",
-    how: "Spurningarnar þyngjast þegar þú svarar rétt og léttast þegar þú svarar rangt. Það er því alveg eðlilegt að kunna ekki allt. Ef þú veist ekki svarið skaltu bara giska og halda áfram.",
+    how: "Spurningarnar verða þyngri þegar þú svarar rétt og léttari þegar þú svarar rangt. Það er því alveg eðlilegt að kunna ekki allt. Ef þú veist ekki svarið skaltu bara giska og halda áfram.",
     go: "Byrja →",
     pass: "Sleppa spurningunum",
     back: "← Til baka",
@@ -226,7 +226,7 @@ export function createTour(app) {
      the screen) or "steps". */
   const fresh = () => ({
     phase: null, replay: false, year: null, yearSaid: false, step: 0, steps: [],
-    result: null, levels0: null, held: [], onHeld: null, demo: false, seen0: null,
+    result: null, levels0: null, held: [], demo: false, seen0: null,
     /* `applied`: the year whose preset this run has set, or null;
        `pendingYear`: the year pressed on the result card, set on the way out. */
     applied: null, pendingYear: null,
@@ -490,7 +490,7 @@ export function createTour(app) {
     /* The badges the answers won wait with the others (see `hold`). */
     const held = app.sess.heldBadges || [];
     app.sess.heldBadges = [];
-    hold([...(r.badges || []), ...held], null);
+    hold([...(r.badges || []), ...held]);
     T.result = result;
     if (mine) noteTour(S, T.replay ? (S.tour ? S.tour.st : "done") : "open",
       { day: todayKey(), placed: result.placed ? 1 : null, year: T.replay ? undefined : T.year });
@@ -610,25 +610,47 @@ export function createTour(app) {
     /* Instantly, not smoothly: the ring is measured in the next frame, and
        nothing should glide for a pupil who asked for no motion. */
     el.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+    /* Where the small board goes: under its element if it fits there, else
+       over it, else beside it (a phone on its side is wide and low). If it
+       fits nowhere — a small phone, an element in the middle of the window —
+       the page is moved once, so the element stands at the top and the
+       board has the rest of the window under it. */
+    let nudged = false;
     const place = () => {
       const t = s.target();
       if (!visible(t) || !tip.isConnected) return;
-      const r = t.getBoundingClientRect();
+      let r = t.getBoundingClientRect();
       const vw = document.documentElement.clientWidth, vh = window.innerHeight;
       const pad = 6, gap = 16;
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      const fits = (q) => ({
+        below: q.bottom + pad + gap + th <= vh - 8,
+        above: q.top - pad - gap - th >= 8,
+        right: q.right + pad + gap + tw <= vw - 8 && th <= vh - 16,
+        left: q.left - pad - gap - tw >= 8 && th <= vh - 16,
+      });
+      let f = fits(r);
+      if (!nudged && !f.below && !f.above && !f.right && !f.left) {
+        nudged = true;
+        window.scrollBy(0, r.top - pad - 8);
+        r = t.getBoundingClientRect();
+        f = fits(r);
+      }
       const left = Math.max(4, r.left - pad), right = Math.min(vw - 4, r.right + pad);
       const top = Math.max(4, r.top - pad), bottom = Math.min(vh - 4, r.bottom + pad);
       Object.assign(ring.style, { left: left + "px", top: top + "px",
         width: Math.max(0, right - left) + "px", height: Math.max(0, bottom - top) + "px" });
-      const tw = tip.offsetWidth, th = tip.offsetHeight;
-      const below = bottom + gap + th <= vh - 8, above = top - gap - th >= 8;
-      const y = below ? bottom + gap : above ? top - gap - th : Math.max(8, vh - th - 8);
-      const cx = (left + right) / 2;
-      const x = Math.max(12, Math.min(vw - tw - 12, cx - tw / 2));
-      Object.assign(tip.style, { left: x + "px", top: Math.max(8, Math.min(vh - th - 8, y)) + "px" });
-      tip.classList.toggle("below", below);
-      tip.classList.toggle("above", !below && above);
+      const side = f.below ? "below" : f.above ? "above" : f.right ? "right" : f.left ? "left" : "";
+      const cx = (left + right) / 2, cy = (top + bottom) / 2;
+      const clampX = (x) => Math.max(12, Math.min(vw - tw - 12, x));
+      const clampY = (y) => Math.max(8, Math.min(vh - th - 8, y));
+      const x = side === "right" ? right + gap : side === "left" ? left - gap - tw : clampX(cx - tw / 2);
+      const y = side === "below" ? bottom + gap : side === "above" ? top - gap - th
+        : side ? clampY(cy - th / 2) : clampY(vh);
+      Object.assign(tip.style, { left: x + "px", top: clampY(y) + "px" });
+      for (const c of ["below", "above", "right", "left"]) tip.classList.toggle(c, c === side);
       tip.style.setProperty("--ax", Math.max(22, Math.min(tw - 22, cx - x)) + "px");
+      tip.style.setProperty("--ay", Math.max(22, Math.min(th - 22, cy - clampY(y))) + "px");
     };
     place();
     requestAnimationFrame(place);
@@ -658,11 +680,10 @@ export function createTour(app) {
   }
 
   /** ui/dom.js `setBadgeGate`: taken, while the tour is on the screen. */
-  function hold(list, onClose) {
+  function hold(list) {
     heal();
     if (!T.phase) return false;
     for (const b of list || []) if (b && !T.held.some((x) => x.id === b.id)) T.held.push(b);
-    if (onClose) T.onHeld = onClose;
     return true;
   }
 

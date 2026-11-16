@@ -75,6 +75,12 @@ set +e; node tools/browser-test.mjs; RC=$?; set -e
 if [ "$RC" = "2" ]; then echo "  (skipped: no Chromium — set CHROME_PATH)"
 elif [ "$RC" != "0" ]; then echo "  THE BROWSER TEST FAILED (code $RC)."; exit "$RC"; fi
 
+# The guided first run (item 84) has a test of its own: the browser test
+# above starts from a new pupil hundreds of times to check other things.
+set +e; node tools/tour-test.mjs; RC=$?; set -e
+if [ "$RC" = "2" ]; then echo "  (skipped: no Chromium — set CHROME_PATH)"
+elif [ "$RC" != "0" ]; then echo "  THE FIRST-RUN TEST FAILED (code $RC)."; exit "$RC"; fi
+
 echo "── 8. the server and the app together ──────────────────────────────"
 set +e; node tools/server-test.mjs; RC=$?; set -e
 if [ "$RC" = "2" ]; then echo "  (skipped: no Chromium — set CHROME_PATH)"

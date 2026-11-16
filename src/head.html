@@ -1577,7 +1577,7 @@ table.classpat td.cpcell.unread{background:var(--paper-2);color:var(--slate)}
 .tourshade{position:fixed;top:0;right:0;bottom:0;left:0;inset:0}
 .tourring{position:fixed;pointer-events:none;border:2px dashed var(--chalk-yellow);border-radius:10px;
   box-shadow:0 0 0 200vmax rgba(15,23,32,.6);transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease}
-.tourring::after{content:"";position:absolute;top:-7px;right:-7px;bottom:-7px;left:-7px;inset:-7px;border:2px solid rgba(242,217,107,.55);
+.tourring::after{content:"";position:absolute;top:-7px;right:-7px;bottom:-7px;left:-7px;border:2px solid rgba(242,217,107,.55);
   border-radius:15px;animation:tourpulse 1.9s ease-in-out infinite}
 @keyframes tourpulse{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:.9;transform:scale(1.015)}}
 .tourtip.blackboard{position:fixed;left:12px;top:12px;width:min(400px,calc(100vw - 24px));margin:0;padding:14px 18px 12px;
@@ -1595,6 +1595,18 @@ table.classpat td.cpcell.unread{background:var(--paper-2);color:var(--slate)}
   transform:rotate(45deg);display:none}
 .tourtip.below .tourarrow{display:block;top:-15px}
 .tourtip.above .tourarrow{display:block;bottom:-15px}
+.tourtip.right .tourarrow,.tourtip.left .tourarrow{display:block;top:var(--ay,50%);margin:-9px 0 0}
+.tourtip.right .tourarrow{left:-15px}
+.tourtip.left .tourarrow{left:auto;right:-15px}
+/* A low window (a phone on its side): the same board, set tighter. */
+@media (max-height:480px){
+  .tourtip.blackboard{padding:10px 14px 8px;border-width:5px}
+  .tourtip h2{font-size:18px;margin-bottom:3px}
+  .tourtip .tourtext{font-size:14px;line-height:1.45}
+  .tourtip .touractions{margin-top:9px}
+  .tourtip .tourskip{margin-top:2px;min-height:36px;padding:6px}
+  .toureyebrow{margin-bottom:3px}
+}
 @media (max-width:600px){
   .tourscrim{padding:14px 10px 40px}
   .tourcard.blackboard{padding:20px 18px 20px;border-width:7px}
