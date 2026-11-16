@@ -64,8 +64,11 @@ export function nounCloze(lex, view, rng, { noun = null, only = null, balanced =
     const odds = (weigh ? CASE_ODDS[a.fall] : 1) * ease;
     if (odds < 1 && rng() >= odds) continue;
     const open = substitutable(s);
-    /* A drill wants its own word, so a sentence with its noun fixed is no use. */
-    if (drilling(view) && !open) continue;
+    /* A drill wants its own word, so a sentence with its noun fixed is no
+       use — nor is it to the word asked again after a wrong answer: the
+       sentence's own noun would be asked instead, the word let go, and the
+       pupil never asked it again. */
+    if ((drilling(view) || noun) && !open) continue;
     if (noun && open) {
       /* The same word again after a wrong answer — but only in a sentence
          that accepts it. */
