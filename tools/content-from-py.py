@@ -124,6 +124,9 @@ class Source:
 # ---------------------------------------------------------------- cells
 
 def cell(kind, v):
+    if ":" in kind:
+        kind, n = kind.split(":")
+        assert all(len(t) == int(n) for t in ([v] if kind == "word" else v)), (kind, n, v)
     def ok(s):
         s = str(s)
         assert "\t" not in s and "\n" not in s, s

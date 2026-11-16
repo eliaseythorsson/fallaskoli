@@ -29,8 +29,10 @@ Field types (what a column's cells are turned into):
   opt     text, or None when the field is empty
   bool    "já" or "nei"
   flag    "já", or empty for no
-  word    lemma|class|mark — a tuple of the parts between the bars
+  word    lemma|class|mark — a tuple of the parts between the bars;
+          "word:3" also checks that there are exactly three parts
   words   several of those, separated by commas: a list of tuples
+          ("words:2": each of exactly two parts)
   list    words or phrases separated by commas: a list of strings;
           "(ekkert)" stands for an empty phrase ("nothing follows the blank")
   ints    whole numbers separated by commas
@@ -61,13 +63,24 @@ class Row(dict):
             raise AttributeError(k)
 
 
-def _split(cell):
+def split_list(cell):
+    """"a, b, c" -> ["a", "b", "c"]; an empty cell is an empty list."""
     return [x.strip() for x in cell.split(",")] if cell.strip() else []
+
+
+_split = split_list
 
 
 def _parse(kind, cell, where):
     def bad(why):
         raise ContentError("%s: %s (%r)" % (where, why, cell))
+    if ":" in kind:                                   # word:3, words:2
+        kind, n = kind.split(":")
+        v = _parse(kind, cell, where)
+        for t in ([v] if kind == "word" else v):
+            if len(t) != int(n):
+                bad("á að vera %s hlutar aðskildir með | / expected %s parts separated by |" % (n, n))
+        return v
     if kind == "int":
         try:
             return int(cell)

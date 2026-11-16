@@ -1,6 +1,15 @@
 """Hand-written exercise items for the question types added in v6.11.
 
-Nothing here is an inflected form. Every word a question ASKS about — the
+WHERE THE ITEMS ARE (critique item 82)
+--------------------------------------
+The items themselves are in content/<category>/*.tsv, one item per line,
+so that a teacher or a native reader can read and edit them in a text
+editor or a spreadsheet; each file's header explains its columns in
+Icelandic. This module reads those files (content_io.py) and gives
+build_exercises.py exactly the lists it always had, under the same names.
+What stays here is the format, the rules below, and what is not content.
+
+Nothing in the items is an inflected form. Every word a question ASKS about — the
 answer, the options, the cue in brackets — is written as a BÍN lemma, a word
 class and a BÍN mark, and `build_exercises.py` looks the form up in BÍN. The
 sentences around the blank are checked word by word against BÍN too; the
@@ -8,9 +17,10 @@ build stops if one of them is not there.
 
     ___                  the blank
     {lemma|cls|MARK}     a word in the sentence, inflected by BÍN
-    a=(lemma, cls, MARK) the answer
+    lemma|cls|MARK       in a file's column: a word asked about (the answer,
+                         an option), the (lemma, cls, MARK) of the lists
 
-One table is written the other way round: HUNT, at the end, the bank of real
+One table is written the other way round: HUNT (villuveidar/villur.tsv), the bank of real
 errors for Villuveiðar. There the corrected word stands in the sentence as it
 is read, with its lemma, class and mark beside it, and the build refuses the
 item unless BÍN gives exactly that form — so a person can read the bank as
@@ -22,7 +32,7 @@ við = ég FT, þið = þú FT, þeir/þær/þau = hann/hún/það FT.
 
 LEVELS (v6.13, critique item 13)
 --------------------------------
-Every item in the lists below opens with its level, þyngd 1-5, and the
+Every item in the files opens with its level, þyngd 1-5, and the
 builders ask the items near the pupil's difficulty first (tasks/shared.js
 `nearBand`: the band and the level below it, widening a step at a time when
 too few are left). Until v6.13 these question types built the same questions
@@ -50,6 +60,42 @@ part of this. SYNONYMS and ANTONYMS are words, not items: their difficulty is
 how rare the words are, and the build reads that from the frequency list
 (`r`, tasks/shared.js `pickVocab`) rather than from a hand-written number.
 """
+
+# ---------------------------------------------------------------- reading content/
+#
+# The lists below are read from content/**/*.tsv (critique item 82), where a
+# teacher or a native reader can read and edit them without reading Python;
+# each file's header says, in Icelandic, what its columns hold. What stays
+# here is what is not content: the closed grammatical tables (ordinals,
+# months, the plural-only numerals, multi-word conjunctions) and the few
+# switches the builders read.
+import content_io as _C
+
+
+def _table(rel, cols):
+    """content/<rel>: one tuple per line, its columns in order."""
+    return [tuple(r[n] for n, _ in cols) for r in _C.rows(rel, cols)]
+
+
+def _column(rel, col):
+    """content/<rel> with a single column: the list of its values."""
+    return [r[col[0]] for r in _C.rows(rel, [col])]
+
+
+def _dict(rel, cols):
+    """content/<rel> as {first column: second column}, in the file's order."""
+    out = {}
+    for r in _C.rows(rel, cols):
+        k = r[cols[0][0]]
+        if k in out:
+            raise _C.ContentError("%s:%d: „%s“ kemur tvisvar fyrir / appears twice" % (r.file, r.line, k))
+        out[k] = r[cols[1][0]]
+    return out
+
+
+def _bad(r, why):
+    raise _C.ContentError("%s:%d: %s" % (r.file, r.line, why))
+
 
 # ---------------------------------------------------------------- Lýsingarorð
 
@@ -1389,366 +1435,41 @@ SORT_SKIP = {"ríða", "byssa", "guð", "almáttugur", "gær", "konar", "öllsö
              "fremja", "deyja", "eyðileggja", "náungi", "sundur", "frammi", "mis", "margur",
              "hve", "samstundis", "sömuleiðis", "skulu", "hljóta"}
 
-
 # ---------------------------------------------------------------- Villuveiðar
-#
-# HUNT: the errors Icelandic teenagers actually make (critique item 26).
-#
-# The generated error hunt breaks a case or an agreement at random, and much
-# of what it makes no native speaker would say (*Stelpan hlaupa*, *Ég borðum*).
-# This bank is the other kind: one sentence, natural and correct apart from ONE
-# well-known slip, with the correction and a short explanation a 13-year-old
-# can read. tasks/malbeiting.js serves it from þyngd 3; the generated kind is
-# kept for þyngd 1–2 and for pupils with Icelandic as a second language.
-#
-#     H(band, sentence, wrong, spec, why, patterns, **checks)
-#
-#   band      3, 4 or 5 — the þyngd from which the item is asked
-#   sentence  the CORRECT sentence, with the word (or two) that is made wrong
-#             in [square brackets]
-#   wrong     what the pupil is shown in its place. A leading * says the form
-#             is not standard Icelandic at all (*læknirar, *talva): the build
-#             then requires that BÍN does NOT list it as a standard form of
-#             the word. Without the star every word of it must be a standard
-#             BÍN form — the right word in the wrong cell (mér, drottningu),
-#             or another word altogether (tíndi for týndi, af for að).
-#   spec      (lemma, class, mark) for each word inside the brackets, in order.
-#             The build looks the form up in BÍN and stops unless it is
-#             exactly the word written in the sentence. For a word that does
-#             not inflect the mark is "" and only the class is checked.
-#   why       the explanation, in Icelandic. Several of these are matters of
-#             the written norm rather than "wrong Icelandic"; those say
-#             "í vönduðu máli" and do not call the other form an error.
-#   patterns  ids from core/diagnosis.js PATTERNS, comma-separated; "" where
-#             none fits (a miss is then counted as unread, which is honest).
-#   checks    op=(verb, "ÞF")   BÍN lists the verb as impersonal with a subject
-#                               in that case, and not in the dative
-#             nf="hlakka"       BÍN does NOT list the verb with an oblique subject
-#             gov=(word, "ef")  government.py: the verb or preposition governs
-#                               that case and no other
-#             also=["ennþá"]    other single words that put the sentence right
-#             parse=False       Greynir is known not to parse this (correct)
-#                               sentence: it does not read a verb with -tu
-#                               merged into it (*viltu, máttu, komstu*) nor
-#                               *hvor öðrum*. Every other corrected sentence
-#                               must parse.
-#
-# One error per sentence, and one way to mend it. Items whose natural
-# correction would change two separate words are left out; where the
-# correction moves a word (*við hvorn* → *hvor við*) the two words are one
-# unit in the brackets.
 
+# HUNT: the errors Icelandic teenagers actually make (critique item 26), one
+# sentence per line of content/villuveidar/villur.tsv. The file's header says
+# what each column holds and what the build checks; build_exercises.py looks
+# every word inside the [brackets] up in BÍN. H() makes the item of one line
+# (and is what tests/hunt-bank.test.js builds its bad items with).
 def H(band, t, wrong, spec, why, patterns="", **checks):
     return dict(band=band, t=t, wrong=wrong, spec=[spec] if isinstance(spec, tuple) else spec,
                 why=why, p=[x for x in patterns.split(",") if x], **checks)
 
-_LANGA = "Sögnin *langa* tekur frumlag í **þolfalli**, ekki þágufalli: *mig langar*, *þig langar*, *hana langar*."
-_VANTA = "Sögnin *vanta* tekur frumlag í **þolfalli**, ekki þágufalli: *mig vantar*, *þig vantar*, *hann vantar*."
-_DREYMA = "Sögnin *dreyma* tekur frumlag í **þolfalli**: *mig dreymdi*, *hana dreymdi*."
-_HLAKKA = ("*Hlakka til* tekur frumlag í **nefnifalli** og sögnin lagar sig að því: "
-           "*ég hlakka til*, *hann hlakkar til*, *við hlökkum til*.")
-_VIL = "Með *ég* er sögnin *vil*, ekki *vill*: *ég vil*, *þú vilt*, *hann vill*."
-_ING = "Kvenkynsorð sem enda á *-ing* fá *-ar* í eignarfalli eintölu"
-def _ef(example):
-    return ("Á eftir *ef* er notaður **framsöguháttur** þegar talað er um það sem getur vel gerst: "
-            f"*{example}*. Viðtengingarháttur þátíðar á við um það sem er ekki raunverulegt: "
-            "*ef veðrið væri gott*.")
-_THOTT = "Á eftir *þótt* og *þó að* stendur **viðtengingarháttur**: *þótt það væri rigning*, *þó að hún sé lasin*."
-_HVOR = ("Í vönduðu máli beygjast *hvor* og *annar* ekki saman. *Hvor* stendur í sama falli og frumlagið "
-         "(hér nefnifalli) en *annar* tekur fallið sem sögnin stýrir")
-_HVOR_FS = ("Í vönduðu máli stendur *hvor* á undan forsetningunni, í sama falli og frumlagið, "
-            "en *annar* tekur fallið sem forsetningin stýrir")
-_NY = ("Þessi orðaröð er kölluð nýja þolmyndin. Hún heyrist oft í talmáli en er ekki notuð í vönduðu ritmáli.")
-_FLT = ("Með fleirtöluorðum eru notuð töluorðin *einir, tvennir, þrennir, fernir* "
-        "í stað *einn, tveir, þrír, fjórir*")
-_LAEKNIR = "*-ir* í *læknir* er ending nefnifallsins, ekki hluti af stofninum, og dettur út í beygingu"
-_FOTUR = "*Fótur* er karlkynsorð: *fæturnir* (nefnifall) og *fæturna* (þolfall). Endingin *-nar* er kvenkyn (*hendurnar*)."
-_TOLVA = ("Orðið er alltaf með *ö*: *tölva – tölvu – tölvan – tölvur*. "
-          "Það er búið til úr orðunum *tala* og *völva*.")
-_HOND = "*Hönd* beygist: *hönd – hönd – hendi – handar*. *Hendi* er aðeins þágufall eintölu: *í hendinni*."
-_FRAENDSEMI = "er aðeins nefnifall. Í hinum föllunum þremur er"
-_HVORT = ("Óbein spurning hefst á *hvort*, ekki *ef*: *ég veit ekki hvort hún kemur*. "
-          "*Ef* táknar skilyrði: *ég kem ef ég get*.")
-_FYRST = ("*Fyrst* þýðir hér „úr því að“. *Víst* þýðir „áreiðanlega“ eða „jú“: *hann kemur víst á morgun*.")
-_HVORKI = "*Hvorki* og *né* fylgjast að: *hvorki … né*. *Eða* fylgir *annaðhvort*: *annaðhvort … eða*."
-_INN_KK = "Lýsingarorð sem enda á *-inn* hafa **tvö n** í karlkyni og **eitt n** í kvenkyni"
-_BLANDAD = ("Þegar talað er um karl og konu saman er notað **hvorugkyn fleirtölu**: *þau eru")
-_EINHVER = ("Fornafnið er *einhver*: *einhver – einhvern – einhverjum – einhverjir*. "
-            "*Eitt-* er aðeins í hvorugkyni eintölu: *eitthvað, eitthvert*.")
 
-HUNT = [
-    # ---- þágufallssýki: frumlag ópersónulegra sagna (og nefnifall með hlakka, kvíða)
-    H(3, "[Mig] langar í nýjan síma.", "Mér", ("ég", "pfn", "ÞFET"), _LANGA, "opersonuleg", op=("langa", "ÞF")),
-    H(3, "[Mig] vantar blýant og strokleður.", "Mér", ("ég", "pfn", "ÞFET"), _VANTA, "opersonuleg", op=("vanta", "ÞF")),
-    H(3, "[Hana] langar að fara í sund eftir skóla.", "Henni", ("hún", "pfn", "ÞFET"), _LANGA, "opersonuleg", op=("langa", "ÞF")),
-    H(3, "[Hann] vantar nýja fótboltaskó.", "Honum", ("hann", "pfn", "ÞFET"), _VANTA, "opersonuleg", op=("vanta", "ÞF")),
-    H(3, "[Þig] vantar bara meiri æfingu.", "Þér", ("þú", "pfn", "ÞFET"), _VANTA, "opersonuleg", op=("vanta", "ÞF")),
-    H(4, "[Mig] dreymdi skrýtinn draum í nótt.", "Mér", ("ég", "pfn", "ÞFET"), _DREYMA, "opersonuleg", op=("dreyma", "ÞF")),
-    H(4, "[Mig] minnir að prófið sé á föstudaginn.", "Mér", ("ég", "pfn", "ÞFET"),
-      "*Mig minnir* (ég held að ég muni það rétt): frumlagið er í **þolfalli**, ekki þágufalli.",
-      "opersonuleg", op=("minna", "ÞF")),
-    H(4, "[Mig] grunar að hann hafi gleymt þessu.", "Mér", ("ég", "pfn", "ÞFET"),
-      "Sögnin *gruna* tekur frumlag í **þolfalli**: *mig grunar*, *hana grunar*.", "opersonuleg", op=("gruna", "ÞF")),
-    H(4, "[Mig] klæjar í nefið.", "Mér", ("ég", "pfn", "ÞFET"),
-      "Sögnin *klæja* tekur frumlag í **þolfalli**: *mig klæjar*, *hann klæjar*.", "opersonuleg", op=("klæja", "ÞF")),
-    H(4, "[Strákana] langar að spila fótbolta í frímínútunum.", "Strákunum", ("strákur", "kk", "ÞFFTgr"),
-      _LANGA + " Það á líka við um nafnorð: *strákana langar*.", "opersonuleg", op=("langa", "ÞF")),
-    H(4, "[Krakkana] vantar fleiri bolta.", "Krökkunum", ("krakki", "kk", "ÞFFTgr"),
-      _VANTA + " Það á líka við um nafnorð: *krakkana vantar*.", "opersonuleg", op=("vanta", "ÞF")),
-    H(4, "[Stelpuna] langaði mest í ís.", "Stelpunni", ("stelpa", "kvk", "ÞFETgr"),
-      _LANGA + " Það á líka við um nafnorð: *stelpuna langaði*.", "opersonuleg", op=("langa", "ÞF")),
-    H(4, "[Hann] hlakkar mikið til jólanna.", "Honum", ("hann", "pfn", "NFET"), _HLAKKA, "opersonuleg", nf="hlakka"),
-    H(4, "[Hún] kvíðir fyrir prófinu á morgun.", "Henni", ("hún", "pfn", "NFET"),
-      "*Kvíða fyrir* tekur frumlag í **nefnifalli**: *ég kvíði fyrir*, *hún kvíðir fyrir*.", "opersonuleg", nf="kvíða"),
-    H(4, "[Ég hlakka] til sumarsins.", "Mér hlakkar", [("ég", "pfn", "NFET"), ("hlakka", "so", "GM-FH-NT-1P-ET")],
-      _HLAKKA, "opersonuleg", nf="hlakka"),
-    H(4, "[Ég hlakka] svo til að fara í ferðalagið.", "Mig hlakkar", [("ég", "pfn", "NFET"), ("hlakka", "so", "GM-FH-NT-1P-ET")],
-      _HLAKKA, "opersonuleg", nf="hlakka"),
-    H(5, "[Mig] syfjar alltaf eftir matinn.", "Mér", ("ég", "pfn", "ÞFET"),
-      "Sögnin *syfja* tekur frumlag í **þolfalli**: *mig syfjar*, *hana syfjar*.", "opersonuleg", op=("syfja", "ÞF")),
-    H(5, "[Hana] dreymdi að hún gæti flogið.", "Henni", ("hún", "pfn", "ÞFET"), _DREYMA, "opersonuleg", op=("dreyma", "ÞF")),
+def _hunt():
+    out = []
+    for r in _C.rows("villuveidar/villur.tsv", [
+            ("þyngd", "int"), ("setning", "text"), ("villa", "text"), ("orð", "words:3"),
+            ("skýring", "text"), ("mynstur", "str"), ("ópersónuleg", "str"), ("nefnifall", "str"),
+            ("fallstjórn", "str"), ("líka rétt", "list"), ("greinist", "str")]):
+        checks = {}
+        for col, key in (("ópersónuleg", "op"), ("fallstjórn", "gov")):
+            if r[col]:
+                pair = tuple(r[col].split("|"))
+                if len(pair) != 2:
+                    _bad(r, "„%s“ á að vera orð|fall / expected word|case" % col)
+                checks[key] = pair
+        if r["nefnifall"]:
+            checks["nf"] = r["nefnifall"]
+        if r["líka rétt"]:
+            checks["also"] = r["líka rétt"]
+        if r["greinist"] not in ("", "nei"):
+            _bad(r, "„greinist“ á að vera „nei“ eða autt / expected nei or nothing")
+        if r["greinist"] == "nei":
+            checks["parse"] = False
+        out.append(H(r["þyngd"], r["setning"], r["villa"], r["orð"], r["skýring"], r["mynstur"], **checks))
+    return out
 
-    # ---- ég vill
-    H(3, "Ég [vil] fá að vita svarið.", "vill", ("vilja", "so", "GM-FH-NT-1P-ET"), _VIL, "sogn_frumlag"),
-    H(3, "Ég [vil] ekki fara heim strax.", "vill", ("vilja", "so", "GM-FH-NT-1P-ET"), _VIL, "sogn_frumlag"),
-    H(4, "Mamma veit að ég [vil] frekar vera heima.", "vill", ("vilja", "so", "GM-FH-NT-1P-ET"), _VIL, "sogn_frumlag"),
 
-    # ---- eignarfall á eftir forsetningum og sögnum
-    H(4, "Kóngurinn sendi bréf til [drottningar] Danmerkur.", "drottningu", ("drottning", "kvk", "EFET"),
-      "*Til* stýrir **eignarfalli**. " + _ING + ": *drottning – til drottningar*.", "ef,fallstjorn_fs", gov=("til", "ef")),
-    H(4, "Gatan var breikkuð vegna [aukningar] á umferð.", "aukningu", ("aukning", "kvk", "EFET"),
-      "*Vegna* stýrir **eignarfalli**. " + _ING + ": *aukning – vegna aukningar*.", "ef,fallstjorn_fs", gov=("vegna", "ef")),
-    H(4, "Leiknum var frestað vegna [rigningar].", "rigningu", ("rigning", "kvk", "EFET"),
-      "*Vegna* stýrir **eignarfalli**. " + _ING + ": *rigning – vegna rigningar*.", "ef,fallstjorn_fs", gov=("vegna", "ef")),
-    H(4, "Ég missti af myndinni vegna [æfingarinnar].", "*æfingunnar", ("æfing", "kvk", "EFETgr"),
-      "*Vegna* stýrir **eignarfalli**: *æfing – æfingar – æfingarinnar*. *Æfingunnar* er ekki rétt beygingarmynd.",
-      "ef,fallstjorn_fs", gov=("vegna", "ef")),
-    H(4, "Skólinn þarf fleiri stofur vegna [fjölgunar] nemenda.", "fjölgun", ("fjölgun", "kvk", "EFET"),
-      "*Vegna* stýrir **eignarfalli**. Orð sem enda á *-un* fá *-unar* í eignarfalli: *fjölgun – vegna fjölgunar*.",
-      "ef,fallstjorn_fs", gov=("vegna", "ef")),
-    H(4, "Skólanum var lokað vegna [bilunar] í hitakerfinu.", "bilun", ("bilun", "kvk", "EFET"),
-      "*Vegna* stýrir **eignarfalli**. Orð sem enda á *-un* fá *-unar* í eignarfalli: *bilun – vegna bilunar*.",
-      "ef,fallstjorn_fs", gov=("vegna", "ef")),
-    H(4, "Við komumst ekki til [Akureyrar] vegna veðurs.", "Akureyri", ("Akureyri", "kvk", "EFET"),
-      "*Til* stýrir **eignarfalli**: *Akureyri – til Akureyrar*.", "ef,fallstjorn_fs", gov=("til", "ef")),
-    H(4, "Hún gerði þetta allt án [hjálpar].", "hjálp", ("hjálp", "kvk", "EFET"),
-      "*Án* stýrir **eignarfalli**: *hjálp – án hjálpar*.", "ef,fallstjorn_fs", gov=("án", "ef")),
-    H(5, "Hún fór til [læknis] í morgun.", "*læknirs", ("læknir", "kk", "EFET"),
-      "*Til* stýrir eignarfalli. " + _LAEKNIR + ": *læknir – lækni – lækni – læknis*.", "ending,ef", gov=("til", "ef")),
-    H(4, "Ég sakna [þín] mjög mikið.", "þig", ("þú", "pfn", "EFET"),
-      "Sögnin *sakna* stýrir **eignarfalli**: *ég sakna þín*, *hún saknar hans*.", "ef,fallstjorn_so", gov=("sakna", "ef")),
-    H(4, "Hún saknar [hans] á hverjum degi.", "hann", ("hann", "pfn", "EFET"),
-      "Sögnin *sakna* stýrir **eignarfalli**: *ég sakna þín*, *hún saknar hans*.", "ef,fallstjorn_so", gov=("sakna", "ef")),
-
-    # ---- háttur: ef + framsöguháttur; þótt, vona að, halda að, vilja að + viðtengingarháttur
-    H(4, "Ég kem á morgun ef ég [hef] tíma.", "hafi", ("hafa", "so", "GM-FH-NT-1P-ET"), _ef("ef ég hef tíma"), "hattur"),
-    H(4, "Við förum í fjallgöngu ef veðrið [er] gott.", "sé", ("vera", "so", "GM-FH-NT-3P-ET"), _ef("ef veðrið er gott"), "hattur"),
-    H(4, "Láttu mig vita ef hann [kemur] ekki.", "komi", ("koma", "so", "GM-FH-NT-3P-ET"), _ef("ef hann kemur ekki"), "hattur"),
-    H(5, "Ef þú [vilt] get ég hjálpað þér.", "viljir", ("vilja", "so", "GM-FH-NT-2P-ET"), _ef("ef þú vilt"), "hattur"),
-    H(4, "Hann fór út að hjóla þótt það [væri] rigning.", "var", ("vera", "so", "GM-VH-ÞT-3P-ET"), _THOTT, "hattur"),
-    H(4, "Hún mætti í skólann þó að hún [væri] lasin.", "var", ("vera", "so", "GM-VH-ÞT-3P-ET"), _THOTT, "hattur"),
-    H(4, "Ég vona að þú [komir] í afmælið mitt.", "kemur", ("koma", "so", "GM-VH-NT-2P-ET"),
-      "Á eftir *vona að* stendur **viðtengingarháttur**, því að þetta er ósk en ekki staðreynd: *ég vona að þú komir*.",
-      "hattur"),
-    H(4, "Ég held að hann [sé] heima.", "er", ("vera", "so", "GM-VH-NT-3P-ET"),
-      "Á eftir *halda að* stendur **viðtengingarháttur**, því að þetta er skoðun en ekki vissa: "
-      "*ég held að hann sé heima*. En: *ég veit að hann er heima*.", "hattur"),
-    H(5, "Mamma vill að ég [taki] til í herberginu.", "tek", ("taka", "so", "GM-VH-NT-1P-ET"),
-      "Á eftir *vilja að* stendur **viðtengingarháttur**: *hún vill að ég taki til*.", "hattur"),
-
-    # ---- hvor annar, hvor og hvorugur
-    H(5, "Jón og Gunnar hjálpuðu [hvor] öðrum með verkefnið.", "hvorum", ("hvor", "fn", "KK-NFET"),
-      _HVOR + ": *þeir hjálpuðu hvor öðrum*.", "hvor", parse=False),
-    H(5, "Anna og Sigga sakna [hvor] annarrar.", "hvorrar", ("hvor", "fn", "KVK-NFET"),
-      _HVOR + ": *þær sakna hvor annarrar*.", "hvor", parse=False),
-    H(5, "Vinirnir tveir treysta [hvor] öðrum.", "hvorum", ("hvor", "fn", "KK-NFET"),
-      _HVOR + ": *þeir treysta hvor öðrum*.", "hvor", parse=False),
-    H(5, "Tvíburarnir töluðu [hvor við] annan allt kvöldið.", "við hvorn", [("hvor", "fn", "KK-NFET"), ("við", "fs", "")],
-      _HVOR_FS + ": *þeir töluðu hvor við annan*.", "hvor"),
-    H(5, "Systurnar tvær horfðu [hvor á] aðra og hlógu.", "á hvora", [("hvor", "fn", "KVK-NFET"), ("á", "fs", "")],
-      _HVOR_FS + ": *þær horfðu hvor á aðra*.", "hvor"),
-    H(5, "[Hvor] ykkar tveggja á þessa úlpu?", "Hver", ("hvor", "fn", "KK-NFET"),
-      "Þegar valið er á milli **tveggja** er í vönduðu máli notað *hvor*; *hver* er notað um þrjá eða fleiri.", "hvor"),
-    H(5, "[Hvorugur] strákanna mundi eftir lyklunum.", "Hvorugt", ("hvorugur", "fn", "KK-NFET"),
-      "*Hvorugur* lagar sig að kyni þeirra sem talað er um: *hvorugur strákanna*, *hvorug stelpnanna*, *hvorugt barnanna*.",
-      "hvor,kyn_samraemi"),
-    H(5, "Hvorugur þeirra [vildi] byrja.", "vildu", ("vilja", "so", "GM-FH-ÞT-3P-ET"),
-      "*Hvorugur* er eintala þótt talað sé um tvo, og sögnin lagar sig að því: *hvorugur þeirra vildi*.",
-      "hvor,sogn_frumlag"),
-    H(5, "Hvorugt liðið [skoraði] í fyrri hálfleik.", "skoruðu", ("skora", "so", "GM-FH-ÞT-3P-ET"),
-      "*Hvorugt liðið* er eintala þótt talað sé um tvö lið, og sögnin lagar sig að því: *hvorugt liðið skoraði*.",
-      "hvor,sogn_frumlag"),
-
-    # ---- nýja þolmyndin
-    H(5, "Í gær var [henni strítt] í skólanum.", "strítt henni", [("hún", "pfn", "ÞGFET"), ("stríða", "so", "GM-SAGNB")],
-      "Í vönduðu máli stendur fornafnið á undan lýsingarhættinum: *Í gær var henni strítt* eða *Henni var strítt í gær*. " + _NY,
-      "tholmynd"),
-    H(5, "Um kvöldið var [mér boðið] í mat hjá ömmu.", "boðið mér", [("ég", "pfn", "ÞGFET"), ("bjóða", "so", "LHÞT-SB-HK-NFET")],
-      "Í vönduðu máli stendur fornafnið á undan lýsingarhættinum: *Um kvöldið var mér boðið* eða *Mér var boðið*. " + _NY,
-      "tholmynd"),
-    H(5, "Svo var [okkur sagt] að bíða fyrir utan.", "sagt okkur", [("ég", "pfn", "ÞGFFT"), ("segja", "so", "LHÞT-SB-HK-NFET")],
-      "Í vönduðu máli stendur fornafnið á undan lýsingarhættinum: *Svo var okkur sagt* eða *Okkur var sagt*. " + _NY,
-      "tholmynd"),
-    H(5, "Eftir leikinn var [honum hrósað] fyrir markið.", "hrósað honum", [("hann", "pfn", "ÞGFET"), ("hrósa", "so", "GM-SAGNB")],
-      "Í vönduðu máli stendur fornafnið á undan lýsingarhættinum: *Eftir leikinn var honum hrósað* eða *Honum var hrósað*. " + _NY,
-      "tholmynd"),
-    H(5, "Í morgun var [hún skömmuð] fyrir að koma of seint.", "skammað hana", [("hún", "pfn", "NFET"), ("skamma", "so", "LHÞT-SB-KVK-NFET")],
-      "Í þolmynd verður andlagið (*hana*) að frumlagi í nefnifalli og lýsingarhátturinn lagar sig að því: "
-      "*hún var skömmuð*. *Það var skammað hana* er kallað nýja þolmyndin; hún heyrist oft í talmáli "
-      "en er ekki notuð í vönduðu ritmáli.", "tholmynd"),
-
-    # ---- töluorð með fleirtöluorðum
-    H(4, "Ég keypti [tvennar] buxur á útsölunni.", "tvær", ("tvennur", "lo", "FSB-KVK-ÞFFT"),
-      "*Buxur* er fleirtöluorð: það er aðeins til í fleirtölu. " + _FLT + ": *tvennar buxur*.", "fleirtoluord"),
-    H(4, "Á ganginum eru [þrennar] dyr.", "þrjár", ("þrennur", "lo", "FSB-KVK-NFFT"),
-      "*Dyr* er fleirtöluorð: það er aðeins til í fleirtölu. " + _FLT + ": *þrennar dyr*.", "fleirtoluord"),
-    H(4, "Amma á [tvenn] gleraugu.", "tvö", ("tvennur", "lo", "FSB-HK-ÞFFT"),
-      "*Gleraugu* er fleirtöluorð: það er aðeins til í fleirtölu. " + _FLT + ": *tvenn gleraugu*.", "fleirtoluord"),
-    H(4, "Í skúffunni eru [tvenn] skæri.", "tvö", ("tvennur", "lo", "FSB-HK-NFFT"),
-      "*Skæri* er fleirtöluorð: það er aðeins til í fleirtölu. " + _FLT + ": *tvenn skæri*.", "fleirtoluord"),
-    H(5, "Hljómsveitin hélt [tvenna] tónleika um helgina.", "tvo", ("tvennur", "lo", "FSB-KK-ÞFFT"),
-      "*Tónleikar* er fleirtöluorð: það er aðeins til í fleirtölu. " + _FLT + ": *tvennir tónleikar*, *tvenna tónleika*.",
-      "fleirtoluord"),
-    H(5, "Liðið vann [þrenn] verðlaun á mótinu.", "þrjú", ("þrennur", "lo", "FSB-HK-ÞFFT"),
-      "*Verðlaun* er fleirtöluorð: það er aðeins til í fleirtölu. " + _FLT + ": *þrenn verðlaun*.", "fleirtoluord"),
-    H(5, "Við höfum haldið [fern] jól í þessu húsi.", "fjögur", ("fern", "lo", "FSB-HK-ÞFFT"),
-      "*Jól* er fleirtöluorð: það er aðeins til í fleirtölu. " + _FLT + ": *fern jól*.", "fleirtoluord"),
-
-    # ---- beygingarmyndir: -ir-orð, fætur og fingur, kýr, tölva, hönd, frændsemisorð, sagnir
-    H(3, "Tveir [læknar] vinna á heilsugæslunni.", "*læknirar", ("læknir", "kk", "NFFT"),
-      _LAEKNIR + ": *læknir – læknar*, eins og *hellir – hellar*.", "ending"),
-    H(4, "Ég á tíma hjá [lækninum] á morgun.", "*læknirnum", ("læknir", "kk", "ÞGFETgr"),
-      _LAEKNIR + ": *læknirinn – lækninn – lækninum – læknisins*.", "ending"),
-    H(4, "Við gengum inn í [hellinn] með vasaljós.", "hellirinn", ("hellir", "kk", "ÞFETgr"),
-      "*Hellirinn* er nefnifall. *-ir* er ending nefnifallsins og dettur út í þolfalli: *inn í hellinn*.",
-      "ending,nf_aukafall"),
-    H(4, "Það eru margir [hellar] á Íslandi.", "*hellirar", ("hellir", "kk", "NFFT"),
-      "*-ir* í *hellir* er ending nefnifallsins og dettur út í fleirtölu: *hellir – hellar*, eins og *læknir – læknar*.",
-      "ending"),
-    H(3, "[Fæturnir] á mér eru ískaldir.", "*Fæturnar", ("fótur", "kk", "NFFTgr"), _FOTUR, "ending"),
-    H(4, "Ég þvoði mér um [fæturna] eftir leikinn.", "*fæturnar", ("fótur", "kk", "ÞFFTgr"), _FOTUR, "ending"),
-    H(4, "[Fingurnir] voru alveg frosnir eftir snjókastið.", "*Fingurnar", ("fingur", "kk", "NFFTgr"),
-      "*Fingur* er karlkynsorð: *fingurnir* (nefnifall) og *fingurna* (þolfall). Endingin *-nar* er kvenkyn (*hendurnar*).",
-      "ending"),
-    H(5, "[Veturnir] á Íslandi eru langir og dimmir.", "*Veturnar", ("vetur", "kk", "NFFTgr"),
-      "*Vetur* er karlkynsorð: *veturnir* (nefnifall) og *veturna* (þolfall, *á veturna*). Endingin *-nar* er kvenkyn.",
-      "ending"),
-    H(3, "[Kýrin] stóð úti á túni.", "*Kúin", ("kýr", "kvk", "NFETgr"),
-      "*Kýr* beygist óreglulega: *kýr – kú – kú – kýr*. Í nefnifalli er því *kýrin*; *kúna* er þolfall.", "ending"),
-    H(4, "Þetta er stærsta [kýr] sem ég hef séð.", "kú", ("kýr", "kvk", "NFET"),
-      "*Kýr* beygist óreglulega: *kýr – kú – kú – kýr*. Hér á að vera nefnifall: *þetta er kýr*.", "ending"),
-    H(3, "[Tölvan] mín er orðin mjög hæg.", "*Talvan", ("tölva", "kvk", "NFETgr"), _TOLVA, "hljodvarp"),
-    H(3, "Það er ný [tölva] í stofunni okkar.", "*talva", ("tölva", "kvk", "NFET"), _TOLVA, "hljodvarp"),
-    H(3, "Viltu rétta mér [höndina]?", "*hendina", ("hönd", "kvk", "ÞFETgr"), _HOND + " Í þolfalli er *höndina*.", "hljodvarp", parse=False),
-    H(4, "[Höndin] á mér er bólgin.", "*Hendin", ("hönd", "kvk", "NFETgr"), _HOND + " Í nefnifalli er *höndin*.", "hljodvarp"),
-    H(3, "Hann [dró] sleðann upp brekkuna.", "*dróg", ("draga", "so", "GM-FH-ÞT-3P-ET"),
-      "Þátíðin af *draga* er *dró*, án *g*: *ég dró, hann dró* — en *við drógum*.", "ending"),
-    H(3, "Hún [hló] að brandaranum.", "*hlóg", ("hlæja", "so", "GM-FH-ÞT-3P-ET"),
-      "Þátíðin af *hlæja* er *hló*, án *g*: *ég hló, hún hló* — en *við hlógum*.", "ending"),
-    H(5, "Þjálfarinn [réð] því hverjir fengu að byrja.", "réði", ("ráða", "so", "GM-FH-ÞT-3P-ET"),
-      "Þátíðin af *ráða* er í vönduðu máli *réð*: *ég réð, hann réð*. *Réði* er viðtengingarháttur: *þótt hann réði*.",
-      "ending"),
-    H(4, "Ég [kveið] mikið fyrir prófinu.", "*kvíddi", ("kvíða", "so", "GM-FH-ÞT-1P-ET"),
-      "*Kvíða* er sterk sögn og fær enga endingu í þátíð: *kvíða – kveið – kviðum – kviðið*.", "sterk_veik_sogn"),
-    H(3, "[Kauptu] mjólk á leiðinni heim.", "Keyptu", ("kaupa", "so", "GM-BH-ET"),
-      "Boðhátturinn er myndaður af nafnhættinum *kaupa*: *kauptu!* *Keyptu* er þátíð: *þau keyptu mjólk*.", ""),
-    H(4, "Ég fór í bíó með [systur] minni.", "systir", ("systir", "kvk", "ÞGFET"),
-      "*Systir* " + _FRAENDSEMI + " *systur*: *systir – systur – systur – systur*.", "nf_aukafall"),
-    H(4, "Hann hitti [bróður] sinn í bænum.", "bróðir", ("bróðir", "kk", "ÞFET"),
-      "*Bróðir* " + _FRAENDSEMI + " *bróður*: *bróðir – bróður – bróður – bróður*.", "nf_aukafall"),
-    H(4, "Hún líkist [móður] sinni mjög mikið.", "móðir", ("móðir", "kvk", "ÞGFET"),
-      "*Móðir* " + _FRAENDSEMI + " *móður*: *móðir – móður – móður – móður*.", "nf_aukafall"),
-    H(4, "Þau fóru í heimsókn til [dóttur] sinnar.", "dóttir", ("dóttir", "kvk", "EFET"),
-      "*Dóttir* " + _FRAENDSEMI + " *dóttur*: *dóttir – dóttur – dóttur – dóttur*.", "nf_aukafall", gov=("til", "ef")),
-    H(5, "Þetta er bíll [föður] míns.", "*föðurs", ("faðir", "kk", "EFET"),
-      "*Faðir* beygist: *faðir – föður – föður – föður*. Eignarfallið fær ekkert *-s*.", "ending,ef"),
-    H(4, "Hún fékk góðar [einkunnir] í vor.", "*einkannir", ("einkunn", "kvk", "ÞFFT"),
-      "Fleirtalan af *einkunn* er *einkunnir*, með *u*: *einkunn – einkunnir*.", "ending"),
-    H(5, "Það eru þrjár [hurðir] á bílskúrnum.", "hurðar", ("hurð", "kvk", "NFFT"),
-      "Fleirtalan af *hurð* er í vönduðu máli *hurðir*. *Hurðar* er eignarfall eintölu.", "ending"),
-
-    # ---- að eða af
-    H(4, "Ég leitaði [að] símanum mínum í allan dag.", "af", ("að", "fs", ""), "Maður *leitar að* einhverju — með *að*, ekki *af*.", "ad_af"),
-    H(4, "Krakkarnir hlógu [að] brandaranum.", "af", ("að", "fs", ""), "Maður *hlær að* einhverju — með *að*, ekki *af*.", "ad_af"),
-    H(4, "Ekki gera grín [að] litla bróður þínum.", "af", ("að", "fs", ""), "Orðasambandið er *gera grín að* einhverjum — með *að*.", "ad_af"),
-    H(4, "Ég er mjög stolt [af] systur minni.", "að", ("af", "fs", ""), "Maður er *stoltur af* einhverju — með *af*.", "ad_af"),
-    H(5, "Hún hefur mjög gaman [af] tónlist.", "að", ("af", "fs", ""),
-      "Í vönduðu máli er sagt *hafa gaman af* einhverju — en *það er gaman að* einhverju.", "ad_af"),
-    H(4, "Við komumst [að] því að búðin var lokuð.", "af", ("að", "fs", ""),
-      "*Komast að* einhverju þýðir að uppgötva það. *Komast af* þýðir að bjarga sér.", "ad_af"),
-    H(5, "Hann móðgaðist [að] ástæðulausu.", "af", ("að", "fs", ""), "Orðasambandið er *að ástæðulausu* — með *að*.", "ad_af"),
-    H(5, "[Að] mínu mati er þetta besta bókin.", "Af", ("að", "fs", ""), "Orðasambandið er *að mínu mati* — með *að*.", "ad_af"),
-    H(4, "Það er nóg [af] mat handa öllum.", "að", ("af", "fs", ""), "*Nóg af*, *mikið af*, *fullt af* einhverju — með *af*.", "ad_af"),
-    H(4, "Kennarinn spurði mig [að] þessu í gær.", "af", ("að", "fs", ""), "Maður *spyr að* einhverju — með *að*, ekki *af*.", "ad_af"),
-    H(5, "Þetta er [að] mörgu leyti góð hugmynd.", "af", ("að", "fs", ""), "Orðasambandið er *að mörgu leyti*, *að öllu leyti* — með *að*.", "ad_af"),
-    H(5, "Margir urðu vitni [að] atvikinu.", "af", ("að", "fs", ""), "Orðasambandið er *verða vitni að* einhverju — með *að*.", "ad_af"),
-    H(4, "[Að] sjálfsögðu máttu koma með.", "Af", ("að", "fs", ""), "Orðasambandið er *að sjálfsögðu* — með *að*.", "ad_af", parse=False),
-    H(5, "Ég dáist [að] henni fyrir þetta.", "af", ("að", "fs", ""), "Maður *dáist að* einhverjum — með *að*, ekki *af*.", "ad_af"),
-
-    # ---- samtengingar: hvort/ef, en/enn, fyrst/víst, hvorki … né, sem (að)
-    H(4, "Ég veit ekki [hvort] hún kemur í kvöld.", "ef", ("hvort", "st", ""), _HVORT, "samtengingar"),
-    H(4, "Spurðu kennarann [hvort] við megum fara út.", "ef", ("hvort", "st", ""), _HVORT, "samtengingar"),
-    H(4, "Hann er stærri [en] ég.", "enn", ("en", "st", ""),
-      "Samtengingin *en* (með einu n) kemur á eftir miðstigi: *stærri en ég*. *Enn* (með tveimur n) þýðir „ennþá“.",
-      "samtengingar"),
-    H(4, "Ertu [enn] að bíða eftir strætó?", "en", ("enn", "ao", ""),
-      "*Enn* (með tveimur n) þýðir „ennþá“. *En* (með einu n) er samtenging: *stærri en ég*, *ég kom en hún fór*.",
-      "samtengingar", also=["ennþá"]),
-    H(3, "[Fyrst] þú ert búinn að læra máttu fara út.", "Víst", ("fyrst", "st", ""), _FYRST, "samtengingar", parse=False),
-    H(3, "Við skulum fara heim [fyrst] það er farið að rigna.", "víst", ("fyrst", "st", ""), _FYRST, "samtengingar"),
-    H(4, "Ég á hvorki hund [né] kött.", "eða", ("né", "st", ""), _HVORKI, "samtengingar"),
-    H(4, "Hún borðar hvorki fisk [né] kjöt.", "eða", ("né", "st", ""), _HVORKI, "samtengingar"),
-    H(5, "Þetta er strákurinn [sem] ég sagði þér frá.", "sem að", ("sem", "st", ""),
-      "Í vönduðu máli stendur *sem* eitt, án *að*: *strákurinn sem ég sagði þér frá*.", "samtengingar"),
-    H(5, "Láttu mig vita [þegar] þú ert komin heim.", "þegar að", ("þegar", "st", ""),
-      "Í vönduðu máli stendur *þegar* eitt, án *að*: *þegar þú ert komin heim*.", "samtengingar"),
-
-    # ---- stafsetning: y/ý/ey og n/nn
-    H(3, "Ég [týndi] símanum mínum í gær.", "tíndi", ("týna", "so", "GM-FH-ÞT-1P-ET"),
-      "*Týna* (missa eitthvað) er með *ý*: *ég týndi símanum*. *Tína* (tína ber eða blóm) er með *í*.", "y_i"),
-    H(3, "Mamma [leyfði] mér að vaka lengur.", "leifði", ("leyfa", "so", "GM-FH-ÞT-3P-ET"),
-      "*Leyfa* (gefa leyfi) er með *ey*: *mamma leyfði mér*. *Leifa* (skilja eftir mat á diskinum) er með *ei*.", "y_i"),
-    H(3, "Viltu [sýna] mér myndirnar?", "sína", ("sýna", "so", "GM-NH"),
-      "*Sýna* (láta sjá) er með *ý*, skylt orðinu *sjón*. *Sína* er mynd af fornafninu *sinn*: *hún tók bókina sína*.", "y_i", parse=False),
-    H(3, "Ég á þrjú [systkini].", "*systkyni", ("systkini", "hk", "ÞFFT"),
-      "*Systkini* er skrifað með *i* í endingunni, eins og *feðgin* og *mæðgin*.", "y_i"),
-    H(3, "Leikurinn [byrjar] klukkan átta.", "*birjar", ("byrja", "so", "GM-FH-NT-3P-ET"),
-      "*Byrja* er skrifað með *y*: *byrja – byrjar – byrjun*.", "y_i"),
-    H(4, "Hann [skildi] ekki spurninguna.", "skyldi", ("skilja", "so", "GM-FH-ÞT-3P-ET"),
-      "*Skildi* er þátíð af *skilja*, með *i*. *Skyldi* er af sögninni *skulu*: *hann skyldi gera það*.", "y_i"),
-    H(3, "[Bókin] sem ég las var mjög spennandi.", "*Bókinn", ("bók", "kvk", "NFETgr"),
-      "Greinirinn er með **einu n** í kvenkyni: *bókin, konan, stelpan*. Tvö n eru í karlkyni: *hesturinn*.", "n_nn"),
-    H(3, "Systir mín er mjög [fyndin].", "fyndinn", ("fyndinn", "lo", "FSB-KVK-NFET"),
-      _INN_KK + ": *hann er fyndinn* en *hún er fyndin*.", "n_nn"),
-    H(3, "Bróðir minn er dálítið [feiminn].", "feimin", ("feiminn", "lo", "FSB-KK-NFET"),
-      _INN_KK + ": *hann er feiminn* en *hún er feimin*.", "n_nn"),
-    H(3, "Hún er [komin] heim úr skólanum.", "kominn", ("koma", "so", "LHÞT-SB-KVK-NFET"),
-      "Lýsingarháttur sem endar á *-inn* hefur **tvö n** í karlkyni og **eitt n** í kvenkyni: "
-      "*hann er kominn* en *hún er komin*.", "n_nn"),
-    H(4, "[Morgunninn] var kaldur og bjartur.", "Morguninn", ("morgunn", "kk", "NFETgr"),
-      "Orðið er *morgunn* í nefnifalli, með tveimur n, og greinirinn bætist við: *morgunninn*. "
-      "*Morguninn* er þolfall: *ég svaf allan morguninn*.", "n_nn"),
-    H(4, "[Engin] stelpa í bekknum æfir handbolta.", "Enginn", ("enginn", "fn", "KVK-NFET"),
-      "*Enginn* (tvö n) er karlkyn: *enginn strákur*. *Engin* (eitt n) er kvenkyn: *engin stelpa*.", "n_nn"),
-
-    # ---- samræmi, fornöfn, fallstjórn sagna, eitt orð eða tvö
-    H(4, "Jón og Anna eru bæði mjög [þreytt] eftir ferðina.", "þreyttir", ("þreyttur", "lo", "FSB-HK-NFFT"),
-      _BLANDAD + " þreytt*. *Þreyttir* á aðeins við um karla.", "kyn_samraemi"),
-    H(4, "Strákurinn og stelpan voru [glöð] að sjá okkur.", "glaðir", ("glaður", "lo", "FSB-HK-NFFT"),
-      _BLANDAD + " glöð*. *Glaðir* á aðeins við um karla.", "kyn_samraemi"),
-    H(5, "Ég heyrði [eitthvert] hljóð úti í garði.", "eitthvað", ("einhver", "fn", ""),
-      "Í vönduðu máli er *eitthvert* notað með nafnorði (*eitthvert hljóð*) en *eitthvað* stendur eitt og sér: "
-      "*ég heyrði eitthvað*.", ""),
-    H(4, "Ég sá [einhvern] mann fyrir utan húsið.", "*eitthvern", ("einhver", "fn", "KK-ÞFET"), _EINHVER, ""),
-    H(4, "Það komu [einhverjir] krakkar í heimsókn.", "*eitthverjir", ("einhver", "fn", "KK-NFFT"), _EINHVER, ""),
-    H(4, "Ég þori [því] ekki.", "það", ("það", "pfn", "ÞGFET"),
-      "Sögnin *þora* stýrir **þágufalli**: *ég þori því ekki*.", "fallstjorn_so,thf_thgf"),
-    H(4, "Ég nenni [því] ekki núna.", "það", ("það", "pfn", "ÞGFET"),
-      "Sögnin *nenna* stýrir **þágufalli**: *ég nenni því ekki*.", "fallstjorn_so,thf_thgf", gov=("nenna", "þgf")),
-    H(5, "Ég hef ekkert spáð í [það].", "því", ("það", "pfn", "ÞFET"),
-      "Í vönduðu máli er sagt *spá í eitthvað*, með þolfalli: *ég hef ekkert spáð í það*.", "thf_thgf"),
-    H(3, "[Af hverju] komstu ekki í gær?", "*Afhverju", [("af", "fs", ""), ("hver", "fn", "HK-ÞGFET")],
-      "*Af hverju* er skrifað í tveimur orðum.", "", parse=False),
-    H(4, "Leiknum var frestað [út af] veðrinu.", "*útaf", [("út", "ao", ""), ("af", "fs", "")],
-      "*Út af* er skrifað í tveimur orðum.", ""),
-]
+HUNT = _hunt()
