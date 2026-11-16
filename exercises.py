@@ -87,6 +87,10 @@ ADJ_NOUN_GROUPS = {
     "drinks": ["drykkur", "súpa"],
     "fruit": ["ávöxtur", "appelsína", "epli"],
     "ideas": ["kostur", "leið", "svar"],
+    # *kosturinn* on its own, with the article, reads oddly ("Kosturinn er
+    # líklegri en ég hélt", "Við töluðum um góða kostinn"): the frames with
+    # the article take these
+    "answers": ["leið", "svar"],
     "times": ["dagur", "ferð", "kvöld"],
     "places": ["staður", "borg", "land"],
     "rooms": ["gangur", "stofa", "herbergi"],
@@ -97,10 +101,13 @@ ADJ_NOUN_GROUPS = {
     "bedroom": ["herbergi"],
     # what a town has the biggest of
     "town": ["hús", "bíll", "hundur", "kisa"],
-    # what is bought in a shop
-    "shop": ["bók", "koddi", "peysa", "teppi", "ávöxtur", "appelsína", "epli", "drykkur"],
+    # what is bought in a shop — not the soft things, whose adjectives say
+    # how they are now ("blautasta teppið í búðinni", "rökustu peysuna")
+    "shop": ["bók", "ávöxtur", "appelsína", "epli", "drykkur"],
 }
 _ANY = "people animals things vehicles soft drinks fruit ideas places rooms"
+# the same with the article
+_ANY_DEF = "people animals things vehicles soft drinks fruit answers places rooms"
 _SEEN = "people animals things vehicles soft places rooms"
 # what one looks for in the house: not a place or a country
 _HERE = "people animals things vehicles soft rooms fruit drinks"
@@ -118,28 +125,29 @@ ADJ_FRAMES = [
     # frumstig, weak: with the article
     (1, "Ég sá ___ {N} í gær.", "ÞFETgr", "FVB", "people animals things vehicles"),
     (1, "Hvar er ___ {N}?", "NFETgr", "FVB", _HERE),
-    (1, "Við töluðum um ___ {N}.", "ÞFETgr", "FVB", _ANY + " times"),
+    (1, "Við töluðum um ___ {N}.", "ÞFETgr", "FVB", _ANY_DEF + " times"),
     (2, "Hvar eru ___ {N}?", "NFFTgr", "FVB", _HERE),
-    (3, "Ég man vel eftir ___ {N}.", "ÞGFETgr", "FVB", _ANY + " times"),
+    (3, "Ég man vel eftir ___ {N}.", "ÞGFETgr", "FVB", _ANY_DEF + " times"),
     # frumstig, predicative: strong, agreeing with the subject (lo_samr)
-    (1, "{N} er ___.", "NFETgr", "FSB", _ANY),
+    (1, "{N} er ___.", "NFETgr", "FSB", _ANY_DEF),
     (1, "{N} var ___.", "NFETgr", "FSB", "times"),
-    (1, "Mér finnst {N} ___.", "NFETgr", "FSB", "ideas times"),
-    (2, "{N} eru ___.", "NFFTgr", "FSB", _ANY),
+    (1, "Mér finnst {N} ___.", "NFETgr", "FSB", "answers times"),
+    (2, "{N} eru ___.", "NFFTgr", "FSB", _ANY_DEF),
     (2, "{N} voru ___.", "NFFTgr", "FSB", "times"),
     # miðstig
     (2, "Hún fékk ___ {N} en ég.", "ÞFET", "MST", "things soft fruit drinks bedroom"),
     (1, "Þetta er ___ {N}.", "NFET", "MST", "ideas"),
-    (2, "{N} er ___ en ég hélt.", "NFETgr", "MST", _ANY),
+    (2, "{N} er ___ en ég hélt.", "NFETgr", "MST", _ANY_DEF),
     (2, "{N} var ___ en ég hélt.", "NFETgr", "MST", "times"),
     (2, "Ég á ___ {N} en þú.", "ÞFET", "MST", "animals things soft"),
     (2, "Hún fann ___ {N} en ég.", "ÞFET", "MST", "ideas"),
     (2, "Þetta er ___ {N} en ég hélt.", "NFET", "MST", _ANY),
     (3, "Hann býr í ___ {N} en ég.", "ÞGFET", "MST", "homes"),
-    (3, "{N} eru ___ en ég hélt.", "NFFTgr", "MST", _ANY),
+    (3, "{N} eru ___ en ég hélt.", "NFFTgr", "MST", _ANY_DEF),
     # efsta stig, weak: with the article
     (1, "Þetta er ___ {N}.", "NFETgr", "EVB", "ideas"),
-    (1, "Hvar er ___ {N}?", "NFETgr", "EVB", _HERE),
+    # not people or rooms: "Hvar er sælasti maðurinn?"
+    (1, "Hvar er ___ {N}?", "NFETgr", "EVB", "animals things vehicles soft fruit drinks"),
     (1, "Ég tók ___ {N}.", "ÞFETgr", "EVB", "things soft drinks fruit bedroom"),
     (2, "Þetta er ___ {N} sem ég þekki.", "NFETgr", "EVB", "people"),
     (2, "Þetta var ___ {N} í sumar.", "NFETgr", "EVB", "times"),
@@ -380,10 +388,12 @@ NUMERAL_AGREE = [
     (1, "Ég beið í ___ {N}.", "ÞF", [1, 2, 3, 4], ["dagur", "vika", "mínúta", "klukkutími"]),
     (1, "Á bænum eru ___ {N}.", "NF", [2, 3, 4], ["kýr", "hestur", "kind", "hæna", "svín"]),
     (3, "Þetta er hús ___ {N}.", "EF", [2, 3, 4], ["bróðir", "systir", "vinur"]),
-    # v6.13 (item 23): *með* takes the dative of company and the accusative
-    # of what is carried — "kom heim með tvo fiska". Until now this frame had
-    # the things carried and asked for the dative; now it has company.
-    (3, "Hann kom heim með ___ {N}.", "ÞGF", [1, 2, 3, 4], ["vinur", "vinkona", "gestur", "strákur"]),
+    # v6.13 (item 23): this was "Hann kom heim með ___ {N}." with things
+    # carried, in the dative — but what is carried home is the accusative
+    # ("kom heim með tvo fiska"). With people it has two right answers:
+    # *með tveimur vinum* (in their company) and *með tvo vini* (brought them
+    # home). *mæta* takes the dative and nothing else.
+    (3, "Hún mætti ___ {N} á leiðinni heim.", "ÞGF", [1, 2, 3, 4], ["vinur", "vinkona", "strákur", "stelpa", "kennari"]),
     (2, "Í bekknum eru ___ {N} með gleraugu.", "NF", [2, 3, 4], ["stelpa", "strákur", "nemandi"]),
     (2, "Ég fékk ___ {N} í afmælisgjöf.", "ÞF", [1, 2, 3, 4], ["bók", "leikur", "spil", "peysa"]),
 ]
@@ -435,7 +445,6 @@ NUMERAL_FRAMES = [
     (3, "Hún saknaði ___ {N}.", "EF", [1, 2, 3, 4], _CLOSE),
     (4, "Kennarinn talaði lengi við foreldra ___ {N}.", "EF", [2, 3, 4], ["stelpa", "strákur",
      "barn", "nemandi"]),
-    (3, "Ég fór í afmæli ___ {N}.", "EF", [1, 2, 3, 4], _CLOSE),
     (4, "Hún passaði hunda ___ {N} um helgina.", "EF", [1, 2, 3, 4], _CLOSE),
     (4, "Kennarinn hrósaði verkefnum ___ {N} í dag.", "EF", [1, 2, 3, 4], _CHILDREN),
 ]
@@ -469,7 +478,7 @@ PLURAL_ONLY_GROUPS = {
     "glasses": ["gleraugu", "sólgleraugu", "sundgleraugu", "skíðagleraugu"],
     "tool": ["skæri", "naglaskæri"],
     "door": ["dyr", "útidyr", "bakdyr", "svaladyr"],
-    "people": ["hjón", "brúðhjón", "feðgar", "mæðgur", "feðgin", "mæðgin"],
+    "people": ["hjón", "feðgar", "mæðgur", "feðgin", "mæðgin"],
     "feast": ["jól", "páskar", "áramót"],
     "prize": ["verðlaun"],
 }
@@ -482,7 +491,6 @@ PLURAL_ONLY_FRAMES = [
     (3, "Hann kom heim með ___ {N}.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
     (4, "Það er gat á ___ {N}.", "ÞGF", [1, 2, 3], "trousers"),
     (3, "Á húsinu eru ___ {N}.", "NF", [1, 2, 3, 4], "door"),
-    (4, "Við gengum inn um ___ {N}.", "ÞF", [1, 2, 3, 4], "door"),
     (4, "Á bænum búa ___ {N}.", "NF", [1, 2, 3, 4], "people"),
     (4, "Í veislunni voru ___ {N}.", "NF", [1, 2, 3, 4], "people"),
     (4, "Liðið fékk ___ {N} á mótinu.", "ÞF", [1, 2, 3, 4], "prize"),

@@ -192,10 +192,11 @@ test("to_samr / to_val: every numeral is BÍN's for its noun, and *tala við* ta
     assert.equal(x.m, `${{ kk: "KK", kvk: "KVK", hk: "HK" }[x.g]}-${x.case}${x.n === 1 ? "ET" : "FT"}`, x.t);
     if (/töluðum við/.test(x.t)) assert.equal(x.case, "ÞF", x.t);
   }
-  /* *koma heim með* things is the accusative; the dative frame has company */
-  for (const x of items.filter((y) => /kom heim með/.test(y.t))) {
-    assert.ok(["vinur", "vinkona", "gestur", "strákur"].includes(x.noun), x.t);
-  }
+  /* *koma heim með* has two right cases with people (in company: dative;
+     brought home: accusative) and is the accusative with things: no
+     numeral frame asks it any more; *mæta* is the dative and only that. */
+  assert.ok(!items.some((y) => /kom heim með/.test(y.t)), "a frame with *kom heim með*");
+  assert.ok(items.some((y) => /mætti .* á leiðinni heim/.test(y.t) && y.case === "ÞGF"));
 });
 
 test("to_flt: only nouns with no singular, and the numerals of the plural-only nouns", () => {

@@ -605,9 +605,8 @@ def _std(e):
 _hcache = {}
 def hunt_paradigm(lemma, ofl):
     """{mark: [forms]}, core standard forms only — as `paradigm`, but the
-    person stays in the mark (GM-FH-NT-1P-ET): `paradigm` strips every digit,
-    which is right for the numbered variants (NFET2) and folds *vil* and
-    *vill* into one cell. Only a digit that is not a person is a variant."""
+    person stays in the mark (GM-FH-NT-1P-ET), as in `paradigm`, and a digit
+    that is not a person is a variant (NFET2) wherever it stands."""
     key = (lemma, ofl)
     if key in _hcache: return _hcache[key]
     ids = sorted({e.bin_id for e in _entries(lemma) if e.ofl == ofl})
