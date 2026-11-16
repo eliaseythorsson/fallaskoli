@@ -14,6 +14,7 @@ import { vocabScore, weakWords, HEALTH, DRILL, STATUS_LABEL } from "../core/word
 import { $, esc, keypadOn, keypadEnv } from "./dom.js";
 import { renderPolicyEditor } from "./policyui.js";
 import { holidayName } from "../core/calendar.js";
+import { weekGoalOf } from "../core/state.js";
 import { LICENSES } from "../../../data/licenses.js";
 
 /* ---------- dates on badges --------------------------------------------- */
@@ -740,6 +741,7 @@ function wordChip(w, stats) {
 export function renderSettings(app) {
   const S = app.S;
   $("goalin").value = S.goal;
+  $("weekin").value = String(weekGoalOf(S));
   $("set-decay").checked = S.settings.decay === true;
   $("set-gloss").checked = S.settings.glossary !== false;
   $("set-comfort").checked = S.settings.comfort === true;

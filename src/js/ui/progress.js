@@ -3,7 +3,8 @@
    map since v6.13 (item 83, ui/skillmap.js). */
 
 import { overallLevel, overallRank, dayMult } from "../core/progress.js";
-import { dayStreak, dkey, todayKey, effectivePolicy } from "../core/state.js";
+import { dayStreak, weekStreak, weekProgress, dkey, todayKey, effectivePolicy } from "../core/state.js";
+import { weeksInARow } from "../core/calendar.js";
 import { fmtDuration } from "../core/timing.js";
 import { bandOf } from "../core/difficulty.js";
 import { $, esc } from "./dom.js";
@@ -67,13 +68,25 @@ export function tallyHTML(done, goal) {
     <span class="tallytext">${text}</span>`;
 }
 
+/* "2 af 4 dögum í þessari viku", and when the goal is met "Vikumarkmiði náð,
+   5 dagar í þessari viku". Digits and "af … dögum" (dative plural, whatever
+   the number) so no numeral has to be declined. */
+export function weekLine({ done, goal, met }) {
+  return met
+    ? `Vikumarkmiði náð, ${done} dagar í þessari viku`
+    : `${done} af ${goal} dögum í þessari viku`;
+}
+
 export function renderHeader(app) {
   const S = app.S;
   const d = S.days[todayKey()] || { a: 0, c: 0 };
   $("s-xp").textContent = S.xp.toLocaleString("is-IS");
   $("s-acc").textContent = d.a ? Math.round(100 * d.c / d.a) + "%" : "—";
   $("s-run").textContent = S.run;
-  $("s-days").textContent = dayStreak(S);
+  /* Item 57: the streak is weeks in which the weekly goal was met. */
+  $("s-days").textContent = weekStreak(S);
+  const wp = weekProgress(S);
+  $("s-weeks").title = `${weeksInARow(weekStreak(S))} · ${weekLine(wp)}`;
   const L = overallLevel(S.xp);
   $("lvlbar").style.width = Math.round(100 * L.into / L.need) + "%";
   $("lvlname").textContent = "Stig " + L.level + " · " + overallRank(L.level);
@@ -218,7 +231,7 @@ export function renderStats(app) {
   $("tiles").innerHTML = `
     <div class="tile"><span>Í dag</span><b>${d.c} / ${d.a}</b><small>${d.a ? Math.round(100 * d.c / d.a) : 0}% rétt · ${d.xp} XP · markmið ${S.goal}</small></div>
     <div class="tile"><span>Alls</span><b>${acc}%</b><small>${S.totalCorrect} rétt af ${S.totalAnswers} · ${active} virkir dagar</small></div>
-    <div class="tile"><span>Dagaröð</span><b>${dayStreak(S)}</b><small>margfaldari ×${dayMult(dayStreak(S)).toFixed(2)}</small></div>
+    <div class="tile"><span>Vikur í röð</span><b>${weekStreak(S)}</b><small>${weekLine(weekProgress(S))} · margfaldari ×${dayMult(dayStreak(S)).toFixed(2)}</small></div>
     <div class="tile"><span>Heildarstig</span><b>${L.level}</b><small>${overallRank(L.level)} · ${(L.need - L.into).toLocaleString("is-IS")} XP í næsta</small></div>`;
   const rows = lastDays(S, 30);
   $("chart1").innerHTML = activityChart(S, rows);
