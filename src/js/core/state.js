@@ -539,6 +539,13 @@ export function easeFor(S, { cell, word, skill }) {
 /**
  * Write one answer into the state. Single entry point, so every exercise
  * type updates the same counters in the same way.
+ *
+ * @param {State} S
+ * @param {Session} sess
+ * @param {{skill?: ?string, cell?: ?string, word?: ?string, ok: boolean, xp?: number,
+ *          hinted?: boolean, counts?: boolean, ms?: number, answer?: any,
+ *          tally?: boolean}} answer
+ * @returns {State}
  */
 export function record(S, sess, {
   skill, cell, word, ok, xp = 0, hinted = false, counts = true, ms = 0, answer = null,
