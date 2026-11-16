@@ -63,7 +63,7 @@ export const QUESTION_TYPES = [
   { id: "meaning",  nm: "Hvað þýðir orðið?",           skill: "ordaford",
     ds: "Merking orðs með eigin orðum — í lotu sem valfrjáls bónus" },
   { id: "villur",   nm: "Villuveiðar",                 skill: "malbeiting",
-    ds: "Finndu og lagaðu eina eða tvær villur í falli eða samræmi í tveimur setningum" },
+    ds: "Finndu og lagaðu eina eða tvær villur í tveimur setningum: fall og samræmi, og frá þyngd 3 algengar málvillur (mér langar, ég vill)" },
   { id: "smidja",   nm: "Setningasmiðja",              skill: "malbeiting",
     ds: "Búðu til setningu úr orðum í orðabókarmynd og beygðu hvert orð" },
   { id: "umritun",  nm: "Umritun",                     skill: "malbeiting",

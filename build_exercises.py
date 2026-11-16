@@ -334,6 +334,167 @@ for t, mark, right, wrong in X.WORD_IN_CONTEXT:
     items.append({"t": t, "m": mark, "a": opts[0] if opts else None, "w": opts[1:]})
 out["wordInContext"] = items
 
+# ---------------------------------------------------------------- Villuveiðar
+# HUNT (critique item 26): one sentence, one error a native teenager makes,
+# its correction and why. What is checked, item by item:
+#   * the word(s) in the brackets ARE the BÍN form of the lemma, class and
+#     mark written beside them — the correction is never taken on trust;
+#   * every other word of the corrected sentence is a word BÍN knows, and
+#     Greynir parses the corrected sentence;
+#   * the wrong form is really wrong: it is not one of the right forms; with a
+#     star it is not a standard BÍN form of the word at all (*læknirar);
+#     without one every word of it is a standard BÍN form (the right word in
+#     the wrong cell, or another word);
+#   * what the explanation claims about the verb or preposition (an oblique
+#     subject, the case governed) is what BÍN and government.py say.
+def _std(e):
+    return (e.birting == 'K' and e.einkunn == 1 and e.beinkunn == 1
+            and not e.malsnid and not e.bmalsnid)
+
+_hcache = {}
+def hunt_paradigm(lemma, ofl):
+    """{mark: [forms]}, core standard forms only — as `paradigm`, but the
+    person stays in the mark (GM-FH-NT-1P-ET): `paradigm` strips every digit,
+    which is right for the numbered variants (NFET2) and folds *vil* and
+    *vill* into one cell. Only a digit that is not a person is a variant."""
+    key = (lemma, ofl)
+    if key in _hcache: return _hcache[key]
+    ids = sorted({e.bin_id for e in _entries(lemma) if e.ofl == ofl})
+    best = {}
+    for bid in ids:
+        ent = [e for e in b.lookup_id(bid) if _std(e)]
+        ent.sort(key=lambda e: (e.mark, e.bmynd))
+        forms = collections.defaultdict(list)
+        for e in ent:
+            m = re.sub(r'\d(?!P)', '', e.mark)
+            if e.bmynd not in forms[m]: forms[m].append(e.bmynd)
+        if len(forms) > len(best): best = dict(forms)
+    _hcache[key] = best
+    return best
+
+def standard_word(w):
+    """Is `w` a standard form of some word in BÍN's core vocabulary?"""
+    for x in dict.fromkeys([w, w.lower()]):
+        _, ks = b.lookup_ksnid(x)
+        if any(_std(k) for k in ks): return True
+    return False
+
+def subject_cases(verb):
+    """The cases BÍN lists for the subject of `verb` used impersonally."""
+    out = set()
+    for bid in {e.bin_id for e in _entries(verb) if e.ofl == "so"}:
+        for e in b.lookup_id(bid):
+            if e.mark.startswith("OP-") and _std(e): out.add(e.mark.split("-")[1])
+    return out
+
+_greynir = None
+def parses(text):
+    global _greynir
+    if _greynir is None:
+        from reynir import Greynir
+        _greynir = Greynir()
+    s = _greynir.parse_single(text)
+    return bool(s and s.tree is not None)
+
+import government as GOV
+HUNT_TOKEN = re.compile(r"[A-Za-zÁÉÍÓÚÝÞÆÖÐáéíóúýþæöð]+(?:-[A-Za-zÁÉÍÓÚÝÞÆÖÐáéíóúýþæöð]+)*|[.,!?;:]")
+low1 = lambda s: s[:1].lower() + s[1:]
+cap1 = lambda s: s[:1].upper() + s[1:]
+items = []
+_seen_hunt = set()
+for it in X.HUNT:
+    t, where = it["t"], f"HUNT {it['t']}"
+    mm = re.fullmatch(r"([^\[\]]*)\[([^\[\]]+)\]([^\[\]]*)", t)
+    if not mm:
+        fail(f"{where}: exactly one [target]"); continue
+    pre, right, post = mm.groups()
+    correct = pre + right + post
+    if correct in _seen_hunt: fail(f"{where}: the sentence is in the bank twice")
+    _seen_hunt.add(correct)
+    if it["band"] not in (3, 4, 5): fail(f"{where}: band must be 3, 4 or 5")
+    if not it["why"].strip(): fail(f"{where}: no explanation")
+    first = not pre.strip()
+    words, spec = right.split(), it["spec"]
+    if len(words) != len(spec):
+        fail(f"{where}: {len(words)} word(s) in the brackets, {len(spec)} in the spec"); continue
+    # the correction, word by word, out of BÍN
+    choices, marks, ok = [], [], True
+    for k, (w, (lemma, ofl, mark)) in enumerate(zip(words, spec)):
+        plain = low1(w) if (first and k == 0 and not lemma[:1].isupper()) else w
+        if mark:
+            fs = hunt_paradigm(lemma, ofl).get(mark)
+            if not fs:
+                fail(f"{where}: BÍN has no {mark} of {ofl} '{lemma}'"); ok = False; continue
+            if plain not in fs:
+                fail(f"{where}: '{w}' is not BÍN's {mark} of '{lemma}' ({', '.join(fs)})"); ok = False; continue
+            choices.append([plain] + [f for f in fs if f != plain])
+            marks.append(mark)
+        else:
+            if ofl not in classes_of(plain):
+                fail(f"{where}: BÍN does not list '{plain}' as {ofl}"); ok = False; continue
+            if not standard_word(plain):
+                fail(f"{where}: '{plain}' is not a standard word in BÍN"); ok = False; continue
+            choices.append([plain])
+    if not ok: continue
+    answers = [" ".join(c) for c in itertools.product(*choices)]
+    for extra in it.get("also", []):
+        if not all(classes_of(w) for w in extra.split()):
+            fail(f"{where}: the other answer '{extra}' is not a word BÍN knows")
+        answers.append(extra)
+    if first: answers = [cap1(a) for a in answers]
+    # the rest of the sentence
+    check_words(correct, where)
+    if it.get("parse", True):
+        if not parses(correct): fail(f"{where}: Greynir cannot parse the corrected sentence")
+    elif parses(correct): fail(f"{where}: Greynir parses the sentence — drop parse=False")
+    # the wrong form
+    star = it["wrong"].startswith("*")
+    wrong = it["wrong"].lstrip("*")
+    if wrong.lower() in [a.lower() for a in answers]:
+        fail(f"{where}: the wrong form '{wrong}' is one of the right ones")
+    if star:
+        for w in wrong.split():
+            for lemma, ofl, mark in spec:
+                if not mark: continue
+                every = {f.lower() for fs in hunt_paradigm(lemma, ofl).values() for f in fs}
+                if w.lower() in every:
+                    fail(f"{where}: '*{w}' is a standard BÍN form of '{lemma}' — it needs no star")
+        if all(standard_word(w) for w in wrong.split()) and len(wrong.split()) == 1 \
+           and any(k.ofl == spec[0][1] for k in b.lookup_ksnid(wrong.lower())[1] if _std(k)):
+            fail(f"{where}: '*{wrong}' is a standard BÍN word of the same class — it needs no star")
+    else:
+        for w in wrong.split():
+            if not standard_word(w):
+                fail(f"{where}: '{w}' is not a standard BÍN form — mark it with * if that is meant")
+    # what the explanation claims
+    if "op" in it:
+        verb, case = it["op"]
+        cases = subject_cases(verb)
+        if case not in cases: fail(f"{where}: BÍN does not list '{verb}' with a subject in {case}")
+        if cases & {"ÞF", "ÞGF"} != {case}: fail(f"{where}: BÍN lists '{verb}' with subjects in {sorted(cases)}")
+        if not verb_in(correct, verb): fail(f"{where}: no form of '{verb}' in the sentence")
+    if "nf" in it:
+        if subject_cases(it["nf"]) & {"ÞF", "ÞGF"}:
+            fail(f"{where}: BÍN lists '{it['nf']}' with an oblique subject")
+        if not verb_in(correct, it["nf"]): fail(f"{where}: no form of '{it['nf']}' in the sentence")
+    if "gov" in it:
+        g, case = it["gov"]
+        table = GOV.PREP_CASES.get(g) or GOV.VERB_CASES.get(g)
+        if table != {case}: fail(f"{where}: government.py has '{g}' governing {table}, not only {case}")
+        if g in GOV.PREP_CASES:
+            if g not in [w.lower() for w in WORD.findall(correct)]: fail(f"{where}: '{g}' is not in the sentence")
+        elif not verb_in(correct, g): fail(f"{where}: no form of '{g}' in the sentence")
+    toks = HUNT_TOKEN.findall(pre) + [right] + HUNT_TOKEN.findall(post)
+    i = len(HUNT_TOKEN.findall(pre))
+    if "".join(HUNT_TOKEN.findall(pre + post)) != re.sub(r"\s", "", pre + post):
+        fail(f"{where}: a character the tokeniser does not know")
+    if toks[-1] not in (".", "?", "!"): fail(f"{where}: no full stop")
+    items.append({"b": it["band"], "t": correct, "toks": toks, "i": i, "w": wrong, "a": answers,
+                  "why": it["why"], "p": it["p"], "ms": marks, "nw": star,
+                  "l": [list(x) for x in spec]})
+if len(items) < 80 and not ERR: fail(f"HUNT: {len(items)} items; the bank must hold at least 80")
+out["hunt"] = items
+
 # ---------------------------------------------------------------- word lists
 # Words that are ONE word class whatever BÍN entry they are read as, for
 # sorting by word class without a sentence around them.
