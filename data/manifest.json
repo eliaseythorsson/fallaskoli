@@ -26,8 +26,8 @@
  "artifacts": {
   "freq_lemmas.json": "8d3063ebe66f3ae33e79a20ae9a846da0a31ee0ed30f7c713bcb8dc9962062c5",
   "lexicon.json": "faed940290ba5856323145cf0888c74450302c3f67b147ae08cf748cacd327a4",
-  "sentences.json": "4f5e3c280711b61c1708043d6ad601d53f836b9d15669aae558c4ed78bda2305",
-  "data/data_bundle.js": "ae7564f3334b1949b1fc4c90f397780e3750861c674b688e275a9dded79997ee",
+  "sentences.json": "52be1b1ca2902e3733a9caff744f594cd67f569f94763fc165a8c3af277ac77b",
+  "data/data_bundle.js": "cf2341dc1a6939500ce06c47be200b33e76164d1b79a60ff66f793bfbe3e2272",
   "data/exercises.js": "a928aedc05fb9d0762f6cde1595cb5452d4cad26d5966cb0867a7272f6acece3"
  },
  "counts": {
@@ -697,7 +697,7 @@
   "Hann sagði okkur frá mikilvægi hreyfingar.": "161225a32b2c",
   "Við töluðum um gildi þessara hugmynda.": "a9ccded4280a",
   "Þegar ég var lítill fannst mér alltaf skemmtilegast að horfa á hestana á sumrin.": "17bb33f24d8a",
-  "Kennarinn útskýrði fyrir okkur í gær hvernig maður á að skrifa góða ritgerð.": "283792b3c1fc",
+  "Kennarinn útskýrði fyrir okkur í gær hvernig maður á að skrifa góða ritgerð.": "1dd4e66a767f",
   "Eftir að við höfðum beðið lengi kom í ljós að rútan var farin.": "c4adf5e23beb",
   "Vinur minn sagði mér að hann hefði aldrei séð svona stóran hund.": "5590c368a9d5",
   "Mamma sagði að við gætum farið í bíó ef við kláruðum heimalærdóminn fyrst.": "318a903dba0f",

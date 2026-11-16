@@ -1,5 +1,5 @@
 export const LICENSES={
- "built": "2026-11-11",
+ "built": "2026-11-16",
  "app": {
   "nm": "Fallaskóli",
   "lic": "engin markaðssetning, engin gjaldtaka"
