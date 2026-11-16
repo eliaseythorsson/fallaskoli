@@ -58,7 +58,7 @@ export interface LevelRecord {
   r: number;                      // right in a row towards the next rise
   h: string;                      // last dozen outcomes, "1"/"0"
   at: number;                     // ms of the last change
-  src: "play" | "xp" | "cal";
+  src: "play" | "xp" | "cal" | "placement";   // "placement": the first run (item 84)
 }
 
 /** Answers to one question type or curriculum node (`S.byType`, `S.byNode`;
@@ -170,6 +170,17 @@ export interface State {
   byNode: Record<string, AnswerRecord>;
   seenTypes: Record<string, DayKey>;
   mend: any;
+  /** The guided first run (item 84, core/placement.js `cleanTour`). */
+  tour: TourRecord | null;
+}
+
+/** Where a pupil is in the guided first run (core/placement.js). */
+export interface TourRecord {
+  st: "open" | "done" | "skipped";
+  at: number;                     // ms of the last change
+  d: DayKey | null;               // the day it ended
+  placed: 0 | 1;                  // a placement round has set the levels
+  year: number | null;            // the year preset it suggested
 }
 
 /**
