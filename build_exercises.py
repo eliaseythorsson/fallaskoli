@@ -1,4 +1,8 @@
-"""exercises.py -> data/exercises.js, every form out of BÍN.
+"""content/*/*.tsv, read by exercises.py -> data/exercises.js, every form out of BÍN.
+
+(The header comment of data/exercises.js still says "from exercises.py": it
+is part of the output, which did not change by a byte when the items moved
+to content/ in critique item 82.)
 
 What this build guarantees, item by item:
   * every answer, option and cue is a BÍN form of the lemma, class and mark
@@ -1073,6 +1077,8 @@ out["para"] = PARA
 
 if ERR:
     print("\n".join("  ✗ " + e for e in ERR), file=sys.stderr)
+    print("  Atriðin eru í content/*/*.tsv: leitaðu að setningunni hér að ofan. / "
+          "The items are in content/*/*.tsv: search for the sentence quoted above.", file=sys.stderr)
     print(f"build_exercises: {len(ERR)} problem(s); nothing written.", file=sys.stderr)
     sys.exit(1)
 
