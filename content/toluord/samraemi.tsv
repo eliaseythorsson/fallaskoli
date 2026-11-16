@@ -1,0 +1,44 @@
+# Töluorð: einn til fjórir með nafnorði
+#
+# Frumtala 1–4 sem samræmist nafnorðinu. Nafnorðið fer í fallið og töluna úr BÍN;
+# töluorðið tekur kyn nafnorðsins.
+#
+# Dálkar:
+#   þyngd    1–5
+#   rammi    setningin; ___ er töluorðið, {N} nafnorðið
+#   fall     fall nafnorðsins: NF, ÞF, ÞGF eða EF
+#   tölur    hvaða tölur má spyrja um (1 tekur eintölu)
+#   nafnorð  nafnorðin, aðskilin með kommu
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# A cardinal 1-4 agreeing with its noun. {N} is the noun, put in the case
+# and number the slot needs by BÍN; the numeral takes the noun's gender.
+# n: which numbers may be asked (1 takes the singular).
+# Level = length (the frame, the noun not counted); +1 for the dative
+# (tveimur, þremur, fjórum), +1 for the genitive (tveggja, þriggja, fjögurra).
+#
+
+þyngd	rammi	fall	tölur	nafnorð
+1	Ég á ___ {N}.	ÞF	1, 2, 3, 4	systir, bróðir, köttur, hundur, frænka, frændi
+1	___ {N} komu í heimsókn.	NF	2, 3, 4	stelpa, strákur, barn, kennari, vinkona
+# v6.13 (item 23): *tala við* takes the accusative — "Við töluðum við
+# tvær stelpur". Until now this frame asked for the dative (*tveimur
+# stelpum*) and marked the right answer wrong.
+1	Við töluðum við ___ {N}.	ÞF	1, 2, 3, 4	stelpa, strákur, kennari, barn, vinkona
+2	Hún keypti ___ {N} í búðinni.	ÞF	1, 2, 3, 4	bók, penni, epli, peysa, blýantur, banani
+1	Ég beið í ___ {N}.	ÞF	1, 2, 3, 4	dagur, vika, mínúta, klukkutími
+1	Á bænum eru ___ {N}.	NF	2, 3, 4	kýr, hestur, kind, hæna, svín
+3	Þetta er hús ___ {N}.	EF	2, 3, 4	bróðir, systir, vinur
+# v6.13 (item 23): this was "Hann kom heim með ___ {N}." with things
+# carried, in the dative — but what is carried home is the accusative
+# ("kom heim með tvo fiska"). With people it has two right answers:
+# *með tveimur vinum* (in their company) and *með tvo vini* (brought them
+# home). *mæta* takes the dative and nothing else.
+3	Hún mætti ___ {N} á leiðinni heim.	ÞGF	1, 2, 3, 4	vinur, vinkona, strákur, stelpa, kennari
+2	Í bekknum eru ___ {N} með gleraugu.	NF	2, 3, 4	stelpa, strákur, nemandi
+2	Ég fékk ___ {N} í afmælisgjöf.	ÞF	1, 2, 3, 4	bók, leikur, spil, peysa

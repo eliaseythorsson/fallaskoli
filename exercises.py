@@ -141,31 +141,14 @@ REFLEX_POSSESSIVE = _table("fornofn/afturbeygt-eign.tsv", [
 
 # ---------------------------------------------------------------- Töluorð
 
-# A cardinal 1-4 agreeing with its noun. {N} is the noun, put in the case
-# and number the slot needs by BÍN; the numeral takes the noun's gender.
-# n: which numbers may be asked (1 takes the singular).
-# Level = length (the frame, the noun not counted); +1 for the dative
-# (tveimur, þremur, fjórum), +1 for the genitive (tveggja, þriggja, fjögurra).
-NUMERAL_AGREE = [
-    (1, "Ég á ___ {N}.", "ÞF", [1, 2, 3, 4], ["systir", "bróðir", "köttur", "hundur", "frænka", "frændi"]),
-    (1, "___ {N} komu í heimsókn.", "NF", [2, 3, 4], ["stelpa", "strákur", "barn", "kennari", "vinkona"]),
-    # v6.13 (item 23): *tala við* takes the accusative — "Við töluðum við
-    # tvær stelpur". Until now this frame asked for the dative (*tveimur
-    # stelpum*) and marked the right answer wrong.
-    (1, "Við töluðum við ___ {N}.", "ÞF", [1, 2, 3, 4], ["stelpa", "strákur", "kennari", "barn", "vinkona"]),
-    (2, "Hún keypti ___ {N} í búðinni.", "ÞF", [1, 2, 3, 4], ["bók", "penni", "epli", "peysa", "blýantur", "banani"]),
-    (1, "Ég beið í ___ {N}.", "ÞF", [1, 2, 3, 4], ["dagur", "vika", "mínúta", "klukkutími"]),
-    (1, "Á bænum eru ___ {N}.", "NF", [2, 3, 4], ["kýr", "hestur", "kind", "hæna", "svín"]),
-    (3, "Þetta er hús ___ {N}.", "EF", [2, 3, 4], ["bróðir", "systir", "vinur"]),
-    # v6.13 (item 23): this was "Hann kom heim með ___ {N}." with things
-    # carried, in the dative — but what is carried home is the accusative
-    # ("kom heim með tvo fiska"). With people it has two right answers:
-    # *með tveimur vinum* (in their company) and *með tvo vini* (brought them
-    # home). *mæta* takes the dative and nothing else.
-    (3, "Hún mætti ___ {N} á leiðinni heim.", "ÞGF", [1, 2, 3, 4], ["vinur", "vinkona", "strákur", "stelpa", "kennari"]),
-    (2, "Í bekknum eru ___ {N} með gleraugu.", "NF", [2, 3, 4], ["stelpa", "strákur", "nemandi"]),
-    (2, "Ég fékk ___ {N} í afmælisgjöf.", "ÞF", [1, 2, 3, 4], ["bók", "leikur", "spil", "peysa"]),
-]
+# A cardinal 1-4 agreeing with its noun, hand-written (content/toluord/
+# samraemi.tsv), and frames × nouns by meaning (rammar.tsv, v6.13, critique
+# item 23). Each file says how its items are levelled.
+#   (level, frame, case, which numbers, nouns)          NUMERAL_AGREE
+#   (level, frame, case, which numbers, nouns or classes[, nouns left out])
+#                                                       NUMERAL_FRAMES
+NUMERAL_AGREE = _table("toluord/samraemi.tsv", [
+    ("þyngd", "int"), ("rammi", "text"), ("fall", "text"), ("tölur", "ints"), ("nafnorð", "list")])
 
 # v6.13 (critique item 23): frames × nouns, for to_samr and to_val. The list
 # above held 164 items; a pupil met each one again within a few sessions.
@@ -187,85 +170,33 @@ NUMERAL_TAKE = 25
 # left OUT are not words the school material uses.)
 _NUMERAL_SKIP = {"skór", "dót", "peningur", "hnífur", "band", "steinn", "óvinur", "náungi",
                 "mamma", "pabbi", "faðir", "móðir", "amma", "afi", "dóttir", "sonur"}
-# the people one lives with or misses, and the children who own bicycles
-_CLOSE = ["vinur", "vinkona", "frænka", "frændi", "bróðir", "systir", "félagi", "nágranni",
-          "strákur", "stelpa"]
-_CHILDREN = ["strákur", "stelpa", "krakki", "barn", "drengur", "vinur", "vinkona", "bróðir",
-             "systir", "nemandi"]
-NUMERAL_FRAMES = [
-    (1, "Ég á ___ {N}.", "ÞF", [1, 2, 3, 4], ["köttur", "hundur", "hestur", "fiskur",
-     "páfagaukur", "systir", "bróðir", "frænka", "frændi", "vinur", "vinkona"]),
-    (1, "Ég á ___ {N}.", "ÞF", [1, 2, 3, 4], "object book clothing"),
-    (1, "Hér eru ___ {N}.", "NF", [2, 3, 4], "object book clothing"),
-    (1, "___ {N} komu í heimsókn.", "NF", [2, 3, 4], "person job"),
-    (1, "Ég hitti ___ {N} í gær.", "ÞF", [1, 2, 3, 4], "person job"),
-    (1, "Á bænum eru ___ {N}.", "NF", [2, 3, 4], ["kýr", "hestur", "kind", "hæna", "svín", "hundur",
-     "köttur", "geit", "hani", "kálfur", "lamb", "gæs", "önd"]),
-    (1, "Ég beið í ___ {N}.", "ÞF", [1, 2, 3, 4], ["dagur", "vika", "mínúta", "klukkutími",
-     "mánuður", "sekúnda"]),
-    (2, "Hún keypti ___ {N} í búðinni.", "ÞF", [1, 2, 3, 4], "object book clothing", ["bréf"]),
-    (2, "Í garðinum eru ___ {N}.", "NF", [2, 3, 4], ["tré", "blóm", "runni", "fugl", "köttur", "bekkur"]),
-    (2, "Ég las ___ {N} í sumar.", "ÞF", [1, 2, 3, 4], ["bók", "saga", "blað", "teiknimyndasaga", "ljóð"]),
-    (2, "Við hjálpuðum ___ {N}.", "ÞGF", [1, 2, 3, 4], "person job"),
-    (2, "Ég gaf ___ {N} mat.", "ÞGF", [1, 2, 3, 4], ["köttur", "hundur", "hestur", "kind", "hæna",
-     "fugl", "fiskur", "kýr", "geit", "önd", "gæs"]),
-    (3, "Hún bjó hjá ___ {N} í sumar.", "ÞGF", [1, 2, 3, 4], _CLOSE),
-    (3, "Þetta eru hjól ___ {N}.", "EF", [2, 3, 4], _CHILDREN),
-    (3, "Hún saknaði ___ {N}.", "EF", [1, 2, 3, 4], _CLOSE),
-    (4, "Kennarinn talaði lengi við foreldra ___ {N}.", "EF", [2, 3, 4], ["stelpa", "strákur",
-     "barn", "nemandi"]),
-    (4, "Hún passaði hunda ___ {N} um helgina.", "EF", [1, 2, 3, 4], _CLOSE),
-    (4, "Kennarinn hrósaði verkefnum ___ {N} í dag.", "EF", [1, 2, 3, 4], _CHILDREN),
-]
+
+def _numeral_frames():
+    out = []
+    for r in _C.rows("toluord/rammar.tsv", [
+            ("þyngd", "int"), ("rammi", "text"), ("fall", "text"), ("tölur", "ints"), ("nafnorð", "list"),
+            ("flokkar", "str"), ("sleppa", "list")]):
+        if bool(r["nafnorð"]) == bool(r["flokkar"]):
+            _bad(r, "fylltu út annaðhvort „nafnorð“ eða „flokkar“ / nouns or classes, one of the two")
+        e = (r["þyngd"], r["rammi"], r["fall"], r["tölur"], r["nafnorð"] or r["flokkar"])
+        out.append(e + ((r["sleppa"],) if r["sleppa"] else ()))
+    return out
+
+
+NUMERAL_FRAMES = _numeral_frames()
 
 # Plural-only nouns: einir, tvennir, þrennir, fernir.
 PLURAL_ONLY_NOUNS = ["buxur", "skæri", "gleraugu", "tónleikar", "dyr", "jól", "hjón"]
 PLURAL_NUMERALS = {1: ("einn", "fn"), 2: ("tvennur", "lo"), 3: ("þrennur", "lo"), 4: ("fern", "lo")}
-# Level = length + 1; +1 for the dative, +1 for a noun whose plural-only
-# meaning is itself a puzzle (hjón, jól) or a perfect tense around it.
-NUMERAL_PLURAL_ONLY = [
-    (3, "Ég keypti ___ {N} í gær.", "ÞF", [1, 2, 3], ["buxur", "skæri", "gleraugu"]),
-    (2, "Hann á ___ {N}.", "ÞF", [1, 2, 3, 4], ["buxur", "gleraugu", "skæri"]),
-    (2, "Í ganginum eru ___ {N}.", "NF", [2, 3, 4], ["dyr"]),
-    (3, "Við fórum á ___ {N} í sumar.", "ÞF", [1, 2, 3, 4], ["tónleikar"]),
-    (4, "Hún hefur haldið ___ {N} hjá ömmu.", "ÞF", [2, 3, 4], ["jól"]),
-    (4, "Í brúðkaupinu dönsuðu ___ {N} saman.", "NF", [2, 3, 4], ["hjón"]),
-    (4, "Það er gat á ___ {N}.", "ÞGF", [1, 2, 3], ["buxur"]),
-]
 
-# v6.13 (critique item 23): more plural-only nouns, in frames written for
-# what they mean. NUMERAL_PLURAL_ONLY held seven nouns in eleven sentences.
-# Every noun here is checked against BÍN to have no singular at all (the
-# build stops otherwise), so *tvennar* is the only right answer; and *skór*,
-# *sokkar*, *vettlingar* are left out on purpose: they have a singular, and
-# with them *tveir* (two shoes) and *tvennir* (two pairs) are both right.
-# Same levels as above (length + 1; +1 dative; +1 for the people and the
-# feasts, whose plural-only meaning is itself a puzzle).
-PLURAL_ONLY_GROUPS = {
-    "trousers": ["buxur", "stuttbuxur", "gallabuxur", "náttbuxur", "íþróttabuxur", "sokkabuxur",
-                 "regnbuxur", "nærbuxur"],
-    "glasses": ["gleraugu", "sólgleraugu", "sundgleraugu", "skíðagleraugu"],
-    "tool": ["skæri", "naglaskæri"],
-    "door": ["dyr", "útidyr", "bakdyr", "svaladyr"],
-    "people": ["hjón", "feðgar", "mæðgur", "feðgin", "mæðgin"],
-    "feast": ["jól", "páskar", "áramót"],
-    "prize": ["verðlaun"],
-}
-PLURAL_ONLY_FRAMES = [
-    (2, "Ég á ___ {N}.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
-    (2, "Hún keypti ___ {N}.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
-    (2, "Hér eru ___ {N}.", "NF", [1, 2, 3, 4], "trousers glasses tool"),
-    (2, "Mig vantar ___ {N}.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
-    (3, "Ég fann ___ {N} í skúffunni.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
-    (3, "Hann kom heim með ___ {N}.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
-    (4, "Það er gat á ___ {N}.", "ÞGF", [1, 2, 3], "trousers"),
-    (3, "Á húsinu eru ___ {N}.", "NF", [1, 2, 3, 4], "door"),
-    (4, "Á bænum búa ___ {N}.", "NF", [1, 2, 3, 4], "people"),
-    (4, "Í veislunni voru ___ {N}.", "NF", [1, 2, 3, 4], "people"),
-    (4, "Liðið fékk ___ {N} á mótinu.", "ÞF", [1, 2, 3, 4], "prize"),
-    (4, "Hún hefur unnið ___ {N}.", "ÞF", [1, 2, 3, 4], "prize"),
-    (4, "Við höfum haldið ___ {N} saman.", "ÞF", [1, 2, 3, 4], "feast"),
-]
+# The plural-only nouns with einir, tvennir, þrennir, fernir: hand-written
+# (content/toluord/fleirtoluord.tsv) and frames × groups of such nouns
+# (fleirtoluord-hopar.tsv, fleirtoluord-rammar.tsv; v6.13, critique item 23).
+NUMERAL_PLURAL_ONLY = _table("toluord/fleirtoluord.tsv", [
+    ("þyngd", "int"), ("rammi", "text"), ("fall", "text"), ("tölur", "ints"), ("nafnorð", "list")])
+PLURAL_ONLY_GROUPS = _dict("toluord/fleirtoluord-hopar.tsv", [("hópur", "text"), ("nafnorð", "list")])
+PLURAL_ONLY_FRAMES = _table("toluord/fleirtoluord-rammar.tsv", [
+    ("þyngd", "int"), ("rammi", "text"), ("fall", "text"), ("tölur", "ints"), ("hópar", "text")])
 
 # Dates. Ordinals are written lemma by lemma (21. = tuttugasti og fyrsti).
 ORDINAL_LEMMAS = {
@@ -279,18 +210,11 @@ ORDINAL_LEMMAS = {
 MONTHS = ["janúar", "febrúar", "mars", "apríl", "maí", "júní", "júlí", "ágúst",
           "september", "október", "nóvember", "desember"]
 DAYS_IN = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-# The case the date stands in, and why.
-# Level = length; +1 for a case other than the nominative, +1 for the
-# genitive or a frame where nothing but the date says "when". The builder
-# adds one more for a compound ordinal (21. = tuttugasti og fyrsti).
-DATE_FRAMES = [
-    (1, "Í dag er ___ {M}.", "NF", "Dagsetningin er frumlag eða sagnfylling: nefnifall (*dagurinn*)."),
-    (2, "Ég á afmæli ___ {M}.", "ÞF", "Dagsetning sem svarar *hvenær?* stendur í þolfalli (*þann þriðja maí*)."),
-    (2, "Skólinn byrjar ___ {M}.", "ÞF", "Dagsetning sem svarar *hvenær?* stendur í þolfalli."),
-    (2, "Frá ___ {M} er sumarfrí.", "ÞGF", "*Frá* stýrir þágufalli."),
-    (3, "Fríið stendur til ___ {M}.", "EF", "*Til* stýrir eignarfalli."),
-    (3, "Við förum til útlanda ___ {M}.", "ÞF", "Dagsetning sem svarar *hvenær?* stendur í þolfalli."),
-]
+
+# The case the date stands in, and why: content/toluord/dagsetningar.tsv.
+#   (level, frame, case, why)
+DATE_FRAMES = _table("toluord/dagsetningar.tsv", [
+    ("þyngd", "int"), ("rammi", "text"), ("fall", "text"), ("skýring", "text")])
 
 # ---------------------------------------------------------------- Fallstjórn
 
