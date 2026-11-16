@@ -1,3 +1,4 @@
+// @ts-check
 /* The curriculum map as data (item 39). The prose, the sources and what could
  * and could not be verified are in docs/CURRICULUM.md; read that first.
  *
@@ -32,6 +33,8 @@
  * Pure data and pure functions. This file imports nothing, so that
  * skills.js, policy.js and the server can all read it without a cycle; the
  * tests check every reference against the real catalogues. */
+
+/** @typedef {import("../types").Node} Node */
 
 /* ---------- the official criteria ---------------------------------------- */
 
@@ -81,6 +84,7 @@ export const PLANNED_CATEGORIES = [
  *           on the node narrows to these (item 83).
  *   item    for backlog nodes: the improvement item that would close the gap
  */
+/** @type {Node[]} */
 export const NODES = [
   /* ---- Nafnorð ---- */
   { id: "no-foll", nm: "Föllin fjögur", cat: "nafnord", year: 8, hv: "ordflokkar",
@@ -227,22 +231,28 @@ export const NODES = [
 export const NODE_IDS = NODES.map((n) => n.id);
 
 const BY_ID = new Map(NODES.map((n) => [n.id, n]));
+/** @type {(id: string) => ?Node} */
 export const nodeById = (id) => BY_ID.get(id) || null;
 
-/** Is there anything to practise on this node today? A locked node is not. */
+/** Is there anything to practise on this node today? A locked node is not.
+    @type {(n: ?Node) => boolean} */
 export const nodeHasQuestions = (n) => !!(n && n.types.length);
 
-/** The nodes of one category, youngest year first, in the order written. */
+/** The nodes of one category, youngest year first, in the order written.
+    @type {(cat: string) => Node[]} */
 export const nodesOfCategory = (cat) =>
   NODES.filter((n) => n.cat === cat).sort((a, b) => a.year - b.year);
 
-/** The nodes a year adds (not the ones it inherits). */
+/** The nodes a year adds (not the ones it inherits).
+    @type {(year: number) => Node[]} */
 export const nodesOfYear = (year) => NODES.filter((n) => n.year === year);
 
-/** Every node a question type tests: one type can serve several nodes. */
+/** Every node a question type tests: one type can serve several nodes.
+    @type {(type: string) => Node[]} */
 export const nodesOfType = (type) => NODES.filter((n) => n.types.includes(type));
 
-/** The backlog: everything that is not fully covered, for items 27 and 28. */
+/** The backlog: everything that is not fully covered, for items 27 and 28.
+    @type {(item?: ?number) => Node[]} */
 export const backlog = (item = null) =>
   NODES.filter((n) => n.cover !== "full" && (item == null || n.item === item));
 
@@ -260,8 +270,9 @@ const TOP_LEVEL = { 8: 5, 9: 6, 10: 7 };
  * the years below it. A category is in if any of its nodes that has
  * questions is; a type is in if any such node lists it.
  *
- * @returns {{ year, skills: string[], types: string[], topLevel: number }}
- *          or null for a year that is not 8, 9 or 10
+ * @param {number} year
+ * @returns {?{ year: number, skills: string[], types: string[], topLevel: number }}
+ *          null for a year that is not 8, 9 or 10
  */
 export function presetContent(year) {
   if (!YEARS.includes(year)) return null;

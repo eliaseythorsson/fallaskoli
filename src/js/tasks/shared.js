@@ -1,3 +1,4 @@
+// @ts-check
 /* What the category files share: the random source, word choice, sentence
    pools, the curriculum gate, and the small text helpers.
 
@@ -12,6 +13,12 @@ import { wordKey } from "../core/state.js";
 import { chooseWord } from "../core/spacing.js";
 import { FX } from "./effects.js";
 
+/** @typedef {import("../types").View} View */
+/** @typedef {import("../types").Rng} Rng */
+/** @typedef {import("../types").Policy} Policy */
+/** @typedef {import("../types").State} State */
+/** @typedef {import("../types").Lexicon} Lexicon */
+
 /* ---------- the random source -------------------------------------------
  *
  * Every draw a builder makes goes through `rng`, which is passed in. There is
@@ -21,11 +28,16 @@ import { FX } from "./effects.js";
  * not named anywhere in this folder — tests/purity.test.js greps for it, and
  * builds every type with it taken away. */
 
+/** One item of `a`. @template T @param {readonly T[]} a @param {Rng} rng @returns {T} */
 export const pick = (a, rng) => a[Math.floor(rng() * a.length)];
 
-/** A whole number from 0 up to (not including) n. */
+/** A whole number from 0 up to (not including) n.
+    @type {(n: number, rng: Rng) => number} */
 export const randInt = (n, rng) => Math.floor(rng() * n);
 
+/** One item, chosen with weight `wf(item)` (never quite 0).
+    @template T @param {readonly T[]} items @param {(x: T) => number} wf
+    @param {Rng} rng @returns {T} */
 export function wpick(items, wf, rng) {
   const total = items.reduce((s, i) => s + Math.max(wf(i), 1e-4), 0);
   let r = rng() * total;
@@ -33,7 +45,8 @@ export function wpick(items, wf, rng) {
   return items[items.length - 1];
 }
 
-/** A shuffled copy. */
+/** A shuffled copy.
+    @template T @param {Iterable<T>} a @param {Rng} rng @returns {T[]} */
 export function shuffle(a, rng) {
   const x = [...a];
   for (let i = x.length - 1; i > 0; i--) {
@@ -47,19 +60,23 @@ export function shuffle(a, rng) {
 
 /* The one gate every cell goes through: the policy, plus the one cell the
  * program never teaches — the shortened imperative (core/marks.js). */
+/** @type {(P: Pick<Policy, "mark">, m: ?string) => boolean} */
 export const askable = (P, m) => !!m && !isStyfdur(m) && P.mark(m);
 
-/** The band this skill may run at, never above what the policy permits. */
+/** The band this skill may run at, never above what the policy permits.
+    @type {(view: View, skill: string) => number} */
 export const bandFor = (view, skill) => Math.min(bandOf(view.sess, skill), view.policy.maxLevel);
 
-/** A level this child may meet: the item's own, or the nearest allowed. */
+/** A level this child may meet: the item's own, or the nearest allowed.
+    @type {(P: Pick<Policy, "level"|"levels">, want: number) => number} */
 export const levelFor = (P, want) => (P.level(want) ? want
   : P.levels.reduce((b, x) => (Math.abs(x - want) < Math.abs(b - want) ? x : b), P.levels[0]));
 
-/* Sentences at about the right difficulty AND at a difficulty this child is
+/** Sentences at about the right difficulty AND at a difficulty this child is
    allowed to meet. The band is clamped to the policy's ceiling, so a class that
    is only working at þyngd 1-2 never has the band drift above it however well
-   the child does. */
+   the child does.
+   @param {Lexicon} lex @param {View} view @param {string} skill @param {number} [maxLvl] */
 export const sentPool = (lex, view, skill, maxLvl) => {
   const P = view.policy;
   const b = Math.min(maxLvl ?? bandOf(view.sess, skill), P.maxLevel);
@@ -82,7 +99,9 @@ export const sentPool = (lex, view, skill, maxLvl) => {
  * anywhere. The band is first brought down to the highest level the list
  * has: a list that stops at 3 is the same list at þyngd 4, 5, 6 and 7. */
 
-/** The items near `band` by `lvlOf`, at least `min` of them if there are. */
+/** The items near `band` by `lvlOf`, at least `min` of them if there are.
+    @template T @param {T[]} items @param {(x: T) => number} lvlOf
+    @param {number} band @param {number} [min] @returns {T[]} */
 export function nearBand(items, lvlOf, band, min = 4) {
   if (items.length <= min) return items;
   const top = Math.max(...items.map(lvlOf));
@@ -100,6 +119,10 @@ export function nearBand(items, lvlOf, band, min = 4) {
  * visit (if any is left — `fresh` below), near the band of `skill`. A
  * builder picks one of what this returns, and labels the question with the
  * item's own level (`levelFor`).
+ *
+ * @template {{lvl: number}} T
+ * @param {View} view @param {string} skill @param {T[]} items
+ * @param {((x: T) => string)|null} key @param {number} [min] @returns {T[]}
  */
 export function itemsForBand(view, skill, items, key, min = 4) {
   if (!items.length) return items;
@@ -117,10 +140,12 @@ export function itemsForBand(view, skill, items, key, min = 4) {
  * that chooses a word asks this first: during a drill it hands back the drilled
  * word if it belongs to one of these classes, and null otherwise — in which
  * case a builder for some other class has nothing to do and returns null. */
+/** @type {(view: View, classes: string[]) => any} */
 export const forced = (view, classes) => {
   const w = view.drillWord;
   return w && classes.includes(w.c) ? w : null;
 };
+/** @type {(view: View) => boolean} */
 export const drilling = (view) => !!view.drillWord;
 
 /* ---------- a review (v6.13, tasks/review.js) -----------------------------
@@ -130,11 +155,12 @@ export const drilling = (view) => !!view.drillWord;
  * over. These read the rest. A builder that honours a forced cell builds that
  * cell or returns null. */
 
-/** The cell a review asks for, or null. */
+/** The cell a review asks for, or null. @type {(view: View) => ?string} */
 export const forcedCell = (view) => (view.force && view.force.cell) || null;
-/** The hand-written item a review asks for, or null. */
+/** The hand-written item a review asks for, or null. @type {(view: View) => ?string} */
 export const forcedItem = (view) => (view.force && view.force.item) || null;
-/** May this cell be built? Always, unless a review asks for another. */
+/** May this cell be built? Always, unless a review asks for another.
+    @type {(view: View, m: string) => boolean} */
 export const cellWanted = (view, m) => !forcedCell(view) || forcedCell(view) === m;
 
 /* ---------- choosing a word ---------------------------------------------- */
@@ -202,7 +228,8 @@ function rankCut(lex, cls) {
  * of keeping a draw); neither ever returns 0, so nothing is starved. */
 
 /** The level the second axis reads: the skill's live level, in halves, never
-    above what the policy permits (as `bandFor`, but not rounded). */
+    above what the policy permits (as `bandFor`, but not rounded).
+    @type {(view: View, skill: string) => number} */
 export const axisLevel = (view, skill) =>
   Math.min(diffOf(view.sess, skill), view.policy.maxLevel ?? Infinity);
 
@@ -237,7 +264,10 @@ export function caseCellEase(lex, view, skill, m) {
 
 /** Word choice: common words first, rarer as the skill level grows, regular
     words first and irregular ones as the level of the session grows, and
-    words this child gets wrong come back sooner. */
+    words this child gets wrong come back sooner.
+    @param {Lexicon} lex @param {View} view
+    @param {{o: string, c: string, r: number, irr?: number}} x  a lexicon entry
+    @param {string} skill @returns {number} */
 export function wordWeight(lex, view, x, skill) {
   const { S, sess } = view;
   const L = skillLevel((S.skills[skill] || {}).xp || 0).level;
@@ -259,6 +289,7 @@ export function wordWeight(lex, view, x, skill) {
   return base;
 }
 
+/** @type {(S: State, m: string) => number} */
 export const cellWeight = (S, m) => {
   const c = S.cells[m] || { c: 0, w: 0 };
   const n = c.c + c.w;
@@ -305,6 +336,9 @@ export function textSentence(text) {
  * straight away. `fresh` reads what the session remembers; the builder that
  * uses an item returns `FX.exSeen(key)` beside its task, and the item is
  * remembered when — and only when — the question is shown. */
+
+/** @template T @param {View} view @param {(x: T) => string} key @param {T[]} list
+    @returns {T[]} */
 export function fresh(view, key, list) {
   const seen = view.sess.exSeen || [];
   const ok = list.filter((x) => !seen.includes(key(x)));
@@ -341,6 +375,13 @@ export const RANK_CAP = [0, 700, 1500, 2600, 4000, 6000, 9000, Infinity];
 export const CLASS_RANK_CAP = [0, 150, 350, 600, 950, Infinity];
 /** The level, 1-5, of a word of this class rank. */
 export const classRankLevel = (r) => { let L = 1; while (L < 5 && r > CLASS_RANK_CAP[L]) L++; return L; };
+/**
+ * @template T
+ * @param {View} view @param {Rng} rng @param {string} kind @param {T[]} items
+ * @param {(x: T) => string} keyOf @param {(x: T) => number} rankOf
+ * @param {number} [maxBand]
+ * @returns {?{x: T, fx: import("../types").BuildEffect}}
+ */
 export function pickVocab(view, rng, kind, items, keyOf, rankOf, maxBand = 7) {
   if (!items.length) return null;
   /* `maxBand`: a list whose items stop at level 5 (or_samhengi, or_myndun)
@@ -354,7 +395,8 @@ export function pickVocab(view, rng, kind, items, keyOf, rankOf, maxBand = 7) {
   for (const t of tiers) {
     if (!t.length) continue;
     const c = chooseWord(view.S, t, view.today, rng);
-    if (c) return { x: c.x, fx: FX.asked(c.key, view.today) };
+    /* tasks/effects.js is not type-checked yet, so FX's `op` is a plain string to tsc. */
+    if (c) return { x: c.x, fx: /** @type {import("../types").BuildEffect} */ (FX.asked(c.key, view.today)) };
   }
   return null;
 }

@@ -1,3 +1,4 @@
+// @ts-check
 /* "Dagsins lota" — today's session (critique item 21).
 
    The picker used to offer ten categories and no advice. A pupil who did not
@@ -61,9 +62,9 @@ export const TODAY_PATTERNS = 3;
 
 /**
  * How many of `n` questions are reviews, patterns and new material.
- * @param n         the size of the session
- * @param due       how many reviews are due (and may be asked)
- * @param patterns  how many active patterns can be practised
+ * @param {number} n         the size of the session
+ * @param {number} due       how many reviews are due (and may be asked)
+ * @param {number} patterns  how many active patterns can be practised
  * @returns {{review:number, pattern:number, fresh:number}}
  */
 export function shares(n, due, patterns) {
@@ -85,20 +86,25 @@ export function shares(n, due, patterns) {
 /**
  * Today's session, planned.
  *
- * @param S       the saved state
- * @param P       the curriculum policy (core/policy.js, the effective one)
- * @param now     today: a day key, a Date or milliseconds
- * @param opts.n        the size (default ten)
- * @param opts.canType  (typeId) → may a question of this type be asked under
- *                      `P`? Default: `P.type`. app.js passes the registry's
- *                      `enabled`, which also checks the type's skill.
- * @returns {{ n, slots, reviews, patterns, counts }}
+ * @param {import("../types").State} S  the saved state
+ * @param {?import("../types").Policy} P  the curriculum policy (core/policy.js, the effective one)
+ * @param {import("../types").When} now   today: a day key, a Date or milliseconds
+ * @param {object} [opts]
+ * @param {number} [opts.n]  the size (default ten)
+ * @param {((typeId: string) => boolean)|null} [opts.canType]  may a question of
+ *                      this type be asked under `P`? Default: `P.type`.
+ *                      app.js passes the registry's `enabled`, which also
+ *                      checks the type's skill.
+ * @returns {{ n: number, slots: TodaySlot[], reviews: string[], patterns: string[],
+ *             counts: {review: number, pattern: number, fresh: number} }}
  *   slots     one per question, in order: { kind: "review", k } |
  *             { kind: "pattern", p } | { kind: "new", skill }
  *   reviews   the keys of the review slots, most urgent first
  *   patterns  the ids of the patterns worked on, worst first
  *   counts    { review, pattern, fresh }
  */
+/** @typedef {{kind: "review", k: string} | {kind: "pattern", p: string}
+              | {kind: "new", skill: ?string}} TodaySlot */
 export function planToday(S, P, now, { n = TODAY_SIZE, canType = null } = {}) {
   const may = canType || ((id) => !!P && P.type(id));
 
@@ -107,6 +113,7 @@ export function planToday(S, P, now, { n = TODAY_SIZE, canType = null } = {}) {
     .map((p) => p.id);
   const counts = shares(n, due.length, pats.length);
 
+  /** @type {TodaySlot[]} */
   const slots = [];
   const reviews = due.slice(0, counts.review).map((e) => e.k);
   reviews.forEach((k) => slots.push({ kind: "review", k }));
@@ -127,6 +134,12 @@ export function planToday(S, P, now, { n = TODAY_SIZE, canType = null } = {}) {
  * catalogue's order, so the plan never depends on how the state is stored.
  * At most three, so that the new questions are not three different
  * categories every day for a pupil with everything on.
+ *
+ * @param {import("../types").State} S
+ * @param {?Pick<import("../types").Policy, "skill"|"type">} P
+ * @param {((typeId: string) => boolean)|null} [canType]
+ * @param {number} [limit]
+ * @returns {string[]}
  */
 export function freshSkills(S, P, canType = null, limit = 3) {
   if (!P) return [];

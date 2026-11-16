@@ -37,6 +37,9 @@ const KNOWN = {
   "puppeteer-core": { nm: "puppeteer-core", who: "Google LLC", lic: "Apache-2.0",
     url: "https://github.com/puppeteer/puppeteer",
     what: "Stýring á Chrome í vafraprófunum. Fylgir ekki afurðinni." },
+  typescript: { nm: "TypeScript", who: "Microsoft Corp.", lic: "Apache-2.0",
+    url: "https://github.com/microsoft/TypeScript",
+    what: "Villuleit í kóðanum við smíði. Fylgir ekki afurðinni." },
 };
 
 /* Data sets and other things that are not packages. */

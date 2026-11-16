@@ -1,3 +1,4 @@
+// @ts-check
 /* Two devices, one child: putting two copies of the progress back together.
  *
  * Until v6.3 the whole state went up and the last write won, so a phone left
@@ -25,6 +26,8 @@ import { mergeLevels } from "./difficulty.js";
 import { mergeByType } from "./mastery.js";
 import { mergeByNode } from "./skillmap.js";
 import { mergeSeenTypes } from "./examples.js";
+
+/** @typedef {import("../types").State} State */
 
 const num = (x) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
 const obj = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : {});
@@ -96,10 +99,14 @@ function mergeBadge(b, l, r, keep = 80) {
 }
 
 /**
- * @param {object|null} base   the last state this device and the server agreed on
- * @param {object} local       this device's state now
- * @param {object} remote      the server's state now
- * @returns {object} a new state holding the work of both
+ * The arguments are typed as the current State, but the code reads every
+ * part of them defensively (`obj`, `num`): a copy may come from an older
+ * build on another device.
+ *
+ * @param {?State} base   the last state this device and the server agreed on
+ * @param {State} local       this device's state now
+ * @param {State} remote      the server's state now
+ * @returns {State} a new state holding the work of both
  */
 export function mergeStates(base, local, remote) {
   if (!remote) return local;

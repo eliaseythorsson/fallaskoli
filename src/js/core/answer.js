@@ -1,3 +1,4 @@
+// @ts-check
 /* Judging an answer — every question type, in one place, without a screen.
  *
  * Until v6.13 each of the seventeen submit handlers in ui/render.js and
@@ -101,6 +102,14 @@ import { noteTypeAnswer } from "./mastery.js";
 import { noteNodeAnswer, partsOf } from "./skillmap.js";
 import { noteReview } from "./review.js";
 import { noteReviewsPassed } from "./mending.js";
+
+/** @typedef {import("../types").State} State */
+/** @typedef {import("../types").Session} Session */
+/** @typedef {import("../types").Task} Task */
+/** @typedef {import("../types").Judgement} Judgement */
+/** @typedef {import("../types").Effect} Effect */
+/** @typedef {import("../types").RecordEffect} RecordEffect */
+/** @typedef {{S: State, sess?: Session}} Pupil */
 
 /* ========================================================================
  * 1. What the pupil's history says — read-only
@@ -513,13 +522,18 @@ export function tailLeftOut(input, task) {
 const VERDICT = (ok, near = false) => (ok ? (near ? "near" : "right") : "wrong");
 
 /** Not an answer yet: nothing is recorded, the renderer asks again. */
+/** @type {(verdict: string, detail?: object) => Judgement} */
 const pending = (verdict, detail = {}) => ({
   ok: null, verdict, pending: true, findings: [], xp: 0, effects: [],
   finish: null, detail, resp: null,
 });
 
 /** An answer. `resp` is what `diagnose` reads; `finish` the question-level
-    flags for `app.finish`, `correct` first. */
+    flags for `app.finish`, `correct` first.
+    @param {Task} task
+    @param {{ok: ?boolean, verdict: string, effects: Effect[], resp?: ?object,
+             finish?: object, detail?: object}} parts
+    @returns {Judgement} */
 function result(task, { ok, verdict, effects, resp = null, finish = {}, detail = {} }) {
   const xp = effects.reduce((n, e) =>
     n + (e.do === "record" || e.do === "grant" ? e.xp || 0 : 0), 0);
@@ -533,9 +547,13 @@ function result(task, { ok, verdict, effects, resp = null, finish = {}, detail =
 }
 
 /* The effects. Each is one thing `settle` does, in the order listed. */
+/** @type {(spec: Omit<RecordEffect, "do">) => RecordEffect} */
 const rec = (spec) => ({ do: "record", ...spec });
+/** @type {(skill: string, ok: ?boolean) => Effect} */
 const bump = (skill, ok) => ({ do: "bump", skill, ok });
+/** @type {(skill: string, ok: boolean) => Effect} */
 const tally = (skill, ok) => ({ do: "tally", skill, ok });
+/** @type {(counter: string) => Effect} */
 const count = (counter) => ({ do: "count", counter });
 
 /* ========================================================================
@@ -563,8 +581,11 @@ function writtenForm(task, response, hist, { flags, conj = false, gap = false })
   const xp = xpFor(hist, task, { ok, hinted, factor: v.factor });
   const shape = answerShape(text);
 
+  /** @type {Record<string, any>} */
   const item = { m: task.m, typed: text, g, accepted: task.answers };
   if (conj) item.conj = task.conj;
+  /** @type {Record<string, any>} the answer as `diagnose` reads it; a gap
+      without a mark is read for its patterns alone */
   let resp = { kind: "form", items: [item] };
   let plain = false;
   if (gap) {
@@ -1084,12 +1105,10 @@ export const JUDGED_TYPES = Object.keys(JUDGES);
 /**
  * Judge one answer. Pure.
  *
- * @param {object}  task      a task as the builders make it (`task.type`)
- * @param {object}  response  what the pupil gave — shapes at the top of the file
- * @param {?{S:object, sess:object}} pupil  read for XP only; may be omitted
- * @returns {{ok:?boolean, verdict:string, pending:boolean, findings:object[],
- *            xp:number, effects:object[], finish:?object, detail:object,
- *            resp:?object}}
+ * @param {Task}  task      a task as the builders make it (`task.type`)
+ * @param {Record<string, any>}  [response]  what the pupil gave — shapes at the top of the file
+ * @param {?Pupil} [pupil]  read for XP only; may be omitted
+ * @returns {Judgement}
  */
 export function judge(task, response = {}, pupil = null) {
   const fn = task && JUDGES[task.type];
@@ -1108,6 +1127,9 @@ export function judge(task, response = {}, pupil = null) {
  * type — the question it hangs under has already been judged — but its XP is
  * decided and written the same way, so it has the same shape of result.
  * `pending` (with `detail.why`) when the sentence does not earn the bonus.
+ *
+ * @param {Task} task @param {string} text @param {?Pupil} [pupil]
+ * @returns {Judgement}
  */
 export function judgeBonus(task, text, pupil = null) {
   const hist = historyOf(pupil);
@@ -1190,7 +1212,8 @@ export const RETRY_TYPES = {
 };
 
 /** May this judged answer be tried again? Only a settled wrong answer, of a
-    type listed above, outside a duel, and only once. */
+    type listed above, outside a duel, and only once.
+    @param {?Task} task @param {?Judgement} j @returns {boolean} */
 export function retryAllowed(task, j) {
   if (!task || !j || j.pending || j.ok !== false) return false;
   if (task.duel || task.retried) return false;
@@ -1234,6 +1257,12 @@ export function hideAnswer(text, task, mask = "…") {
  * Otherwise `{ ok, verdict, retry: true, xp, effects, finish: null, … }`:
  * `detail` and `resp` are the second try's own, for drawing; `findings` too,
  * and they are NOT written to the diagnosis (the miss already was).
+ *
+ * @param {Task} task
+ * @param {Record<string, any>} [response]
+ * @param {?Record<string, any>} [firstResponse]
+ * @param {?Pupil} [pupil]
+ * @returns {Judgement}
  */
 export function judgeRetry(task, response = {}, firstResponse = null, pupil = null) {
   const j = judge(task, response, pupil);
@@ -1242,6 +1271,7 @@ export function judgeRetry(task, response = {}, firstResponse = null, pupil = nu
     return pending("same", j.detail);
   const ok = j.ok === true;
   const xp = ok && j.xp > 0 ? Math.max(1, Math.round(j.xp * RETRY_XP)) : 0;
+  /** @type {Effect[]} */
   const effects = [count("retries")];
   if (ok) effects.push({ do: "grant", skill: task.skill, xp }, count("retryFixed"));
   return {
@@ -1263,6 +1293,10 @@ export const firstSaid = (response) =>
  * time the answer took (the renderer's clock; a simulation passes what it
  * likes). Returns what `app.finish` is to be told, or null for a result that
  * does not end a question (`pending`, the bonus sentence).
+ *
+ * @param {State} S @param {Session} sess @param {Task} task
+ * @param {?Judgement} j @param {{ms?: number}} [opts]
+ * @returns {?Record<string, any>}
  */
 export function settle(S, sess, task, j, { ms = 0 } = {}) {
   if (!j || j.pending) return null;
@@ -1289,7 +1323,7 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
       /* A text that has earned its XP once this visit. */
       case "remember": (sess[e.list] ||= []).push(e.key); break;
       case "bump": bumpDiff(sess, S, e.skill, e.ok); break;
-      default: throw new Error("Óþekkt áhrif: " + e.do);
+      default: throw new Error("Óþekkt áhrif: " + /** @type {any} */ (e).do);
     }
   }
   if (!j.finish) return null;
@@ -1311,6 +1345,7 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
      (core/mending.js). A duel's answers count too: a due entry answered
      right is a review passed wherever it happens. */
   noteReviewsPassed(S, review.passed.length + review.done.length, todayKey());
+  /** @type {Record<string, any>} */
   const out = { ...j.finish, findings: j.findings, review };
   /* The badges for a quick or a curious answer read its time and its shape
      together; both only when the answer was right. */

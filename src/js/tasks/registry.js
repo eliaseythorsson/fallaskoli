@@ -1,3 +1,4 @@
+// @ts-check
 /* The catalogue of question types.
 
    One file per category (the twelve skills of core/skills.js), and in each
@@ -52,7 +53,11 @@ import { TYPES as SETNINGAFRAEDI } from "./setningafraedi.js";
 import { TYPES as MALBEITING } from "./malbeiting.js";
 import { TYPES as SETNINGAGERD } from "./setningagerd.js";
 
-/** The types of each category, as its file declares them. */
+/** @typedef {import("../types").TaskType} TaskType */
+/** @typedef {import("../types").View} View */
+
+/** The types of each category, as its file declares them.
+    @type {Record<string, TaskType[]>} */
 export const CATEGORIES = {
   nafnord: NAFNORD, lysingarord: LYSINGARORD, sagnord: SAGNORD, fornofn: FORNOFN,
   toluord: TOLUORD, obeygjanleg: OBEYGJANLEG, greining: GREINING, fallstjorn: FALLSTJORN,
@@ -82,7 +87,10 @@ const ORDER = [
   "gerd_tegund", "setn_lidir", "lid_finna", "raeda",
 ];
 
-/** What is wrong with the declarations, as sentences; empty when nothing is. */
+/** What is wrong with the declarations, as sentences; empty when nothing is.
+    The declarations are read as untrusted (a test passes broken ones).
+    @param {Record<string, any[]>} [categories] @param {string[]} [order]
+    @returns {string[]} */
 export function registryFaults(categories = CATEGORIES, order = ORDER) {
   const faults = [];
   const seen = new Map();
@@ -119,17 +127,21 @@ if (faults.length) throw new Error("tasks/registry.js: " + faults.join("; "));
 
 const BY_ID = new Map(Object.values(CATEGORIES).flat().map((t) => [t.id, t]));
 
-/** Every question type, in catalogue order. */
+/** Every question type, in catalogue order.
+    @type {readonly Readonly<TaskType>[]} */
 export const TASKS = Object.freeze(ORDER.map((id) => Object.freeze(BY_ID.get(id))));
 
+/** @type {(id: string) => ?TaskType} */
 export const typeById = (id) => BY_ID.get(id) || null;
 
-/* Some types serve more than one skill (the reverse analysis covers
-   adjectives, verbs and nouns) and may appear if any of them is on. */
+/** Some types serve more than one skill (the reverse analysis covers
+   adjectives, verbs and nouns) and may appear if any of them is on.
+   @type {(P: Pick<import("../types").Policy, "type"|"skill">, t: TaskType) => boolean} */
 export const enabled = (P, t) =>
   P.type(t.id) &&
   (t.anyOf ? t.anyOf.some((x) => P.skill(x)) : P.skill(t.skill));
 
-/** The weight of a type as things stand: inside a session or outside one. */
+/** The weight of a type as things stand: inside a session or outside one.
+    @type {(t: TaskType, view: ?Pick<View, "inRun">) => number} */
 export const weightOf = (t, view) =>
   (view && view.inRun && t.weightInRun != null ? t.weightInRun : t.weight);

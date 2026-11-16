@@ -1,3 +1,4 @@
+// @ts-check
 /* Error diagnosis (v6.10).
 
    A wrong answer says that something went wrong; this module says WHAT. It
@@ -25,6 +26,11 @@
 
 import { readMark } from "./marks.js";
 import { normalise, stripAccents } from "./grading.js";
+
+/** @typedef {import("../types").State} State */
+/** @typedef {import("../types").Task} Task */
+/** @typedef {import("../types").Finding} Finding */
+/** @typedef {import("../types").DiagRecord} DiagRecord */
 
 /* ---------- the patterns ------------------------------------------------- */
 
@@ -281,7 +287,8 @@ for (const id of BANK_PATTERNS) {
 const caseKey = (f) => (f === "ÞG" ? "ÞGF" : f);
 const AO_FS = new Set(["atviksorð", "forsetning"]);
 
-/** The tags of a question: what it gives the child a chance to get wrong. */
+/** The tags of a question: what it gives the child a chance to get wrong.
+    @param {?Task} t @returns {Set<string>} */
 export function tagsOf(t) {
   const tags = new Set();
   if (!t) return tags;
@@ -378,13 +385,15 @@ export function tagsOf(t) {
 
 const huntErrors = (t) => (t && t.hunt ? t.hunt.lines.flatMap((l) => l.toks.filter((x) => x.err).map((x) => x.err)) : []);
 
-/** The patterns a question gives a chance to get wrong. */
+/** The patterns a question gives a chance to get wrong.
+    @param {?Task} task @returns {string[]} */
 export function chancesIn(task) {
   const tags = tagsOf(task);
   return PATTERNS.filter((p) => p.tags.some((x) => tags.has(x))).map((p) => p.id);
 }
 
-/** Does this question test any of these patterns? */
+/** Does this question test any of these patterns?
+    @type {(task: Task, ids: ?string[]) => boolean} */
 export const targets = (task, ids) => {
   if (!ids || !ids.length) return false;
   const c = new Set(chancesIn(task));
@@ -631,6 +640,8 @@ const ROW_PATTERN = {
  * Everything that went wrong in one answer, as findings
  * `{ p, soft?, ex?: {said, right}, m?, other? }`. `resp` is the answer as the
  * judge saw it (core/answer.js); a question with nothing to diagnose gives [].
+ *
+ * @param {?Task} task @param {?Record<string, any>} resp @returns {Finding[]}
  */
 export function diagnose(task, resp) {
   if (!task || !resp) return [];
@@ -756,6 +767,10 @@ export const UNREAD = "ogreint";
  * share of wrong answers left unread. Returns the patterns the question
  * tested and that were written — never "ogreint", which belongs to no
  * session report.
+ *
+ * @param {State} S @param {Task} task @param {Finding[]} findings
+ * @param {?boolean} verdict @param {?string} today  a day key
+ * @returns {string[]}
  */
 export function noteDiagnosis(S, task, findings, verdict, today) {
   if (verdict !== true && verdict !== false) return [];
@@ -807,7 +822,8 @@ export const MIN_CHANCES = 5;
 export const ACTIVE_RATE = 0.2;
 const Z = 1.645;
 
-/** Lower bound of the Wilson score interval for k misses in n answers. */
+/** Lower bound of the Wilson score interval for k misses in n answers.
+    @param {number} k @param {number} n @param {number} [z] @returns {number} */
 export function wilsonLower(k, n, z = Z) {
   if (!n) return 0;
   const p = k / n, z2 = z * z;
@@ -816,7 +832,10 @@ export function wilsonLower(k, n, z = Z) {
   return Math.max(0, (centre - margin) / (1 + z2 / n));
 }
 
-/** How a pattern stands: totals, the recent window and the direction. */
+/** How a pattern stands: totals, the recent window and the direction.
+    @param {?Partial<DiagRecord>} rec
+    @returns {{n: number, w: number, seen: number, misses: number, rate: number,
+               trend: ?("betra"|"verra"|"jafnt"), active: boolean, score: number}} */
 export function standingOf(rec) {
   const h = (rec && rec.h) || "";
   const misses = [...h].filter((c) => c === "0").length;
@@ -839,7 +858,8 @@ export function standingOf(rec) {
 }
 
 /** Every pattern this child has met, worst first; "Ógreint" (a count, not
-    an error of the child's) last, and never active. */
+    an error of the child's) last, and never active.
+    @param {?State} S */
 export function standings(S) {
   return Object.entries((S && S.diag) || {})
     .filter(([id]) => BY_ID.has(id))
@@ -851,17 +871,20 @@ export function standings(S) {
     .sort((a, b) => (a.meta ? 1 : 0) - (b.meta ? 1 : 0) || b.score - a.score);
 }
 
-/** The patterns that are going wrong now, worst first (at most `limit`). */
+/** The patterns that are going wrong now, worst first (at most `limit`).
+    @param {?State} S @param {number} [limit] @param {((p: any) => boolean)|null} [only] */
 export function activePatterns(S, limit = 3, only = null) {
   return standings(S).filter((p) => p.active && (!only || only(p))).slice(0, limit);
 }
 
-/** The Villuveiðar error kinds that exercise these patterns. */
+/** The Villuveiðar error kinds that exercise these patterns.
+    @param {?string[]} ids @returns {string[]} */
 export function huntPreferFor(ids) {
   return [...new Set((ids || []).map((id) => (BY_ID.get(id) || {}).hunt).filter(Boolean))];
 }
 
-/** The question types a session aimed at these patterns is drawn from. */
+/** The question types a session aimed at these patterns is drawn from.
+    @param {?string[]} ids @returns {Set<string>} */
 export function focusTypes(ids) {
   return new Set((ids || []).flatMap((id) => (BY_ID.get(id) || {}).types || []));
 }
@@ -874,6 +897,10 @@ export function focusTypes(ids) {
  * question or returns null; since v6.13 building changes nothing (the
  * builders are pure, tasks/view.js), so the candidates that are dropped use
  * nothing up — the caller applies the effects of the one that is returned.
+ *
+ * @param {() => ?Task} next @param {?string[]} ids
+ * @param {{p?: number, tries?: number, rnd?: () => number}} [opts]
+ * @returns {?Task}
  */
 export function pickTargeted(next, ids, { p = 0.4, tries = 5, rnd = Math.random } = {}) {
   if (!ids || !ids.length || rnd() >= p) return next();
@@ -897,6 +924,10 @@ const NO_PRAISE = new Set(["broddar", "stafsetning", "y_i", "n_nn", "dh_d", "hlj
  * The report on a finished session. `run` is app.js's record of it:
  * { chances: {id: n}, misses: {id: n}, found: [{p, ex}] , before: [ids] }.
  * Returns what the summary screen shows; pure.
+ *
+ * @param {{chances?: Record<string, number>, misses?: Record<string, number>,
+ *          found?: {p: string, ex?: any}[], before?: string[]}} run
+ * @param {State} S @param {((p: any) => boolean)|null} [only]
  */
 export function runReport(run, S, only = null) {
   const chances = run.chances || {}, misses = run.misses || {};

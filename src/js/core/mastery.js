@@ -1,3 +1,4 @@
+// @ts-check
 /* The mastery mark (critique item 44): how well a pupil knows something, not
  * how much they have practised it.
  *
@@ -73,6 +74,19 @@ import { QUESTION_TYPES, TYPE_IDS } from "./policy.js";
 import { storedLevel, MIN, MAX } from "./difficulty.js";
 import { dayOf, daysBetween, ON_TIME_DAYS, STALE_DAYS } from "./review.js";
 
+/** @typedef {import("../types").State} State */
+/** @typedef {import("../types").AnswerRecord} AnswerRecord */
+/** @typedef {import("../types").ReviewEntry} ReviewEntry */
+/** @typedef {import("../types").When} When */
+/**
+ * The mark (`markFrom`); `masteryOf` adds `band`.
+ * @typedef {{level:number, label:string, accuracy:?number, n:number, right:number,
+ *   reviewsOnTime:number, reviewsPassed:number, lapsed:number, overdue:number,
+ *   reviewsKept:boolean, band?: ?number}} Mark
+ */
+/** The review figures a mark reads; a missing one counts as 0.
+    @typedef {{added?:number, passed?:number, onTime?:number, lapsed?:number, overdue?:number}} ReviewFigures */
+
 /** Answers each question type keeps. */
 export const HIST = 20;
 /** Recent answers at the level the mark reads. */
@@ -97,17 +111,20 @@ const H_RE = /^[A-Ga-g]*$/;
 
 /* ---------- one answer ------------------------------------------------------ */
 
-/** The letter of one answer: the step as A–G, capital when right. */
+/** The letter of one answer: the step as A–G, capital when right.
+    @param {number} band @param {boolean} ok @returns {string} */
 export const answerChar = (band, ok) => {
   const b = Math.min(MAX, Math.max(MIN, Math.round(Number(band) || MIN)));
   const ch = String.fromCharCode(64 + b);
   return ok ? ch : ch.toLowerCase();
 };
 
-/** One letter read back: { band, ok }. */
+/** One letter read back: { band, ok }.
+    @type {(ch: string) => {band: number, ok: boolean}} */
 export const readChar = (ch) => ({ band: ch.toUpperCase().charCodeAt(0) - 64, ok: ch === ch.toUpperCase() });
 
-/** The question types of one category, as the curriculum switch files them. */
+/** The question types of one category, as the curriculum switch files them.
+    @type {(skill: string) => string[]} */
 export const typesOfSkill = (skill) => QUESTION_TYPES.filter((t) => t.skill === skill).map((t) => t.id);
 
 /**
@@ -115,6 +132,10 @@ export const typesOfSkill = (skill) => QUESTION_TYPES.filter((t) => t.skill === 
  * difficulty the pupil was at in the question's skill when it was asked;
  * `ok` must be true or false (anything else is not an answer and changes
  * nothing). An unknown type changes nothing. Returns the record, or null.
+ *
+ * @param {State} S @param {string} typeId @param {number} band
+ * @param {boolean|null} ok @param {number} [now]  ms
+ * @returns {?AnswerRecord}
  */
 export function noteTypeAnswer(S, typeId, band, ok, now = Date.now()) {
   if (!S || !KNOWN.has(typeId) || typeof ok !== "boolean") return null;
@@ -137,6 +158,9 @@ export function noteTypeAnswer(S, typeId, band, ok, now = Date.now()) {
  * guard (server/guard.mjs). Never throws. `ids`: the keys that may be kept —
  * the question types, or for the same record kept per curriculum node
  * (`S.byNode`, core/skillmap.js) the nodes that have one.
+ *
+ * @param {any} raw @param {string[]} [ids]
+ * @returns {Record<string, AnswerRecord>}
  */
 export function cleanByType(raw, ids = TYPE_IDS) {
   const out = {};
@@ -158,6 +182,9 @@ export function cleanByType(raw, ids = TYPE_IDS) {
  * Two devices (core/merge.js): the counts add like every counter; the recent
  * history is a position, not a count, and the side answered last wins it
  * whole (`at`), as a saved level does (core/difficulty.js mergeLevels).
+ *
+ * @param {any} base @param {any} local @param {any} remote @param {string[]} [ids]
+ * @returns {Record<string, AnswerRecord>}
  */
 export function mergeByType(base, local, remote, ids = TYPE_IDS) {
   const B = cleanByType(base, ids), L = cleanByType(local, ids), R = cleanByType(remote, ids);
@@ -174,7 +201,8 @@ export function mergeByType(base, local, remote, ids = TYPE_IDS) {
 
 /* ---------- the mark ------------------------------------------------------- */
 
-/** The step a skill is at now, as a whole number (the level moves in halves). */
+/** The step a skill is at now, as a whole number (the level moves in halves).
+    @type {(S: State, skill: string) => number} */
 const bandNow = (S, skill) => Math.min(MAX, Math.max(MIN, Math.round(storedLevel(S, skill))));
 
 /**
@@ -184,6 +212,9 @@ const bandNow = (S, skill) => Math.min(MAX, Math.max(MIN, Math.round(storedLevel
  * In turn because the saved history has no clock per answer, and in a mixed
  * session the types come interleaved; it also keeps one type answered fifty
  * times from drowning the others of a node.
+ *
+ * @param {State} S @param {Iterable<string>} typeIds @param {{window?: number}} [opts]
+ * @returns {{band: number, ok: boolean}[]}
  */
 export function recentAtLevel(S, typeIds, { window = WINDOW } = {}) {
   const lanes = [];
@@ -201,9 +232,13 @@ export function recentAtLevel(S, typeIds, { window = WINDOW } = {}) {
   return out;
 }
 
-/* The review figures the mark reads, out of S.review: tallies under the given
-   stats keys, and the live entries that match, of which the overdue ones. */
+/** The review figures the mark reads, out of S.review: tallies under the given
+   stats keys, and the live entries that match, of which the overdue ones.
+   @param {State} S @param {When} now @param {string[]} keys
+   @param {(e: ReviewEntry) => boolean} match
+   @returns {Required<ReviewFigures>} */
 function reviewFigures(S, now, keys, match) {
+  /** @type {Partial<import("../types").ReviewState>} */
   const R = (S && S.review) || {};
   const stats = isObj(R.stats) ? R.stats : {};
   const out = { added: 0, passed: 0, onTime: 0, lapsed: 0, overdue: 0 };
@@ -226,10 +261,8 @@ function reviewFigures(S, now, keys, match) {
  * for the tests and for anything that has its own figures.
  *
  * @param {{ok:boolean}[]} recent  the answers (`recentAtLevel`)
- * @param {{added, passed, onTime, lapsed, overdue}} rev
- * @returns {{level:number, label:string, accuracy:?number, n:number, right:number,
- *   reviewsOnTime:number, reviewsPassed:number, lapsed:number, overdue:number,
- *   reviewsKept:boolean}}
+ * @param {?ReviewFigures} rev  the figures; any left out count as 0
+ * @returns {Mark}
  */
 export function markFrom(recent, rev) {
   const n = recent.length;
@@ -253,6 +286,9 @@ export function markFrom(recent, rev) {
  * Reviews are read from the per-type tallies of the review queue
  * (core/review.js, kept since v6.13 item 44) and from the entries of these
  * types waiting in it.
+ *
+ * @param {State} S @param {Iterable<string>} typeIds @param {When} [now]
+ * @returns {Mark}
  */
 export function masteryOfTypes(S, typeIds, now = Date.now()) {
   const ids = [...new Set(typeIds || [])].filter((id) => KNOWN.has(id));
@@ -266,6 +302,10 @@ export function masteryOfTypes(S, typeIds, now = Date.now()) {
  * category's own review tallies (kept from the start of the review queue, so
  * they hold more history than the per-type ones). `band` is the step the
  * skill is at now, for the line beside the mark.
+ *
+ * @param {State} S @param {string} skill
+ * @param {When} [now]  ms, a Date (core/state.js badgeContext) or a day key
+ * @returns {Mark}
  */
 export function masteryOf(S, skill, now = Date.now()) {
   const ids = typesOfSkill(skill);
@@ -277,6 +317,8 @@ export function masteryOf(S, skill, now = Date.now()) {
  * One line that says what the mark rests on, for a title or under the mark:
  * "17 af 20 rétt á þyngd 3 · 4 upprifjanir á réttum tíma". With too little,
  * how many answers are still missing.
+ *
+ * @param {?Mark} m @returns {string}
  */
 export function masteryLine(m) {
   if (!m) return "";

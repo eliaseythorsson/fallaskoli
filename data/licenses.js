@@ -46,6 +46,16 @@ export const LICENSES={
    "kind": "node"
   },
   {
+   "nm": "TypeScript",
+   "who": "Microsoft Corp.",
+   "lic": "Apache-2.0",
+   "url": "https://github.com/microsoft/TypeScript",
+   "what": "Villuleit í kóðanum við smíði. Fylgir ekki afurðinni.",
+   "id": "typescript",
+   "ver": "7.0.2",
+   "kind": "node"
+  },
+  {
    "nm": "puppeteer-core",
    "who": "Google LLC",
    "lic": "Apache-2.0",

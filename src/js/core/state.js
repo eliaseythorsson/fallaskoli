@@ -1,3 +1,4 @@
+// @ts-check
 /* User state and session state.
 
    Everything that is persisted goes through here. The functions take the state
@@ -16,8 +17,13 @@ import { cleanByNode } from "./skillmap.js";
 import { cleanSeenTypes } from "./examples.js";
 import { blankMend, sanitiseMend, patternsMended, reviewsOnTime } from "./mending.js";
 
+/** @typedef {import("../types").State} State */
+/** @typedef {import("../types").Session} Session */
+/** @typedef {import("../types").DayKey} DayKey */
+
 export const STATE_VERSION = 11;
 
+/** @param {Date} d @returns {DayKey} */
 export const dkey = (d) =>
   d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" +
   String(d.getDate()).padStart(2, "0");
@@ -31,6 +37,7 @@ export function prevKey(key) {
   return dkey(new Date(y, m - 1, d - 1));
 }
 
+/** @returns {State} */
 export function blankState() {
   const skills = {};
   SKILL_IDS.forEach((id) => { skills[id] = { xp: 0, c: 0, w: 0, bestRun: 0 }; });
@@ -164,7 +171,9 @@ export function cleanFrames(raw) {
   return out;
 }
 
-/** Bring any older saved blob up to the current shape without losing data. */
+/** Bring any older saved blob up to the current shape without losing data.
+    @param {any} raw  whatever was saved, of any age, or nothing
+    @returns {State} */
 export function migrate(raw) {
   const S = blankState();
   if (!raw || typeof raw !== "object") return S;
@@ -275,6 +284,7 @@ export function migrate(raw) {
   return S;
 }
 
+/** @param {State} S @param {DayKey} [today] @returns {Session} */
 export function newSession(S, today = todayKey()) {
   const skillRun = {};
   SKILL_IDS.forEach((id) => { skillRun[id] = 0; });
@@ -529,6 +539,13 @@ export function easeFor(S, { cell, word, skill }) {
 /**
  * Write one answer into the state. Single entry point, so every exercise
  * type updates the same counters in the same way.
+ *
+ * @param {State} S
+ * @param {Session} sess
+ * @param {{skill?: ?string, cell?: ?string, word?: ?string, ok: boolean, xp?: number,
+ *          hinted?: boolean, counts?: boolean, ms?: number, answer?: any,
+ *          tally?: boolean}} answer
+ * @returns {State}
  */
 export function record(S, sess, {
   skill, cell, word, ok, xp = 0, hinted = false, counts = true, ms = 0, answer = null,
