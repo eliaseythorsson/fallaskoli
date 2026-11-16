@@ -118,14 +118,27 @@ export function tableNoun(lex, view, rng) {
   const { S } = view;
   const P = view.policy;
   if (drilling(view) && !forced(view, ["kk", "kvk", "hk"])) return null;
-  const n = forced(view, ["kk", "kvk", "hk"]) || wpick(lex.nouns, (x) => wordWeight(lex, view, x, "nafnord"), rng);
-  const cols = COLS.filter((c) => CASES.every((cs) => n.forms[mark(cs.k, c.k)])
+  /* The columns of one noun that may be asked: all four cases must exist,
+     the column must be showable for the word (no plural of *friður*), and
+     the policy must allow every cell in it. */
+  const colsOf = (n) => COLS.filter((c) => CASES.every((cs) => n.forms[mark(cs.k, c.k)])
     && showable(n, mark("NF", c.k))
     && P.marks(CASES.map((cs) => mark(cs.k, c.k))));
-  if (!cols.length) return null;
   /* A review asks for the column its cell is in. */
   const fc = forcedCell(view);
-  const mine = fc ? cols.filter((c) => CASES.some((cs) => mark(cs.k, c.k) === fc)) : cols;
+  const hasCell = (c) => CASES.some((cs) => mark(cs.k, c.k) === fc);
+  /* When a review asks for a cell, the noun is chosen AMONG THE NOUNS THAT
+     HAVE IT. Picking any noun first and then finding it has no plural turned
+     a large share of reviews into nothing once the frequency ranks favoured
+     singular-only abstract nouns (item 9) — a pupil's mistake in the plural
+     then waited for a lucky draw. A forced word is still honoured as it is. */
+  const n = forced(view, ["kk", "kvk", "hk"]) || wpick(
+    fc ? lex.nouns.filter((x) => colsOf(x).some(hasCell)) : lex.nouns,
+    (x) => wordWeight(lex, view, x, "nafnord"), rng);
+  if (!n) return null;
+  const cols = colsOf(n);
+  if (!cols.length) return null;
+  const mine = fc ? cols.filter(hasCell) : cols;
   if (!mine.length) return null;
   const col = fc ? mine[0]
     : wpick(cols, (c) => CASES.reduce((a, cs) => a + cellWeight(S, mark(cs.k, c.k)), 0), rng);

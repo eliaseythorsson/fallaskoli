@@ -415,6 +415,21 @@ test("asked for a cell only, a builder that knows the hook builds that cell or n
       assert.equal(typeById(id).build(lex, view(pupil(3), { force: { cell: "XX-ekki-til" } }), seeded(seed)), null, id);
 });
 
+test("a review for a plural table cell is built every time: the noun is chosen among those that have the cell", () => {
+  /* Singular-only nouns (friður, áhugi) are about two fifths of the pool and
+     common words are drawn first, so a noun picked at random before the cell
+     was known gave no plural table in many draws. Nouns that have the cell
+     exist, so nothing here may be null. */
+  for (const cell of ["EFFTgr", "NFFT", "ÞGFFT"]) {
+    for (let seed = 0; seed < 40; seed++) {
+      const b = typeById("tbl_no").build(lex, view(pupil(1), { force: { cell } }), seeded(seed));
+      assert.ok(b, `${cell}: nothing built at seed ${seed}`);
+      assert.ok(b.task.cells.some((c) => c.m === cell), `${cell}: another column`);
+      assert.ok(!b.task.w.np, `${cell}: ${b.task.w.o} has no plural`);
+    }
+  }
+});
+
 test("a forced cloze is the bare noun in a sentence that takes it, and not the sentence just missed", () => {
   const p = pupil(4);
   p.S.enabled.lysingarord = true; p.S.enabled.fornofn = true;
