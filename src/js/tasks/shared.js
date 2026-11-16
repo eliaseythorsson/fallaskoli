@@ -143,11 +143,19 @@ export const cellWanted = (view, m) => !forcedCell(view) || forcedCell(view) ===
  * for 310 adjectives covered a fifth as much once there were 957. The shares
  * reproduce the old selection for a beginner and follow the corpus. */
 
-/** The top `share` of the pool by frequency. An empty pool -> the whole pool. */
-export function topByRank(pool, share) {
+/** The top `share` of the pool by frequency. An empty pool -> the whole pool.
+    `rankOf` reads the rank of an item that is not itself a lexicon entry
+    (no_beyging's pool is `{ n, kind, trap }`). Until v6.13 such a pool had
+    no `.r`, nothing passed the filter, and the whole pool came back: the
+    cap did nothing and nobody noticed. An item without a rank now throws. */
+export function topByRank(pool, share, rankOf = (x) => x.r) {
   if (!pool.length) return pool;
   const cut = Math.max(20, Math.ceil(pool.length * Math.min(1, share)));
-  const out = pool.filter((x) => x.r <= cut);
+  const out = pool.filter((x) => {
+    const r = rankOf(x);
+    if (typeof r !== "number") throw new TypeError("topByRank: an item without a frequency rank");
+    return r <= cut;
+  });
   return out.length ? out : pool;
 }
 

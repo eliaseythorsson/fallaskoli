@@ -28,6 +28,7 @@ import { LESSONS } from "../src/js/content/lessons.js";
 import { typeById, makeView, reviewTask } from "../src/js/tasks/index.js";
 import { fnKind, PRONOUN_KINDS } from "../src/js/tasks/fornofn.js";
 import { noDeclension, nounDeclension } from "../src/js/tasks/nafnord.js";
+import { topByRank } from "../src/js/tasks/shared.js";
 
 const lex = buildLexicon(DATA);
 const D0 = "2026-11-16";
@@ -338,4 +339,22 @@ test("both types are in the curriculum switch, the map, the year-8 preset and th
 test("each question opens the Lesefni page that teaches it", () => {
   assert.equal(lessonFor(NO.get(1)[0]), "nafnord-beyging");
   assert.equal(lessonFor(FN.get(1)[0]), "fornofn");
+});
+
+test("no_beyging: þyngd 1–2 ask only the commonest fifth of each gender's nouns", () => {
+  /* v6.13: the cap read `.r` off the pool's `{ n, kind, trap }` wrapper,
+     found none, and let every noun through — þyngd 1 asked words up to rank
+     1,384, as þyngd 3 does. A noun's rank counts within its gender. */
+  const fifth = {};
+  for (const g of ["kk", "kvk", "hk"])
+    fifth[g] = Math.max(20, Math.ceil(0.2 * lex.nouns.filter((n) => n.c === g && !n.nx).length));
+  for (const band of [1, 2]) {
+    for (const t of NO.get(band))
+      assert.ok(t.n.r <= fifth[t.n.c], `þyngd ${band}: *${t.n.o}* (${t.n.c}, rank ${t.n.r}) is not common`);
+  }
+  assert.ok(NO.get(3).some((t) => t.n.r > fifth[t.n.c]), "þyngd 3 should reach past the commonest fifth");
+  /* and the helper no longer hides a pool it cannot read */
+  const wrapped = lex.nouns.slice(0, 50).map((n) => ({ n }));
+  assert.throws(() => topByRank(wrapped, 0.2), /without a frequency rank/);
+  assert.ok(topByRank(wrapped, 0.2, (y) => y.n.r).length < wrapped.length || wrapped.length <= 20);
 });
