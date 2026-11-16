@@ -96,113 +96,15 @@ def _dict(rel, cols):
 def _bad(r, why):
     raise _C.ContentError("%s:%d: %s" % (r.file, r.line, why))
 
-
 # ---------------------------------------------------------------- Lýsingarorð
 
-# v6.13 (critique item 23): frames for lo_beyging, lo_stig and lo_samr. The
-# bank has two or three sentences with a comparative or a superlative at
-# each level, and lo_stig built 12-16 different questions at any band.
-#
-# A frame names the NOUN the adjective is said of — always one of the helper
-# nouns of adj_classes.py — and tasks/lysingarord.js puts in any adjective
-# whose helper noun in that gender this is. adj_classes.py vouches that the
-# adjective can be said of that noun in every degree and both numbers; an
-# adjective it lists as not compared (NO_COMPARE: *dauður*, *íslenskur*) has
-# no comparison forms in the lexicon, so it is never put into a comparative
-# or superlative frame. The frames are written so that WHAT the adjective
-# says does not matter: "Ég á ___ bíl en þú." reads as well with *nýrri* as
-# with *rauðari*, *ódýrari* or *ljótari*. So no frame says the thing is
-# wanted or bought ("Ég vil skítugri peysu", "keypti rotnasta eplið").
-#
+# v6.13 (critique item 23): frames for lo_beyging, lo_stig and lo_samr, and the
+# helper nouns they are said of (adj_classes.py). The rules for writing a frame
+# are at the top of content/lysingarord/rammar.tsv.
 #   (level, frame, the noun's BÍN mark, the adjective's degree, noun groups)
-#
-# {N} is the noun in that mark, from BÍN. A frame with the blank after {N}
-# is predicative (lo_samr); FSB/FVB are frumstig strong/weak (lo_beyging,
-# lo_samr), MST and EVB miðstig and efsta stig (lo_stig). The build leaves
-# out a noun whose form here is also a form of the other number or the other
-# definiteness ("hús", "epli", "teppi" are singular and plural alike): the
-# adjective would have two right answers.
-# Level = length (the blank and the noun one word each), by the table
-# above; +1 for the dative or the genitive; +1 for the plural.
-ADJ_NOUN_GROUPS = {
-    "people": ["maður", "kona", "barn"],
-    "animals": ["hundur", "kisa", "dýr"],
-    "things": ["bíll", "bók", "hús"],
-    "vehicles": ["bíll", "lest", "skip"],
-    "soft": ["koddi", "peysa", "teppi"],
-    "drinks": ["drykkur", "súpa"],
-    "fruit": ["ávöxtur", "appelsína", "epli"],
-    "ideas": ["kostur", "leið", "svar"],
-    # *kosturinn* on its own, with the article, reads oddly ("Kosturinn er
-    # líklegri en ég hélt", "Við töluðum um góða kostinn"): the frames with
-    # the article take these
-    "answers": ["leið", "svar"],
-    "times": ["dagur", "ferð", "kvöld"],
-    "places": ["staður", "borg", "land"],
-    "rooms": ["gangur", "stofa", "herbergi"],
-    # where one lives: *í húsi*, *í borg*, *í landi*, *í herbergi* (not *á stað*)
-    "homes": ["hús", "borg", "land", "herbergi"],
-    "house": ["hús"],
-    # the room one picks: *stærsta herbergið*, not "bjartasta ganginn"
-    "bedroom": ["herbergi"],
-    # what a town has the biggest of
-    "town": ["hús", "bíll", "hundur", "kisa"],
-    # what is bought in a shop — not the soft things, whose adjectives say
-    # how they are now ("blautasta teppið í búðinni", "rökustu peysuna")
-    "shop": ["bók", "ávöxtur", "appelsína", "epli", "drykkur"],
-}
-_ANY = "people animals things vehicles soft drinks fruit ideas places rooms"
-# the same with the article
-_ANY_DEF = "people animals things vehicles soft drinks fruit answers places rooms"
-_SEEN = "people animals things vehicles soft places rooms"
-# what one looks for in the house: not a place or a country
-_HERE = "people animals things vehicles soft rooms fruit drinks"
-ADJ_FRAMES = [
-    # frumstig, strong: no article
-    (1, "Þetta er ___ {N}.", "NFET", "FSB", _ANY),
-    (1, "Þetta var ___ {N}.", "NFET", "FSB", "times"),
-    (1, "Ég sá ___ {N} í gær.", "ÞFET", "FSB", "people animals things vehicles"),
-    (1, "Ég fann ___ {N}.", "ÞFET", "FSB", "things soft fruit"),
-    (1, "Þarna er ___ {N}.", "NFET", "FSB", "people animals things vehicles soft fruit drinks"),
-    (2, "Við bjuggum í ___ {N}.", "ÞGFET", "FSB", "homes"),
-    (2, "Hér eru ___ {N}.", "NFFT", "FSB", "people animals things vehicles soft fruit"),
-    (3, "Við fórum til ___ {N} í sumar.", "EFET", "FSB", "places"),
-    (3, "Við hjálpuðum ___ {N}.", "ÞGFFT", "FSB", "people"),
-    # frumstig, weak: with the article
-    (1, "Ég sá ___ {N} í gær.", "ÞFETgr", "FVB", "people animals things vehicles"),
-    (1, "Hvar er ___ {N}?", "NFETgr", "FVB", _HERE),
-    (1, "Við töluðum um ___ {N}.", "ÞFETgr", "FVB", _ANY_DEF + " times"),
-    (2, "Hvar eru ___ {N}?", "NFFTgr", "FVB", _HERE),
-    (3, "Ég man vel eftir ___ {N}.", "ÞGFETgr", "FVB", _ANY_DEF + " times"),
-    # frumstig, predicative: strong, agreeing with the subject (lo_samr)
-    (1, "{N} er ___.", "NFETgr", "FSB", _ANY_DEF),
-    (1, "{N} var ___.", "NFETgr", "FSB", "times"),
-    (1, "Mér finnst {N} ___.", "NFETgr", "FSB", "answers times"),
-    (2, "{N} eru ___.", "NFFTgr", "FSB", _ANY_DEF),
-    (2, "{N} voru ___.", "NFFTgr", "FSB", "times"),
-    # miðstig
-    (2, "Hún fékk ___ {N} en ég.", "ÞFET", "MST", "things soft fruit drinks bedroom"),
-    (1, "Þetta er ___ {N}.", "NFET", "MST", "ideas"),
-    (2, "{N} er ___ en ég hélt.", "NFETgr", "MST", _ANY_DEF),
-    (2, "{N} var ___ en ég hélt.", "NFETgr", "MST", "times"),
-    (2, "Ég á ___ {N} en þú.", "ÞFET", "MST", "animals things soft"),
-    (2, "Hún fann ___ {N} en ég.", "ÞFET", "MST", "ideas"),
-    (2, "Þetta er ___ {N} en ég hélt.", "NFET", "MST", _ANY),
-    (3, "Hann býr í ___ {N} en ég.", "ÞGFET", "MST", "homes"),
-    (3, "{N} eru ___ en ég hélt.", "NFFTgr", "MST", _ANY_DEF),
-    # efsta stig, weak: with the article
-    (1, "Þetta er ___ {N}.", "NFETgr", "EVB", "ideas"),
-    # not people or rooms: "Hvar er sælasti maðurinn?"
-    (1, "Hvar er ___ {N}?", "NFETgr", "EVB", "animals things vehicles soft fruit drinks"),
-    (1, "Ég tók ___ {N}.", "ÞFETgr", "EVB", "things soft drinks fruit bedroom"),
-    (2, "Þetta er ___ {N} sem ég þekki.", "NFETgr", "EVB", "people"),
-    (2, "Þetta var ___ {N} í sumar.", "NFETgr", "EVB", "times"),
-    (2, "Ég sá ___ {N} í búðinni.", "ÞFETgr", "EVB", "shop"),
-    (3, "Þetta er ___ {N} sem ég hef séð.", "NFETgr", "EVB", "animals things vehicles soft places rooms"),
-    (3, "Þetta eru ___ {N} í bænum.", "NFFTgr", "EVB", "town"),
-    (3, "Við gistum í ___ {N} í bænum.", "ÞGFETgr", "EVB", "house"),
-    (3, "Við fórum til ___ {N} í heimi.", "EFETgr", "EVB", "places"),
-]
+ADJ_NOUN_GROUPS = _dict("lysingarord/nafnordahopar.tsv", [("hópur", "text"), ("nafnorð", "list")])
+ADJ_FRAMES = _table("lysingarord/rammar.tsv", [
+    ("þyngd", "int"), ("rammi", "text"), ("mark", "text"), ("beyging", "text"), ("hópar", "text")])
 
 # ---------------------------------------------------------------- Fornöfn
 
