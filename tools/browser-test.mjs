@@ -11,6 +11,9 @@ import { htmlPath } from "./version.mjs";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 import { QUESTION_TYPES } from "../src/js/core/policy.js";
+import { lessonPractice } from "../src/js/core/lessons.js";
+import { EXAMPLES } from "../src/js/content/examples.js";
+const EXAMPLE_TYPES = new Set(Object.keys(EXAMPLES));
 const QT_COUNT = QUESTION_TYPES.length;
 
 /* v6.10: practice comes in sessions picked on the Æfa tab. The program now
@@ -2380,6 +2383,7 @@ await page.setViewport({ width: 1100, height: 900 });
   ok(setup.focused, "„Dagsins lota“ does not have the focus");
   ok(/^3 upprifjanir, \d spurningar um villurnar þínar og \d nýjar spurningar\.$/.test(setup.line),
     `the line under the button does not say what the session holds: "${setup.line}"`);
+  const graded0 = await page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {}).reduce((a, x) => a + x.n, 0));
   await tap("#todaystart");
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
   const kinds = [];
@@ -2404,6 +2408,10 @@ await page.setViewport({ width: 1100, height: 900 });
   ok(end.summary && end.last && end.last.topic === "dagsins" && end.last.n === 10,
     "today's session did not end in its summary: " + JSON.stringify(end.last));
   ok(end.runTopic !== "dagsins", "today's session took the place of the category the picker remembers");
+  /* Item 44: today's answers count toward the mastery mark like any others. */
+  const graded1 = await page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {}).reduce((a, x) => a + x.n, 0));
+  ok(end.last.j > 0 && graded1 - graded0 === end.last.j,
+    `the mastery record counted ${graded1 - graded0} of today's ${end.last.j} graded answers`);
   ok(end.due === 0, `${end.due} of the reviews it opened with are still at the first step`);
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null;
     A.S.review = { items: [], stats: {} }; delete A.S.diag.thf_thgf; A.next(); });
@@ -2461,7 +2469,24 @@ await page.setViewport({ width: 1100, height: 900 });
       ok(intro.card && intro.rule.length > 20, "the rule is not shown before the first of the three");
       ok(intro.lesson, "the rule has no link to its Lesefni page");
       ok(/^Þrjár í röð: /.test(intro.bar), `the session's line did not give way to the three's own: "${intro.bar}"`);
+      /* Items 36 + 41: the first of the three may be the first question of
+         its type the pupil meets (the three are drawn from all the
+         pattern's types). It then opens with its worked example, like any
+         first meeting: once, on the streak's own card, and the type is met
+         afterwards. The rule card before it does not count as a meeting. */
+      const exType = await page.evaluate(() => { const A = window.FALLASKOLI;
+        const id = A.streak.queue[0].task.typeId; if (A.S.seenTypes) delete A.S.seenTypes[id]; return id; });
       await tap("#streakbegin");
+      const ex = await page.evaluate(() => { const A = window.FALLASKOLI;
+        return { n: document.querySelectorAll("#task .workedex").length, streak: !!A.cur.streak,
+          typeId: A.cur.typeId, met: !!(A.S.seenTypes && A.S.seenTypes[A.cur.typeId]),
+          bar: (document.querySelector("#runbar .streakrun .runcount") || {}).textContent || "" }; });
+      ok(ex.typeId === exType && ex.streak && ex.n === (EXAMPLE_TYPES.has(exType) ? 1 : 0) && ex.met === EXAMPLE_TYPES.has(exType)
+        && ex.bar.trim() === "1/3",
+        "the first of the three, of a type not met before, did not open with its one worked example: " + JSON.stringify({ exType, ...ex }));
+      const answered = () => page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {})
+        .reduce((a, x) => a + x.n, 0));
+      const byType0 = await answered();
       const seen = [];
       for (let k = 0; k < 3; k++) {
         const q = await page.evaluate(() => { const A = window.FALLASKOLI;
@@ -2475,6 +2500,9 @@ await page.setViewport({ width: 1100, height: 900 });
         "the three are not all questions on the pattern: " + JSON.stringify(seen));
       ok(seen.map((q) => q.count.trim()).join(",") === "1/3,2/3,3/3", "the three do not count 1/3, 2/3, 3/3: " + seen.map((q) => q.count).join(","));
       ok(seen.every((q) => q.i === miss.i + 1), "the session's count moved during the three: " + JSON.stringify(seen.map((q) => q.i)));
+      /* Item 44: the three are answers like any other for the mastery mark. */
+      const byType1 = await answered();
+      ok(byType1 - byType0 === 3, `the mastery record counted ${byType1 - byType0} of the three answers`);
       const done = await page.evaluate((p) => ({
         line: (document.querySelector("#verdict .streakend") || {}).textContent || "",
         button: document.getElementById("check").textContent,
@@ -2906,6 +2934,88 @@ await startPractice(page, 15000);
   ok(await page.evaluate(() => document.body.classList.contains("comfort")), "the setting survives a reload");
   await page.evaluate(() => { document.getElementById("set-comfort").click(); });
   ok(await page.evaluate(() => !document.body.classList.contains("comfort")), "and switches off again");
+}
+
+/* ---------- items 41 and 44: "Æfa þetta", the worked example, the mastery mark
+ * A Lesefni page's button starts five questions of exactly that page's types;
+ * the first card of a type not met before opens with a worked example, and
+ * that type never shows it again; "Önnur lota" repeats the page's session;
+ * and every category in Framvinda carries a mastery mark beside its stig. */
+await page.setViewport({ width: 1100, height: 900 });
+{
+  await tap('nav.tabs button[data-view="practice"]');
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null;
+    A.S.seenTypes = {};            // a pupil who has met no type yet
+    A.openView("lessons", "foll");
+  });
+  const want = lessonPractice("foll").types;
+  const btns = await page.evaluate(() => [...document.querySelectorAll("#lsnbody [data-practice]")]
+    .map((b) => ({ id: b.dataset.practice, text: b.innerText })));
+  ok(btns.length === 2 && btns.every((b) => b.id === "foll" && /Æfa þetta/.test(b.text)),
+    `the Föll page has no "Æfa þetta" button: ${JSON.stringify(btns)}`);
+  await tap("#lsnbody section.lsnpractice [data-practice]");
+  await page.waitForFunction("window.FALLASKOLI.cur && window.FALLASKOLI.run", { timeout: 5000 });
+  const run = await page.evaluate(() => {
+    const r = window.FALLASKOLI.run;
+    return { n: r.n, types: r.types, label: r.label,
+      practice: !document.getElementById("view-practice").hidden,
+      bar: document.querySelector("#runbar .runtopic")?.textContent || "" };
+  });
+  ok(run.n === 5 && run.practice, `"Æfa þetta" did not start a five-question session: ${JSON.stringify(run)}`);
+  ok(JSON.stringify([...run.types].sort()) === JSON.stringify([...want].sort()), `the session's types are not the page's: ${run.types}`);
+  ok(/Lesefni: Föllin fjögur/.test(run.bar), `the session bar does not name the page: "${run.bar}"`);
+  const cards = [];
+  for (let i = 0; i < 5; i++) {
+    await dismissModals();
+    cards.push(await page.evaluate(() => {
+      const ex = document.querySelector("#task .card .workedex");
+      return { type: window.FALLASKOLI.cur.typeId, example: !!ex,
+        first: !!ex && ex.previousElementSibling && ex.previousElementSibling.classList.contains("eyebrow"),
+        text: ex ? ex.innerText : "" };
+    }));
+    await answerOne(true);
+  }
+  ok(cards.every((c) => want.includes(c.type)), `the page's session asked other types: ${cards.map((c) => c.type)}`);
+  ok(cards[0].example && cards[0].first && /Svar:/.test(cards[0].text),
+    `the first card of a type not met before has no worked example under its heading: ${JSON.stringify(cards[0])}`);
+  const met = new Set();
+  for (const c of cards) {
+    ok(c.example === !met.has(c.type), `${c.type}: worked example ${c.example ? "shown again" : "missing on the first meeting"}`);
+    met.add(c.type);
+  }
+  const seen = await page.evaluate(() => window.FALLASKOLI.S.seenTypes);
+  ok([...met].every((t) => /^\d{4}-\d{2}-\d{2}$/.test(seen[t] || "")), `the types met were not written down: ${JSON.stringify(seen)}`);
+  const sum = await page.evaluate(() => ({
+    head: document.querySelector("#task .summary .eyebrow")?.innerText || "",
+    again: document.querySelector('#task [data-next="again"]')?.innerText || "",
+  }));
+  ok(/Föllin fjögur/.test(sum.head) && /Föllin fjögur · 5/.test(sum.again), `the summary does not name the page: ${JSON.stringify(sum)}`);
+  /* "Önnur lota": the same page, the same five, and no example for a type met. */
+  await tap('#task [data-next="again"]');
+  await page.waitForFunction("window.FALLASKOLI.cur && window.FALLASKOLI.run", { timeout: 5000 });
+  const again = await page.evaluate(() => ({ n: window.FALLASKOLI.run.n, types: window.FALLASKOLI.run.types,
+    type: window.FALLASKOLI.cur.typeId, example: !!document.querySelector("#task .workedex") }));
+  ok(again.n === 5 && JSON.stringify([...again.types].sort()) === JSON.stringify([...want].sort()),
+    `"Önnur lota" did not repeat the page's session: ${JSON.stringify(again)}`);
+  ok(!(met.has(again.type) && again.example), `${again.type}: the worked example came back a second session`);
+  /* The picker remembers what was picked there, not the page's five. */
+  ok(await page.evaluate(() => window.FALLASKOLI.S.settings.runSize !== 5), "the page's session size leaked into the picker");
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+
+  /* 44: the mastery mark beside every category's stig. */
+  await page.evaluate(() => window.FALLASKOLI.openView("progress"));
+  const marks = await page.evaluate(() => [...document.querySelectorAll("#skillgrid .skillcard")].map((c) => ({
+    skill: c.dataset.skill, level: Number(c.dataset.mastery),
+    mark: c.querySelector(".sklvl .mastery b")?.innerText || "", line: c.querySelector(".mline")?.innerText || "",
+    pips: c.querySelectorAll(".mastery .mpips i").length,
+  })));
+  ok(marks.length === 12 && marks.every((m) => m.mark && m.line && m.pips === 4 && m.level >= 0 && m.level <= 4),
+    `every category should carry a mastery mark beside its stig: ${JSON.stringify(marks.slice(0, 3))}`);
+  const no = marks.find((m) => m.skill === "nafnord");
+  ok(no && /rétt á þyngd|svör á þyngd|vantar/.test(no.line), `Nafnorð's mark does not say what it rests on: ${JSON.stringify(no)}`);
+  await tap('nav.tabs button[data-view="practice"]');
 }
 
 await browser.close();

@@ -27,7 +27,7 @@ import { mergeStates } from "../src/js/core/merge.js";
 import { maxOf } from "../src/js/core/mix.js";
 import { cleanState } from "../server/guard.mjs";
 import {
-  INTERVALS, REVIEW_MAX, STALE_DAYS, OPENING_MAX, REASK_GAP,
+  INTERVALS, REVIEW_MAX, STATS_MAX, STALE_DAYS, OPENING_MAX, REASK_GAP,
   noteReview, readAnswer, keyFor, dueEntries, dueCount, openingSize, openingReviews,
   entryByKey, tidyReview, queuePattern, addDays, daysBetween, dayOf, reaskAt, blankReview, sanitiseReview,
   mergeReview, patternReviewStats, skillReviewStats, reviewSummary, reviewLine,
@@ -904,7 +904,9 @@ test("the server keeps the queue, field by field, and bounds it", () => {
   for (let n = 0; n < 500; n++) big.review.stats["p:m" + n] = { a: 1 };
   const kept = cleanState(big, { today: now }).review;
   assert.equal(kept.items.length, REVIEW_MAX);
-  assert.ok(Object.keys(kept.stats).length <= 100);
+  /* Item 44 added a tally per question type, so the cap is STATS_MAX
+     (patterns, categories and types with room to spare), not 100. */
+  assert.ok(Object.keys(kept.stats).length <= STATS_MAX);
   assert.ok(JSON.stringify(kept).length < 100000, `the queue can be at most ${JSON.stringify(kept).length} bytes`);
   /* what the server stored loads in the browser as it is */
   assert.deepEqual(sanitiseReview(copy(kept)), kept);

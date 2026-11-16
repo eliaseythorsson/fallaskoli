@@ -15,7 +15,8 @@ import { abbr, markHTML } from "../core/glossary.js";
 import { agreementNote, normalise } from "../core/grading.js";
 import { judge, settle, parseRows, judgeSyntax, judgeRetry, retryAllowed, hideAnswer } from "../core/answer.js";
 import { runMult, dayMult } from "../core/progress.js";
-import { dayStreak } from "../core/state.js";
+import { dayStreak, todayKey } from "../core/state.js";
+import { firstMeeting, markTypeSeen } from "../core/examples.js";
 import { skillName } from "../core/skills.js";
 import { conjugationNote } from "../tasks/explain.js";
 import { reportButtonHTML } from "./reports.js";
@@ -38,12 +39,45 @@ const CLASS_IS_THE_ANSWER = new Set(["parse", "indecl"]);
 export const definitionLocked = (task) =>
   !!task && CLASS_IS_THE_ANSWER.has(task.type);
 
+/* Item 41: the first time a pupil meets a type of question, its card opens
+   with one worked example (core/examples.js, content/examples.js). Decided
+   once per question — a card drawn again keeps it — and the type is written
+   down as met when the example is shown. A `details` element, open: it
+   takes no focus and no click from the question below it. */
+const examples = new WeakMap();
+
+function exampleHTML(ex) {
+  return `<details class="workedex" open>
+    <summary>Ný tegund spurningar: svona er hún leyst</summary>
+    <p class="wq">${fmt(ex.q, { gloss: false })}</p>
+    <p class="wa"><b>Svar:</b> ${fmt(ex.a, { gloss: false })}</p>
+    <p class="wh"><b>Svona:</b> ${fmt(ex.how, { gloss: false })}</p>
+    <p class="faint wn">Nú er komið að þér.</p>
+  </details>`;
+}
+
+function showExample(app) {
+  const t = app.cur;
+  if (!examples.has(t)) {
+    const ex = app.duelRun ? null : firstMeeting(app.S, t);
+    examples.set(t, ex);
+    if (ex) markTypeSeen(app.S, t.typeId, todayKey());
+  }
+  const ex = examples.get(t);
+  const card = document.querySelector("#task .card");
+  if (!ex || !card || card.querySelector(".workedex")) return;
+  const eb = card.querySelector(":scope > .eyebrow");
+  if (eb) eb.insertAdjacentHTML("afterend", exampleHTML(ex));
+  else card.insertAdjacentHTML("afterbegin", exampleHTML(ex));
+}
+
 export function renderTask(app) {
   hideTip();
   stopConfetti();
   const fn = RENDER[app.cur.type];
   if (!fn) throw new Error("Enginn birtir fyrir " + app.cur.type);
   fn(app);
+  showExample(app);
   /* Item 51: the verdict is a live region, so a screen reader says "Rétt" or
      "Ekki alveg" when it is written. Set here, once, rather than in each of
      the renderers that draw an empty #verdict: the region is in the page

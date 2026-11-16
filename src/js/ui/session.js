@@ -257,7 +257,7 @@ export function renderRunBar(app) {
   }
   const shown = Math.min(r.n, r.i + (app.cur && app.cur.inRun && !app.cur.closed ? 1 : 0)) || 1;
   const name = r.assignment ? `${ASSIGNED.nm}: ${targetName(r.assignment.target)}`
-    : `${topicName(r.topic)}${r.focus && r.focus.length === 1 ? `: ${patternById(r.focus[0]).nm}` : ""}`;
+    : r.label || `${topicName(r.topic)}${r.focus && r.focus.length === 1 ? `: ${patternById(r.focus[0]).nm}` : ""}`;
   const said = `${name}. Spurning ${shown} af ${r.n}${r.j ? `, ${r.c} rétt` : ""}.`;
   /* The dots say which were right; on a phone there is no room for twenty of
      them, so a thin bar along the bottom of the line says how far instead
@@ -436,7 +436,7 @@ export function renderSummary(app) {
   const again = d.assignment
     ? ((app.assignments || []).some((a) => a.id === d.assignment.id && a.open !== false)
       ? `<button type="button" class="${next.length ? "ghost" : "go"}" data-next="assign">↻ Gera verkefnið aftur</button>` : "")
-    : `<button type="button" class="${next.length ? "ghost" : "go"}" data-next="again">↻ Önnur lota: ${esc(topicName(d.topic))} · ${d.n}</button>`;
+    : `<button type="button" class="${next.length ? "ghost" : "go"}" data-next="again">↻ Önnur lota: ${esc(d.label || topicName(d.topic))} · ${d.n}</button>`;
   if (again) next.push(again);
   next.push(`<button type="button" class="ghost" data-next="pick">Velja annað efni</button>`);
 
@@ -451,7 +451,7 @@ export function renderSummary(app) {
 
   const mins = Math.max(1, Math.round((d.ms || 0) / 60000));
   el.innerHTML = `<div class="card summary">
-    <p class="eyebrow"><span>${d.early ? "Lotu hætt" : "Lotu lokið"} · ${topicIco(d.topic)} ${esc(topicName(d.topic))}</span><b>${mins} mín.</b></p>
+    <p class="eyebrow"><span>${d.early ? "Lotu hætt" : "Lotu lokið"} · ${topicIco(d.topic)} ${esc(d.label || topicName(d.topic))}</span><b>${mins} mín.</b></p>
     <div class="sumhead">
       <div class="sumscore"><b>${d.j ? `${d.c}<small>/${d.j}</small>` : d.i}</b><span>${d.j ? `rétt · ${pct(d.c, d.j)}%` : "svör"}</span></div>
       <div class="sumscore xp"><b>+${d.xp}</b><span>XP</span></div>
@@ -472,7 +472,7 @@ export function renderSummary(app) {
     b.onclick = () => {
       const what = b.dataset.next;
       if (what === "focus") app.startRun(MINE.id, 10, [f.id]);
-      else if (what === "again") app.startRun(d.topic, d.n, d.focus);
+      else if (what === "again") app.startRun(d.topic, d.n, d.focus, d.again || {});
       else if (what === "assign") app.startAssignment(d.assignment.id);
       else if (what === "drill") { app.runDone = null; app.startDrill(b.dataset.key); }
       else { app.runDone = null; app.next(); }
