@@ -409,6 +409,11 @@ function whenLine(key) {
     hægt var að dæma hann. Dagsetningin á merkinu er dagurinn sjálfur.</p>`;
 }
 
+/* Somebody who wants the badge windows held for now (ui/tour.js): a function
+   (badges, onClose) → true when it has taken them. One holder at a time. */
+let badgeGate = null;
+export function setBadgeGate(fn) { badgeGate = typeof fn === "function" ? fn : null; }
+
 /**
  * Show these badges, one window at a time.
  * @param {Array}     list     badges to show
@@ -417,6 +422,9 @@ function whenLine(key) {
  *                             kept out of the queue; the LAST window names them
  */
 export function queueBadges(list, onClose, quiet = []) {
+  /* Item 84: while the guided first run is on the screen no window opens
+     over it; the tour keeps the badges and shows them when it ends. */
+  if (badgeGate && badgeGate([...list, ...quiet], onClose)) return;
   const wasIdle = badgeQueue.length === 0;
   const items = [...list];
   if (quiet.length && items.length) {

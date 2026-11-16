@@ -35,6 +35,7 @@ import { renderBadges, renderClass, renderSettings, renderData } from "./ui/pane
 import { renderLogin, renderAdmin, renderAccount, renderShareCard } from "./ui/account.js";
 import { renderTeacher } from "./ui/teacher.js";
 import { renderSkillMap } from "./ui/skillmap.js";
+import { createTour } from "./ui/tour.js";
 import { nodeSession } from "./core/skillmap.js";
 import { nodeById } from "./core/curriculum.js";
 import { startPWA, rememberServer, wasServer, renderOffline } from "./ui/pwa.js";
@@ -492,6 +493,8 @@ const app = {
       /* Item 41: a session on given question types, and its name. */
       types: opts.types || null, skills: opts.skills || null, attrs: opts.attrs || null,
       label: opts.label || null, lesson: opts.lesson || null,
+      /* Item 84: the placement round of the first run (ui/tour.js). */
+      placement: opts.placement || null,
     };
     if (today) this.run.review = today.reviews.slice();
     else if (Array.isArray(opts.review)) this.run.review = opts.review.slice();
@@ -500,7 +503,7 @@ const app = {
     /* The picker remembers the CATEGORY last chosen there, and its size;
        neither today's session, an assignment, "Villurnar mínar" nor a
        Lesefni page's five (item 41, `opts.types`) is one. */
-    const picked = !opts.types && topic !== TODAY.id && topic !== ASSIGNED.id;
+    const picked = !opts.types && !opts.placement && topic !== TODAY.id && topic !== ASSIGNED.id;
     if (picked && topic !== MINE.id) this.S.settings.runTopic = topic;
     if (picked) this.S.settings.runSize = n;
     this.save();
@@ -575,6 +578,8 @@ const app = {
    */
   pickTask() {
     const r = this.run;
+    /* Item 84: the placement round asks what its staircase says (ui/tour.js). */
+    if (r.placement) return this.tour.pick();
     this.policy = this.runPolicy();
     const ids = r.focus || activePatterns(this.S, 3).map((p) => p.id);
     /* v6.11: the mix rule (core/mix.js) sees what the session has had. */
@@ -648,6 +653,9 @@ const app = {
     this.streak = null; this.streakOffer = null;
     if (!r) return;
     this.flushAnswers();
+    /* Item 84: the placement round has no summary of the usual kind — the
+       first run says what it found and goes on (ui/tour.js). */
+    if (r.placement) { this.tour.placementOver(r); return; }
     if (!r.i) {
       this.runDone = null;
       if (empty) this.runNotice = "Engin spurning fannst í þessu efni með þeim stillingum sem eru á. " +
@@ -711,6 +719,7 @@ const app = {
 
   quitRun() {
     if (!this.run) return;
+    if (this.run.placement) { this.tour.quitPlacement(); return; }
     confirmQuit(this, () => { if (this.run) this.endRun(true); });
   },
 
@@ -1076,6 +1085,8 @@ const app = {
         r.found.push({ p: f.p, ex: f.ex || null });
       });
       r.items.push({ type: this.cur.typeId || this.cur.type, skill: this.cur.skill, ok: extra.correct ?? null });
+      /* Item 84: one step of the placement staircase (ui/tour.js). */
+      if (r.placement) this.tour.answered(extra.correct ?? null);
       renderRunBar(this);
       if (r.i >= r.n) {
         const b = $("check");
@@ -1094,7 +1105,7 @@ const app = {
         this.endStreak();
         showStreakEnd(streakLine(st), r && r.i >= r.n);
       }
-    } else if (runQuestion && extra.correct === false) this.offerStreak(findings);
+    } else if (runQuestion && extra.correct === false && !r.placement) this.offerStreak(findings);
     const comeback = noteQuestion(this.sess, extra.correct ?? null);
     const accidents = noteAccidents(this.S, this.sess, this.cur, extra);
 
@@ -1424,6 +1435,8 @@ function wireSettings() {
     app.sess = newSession(app.S);
     await app.save(true);
     renderStats(app); renderSettings(app); app.next();
+    /* Item 84: starting over is starting as a new pupil. */
+    app.tour.maybeStart();
   };
 
   /* Moving progress between devices. A hosted page may not start a download,
@@ -1689,6 +1702,9 @@ async function init() {
   wireTabs();
   wireLessons(app);
   wireSettings();
+  /* Item 84: the guided first run, and its button under Stillingar. */
+  app.tour = createTour(app);
+  app.tour.wire();
   renderSettings(app);
   applyComfort(app.S.settings);
 
@@ -1722,6 +1738,10 @@ async function init() {
   decayNotice(report);
   app.refresh();
   app.next();
+  /* Item 84: a new pupil is welcomed here, before the badges judged below —
+     while the first run is on the screen their windows wait (ui/dom.js
+     `setBadgeGate`) and open when it ends. */
+  app.tour.maybeStart();
 
   /* ---- badges judged at start-up ----
    * Login-streak badges ("opened it every day this week") are true the moment

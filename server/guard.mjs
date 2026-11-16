@@ -30,6 +30,7 @@ import { cleanByType } from "../src/js/core/mastery.js";
 import { cleanByNode } from "../src/js/core/skillmap.js";
 import { cleanSeenTypes } from "../src/js/core/examples.js";
 import { sanitiseMend } from "../src/js/core/mending.js";
+import { cleanTour } from "../src/js/core/placement.js";
 import { TYPE_IDS } from "../src/js/core/policy.js";
 
 export const MAX_STATE_BYTES = 2 * 1024 * 1024;
@@ -229,6 +230,16 @@ export function cleanState(raw, { today = new Date() } = {}) {
   mend.log = mend.log.filter((x) => x.d <= limit);
   for (const k of Object.keys(mend.rv)) if (k > limit) delete mend.rv[k];
   S.mend = mend;
+
+  /* The guided first run (item 84, core/placement.js): one of three states,
+     a time, a day, a flag and a year. `migrate` has rebuilt it with the
+     function the browser loads with; here the day and the time are held to
+     the calendar like every other date in the state. */
+  S.tour = cleanTour(S.tour);
+  if (S.tour) {
+    if (S.tour.d && S.tour.d > limit) S.tour.d = null;
+    S.tour.at = Math.min(S.tour.at, today.getTime() + 2 * 86400000);
+  }
 
   S.counters = Object.fromEntries(pairs(S.counters, 20, 40).map(([k, v]) => [k, n(v)]));
   S.periods = smallJSON(S.periods, 60000) || {};

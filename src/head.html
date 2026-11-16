@@ -1232,8 +1232,12 @@ nav.tabs button[data-view="lessons"]{--tab:var(--rust)}
 .lessonhint{font-size:13.5px;margin:10px 0 0}
 .tiplesson{margin:6px 0 2px;font-size:13px}
 @media (max-width:820px){
-  .lsnwrap{grid-template-columns:1fr}
+  /* minmax(0,…): a plain 1fr is as wide as its widest word, and the index
+     pushed the page 5 px sideways on a 390 px phone (found by item 84's
+     pointer at this tab). The count of pages read gets a line of its own. */
+  .lsnwrap{grid-template-columns:minmax(0,1fr)}
   .lsnindex{position:static;max-height:none;display:flex;flex-wrap:wrap;gap:4px 14px}
+  .lsnindex .sub{flex:1 1 100%}
   .lsngroup{flex:1 1 200px}
   .lsnpage{padding:16px 16px}
 }
@@ -1516,6 +1520,114 @@ table.classpat td.cpcell.unread{background:var(--paper-2);color:var(--slate)}
 .cpflag{color:var(--rust);margin-right:3px}
 .cptrend{font-size:10.5px}
 .cptrend.betra{color:var(--moss)} .cptrend.verra{color:var(--rust)}
+
+/* ---------- the guided first run (item 84, ui/tour.js) ----------------------
+   Two shapes, both chalk on a board with a wooden frame, like the Æfa tab:
+   a CARD in the middle of the screen (the welcome, the placement round's
+   introduction, what it found) and a POINTER — a dashed chalk ring round a
+   real element of the page, with a small board beside it that says what the
+   element is for. Everything is laid out from the viewport's own width
+   (`position:fixed`, widths in `min()`), so nothing can push the page
+   sideways on a 390 px phone. Motion: the ring's slow pulse and its glide
+   from one element to the next; the reduced-motion rule above stops both. */
+.tour{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;z-index:90}
+.tour button:focus-visible{outline:2px solid var(--chalk-yellow);outline-offset:2px}
+.tourscrim{position:fixed;top:0;right:0;bottom:0;left:0;inset:0;display:flex;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:28px 16px 48px;background:rgba(15,23,32,.62)}
+.tourcard.blackboard:focus{outline:none}
+.tourcard.blackboard{margin:auto;width:100%;max-width:540px;padding:26px 30px 26px;border-radius:6px 6px 0 0;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.4),inset 0 3px 14px rgba(0,0,0,.28),0 18px 50px rgba(0,0,0,.35);
+  animation:tourin .28s ease-out}
+.tourcard.blackboard.wide{max-width:650px}
+@keyframes tourin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.tour h2{font-family:var(--display);font-weight:800;font-size:28px;line-height:1.15;letter-spacing:-.02em;margin:0;color:var(--chalk)}
+.tourline{display:block;width:min(220px,70%);height:10px;margin:6px 0 14px}
+.tourline path{fill:none;stroke:var(--chalk-yellow);stroke-width:2.4;stroke-linecap:round;opacity:.9}
+.tourtext{font-size:16px;line-height:1.6;color:var(--chalk)}
+.tourtext p{margin:0 0 10px}
+.tourtext p:last-child{margin-bottom:0}
+.tourtext b{color:var(--chalk-yellow);font-weight:600}
+/* The four cases of "þú", as the tagline has the four cases of "skóli". */
+.tourchant{font-family:var(--mono);font-size:13.5px;color:var(--chalk-dim);letter-spacing:.01em}
+.tourchant b{color:var(--chalk-yellow);font-weight:600}
+.tourask{font-family:var(--display);font-weight:700;font-size:19px;margin:20px 0 0;color:var(--chalk)}
+.touryears{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 0}
+.touryear{position:relative;font-family:var(--display);font-weight:700;font-size:24px;line-height:1.05;color:var(--chalk);
+  background:rgba(243,241,231,.06);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 6px 12px;min-height:72px;cursor:pointer}
+.touryear small{display:block;margin-top:4px;font-family:var(--body);font-weight:500;font-size:13px;color:var(--chalk-dim)}
+.touryear em{display:block;margin-top:5px;font-family:var(--body);font-style:normal;font-weight:600;font-size:11.5px;
+  letter-spacing:.02em;color:var(--chalk-yellow)}
+.touryear:hover:not(:disabled){border-color:var(--chalk);background:rgba(243,241,231,.1)}
+.touryear[aria-pressed="true"]{border:2px solid var(--chalk-yellow);background:var(--lupine-soft);padding:13px 5px 11px}
+.touryear:disabled{opacity:.42;cursor:default}
+.touryear.wide{grid-column:1/-1;font-family:var(--body);font-weight:600;font-size:15px;min-height:48px;padding:10px}
+.touryearline{font-size:15px;line-height:1.55;margin:18px 0 0;padding-top:14px;border-top:1px dashed var(--line);color:var(--chalk)}
+.touryearline b{color:var(--chalk-yellow);font-weight:600}
+.touractions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.tourskip{display:block;margin:10px 0 -8px -6px;padding:10px 6px;min-height:44px;background:none;border:none;cursor:pointer;
+  font-family:var(--body);font-size:13.5px;color:var(--chalk-dim);text-decoration:underline;text-underline-offset:3px}
+.tourskip:hover{color:var(--chalk)}
+/* What the round found: one row per category, the level as chalk strokes. */
+.tourcap{display:flex;justify-content:space-between;margin:16px 0 0;font-size:12.5px;color:var(--chalk-dim)}
+.tourcap + .tourlevels{margin-top:6px}
+.tourlevels{list-style:none;margin:16px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:7px 26px}
+.tourlevels li{display:flex;align-items:center;gap:8px;min-width:0;font-size:14.5px}
+.tourlevels .tln{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tourlevels .tln i{font-style:normal;margin-right:2px}
+.tourlevels .tlm{flex:0 0 auto;display:inline-flex;gap:3px}
+.tourlevels .tlm i{display:block;width:7px;height:15px;border-radius:2px;background:rgba(243,241,231,.16)}
+.tourlevels .tlm i.on{background:var(--chalk-yellow)}
+.tourlevels .tlv{flex:0 0 auto;width:1.2em;text-align:right;font-family:var(--mono);font-size:13px;color:var(--chalk-dim)}
+
+/* The pointer. The shade takes every click that is not on the small board;
+   the ring's own shadow is what dims the page, so the element inside it
+   stays as bright as it was. */
+.tourshade{position:fixed;top:0;right:0;bottom:0;left:0;inset:0}
+.tourring{position:fixed;pointer-events:none;border:2px dashed var(--chalk-yellow);border-radius:10px;
+  box-shadow:0 0 0 200vmax rgba(15,23,32,.6);transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease}
+.tourring::after{content:"";position:absolute;top:-7px;right:-7px;bottom:-7px;left:-7px;border:2px solid rgba(242,217,107,.55);
+  border-radius:15px;animation:tourpulse 1.9s ease-in-out infinite}
+@keyframes tourpulse{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:.9;transform:scale(1.015)}}
+.tourtip.blackboard{position:fixed;left:12px;top:12px;width:min(400px,calc(100vw - 24px));margin:0;padding:14px 18px 12px;
+  border:7px solid var(--wood);border-radius:6px;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.4),inset 0 3px 14px rgba(0,0,0,.28),0 14px 36px rgba(0,0,0,.4)}
+.tourtip h2{font-size:21px;margin:0 0 6px}
+.tourtip .tourtext{font-size:15px;line-height:1.55;margin:0}
+.tourtip .touractions{margin-top:14px}
+.tourtip button.go{padding:11px 16px}
+.tourtip button.ghost{padding:10px 12px}
+.tourtip .tourskip{margin-top:6px}
+.toureyebrow{display:flex;justify-content:space-between;gap:10px;margin:0 0 6px;font-size:12.5px;color:var(--chalk-dim)}
+.toureyebrow b{font-family:var(--mono);font-weight:500;color:var(--chalk-yellow)}
+.tourarrow{position:absolute;left:var(--ax,50%);width:18px;height:18px;margin-left:-9px;background:var(--wood);
+  transform:rotate(45deg);display:none}
+.tourtip.below .tourarrow{display:block;top:-15px}
+.tourtip.above .tourarrow{display:block;bottom:-15px}
+.tourtip.right .tourarrow,.tourtip.left .tourarrow{display:block;top:var(--ay,50%);margin:-9px 0 0}
+.tourtip.right .tourarrow{left:-15px}
+.tourtip.left .tourarrow{left:auto;right:-15px}
+/* A low window (a phone on its side): the same board, set tighter. */
+@media (max-height:480px){
+  .tourtip.blackboard{padding:10px 14px 8px;border-width:5px}
+  .tourtip h2{font-size:18px;margin-bottom:3px}
+  .tourtip .tourtext{font-size:14px;line-height:1.45}
+  .tourtip .touractions{margin-top:9px}
+  .tourtip .tourskip{margin-top:2px;min-height:36px;padding:6px}
+  .toureyebrow{margin-bottom:3px}
+}
+@media (max-width:600px){
+  .tourscrim{padding:14px 10px 40px}
+  .tourcard.blackboard{padding:20px 18px 20px;border-width:7px}
+  .tour h2{font-size:24px}
+  .tourtext{font-size:15.5px}
+  .tourlevels{grid-template-columns:1fr}
+  .tourtip h2{font-size:19px}
+}
+@media (prefers-reduced-motion:reduce){
+  .tourcard.blackboard,.tourring::after{animation:none}
+  .tourring{transition:none}
+}
 /* ---------- a live class round (v6.13, item 64; ui/live.js) ---------------
    The projector is a full-screen blackboard, so the question on the wall
    looks as it does on every pupil's board, and reads from the back row. */

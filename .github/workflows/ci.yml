@@ -49,6 +49,9 @@ jobs:
       - name: Browser test (Chromium)
         continue-on-error: true
         run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/browser-test.mjs
+      - name: Guided first run (Chromium)
+        continue-on-error: true
+        run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/tour-test.mjs
       - name: Server + app test (Chromium)
         continue-on-error: true
         run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/server-test.mjs
