@@ -206,9 +206,24 @@ out["motionRest"] = items
 
 CASEW = {"NF": "nefnifall", "ÞF": "þolfall", "ÞGF": "þágufall", "EF": "eignarfall"}
 items = []
+def verb_in(text, verb):
+    """True when some word of `text` is a BÍN form of the verb `verb`."""
+    for w in WORD.findall(text):
+        _, ms = b.lookup(w)
+        if any(e.ofl == "so" and e.ord == verb for e in ms): return True
+    return False
 for t, verb, case, col, nouns in X.VERB_CASE:
     if "so" not in classes_of(verb) and not paradigm(verb, "so"):
         fail(f"VERB_CASE: '{verb}' is not a verb in BÍN")
+    # The app says "Sögnin X stýrir …falli": the verb must be in the sentence,
+    # and the case must not be set by a preposition right before the blank
+    # (*hlakka til ___*: til stýrir eignarfalli, not hlakka).
+    if not verb_in(t, verb):
+        fail(f"VERB_CASE {t}: no form of '{verb}' in the sentence")
+    before = re.search(r"(\w+)\s+___", t)
+    if before and "fs" in classes_of(before.group(1).lower()):
+        fail(f"VERB_CASE {t}: '{before.group(1)}' before the blank is a preposition — "
+             "the preposition governs the case, not the verb; ask it as a preposition item")
     for noun in nouns:
         where = f"VERB_CASE {t} {noun}"
         g = noun_gender(noun, where)
@@ -246,11 +261,24 @@ for t, w, cls in X.ADV_OR_PREP:
 out["advPrep"] = items
 
 items = []
+def is_conjunction(o):
+    """One word that BÍN lists as a conjunction, or a declared phrase
+    (exercises.CONJ_PHRASES) whose words are all in BÍN and whose last word
+    is a conjunction there (af því AÐ, áður EN)."""
+    if " " not in o:
+        return "st" in classes_of(o)
+    words = o.split()
+    return (o in X.CONJ_PHRASES and all(classes_of(w) for w in words)
+            and "st" in classes_of(words[-1]))
 for t, right, wrong, why in X.CONJUNCTION:
     where = f"CONJUNCTION {t}"
     check_words(t.replace("___", right), where)
-    for o in [right] + wrong:
-        if "st" not in classes_of(o): fail(f"{where}: BÍN does not list '{o}' as a conjunction")
+    if t.count("___") != 1: fail(f"{where}: exactly one blank")
+    opts = [right] + wrong
+    if len(set(opts)) != len(opts): fail(f"{where}: an option twice")
+    if len(wrong) != 3: fail(f"{where}: three wrong options")
+    for o in opts:
+        if not is_conjunction(o): fail(f"{where}: BÍN does not list '{o}' as a conjunction")
     items.append({"t": t, "a": right, "w": wrong, "why": why})
 out["conjunction"] = items
 
