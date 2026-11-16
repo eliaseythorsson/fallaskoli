@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 22.23.4
           cache: npm
       - run: npm ci --no-audit --no-fund
       - name: Tag matches package.json
@@ -27,6 +27,12 @@ jobs:
       - run: node --test tests/*.test.js
       - run: node tools/build.mjs
       - run: node tools/pack.mjs
+      # Item 54: the program as a folder for a web host (index.html, the
+      # manifest, the icons, the service worker), zipped beside the HTML.
+      - name: The web folder
+        run: |
+          short="$(node --input-type=module -e 'import { SHORT } from "./tools/version.mjs"; process.stdout.write(SHORT)')"
+          (cd dist/web && zip -qrX "../fallaskoli-v${short}-vefur.zip" .)
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}

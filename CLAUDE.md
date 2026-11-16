@@ -30,7 +30,9 @@ node tools/build.mjs           # → dist/fallaskoli-v<version>.html
 The full `./build.sh` also regenerates all data with Python (Greynir/BÍN; needs
 Python 3.10+, and the grammar libraries only ship x86_64 Linux and macOS wheels).
 Run it whenever you touch a `*.py` file, `sentences.py`, `exercises.py` or anything
-under `data/`.
+under `data/`. On a Mac, or anywhere the result must match CI byte for byte, run
+`./build-in-container.sh` instead (same arguments; needs Docker): CI's
+`reproducible` job rebuilds the data in that container and fails on any difference.
 
 ## Do not
 
