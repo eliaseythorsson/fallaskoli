@@ -15,7 +15,7 @@ import { SKILL_IDS } from "../src/js/core/skills.js";
 import { createPolicy, narrowPolicy, presetPolicy } from "../src/js/core/policy.js";
 import { keyFor, addDays, dueEntries } from "../src/js/core/review.js";
 import { activePatterns, focusTypes, huntPreferFor, pickTargeted, targets } from "../src/js/core/diagnosis.js";
-import { planToday, shares, freshSkills, todayLine, TODAY_SIZE } from "../src/js/core/today.js";
+import { planToday, shares, freshSkills, todayLine, TODAY_SIZE, CORE, NEW_PUPIL, FRESH_PER, freshSpread } from "../src/js/core/today.js";
 import { typeById, enabled, nextTask, makeView, withView, nextOpening } from "../src/js/tasks/index.js";
 import { seeded } from "../src/js/core/duel.js";
 
@@ -140,6 +140,7 @@ test("new material comes from the least-practised skills first", () => {
   SKILL_IDS.forEach((id, k) => { xp[id] = 1000 - k; });      // the last in the catalogue has least
   xp.sagnord = 0;
   const S = pupil({ xp });
+  S.skills.nafnord.c = NEW_PUPIL;                             // not a new pupil: XP alone decides
   const fresh = freshSkills(S, POLICY, canType(POLICY));
   assert.equal(fresh[0], "sagnord");
   assert.equal(fresh.length, 3);
@@ -206,4 +207,70 @@ test("a plan runs: reviews, then questions that test the pattern, then new mater
     asked.push({ kind: slot.kind, task: t });
   }
   assert.deepEqual(asked.map((x) => x.kind), kinds(plan));
+});
+
+/* ---------- review of v6.13, S6: a new pupil's first session -------------------- */
+
+const P8 = createPolicy(null, presetPolicy(8));
+const newOf = (plan) => plan.slots.filter((x) => x.kind === "new").map((x) => x.skill);
+const countOf = (list) => list.reduce((m, id) => m.set(id, (m.get(id) || 0) + 1), new Map());
+
+test("S6: a blank pupil's ten new questions are the five core skills, two each, interleaved", () => {
+  for (const P of [POLICY, P8]) {
+    const plan = planToday(pupil(), P, D0, { canType: canType(P) });
+    const got = newOf(plan);
+    assert.equal(got.length, 10);
+    assert.deepEqual([...countOf(got).keys()].sort(), [...CORE].sort());
+    assert.ok([...countOf(got).values()].every((c) => c === FRESH_PER));
+    got.forEach((id, k) => assert.ok(k === 0 || id !== got[k - 1], "the same skill twice in a row: " + got.join(",")));
+  }
+});
+
+test("S6: after the placement round, the skills the pupil missed do not take the whole session (the reviewer's seed 4242)", () => {
+  /* XP where the round's answers were right, none in Töluorð, Málbeiting and
+     Orðaforði: the old plan gave those three, three questions each. */
+  const S = pupil();
+  for (const id of ["nafnord", "lysingarord", "sagnord", "fornofn", "obeygjanleg", "greining", "fallstjorn"])
+    Object.assign(S.skills[id], { xp: 30, c: 1, w: 0 });
+  Object.assign(S.skills.sagnord, { xp: 60, c: 2 });
+  for (const id of ["toluord", "malbeiting", "ordaford"]) Object.assign(S.skills[id], { xp: 0, c: 0, w: 1 });
+  const got = newOf(planToday(S, P8, D0, { canType: canType(P8) }));
+  for (const id of ["nafnord", "lysingarord", "fornofn", "fallstjorn", "sagnord"]) assert.ok(got.includes(id), id + ": " + got.join(","));
+  assert.ok(!got.includes("toluord") && !got.includes("malbeiting") && !got.includes("ordaford"), got.join(","));
+});
+
+test("S6: across 300 seeded new pupils the new part is spread, at most two a skill, and core first", () => {
+  const plan8 = ["nafnord", "lysingarord", "sagnord", "fornofn", "toluord", "obeygjanleg", "greining",
+    "fallstjorn", "ordaford", "malbeiting", "nafnord", "sagnord", "lysingarord"];
+  for (let seed = 1; seed <= 300; seed++) {
+    const rnd = seeded(seed);
+    const S = pupil({ active: rnd() < 0.3 ? ["thf_thgf"] : [] });
+    const p = 0.3 + 0.65 * rnd();
+    for (const id of plan8) {
+      const ok = rnd() < p, sk = S.skills[id];
+      if (ok) { sk.c++; sk.xp += 5 + Math.floor(rnd() * 20); } else sk.w++;
+    }
+    const plan = planToday(S, P8, D0, { canType: canType(P8) });
+    const got = newOf(plan);
+    const per = countOf(got);
+    assert.equal(got.length, plan.counts.fresh);
+    assert.ok(per.size >= Math.min(freshSpread(got.length), got.length), `seed ${seed}: ${got.join(",")}`);
+    assert.ok([...per.values()].every((c) => c <= FRESH_PER), `seed ${seed}: ${got.join(",")}`);
+    assert.ok(got.every((id) => CORE.includes(id)), `seed ${seed}: a new pupil's new material outside the core: ${got.join(",")}`);
+  }
+});
+
+test("S6: an experienced pupil's new material is spread too, least practised first", () => {
+  const S = pupil();
+  SKILL_IDS.forEach((id, k) => Object.assign(S.skills[id], { xp: 100 * (k + 1), c: 50, w: 10 }));
+  const got = newOf(planToday(S, POLICY, D0, { canType: canType(POLICY) }));
+  assert.deepEqual([...countOf(got).keys()], SKILL_IDS.slice(0, 5), "least XP first, five skills for ten questions");
+  assert.ok([...countOf(got).values()].every((c) => c === 2));
+});
+
+test("S6: three new questions are three skills, one each, as before", () => {
+  const plan = planToday(pupil({ due: 3, active: ["thf_thgf"] }), POLICY, D0, { canType: canType(POLICY) });
+  assert.equal(plan.counts.fresh, 3);
+  assert.equal(new Set(newOf(plan)).size, 3);
+  assert.deepEqual([freshSpread(0), freshSpread(3), freshSpread(5), freshSpread(8), freshSpread(10)], [3, 3, 3, 4, 5]);
 });

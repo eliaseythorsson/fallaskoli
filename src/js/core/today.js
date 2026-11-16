@@ -8,7 +8,7 @@
 
      first   the reviews that are due              (core/review.js)
      then    the pupil's active error patterns     (core/diagnosis.js)
-     last    new material                          (the least-practised skills)
+     last    new material                          (spread over several skills)
 
    about 3 / 4 / 3 of ten. This file only PLANS: it says which kind of
    question each of the ten is, which entry or pattern it is about, and
@@ -39,6 +39,24 @@
        ≥5    no             5 / 0 / 5
        0     no             0 / 0 / 10
 
+   ---- where new material comes from ------------------------------------------
+
+   `freshSkills` orders the switched-on skills, and the new slots are dealt
+   out round the first few of them, one each in turn: never fewer than
+   FRESH_MIN skills, and enough that no skill has more than FRESH_PER of the
+   new questions. Three new questions are three skills; ten (a new pupil, or a
+   day with nothing to mend) are five skills, two each, interleaved.
+
+   The order: least practised first (by XP) — a pupil who has done forty
+   sessions of nouns and none of verbs gets verbs. But a NEW pupil (fewer than
+   NEW_PUPIL answers in all) gets the core skills first (CORE: nouns, verbs,
+   adjectives, pronouns and case government), least practised among them
+   first. Without that, the placement round decided: its XP lands in the
+   skills answered right, so "least practised" meant the skills the pupil had
+   just missed or that are farthest from the core, and one new pupil's first
+   session was three Töluorð, three Málbeiting, three Orðaforði, one Sagnorð
+   and no noun, adjective, pronoun or Fallstjórn at all (review of v6.13, S6).
+
    The plan respects the curriculum policy (the year preset and the switches):
    a review whose question type is switched off is not counted as due, a
    pattern no switched-on type can test is not counted as active, and new
@@ -59,6 +77,17 @@ export const TODAY_SIZE = 10;
 export const SHARE = { review: 0.3, pattern: 0.4 };
 /** At most this many patterns are worked on in one session. */
 export const TODAY_PATTERNS = 3;
+/** New material comes from at least this many skills … */
+export const FRESH_MIN = 3;
+/** … and enough of them that none has more than this many new questions. */
+export const FRESH_PER = 2;
+/** The core skills a new pupil's new material comes from first, in this order. */
+export const CORE = ["nafnord", "sagnord", "lysingarord", "fornofn", "fallstjorn"];
+/** Fewer answers than this, in all skills together: a new pupil. */
+export const NEW_PUPIL = 100;
+
+/** How many skills `fresh` new questions are spread over. */
+export const freshSpread = (fresh) => Math.max(FRESH_MIN, Math.ceil(Math.max(0, fresh) / FRESH_PER));
 
 /**
  * How many of `n` questions are reviews, patterns and new material.
@@ -120,7 +149,7 @@ export function planToday(S, P, now, { n = TODAY_SIZE, canType = null } = {}) {
   /* The worst pattern first, and round the list: with two patterns and four
      slots each comes twice, never four of one and none of the other. */
   for (let k = 0; k < counts.pattern; k++) slots.push({ kind: "pattern", p: pats[k % pats.length] });
-  const fresh = freshSkills(S, P, may);
+  const fresh = freshSkills(S, P, may, freshSpread(counts.fresh));
   for (let k = 0; k < counts.fresh; k++)
     slots.push({ kind: "new", skill: fresh.length ? fresh[k % fresh.length] : null });
 
@@ -129,11 +158,11 @@ export function planToday(S, P, now, { n = TODAY_SIZE, canType = null } = {}) {
 
 /**
  * The skills new material comes from: the switched-on skills that have a
- * switched-on question type, least practised first (by XP). A pupil who has
- * done forty sessions of nouns and none of verbs gets verbs. Ties keep the
- * catalogue's order, so the plan never depends on how the state is stored.
- * At most three, so that the new questions are not three different
- * categories every day for a pupil with everything on.
+ * switched-on question type, least practised first (by XP) — and for a new
+ * pupil (fewer than NEW_PUPIL answers) the CORE skills before the rest (see
+ * the head of this file). Ties keep the catalogue's order, so the plan never
+ * depends on how the state is stored. At most `limit` (planToday passes
+ * `freshSpread`), so that a few new questions are not as many categories.
  *
  * @param {import("../types").State} S
  * @param {?Pick<import("../types").Policy, "skill"|"type">} P
@@ -144,11 +173,14 @@ export function planToday(S, P, now, { n = TODAY_SIZE, canType = null } = {}) {
 export function freshSkills(S, P, canType = null, limit = 3) {
   if (!P) return [];
   const may = canType || ((id) => P.type(id));
-  const xp = (id) => (((S && S.skills) || {})[id] || {}).xp || 0;
+  const skills = (S && S.skills) || {};
+  const xp = (id) => (skills[id] || {}).xp || 0;
+  const answers = Object.values(skills).reduce((a, v) => a + ((v && v.c) || 0) + ((v && v.w) || 0), 0);
+  const core = (id) => (answers < NEW_PUPIL && CORE.includes(id) ? 0 : 1);
   return SKILL_IDS
     .filter((id) => P.skill(id) && QUESTION_TYPES.some((q) => q.skill === id && may(q.id)))
-    .map((id, at) => ({ id, at, xp: xp(id) }))
-    .sort((a, b) => a.xp - b.xp || a.at - b.at)
+    .map((id, at) => ({ id, at, xp: xp(id), core: core(id) }))
+    .sort((a, b) => a.core - b.core || a.xp - b.xp || a.at - b.at)
     .slice(0, limit)
     .map((x) => x.id);
 }
