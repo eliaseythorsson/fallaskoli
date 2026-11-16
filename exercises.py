@@ -546,7 +546,6 @@ ADV_OR_PREP = [
     (2, "Hún kom eftir matinn.", "eftir", "fs"),
     (3, "Kakan er búin og ekkert er eftir.", "eftir", "ao"),
     (2, "Kötturinn skreið undir rúmið.", "undir", "fs"),
-    (3, "Báturinn sökk og fór undir.", "undir", "ao"),
     (2, "Barnið hljóp út.", "út", "ao"),
     (3, "Kötturinn stökk upp á borðið.", "upp", "ao"),
     (3, "Kötturinn stökk upp á borðið.", "á", "fs"),
