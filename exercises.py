@@ -160,10 +160,19 @@ DATE_FRAMES = [
 
 # Motion (þolfall) or rest (þágufall) after í / á / undir / yfir.
 # (sentence, noun, column, motion?)
+#
+# Each item must have ONE right answer. A verb of moving (fljúga, skríða,
+# rúlla, ganga, stökkva) can also mean moving about IN a place, and then the
+# þágufall is right too: "Hundurinn skreið undir borðinu" (crawled about
+# under it) is as good as "undir borðið". So every motion item carries a word
+# that fixes the direction: a directional adverb before the preposition (inn,
+# út, upp), a verb of placing (leggja, setja, hengja, stinga, hella), or a
+# goal in the rest of the sentence (til mín, og settist þar). Six motion
+# items were rewritten for this in v6.13 (critique item 6).
 MOTION_REST = [
     ("Ég lagði bókina á ___.", "borð", "ETgr", True),
     ("Bókin liggur á ___.", "borð", "ETgr", False),
-    ("Kötturinn stökk upp í ___.", "rúm", "ETgr", True),
+    ("Kötturinn stökk upp í ___ til mín.", "rúm", "ETgr", True),
     ("Kötturinn sefur í ___.", "rúm", "ETgr", False),
     ("Við fórum í ___ eftir skóla.", "búð", "ETgr", True),
     ("Við hittumst í ___ eftir skóla.", "búð", "ETgr", False),
@@ -171,7 +180,7 @@ MOTION_REST = [
     ("Mjólkin er í ___.", "ísskápur", "ETgr", False),
     ("Strákurinn hljóp út á ___.", "gata", "ETgr", True),
     ("Strákurinn lék sér á ___.", "gata", "ETgr", False),
-    ("Fuglinn flaug upp á ___.", "þak", "ETgr", True),
+    ("Fuglinn flaug upp á ___ og settist þar.", "þak", "ETgr", True),
     ("Fuglinn situr á ___.", "þak", "ETgr", False),
     ("Ég hengdi myndina á ___.", "veggur", "ETgr", True),
     ("Myndin hangir á ___.", "veggur", "ETgr", False),
@@ -179,25 +188,34 @@ MOTION_REST = [
     ("Við búum í ___.", "bær", "ETgr", False),
     ("Hann stakk símanum í ___.", "vasi", "ETgr", True),
     ("Síminn er í ___.", "vasi", "ETgr", False),
-    ("Boltinn rúllaði undir ___.", "sófi", "ETgr", True),
+    ("Boltinn rúllaði inn undir ___.", "sófi", "ETgr", True),
     ("Boltinn liggur undir ___.", "sófi", "ETgr", False),
-    ("Flugvélin flaug yfir ___.", "fjall", "ETgr", True),
+    ("Hesturinn stökk yfir ___.", "girðing", "ETgr", True),
     ("Skýið hangir yfir ___.", "fjall", "ETgr", False),
     ("Krakkarnir hlupu út á ___.", "völlur", "ETgr", True),
     ("Krakkarnir spila fótbolta á ___.", "völlur", "ETgr", False),
     ("Hún hellti vatni í ___.", "glas", "ETgr", True),
     ("Vatnið er í ___.", "glas", "ETgr", False),
-    ("Hundurinn skreið undir ___.", "borð", "ETgr", True),
+    ("Hundurinn skreið inn undir ___.", "borð", "ETgr", True),
     ("Hundurinn sefur undir ___.", "borð", "ETgr", False),
     ("Ég setti diskana í ___.", "skápur", "ETgr", True),
     ("Diskarnir eru í ___.", "skápur", "ETgr", False),
-    ("Við gengum upp á ___.", "hæð", "ETgr", True),
+    ("Við gengum alla leið upp á ___.", "hæð", "ETgr", True),
     ("Við stóðum á ___.", "hæð", "ETgr", False),
 ]
 
 # A verb that governs a case. {V} is not used: the verb is written out. The
 # noun is asked in the column given (ETgr: singular with the article); the
 # cue is the noun's nominative in that column.
+#
+# Only items where the VERB governs the case. The app explains each one as
+# "Sögnin X stýrir …falli. Prófaðu: X mér/mín", so a case set by a
+# preposition (hlakka TIL e-s: til stýrir eignarfalli) or by a fixed phrase
+# does not belong here; the build stops on a preposition right before the
+# blank. "Ég hlakka til ___" was here until v6.13 (critique item 5); the
+# preposition cloze already asks it from the sentence bank (Ég hlakka til
+# sumarsins / afmælisins / ferðanna), where the lead says "Forsetningin til
+# ræður fallinu".
 VERB_CASE = [
     ("Ég hjálpaði ___ að bera pokana.", "hjálpa", "ÞGF", "ETgr", ["kennari", "nágranni", "stelpa", "strákur"]),
     ("Ég sakna ___ mjög mikið.", "sakna", "EF", "ETgr", ["hundur", "köttur", "vinur", "kennari"]),
@@ -217,7 +235,6 @@ VERB_CASE = [
     ("Ég aðstoðaði ___ í eldhúsinu.", "aðstoða", "ÞF", "ETgr", ["kokkur", "bakari", "smiður"]),
     ("Ég spurði ___ til vegar.", "spyrja", "ÞF", "ETgr", ["lögreglumaður", "kona", "maður"]),
     ("Litla stelpan óttaðist ___.", "óttast", "ÞF", "ETgr", ["hundur", "myrkur", "þruma"]),
-    ("Ég hlakka til ___.", "hlakka", "EF", "ETgr", ["sumar", "ferð", "veisla", "afmæli"]),
     ("Garðurinn þarfnast ___.", "þarfnast", "EF", "ET", ["vatn", "umhirða", "áburður"]),
     ("Hún bjargaði ___ úr ánni.", "bjarga", "ÞGF", "ETgr", ["hundur", "kettlingur", "strákur"]),
     ("Við fögnuðum ___ með köku.", "fagna", "ÞGF", "ETgr", ["sigur", "afmæli", "vor"]),
@@ -277,25 +294,66 @@ ADV_OR_PREP = [
     ("Sólin skein á okkur.", "á", "fs"),
 ]
 
-# Choose the conjunction. Every wrong option makes the sentence wrong.
+# Choose the conjunction. (sentence, right, [wrong, wrong, wrong], why)
+#
+# The options are contrast sets: every wrong option is a conjunction a pupil
+# could really reach for in that place, and is wrong for a reason the
+# explanation can name — the meaning (ef / þegar / þótt / nema), the order
+# of words after it (enda takes the verb first: *enda hafði hún*), what
+# follows it (til þess að takes the infinitive), or the pair it belongs to
+# (hvorki … né, annaðhvort … eða, bæði … og). No distractor may be learned
+# as "always wrong": none stands in more than a third of the items
+# (tests/more.test.js). Each item has exactly one right answer: a word that
+# would also do (*þegar* for *ef* in "Þú mátt fá köku ___ þú klárar") is
+# never offered.
 CONJUNCTION = [
-    ("Ég veit ekki ___ hún kemur á morgun.", "hvort", ["ef", "sem", "né"], "*Hvort* spyr: *Ég veit ekki hvort …* — *ef* er skilyrði."),
-    ("Hún spurði ___ ég vildi koma með.", "hvort", ["ef", "sem", "né"], "Óbein spurning hefst á *hvort*, ekki *ef*."),
-    ("___ það rignir förum við ekki út.", "ef", ["hvort", "né", "sem"], "*Ef* táknar skilyrði."),
-    ("Bókin ___ ég las var spennandi.", "sem", ["hvort", "ef", "né"], "*Sem* tengir tilvísunarsetningu við nafnorð."),
-    ("Hún sagði ___ hún væri svöng.", "að", ["sem", "hvort", "né"], "*Að* tengir það sem sagt er við sögnina."),
-    ("Hvorki ég ___ bróðir minn fórum á ballið.", "né", ["eða", "en", "sem"], "*Hvorki … né*."),
-    ("Annaðhvort förum við í bíó ___ í sund.", "eða", ["né", "en", "sem"], "*Annaðhvort … eða*."),
-    ("Bæði Siggi ___ Gunna komu í veisluna.", "og", ["né", "eða", "sem"], "*Bæði … og*."),
-    ("Ég fer ekki út ___ það hætti að rigna.", "nema", ["hvort", "sem", "né"], "*Nema* = ef ekki."),
-    ("Hann hló ___ hann væri leiður.", "þótt", ["hvort", "sem", "né"], "*Þótt* táknar andstæðu: það gerist samt."),
-    ("Hún er eldri ___ ég.", "en", ["sem", "hvort", "né"], "Á eftir miðstigi kemur *en*."),
-    ("Viltu te ___ kaffi?", "eða", ["né", "sem", "að"], "*Eða* býður upp á val."),
-    ("Mig langaði út ___ það var rigning.", "en", ["hvort", "sem", "né"], "*En* tengir saman andstæður."),
-    ("Ég kem ___ ég hef lokið við heimavinnuna.", "þegar", ["hvort", "sem", "né"], "*Þegar* segir hvenær."),
-    ("Hún var svo þreytt ___ hún sofnaði strax.", "að", ["sem", "hvort", "né"], "*Svo … að*."),
-    ("Við lékum okkur úti ___ sólin skein.", "meðan", ["hvort", "sem", "né"], "*Meðan* = á sama tíma og."),
+    # hvort / hvort sem / ef: the indirect question
+    ("Ég veit ekki ___ hún kemur á morgun.", "hvort", ["ef", "hvort sem", "þegar"],
+     "Óbein spurning hefst á *hvort*: *Ég veit ekki hvort …* — *ef* táknar skilyrði og *þegar* tíma."),
+    ("Hún spurði ___ ég vildi koma með.", "hvort", ["ef", "að", "hvort sem"],
+     "Óbein já- eða nei-spurning hefst á *hvort*: *Hún spurði hvort …*, ekki *ef*."),
+    ("Við förum í gönguferð ___ það rignir eða ekki.", "hvort sem", ["hvort", "ef", "þótt"],
+     "*Hvort sem … eða ekki*: það skiptir ekki máli hvort það rignir, við förum samt."),
+    # ef / þegar / þótt / nema: condition, time, concession, exception
+    ("___ ég væri fugl myndi ég fljúga til Spánar.", "ef", ["þegar", "nema", "hvort"],
+     "*Ef* táknar skilyrði, hér skilyrði sem er ekki satt: *ef ég væri fugl*."),
+    ("Ég var sex ára ___ ég lærði að synda.", "þegar", ["ef", "nema", "þótt"],
+     "*Þegar* segir hvenær eitthvað gerðist."),
+    ("Hann fór út í stuttbuxum í morgun ___ það væri frost.", "þótt", ["ef", "þegar", "nema"],
+     "*Þótt* táknar andstæðu: það var frost en hann fór samt út í stuttbuxum."),
+    ("Við spilum úti á morgun ___ það rigni, því þá spilum við inni.", "nema", ["ef", "þótt", "þegar"],
+     "*Nema* merkir *ef ekki*: við spilum úti ef það rignir ekki."),
+    # af því að / enda / svo að / til þess að: cause, result, purpose
+    ("Ég fór snemma að sofa ___ ég var mjög þreyttur.", "af því að", ["svo að", "þótt", "til þess að"],
+     "*Af því að* segir hvers vegna: ég fór að sofa vegna þess að ég var þreyttur."),
+    ("Hún var svöng, ___ hafði hún ekkert borðað síðan í morgun.", "enda", ["af því að", "svo að", "til þess að"],
+     "*Enda* bætir við skýringu, og á eftir því kemur sögnin á undan frumlaginu: *enda hafði hún*. "
+     "Á eftir *af því að* kæmi frumlagið fyrst: *af því að hún hafði*."),
+    ("Það var mikil hálka ___ margir duttu á leiðinni í skólann.", "svo að", ["af því að", "til þess að", "þótt"],
+     "*Svo að* segir hvað leiddi af: hálkan varð til þess að margir duttu."),
+    ("Ég vaknaði snemma ___ ná strætó.", "til þess að", ["svo að", "af því að", "enda"],
+     "*Til þess að* segir til hvers, og á eftir því kemur nafnháttur: *til þess að ná strætó*."),
+    # hvorki … né, annaðhvort … eða, bæði … og
+    ("Hvorki ég ___ bróðir minn fórum á ballið.", "né", ["eða", "og", "en"], "*Hvorki … né*."),
+    ("Annaðhvort förum við í bíó ___ í sund.", "eða", ["né", "og", "en"], "*Annaðhvort … eða*."),
+    ("Bæði Siggi ___ Gunna komu í veisluna.", "og", ["né", "eða", "en"], "*Bæði … og*."),
+    # sem / að / en
+    ("Bókin ___ ég las var spennandi.", "sem", ["að", "hvort", "þegar"],
+     "*Sem* tengir tilvísunarsetningu við nafnorð: *bókin sem ég las*."),
+    ("Hún sagði ___ hún væri svöng.", "að", ["sem", "hvort", "nema"],
+     "*Að* tengir það sem sagt er við sögnina: *Hún sagði að …*."),
+    ("Hún er eldri ___ ég.", "en", ["sem", "og", "eða"], "Á eftir miðstigi kemur *en*: *eldri en ég*."),
+    ("Ég ætlaði að fara út ___ það var of kalt.", "en", ["af því að", "svo að", "hvort"],
+     "*En* tengir saman andstæður: ég ætlaði út, en það var of kalt."),
+    ("Ég burstaði tennurnar ___ ég fór að sofa.", "áður en", ["eftir að", "nema", "hvort"],
+     "*Áður en* segir hvað gerðist fyrst: fyrst burstaði ég tennurnar, svo fór ég að sofa."),
+    ("Hún var svo þreytt ___ hún sofnaði strax.", "að", ["sem", "nema", "þótt"],
+     "*Svo … að*: *svo þreytt að hún sofnaði strax*."),
 ]
+# Conjunctions of more than one word. BÍN lists words, not phrases, so the
+# build checks that every word of each is in BÍN and that its last word is
+# a conjunction there; an option with a space must be one of these.
+CONJ_PHRASES = {"af því að", "til þess að", "svo að", "hvort sem", "áður en", "eftir að"}
 
 # Synonyms and antonyms. Groups, not pairs: every word in a group means the
 # same. A distractor is never taken from the same group or from a group
