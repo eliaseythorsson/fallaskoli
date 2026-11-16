@@ -114,3 +114,15 @@ test("52: the server keeps the setting (settings values of boolean type pass the
   const S = cleanState({ settings: { comfort: true } });
   assert.equal(S.settings.comfort, true);
 });
+
+/* ---------- 50 ---------------------------------------------------------- */
+
+test("50: the pupil's editor folds types, levels and features; the administrator's does not", () => {
+  const src = readFileSync(new URL("../src/js/ui/policyui.js", import.meta.url), "utf8");
+  assert.match(src, /<details class="teacherfold"/);
+  assert.match(src, /Fyrir kennara og foreldra/);
+  const panels = readFileSync(new URL("../src/js/ui/panels.js", import.meta.url), "utf8");
+  assert.match(panels, /teacherFold: true/, "renderSettings asks for the fold");
+  const account = readFileSync(new URL("../src/js/ui/account.js", import.meta.url), "utf8");
+  assert.doesNotMatch(account, /teacherFold/, "the administrator's editor is unchanged");
+});
