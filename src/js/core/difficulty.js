@@ -165,7 +165,7 @@ export function recentAccuracy(h) {
  * @param {State} S        the pupil's state (changed)
  * @param {string} skill    a skill id (core/skills.js)
  * @param {number} level    the new level
- * @param {{source?: "cal"|"play"|"xp", now?: number, sess?: Session,
+ * @param {{source?: "cal"|"play"|"xp", now?: number, sess?: ?Session,
  *          history?: string}} [opts]  `history`: outcomes to keep as the
  *          recent history, e.g. the calibration answers ("1"/"0")
  * @returns {LevelRecord} the record written
@@ -329,7 +329,7 @@ export function applyRanges(sess, ranges) {
 /**
  * The rule, on numbers alone. Pure.
  *
- * @param {{live:number, r:number, h:string, warm?:number, lo?:number, hi?:number}} at
+ * @param {{live:number, r?:number, h?:string, warm?:?number, lo?:number, hi?:number}} at
  * @param {boolean} ok
  * @returns {{live:number, r:number, h:string}}
  */
