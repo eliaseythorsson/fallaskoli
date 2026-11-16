@@ -65,6 +65,7 @@ node tools/manifest.mjs $ACCEPT
 
 echo "── 5. tests ────────────────────────────────────────────────────────"
 node --test tests/*.test.js
+npm run -s typecheck          # tsc over the // @ts-check modules (docs/TYPES.md)
 
 echo "── 6. bundle ───────────────────────────────────────────────────────"
 node tools/build.mjs          # ES modules -> dist/fallaskoli-v<version>.html

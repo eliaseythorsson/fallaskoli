@@ -24,6 +24,7 @@ a working folder — `git worktree add ../fallaskoli-78 -b fix/78-git-setup`.
 ```
 npm ci                         # once per clone/worktree
 node --test tests/*.test.js    # 500+ tests, ~30 s
+npm run typecheck              # tsc over the // @ts-check modules (docs/TYPES.md)
 node tools/build.mjs           # → dist/fallaskoli-v<version>.html
 ```
 

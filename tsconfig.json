@@ -11,7 +11,9 @@
       "dom"
     ],
     "strict": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
   "files": [
     "src/js/types.d.ts",
