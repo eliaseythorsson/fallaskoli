@@ -41,6 +41,16 @@
   --mono:"IBM Plex Mono",ui-monospace,monospace;
 }
 *{box-sizing:border-box}
+/* Reading comfort (item 52, ui/dom.js applyComfort). A larger size, wider
+   spacing between letters and words, and the proportional face where the
+   monospaced one stood: `--mono` is the name every word form, input and table
+   cell uses, so pointing it at the body face changes all of them at once.
+   `zoom` scales the fixed pixel sizes in step, so nothing is left small. */
+body.comfort{--mono:var(--body);letter-spacing:.04em;word-spacing:.1em;line-height:1.7}
+body.comfort .wrap{zoom:1.15}
+body.comfort .sentence,body.comfort .lemma,body.comfort .tile b,body.comfort h2.sec,
+body.comfort .lsntitle,body.comfort .mystrip b{letter-spacing:.03em}
+body.comfort input,body.comfort textarea,body.comfort button,body.comfort select{letter-spacing:inherit;word-spacing:inherit}
 /* Text for screen readers only (item 51). */
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 html,body{margin:0;padding:0}

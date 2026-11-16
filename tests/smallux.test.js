@@ -95,3 +95,22 @@ test("51: the verdict and the session line are live regions", () => {
   assert.match(session, /class="runline" role="status"/);
   assert.match(session, /class="sr-only">\$\{esc\(said\)\}/, "its text must be readable, not aria-hidden");
 });
+
+/* ---------- 52 ---------------------------------------------------------- */
+
+test("52: the comfort setting is a switch, off by default, with a class that head.html styles", () => {
+  assert.ok(!blankState().settings.comfort, "off until somebody asks");
+  assert.equal(migrate({ settings: { comfort: true, settingsRev: 1 } }).settings.comfort, true);
+  const body = readFileSync(new URL("../src/body.html", import.meta.url), "utf8");
+  assert.match(body, /id="set-comfort"/);
+  const rule = HEAD.match(/body\.comfort\{([^}]*)\}/)?.[1] || "";
+  assert.match(rule, /--mono:var\(--body\)/, "the proportional face replaces mono");
+  assert.match(rule, /letter-spacing:\.0\d+em/, "wider letter spacing");
+  assert.match(HEAD, /body\.comfort \.wrap\{zoom:1\.\d+\}/, "larger type");
+});
+
+test("52: the server keeps the setting (settings values of boolean type pass the guard)", async () => {
+  const { cleanState } = await import("../server/guard.mjs");
+  const S = cleanState({ settings: { comfort: true } });
+  assert.equal(S.settings.comfort, true);
+});

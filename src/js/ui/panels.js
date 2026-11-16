@@ -742,6 +742,7 @@ export function renderSettings(app) {
   $("goalin").value = S.goal;
   $("set-decay").checked = S.settings.decay === true;
   $("set-gloss").checked = S.settings.glossary !== false;
+  $("set-comfort").checked = S.settings.comfort === true;
   /* Item 53: the box shows what is in force, the guess included, so ticking
      it always does what it looks like it will. */
   $("set-keys").checked = keypadOn(S.settings, keypadEnv());
