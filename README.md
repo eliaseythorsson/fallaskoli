@@ -99,6 +99,10 @@ src/js/core/          pure modules, no DOM: marks, lexicon, grading, leniency,
                       diagnosis (the error patterns) …
 src/js/core/mix.js    the mix rule for a session: ≥3 kinds of question, none
                       over ~40%, tables ≤30%, analysis ≤35%
+src/js/core/curriculum.js  the curriculum map as data: the official
+                      criteria, the nodes (one thing a pupil learns, with its
+                      year, question types and Lesefni page) and what the
+                      8., 9. and 10. bekkur presets switch on
 src/js/tasks/         the question builders (index.js; more.js for the v6.11
                       types in every category), sentence frames
                       (frames.js), explanations (explain.js) and the
@@ -123,7 +127,9 @@ _grammar-audit/       the audit's notes, and three scripts that print what the
                       app generates so a person can read it (see below)
 docs/                 HOSTING.md (Fly.io), PRIVACY.md (GDPR: the record, consent,
                       requests, a breach), SERVER.md (your own machine), API.md,
-                      DEFINITIONS.md
+                      DEFINITIONS.md, CURRICULUM.md (the app against the
+                      aðalnámskrá and the textbooks; its tables are written by
+                      tools/curriculum-doc.mjs)
 ```
 
 ## The data model, briefly

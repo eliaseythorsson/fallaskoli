@@ -22,6 +22,7 @@
 import { readMark } from "./marks.js";
 import { SKILLS } from "./skills.js";
 import { MIN, MAX } from "./difficulty.js";
+import { YEARS, presetContent } from "./curriculum.js";
 
 /* ---------- the dimensions ---------------------------------------------- */
 
@@ -332,6 +333,97 @@ export function narrowPolicy(P, { skills = null, types = null } = {}) {
     skill: (id) => (!S || S.has(id)) && P.skill(id),
     type: (id) => (!T || T.has(id)) && P.type(id),
   };
+}
+
+/* ---------- one switch ---------------------------------------------------- */
+
+/**
+ * Write one switch into a layer.
+ *
+ * Types and levels keep the rule of this file: a missing key means yes, so
+ * switching something back on deletes the `false` and a blank policy stays
+ * blank. Skills are written out as `true` or `false`. The child's skills live
+ * in `S.enabled`, which starts from defaults that say `false` for the
+ * categories of later years, and loading a saved state lays the saved keys
+ * over those defaults: a deleted key there does not mean yes, it means
+ * "whatever the default says". Before v6.13 the editor deleted the key, so a
+ * child who switched Setningafræði on found it off again after a reload.
+ */
+export function setPolicyFlag(policy, dim, key, value) {
+  const bag = (policy[dim] ||= {});
+  if (dim === "skills") bag[key] = !!value;
+  else if (value) delete bag[key];
+  else bag[key] = false;
+}
+
+/* ---------- the three year presets (item 39) ------------------------------ */
+
+/* What each year switches on is not written here: it is read off the
+ * curriculum nodes (core/curriculum.js), so the map in docs/CURRICULUM.md and
+ * the buttons cannot drift apart. Only the words are. A test pins what each
+ * year adds, so these sentences are revisited when the nodes change. */
+const PRESET_TEXT = {
+  8: "Fallorð, sagnorð, óbeygjanleg orð, orðflokkagreining, fallstjórn, orðaforði og málbeiting.",
+  9: "Allt úr 8. bekk og að auki afturbeygt fornafn, samtengingar, forsetning eða atviksorð og ópersónulegar sagnir.",
+  10: "Allt úr 9. bekk og að auki setningafræði og setningagerðir.",
+};
+
+export const PRESETS = YEARS.map((year) => ({
+  year, nm: `${year}. bekkur`, ds: PRESET_TEXT[year],
+}));
+
+/**
+ * The policy a year stands for: every category, question type and level
+ * spelt out as on or off. Features (föll, hættir …) are not part of a preset:
+ * they are the adult's fine adjustment and a preset leaves them alone.
+ *
+ * @returns {{ skills, types, levels }} of booleans, or null for an unknown year
+ */
+export function presetPolicy(year) {
+  const c = presetContent(Number(year));
+  if (!c) return null;
+  const S = new Set(c.skills), T = new Set(c.types);
+  return {
+    skills: Object.fromEntries(SKILLS.map((s) => [s.id, S.has(s.id)])),
+    types: Object.fromEntries(TYPE_IDS.map((t) => [t, T.has(t)])),
+    levels: Object.fromEntries(LEVELS.map((n) => [String(n), n <= c.topLevel])),
+  };
+}
+
+/**
+ * Set a layer to a year, in place. Works on either layer and on the view the
+ * child's settings hand the editor (whose `skills` is `S.enabled`).
+ * `attrs` and `safeVocab` are not touched.
+ *
+ * @returns the same object, or null (and no change) for an unknown year
+ */
+export function applyPreset(policy, year) {
+  const want = presetPolicy(year);
+  if (!want || !policy) return null;
+  for (const dim of ["skills", "types", "levels"]) {
+    /* Emptied rather than replaced: the child's view shares these objects
+       with the saved state, and a new object would be edited and then lost. */
+    const bag = (policy[dim] ||= {});
+    for (const k of Object.keys(bag)) delete bag[k];
+    for (const [k, v] of Object.entries(want[dim])) setPolicyFlag(policy, dim, k, v);
+  }
+  return policy;
+}
+
+/**
+ * Which year a layer is set to, or null when the switches match none. A
+ * blank layer permits everything and so reads as year 10: that is what an
+ * administrator who has restricted nothing has in fact allowed.
+ */
+export function presetOf(policy) {
+  const P = policy || blankPolicy();
+  for (const year of YEARS) {
+    const want = presetPolicy(year);
+    const same = ["skills", "types", "levels"].every((dim) =>
+      Object.entries(want[dim]).every(([k, v]) => on(P[dim], k) === v));
+    if (same) return year;
+  }
+  return null;
 }
 
 /* ---------- validating what arrives from outside ------------------------- */

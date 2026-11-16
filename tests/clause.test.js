@@ -22,12 +22,14 @@ function ctxFor(skill) {
   return { lex, S, sess: newSession(S) };
 }
 
-test("clause types are registered as year 9 material and off by default", () => {
+test("clause types are registered as year 10 material and off by default", () => {
+  /* v6.13: the curriculum map (docs/CURRICULUM.md) moved this from 9.b to
+     10.b. What matters to a pupil is unchanged: off until an adult says so. */
   const s = skillById("setningagerd");
   assert.ok(s, "flokkinn vantar");
-  assert.equal(s.cur, "9.b");
+  assert.equal(s.cur, "10.b");
   assert.equal(blankState().enabled.setningagerd, false,
-    "year 9 should be off until the adult switches it on");
+    "material above year 8 should be off until the adult switches it on");
 });
 
 test("the difficulty ceiling allows material above year 8", () => {
@@ -75,6 +77,6 @@ test("the new skill required no change to the others", () => {
     const t = nextTask(ctx);
     if (t) assert.notEqual(t.skill, "setningagerd");
   }
-  assert.equal(SKILLS.filter((s) => s.cur === "9.b").length, 2,
-    "the number of year 9 skills changed without the test being updated");
+  assert.equal(SKILLS.filter((s) => s.cur !== "8.b").length, 2,
+    "the number of skills above year 8 changed without the test being updated");
 });
