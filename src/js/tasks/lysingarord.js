@@ -17,8 +17,8 @@ import { helperForm } from "../core/helpers.js";
 import { explainDegree } from "./explain.js";
 import { nounSentence, adjectiveSentence, showable } from "./frames.js";
 import { built } from "./effects.js";
-import { pick, wpick, shuffle, askable, bandFor, forced, drilling, topByRank, wordWeight,
-         cap1, caseWord } from "./shared.js";
+import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, cellWanted,
+         topByRank, wordWeight, cap1, caseWord } from "./shared.js";
 
 /* ================= Beygingartafla ======================================== */
 
@@ -50,12 +50,17 @@ export function tableAdj(lex, view, rng) {
   if (drilling(view) && !forced(view, ["lo"])) return null;
   const adj = forced(view, ["lo"]) ||
     wpick(topByRank(lex.adjectives, 0.38), (x) => wordWeight(lex, view, x, "lysingarord"), rng);
-  const kyn = pick(["KK", "KVK", "HK"], rng);
-  const num = pick(["ET", "FT"], rng);
+  /* A review (tasks/review.js) asks for the table its cell is in: that
+     degree, gender and number, whatever the difficulty is now. */
+  const fc = /^(FSB|FVB|MST|ESB|EVB)-(KK|KVK|HK)-(?:NF|ÞF|ÞGF|EF)(ET|FT)$/.exec(forcedCell(view) || "");
+  if (forcedCell(view) && !fc) return null;
+  const kyn = fc ? fc[2] : pick(["KK", "KVK", "HK"], rng);
+  const num = fc ? fc[3] : pick(["ET", "FT"], rng);
   /* comparison arrives as difficulty rises */
-  const degrees = ["FSB", "FVB"];
+  let degrees = ["FSB", "FVB"];
   if (d >= 2.5) degrees.push("MST");
   if (d >= 3.5) degrees.push("ESB", "EVB");
+  if (fc) degrees = [fc[1]];
   for (const deg of shuffle(degrees, rng)) {
     const a = ADJ_DEGREES[deg];
     const cells = CASES
@@ -129,7 +134,7 @@ export function taskReverse(lex, view, rng) {
        person of a weather verb (*snjóum*). */
     if (p.cls === "so" && !w.mm) marks = marks.filter((m) => !/^MM/.test(m));
     if (p.cls === "so" && w.t3) marks = marks.filter((m) => !/-(1P|2P)-|-3P-FT$|-BH-/.test(m));
-    marks = marks.filter((m) => askable(P, m));
+    marks = marks.filter((m) => askable(P, m) && cellWanted(view, m));
     if (["kk", "kvk", "hk"].includes(p.cls)) marks = marks.filter((m) => showable(w, m));
     if (!marks.length) continue;
 
@@ -215,8 +220,28 @@ function adjSlot(lex, view, rng, want, { pred = null, frames = true } = {}) {
   const P = view.policy;
   const b = bandFor(view, "lysingarord");
   const firm = (t) => !(t.u || []).length && !t.rj;
+  /* A review (tasks/review.js): this cell, and this adjective if one is
+     given — from the bank, or put into a frame — or nothing. */
+  const fc = forcedCell(view), fw = forced(view, ["lo"]);
+  if (drilling(view) && !fw) return null;
+  const asked = (r) => (!fc || r.t.m === fc) && (!fw || (r.w.o === fw.o && r.w.c === fw.c));
   const bank = lex.slotsFor("lýsingarorð").filter((r) => want.test(r.t.m) && firm(r.t)
-    && P.level(r.s.lvl) && P.mark(r.t.m) && (!pred || pred(r)) && headSettles(lex, r.s, r.i));
+    && P.level(r.s.lvl) && P.mark(r.t.m) && (!pred || pred(r)) && headSettles(lex, r.s, r.i)
+    && asked(r));
+  if (fc || fw) {
+    if (bank.length) { const r = pick(bank, rng); return { s: r.s, i: r.i, w: r.w, m: r.t.m, lvl: r.s.lvl }; }
+    if (!frames || !fc || !want.test(fc) || !P.mark(fc)) return null;
+    /* Into a frame: the review's adjective, or a common one that has the form. */
+    const words = fw ? [fw] : lex.adjectives.filter((w) => w.r <= 300 + 150 * b && w.forms[fc]);
+    for (let k = 0; k < 25 && words.length; k++) {
+      const w = pick(words, rng);
+      if (!w.forms[fc]) return null;
+      const made = adjectiveSentence(lex, w, fc, w.forms[fc][0],
+        { maxLvl: fw ? P.maxLevel : b + 1, levelOk: (n) => P.level(n), rng });
+      if (made && headSettles(lex, made.s, made.i)) return { s: made.s, i: made.i, w, m: fc, lvl: made.lvl };
+    }
+    return null;
+  }
   if (bank.length && (!frames || rng() < 0.55)) {
     const r = pick(bank, rng);
     return { s: r.s, i: r.i, w: r.w, m: r.t.m, lvl: r.s.lvl };

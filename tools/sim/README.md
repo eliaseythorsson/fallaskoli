@@ -17,11 +17,32 @@ Run from anywhere with Node 18+; nothing here writes to the project.
 The pupil answers right with probability `ability − 0.04·(level−1) − a penalty for tables and
 production + learn·(times this cell was met)`. It is a model: read the output as sizes, not decimals.
 It replaces `Date` with a fake clock to move through days, and mirrors `app.pickTask` / `app.finish`
-by hand because grading lives in `ui/render.js` — if those change, update `sim.mjs` with them.
+by hand — if those change, update `sim.mjs` with them.
+
+v6.13, the review queue (`core/review.js`): the simulated session opens with up to three due entries
+and brings a missed cloze noun back three to five questions on, exactly as `app.pickTask` does
+(both call `tasks/review.js`), and every judged answer is written to the queue. `simulate({ review: false })`
+runs the old rule (no queue; the missed noun is the very next question) for a before/after comparison.
+`mixed.mjs` prints how soon a miss returns in questions, and — the figure the queue is for — on which
+DAY: the share of missed cells, and of missed word-and-cell pairs, that are asked again the next day.
+Measured when the queue went in (8 pupils × 40 days × 20 questions, three abilities — weak / mid / strong):
+
+| | before | after |
+|---|---|---|
+| questions until the missed cell is asked again (median) | 37 / 41 / 50 | 18 / 15 / 12 |
+| the missed cell is asked again the next day | 29% / 26% / 23% | 70% / 85% / 96% |
+| the same word in the same cell is asked again the next day | 2% / 2% / 1% | 34% / 67% / 85% |
+| exact repeat questions (a review IS a repeat) | 7% / 7% / 7% | 13% / 15% / 15% |
+
+(The builders draw from `Math.random` here, so a rerun moves these by a point or two.)
+
+The weak pupil misses about ten questions a day and a session opens with three reviews, so not every
+miss can come back the next day; the queue asks the freshest first (see the top of `core/review.js`).
 
 v6.13: the builders are pure (`build(lex, view, rng)` → `{ task, effects }`), and `sim.mjs` applies the
 effects of the one question it shows, as `app.pickTask` does. `burn.mjs` should therefore print as many
-items marked as there were vocabulary questions shown (`or_utundan` is shown and marks nothing).
+items marked as there were vocabulary questions shown (`or_utundan` is shown and marks nothing; the
+numeral items `to_samr` and `to_flt` are no longer vocabulary and are not counted — critique item 20).
 
 Not yet tests. Suggested thresholds when they become one (`tests/simulation.test.js`):
 every type ≥ 150 distinct questions per band; a pupil at 85% reaches level-3 sentences within ten

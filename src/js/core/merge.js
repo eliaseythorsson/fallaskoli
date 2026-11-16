@@ -19,6 +19,8 @@
  * Pure: no DOM, no requests, never mutates its arguments.
  */
 
+import { mergeReview } from "./review.js";
+
 const num = (x) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
 const obj = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : {});
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -178,6 +180,11 @@ export function mergeStates(base, local, remote) {
   [...(Array.isArray(R.runs) ? R.runs : []), ...(Array.isArray(L.runs) ? L.runs : [])]
     .forEach((x) => { if (x && x.at) runs.set(x.at, x); });
   out.runs = [...runs.values()].sort((a, b) => a.at - b.at).slice(-40);
+
+  /* The review queue (v6.13): one entry per thing missed, whichever device
+     missed it; the rule for an entry both devices changed is in
+     core/review.js `mergeReview`. */
+  out.review = mergeReview(B.review, L.review, R.review);
 
   out.lastActive = later(L.lastActive, R.lastActive);
   out.settled = later(L.settled, R.settled);

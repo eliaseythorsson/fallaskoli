@@ -24,6 +24,7 @@
 import { migrate } from "../src/js/core/state.js";
 import { BADGES } from "../src/js/core/badges.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
+import { sanitiseReview, REVIEW_MAX } from "../src/js/core/review.js";
 
 export const MAX_STATE_BYTES = 2 * 1024 * 1024;
 
@@ -171,6 +172,22 @@ export function cleanState(raw, { today = new Date() } = {}) {
     j: n(r.j, 100), xp: n(r.xp, 100000),
     top: (Array.isArray(r.top) ? r.top : []).filter((x) => typeof x === "string" && x.length <= 40).slice(0, 5),
   }));
+
+  /* The review queue (v6.13, core/review.js): at most REVIEW_MAX entries of
+     short strings, dates and small numbers, and a tally per error pattern and
+     per category. `sanitiseReview` rebuilds it field by field — the same
+     function the browser loads a state with, so the two cannot drift apart —
+     and here the dates are held to the calendar as well: an entry cannot be
+     due further ahead than the longest interval allows, and one whose
+     category the program does not have is dropped. */
+  const review = sanitiseReview(raw.review);
+  const ahead = new Date(today.getTime() + 60 * 86400000).toISOString().slice(0, 10);
+  review.items = review.items
+    .filter((e) => e.due <= ahead && e.last <= limit && e.add <= limit && (!e.sk || SKILLS.has(e.sk)))
+    .slice(0, REVIEW_MAX);
+  review.stats = Object.fromEntries(Object.entries(review.stats)
+    .filter(([k]) => !k.startsWith("s:") || SKILLS.has(k.slice(2))).slice(0, 100));
+  S.review = review;
 
   S.counters = Object.fromEntries(pairs(S.counters, 20, 40).map(([k, v]) => [k, n(v)]));
   S.periods = smallJSON(S.periods, 60000) || {};

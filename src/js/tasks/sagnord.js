@@ -10,8 +10,8 @@ import { skillLevel } from "../core/progress.js";
 import { wordKey } from "../core/state.js";
 import { explainVerbForm, conjugationNote } from "./explain.js";
 import { built } from "./effects.js";
-import { pick, wpick, shuffle, askable, bandFor, forced, drilling, topByRank, shareForLevel,
-         wordWeight, cellWeight } from "./shared.js";
+import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, topByRank,
+         shareForLevel, wordWeight, cellWeight } from "./shared.js";
 
 /* ================= Sagnbeyging ========================================== */
 
@@ -26,12 +26,56 @@ const THIRD_ONLY_SUBJECTS = [["3P-ET", "það"]];
 export const subjectLabel = (pref, pron) =>
   /-VH-/.test(pref + "-") ? "þótt " + pron : pron;
 
+/* Every form "Beygðu sögnina" can ask for, with the words it is named by.
+   `taskVerb` opens them one by one as the difficulty rises; a review asks for
+   the one that was missed, whatever the difficulty is now. */
+const VERB_SPECS = [
+  ["GM-FH-NT", "nútíð, framsöguháttur, germynd"],
+  ["GM-FH-ÞT", "þátíð, framsöguháttur, germynd"],
+  ["GM-VH-NT", "nútíð, viðtengingarháttur"],
+  ["GM-VH-ÞT", "þátíð, viðtengingarháttur"],
+  ["MM-FH-NT", "nútíð, miðmynd"],
+  ["MM-FH-ÞT", "þátíð, miðmynd"],
+];
+
+const verbTask = (view, v, pref, label, sfx, who) => {
+  const m = pref + "-" + sfx;
+  return built({
+    type: "verb", skill: "sagnord", v, m, pron: subjectLabel(pref, who), label,
+    answers: v.forms[m], a: readMark(m),
+    lvl: Math.min(view.policy.maxLevel, Math.round(diffOf(view.sess, "sagnord"))),
+    base: 12, cell: m, word: wordKey(v.o, v.c), paradigm: v.forms,
+    conj: verbConjugation(v),
+  });
+};
+
+/** "Beygðu sögnina" for the one cell a review asks for (tasks/review.js) —
+    of the review's verb, or of a common verb that has the form. */
+function forcedVerb(lex, view, rng, pool) {
+  const fc = forcedCell(view);
+  const spec = VERB_SPECS.find(([pref]) => fc.startsWith(pref + "-"));
+  if (!spec || !askable(view.policy, fc)) return null;
+  const sfx = fc.slice(spec[0].length + 1);
+  const has = (v) => {
+    const sub = (v.t3 ? THIRD_ONLY_SUBJECTS : SUBJECTS).find(([x]) => x === sfx);
+    /* The middle voice only of a verb that has one in use, as below. */
+    return v.forms[fc] && sub && (!/^MM/.test(fc) || v.mm) ? sub : null;
+  };
+  const only = forced(view, ["so"]);
+  const bag = only ? [only] : pool.filter(has);
+  if (!bag.length) return null;
+  const v = only || wpick(bag, (x) => wordWeight(lex, view, x, "sagnord"), rng);
+  const sub = has(v);
+  return sub ? verbTask(view, v, spec[0], spec[1], sub[0], sub[1]) : null;
+}
+
 export function taskVerb(lex, view, rng) {
   const { sess, S } = view;
   const L = skillLevel(S.skills.sagnord.xp).level;
   const d = diffOf(sess, "sagnord");
   if (drilling(view) && !forced(view, ["so"])) return null;
   const pool = topByRank(lex.verbs, shareForLevel(L, 0.21, 0.09));
+  if (forcedCell(view)) return forcedVerb(lex, view, rng, pool);
   const v = forced(view, ["so"]) || wpick(pool, (x) => wordWeight(lex, view, x, "sagnord"), rng);
 
   const specs = [
@@ -56,14 +100,7 @@ export function taskVerb(lex, view, rng) {
       v.forms[pref + "-" + sfx] && askable(P, pref + "-" + sfx));
     if (!cands.length) continue;
     const [sfx, who] = pick(cands, rng);
-    const m = pref + "-" + sfx;
-    const pron = subjectLabel(pref, who);
-    return built({
-      type: "verb", skill: "sagnord", v, m, pron, label,
-      answers: v.forms[m], a: readMark(m), lvl: Math.min(P.maxLevel, Math.round(d)),
-      base: 12, cell: m, word: wordKey(v.o, v.c), paradigm: v.forms,
-      conj: verbConjugation(v),
-    });
+    return verbTask(view, v, pref, label, sfx, who);
   }
   return null;
 }
@@ -101,7 +138,18 @@ export function taskVerbSlot(lex, view, rng) {
   };
   if (drilling(view) && !forced(view, ["so"])) return null;
   const only = forced(view, ["so"]);
-  const slots = lex.slotsFor("sagnorð").filter(
+  /* A review (tasks/review.js) asks for one cell, whatever the difficulty is
+     now — the pupil has met it, that is how it was missed — and in a sentence
+     at their level if there is one, otherwise in any they may meet. */
+  const fc = forcedCell(view);
+  let slots;
+  if (fc) {
+    const all = lex.slotsFor("sagnorð").filter((r) => r.t.m === fc && FINITE.test(fc) &&
+      askable(P, fc) && firm(r.t) && P.level(r.s.lvl) &&
+      (!only || (r.w.o === only.o && r.w.c === only.c)));
+    const near = all.filter((r) => r.s.lvl <= bandFor(view, "sagnord"));
+    slots = near.length ? near : all;
+  } else slots = lex.slotsFor("sagnorð").filter(
     (r) => allowed(r.t.m) && firm(r.t) && P.level(r.s.lvl) &&
       /* A drill takes any sentence the word is in, whatever its level. */
       (only ? r.w.o === only.o && r.w.c === only.c : r.s.lvl <= bandFor(view, "sagnord")));
@@ -159,11 +207,14 @@ export function tableVerb(lex, view, rng) {
   if (forced(view, ["so"]) && forced(view, ["so"]).t3) return null;
   const v = forced(view, ["so"]) || wpick(topByRank(lex.verbs, 0.36).filter((x) => !x.t3),
     (x) => wordWeight(lex, view, x, "sagnord"), rng);
-  const prefs = ["GM-FH-NT", "GM-FH-ÞT"];
+  let prefs = ["GM-FH-NT", "GM-FH-ÞT"];
   if (d >= 3) prefs.push("GM-VH-ÞT");
   if (v.mm && d >= 4) prefs.push("MM-FH-NT");
   const NAME = { "GM-FH-NT": "nútíð · framsöguháttur", "GM-FH-ÞT": "þátíð · framsöguháttur",
                  "GM-VH-ÞT": "þátíð · viðtengingarháttur", "MM-FH-NT": "nútíð · miðmynd" };
+  /* A review asks for the tense its cell is in (of the four a table has). */
+  const fc = forcedCell(view);
+  if (fc) prefs = Object.keys(NAME).filter((p) => fc.startsWith(p + "-") && (!/^MM/.test(p) || v.mm));
   for (const pref of shuffle(prefs, rng)) {
     const cells = SUBJECTS
       .map(([sfx, p]) => ({ m: pref + "-" + sfx, label: subjectLabel(pref, p) }))

@@ -14,7 +14,7 @@ import { wordKey } from "../core/state.js";
 import { wantsHelper, phrase, paradigmWithHelper } from "../core/helpers.js";
 import { settled } from "./frames.js";
 import { built, FX } from "./effects.js";
-import { pick, wpick, shuffle, bandFor, levelFor, forced, drilling, wordWeight, sameInEveryCell,
+import { pick, wpick, shuffle, bandFor, levelFor, forced, drilling, forcedCell, wordWeight, sameInEveryCell,
          cap1, caseWord, caseOf, textSentence, fresh, lexWord, isTimeNoun, headsTimePhrase } from "./shared.js";
 
 /* ================= Beygingartafla ======================================== */
@@ -35,9 +35,13 @@ export function tablePronoun(lex, view, rng) {
   if (!pool.length) return null;
   if (drilling(view) && !forced(view, ["fn", "pfn", "gr"])) return null;
   const w = forced(view, ["fn", "pfn", "gr"]) || wpick(pool, (x) => wordWeight(lex, view, x, "fornofn"), rng);
-  const kyn = pick(["KK", "KVK", "HK"], rng);
+  /* A review (tasks/review.js) asks for the table its cell is in. */
+  const fc = forcedCell(view);
+  const f = /^(?:(KK|KVK|HK)-)?(?:NF|ÞF|ÞGF|EF)(ET|FT)$/.exec(fc || "");
+  if (fc && (!f || (f[2] === "FT" && SINGULAR_TABLE_ONLY.has(w.o)))) return null;
+  const kyn = f && f[1] ? f[1] : pick(["KK", "KVK", "HK"], rng);
   /* *sérhver* has a plural in BÍN and none in use. */
-  const num = SINGULAR_TABLE_ONLY.has(w.o) ? "ET" : pick(["ET", "FT"], rng);
+  const num = f ? f[2] : SINGULAR_TABLE_ONLY.has(w.o) ? "ET" : pick(["ET", "FT"], rng);
   for (const withKyn of [true, false]) {
     const cells = CASES
       .map((cs) => {
@@ -46,6 +50,7 @@ export function tablePronoun(lex, view, rng) {
       })
       .filter((c) => w.forms[c.m]);
     if (cells.length < 4) continue;
+    if (fc && !cells.some((c) => c.m === fc)) continue;
     /* Four cells with the same word in them are not a declension: *hvaða*. */
     if (sameInEveryCell(w, cells)) continue;
     if (!view.policy.marks(cells.map((c) => c.m))) continue;

@@ -17,7 +17,8 @@ import { showable, fittingAdjectives } from "./frames.js";
 import { built } from "./effects.js";
 import { withView } from "./view.js";
 import { nounCloze } from "./cloze.js";
-import { pick, wpick, shuffle, askable, bandFor, forced, drilling, wordWeight, cellWeight, cap1 } from "./shared.js";
+import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, wordWeight,
+         cellWeight, cap1 } from "./shared.js";
 
 /* ================= Cloze — noun (± adjective) =========================== */
 
@@ -45,7 +46,8 @@ export function taskFill(lex, view, rng) {
   const crowded = s.fixed || (prev && (MODIFIER.includes(prev.c) || prev.rj))
     || (next && (MODIFIER.includes(next.c) || next.rj));
   const afterThetta = t.r === "sagnfylling";
-  if (!crowded && (mayAdj || mayDem) && rng() < pPhrase) {
+  /* A review (tasks/review.js) asks for the noun as it was missed, bare. */
+  if (!view.force && !crowded && (mayAdj || mayDem) && rng() < pPhrase) {
     const kyn = n.c.toUpperCase();
     const cn = (a.fall === "ÞG" ? "ÞGF" : a.fall) + (a.tala === "fleirtala" ? "FT" : "ET");
     if (mayDem && rng() < pDem && !a.greinir && !afterThetta) {
@@ -121,7 +123,12 @@ export function tableNoun(lex, view, rng) {
     && showable(n, mark("NF", c.k))
     && P.marks(CASES.map((cs) => mark(cs.k, c.k))));
   if (!cols.length) return null;
-  const col = wpick(cols, (c) => CASES.reduce((a, cs) => a + cellWeight(S, mark(cs.k, c.k)), 0), rng);
+  /* A review asks for the column its cell is in. */
+  const fc = forcedCell(view);
+  const mine = fc ? cols.filter((c) => CASES.some((cs) => mark(cs.k, c.k) === fc)) : cols;
+  if (!mine.length) return null;
+  const col = fc ? mine[0]
+    : wpick(cols, (c) => CASES.reduce((a, cs) => a + cellWeight(S, mark(cs.k, c.k)), 0), rng);
   return built({
     type: "table", kind: "no", skill: "nafnord", w: n,
     cells: CASES.map((cs) => ({ m: mark(cs.k, col.k), label: cs.name })),

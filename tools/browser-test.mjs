@@ -1983,6 +1983,78 @@ await page.setViewport({ width: 1100, height: 900 });
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
 }
 
+/* v6.13 — the review queue, on the screen (core/review.js, critique items 18
+   and 19). The unit tests (tests/review.test.js) prove the schedule; these
+   prove that a pupil SEES it: a session opens with what is due and says so, a
+   passed review says when it comes next, and a missed cloze noun is not the
+   next question but comes back a few questions on. */
+{
+  await dismissModals();
+  const first = await page.evaluate((lemma) => {
+    const A = window.FALLASKOLI;
+    const key = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const today = key(new Date());
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    A.run = null; A.runDone = null;
+    /* yesterday's miss: the dative plural of the test noun, in a cloze */
+    A.S.review = { items: [{ k: `f:mynd|ÞGFFT|${lemma}|kk`, t: "fill", sk: "nafnord", p: null,
+      c: "ÞGFFT", w: `${lemma}|kk`, i: null, s: 0, due: today, add: key(y), last: key(y), l: 1, ok: 0 }], stats: {} };
+    A.startRun("blandad", 20);
+    const c = A.cur;
+    return { review: c.review || null, type: c.type, word: c.word, cell: c.cell, extra: !!c.extra,
+      tag: (document.querySelector("#task .eyebrow .reviewtag") || {}).textContent || "" };
+  }, TEST_NOUN);
+  ok(first.review === `f:mynd|ÞGFFT|${TEST_NOUN}|kk` && first.type === "fill" && first.word === `${TEST_NOUN}|kk`
+    && first.cell === "ÞGFFT" && !first.extra,
+    "the session did not open with the due review: " + JSON.stringify(first));
+  ok(first.tag === "upprifjun", `a review question is not marked as one ("${first.tag}")`);
+  await answerOneNoNext(true);
+  const passed = await page.evaluate(() => ({
+    line: (document.querySelector("#verdict .reviewline") || {}).textContent || "",
+    e: window.FALLASKOLI.S.review.items[0] || null,
+  }));
+  ok(/Upprifjun tókst\. Þetta kemur aftur eftir 3 daga\./.test(passed.line), `no line under a passed review: "${passed.line}"`);
+  ok(passed.e && passed.e.s === 1, "a passed review did not move out: " + JSON.stringify(passed.e));
+  await page.evaluate(() => window.FALLASKOLI.next());
+  const second = await page.evaluate(() => ({ review: window.FALLASKOLI.cur.review || null,
+    tag: !!document.querySelector("#task .eyebrow .reviewtag") }));
+  ok(!second.review && !second.tag, "a question that is not a review is marked as one");
+
+  /* item 19: miss a cloze — the noun is not the next question, and it is back
+     three to five questions on, in the cell that was missed */
+  if (!(await forceNounCloze())) problems.push(`could not draw a noun cloze on ${TEST_NOUN} — cannot test the repeat`);
+  else {
+    const missed = await page.evaluate(() => { const A = window.FALLASKOLI; return { i: A.run.i, cell: A.cur.cell, s: A.cur.s.t }; });
+    await answerOneNoNext(false);
+    const said = await page.evaluate(() => ({
+      text: document.querySelector("#verdict .verdict").textContent,
+      reask: window.FALLASKOLI.run.reask.map((x) => ({ at: x.at, w: x.w })),
+      forced: !!window.FALLASKOLI.forcedNoun,
+      queued: window.FALLASKOLI.S.review.items.some((e) => e.w === "bíll|kk" && e.s === 0),
+    }));
+    ok(!/Næst kemur sama orð/.test(said.text), "the verdict still promises the same word next");
+    ok(/Orðið kemur aftur seinna í lotunni\./.test(said.text), "the verdict does not say the word comes back later");
+    ok(!said.forced, "the missed noun is still set to be the very next question");
+    ok(said.reask.length === 1 && said.reask[0].at - missed.i >= 3 && said.reask[0].at - missed.i <= 5,
+      "the missed noun is not planned 3–5 questions on: " + JSON.stringify(said.reask) + " after " + missed.i);
+    ok(said.queued, "the missed cloze is not in the review queue");
+    await page.evaluate(() => window.FALLASKOLI.next());
+    let back = null;
+    for (let k = 1; k <= 5 && !back; k++) {
+      const c = await page.evaluate(() => { const A = window.FALLASKOLI; const c = A.cur;
+        return { i: A.run.i, reask: !!c.reask, word: c.word, type: c.type, cell: c.cell, s: c.s ? c.s.t : null }; });
+      if (k === 1) ok(!(c.type === "fill" && c.word === `${TEST_NOUN}|kk`), "the missed noun was the very next question");
+      if (c.reask) back = c;
+      else await answerOne(true);
+    }
+    ok(back && back.word === `${TEST_NOUN}|kk` && back.i - missed.i >= 3 && back.i - missed.i <= 5,
+      "the missed noun did not come back 3–5 questions on: " + JSON.stringify(back));
+    ok(back && back.cell === missed.cell && back.s !== missed.s,
+      "it did not come back in the missed cell and another sentence: " + JSON.stringify([missed, back]));
+  }
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.S.review = { items: [], stats: {} }; A.next(); });
+}
+
 /* The tabs must stay reachable at the narrowest width — they scroll sideways
    there, or (since v6.2) wrap their long names onto two lines so that all four
    fit; a tab that has been pushed off the screen is the same as a tab that is

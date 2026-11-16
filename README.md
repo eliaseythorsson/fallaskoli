@@ -106,6 +106,14 @@ src/js/core/answer.js judging an answer, for every question type:
                       xp, … } decides and changes nothing; settle() writes
                       the result into the state. The renderers only collect
                       the response and draw the verdict
+src/js/core/review.js the review queue: every wrong answer goes in with a
+                      due date; a right answer on a due entry moves it out
+                      1 → 3 → 7 → 21 days, a wrong one starts it again; a
+                      session opens with up to three due entries
+                      (tasks/review.js asks them, with the cell or the word
+                      forced). Also what is one entry, the cap, the expiry
+                      and the merge between devices — each choice explained
+                      at the top of the file
 src/js/core/mix.js    the mix rule for a session: ≥3 kinds of question, none
                       over ~40%, tables ≤30%, analysis ≤35%
 src/js/core/curriculum.js  the curriculum map as data: the official
@@ -122,7 +130,9 @@ src/js/tasks/         the question builders, one file per category:
                       pure — build(lex, view, rng) → { task, effects }
                       (view.js, effects.js): it changes nothing and never
                       draws a random number of its own. next.js chooses the
-                      next question, drill.js runs the rescue drill; shared.js,
+                      next question, drill.js runs the rescue drill,
+                      review.js turns an entry of the review queue back
+                      into a question; shared.js,
                       cloze.js and tap.js are what the categories share;
                       frames.js the sentence frames, explain.js the
                       explanations

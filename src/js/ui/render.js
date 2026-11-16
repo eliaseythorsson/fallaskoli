@@ -50,6 +50,9 @@ export function renderTask(app) {
      the neutral Orðflokkar page, not to the page of the class it is about.
      The specific page comes with the verdict (suggestLesson). */
   const link = definitionLocked(app.cur) ? lessonLinkHTML(app.cur, "ordflokkar") : lessonLinkHTML(app.cur);
+  /* v6.13: a question the review queue asked for says so (core/review.js). */
+  if (eb && app.cur.review && !eb.querySelector(".reviewtag"))
+    eb.insertAdjacentHTML("beforeend", `<b class="reviewtag">upprifjun</b>`);
   if (eb && link && !eb.querySelector(".lessonlink")) eb.insertAdjacentHTML("beforeend", link);
   /* v6.8: every question can be reported (ui/reports.js). */
   if (eb && !eb.querySelector(".reportflag")) eb.insertAdjacentHTML("beforeend", reportButtonHTML());
@@ -260,15 +263,19 @@ function submitFill(app) {
       ${whyBox(t.why)}
       <p class="streakline">${app.S.run} í röð${multLine(app, xp)}. Enter fyrir næstu.</p></div>`;
     } else {
-      /* v6.11: a cloze asked for another category (Fallstjórn) does not bring
-         its noun back as a Nafnorð question. */
-      if (!t.noRepeat) app.forcedNoun = t.n;
+      /* v6.13 (critique item 19): the noun used to be the very next question
+         — a test of what the pupil had read a second ago. It now comes back
+         three to five questions on, if the session is that long, and the
+         review queue has it for tomorrow either way (core/review.js). A
+         cloze asked for another category (Fallstjórn, `noRepeat`) does not
+         bring its noun back as a Nafnorð question. */
+      const later = app.planReask ? app.planReask(t) : false;
       $("verdict").innerHTML = `<div class="verdict no">
       <h3>${cheer(CHEERS_NO)}</h3>
       <p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>. Rétt er
          <span class="forms">${t.answers.slice(0, 2).map(esc).join(" / ")}</span>.</p>
       ${nearNote(v)}<p>${full}</p>${whyBox(t.why)}
-      <p class="streakline">${t.noRepeat ? "Enter fyrir næstu." : "Næst kemur sama orð í annarri setningu. Enter."}</p></div>`;
+      <p class="streakline">${later ? "Orðið kemur aftur seinna í lotunni. " : ""}Enter fyrir næstu.</p></div>`;
     }
     $("ans").disabled = true;
     $("hint").disabled = true;

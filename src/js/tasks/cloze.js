@@ -10,7 +10,8 @@ import { readMark } from "../core/marks.js";
 import { wordKey } from "../core/state.js";
 import { explainSlot } from "./explain.js";
 import { substitutable, acceptsNoun, candidateNouns, settled, repeatsNoun } from "./frames.js";
-import { pick, wpick, askable, sentPool, drilling, wordWeight, isTimeNoun, bandFor } from "./shared.js";
+import { pick, wpick, shuffle, askable, sentPool, drilling, forced, forcedCell, wordWeight,
+         isTimeNoun, bandFor } from "./shared.js";
 
 /* How often a slot of each case is let through when the cloze is `balanced`
    (critique item 15). The bank is full of subjects, so left alone 37% of the
@@ -28,6 +29,7 @@ const CASE_ODDS = { NF: 0.12, "ÞF": 0.45, "ÞG": 0.9, EF: 1 };
  *              (above þyngd 1) never where the answer is the word on the card
  */
 export function nounCloze(lex, view, rng, { noun = null, only = null, balanced = false } = {}) {
+  if (forcedCell(view)) return forcedCloze(lex, view, rng, { noun, only });
   const P = view.policy;
   let s = null, n = null, a = null;
   const pool0 = sentPool(lex, view, "nafnord");
@@ -81,6 +83,10 @@ export function nounCloze(lex, view, rng, { noun = null, only = null, balanced =
      chosen for it; never build a question whose cell the noun does not have. */
   if (!s || s.slot == null || !n.forms[s.tok[s.slot].m]) return null;
 
+  return clozeTask(s, n, a);
+}
+
+const clozeTask = (s, n, a) => {
   const t = s.tok[s.slot];
   return {
     type: "fill", skill: "nafnord", s, i: s.slot, n, m: t.m, a,
@@ -89,4 +95,57 @@ export function nounCloze(lex, view, rng, { noun = null, only = null, balanced =
     why: explainSlot(s, s.slot, { time: isTimeNoun(n) }),
     paradigm: n.forms,
   };
+};
+
+/**
+ * The cloze a review asks for (tasks/review.js): THIS cell — and this noun,
+ * if one is given — or nothing.
+ *
+ * The loop above draws sentences until one fits, which is right when any
+ * cell will do and hopeless when one in sixteen will: here every sentence
+ * whose slot stands in the cell is listed first, and one of them is chosen.
+ * The sentences near the pupil's level are tried before the rest of what the
+ * policy allows, so a review is not suddenly two steps harder than the
+ * session — but it is asked rather than dropped.
+ *
+ * Every rule of the loop above that is about CORRECTNESS holds here too (the
+ * case is settled, the cell is allowed, the sentence accepts the noun). The
+ * two that are about variety do not: the odds per case, and "not where the
+ * answer is the word on the card" — the review asks for what was missed.
+ */
+function forcedCloze(lex, view, rng, { noun = null, only = null }) {
+  const P = view.policy;
+  const cell = forcedCell(view);
+  const avoid = view.force.avoid || null;
+  const want = noun || forced(view, ["kk", "kvk", "hk"]);
+  /* A word that is not a noun cannot be put in a noun's slot. */
+  if (!want && drilling(view)) return null;
+  if (!askable(P, cell)) return null;
+  const fits = (s) => {
+    if (s.slot == null || s.nf || s.t === avoid) return false;
+    if (only && !only(s, s.slot)) return false;
+    const t = s.tok[s.slot];
+    return t.m === cell && settled(t) && !(t.u || []).includes("fall") && !!readMark(t.m).fall;
+  };
+  const near = sentPool(lex, view, "nafnord");
+  const pools = [near, lex.sentences.filter((s) => P.level(s.lvl) && !near.includes(s))];
+  for (const pool of pools) {
+    for (const s of shuffle(pool.filter(fits), rng)) {
+      const t = s.tok[s.slot];
+      const open = substitutable(s);
+      const own = open ? null : (lex.lookup(t.l, t.c) || lex.lookup(t.l, "nafnorð"));
+      let n = null;
+      if (want) {
+        if (open) {
+          if (acceptsNoun({ rk: s.rk, need: s.need, ps: s.ps || null }, want, t.m)
+              && !repeatsNoun(s, s.slot, want)) n = want;
+        } else if (own && own.o === want.o && own.c === want.c) n = own;
+      } else if (open) {
+        const cands = candidateNouns(lex, s);
+        if (cands.length) n = wpick(cands, (x) => wordWeight(lex, view, x, "nafnord"), rng);
+      } else n = own;
+      if (n && n.forms[t.m]) return clozeTask(s, n, readMark(t.m));
+    }
+  }
+  return null;
 }

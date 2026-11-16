@@ -80,6 +80,20 @@ export const forced = (view, classes) => {
 };
 export const drilling = (view) => !!view.drillWord;
 
+/* ---------- a review (v6.13, tasks/review.js) -----------------------------
+ *
+ * A review asks for one cell, one word, or both (`view.force`, tasks/view.js).
+ * The word arrives as the drill word, so `forced` above already hands it
+ * over. These read the rest. A builder that honours a forced cell builds that
+ * cell or returns null. */
+
+/** The cell a review asks for, or null. */
+export const forcedCell = (view) => (view.force && view.force.cell) || null;
+/** The hand-written item a review asks for, or null. */
+export const forcedItem = (view) => (view.force && view.force.item) || null;
+/** May this cell be built? Always, unless a review asks for another. */
+export const cellWanted = (view, m) => !forcedCell(view) || forcedCell(view) === m;
+
 /* ---------- choosing a word ---------------------------------------------- */
 
 /* The frequency cap is a SHARE of the pool, not a rank: a fixed rank chosen
@@ -212,8 +226,10 @@ export function fresh(view, key, list) {
  * of ranks; when nothing in it may be asked, the window widens, commonest
  * first, so a question still comes.
  *
- * Here because two categories use it: Orðaforði, and the two Töluorð types
- * whose items are spaced the same way (to_samr, to_flt).
+ * Orðaforði only. Until v6.13 two Töluorð types (to_samr, to_flt) went
+ * through it too; numeral agreement is grammar and needs repeating, so they
+ * now use the review queue and a same-session gate (tasks/toluord.js,
+ * critique item 20). It stays in this file because the rule is general.
  *
  * Returns { x, fx }: the item, and the effect that marks it as asked once the
  * question is shown. The mark used to be written here, at once — so every

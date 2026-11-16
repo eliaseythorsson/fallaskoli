@@ -664,7 +664,15 @@ test("a table: every cell's XP and the bonus are what recording cell by cell gav
       assert.equal(j.detail.bonus, old.bonus, `${t.title}: bonus`);
       if (goalToday && j.ok) assert.equal(j.detail.bonus, Math.round(30 * dayMult(4)), t.title);
       settle(b.S, b.sess, t, j, { ms: 0 });
-      assert.deepEqual(b.S, a.S, `${t.title}: the state after a table`);
+      /* The review queue is the one thing `settle` writes that the old
+         handlers did not (v6.13, core/review.js): a table with a wrong cell
+         leaves one entry — its first wrong cell — and a perfect one none. */
+      const { review, ...rest } = b.S;
+      const { review: none, ...was } = a.S;
+      assert.deepEqual(none.items, []);
+      assert.deepEqual(review.items.map((e) => [e.t, e.w, e.s]),
+        j.ok ? [] : [[t.typeId, t.word, 0]], `${t.title}: the review queue after a table`);
+      assert.deepEqual(rest, was, `${t.title}: the state after a table`);
       assert.deepEqual(b.sess, a.sess, `${t.title}: the session after a table`);
     }
   });
