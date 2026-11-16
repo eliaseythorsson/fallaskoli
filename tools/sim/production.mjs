@@ -3,11 +3,12 @@ const { DATA } = await import(R + "/data/data_bundle.js");
 const { buildLexicon } = await import(R + "/src/js/core/lexicon.js");
 const { blankState, newSession } = await import(R + "/src/js/core/state.js");
 const { SKILL_IDS } = await import(R + "/src/js/core/skills.js");
-const { TASKS } = await import(R + "/src/js/tasks/index.js");
+const { typeById, makeView } = await import(R + "/src/js/tasks/index.js");
+const rng = () => Math.random();
 const lex = buildLexicon(DATA);
 const S = blankState(); SKILL_IDS.forEach((k) => { S.enabled[k] = true; });
-const sess = newSession(S); const ctx = { lex, S, sess, forcedNoun: null };
-const g = (id) => TASKS.find((x) => x.id === id).gen(ctx);
+const sess = newSession(S);
+const g = (id) => { const b = typeById(id).build(lex, makeView({ S, sess }), rng); return b ? b.task : null; };
 for (const D of [1, 3, 5]) {
   SKILL_IDS.forEach((s) => { sess.diff[s] = D; });
   console.log("--- diff", D);

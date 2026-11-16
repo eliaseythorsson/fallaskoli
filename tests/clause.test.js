@@ -9,7 +9,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
-import { nextTask } from "../src/js/tasks/index.js";
+import { ask } from "./helpers.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILLS, skillById } from "../src/js/core/skills.js";
 import { MAX, clamp } from "../src/js/core/difficulty.js";
@@ -42,7 +42,7 @@ test("the builder returns a task and never the same token twice in a span", () =
   const ctx = ctxFor("setningagerd");
   let seen = 0;
   for (let i = 0; i < 60; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     if (!t) continue;
     assert.equal(t.skill, "setningagerd");
     /* v6.11: Setningagerð has three kinds of question; the span rules are
@@ -58,7 +58,7 @@ test("the builder returns a task and never the same token twice in a span", () =
 test("the correct answer is ALWAYS read from the parse, never inferred", () => {
   const ctx = ctxFor("setningagerd");
   for (let i = 0; i < 80; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     if (!t || t.type !== "clause") continue;
     /* Every token in the span must carry exactly the clause type being
        asked about. If the builder inferred anything, this fails.
@@ -74,7 +74,7 @@ test("the new skill required no change to the others", () => {
   /* If the new skill had leaked into the others, this would fail. */
   const ctx = ctxFor("nafnord");
   for (let i = 0; i < 40; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     if (t) assert.notEqual(t.skill, "setningagerd");
   }
   assert.equal(SKILLS.filter((s) => s.cur !== "8.b").length, 2,

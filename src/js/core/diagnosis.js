@@ -234,7 +234,7 @@ export function tagsOf(t) {
       if (AO_FS.has(t.answer)) tags.add("ofl:ao_fs");
       break;
     case "syntax": tags.add("syn"); break;
-    /* v6.11 shapes (tasks/more.js): the mark, if the question has one, and
+    /* v6.11 shapes (gap, choice, tap, sort): the mark, if the question has one, and
        the tags the builder gives. A pronoun has no article to forget. */
     case "gap": case "choice":
       if (t.m) addMark(t.m);
@@ -761,8 +761,10 @@ export function focusTypes(ids) {
  * Build a question, preferring one that tests a pattern in `ids`: with
  * chance `p`, up to `tries` candidates are built and the first that tests one
  * is kept (marked `targeted`); otherwise the first candidate. A vocabulary
- * question is never thrown away — it marks its word as asked — so it ends
- * the search. `next` builds one question or returns null.
+ * question is never thrown away, so it ends the search. `next` builds one
+ * question or returns null; since v6.13 building changes nothing (the
+ * builders are pure, tasks/view.js), so the candidates that are dropped use
+ * nothing up — the caller applies the effects of the one that is returned.
  */
 export function pickTargeted(next, ids, { p = 0.4, tries = 5, rnd = Math.random } = {}) {
   if (!ids || !ids.length || rnd() >= p) return next();

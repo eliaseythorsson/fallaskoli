@@ -752,7 +752,7 @@ export function renderSettings(app) {
   };
   renderPolicyEditor($("policyeditor"), view, {
     ceiling: S.allowed || null,
-    /* The cached policy in tasks/index.js is now stale — say so, or the next
+    /* The policy app.js keeps for the builders is now stale — say so, or the next
        question is drawn from the material that was just switched off. */
     onChange: () => { app.reloadPolicy(); app.save(); },
   });

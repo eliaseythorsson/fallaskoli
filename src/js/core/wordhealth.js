@@ -108,7 +108,7 @@ export const STATUS_LABEL = {
 
 /** Is there a builder that can ask about this word again and again? Words of
     a class with a table or a cloze always; the rest only if a confirmed
-    sentence holds them (tasks/index.js `drillTask`). */
+    sentence holds them (tasks/drill.js `drillTask`). */
 export const DRILL_CLASSES = new Set(["kk", "kvk", "hk", "so", "lo", "fn", "pfn", "gr", "to", "rt"]);
 export function drillable(lex, entry) {
   if (!entry) return false;

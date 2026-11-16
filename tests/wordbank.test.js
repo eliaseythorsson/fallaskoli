@@ -15,7 +15,9 @@ import { collectionSummary } from "../src/js/core/collection.js";
 import { scorecard, rank, METRICS } from "../src/js/core/leaderboard.js";
 import { mergeStates } from "../src/js/core/merge.js";
 import { cleanState } from "../server/guard.mjs";
-import { drillTask, DRILL_PLAN, DRILL_MEANING_TURN, meaningPool } from "../src/js/tasks/index.js";
+import { DRILL_PLAN, DRILL_MEANING_TURN } from "../src/js/tasks/index.js";
+import { meaningPool } from "../src/js/tasks/ordaford.js";
+import { drill } from "./helpers.js";
 
 const lex = buildLexicon(DATA);
 
@@ -167,14 +169,17 @@ test("a drill question is always about the drilled word", () => {
                         ["góður", "lo"], ["þessi", "fn"], ["þrír", "to"]]) {
     const w = lex.lookup(o, c);
     for (let t = 0; t < 8; t++) {
-      const task = drillTask(ctx, w, t);
+      const task = drill(ctx, w, t);
       assert.ok(task, `${o}: no question on turn ${t}`);
       assert.equal(task.word, `${o}|${c}`);
       assert.equal(task.drill, true);
       if (t === DRILL_MEANING_TURN && task.typeId === "meaning") continue;
       assert.ok(DRILL_PLAN[c].includes(task.typeId));
     }
-    assert.equal(ctx.drillWord, null, "the drill word must not leak into ordinary questions");
+    /* v6.13: the drilled word travels in the view the drill makes for its own
+       builders and is never written anywhere, so there is nothing to leak. */
+    assert.ok(!("drillWord" in ctx), "the drill word must not leak into ordinary questions");
+    assert.ok(!ctx.forcedNoun, "nor a noun left waiting for the next cloze");
   }
 });
 
@@ -183,7 +188,7 @@ test("a drill rotates through kinds of question", () => {
   const ctx = { lex, S, sess };
   const w = lex.lookup("hestur", "kk");
   const kinds = new Set();
-  for (let t = 0; t < 8; t++) kinds.add(drillTask(ctx, w, t).typeId);
+  for (let t = 0; t < 8; t++) kinds.add(drill(ctx, w, t).typeId);
   assert.ok(kinds.size >= 3, [...kinds].join(","));
 });
 
@@ -199,7 +204,7 @@ test("the fifth drill question is Orðaforði when the word has a meaning", () =
   let asked = 0;
   for (const [o, c] of [["hestur", "kk"], ["kona", "kvk"], ["barn", "hk"], ["fara", "so"], ["góður", "lo"]]) {
     const w = lex.lookup(o, c);
-    const task = drillTask(ctx, w, DRILL_MEANING_TURN);
+    const task = drill(ctx, w, DRILL_MEANING_TURN);
     if (meaningPool([w]).length) {
       asked++;
       assert.equal(task.typeId, "meaning", `${o}: turn 5 should be the meaning question`);
@@ -210,8 +215,8 @@ test("the fifth drill question is Orðaforði when the word has a meaning", () =
     }
     /* No other kind of question loses its turn: turns 3 and 5 are adjacent in the plan. */
     const plan = DRILL_PLAN[c];
-    const a = drillTask(ctx, w, DRILL_MEANING_TURN - 1).typeId;
-    const b = drillTask(ctx, w, DRILL_MEANING_TURN + 1).typeId;
+    const a = drill(ctx, w, DRILL_MEANING_TURN - 1).typeId;
+    const b = drill(ctx, w, DRILL_MEANING_TURN + 1).typeId;
     if (plan.length > 1 && a === plan[(DRILL_MEANING_TURN - 1) % plan.length])
       assert.notEqual(a, b);
   }

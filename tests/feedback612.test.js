@@ -13,9 +13,10 @@ import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { createPolicy } from "../src/js/core/policy.js";
-import * as MORE from "../src/js/tasks/more.js";
-import { transformPassive, transformOpener, gradeTransform, alsoRight, tailLeftOut }
-  from "../src/js/tasks/production.js";
+import * as MORE from "../src/js/tasks/ordaford.js";
+import { transformPassive, transformOpener, alsoRight } from "../src/js/tasks/malbeiting.js";
+import { gradeTransform, tailLeftOut } from "../src/js/tasks/production.js";
+import { show } from "./helpers.js";
 import { spellingSlip, diagnose } from "../src/js/core/diagnosis.js";
 import { gradeForm } from "../src/js/core/grading.js";
 
@@ -36,7 +37,7 @@ function ctxAt(diff, S = null) {
 test("word formation: the prompt does not name the affix; the hint does", () => {
   const ctx = ctxAt(3);
   for (let k = 0; k < 120; k++) {
-    const t = MORE.ordFormation(ctx);
+    const t = show(ctx, MORE.ordFormation);
     if (!t) continue;
     assert.ok(!/\bó-|-ari\b|-un\b|-ing\b/.test(t.prompt), `affix in the prompt: ${t.prompt}`);
     assert.ok(t.tip && /ó-|-ari|-un|-ing/.test(t.tip), `no affix in the hint: ${t.tip}`);
@@ -57,7 +58,7 @@ test("synonyms and antonyms: many words, and no group twice in a fortnight of pr
   const ctx = ctxAt(3);
   const seen = new Set();
   for (let k = 0; k < 60; k++) {
-    const t = MORE.ordSynAnt(ctx);
+    const t = show(ctx, MORE.ordSynAnt);
     if (!t) continue;
     const key = [t.title, ...[t.question.match(/\*([^*]+)\*\?$/)[1], t.answer].sort()].join("|");
     assert.ok(!seen.has(key), `asked twice on one day: ${key}`);
@@ -70,7 +71,7 @@ test("the words get rarer as the level rises", () => {
     const ctx = ctxAt(diff);
     const rs = [];
     for (let k = 0; k < 40; k++) {
-      const t = MORE.ordSynAnt(ctx);
+      const t = show(ctx, MORE.ordSynAnt);
       if (!t) continue;
       const w = Object.values(t.title === "Andheiti" ? EX.antonyms : EX.synonyms).flat(2)
         .filter((x) => x.o === t.answer && x.r < 99999).map((x) => x.r);

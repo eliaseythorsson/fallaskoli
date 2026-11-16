@@ -15,7 +15,7 @@
  * inflectional features — the last read off the BÍN mark itself (`featuresOf`),
  * never from a table of which question types involve which cases.
  *
- * Used by tasks/index.js (which builders, sentences and cells may run),
+ * Used by the builders in tasks/ (which types, sentences and cells may run),
  * ui/panels.js (the child's switches), ui/account.js (the administrator's)
  * and the server (stores `allowed`). */
 

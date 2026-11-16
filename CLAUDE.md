@@ -48,6 +48,24 @@ under `data/`.
   `data/manifest.json`, `lexicon.json`, `sentences.json`, `freq_lemmas.json`).
   Take main's version and re-run `./build.sh`.
 
+## Question types: one category, one file
+
+`src/js/tasks/<skill>.js` holds a category's builders and its `TYPES` list;
+`tasks/registry.js` is the catalogue and explains every field. To work on a
+category, its file is the only one to open.
+
+- A builder is `build(lex, view, rng)` → `{ task, effects }` or `null`. It does
+  not write to the state (it returns an effect, `tasks/effects.js`), does not
+  read the clock (`view.today`) and never calls `Math.random` (it draws from
+  `rng`). `tests/purity.test.js` holds all three.
+- What a type declares — `renderer`, `tags`, `bands` — is checked against what
+  it builds by `tests/registry.test.js`. When you change a builder on purpose,
+  the failing test names the line of `TYPES` to update.
+- New types go at the END of `ORDER` in `registry.js`: the order is part of
+  what a duel's seed means.
+- To see exactly what a change moved, type by type:
+  `node tools/task-snapshot.mjs take` before and after, then `compare`.
+
 ## Files many branches touch
 
 `server/server.mjs`, `src/head.html`, `CHANGES.md` and `data/manifest.json` are

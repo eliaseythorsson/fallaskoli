@@ -19,6 +19,10 @@ production + learn·(times this cell was met)`. It is a model: read the output a
 It replaces `Date` with a fake clock to move through days, and mirrors `app.pickTask` / `app.finish`
 by hand because grading lives in `ui/render.js` — if those change, update `sim.mjs` with them.
 
+v6.13: the builders are pure (`build(lex, view, rng)` → `{ task, effects }`), and `sim.mjs` applies the
+effects of the one question it shows, as `app.pickTask` does. `burn.mjs` should therefore print as many
+items marked as there were vocabulary questions shown (`or_utundan` is shown and marks nothing).
+
 Not yet tests. Suggested thresholds when they become one (`tests/simulation.test.js`):
 every type ≥ 150 distinct questions per band; a pupil at 85% reaches level-3 sentences within ten
 questions; items marked asked = items shown; exact repeats in 30 single-topic sessions < 10%.

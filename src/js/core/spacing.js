@@ -91,7 +91,8 @@ export function chooseWord(S, pool, today, rnd = Math.random, keyOf = (x) => x.k
   return bag[bag.length - 1];
 }
 
-/** Record that the word was asked about today. Called after an answer, not before. */
+/** Record that the word was asked about today — when its question is shown
+    (tasks/effects.js `applyEffects`), never while one is only being built. */
 export function markAsked(S, key, today) {
   S.vocab ||= {};
   const rec = (S.vocab[key] ||= { n: 0, dates: [], first: today, last: null });
@@ -100,6 +101,17 @@ export function markAsked(S, key, today) {
   rec.first ||= today;
   rec.dates = [...rec.dates, today].slice(-40);
   return rec;
+}
+
+/**
+ * The history `markAsked` would leave for this word today, without writing it.
+ * A question builder may not change the state (tasks/view.js): it shows the
+ * history as it will stand, and the mark itself is made when the question is
+ * shown (tasks/effects.js).
+ */
+export function historyIfAsked(S, key, today) {
+  const h = history(S, key);
+  return { n: h.n + 1, dates: [...h.dates, today].slice(-40), last: today };
 }
 
 /** How many words in the pool are eligible today — for admin and for tests. */

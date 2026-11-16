@@ -9,7 +9,7 @@ import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { createPolicy } from "../src/js/core/policy.js";
-import { nextTask } from "../src/js/tasks/index.js";
+import { nextTask, makeView, applyEffects } from "../src/js/tasks/index.js";
 import { DUEL, DUEL_TOPICS, duelStatus, outcomeFor, prune, viewFor, duelTasks, signature,
          duelLevel, duelDifficulty, settleDuels, duelTotals } from "../src/js/core/duel.js";
 import { skillNeed } from "../src/js/core/progress.js";
@@ -18,7 +18,7 @@ import { cleanState } from "../server/guard.mjs";
 import { mergeStates } from "../src/js/core/merge.js";
 
 const H = 3600000;
-const deps = { nextTask, blankState, newSession, createPolicy };
+const deps = { nextTask, makeView, applyEffects, blankState, newSession, createPolicy };
 const duel = (over = {}) => ({ id: "d1", a: "A", b: "B", topic: "nafnord", n: 10, seed: 7,
   level: 3, created: 0, deadline: 24 * H, res: { a: null, b: null }, ...over });
 
@@ -88,9 +88,19 @@ test("two browsers build the same questions from the same seed, for every topic"
   assert.notEqual(signature(other), signature(duelTasks(l1, duel({ n: 20, seed: 4242 }), deps)));
 });
 
-test("building a duel leaves Math.random as it was", () => {
+test("building a duel never touches Math.random: the seed is its only random source", () => {
+  /* Until v6.13 Math.random was swapped for the seeded generator while the
+     questions were built. Now it is not even called: with it taken away, the
+     duel builds — and builds the same questions. */
+  const lexicon = buildLexicon(DATA);
   const before = Math.random;
-  duelTasks(buildLexicon(DATA), duel(), deps);
+  const usual = signature(duelTasks(lexicon, duel({ n: 20 }), deps));
+  let calls = 0;
+  Math.random = () => { calls++; throw new Error("a builder called Math.random"); };
+  let without;
+  try { without = signature(duelTasks(lexicon, duel({ n: 20 }), deps)); } finally { Math.random = before; }
+  assert.equal(calls, 0);
+  assert.equal(without, usual);
   assert.equal(Math.random, before);
 });
 

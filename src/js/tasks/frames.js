@@ -32,6 +32,7 @@
  */
 
 import { CLASSNAME } from "../core/marks.js";
+import { pick } from "./shared.js";
 
 const CACHE = new WeakMap();
 
@@ -206,35 +207,36 @@ export function fillFrame(frame, word, form) {
 
 /* ---------- choosing a frame --------------------------------------------- */
 
-const pickFrom = (list, rnd) => list[Math.floor(rnd() * list.length)];
 
 /**
  * A sentence showing this noun in exactly this mark, or null.
  * `levelOk` is the curriculum policy and is never relaxed; `maxLvl` is where
  * the child has got to and may be exceeded by a step when nothing else fits.
+ * `rng` is the random source the frame is drawn with; it has no default, so
+ * that no caller falls back on the global generator without meaning to.
  */
 export function nounSentence(lex, word, mark, form,
-  { maxLvl = 7, levelOk = () => true, rnd = Math.random } = {}) {
+  { maxLvl = 7, levelOk = () => true, rng } = {}) {
   const all = frameIndex(lex).noun.get(mark);
   if (!all || !all.length) return null;
   const legal = all.filter((f) => levelOk(f.lvl) && acceptsNoun(f, word, mark)
     && !repeatsNoun(f.s, f.i, word));
   if (!legal.length) return null;
   const within = legal.filter((f) => f.lvl <= maxLvl);
-  const frame = pickFrom(within.length ? within : legal, rnd);
+  const frame = pick(within.length ? within : legal, rng);
   return { s: fillFrame(frame, word, form), i: frame.i, lvl: frame.lvl };
 }
 
 /** A sentence showing this adjective in exactly this mark, or null. The noun
     it agrees with stays; only the adjective changes. */
 export function adjectiveSentence(lex, word, mark, form,
-  { maxLvl = 7, levelOk = () => true, rnd = Math.random } = {}) {
+  { maxLvl = 7, levelOk = () => true, rng } = {}) {
   const all = frameIndex(lex).adj.get(mark);
   if (!all || !all.length) return null;
   const legal = all.filter((f) => levelOk(f.lvl) && f.fits.includes(word.o));
   if (!legal.length) return null;
   const within = legal.filter((f) => f.lvl <= maxLvl);
-  const frame = pickFrom(within.length ? within : legal, rnd);
+  const frame = pick(within.length ? within : legal, rng);
   return { s: fillFrame(frame, word, form), i: frame.i, lvl: frame.lvl };
 }
 

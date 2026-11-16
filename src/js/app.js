@@ -7,7 +7,7 @@ import { migrate, blankState, newSession, todayKey, badgeContext, settleDays,
 import { applyDecay } from "./core/progress.js";
 import { checkBadges, checkLogin, celebrate } from "./core/badges.js";
 import { collectionSummary } from "./core/collection.js";
-import { nextTask, drillTask } from "./tasks/index.js";
+import { nextTask, drillTask, makeView, applyEffects } from "./tasks/index.js";
 import { statusOf, weakWords, drillable, startDrill, drillStep, settleDrill } from "./core/wordhealth.js";
 import { grantXp } from "./core/state.js";
 import { renderDrillBar } from "./ui/drill.js";
@@ -38,6 +38,12 @@ import { SKILL_IDS } from "./core/skills.js";
 import { renderPicker, renderRunBar, renderSummary, renderDiagnosisPanel, confirmQuit,
   topics, MINE, MIXED } from "./ui/session.js";
 import { LESSONS, readCount } from "./core/lessons.js";
+
+/* The random source of the question builders (tasks/view.js). They never call
+   Math.random themselves: it is handed to them, here for practice and seeded
+   for a duel (core/duel.js). Looked up at each call, not captured, so that the
+   browser test's fixed seed — which replaces Math.random — still takes. */
+const rng = () => Math.random();
 
 let store = createStore();
 /* Browser storage itself, kept separately so that older progress can be lifted
@@ -158,7 +164,7 @@ const app = {
       return;
     }
     const tasks = duelTasks(this.lexForDuels(), v,
-      { nextTask, blankState, newSession, createPolicy });
+      { nextTask, makeView, applyEffects, blankState, newSession, createPolicy });
     if (!tasks.length) return;
     this.drill = null; this.drillOffer = null; this.drillDone = null;
     this.duelRun = { view: v, tasks, i: 0, c: 0, marks: [] };
@@ -263,27 +269,38 @@ const app = {
    * error patterns are preferred: a few candidates are built and the first
    * that tests one is kept — most of the time in a session aimed at them,
    * now and then in any other.
+   *
+   * The builders are pure (tasks/view.js): building a candidate changes
+   * nothing, and each comes with the effects of showing it. Only the one that
+   * IS shown has its effects applied — so a vocabulary item is marked as asked
+   * when the child meets it, not each time it was a candidate (until v6.13
+   * every discarded candidate locked its item for a week).
    */
   pickTask() {
     const r = this.run;
     this.policy = this.runPolicy();
     const ids = r.focus || activePatterns(this.S, 3).map((p) => p.id);
-    this.huntPrefer = huntPreferFor(ids);
     /* v6.11: the mix rule (core/mix.js) sees what the session has had. */
     const counts = {};
     r.items.forEach((it) => { counts[it.type] = (counts[it.type] || 0) + 1; });
-    this.mix = { n: r.n, counts };
     /* The same noun again after a wrong cloze — unless the session has had
        its share of clozes. */
     if (this.forcedNoun && (counts.fill || 0) + 1 > maxOf("fill", r.n)) this.forcedNoun = null;
-    try {
-      if (this.forcedNoun) return nextTask(this);
-      return pickTargeted(() => nextTask(this), ids,
-        { p: r.focus ? 0.85 : 0.4, tries: r.focus ? 8 : 5 });
-    } finally {
-      this.huntPrefer = null;
-      this.mix = null;
-    }
+    const view = makeView({
+      S: this.S, sess: this.sess, policy: this.policy, forcedNoun: this.forcedNoun,
+      mix: { n: r.n, counts }, inRun: true, huntPrefer: huntPreferFor(ids),
+    });
+    const effects = new Map();
+    const build = () => {
+      const b = nextTask(this.lex, view, rng);
+      if (!b) return null;
+      effects.set(b.task, b.effects);
+      return b.task;
+    };
+    const t = this.forcedNoun ? build()
+      : pickTargeted(build, ids, { p: r.focus ? 0.85 : 0.4, tries: r.focus ? 8 : 5, rnd: rng });
+    if (t) applyEffects(this, effects.get(t));
+    return t;
   },
 
   /** A session is over: write it down and show the summary. */
@@ -391,9 +408,10 @@ const app = {
   refresh() { renderHeader(this); },
 
   /**
-   * Forget the cached curriculum policy. `tasks/index.js` builds it once per
-   * question and caches it here; whoever changes a switch says so, or the
-   * change would not show until the page is reloaded.
+   * Forget the cached curriculum policy. It is worked out once and kept here
+   * for the views the builders are given (`pickTask`, the drill in `next`);
+   * whoever changes a switch says so, or the change would not show until the
+   * page is reloaded.
    */
   reloadPolicy() { this.policy = null; },
 
@@ -416,9 +434,14 @@ const app = {
       this.endDuel();
     }
     if (this.drill) {
-      const t = drillTask(this, this.drill.entry, this.drill.turn++);
-      if (t) {
-        this.cur = t;
+      const b = drillTask(this.lex, makeView({
+        S: this.S, sess: this.sess, policy: (this.policy ||= effectivePolicy(this.S)), inRun: !!this.run,
+      }), rng, this.drill.entry, this.drill.turn++);
+      /* A noun left waiting by a cloze has no say in a drill, or after it. */
+      this.forcedNoun = null;
+      if (b) {
+        applyEffects(this, b.effects);
+        this.cur = b.task;
         renderDrillBar(this);
         renderRunBar(this);
         renderTask(this);

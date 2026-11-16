@@ -9,7 +9,7 @@ const { DATA } = await import(R + "/data/data_bundle.js");
 const { buildLexicon } = await import(R + "/src/js/core/lexicon.js");
 const ST = await import(R + "/src/js/core/state.js");
 const { SKILL_IDS, SKILLS } = await import(R + "/src/js/core/skills.js");
-const { TASKS, nextTask } = await import(R + "/src/js/tasks/index.js");
+const { TASKS, nextTask, makeView, applyEffects } = await import(R + "/src/js/tasks/index.js");
 const { narrowPolicy } = await import(R + "/src/js/core/policy.js");
 const DG = await import(R + "/src/js/core/diagnosis.js");
 const PR = await import(R + "/src/js/core/progress.js");
@@ -17,7 +17,8 @@ const DF = await import(R + "/src/js/core/difficulty.js");
 const { maxOf } = await import(R + "/src/js/core/mix.js");
 const lex = buildLexicon(DATA);
 
-// seeded rng for the learner; app itself uses Math.random
+// seeded rng for the learner; the builders are handed Math.random, as in app.js
+const appRng = () => Math.random();
 function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 
 const sig = (t) => t.type === "villur" ? "villur|" + t.hunt.lines.map((l) => l.toks.map((x) => x.w).join(" ")).join("/") : t.type === "sort" ? t.typeId + "|" + (t.s ? t.s.t : "") + t.items.map((x) => x.w).join(",") : t.type === "tap" ? t.typeId + "|" + (t.s ? t.s.t : JSON.stringify(t.toks || "")) + "|" + t.cls : t.type === "parse" ? t.typeId + "|" + (t.s ? t.s.t : "") + "|" + t.t.w + "|" + t.i : t.type === "syntax" ? "syntax|" + t.s.t + "|" + t.askRole : t.type === "clause" ? "clause|" + t.s.t + "|" + t.span.from : t.type==="meaning" ? "meaning|"+t.word : [t.typeId, t.s ? t.s.t : (t.title || ""), t.prompt || t.question || "", (t.answers || [t.answer || ""])[0], t.cue || "", t.pron || "", t.askRole || ""].join("|");
@@ -43,14 +44,16 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
         app.policy = narrowPolicy(P, { skills: SKILL_IDS.includes(topic) ? [topic] : null, types: null });
         const ids = DG.activePatterns(S, 3).map((p) => p.id);
         const counts = {}; run.items.forEach((it) => { counts[it.type] = (counts[it.type] || 0) + 1; });
-        app.mix = { n: size, counts };
         if (app.forcedNoun && (counts.fill || 0) + 1 > maxOf("fill", size)) app.forcedNoun = null;
         const t0 = performance.now();
-        let t;
-        if (app.forcedNoun) t = nextTask(app);
-        else t = DG.pickTargeted(() => nextTask(app), ids, { p: 0.4, tries: 5 });
+        // as app.pickTask: pure builders, the effects of the one question that is shown
+        const view = makeView({ S, sess: app.sess, policy: app.policy, forcedNoun: app.forcedNoun,
+          mix: { n: size, counts }, inRun: true, huntPrefer: DG.huntPreferFor(ids) });
+        const effects = new Map();
+        const build = () => { const b = nextTask(lex, view, appRng); if (!b) return null; effects.set(b.task, b.effects); return b.task; };
+        const t = app.forcedNoun ? build() : DG.pickTargeted(build, ids, { p: 0.4, tries: 5, rnd: appRng });
+        if (t) applyEffects(app, effects.get(t));
         ms += performance.now() - t0;
-        app.mix = null;
         if (!t) { nulls++; break; }
         // answer model
         const key = t.cell || t.typeId;

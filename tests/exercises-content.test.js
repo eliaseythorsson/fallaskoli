@@ -16,7 +16,9 @@ import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { createPolicy } from "../src/js/core/policy.js";
-import * as MORE from "../src/js/tasks/more.js";
+import { fsVerb, fsPrepNoun, fsMotion } from "../src/js/tasks/fallstjorn.js";
+import { obConj } from "../src/js/tasks/obeygjanleg.js";
+import { show } from "./helpers.js";
 
 const lex = buildLexicon(DATA);
 function ctx(diff = 2) {
@@ -51,7 +53,7 @@ test("item 5: hlakka til is not explained as a verb that governs the genitive", 
   assert.ok(!EX.verbCase.some((x) => x.verb === "hlakka"), "hlakka is back in VERB_CASE");
   /* and the explanation the pupil reads never says so */
   for (let k = 0; k < 400; k++) {
-    const t = MORE.fsVerb(ctx(1 + (k % 5)));
+    const t = show(ctx(1 + (k % 5)), fsVerb);
     if (!t) continue;
     assert.doesNotMatch(t.why, /hlakka/, t.why);
     assert.ok(t.why.startsWith(`Sögnin *${EX.verbCase.find((x) => x.t === t.s.t).verb}*`), t.why);
@@ -61,7 +63,7 @@ test("item 5: hlakka til is not explained as a verb that governs the genitive", 
 test("item 5: hlakka til ___ is asked by the preposition cloze, with til named", () => {
   let hits = 0;
   for (let k = 0; k < 3000 && hits < 3; k++) {
-    const t = MORE.fsPrepNoun(ctx(1 + (k % 3)));
+    const t = show(ctx(1 + (k % 3)), fsPrepNoun);
     if (!t || !t.s.tok.some((x) => /^hlakka$/i.test(x.w))) continue;
     hits++;
     assert.equal(t.s.tok[t.i - 1].w.toLowerCase(), "til");
@@ -107,7 +109,7 @@ test("item 6: the motion-or-rest pool stays balanced and every pair differs", ()
 
 test("item 6: the built question offers exactly the two forms and the right one fits", () => {
   for (let k = 0; k < 200; k++) {
-    const t = MORE.fsMotion(ctx());
+    const t = show(ctx(), fsMotion);
     if (!t) continue;
     const x = EX.motionRest.find((y) => y.t === t.s.t);
     assert.deepEqual([...t.options].sort(), [x.thf[0], x.thgf[0]].sort());
@@ -149,7 +151,7 @@ test("item 25: the contrast sets are there — each member is a right answer som
 test("item 25: the question is built with a multi-word conjunction, capitalised at the start", () => {
   const seen = new Set();
   for (let k = 0; k < 600; k++) {
-    const t = MORE.obConj(ctx());
+    const t = show(ctx(), obConj);
     assert.ok(t && t.options.length === 4);
     assert.ok(t.options.includes(t.answer));
     if (t.i === 0) t.options.forEach((o) => assert.match(o, /^\p{Lu}/u, o));

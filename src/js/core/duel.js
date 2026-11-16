@@ -191,13 +191,22 @@ export function signature(tasks) {
 
 /**
  * The duel's questions. `deps` carries what lives elsewhere, so this module
- * stays free of the task builders: { nextTask, blankState, newSession,
- * createPolicy }. Math.random is swapped for the seeded generator while the
- * questions are built — every builder draws from it, and nothing else runs
- * in between because this is synchronous.
+ * stays free of the task builders: { nextTask, makeView, applyEffects,
+ * blankState, newSession, createPolicy }.
+ *
+ * The random source is the seeded generator, handed to the builders as their
+ * `rng`. Until v6.13 Math.random itself was swapped for it while the questions
+ * were built; that worked only because nothing else ran in between, and would
+ * have broken without a sound the day a builder became asynchronous or a
+ * library drew a number of its own. Now nothing global is touched, and no
+ * builder can reach Math.random (tests/purity.test.js).
+ *
+ * The builders are pure (tasks/view.js), so the private state the duel is
+ * built against moves on only through the effects of each question as it is
+ * taken — exactly what a practice session does when it shows one.
  */
 export function duelTasks(lex, duel, deps) {
-  const { nextTask, blankState, newSession, createPolicy } = deps;
+  const { nextTask, makeView, applyEffects, blankState, newSession, createPolicy } = deps;
   const S = blankState();
   const on = new Set(Array.isArray(duel.skills) && duel.skills.length ? duel.skills : skillsOf(duel.topic));
   const skills = {};
@@ -210,21 +219,25 @@ export function duelTasks(lex, duel, deps) {
   const sess = newSession(S);
   const D = duelDifficulty(duel.level);
   Object.keys(sess.diff).forEach((k) => { sess.diff[k] = D; });
-  const ctx = { lex, S, sess, policy: createPolicy(null, S.policy), duel: true };
+  const host = { S, sess, forcedNoun: null };
+  const policy = createPolicy(null, S.policy);
+  /* The day is part of the view; a duel has none of its own. A fixed one, so
+     that a duel built a minute before midnight and one built a minute after
+     are the same duel. */
+  const today = "2000-01-01";
 
-  const real = Math.random;
-  Math.random = seeded(duel.seed);
+  const rng = seeded(duel.seed);
   const out = [];
-  try {
-    for (let k = 0; k < duel.n * 3 && out.length < duel.n; k++) {
-      const t = nextTask(ctx);
-      if (!t) break;
-      if (t.counts === false) continue;      // no right answer, no place in a duel
-      t.duel = true;
-      out.push(t);
-    }
-  } finally {
-    Math.random = real;
+  for (let k = 0; k < duel.n * 3 && out.length < duel.n; k++) {
+    const b = nextTask(lex, makeView({ S, sess, policy, today, forcedNoun: host.forcedNoun }), rng);
+    if (!b) break;
+    /* Taken, whether or not it is kept: a question with no right answer has
+       no place in a duel, but it has been drawn and must not come again. */
+    applyEffects(host, b.effects);
+    const t = b.task;
+    if (t.counts === false) continue;      // no right answer, no place in a duel
+    t.duel = true;
+    out.push(t);
   }
   return out;
 }

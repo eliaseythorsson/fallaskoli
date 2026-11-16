@@ -3,7 +3,7 @@
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
-import { TASKS } from "../src/js/tasks/index.js";
+import { TASKS, makeView } from "../src/js/tasks/index.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 
 const lex = buildLexicon(DATA);
@@ -25,8 +25,8 @@ for (const spec of TASKS.filter((x) => NEW.includes(x.id) && (!only.length || on
     SKILL_IDS.forEach((id) => { S.enabled[id] = true; });
     const sess = newSession(S);
     Object.keys(sess.diff).forEach((d) => { sess.diff[d] = 1 + (k % 5); });
-    const ctx = { lex, S, sess, forcedNoun: null };
-    const t = spec.gen(ctx);
+    const b = spec.build(lex, makeView({ S, sess }), () => Math.random());
+    const t = b ? b.task : null;
     if (!t) { nulls++; continue; }
     if (t.type === "gap") console.log(`  ${t.mode === "free" ? t.prompt : text(t)}  →  ${t.answers.join(" / ")}`);
     else if (t.type === "choice") console.log(`  ${text(t)} ${t.gloss ? "{" + t.gloss + "} " : ""}| ${t.question} [${t.options.join(" | ")}] → ${t.answer}`);
