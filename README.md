@@ -30,9 +30,10 @@ nothing configured — the program looks at where it was loaded from:
 **Testing with several people from your own computer:** `./test-together.sh`
 runs the server for everyone on the same Wi-Fi; `./test-together.sh --internet`
 gives a temporary https address that works from anywhere (needs
-`brew install cloudflared`, no account). Test accounts and progress live in
-`_prufa/`, apart from `server/data`, and never go into the image or the zip. `./test-together.sh demo 3`
-makes demo1–demo3 for trying several accounts yourself; open each on its own
+`brew install cloudflared`, no account). Test accounts, passwords and progress live
+in a temporary folder outside the project (made with `mktemp -d`; the script prints
+where, and reuses it next time), never in the repository, the image or the zip.
+`./test-together.sh demo 3` makes demo1–demo3 for trying several accounts yourself; open each on its own
 address (`http://demo1.localhost:8080`, `http://demo2.localhost:8080` …) to stay
 logged in as all of them at once.
 
