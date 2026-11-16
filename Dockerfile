@@ -27,6 +27,11 @@ COPY src/js/content/examples.js ./src/js/content/examples.js
 COPY src/js/content/lessons.js ./src/js/content/lessons.js
 COPY data/data_bundle.js data/exercises.js ./data/
 COPY tools/version.mjs ./tools/version.mjs
+# Installing the program (item 54): the server makes the manifest, the icons
+# and the service worker from the HTML it serves; src/sw.js is the worker's
+# text, read (not imported) by tools/pwa.mjs.
+COPY tools/pwa.mjs ./tools/pwa.mjs
+COPY src/sw.js ./src/sw.js
 # The built program (dist/ is git-ignored; ./build.sh makes it). The server
 # serves the one whose number matches package.json.
 COPY dist/fallaskoli-v*.html ./dist/

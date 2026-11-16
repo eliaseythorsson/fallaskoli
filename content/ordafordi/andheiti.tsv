@@ -1,0 +1,155 @@
+# Orðaforði: andheiti
+#
+# Orð getur átt fleiri en eitt andheiti (gamall: ungur, nýr); þau eru öll höfð utan
+# við röngu kostina.
+#
+# Dálkar:
+#   orðflokkur  lo, no, so eða ao
+#   orð         orðið
+#   andheiti    andheiti þess
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Antonyms: a word may have more than one (gamall: ungur, nýr); all of them
+# are kept away from the wrong options.
+#
+
+orðflokkur	orð	andheiti
+lo	stór	lítill
+lo	heitur	kaldur
+lo	gamall	ungur
+lo	glaður	dapur
+lo	fljótur	hægur
+lo	langur	stuttur
+lo	hár	lágur
+lo	þungur	léttur
+lo	sterkur	veikur
+lo	ríkur	fátækur
+lo	dýr	ódýr
+lo	hreinn	skítugur
+lo	opinn	lokaður
+lo	harður	mjúkur
+lo	breiður	mjór
+lo	þykkur	þunnur
+lo	blautur	þurr
+lo	auðveldur	erfiður
+lo	fullur	tómur
+lo	góður	vondur
+lo	réttur	rangur
+lo	ljós	dökkur
+lo	nýr	gamall
+lo	kurteis	dónalegur
+lo	hugrakkur	huglaus
+lo	duglegur	latur
+lo	örlátur	nískur
+lo	hógvær	hrokafullur
+lo	hávær	hljóður
+lo	bjartur	dimmur
+lo	djúpur	grunnur
+lo	sætur	súr
+lo	fallegur	ljótur
+lo	feitur	grannur
+lo	gáfaður	heimskur
+lo	öruggur	hættulegur
+lo	lifandi	dauður
+lo	þröngur	víður
+lo	beinn	boginn
+lo	sléttur	hrjúfur
+lo	beittur	bitlaus
+lo	fjarlægur	nálægur
+lo	bjartsýnn	svartsýnn
+lo	jákvæður	neikvæður
+lo	einfaldur	flókinn
+lo	algengur	sjaldgæfur
+lo	varanlegur	tímabundinn
+lo	vingjarnlegur	fjandsamlegur
+lo	hrokafullur	auðmjúkur
+lo	kátur	fúll
+lo	rólegur	æstur
+lo	hægur	hraður
+lo	fyrirsjáanlegur	óvæntur
+lo	snyrtilegur	subbulegur
+lo	sýnilegur	ósýnilegur
+lo	sekur	saklaus
+lo	hlýðinn	óþekkur
+lo	hollur	óhollur
+lo	þolinmóður	óþolinmóður
+lo	sannur	ósannur
+lo	vinsæll	óvinsæll
+lo	ánægður	óánægður
+so	opna	loka
+so	byrja	hætta
+so	kaupa	selja
+so	koma	fara
+so	muna	gleyma
+so	hlæja	gráta
+so	vinna	tapa
+so	sofna	vakna
+so	finna	týna
+so	hækka	lækka
+so	kveikja	slökkva
+so	spyrja	svara
+so	gefa	þiggja
+so	stækka	minnka
+so	elska	hata
+so	ýta	toga
+so	hrósa	skamma
+so	leyfa	banna
+so	samþykkja	hafna
+so	byggja	rífa
+so	fylla	tæma
+so	festa	losa
+so	hita	kæla
+so	sökkva	fljóta
+so	þegja	tala
+so	vaka	sofa
+so	kenna	læra
+so	spara	eyða
+so	hefja	ljúka
+so	sigra	tapa
+no	dagur	nótt
+no	vinur	óvinur
+no	sigur	ósigur
+no	hiti	kuldi
+no	sumar	vetur
+no	stríð	friður
+no	upphaf	endir
+no	ljós	myrkur
+no	spurning	svar
+no	gleði	sorg
+no	sannleikur	lygi
+no	ást	hatur
+no	fortíð	framtíð
+no	kostur	galli
+no	gróði	tap
+no	fátækt	ríkidæmi
+no	heilsa	veikindi
+no	morgunn	kvöld
+no	himinn	jörð
+no	hugrekki:hk	hugleysi
+no	leyfi	bann
+no	vor	haust
+no	hrós	last
+no	sólarupprás	sólsetur
+no	hamingja	óhamingja
+no	heppni	óheppni
+no	frelsi	ánauð
+no	inngangur	útgangur
+no	vinátta	óvinátta
+ao	alltaf	aldrei
+ao	oft	sjaldan
+ao	snemma	seint
+ao	upp	niður
+ao	inn	út
+ao	hratt	hægt
+ao	hér	þar
+ao	úti	inni
+ao	uppi	niðri
+ao	áður	síðar
+ao	vel	illa
+ao	mikið	lítið
+ao	hátt	lágt

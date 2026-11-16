@@ -1,0 +1,221 @@
+# Villuveiðar: raunverulegar villur unglinga
+#
+# Hver lína er ein setning með EINNI algengri villu. Nemandinn finnur orðið sem er
+# rangt og skrifar það rétt. Setningin er skrifuð rétt hér. Þegar forritið er smíðað
+# er hverju orði innan hornklofanna flett upp í BÍN, og forritið er ekki smíðað ef
+# myndin er önnur en sú sem stendur í setningunni. Sumt er spurning um vandað mál
+# fremur en villu; þá segir skýringin „í vönduðu máli“.
+#
+# Dálkar:
+#   þyngd        3, 4 eða 5: frá hvaða þyngd spurningin er spurð
+#   setning      RÉTTA setningin; orðið (eða orðin) sem nemandinn á að laga eru innan [hornklofa]
+#   villa        það sem nemandinn sér í staðinn. * fremst: myndin er ekki til í BÍN (*læknirar)
+#   orð          fyrir hvert orð innan hornklofanna: uppflettimynd|orðflokkur|BÍN-mark (flett upp í BÍN)
+#   skýring      skýringin sem nemandinn les
+#   mynstur      villumynstur úr core/diagnosis.js, aðskilin með kommu; autt ef ekkert á við
+#   ópersónuleg  sögn|fall: BÍN skráir sögnina ópersónulega með frumlagi í þessu falli
+#   nefnifall    sögn sem BÍN má EKKI skrá með frumlagi í aukafalli (hlakka, kvíða)
+#   fallstjórn   orð|fall: government.py segir að orðið stýri þessu falli og engu öðru
+#   líka rétt    önnur orð sem laga setninguna líka, aðskilin með kommu
+#   greinist     „nei“ ef Greynir getur ekki greint þessa (réttu) setningu; annars autt
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# HUNT: the errors Icelandic teenagers actually make (critique item 26).
+#
+# The generated error hunt breaks a case or an agreement at random, and much
+# of what it makes no native speaker would say (*Stelpan hlaupa*, *Ég borðum*).
+# This bank is the other kind: one sentence, natural and correct apart from ONE
+# well-known slip, with the correction and a short explanation a 13-year-old
+# can read. tasks/malbeiting.js serves it from þyngd 3; the generated kind is
+# kept for þyngd 1–2 and for pupils with Icelandic as a second language.
+#
+#     H(band, sentence, wrong, spec, why, patterns, **checks)
+#
+#   band      3, 4 or 5 — the þyngd from which the item is asked
+#   sentence  the CORRECT sentence, with the word (or two) that is made wrong
+#             in [square brackets]
+#   wrong     what the pupil is shown in its place. A leading * says the form
+#             is not standard Icelandic at all (*læknirar, *talva): the build
+#             then requires that BÍN does NOT list it as a standard form of
+#             the word. Without the star every word of it must be a standard
+#             BÍN form — the right word in the wrong cell (mér, drottningu),
+#             or another word altogether (tíndi for týndi, af for að).
+#   spec      (lemma, class, mark) for each word inside the brackets, in order.
+#             The build looks the form up in BÍN and stops unless it is
+#             exactly the word written in the sentence. For a word that does
+#             not inflect the mark is "" and only the class is checked.
+#   why       the explanation, in Icelandic. Several of these are matters of
+#             the written norm rather than "wrong Icelandic"; those say
+#             "í vönduðu máli" and do not call the other form an error.
+#   patterns  ids from core/diagnosis.js PATTERNS, comma-separated; "" where
+#             none fits (a miss is then counted as unread, which is honest).
+#   checks    op=(verb, "ÞF")   BÍN lists the verb as impersonal with a subject
+#                               in that case, and not in the dative
+#             nf="hlakka"       BÍN does NOT list the verb with an oblique subject
+#             gov=(word, "ef")  government.py: the verb or preposition governs
+#                               that case and no other
+#             also=["ennþá"]    other single words that put the sentence right
+#             parse=False       Greynir is known not to parse this (correct)
+#                               sentence: it does not read a verb with -tu
+#                               merged into it (*viltu, máttu, komstu*) nor
+#                               *hvor öðrum*. Every other corrected sentence
+#                               must parse.
+#
+# One error per sentence, and one way to mend it. Items whose natural
+# correction would change two separate words are left out; where the
+# correction moves a word (*við hvorn* → *hvor við*) the two words are one
+# unit in the brackets.
+#
+
+þyngd	setning	villa	orð	skýring	mynstur	ópersónuleg	nefnifall	fallstjórn	líka rétt	greinist
+# ---- þágufallssýki: frumlag ópersónulegra sagna (og nefnifall með hlakka, kvíða)
+3	[Mig] langar í nýjan síma.	Mér	ég|pfn|ÞFET	Sögnin *langa* tekur frumlag í **þolfalli**, ekki þágufalli: *mig langar*, *þig langar*, *hana langar*.	opersonuleg	langa|ÞF
+3	[Mig] vantar blýant og strokleður.	Mér	ég|pfn|ÞFET	Sögnin *vanta* tekur frumlag í **þolfalli**, ekki þágufalli: *mig vantar*, *þig vantar*, *hann vantar*.	opersonuleg	vanta|ÞF
+3	[Hana] langar að fara í sund eftir skóla.	Henni	hún|pfn|ÞFET	Sögnin *langa* tekur frumlag í **þolfalli**, ekki þágufalli: *mig langar*, *þig langar*, *hana langar*.	opersonuleg	langa|ÞF
+3	[Hann] vantar nýja fótboltaskó.	Honum	hann|pfn|ÞFET	Sögnin *vanta* tekur frumlag í **þolfalli**, ekki þágufalli: *mig vantar*, *þig vantar*, *hann vantar*.	opersonuleg	vanta|ÞF
+3	[Þig] vantar bara meiri æfingu.	Þér	þú|pfn|ÞFET	Sögnin *vanta* tekur frumlag í **þolfalli**, ekki þágufalli: *mig vantar*, *þig vantar*, *hann vantar*.	opersonuleg	vanta|ÞF
+4	[Mig] dreymdi skrýtinn draum í nótt.	Mér	ég|pfn|ÞFET	Sögnin *dreyma* tekur frumlag í **þolfalli**: *mig dreymdi*, *hana dreymdi*.	opersonuleg	dreyma|ÞF
+4	[Mig] minnir að prófið sé á föstudaginn.	Mér	ég|pfn|ÞFET	*Mig minnir* (ég held að ég muni það rétt): frumlagið er í **þolfalli**, ekki þágufalli.	opersonuleg	minna|ÞF
+4	[Mig] grunar að hann hafi gleymt þessu.	Mér	ég|pfn|ÞFET	Sögnin *gruna* tekur frumlag í **þolfalli**: *mig grunar*, *hana grunar*.	opersonuleg	gruna|ÞF
+4	[Mig] klæjar í nefið.	Mér	ég|pfn|ÞFET	Sögnin *klæja* tekur frumlag í **þolfalli**: *mig klæjar*, *hann klæjar*.	opersonuleg	klæja|ÞF
+4	[Strákana] langar að spila fótbolta í frímínútunum.	Strákunum	strákur|kk|ÞFFTgr	Sögnin *langa* tekur frumlag í **þolfalli**, ekki þágufalli: *mig langar*, *þig langar*, *hana langar*. Það á líka við um nafnorð: *strákana langar*.	opersonuleg	langa|ÞF
+4	[Krakkana] vantar fleiri bolta.	Krökkunum	krakki|kk|ÞFFTgr	Sögnin *vanta* tekur frumlag í **þolfalli**, ekki þágufalli: *mig vantar*, *þig vantar*, *hann vantar*. Það á líka við um nafnorð: *krakkana vantar*.	opersonuleg	vanta|ÞF
+4	[Stelpuna] langaði mest í ís.	Stelpunni	stelpa|kvk|ÞFETgr	Sögnin *langa* tekur frumlag í **þolfalli**, ekki þágufalli: *mig langar*, *þig langar*, *hana langar*. Það á líka við um nafnorð: *stelpuna langaði*.	opersonuleg	langa|ÞF
+4	[Hann] hlakkar mikið til jólanna.	Honum	hann|pfn|NFET	*Hlakka til* tekur frumlag í **nefnifalli** og sögnin lagar sig að því: *ég hlakka til*, *hann hlakkar til*, *við hlökkum til*.	opersonuleg		hlakka
+4	[Hún] kvíðir fyrir prófinu á morgun.	Henni	hún|pfn|NFET	*Kvíða fyrir* tekur frumlag í **nefnifalli**: *ég kvíði fyrir*, *hún kvíðir fyrir*.	opersonuleg		kvíða
+4	[Ég hlakka] til sumarsins.	Mér hlakkar	ég|pfn|NFET, hlakka|so|GM-FH-NT-1P-ET	*Hlakka til* tekur frumlag í **nefnifalli** og sögnin lagar sig að því: *ég hlakka til*, *hann hlakkar til*, *við hlökkum til*.	opersonuleg		hlakka
+4	[Ég hlakka] svo til að fara í ferðalagið.	Mig hlakkar	ég|pfn|NFET, hlakka|so|GM-FH-NT-1P-ET	*Hlakka til* tekur frumlag í **nefnifalli** og sögnin lagar sig að því: *ég hlakka til*, *hann hlakkar til*, *við hlökkum til*.	opersonuleg		hlakka
+5	[Mig] syfjar alltaf eftir matinn.	Mér	ég|pfn|ÞFET	Sögnin *syfja* tekur frumlag í **þolfalli**: *mig syfjar*, *hana syfjar*.	opersonuleg	syfja|ÞF
+5	[Hana] dreymdi að hún gæti flogið.	Henni	hún|pfn|ÞFET	Sögnin *dreyma* tekur frumlag í **þolfalli**: *mig dreymdi*, *hana dreymdi*.	opersonuleg	dreyma|ÞF
+# ---- ég vill
+3	Ég [vil] fá að vita svarið.	vill	vilja|so|GM-FH-NT-1P-ET	Með *ég* er sögnin *vil*, ekki *vill*: *ég vil*, *þú vilt*, *hann vill*.	sogn_frumlag
+3	Ég [vil] ekki fara heim strax.	vill	vilja|so|GM-FH-NT-1P-ET	Með *ég* er sögnin *vil*, ekki *vill*: *ég vil*, *þú vilt*, *hann vill*.	sogn_frumlag
+4	Mamma veit að ég [vil] frekar vera heima.	vill	vilja|so|GM-FH-NT-1P-ET	Með *ég* er sögnin *vil*, ekki *vill*: *ég vil*, *þú vilt*, *hann vill*.	sogn_frumlag
+# ---- eignarfall á eftir forsetningum og sögnum
+4	Kóngurinn sendi bréf til [drottningar] Danmerkur.	drottningu	drottning|kvk|EFET	*Til* stýrir **eignarfalli**. Kvenkynsorð sem enda á *-ing* fá *-ar* í eignarfalli eintölu: *drottning – til drottningar*.	ef,fallstjorn_fs			til|ef
+4	Gatan var breikkuð vegna [aukningar] á umferð.	aukningu	aukning|kvk|EFET	*Vegna* stýrir **eignarfalli**. Kvenkynsorð sem enda á *-ing* fá *-ar* í eignarfalli eintölu: *aukning – vegna aukningar*.	ef,fallstjorn_fs			vegna|ef
+4	Leiknum var frestað vegna [rigningar].	rigningu	rigning|kvk|EFET	*Vegna* stýrir **eignarfalli**. Kvenkynsorð sem enda á *-ing* fá *-ar* í eignarfalli eintölu: *rigning – vegna rigningar*.	ef,fallstjorn_fs			vegna|ef
+4	Ég missti af myndinni vegna [æfingarinnar].	*æfingunnar	æfing|kvk|EFETgr	*Vegna* stýrir **eignarfalli**: *æfing – æfingar – æfingarinnar*. *Æfingunnar* er ekki rétt beygingarmynd.	ef,fallstjorn_fs			vegna|ef
+4	Skólinn þarf fleiri stofur vegna [fjölgunar] nemenda.	fjölgun	fjölgun|kvk|EFET	*Vegna* stýrir **eignarfalli**. Orð sem enda á *-un* fá *-unar* í eignarfalli: *fjölgun – vegna fjölgunar*.	ef,fallstjorn_fs			vegna|ef
+4	Skólanum var lokað vegna [bilunar] í hitakerfinu.	bilun	bilun|kvk|EFET	*Vegna* stýrir **eignarfalli**. Orð sem enda á *-un* fá *-unar* í eignarfalli: *bilun – vegna bilunar*.	ef,fallstjorn_fs			vegna|ef
+4	Við komumst ekki til [Akureyrar] vegna veðurs.	Akureyri	Akureyri|kvk|EFET	*Til* stýrir **eignarfalli**: *Akureyri – til Akureyrar*.	ef,fallstjorn_fs			til|ef
+4	Hún gerði þetta allt án [hjálpar].	hjálp	hjálp|kvk|EFET	*Án* stýrir **eignarfalli**: *hjálp – án hjálpar*.	ef,fallstjorn_fs			án|ef
+5	Hún fór til [læknis] í morgun.	*læknirs	læknir|kk|EFET	*Til* stýrir eignarfalli. *-ir* í *læknir* er ending nefnifallsins, ekki hluti af stofninum, og dettur út í beygingu: *læknir – lækni – lækni – læknis*.	ending,ef			til|ef
+4	Ég sakna [þín] mjög mikið.	þig	þú|pfn|EFET	Sögnin *sakna* stýrir **eignarfalli**: *ég sakna þín*, *hún saknar hans*.	ef,fallstjorn_so			sakna|ef
+4	Hún saknar [hans] á hverjum degi.	hann	hann|pfn|EFET	Sögnin *sakna* stýrir **eignarfalli**: *ég sakna þín*, *hún saknar hans*.	ef,fallstjorn_so			sakna|ef
+# ---- háttur: ef + framsöguháttur; þótt, vona að, halda að, vilja að + viðtengingarháttur
+4	Ég kem á morgun ef ég [hef] tíma.	hafi	hafa|so|GM-FH-NT-1P-ET	Á eftir *ef* er notaður **framsöguháttur** þegar talað er um það sem getur vel gerst: *ef ég hef tíma*. Viðtengingarháttur þátíðar á við um það sem er ekki raunverulegt: *ef veðrið væri gott*.	hattur
+4	Við förum í fjallgöngu ef veðrið [er] gott.	sé	vera|so|GM-FH-NT-3P-ET	Á eftir *ef* er notaður **framsöguháttur** þegar talað er um það sem getur vel gerst: *ef veðrið er gott*. Viðtengingarháttur þátíðar á við um það sem er ekki raunverulegt: *ef veðrið væri gott*.	hattur
+4	Láttu mig vita ef hann [kemur] ekki.	komi	koma|so|GM-FH-NT-3P-ET	Á eftir *ef* er notaður **framsöguháttur** þegar talað er um það sem getur vel gerst: *ef hann kemur ekki*. Viðtengingarháttur þátíðar á við um það sem er ekki raunverulegt: *ef veðrið væri gott*.	hattur
+5	Ef þú [vilt] get ég hjálpað þér.	viljir	vilja|so|GM-FH-NT-2P-ET	Á eftir *ef* er notaður **framsöguháttur** þegar talað er um það sem getur vel gerst: *ef þú vilt*. Viðtengingarháttur þátíðar á við um það sem er ekki raunverulegt: *ef veðrið væri gott*.	hattur
+4	Hann fór út að hjóla þótt það [væri] rigning.	var	vera|so|GM-VH-ÞT-3P-ET	Á eftir *þótt* og *þó að* stendur **viðtengingarháttur**: *þótt það væri rigning*, *þó að hún sé lasin*.	hattur
+4	Hún mætti í skólann þó að hún [væri] lasin.	var	vera|so|GM-VH-ÞT-3P-ET	Á eftir *þótt* og *þó að* stendur **viðtengingarháttur**: *þótt það væri rigning*, *þó að hún sé lasin*.	hattur
+4	Ég vona að þú [komir] í afmælið mitt.	kemur	koma|so|GM-VH-NT-2P-ET	Á eftir *vona að* stendur **viðtengingarháttur**, því að þetta er ósk en ekki staðreynd: *ég vona að þú komir*.	hattur
+4	Ég held að hann [sé] heima.	er	vera|so|GM-VH-NT-3P-ET	Á eftir *halda að* stendur **viðtengingarháttur**, því að þetta er skoðun en ekki vissa: *ég held að hann sé heima*. En: *ég veit að hann er heima*.	hattur
+5	Mamma vill að ég [taki] til í herberginu.	tek	taka|so|GM-VH-NT-1P-ET	Á eftir *vilja að* stendur **viðtengingarháttur**: *hún vill að ég taki til*.	hattur
+# ---- hvor annar, hvor og hvorugur
+5	Jón og Gunnar hjálpuðu [hvor] öðrum með verkefnið.	hvorum	hvor|fn|KK-NFET	Í vönduðu máli beygjast *hvor* og *annar* ekki saman. *Hvor* stendur í sama falli og frumlagið (hér nefnifalli) en *annar* tekur fallið sem sögnin stýrir: *þeir hjálpuðu hvor öðrum*.	hvor					nei
+5	Anna og Sigga sakna [hvor] annarrar.	hvorrar	hvor|fn|KVK-NFET	Í vönduðu máli beygjast *hvor* og *annar* ekki saman. *Hvor* stendur í sama falli og frumlagið (hér nefnifalli) en *annar* tekur fallið sem sögnin stýrir: *þær sakna hvor annarrar*.	hvor					nei
+5	Vinirnir tveir treysta [hvor] öðrum.	hvorum	hvor|fn|KK-NFET	Í vönduðu máli beygjast *hvor* og *annar* ekki saman. *Hvor* stendur í sama falli og frumlagið (hér nefnifalli) en *annar* tekur fallið sem sögnin stýrir: *þeir treysta hvor öðrum*.	hvor					nei
+5	Tvíburarnir töluðu [hvor við] annan allt kvöldið.	við hvorn	hvor|fn|KK-NFET, við|fs|	Í vönduðu máli stendur *hvor* á undan forsetningunni, í sama falli og frumlagið, en *annar* tekur fallið sem forsetningin stýrir: *þeir töluðu hvor við annan*.	hvor
+5	Systurnar tvær horfðu [hvor á] aðra og hlógu.	á hvora	hvor|fn|KVK-NFET, á|fs|	Í vönduðu máli stendur *hvor* á undan forsetningunni, í sama falli og frumlagið, en *annar* tekur fallið sem forsetningin stýrir: *þær horfðu hvor á aðra*.	hvor
+5	[Hvor] ykkar tveggja á þessa úlpu?	Hver	hvor|fn|KK-NFET	Þegar valið er á milli **tveggja** er í vönduðu máli notað *hvor*; *hver* er notað um þrjá eða fleiri.	hvor
+5	[Hvorugur] strákanna mundi eftir lyklunum.	Hvorugt	hvorugur|fn|KK-NFET	*Hvorugur* lagar sig að kyni þeirra sem talað er um: *hvorugur strákanna*, *hvorug stelpnanna*, *hvorugt barnanna*.	hvor,kyn_samraemi
+5	Hvorugur þeirra [vildi] byrja.	vildu	vilja|so|GM-FH-ÞT-3P-ET	*Hvorugur* er eintala þótt talað sé um tvo, og sögnin lagar sig að því: *hvorugur þeirra vildi*.	hvor,sogn_frumlag
+5	Hvorugt liðið [skoraði] í fyrri hálfleik.	skoruðu	skora|so|GM-FH-ÞT-3P-ET	*Hvorugt liðið* er eintala þótt talað sé um tvö lið, og sögnin lagar sig að því: *hvorugt liðið skoraði*.	hvor,sogn_frumlag
+# ---- nýja þolmyndin
+5	Í gær var [henni strítt] í skólanum.	strítt henni	hún|pfn|ÞGFET, stríða|so|GM-SAGNB	Í vönduðu máli stendur fornafnið á undan lýsingarhættinum: *Í gær var henni strítt* eða *Henni var strítt í gær*. Þessi orðaröð er kölluð nýja þolmyndin. Hún heyrist oft í talmáli en er ekki notuð í vönduðu ritmáli.	tholmynd
+5	Um kvöldið var [mér boðið] í mat hjá ömmu.	boðið mér	ég|pfn|ÞGFET, bjóða|so|LHÞT-SB-HK-NFET	Í vönduðu máli stendur fornafnið á undan lýsingarhættinum: *Um kvöldið var mér boðið* eða *Mér var boðið*. Þessi orðaröð er kölluð nýja þolmyndin. Hún heyrist oft í talmáli en er ekki notuð í vönduðu ritmáli.	tholmynd
+5	Svo var [okkur sagt] að bíða fyrir utan.	sagt okkur	ég|pfn|ÞGFFT, segja|so|LHÞT-SB-HK-NFET	Í vönduðu máli stendur fornafnið á undan lýsingarhættinum: *Svo var okkur sagt* eða *Okkur var sagt*. Þessi orðaröð er kölluð nýja þolmyndin. Hún heyrist oft í talmáli en er ekki notuð í vönduðu ritmáli.	tholmynd
+5	Eftir leikinn var [honum hrósað] fyrir markið.	hrósað honum	hann|pfn|ÞGFET, hrósa|so|GM-SAGNB	Í vönduðu máli stendur fornafnið á undan lýsingarhættinum: *Eftir leikinn var honum hrósað* eða *Honum var hrósað*. Þessi orðaröð er kölluð nýja þolmyndin. Hún heyrist oft í talmáli en er ekki notuð í vönduðu ritmáli.	tholmynd
+5	Í morgun var [hún skömmuð] fyrir að koma of seint.	skammað hana	hún|pfn|NFET, skamma|so|LHÞT-SB-KVK-NFET	Í þolmynd verður andlagið (*hana*) að frumlagi í nefnifalli og lýsingarhátturinn lagar sig að því: *hún var skömmuð*. *Það var skammað hana* er kallað nýja þolmyndin; hún heyrist oft í talmáli en er ekki notuð í vönduðu ritmáli.	tholmynd
+# ---- töluorð með fleirtöluorðum
+4	Ég keypti [tvennar] buxur á útsölunni.	tvær	tvennur|lo|FSB-KVK-ÞFFT	*Buxur* er fleirtöluorð: það er aðeins til í fleirtölu. Með fleirtöluorðum eru notuð töluorðin *einir, tvennir, þrennir, fernir* í stað *einn, tveir, þrír, fjórir*: *tvennar buxur*.	fleirtoluord
+4	Á ganginum eru [þrennar] dyr.	þrjár	þrennur|lo|FSB-KVK-NFFT	*Dyr* er fleirtöluorð: það er aðeins til í fleirtölu. Með fleirtöluorðum eru notuð töluorðin *einir, tvennir, þrennir, fernir* í stað *einn, tveir, þrír, fjórir*: *þrennar dyr*.	fleirtoluord
+4	Amma á [tvenn] gleraugu.	tvö	tvennur|lo|FSB-HK-ÞFFT	*Gleraugu* er fleirtöluorð: það er aðeins til í fleirtölu. Með fleirtöluorðum eru notuð töluorðin *einir, tvennir, þrennir, fernir* í stað *einn, tveir, þrír, fjórir*: *tvenn gleraugu*.	fleirtoluord
+4	Í skúffunni eru [tvenn] skæri.	tvö	tvennur|lo|FSB-HK-NFFT	*Skæri* er fleirtöluorð: það er aðeins til í fleirtölu. Með fleirtöluorðum eru notuð töluorðin *einir, tvennir, þrennir, fernir* í stað *einn, tveir, þrír, fjórir*: *tvenn skæri*.	fleirtoluord
+5	Hljómsveitin hélt [tvenna] tónleika um helgina.	tvo	tvennur|lo|FSB-KK-ÞFFT	*Tónleikar* er fleirtöluorð: það er aðeins til í fleirtölu. Með fleirtöluorðum eru notuð töluorðin *einir, tvennir, þrennir, fernir* í stað *einn, tveir, þrír, fjórir*: *tvennir tónleikar*, *tvenna tónleika*.	fleirtoluord
+5	Liðið vann [þrenn] verðlaun á mótinu.	þrjú	þrennur|lo|FSB-HK-ÞFFT	*Verðlaun* er fleirtöluorð: það er aðeins til í fleirtölu. Með fleirtöluorðum eru notuð töluorðin *einir, tvennir, þrennir, fernir* í stað *einn, tveir, þrír, fjórir*: *þrenn verðlaun*.	fleirtoluord
+5	Við höfum haldið [fern] jól í þessu húsi.	fjögur	fern|lo|FSB-HK-ÞFFT	*Jól* er fleirtöluorð: það er aðeins til í fleirtölu. Með fleirtöluorðum eru notuð töluorðin *einir, tvennir, þrennir, fernir* í stað *einn, tveir, þrír, fjórir*: *fern jól*.	fleirtoluord
+# ---- beygingarmyndir: -ir-orð, fætur og fingur, kýr, tölva, hönd, frændsemisorð, sagnir
+3	Tveir [læknar] vinna á heilsugæslunni.	*læknirar	læknir|kk|NFFT	*-ir* í *læknir* er ending nefnifallsins, ekki hluti af stofninum, og dettur út í beygingu: *læknir – læknar*, eins og *hellir – hellar*.	ending
+4	Ég á tíma hjá [lækninum] á morgun.	*læknirnum	læknir|kk|ÞGFETgr	*-ir* í *læknir* er ending nefnifallsins, ekki hluti af stofninum, og dettur út í beygingu: *læknirinn – lækninn – lækninum – læknisins*.	ending
+4	Við gengum inn í [hellinn] með vasaljós.	hellirinn	hellir|kk|ÞFETgr	*Hellirinn* er nefnifall. *-ir* er ending nefnifallsins og dettur út í þolfalli: *inn í hellinn*.	ending,nf_aukafall
+4	Það eru margir [hellar] á Íslandi.	*hellirar	hellir|kk|NFFT	*-ir* í *hellir* er ending nefnifallsins og dettur út í fleirtölu: *hellir – hellar*, eins og *læknir – læknar*.	ending
+3	[Fæturnir] á mér eru ískaldir.	*Fæturnar	fótur|kk|NFFTgr	*Fótur* er karlkynsorð: *fæturnir* (nefnifall) og *fæturna* (þolfall). Endingin *-nar* er kvenkyn (*hendurnar*).	ending
+4	Ég þvoði mér um [fæturna] eftir leikinn.	*fæturnar	fótur|kk|ÞFFTgr	*Fótur* er karlkynsorð: *fæturnir* (nefnifall) og *fæturna* (þolfall). Endingin *-nar* er kvenkyn (*hendurnar*).	ending
+4	[Fingurnir] voru alveg frosnir eftir snjókastið.	*Fingurnar	fingur|kk|NFFTgr	*Fingur* er karlkynsorð: *fingurnir* (nefnifall) og *fingurna* (þolfall). Endingin *-nar* er kvenkyn (*hendurnar*).	ending
+5	[Veturnir] á Íslandi eru langir og dimmir.	*Veturnar	vetur|kk|NFFTgr	*Vetur* er karlkynsorð: *veturnir* (nefnifall) og *veturna* (þolfall, *á veturna*). Endingin *-nar* er kvenkyn.	ending
+3	[Kýrin] stóð úti á túni.	*Kúin	kýr|kvk|NFETgr	*Kýr* beygist óreglulega: *kýr – kú – kú – kýr*. Í nefnifalli er því *kýrin*; *kúna* er þolfall.	ending
+4	Þetta er stærsta [kýr] sem ég hef séð.	kú	kýr|kvk|NFET	*Kýr* beygist óreglulega: *kýr – kú – kú – kýr*. Hér á að vera nefnifall: *þetta er kýr*.	ending
+3	[Tölvan] mín er orðin mjög hæg.	*Talvan	tölva|kvk|NFETgr	Orðið er alltaf með *ö*: *tölva – tölvu – tölvan – tölvur*. Það er búið til úr orðunum *tala* og *völva*.	hljodvarp
+3	Það er ný [tölva] í stofunni okkar.	*talva	tölva|kvk|NFET	Orðið er alltaf með *ö*: *tölva – tölvu – tölvan – tölvur*. Það er búið til úr orðunum *tala* og *völva*.	hljodvarp
+3	Viltu rétta mér [höndina]?	*hendina	hönd|kvk|ÞFETgr	*Hönd* beygist: *hönd – hönd – hendi – handar*. *Hendi* er aðeins þágufall eintölu: *í hendinni*. Í þolfalli er *höndina*.	hljodvarp					nei
+4	[Höndin] á mér er bólgin.	*Hendin	hönd|kvk|NFETgr	*Hönd* beygist: *hönd – hönd – hendi – handar*. *Hendi* er aðeins þágufall eintölu: *í hendinni*. Í nefnifalli er *höndin*.	hljodvarp
+3	Hann [dró] sleðann upp brekkuna.	*dróg	draga|so|GM-FH-ÞT-3P-ET	Þátíðin af *draga* er *dró*, án *g*: *ég dró, hann dró* — en *við drógum*.	ending
+3	Hún [hló] að brandaranum.	*hlóg	hlæja|so|GM-FH-ÞT-3P-ET	Þátíðin af *hlæja* er *hló*, án *g*: *ég hló, hún hló* — en *við hlógum*.	ending
+5	Þjálfarinn [réð] því hverjir fengu að byrja.	réði	ráða|so|GM-FH-ÞT-3P-ET	Þátíðin af *ráða* er í vönduðu máli *réð*: *ég réð, hann réð*. *Réði* er viðtengingarháttur: *þótt hann réði*.	ending
+4	Ég [kveið] mikið fyrir prófinu.	*kvíddi	kvíða|so|GM-FH-ÞT-1P-ET	*Kvíða* er sterk sögn og fær enga endingu í þátíð: *kvíða – kveið – kviðum – kviðið*.	sterk_veik_sogn
+3	[Kauptu] mjólk á leiðinni heim.	Keyptu	kaupa|so|GM-BH-ET	Boðhátturinn er myndaður af nafnhættinum *kaupa*: *kauptu!* *Keyptu* er þátíð: *þau keyptu mjólk*.
+4	Ég fór í bíó með [systur] minni.	systir	systir|kvk|ÞGFET	*Systir* er aðeins nefnifall. Í hinum föllunum þremur er *systur*: *systir – systur – systur – systur*.	nf_aukafall
+4	Hann hitti [bróður] sinn í bænum.	bróðir	bróðir|kk|ÞFET	*Bróðir* er aðeins nefnifall. Í hinum föllunum þremur er *bróður*: *bróðir – bróður – bróður – bróður*.	nf_aukafall
+4	Hún líkist [móður] sinni mjög mikið.	móðir	móðir|kvk|ÞGFET	*Móðir* er aðeins nefnifall. Í hinum föllunum þremur er *móður*: *móðir – móður – móður – móður*.	nf_aukafall
+4	Þau fóru í heimsókn til [dóttur] sinnar.	dóttir	dóttir|kvk|EFET	*Dóttir* er aðeins nefnifall. Í hinum föllunum þremur er *dóttur*: *dóttir – dóttur – dóttur – dóttur*.	nf_aukafall			til|ef
+5	Þetta er bíll [föður] míns.	*föðurs	faðir|kk|EFET	*Faðir* beygist: *faðir – föður – föður – föður*. Eignarfallið fær ekkert *-s*.	ending,ef
+4	Hún fékk góðar [einkunnir] í vor.	*einkannir	einkunn|kvk|ÞFFT	Fleirtalan af *einkunn* er *einkunnir*, með *u*: *einkunn – einkunnir*.	ending
+5	Það eru þrjár [hurðir] á bílskúrnum.	hurðar	hurð|kvk|NFFT	Fleirtalan af *hurð* er í vönduðu máli *hurðir*. *Hurðar* er eignarfall eintölu.	ending
+# ---- að eða af
+4	Ég leitaði [að] símanum mínum í allan dag.	af	að|fs|	Maður *leitar að* einhverju — með *að*, ekki *af*.	ad_af
+4	Krakkarnir hlógu [að] brandaranum.	af	að|fs|	Maður *hlær að* einhverju — með *að*, ekki *af*.	ad_af
+4	Ekki gera grín [að] litla bróður þínum.	af	að|fs|	Orðasambandið er *gera grín að* einhverjum — með *að*.	ad_af
+4	Ég er mjög stolt [af] systur minni.	að	af|fs|	Maður er *stoltur af* einhverju — með *af*.	ad_af
+5	Hún hefur mjög gaman [af] tónlist.	að	af|fs|	Í vönduðu máli er sagt *hafa gaman af* einhverju — en *það er gaman að* einhverju.	ad_af
+4	Við komumst [að] því að búðin var lokuð.	af	að|fs|	*Komast að* einhverju þýðir að uppgötva það. *Komast af* þýðir að bjarga sér.	ad_af
+5	Hann móðgaðist [að] ástæðulausu.	af	að|fs|	Orðasambandið er *að ástæðulausu* — með *að*.	ad_af
+5	[Að] mínu mati er þetta besta bókin.	Af	að|fs|	Orðasambandið er *að mínu mati* — með *að*.	ad_af
+4	Það er nóg [af] mat handa öllum.	að	af|fs|	*Nóg af*, *mikið af*, *fullt af* einhverju — með *af*.	ad_af
+4	Kennarinn spurði mig [að] þessu í gær.	af	að|fs|	Maður *spyr að* einhverju — með *að*, ekki *af*.	ad_af
+5	Þetta er [að] mörgu leyti góð hugmynd.	af	að|fs|	Orðasambandið er *að mörgu leyti*, *að öllu leyti* — með *að*.	ad_af
+5	Margir urðu vitni [að] atvikinu.	af	að|fs|	Orðasambandið er *verða vitni að* einhverju — með *að*.	ad_af
+4	[Að] sjálfsögðu máttu koma með.	Af	að|fs|	Orðasambandið er *að sjálfsögðu* — með *að*.	ad_af					nei
+5	Ég dáist [að] henni fyrir þetta.	af	að|fs|	Maður *dáist að* einhverjum — með *að*, ekki *af*.	ad_af
+# ---- samtengingar: hvort/ef, en/enn, fyrst/víst, hvorki … né, sem (að)
+4	Ég veit ekki [hvort] hún kemur í kvöld.	ef	hvort|st|	Óbein spurning hefst á *hvort*, ekki *ef*: *ég veit ekki hvort hún kemur*. *Ef* táknar skilyrði: *ég kem ef ég get*.	samtengingar
+4	Spurðu kennarann [hvort] við megum fara út.	ef	hvort|st|	Óbein spurning hefst á *hvort*, ekki *ef*: *ég veit ekki hvort hún kemur*. *Ef* táknar skilyrði: *ég kem ef ég get*.	samtengingar
+4	Hann er stærri [en] ég.	enn	en|st|	Samtengingin *en* (með einu n) kemur á eftir miðstigi: *stærri en ég*. *Enn* (með tveimur n) þýðir „ennþá“.	samtengingar
+4	Ertu [enn] að bíða eftir strætó?	en	enn|ao|	*Enn* (með tveimur n) þýðir „ennþá“. *En* (með einu n) er samtenging: *stærri en ég*, *ég kom en hún fór*.	samtengingar				ennþá
+3	[Fyrst] þú ert búinn að læra máttu fara út.	Víst	fyrst|st|	*Fyrst* þýðir hér „úr því að“. *Víst* þýðir „áreiðanlega“ eða „jú“: *hann kemur víst á morgun*.	samtengingar					nei
+3	Við skulum fara heim [fyrst] það er farið að rigna.	víst	fyrst|st|	*Fyrst* þýðir hér „úr því að“. *Víst* þýðir „áreiðanlega“ eða „jú“: *hann kemur víst á morgun*.	samtengingar
+4	Ég á hvorki hund [né] kött.	eða	né|st|	*Hvorki* og *né* fylgjast að: *hvorki … né*. *Eða* fylgir *annaðhvort*: *annaðhvort … eða*.	samtengingar
+4	Hún borðar hvorki fisk [né] kjöt.	eða	né|st|	*Hvorki* og *né* fylgjast að: *hvorki … né*. *Eða* fylgir *annaðhvort*: *annaðhvort … eða*.	samtengingar
+5	Þetta er strákurinn [sem] ég sagði þér frá.	sem að	sem|st|	Í vönduðu máli stendur *sem* eitt, án *að*: *strákurinn sem ég sagði þér frá*.	samtengingar
+5	Láttu mig vita [þegar] þú ert komin heim.	þegar að	þegar|st|	Í vönduðu máli stendur *þegar* eitt, án *að*: *þegar þú ert komin heim*.	samtengingar
+# ---- stafsetning: y/ý/ey og n/nn
+3	Ég [týndi] símanum mínum í gær.	tíndi	týna|so|GM-FH-ÞT-1P-ET	*Týna* (missa eitthvað) er með *ý*: *ég týndi símanum*. *Tína* (tína ber eða blóm) er með *í*.	y_i
+3	Mamma [leyfði] mér að vaka lengur.	leifði	leyfa|so|GM-FH-ÞT-3P-ET	*Leyfa* (gefa leyfi) er með *ey*: *mamma leyfði mér*. *Leifa* (skilja eftir mat á diskinum) er með *ei*.	y_i
+3	Viltu [sýna] mér myndirnar?	sína	sýna|so|GM-NH	*Sýna* (láta sjá) er með *ý*, skylt orðinu *sjón*. *Sína* er mynd af fornafninu *sinn*: *hún tók bókina sína*.	y_i					nei
+3	Ég á þrjú [systkini].	*systkyni	systkini|hk|ÞFFT	*Systkini* er skrifað með *i* í endingunni, eins og *feðgin* og *mæðgin*.	y_i
+3	Leikurinn [byrjar] klukkan átta.	*birjar	byrja|so|GM-FH-NT-3P-ET	*Byrja* er skrifað með *y*: *byrja – byrjar – byrjun*.	y_i
+4	Hann [skildi] ekki spurninguna.	skyldi	skilja|so|GM-FH-ÞT-3P-ET	*Skildi* er þátíð af *skilja*, með *i*. *Skyldi* er af sögninni *skulu*: *hann skyldi gera það*.	y_i
+3	[Bókin] sem ég las var mjög spennandi.	*Bókinn	bók|kvk|NFETgr	Greinirinn er með **einu n** í kvenkyni: *bókin, konan, stelpan*. Tvö n eru í karlkyni: *hesturinn*.	n_nn
+3	Systir mín er mjög [fyndin].	fyndinn	fyndinn|lo|FSB-KVK-NFET	Lýsingarorð sem enda á *-inn* hafa **tvö n** í karlkyni og **eitt n** í kvenkyni: *hann er fyndinn* en *hún er fyndin*.	n_nn
+3	Bróðir minn er dálítið [feiminn].	feimin	feiminn|lo|FSB-KK-NFET	Lýsingarorð sem enda á *-inn* hafa **tvö n** í karlkyni og **eitt n** í kvenkyni: *hann er feiminn* en *hún er feimin*.	n_nn
+3	Hún er [komin] heim úr skólanum.	kominn	koma|so|LHÞT-SB-KVK-NFET	Lýsingarháttur sem endar á *-inn* hefur **tvö n** í karlkyni og **eitt n** í kvenkyni: *hann er kominn* en *hún er komin*.	n_nn
+4	[Morgunninn] var kaldur og bjartur.	Morguninn	morgunn|kk|NFETgr	Orðið er *morgunn* í nefnifalli, með tveimur n, og greinirinn bætist við: *morgunninn*. *Morguninn* er þolfall: *ég svaf allan morguninn*.	n_nn
+4	[Engin] stelpa í bekknum æfir handbolta.	Enginn	enginn|fn|KVK-NFET	*Enginn* (tvö n) er karlkyn: *enginn strákur*. *Engin* (eitt n) er kvenkyn: *engin stelpa*.	n_nn
+# ---- samræmi, fornöfn, fallstjórn sagna, eitt orð eða tvö
+4	Jón og Anna eru bæði mjög [þreytt] eftir ferðina.	þreyttir	þreyttur|lo|FSB-HK-NFFT	Þegar talað er um karl og konu saman er notað **hvorugkyn fleirtölu**: *þau eru þreytt*. *Þreyttir* á aðeins við um karla.	kyn_samraemi
+4	Strákurinn og stelpan voru [glöð] að sjá okkur.	glaðir	glaður|lo|FSB-HK-NFFT	Þegar talað er um karl og konu saman er notað **hvorugkyn fleirtölu**: *þau eru glöð*. *Glaðir* á aðeins við um karla.	kyn_samraemi
+5	Ég heyrði [eitthvert] hljóð úti í garði.	eitthvað	einhver|fn|	Í vönduðu máli er *eitthvert* notað með nafnorði (*eitthvert hljóð*) en *eitthvað* stendur eitt og sér: *ég heyrði eitthvað*.
+4	Ég sá [einhvern] mann fyrir utan húsið.	*eitthvern	einhver|fn|KK-ÞFET	Fornafnið er *einhver*: *einhver – einhvern – einhverjum – einhverjir*. *Eitt-* er aðeins í hvorugkyni eintölu: *eitthvað, eitthvert*.
+4	Það komu [einhverjir] krakkar í heimsókn.	*eitthverjir	einhver|fn|KK-NFFT	Fornafnið er *einhver*: *einhver – einhvern – einhverjum – einhverjir*. *Eitt-* er aðeins í hvorugkyni eintölu: *eitthvað, eitthvert*.
+4	Ég þori [því] ekki.	það	það|pfn|ÞGFET	Sögnin *þora* stýrir **þágufalli**: *ég þori því ekki*.	fallstjorn_so,thf_thgf
+4	Ég nenni [því] ekki núna.	það	það|pfn|ÞGFET	Sögnin *nenna* stýrir **þágufalli**: *ég nenni því ekki*.	fallstjorn_so,thf_thgf			nenna|þgf
+5	Ég hef ekkert spáð í [það].	því	það|pfn|ÞFET	Í vönduðu máli er sagt *spá í eitthvað*, með þolfalli: *ég hef ekkert spáð í það*.	thf_thgf
+3	[Af hverju] komstu ekki í gær?	*Afhverju	af|fs|, hver|fn|HK-ÞGFET	*Af hverju* er skrifað í tveimur orðum.						nei
+4	Leiknum var frestað [út af] veðrinu.	*útaf	út|ao|, af|fs|	*Út af* er skrifað í tveimur orðum.

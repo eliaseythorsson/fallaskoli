@@ -1,0 +1,82 @@
+# Fallstjórn: sagnarammar
+#
+# Sama spurning og í sagnir.tsv, en hver rammi er spurður með hverju nafnorði hópsins.
+#
+# Dálkar:
+#   bónus    0 eða 1: einu stigi þyngra (sögn sem er ekki hversdagsleg eða stýrir öðru falli en svipuð sögn)
+#   setning  setningin; ___ er nafnorðið
+#   sögn     sögnin (nafnháttur)
+#   fall     fallið sem sögnin stýrir
+#   hópur    nafnorðahópur úr sagnir-hopar.tsv; fleiri tengdir með +
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Verb frames × noun groups (critique item 23): the same question as
+# VERB_CASE, generated. Every frame is asked with every noun of its group,
+# each form out of BÍN. A group is chosen so that every noun makes sense
+# with the verb (*Ég kvaddi ömmu*, not *Ég vakti lögreglumanninn*), and a
+# noun whose form in the asked case is its nominative (*Ég opnaði veskið*) is
+# left out by the build: copying the cue is not knowing the case.
+#   (bonus, sentence, verb, case, group)
+# Level = length + 1, as VERB_CASE; +1 for the genitive; +1 (bonus) for a
+# verb that is not everyday or takes another case than the verb it
+# resembles (aðstoða, óttast, gæta). Kept at 4 and under, as VERB_CASE.
+#
+
+bónus	setning	sögn	fall	hópur
+# þágufall
+0	Ég hjálpaði ___.	hjálpa	ÞGF	fólk
+0	Ég hjálpaði ___ að bera þunga pokana heim.	hjálpa	ÞGF	fólk
+0	Ég heilsaði ___.	heilsa	ÞGF	fólk
+0	Í hádeginu heilsaði ég ___ á ganginum.	heilsa	ÞGF	aðrir
+0	Ég treysti ___.	treysta	ÞGF	fólk
+0	Ég svaraði ___ strax.	svara	ÞGF	fólk
+0	Ég þakkaði ___ kærlega fyrir alla hjálpina.	þakka	ÞGF	fólk
+0	Ég lofaði ___ að koma aftur á morgun.	lofa	ÞGF	fólk
+0	Ég sýndi ___ myndina.	sýna	ÞGF	fólk
+0	Ég sagði ___ frá ferðinni til Spánar.	segja	ÞGF	fólk
+0	Ég kynntist ___ í sumar.	kynnast	ÞGF	aðrir
+0	Ég mætti ___ á leiðinni heim.	mæta	ÞGF	aðrir + dýr
+0	Ég klappaði ___.	klappa	ÞGF	dýr
+0	Ég klappaði ___ áður en ég fór.	klappa	ÞGF	dýr
+0	Ég gaf ___ að borða.	gefa	ÞGF	dýr
+0	Ég gaf ___ að borða í morgun.	gefa	ÞGF	dýr
+0	Slökkviliðið bjargaði ___.	bjarga	ÞGF	dýr
+0	Ég gleymdi ___ í skólanum.	gleyma	ÞGF	hlutir
+0	Litla systir mín gleymdi ___ heima í morgun.	gleyma	ÞGF	hlutir
+0	Ég týndi ___ í gær.	týna	ÞGF	hlutir
+0	Strákurinn í næsta húsi týndi ___ í gær.	týna	ÞGF	hlutir
+0	Þjófurinn stal ___ í nótt.	stela	ÞGF	stolið
+0	Þjófurinn stal ___ úr bílnum í nótt.	stela	ÞGF	stolið
+0	Hún kastaði ___ til mín.	kasta	ÞGF	kastað
+0	Strákurinn kastaði ___ langt út í garð.	kasta	ÞGF	kastað
+0	Ég lokaði ___.	loka	ÞGF	lokað
+0	Ég lokaði ___ vandlega áður en ég fór.	loka	ÞGF	lokað
+0	Hún henti ___ í ruslið.	henda	ÞGF	rusl
+0	Ég ýtti ___ til hliðar.	ýta	ÞGF	ýtt
+# þolfall
+0	Ég opnaði ___.	opna	ÞF	lokað
+0	Mamma opnaði ___ varlega.	opna	ÞF	lokað
+0	Ég heimsótti ___ í gær.	heimsækja	ÞF	heimsótt
+0	Í gær heimsótti ég ___ eftir skóla.	heimsækja	ÞF	heimsótt
+0	Ég kvaddi ___ í gær.	kveðja	ÞF	fjölskylda
+0	Ég kvaddi ___ þegar ég fór heim.	kveðja	ÞF	fjölskylda
+0	Ég vakti ___ í morgun.	vekja	ÞF	fjölskylda
+0	Ég vakti ___ klukkan sjö í morgun.	vekja	ÞF	fjölskylda
+0	Ég sótti ___ í skólann.	sækja	ÞF	sótt
+0	Ég þekki ___ vel.	þekkja	ÞF	fólk
+0	Ég spurði ___ um leiðina.	spyrja	ÞF	aðrir
+1	Ég aðstoðaði ___ í gær.	aðstoða	ÞF	aðrir
+1	Litli bróðir minn óttast ___.	óttast	ÞF	gæludýr
+# eignarfall
+0	Ég sakna ___ mikið.	sakna	EF	fjölskylda + gæludýr
+0	Ég sakna ___ alveg ótrúlega mikið.	sakna	EF	fjölskylda + gæludýr
+0	Við leituðum ___ lengi.	leita	EF	hlutir
+0	Við leituðum ___ úti um allt.	leita	EF	hlutir
+0	Við biðum ___ lengi.	bíða	EF	beðið
+0	Í allan morgun hef ég beðið ___.	bíða	EF	beðið
+1	Ég gætti ___ um helgina.	gæta	EF	gæludýr

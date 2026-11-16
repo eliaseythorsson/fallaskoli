@@ -17,8 +17,11 @@ epli*, not *ferskt barn*) and which adjectives are not compared (*dauður*,
 
 ## Running it
 
-The app is one HTML file, `dist/fallaskoli-v6.12.html` (built by `./build.sh`; not
-committed — every release is a git tag). It works three ways, with
+The app is one HTML file, `dist/fallaskoli-v<version>.html` (built by `./build.sh`; not
+committed — every release is a git tag and its file is attached to the release).
+The version is in `package.json` and nowhere else: `tools/version.mjs` reads it
+for every tool that needs the file name, and this README deliberately names no
+version or test count, which would only go stale. It works three ways, with
 nothing configured — the program looks at where it was loaded from:
 
 | how it is opened | where progress lives |
@@ -30,11 +33,35 @@ nothing configured — the program looks at where it was loaded from:
 **Testing with several people from your own computer:** `./test-together.sh`
 runs the server for everyone on the same Wi-Fi; `./test-together.sh --internet`
 gives a temporary https address that works from anywhere (needs
-`brew install cloudflared`, no account). Test accounts and progress live in
-`_prufa/`, apart from `server/data`, and never go into the image or the zip. `./test-together.sh demo 3`
-makes demo1–demo3 for trying several accounts yourself; open each on its own
+`brew install cloudflared`, no account). Test accounts, passwords and progress live
+in a temporary folder outside the project (made with `mktemp -d`; the script prints
+where, and reuses it next time), never in the repository, the image or the zip.
+`./test-together.sh demo 3` makes demo1–demo3 for trying several accounts yourself; open each on its own
 address (`http://demo1.localhost:8080`, `http://demo2.localhost:8080` …) to stay
 logged in as all of them at once.
+
+**Installing it (v6.13).** Served over http(s), the program can sit on the
+home screen of a phone or a Chromebook and opens without a network. The build
+writes `dist/web/` for this: the same program as `index.html`, with a manifest,
+icons (the board's tally mark in chalk, drawn by `tools/pwa.mjs`) and a service
+worker (`src/sw.js`). Put that folder's contents on any web host;
+`server/server.mjs` serves the same files by itself. The worker caches the
+program and nothing else — never an answer from the server — and when a new
+version is published it says *Ný útgáfa er tilbúin — endurhlaða* instead of
+swapping it under the pupil. On a server the progress lives on the server, so
+offline the program says it has no connection rather than starting a second
+progress in the browser. Opened from a file, none of this happens: no worker,
+no manifest, the same single file.
+
+**What the server adds.** Accounts and groups, a leaderboard inside a group (its
+default metric counts what got *better* this week, not how long the child sat
+there), duels that the server grades, and a teacher's part of Skólastofan for
+the guardian of a group: the class's error patterns, one pupil's skill map,
+homework (*Verkefni*), a weekly class goal, a live round on the projector and
+team duels. The server also counts answers anonymously and, once enough have
+come in, adjusts the difficulty of question types and cells by itself
+(`docs/SERVER.md` §4.3). Every route is in `docs/API.md`, and what each of
+these lets a teacher see is in `docs/PRIVACY.md` §1a–1d.
 
 For one child on several devices the second row is the simplest: put the file
 anywhere on the web and open the same link everywhere. Progress is then kept
@@ -51,10 +78,35 @@ and progress that follows the child automatically and merges between devices.
 ./build.sh --accept     # after a deliberate change to the data
 ```
 
-Needs Python 3.10+ with `pip`, Node 18+, and for the browser checks a Chromium
+Needs Python 3.10+ with `pip`, Node 20+ (CI and the container use 22), and for the browser checks a Chromium
 (`CHROME_PATH=/path/to/chrome`; they are skipped otherwise). Debian/Ubuntu:
 `apt install -y nodejs npm python3 python3-pip`. The grammar libraries ship
 Linux wheels for x86_64 only.
+
+**The same bytes on any computer (v6.13).** `./build.sh` on your own machine
+uses whatever Python and processor it finds — and with the very same library
+versions, an ARM Linux VM (which compiles the parser from source) parsed one
+token differently from an x86_64 one. The committed data is the x86_64 build.
+To build exactly that anywhere, Mac included, with Docker:
+
+```
+./build-in-container.sh             # = ./build.sh, in the build container
+./build-in-container.sh --accept    # = ./build.sh --accept
+```
+
+`Dockerfile.build` pins the platform (linux/amd64; emulated on an
+Apple-silicon Mac, so slower), Python 3.13.18, Node 22.23.4, and every Python
+package by its hash (`requirements-build.txt` — change it together with
+`requirements.txt`). Your source folder is mounted, so the results land where
+`./build.sh` puts them; your own `node_modules` is not touched. The licence
+list keeps its date while it is unchanged, so a rebuild changes no byte. CI
+(`.github/workflows/ci.yml`, job `reproducible`) runs this on every push and
+fails if the rebuilt data differs from what is committed. Two things the
+container could not check where it was written (no access to Docker Hub): it
+was never built, only read and linted (hadolint), and the image tags carry no
+digest yet — `docker buildx imagetools inspect python:3.13.18-slim-bookworm`
+(and the same for `node:22.23.4-bookworm-slim`) prints the digest to add after
+the tag in `Dockerfile.build`, which makes the pin final.
 
 What the build does, in order:
 
@@ -66,26 +118,43 @@ What the build does, in order:
    (and, by `irregularity.py`, how irregular each paradigm is, `irr` 1–5, and
    how hard each cell is, `cellh` — the second axis of difficulty)
    (minus the comparison forms of the adjectives `adj_classes.py` lists as not compared)
-3. `build_sentences.py` — every sentence in `sentences.py` parsed by Greynir
-   and checked by `parse_guard.py` → `sentences.json`
+3. `build_sentences.py` — every sentence of the bank
+   (`content/setningar/setningar.tsv`, read by `sentences.py`) parsed by
+   Greynir and checked by `parse_guard.py` → `sentences.json`
 4. `build_bundle.py` — lexicon + sentences + semantic classes + definitions
    → `data/data_bundle.js`; `build_exercises.py` — the hand-written items in
-   `exercises.py`, every answer, option and cue looked up in BÍN →
-   `data/exercises.js`
+   `content/*/*.tsv` (read by `exercises.py`), every answer, option and cue
+   looked up in BÍN → `data/exercises.js`
 5. `tools/manifest.mjs` — a fingerprint of all of the above. If anything
    changed since the last accepted build the build stops and lists the change;
    `--accept` records it. This is what stops a parser upgrade from quietly
    changing a grammatical analysis.
 6. `node --test tests/*.test.js`, then `tools/build.mjs` bundles `src/` into
-   the HTML file, then `tools/browser-test.mjs`, `tools/tour-test.mjs` (the
-   guided first run) and `tools/server-test.mjs` drive it in a real Chromium.
+   the HTML file (and `dist/web/`, the same program as a folder for a web
+   host — see *Installing it* above) and `tools/review.mjs` writes the review
+   page (`dist/review.html`, see "Efnið" below), then `tools/browser-test.mjs`,
+   `tools/tour-test.mjs` (the guided first run) and `tools/server-test.mjs`
+   drive it in a real Chromium.
 
-`node tools/pack.mjs` writes `dist/fallaskoli-v6.12-src.zip` with everything.
+`node tools/pack.mjs` writes `dist/fallaskoli-v<version>-src.zip` with everything
+the build needs. CI (`.github/workflows/ci.yml`) also runs the unit tests, the
+bundle and the data manifest on every push, and refuses a commit that contains
+personal data or a built file; `.github/workflows/release.yml` builds a tag and
+attaches the HTML, the zip and the web folder to a release.
 
 ## Where things are
 
 ```
-sentences.py          the sentence bank: (level, text, slot, need[, options])
+content/              ALL HAND-WRITTEN CONTENT, one TAB-separated file per list,
+                      readable and editable without reading code (see "Efnið"):
+                      setningar/ (the sentence bank), villuveidar/ (the real
+                      errors), lysingarord/ fornofn/ toluord/ fallstjorn/
+                      obeygjanleg/ ordafordi/ (exercise items and frames);
+                      REVIEW-NOTES.md, what a native reader should check
+content_io.py         the reader of content/*.tsv (stdlib only);
+                      `python3 content_io.py` checks every file in a second
+sentences.py          reads the sentence bank: (level, text, slot, need[,
+                      options]); the rules for writing a sentence, and GROUPS
 noun_classes.py       semantic class of every noun; í/á convention; exclusions
 irregularity.py       how irregular a paradigm is (stems counted on BÍN's forms:
                       umlaut, syncope, -j-/-v-, consonant change, strong verbs)
@@ -105,16 +174,19 @@ parse_guard.py        the checks every token passes: the lemma is plausible, the
                       mark exists in BÍN, government agrees with the table,
                       features the form cannot settle are marked uncertain
 parse_overrides.py    declared decisions about readings the guard accepts
+phrases.py            kinds of subordinate clause and phrase, written into a
+                      sentence only when the parse and a closed table of what
+                      such a clause looks like agree (years 9–10)
 definitions.py        a handful of hand-written definitions; the rest are ÍNO
-exercises.py          hand-written items for the v6.11 question types (pronouns,
-                      numerals, dates, government, synonyms …): sentences and
-                      lemma + class + BÍN mark only; build_exercises.py
-                      resolves every form in BÍN and checks every word.
-                      Also frames that build_exercises.py fills in from BÍN
-                      (v6.13): pronouns after the verbs and prepositions of
-                      government.py, reflexive pairs, numerals × nouns by
-                      meaning, adjective frames around the helper nouns of
-                      adj_classes.py
+exercises.py          reads the hand-written items for the v6.11 question types
+                      (pronouns, numerals, dates, government, synonyms …) and
+                      the frames build_exercises.py fills in from BÍN (v6.13)
+                      out of content/, under the names the build has always
+                      used; keeps the rules for levels and the closed tables
+                      (ordinals, months, multi-word conjunctions). Items are
+                      sentences and lemma + class + BÍN mark only;
+                      build_exercises.py resolves every form in BÍN and
+                      checks every word
 vocab_filter.py       lemma errors and words for acts of violence (always
                       removed), the coarse-word block list (on by default,
                       the administrator can switch it off), and the words
@@ -166,7 +238,7 @@ src/js/core/classgoal.js  the class goal (item 59): a weekly target the
                       the bar in ui/classgoal.js
 src/js/core/examples.js  the worked example on the first card of a type a
                       pupil has not met (item 41; the texts are in
-                      content/examples.js, every form checked against BÍN
+                      src/js/content/examples.js, every form checked against BÍN
                       by tests/examples.test.js), and `S.seenTypes`
 src/js/core/placement.js  the guided first run's rules (item 84): the
                       placement round — 12–15 questions, one skill after
@@ -186,6 +258,29 @@ src/js/core/curriculum.js  the curriculum map as data: the official
                       criteria, the nodes (one thing a pupil learns, with its
                       year, question types and Lesefni page) and what the
                       8., 9. and 10. bekkur presets switch on
+src/js/core/skillmap.js  the skill map (item 83): every node with how well
+                      (the mastery mark), when it was last trained and
+                      whether it needs work (an active pattern, reviews due);
+                      `standingOfNode(node, S)`, and `teacherMap` for the same
+                      map of one pupil on the teacher's screen
+src/js/core/difficulty.js  difficulty kept per skill and saved with the
+                      progress (`S.difficulty`): half a step up after two
+                      right in a row, down after a miss, held back while
+                      recent accuracy is low; the hardness of a word and a
+                      cell (`hardnessWeight`)
+src/js/core/duel.js, teamduel.js, live.js, assignment.js, classview.js
+                      the rules of duels (the same seed gives both pupils
+                      the same plan; the server grades the answers), team
+                      duels, a live class round, a teacher's assignments and
+                      the class's error-pattern table — each shared by the
+                      server and the browser so both read the same numbers
+src/js/core/calibration.js, classifiercheck.js  difficulty set from anonymous
+                      counts of answers, and the check of the error
+                      classifier against a sample of real wrong answers
+                      (server/calibrate.mjs holds what only a server has)
+src/js/core/merge.js, server.js, social.js, leaderboard.js  progress from two
+                      devices put together, the program's one view of the
+                      server, and what pupils see of each other
 src/js/tasks/         the question builders, one file per category:
                       nafnord.js, lysingarord.js, sagnord.js, fornofn.js,
                       toluord.js, obeygjanleg.js, greining.js, fallstjorn.js,
@@ -206,25 +301,42 @@ src/js/ui/            rendering: render.js (one renderer per task type;
                       render-more.js for gap, choice, tap, sort and the
                       Orðaforði bonus),
                       session.js (the Æfa picker, a session, its summary),
+                      skillmap.js (Merki og framvinda), teacher.js, live.js,
+                      teamduel.js, duel.js, classgoal.js (Skólastofan),
+                      lessons.js (Lesefni), drill.js, reports.js, pwa.js,
                       dom.js, panels.js, progress.js, account.js, policyui.js
+src/js/content/       hand-written texts in the program: the worked examples
+                      and the Lesefni pages
 src/head.html         the stylesheet
+src/sw.js             the service worker: caches the program, never an answer
 src/fonts/            the three typefaces, inlined into the built file
 server/               the optional multi-user server (Node, JSON files on disk):
                       server.mjs (routes), store.mjs (files, cache, erasure),
                       auth.mjs, guard.mjs (what is stored and believed),
                       privacy.mjs (the notice), backup.mjs, admin.mjs (CLI),
                       calibrate.mjs (anonymous counts of answers → a weekly
-                      table of adjustments; the opt-in sample of wrong answers)
+                      table of adjustments; the opt-in sample of wrong answers),
+                      classgoal.mjs, live.mjs (in memory, server-sent events),
+                      teamduel.mjs, privs.mjs (give up root)
 Dockerfile, fly.toml  the server as a container, and where it runs
-tools/                build, manifest, coverage, pack, ÍNO converter, tests in
-                      Chromium, try-sentences.py, task-snapshot.mjs (what the
-                      builders build from fixed seeds — to compare two versions)
-tests/                node --test; 505 tests
+Dockerfile.build, build-in-container.sh   the pinned build (see above)
+test-together.sh      the server for several testers on your own computer
+.github/workflows/    ci.yml (tests, bundle, manifest, the reproducible build)
+                      and release.yml (a tag → a release)
+tools/                build, version (the file name), manifest, coverage, pack,
+                      pwa (manifest and icons), ÍNO converter, tests in
+                      Chromium (browser-test, server-test), load-test,
+                      try-sentences.py, task-snapshot.mjs (what the builders
+                      build from fixed seeds — to compare two versions) and
+                      sim/ (simulated pupils; see its README), review.mjs (the review
+                      page), content-from-py.py (moved the content out of
+                      Python; for branches made before)
+tests/                node --test tests/*.test.js
 _grammar-audit/       the audit's notes, and three scripts that print what the
                       app generates so a person can read it (see below)
 docs/                 HOSTING.md (Fly.io), PRIVACY.md (GDPR: the record, consent,
                       requests, a breach), SERVER.md (your own machine), API.md,
-                      DEFINITIONS.md, CURRICULUM.md (the app against the
+                      DEFINITIONS.md, LESEFNI.md, CURRICULUM.md (the app against the
                       aðalnámskrá and the textbooks; its tables are written by
                       tools/curriculum-doc.mjs)
 ```
@@ -245,16 +357,52 @@ in the sentence agrees with it). `fixed` means an adjective or pronoun sits
 beside the slot and no swap is allowed; `nf` means the sentence is never used
 as a cloze, because the case after *með* depends on what is meant.
 
-That one mechanism — frames × BÍN — is how 733 sentences show 3,700 nouns in
-every one of their 16 forms inside a real sentence (99.7% of all cells; the
-rest are mass nouns in the plural, excluded on purpose).
+That one mechanism — frames × BÍN — is how the frames of the sentence bank show
+every noun in every one of its 16 forms inside a real sentence (all cells but
+the plural of mass nouns, excluded on purpose; `node tools/coverage.mjs` prints
+the current figures).
 
-## Adding sentences
+## Efnið — the hand-written content
 
-Add a line to `sentences.py` and run `./build.sh`. The build refuses a
-sentence that does not parse, that is longer than its level allows, whose
-analysis contradicts BÍN or the government table, or whose blank is fixed by a
-numeral. To try a candidate first:
+Every sentence, exercise item, frame and Villuveiðar item a person wrote is in
+`content/`, one plain text file per list, so that a teacher or a native reader
+can read it, correct it and add to it without reading Python:
+
+```
+content/setningar/setningar.tsv     the sentence bank (1,130 sentences)
+content/villuveidar/villur.tsv      the real errors of Villuveiðar
+content/lysingarord/ …/ordafordi/   exercise items and frames, by category
+content/REVIEW-NOTES.md             what a native reader should check first
+```
+
+**The format.** UTF-8, one item per line, the fields separated by a TAB. A line
+that starts with `#` is a comment. The first other line names the columns, and
+the comment block at the top of each file says in Icelandic what each column
+holds (`þyngd`, `setning`, `svar`, `skýring` …). A word asked about is written
+`lemma|class|BÍN mark` (`hún|pfn|ÞGFET`); a list is comma-separated. Nothing is
+quoted, so a field cannot hold a TAB. `content_io.py` explains every column type.
+
+**Editing.** Any text editor that keeps TABs works, and so does a spreadsheet
+(LibreOffice, Excel, Google Sheets): open the file as tab-separated, keep the
+header row and the column order, and save it again as *tab-separated text,
+UTF-8*. Then:
+
+```
+python3 content_io.py      # a second: every file read, or the file and line that is wrong
+./build.sh                 # the real check: every form against BÍN, every sentence through Greynir
+git diff content/          # one changed line per changed item
+```
+
+The build stops on a column moved or renamed, a field that is not what its
+column holds, a word BÍN does not have, a sentence Greynir cannot parse or a
+claim the government table contradicts, and names the file and line or the
+sentence. The manifest then stops once more on purpose: read what it lists and
+accept it (`./build.sh --accept`).
+
+**Adding sentences.** Add a line to `content/setningar/setningar.tsv`. The build
+refuses a sentence that does not parse, that is longer than its level allows,
+whose analysis contradicts BÍN or the government table, or whose blank is fixed
+by a numeral. To try a candidate first:
 
 ```
 python3 tools/try-sentences.py "Ég sá hestana í gær." hestur concrete
@@ -274,7 +422,28 @@ node _grammar-audit/sample-new.mjs 8      # the v6.11 types, eight of each
 Three things to know when writing one: use the past tense for a transitive
 verb with *ég* (*Ég sé hestana* parses as the subjunctive of *vera*); keep
 the subject *ég* or *við* where the gender should stay free; and say exactly
-which nouns the blank accepts — `drink` for *Ég drekk ___*, not `thing`.
+which nouns the blank accepts — `drink` for *Ég drekk ___*, not `thing`. The
+full rules are at the top of `sentences.py`, and the rules for each exercise
+list at the top of its file.
+
+**The review page.** `node tools/review.mjs` (also run by `./build.sh`) writes
+`dist/review.html`: one self-contained page with every hand-written item —
+the files above, the 24 Lesefni pages and the worked examples — each with its
+answer, explanation, level and file:line. It filters by kind, level, text and
+by *þarf að athuga*: the items a note in `content/REVIEW-NOTES.md` is about,
+with the note beside them. A reader marks items *Í lagi* or *Athuga*, writes a
+comment, and *Sækja athugasemdir* downloads the marks as a text file; nothing
+leaves the browser. To flag something new for a native reader, add a note to
+`content/REVIEW-NOTES.md` with `Leita:` phrases from the items (the tests fail if a
+phrase stops finding one).
+
+**What is still in code.** The Lesefni pages and the worked examples
+(`src/js/content/lessons.js`, `examples.js`) are plain data in JavaScript that
+the app imports as it is; they are on the review page, and are edited where
+they are. The closed grammatical tables (ordinals, months, multi-word
+conjunctions, `sentences.GROUPS`), the clause and phrase rules of `phrases.py`
+and the short list of adjectives that fit a kind of noun in
+`src/js/tasks/frames.js` stay in code too.
 
 ## The guard, briefly
 
@@ -293,4 +462,4 @@ OpenSubtitles frequency list (hermitdave/FrequencyWords), Bricolage Grotesque,
 Public Sans and IBM Plex Mono (OFL; bundled, notice in `src/fonts/OFL.txt`), and
 Íslensk nútímamálsorðabók (CC BY-SA 4.0) for the definitions. The full list
 is at the bottom of the Stillingar og námsefni tab and in `data/licenses.js`. ShareAlike applies to the built
-file: it contains 6,000 of ÍNO's definitions.
+file: it contains ÍNO's definitions.

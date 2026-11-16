@@ -15,6 +15,7 @@ import path from "node:path";
 import { htmlPath } from "./version.mjs";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
+import http from "node:http";
 
 import { createApp } from "../server/server.mjs";
 import { hashPassword, newId } from "../server/auth.mjs";
@@ -84,14 +85,16 @@ async function fresh() {
   await page.setViewport({ width: 1100, height: 900 });
   page.on("pageerror", (e) => problems.push("pageerror: " + e.message));
   page.on("console", (m) => {
-    if (m.type() === "error" && !/favicon|fonts\.g|Failed to load resource/.test(m.text()))
+    /* The last one: a service worker's update check while the server is
+       down on purpose (the offline checks of item 54). */
+    if (m.type() === "error" && !/favicon|fonts\.g|Failed to load resource|error occurred when fetching the script/.test(m.text()))
       problems.push("console.error: " + m.text());
   });
   return { ctx, page };
 }
 
-async function login(page, username) {
-  await page.goto(BASE + "/", { waitUntil: "domcontentloaded" });
+async function login(page, username, base = BASE) {
+  await page.goto(base + "/", { waitUntil: "domcontentloaded" });
   await page.waitForSelector("#lg-user", { timeout: 15000 });
   await page.type("#lg-user", username);
   await page.type("#lg-pass", "lykilordid-mitt");
@@ -1319,6 +1322,147 @@ async function closeWindows(page) {
   await Q.page.waitForSelector("#classgoal .goalcard.met", { timeout: 10000 });
   ok(/náð!/.test(await Q.page.$eval("#classgoal", (e) => e.innerText)), "the full bar does not say it was met");
   await T.ctx.close(); await Q.ctx.close();
+}
+
+/* ---------- item 54: installed, offline, and told about a new version ----------
+
+   Its own server on its own copy of the program, so the checks can stop the
+   server (offline) and publish a "new version" (a changed file) without
+   touching anything above. */
+{
+  const pdir = await fs.mkdtemp(path.join(os.tmpdir(), "fallaskoli-pwa-"));
+  const phtml = path.join(pdir, "forrit.html");
+  await fs.copyFile(HTML, phtml);
+  const papp = createApp({ dataDir: path.join(pdir, "data"), htmlFile: phtml, secureCookies: false, env: {} });
+  await papp.store.init();
+  const { salt, hash } = await hashPassword("lykilordid-mitt");
+  await papp.store.updateUsers((users) => {
+    users.push({ id: newId(), username: "heima", name: "heima", role: "learner", status: "active",
+      salt, hash, group: "default", share: { board: false, minutes: false },
+      consent: { by: "self", over16: true, at: new Date().toISOString(), how: "admin" } });
+    return users;
+  });
+  const up = (port = 0) => new Promise((r) => papp.server.listen(port, "127.0.0.1", r));
+  const down = () => new Promise((r) => { papp.server.close(r); papp.server.closeAllConnections(); });
+  await up();
+  const port = papp.server.address().port;
+  const PB = "http://127.0.0.1:" + port;
+  const ALLOWED = /\/(index\.html|manifest\.webmanifest|icon-192\.png|icon-512\.png|icon-maskable-512\.png|apple-touch-icon\.png)$/;
+  const cached = (page) => page.evaluate(async () => {
+    const out = [];
+    for (const k of await caches.keys()) for (const r of await (await caches.open(k)).keys()) out.push(k + " " + r.url);
+    return out;
+  });
+
+  const S = await fresh();
+  await login(S.page, "heima", PB);
+
+  /* The manifest is served, read and complete; the worker registers and
+     takes the page over (clients.claim — the very next load is offline-safe). */
+  await S.page.waitForSelector('link[rel="manifest"]', { timeout: 30000 });
+  const cdp = await S.page.createCDPSession();
+  const man = await cdp.send("Page.getAppManifest");
+  ok(man.url === PB + "/manifest.webmanifest" && man.errors.length === 0 && /"short_name": "Fallaskóli"/.test(man.data),
+    "the manifest was not served or not read: " + JSON.stringify({ url: man.url, errors: man.errors }));
+  await S.page.waitForFunction("navigator.serviceWorker.controller", { timeout: 60000 });
+  /* Chrome's own verdict on installing. A context made for a test counts as
+     incognito, where nothing is installed: that one reason is not ours. */
+  const inst = await cdp.send("Page.getInstallabilityErrors");
+  const why = inst.installabilityErrors.map((e) => e.errorId).filter((e) => e !== "in-incognito");
+  ok(why.length === 0, "Chrome would not install it: " + why.join(", "));
+  const before = await cached(S.page);
+  ok(before.length === 6 && before.every((x) => ALLOWED.test(x)),
+    "the cache holds something other than the program and its files: " + before.join(" | "));
+
+  /* Practise a little, so there IS pupil data going over the wire — and
+     none of it may end up in the cache. */
+  await S.page.evaluate(() => { window.FALLASKOLI.S.xp = 321; return window.FALLASKOLI.save(true); });
+  await S.page.evaluate(() => fetch("/auth/me").then((r) => r.json()));
+  await new Promise((r) => setTimeout(r, 800));
+  const onServer = (await papp.store.users()).find((u) => u.username === "heima");
+  ok((await papp.store.state(onServer.id))?.xp === 321, "the progress did not reach the server");
+  const after = await cached(S.page);
+  ok(after.length === 6 && after.every((x) => ALLOWED.test(x)), "an API answer went into the cache: " + after.join(" | "));
+
+  /* Offline: the server is gone. The program still opens — from the cache —
+     with the CSP it was served with, and says plainly that it needs the
+     server, rather than starting a second progress in the browser. */
+  await down();
+  await S.page.reload({ waitUntil: "domcontentloaded" });
+  await S.page.waitForSelector("#offline", { timeout: 30000 });
+  const off = await S.page.evaluate(() => ({
+    text: document.getElementById("offline").innerText, gated: document.body.classList.contains("gated"),
+    local: Object.keys(localStorage).filter((k) => k.startsWith("fallaskoli.v5")) }));
+  ok(/Ekkert samband/.test(off.text) && /Reyna aftur/.test(off.text) && off.gated,
+    "offline, the program did not say it has no connection: " + JSON.stringify(off));
+  ok(off.local.length === 0, "offline, a separate progress was started in the browser: " + off.local.join(","));
+
+  /* Back online, "Reyna aftur": the same pupil, logged in, on the server. */
+  await up(port);
+  await Promise.all([S.page.waitForNavigation({ waitUntil: "domcontentloaded" }), S.page.click("#offline-retry")]);
+  await startPractice(S.page, 30000);
+  ok(await S.page.evaluate(() => !!window.FALLASKOLI.server && window.FALLASKOLI.profile?.name === "heima"),
+    "after the network came back the pupil was not on the server again");
+
+  /* A new version is published. The open program is NOT swapped under the
+     pupil: it offers it, and only the click reloads into it. */
+  await fs.appendFile(phtml, "\n<!-- ny-utgafa -->\n");
+  const isNew = () => S.page.evaluate(() => [...document.childNodes].some((n) => n.nodeType === 8 && /ny-utgafa/.test(n.data)));
+  await S.page.evaluate(() => navigator.serviceWorker.getRegistration().then((r) => r.update()));
+  await S.page.waitForSelector("#update-go", { visible: true, timeout: 60000 });
+  ok((await S.page.$eval("#update-go", (b) => b.textContent)) === "Ný útgáfa er tilbúin — endurhlaða",
+    "the offer of the new version reads otherwise");
+  ok(!(await isNew()), "the new version arrived before the pupil asked for it");
+  await Promise.all([S.page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 60000 }), S.page.click("#update-go")]);
+  await startPractice(S.page, 30000);
+  ok(await isNew(), "after the click the page is still the old version");
+  ok(!(await S.page.$("#update-go")), "the offer is still there after updating");
+  const caches2 = await cached(S.page);
+  ok(caches2.length === 6 && new Set(caches2.map((x) => x.split(" ")[0])).size === 1,
+    "the old version's cache was not cleared: " + caches2.join(" | "));
+  await S.ctx.close();
+  await down();
+  await fs.rm(pdir, { recursive: true, force: true });
+
+  /* The same folder on a plain web host (dist/web/, in a folder of the
+     host): installable, and with no server behind it the program runs
+     offline in full — progress in this browser, as from a file. */
+  const WEB = path.join(path.dirname(HTML), "web");
+  if (!existsSync(path.join(WEB, "sw.js"))) {
+    ok(process.argv[2], "dist/web/ is missing — tools/build.mjs writes it beside the HTML");
+  } else {
+    const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".png": "image/png",
+      ".webmanifest": "application/manifest+json" };
+    const host = http.createServer(async (req, res) => {
+      const u = new URL(req.url, "http://x");
+      const name = u.pathname === "/skoli/" ? "index.html" : u.pathname.replace(/^\/skoli\//, "");
+      if (!u.pathname.startsWith("/skoli/") || name.includes("/") || !existsSync(path.join(WEB, name))) {
+        res.writeHead(404, { "Content-Type": "text/html" }); return res.end("<h1>404</h1>");
+      }
+      const body = await fs.readFile(path.join(WEB, name));
+      res.writeHead(200, { "Content-Type": TYPES[path.extname(name)] || "application/octet-stream", "Cache-Control": "no-cache" });
+      res.end(body);
+    });
+    await new Promise((r) => host.listen(0, "127.0.0.1", r));
+    const HB = `http://127.0.0.1:${host.address().port}/skoli`;
+    const W = await fresh();
+    await W.page.goto(HB + "/", { waitUntil: "domcontentloaded" });
+    await startPractice(W.page, 30000);
+    await W.page.waitForFunction("navigator.serviceWorker.controller", { timeout: 60000 });
+    const wcdp = await W.page.createCDPSession();
+    const wman = await wcdp.send("Page.getAppManifest");
+    ok(wman.url === HB + "/manifest.webmanifest" && wman.errors.length === 0, "the web folder's manifest: " + JSON.stringify(wman.errors));
+    await W.page.evaluate(() => { window.FALLASKOLI.S.xp = 4321; return window.FALLASKOLI.save(true); });
+    const xp = 4321;
+    await new Promise((r) => { host.close(r); host.closeAllConnections(); });
+    await W.page.reload({ waitUntil: "domcontentloaded" });
+    await startPractice(W.page, 30000);
+    const offline = await W.page.evaluate(() => ({ server: !!window.FALLASKOLI.server,
+      xp: window.FALLASKOLI.S.xp, offlineCard: !!document.getElementById("offline") }));
+    ok(!offline.server && !offline.offlineCard && offline.xp === xp,
+      "the web folder did not open offline with its progress: " + JSON.stringify({ ...offline, before: xp }));
+    await W.ctx.close();
+  }
 }
 
 await browser.close();

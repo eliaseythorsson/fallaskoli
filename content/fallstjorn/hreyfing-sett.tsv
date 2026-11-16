@@ -1,0 +1,85 @@
+# Fallstjórn: hreyfing og kyrrstaða í settum
+#
+# Ein forsetning, setningar um hreyfingu, setningar um kyrrstöðu og nafnorð sem passa
+# í þær allar. Hver hreyfingarsetning og hver kyrrstöðusetning mynda par með hverju nafnorði.
+#
+# Dálkar:
+#   sett        númer settsins; línur með sama númeri eiga saman
+#   forsetning  forsetningin
+#   dálkur      tala og greinir nafnorðsins
+#   gerð        hreyfing, kyrrstaða eða nafnorð
+#   texti       setning (___ er nafnorðið), eða nafnorð settsins aðskilin með kommu
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Motion and rest as SETS (critique item 23): one preposition, sentences of
+# motion, sentences of rest, and nouns that fit every one of them. Every
+# motion sentence × every rest sentence × every noun is a pair (item 43: both
+# halves on one card), so a set of 3 + 3 sentences and 8 nouns makes 72.
+#
+# Each half must have exactly one right answer (item 6 found *flaug yfir
+# fjallið / fjallinu* and *skreið undir borðið / borðinu*, both good). So:
+#   motion  a verb that needs a goal — leggja, setja, stinga, henda,
+#           fara, ganga/hlaupa/koma INN Í, stökkva UPP Á, rúlla INN UNDIR;
+#   rest    a verb of being somewhere — vera, liggja, sitja, bíða, sofa,
+#           geyma, hittast, INNI Í;
+#   never   yfir, and never undir without *inn* (both cases are right there);
+#           no verb that takes either (fela, finna, leika sér, hoppa).
+# Each noun must take the set's preposition in both senses (*á völlinn* /
+# *á vellinum*), and none may be a time word (*í dag*).
+#
+# Level = length (sentences.py's table), the pair as hard as its harder half.
+#
+
+sett	forsetning	dálkur	gerð	texti
+1	á	ETgr	hreyfing	Ég lagði bókina á ___.
+1	á	ETgr	hreyfing	Hún setti töskuna á ___.
+1	á	ETgr	hreyfing	Strákurinn henti úlpunni sinni á ___.
+1	á	ETgr	hreyfing	Mamma lagði hreinu fötin varlega á ___.
+1	á	ETgr	kyrrstaða	Bókin liggur á ___.
+1	á	ETgr	kyrrstaða	Taskan er á ___.
+1	á	ETgr	kyrrstaða	Hreinu fötin liggja enn þá á ___.
+1	á	ETgr	kyrrstaða	Úlpan hans hefur legið á ___ í allan dag.
+1	á	ETgr	nafnorð	borð, stóll, sófi, rúm, gólf, hilla, bekkur, skrifborð
+2	í	ETgr	hreyfing	Ég setti lykilinn í ___.
+2	í	ETgr	hreyfing	Hún stakk símanum í ___.
+2	í	ETgr	hreyfing	Pabbi setti peningana sína í ___.
+2	í	ETgr	hreyfing	Ég stakk bréfunum varlega í ___.
+2	í	ETgr	kyrrstaða	Lykillinn er í ___.
+2	í	ETgr	kyrrstaða	Síminn liggur í ___.
+2	í	ETgr	kyrrstaða	Peningarnir hans eru alltaf geymdir í ___.
+2	í	ETgr	kyrrstaða	Bréfin hafa legið lengi í ___.
+2	í	ETgr	nafnorð	skúffa, taska, poki, kassi, skápur, vasi, bakpoki
+3	í	ETgr	hreyfing	Við fórum í ___.
+3	í	ETgr	hreyfing	Hann gekk inn í ___.
+3	í	ETgr	hreyfing	Hún flýtti sér inn í ___.
+3	í	ETgr	hreyfing	Krakkarnir hlupu beint inn í ___ eftir skóla.
+3	í	ETgr	kyrrstaða	Við vorum í ___.
+3	í	ETgr	kyrrstaða	Hann beið í ___.
+3	í	ETgr	kyrrstaða	Hún stóð lengi í ___.
+3	í	ETgr	kyrrstaða	Krakkarnir voru lengi inni í ___ í gær.
+3	í	ETgr	nafnorð	eldhús, stofa, herbergi, búð, kirkja, bakarí, íþróttahús, bókabúð
+4	á	ETgr	hreyfing	Við fórum á ___.
+4	á	ETgr	hreyfing	Pabbi keyrði okkur á ___.
+4	á	ETgr	hreyfing	Við fórum saman á ___ í morgun.
+4	á	ETgr	hreyfing	Afi fór með okkur á ___ um helgina.
+4	á	ETgr	kyrrstaða	Við vorum á ___.
+4	á	ETgr	kyrrstaða	Hann beið á ___.
+4	á	ETgr	kyrrstaða	Við hittumst á ___ í morgun.
+4	á	ETgr	kyrrstaða	Við biðum lengi á ___ í gær.
+4	á	ETgr	nafnorð	völlur, strönd, bryggja, torg, flugvöllur, bensínstöð, pósthús, sjúkrahús
+5	á	ETgr	hreyfing	Kötturinn stökk upp á ___.
+5	á	ETgr	hreyfing	Fuglinn flaug upp á ___.
+5	á	ETgr	kyrrstaða	Kötturinn situr á ___.
+5	á	ETgr	kyrrstaða	Fuglinn situr á ___.
+5	á	ETgr	kyrrstaða	Kötturinn hefur legið á ___ í allan dag.
+5	á	ETgr	nafnorð	borð, stóll, þak, sófi, bekkur, kassi, girðing, skápur, steinn
+6	undir	ETgr	hreyfing	Boltinn rúllaði inn undir ___.
+6	undir	ETgr	hreyfing	Kötturinn skreið inn undir ___.
+6	undir	ETgr	kyrrstaða	Boltinn liggur undir ___.
+6	undir	ETgr	kyrrstaða	Kötturinn sefur undir ___.
+6	undir	ETgr	nafnorð	sófi, rúm, borð, stóll, bekkur, skápur

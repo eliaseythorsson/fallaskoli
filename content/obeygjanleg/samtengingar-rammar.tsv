@@ -1,0 +1,54 @@
+# Óbeygjanleg orð: rammar samtenginga
+#
+# Rammar þar sem málfræðin skilur aðeins eftir einn kost.
+#
+# Dálkar:
+#   listi  bæði, hvorki, annaðhvort, sem, að, hvort-rammi eða hvort-setning
+#   texti  ramminn (___ er samtengingin, {A} og {B} parið, {C} hvort-setning) eða hvort-setningin sjálf
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+
+listi	texti
+bæði	Bæði {A} ___ {B} komu í veisluna.
+bæði	Bæði {A} ___ {B} fóru í sund.
+bæði	Bæði {A} ___ {B} voru heima í gær.
+bæði	Bæði {A} ___ {B} ætla að koma í afmælið mitt á laugardaginn.
+hvorki	Hvorki {A} ___ {B} komu í veisluna.
+hvorki	Hvorki {A} ___ {B} vissu svarið.
+hvorki	Hvorki {A} ___ {B} voru heima í gær.
+hvorki	Hvorki {A} ___ {B} höfðu heyrt um nýja kennarann.
+hvorki	Hvorki {A} ___ {B} vissu hvað hafði gerst í skólanum í gær.
+annaðhvort	Annaðhvort {A} ___ {B} sækir mig í dag.
+annaðhvort	Annaðhvort {A} ___ {B} eldar matinn í kvöld.
+annaðhvort	Annaðhvort {A} ___ {B} hringir í mig á morgun.
+annaðhvort	Annaðhvort {A} ___ {B} ætlar að sækja mig á æfinguna í kvöld.
+hvort-rammi	Ég veit ekki ___ {C}.
+hvort-rammi	Ég man ekki ___ {C}.
+hvort-rammi	Við vitum ekki ___ {C}.
+hvort-setning	hún kemur á morgun
+hvort-setning	búðin er opin í dag
+hvort-setning	skólinn byrjar á mánudaginn
+hvort-setning	amma er heima
+hvort-setning	strætó er farinn
+hvort-setning	við eigum að mæta klukkan átta
+hvort-setning	sundlaugin er opin á sunnudögum
+hvort-setning	búðin á horninu er opin lengur á föstudögum
+hvort-setning	við eigum að skila verkefninu á morgun
+hvort-setning	nýi kennarinn byrjar að kenna okkur í næstu viku
+sem	Bókin ___ ég las var spennandi.
+sem	Myndin ___ við sáum var löng.
+sem	Kakan ___ mamma bakaði var góð.
+sem	Hundurinn ___ ég fann var svangur.
+sem	Lagið ___ hún söng var fallegt.
+sem	Peysan ___ amma prjónaði er hlý.
+sem	Rútan ___ við tókum var full.
+sem	Leikurinn ___ við spiluðum var skemmtilegur.
+að	Hún sagði ___ hún væri svöng.
+að	Pabbi sagði ___ maturinn væri tilbúinn.
+að	Kennarinn sagði ___ prófið yrði á morgun.
+að	Amma sagði ___ hún kæmi í heimsókn.
+að	Hann hélt ___ búðin væri lokuð.
+að	Ég vona ___ veðrið verði gott á morgun.

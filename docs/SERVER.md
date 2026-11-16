@@ -85,7 +85,8 @@ cd <the path to the fallaskoli folder>
 ```
 
 This takes a few minutes the first time. **You should see** the line
-`built fallaskoli-v6.3.html` at the end. If it stops, the message says why: a
+`built dist/fallaskoli-v<version>.html` at the end (the version is in
+`package.json`). If it stops, the message says why: a
 missing Python, a data change waiting for `--accept`, or a failing test.
 
 ### 1.4 Create your administrator account
@@ -161,8 +162,9 @@ first time he logs in **in the same browser he practised in**: the progress move
 up to the server and the local copy is left untouched.
 
 If it is a different browser or a different computer: open the old file there, go
-to the **Gögn** tab, press **Flytja út**, then log in on the server and press
-**Flytja inn** with the file that was produced.
+to **Stillingar og námsefni → Færa milli tækja** and press **Afrita framvindu**
+(the progress is copied as text; save it in a file), then log in on the server,
+open the same place and press **Líma inn framvindu** or **Lesa inn skrá** with it.
 
 Do this **before** you start using the server in earnest. Moving progress is the
 only operation in the whole program that can lose data, and it is simple while
@@ -242,17 +244,17 @@ The easiest way is to copy across the zip file you were given. On **your own
 computer**, in a new command window:
 
 ```
-scp fallaskoli-v6.3-src.zip root@203.0.113.45:/opt/
+scp fallaskoli-v<version>-src.zip root@203.0.113.45:/opt/   # the zip you were given
 ```
 
 Then, back on the machine:
 
 ```
-cd /opt && apt install -y unzip && unzip fallaskoli-v6.3-src.zip
-mv fallaskoli-v6.3 fallaskoli && cd fallaskoli && ./build.sh
+cd /opt && apt install -y unzip && unzip fallaskoli-v<version>-src.zip
+mv fallaskoli-v<version> fallaskoli && cd fallaskoli && ./build.sh
 ```
 
-The build takes a few minutes. **You should see** `built fallaskoli-v6.3.html`.
+The build takes a few minutes. **You should see** `built dist/fallaskoli-v<version>.html`.
 
 ### 2.5 Create the accounts and try it
 
@@ -311,7 +313,7 @@ WantedBy=multi-user.target
 END
 ```
 
-(`/opt/fallaskoli` is the folder from 2.4, renamed from `fallaskoli-v6.3` so the
+(`/opt/fallaskoli` is the folder from 2.4, renamed from `fallaskoli-v<version>` so the
 name does not change with every version. Run the admin tool as the same user
 and with the same data folder:
 `sudo -u fallaskoli FALLASKOLI_DATA=/var/lib/fallaskoli node server/admin.mjs listi`.)
@@ -446,7 +448,7 @@ and anything already pointed at it keeps working.)
 
 ### 4.1 The admin page
 
-It is at the bottom of the **Gögn** tab and **only you can see it**. It holds:
+It is the **Umsjón** section of **Stillingar og námsefni** and **only you can see it**. It holds:
 
 - **The data set** — one button. You choose the JSON file once and it goes up
   whole. After that every word definition comes from there and the program
@@ -601,6 +603,105 @@ as `tests/fixtures/wrong-answers.json` it becomes part of the test suite.
 **Before a teacher switches it on, the families of that group should be told**
 (`docs/PRIVACY.md` §1b).
 
+### 4.4 How many pupils one server carries (v6.13)
+
+**In one sentence:** one server carries **about 300 pupils practising in the
+same few minutes** with every answer saved in well under a second; around 500
+it starts to make pupils wait, and at 1,000 at once it fails. Only pupils
+practising *at the same time* count — a school of 1,000 whose classes practise
+in different lessons is a few hundred at once. **On Fly.io give the machine
+1 GB of memory** before more than about 150 pupils use it at once (below).
+
+**How it was measured.** `node tools/load-test.mjs` (the method is written at
+the top of that file) starts the real server on a fresh temporary data folder,
+with N pupils in classes of 25 and a teacher for each class, every pupil with a
+real state made by the program's own simulator (38 KB on average: three weeks
+to three months of practice). Everybody logs in; then **all N practise at
+once**: each opens the program at a random moment in the first minute (the
+eleven requests a page load makes), answers a question every 12 seconds or so
+(each answer saves the state), sends the anonymous calibration counts, ends a
+session every ten answers (the board, the class goal and the assignments again,
+the assignment result, and one time in five a duel with a classmate), while the
+teachers look at their class page. It reports how long every kind of request
+took, every error, the server's CPU and memory, and how the data folder grew.
+
+```
+node tools/load-test.mjs --pupils 30,300 --seconds 150 --arrive 60
+node tools/load-test.mjs --pupils 1000 --profile      # where the CPU goes
+```
+
+**What it measured** (November 2026, v6.13 before release; a container with
+2 CPUs, Node 22.23.4, which other jobs were sharing — two runs of the same size
+differed by a factor of ten at the slow end, so read the table as sizes):
+
+| pupils at once | errors | saving an answer, p95 | opening the program, p95 | server CPU, mean / busiest second | memory, peak |
+|---:|---:|---:|---:|---:|---:|
+| 30 | 0 | 73 ms | 0.2 s | 3% / 42% | 314 MB |
+| 150 | 0 | 78 ms | 0.4 s | 10% / 42% | 375 MB |
+| 300 | 0 | 94 ms (2.3 s in a run while the machine was busy with other work) | 0.2 s (0.6 s) | 32% / 100% | 467–556 MB |
+| 500 | 0 | 301 ms | 1.1 s | 42% / 98% | 628 MB |
+| 1,000 | ≈ 3,100 requests; 14% of pupils could not open the program | 2.9–3.6 s | 82 s | 53–58% / 100% | 1.1 GB |
+
+(Saving: after everybody had arrived. Opening: all eleven requests of a page
+load. CPU: of one core — Node answers on one thread, so a second at 100% is a
+second in which everybody waits.)
+
+At 1,000 the first minute is the end of it: a thousand page loads arrive
+faster than one thread can answer them, requests queue for over a minute, and
+the server's own 60-second limit cuts them off — pupils would see the program
+fail to open. Nothing was lost on the server side: every save that arrived was
+written whole.
+
+**What gives way first, and why.** The profile (`--profile`): the largest
+single cost is `clone` in `server/store.mjs` — every request makes a full copy
+of the list of users and the list of sessions, so each request costs more the
+more accounts there are, and the total grows with the *square* of the number
+of pupils. At 500 pupils it was 40% of the time the server was busy; at 1,000,
+with the garbage collector clearing up after it, nearly two-thirds. The
+second is that every write — a save, a duel, the calibration counts, a login —
+waits in one queue (`serial` in store.mjs), each as a chain of file
+operations. Disk is not the problem: a state is rewritten in place, so the
+data folder grows by the size of the states (≈ 40 KB per pupil after a few
+months; 1,000 pupils ≈ 40 MB), not by the number of answers.
+
+**Memory is the limit on Fly.io before the processor is.** The server holds
+every pupil's state in memory along with what it works out from them (the
+board, rarity): about 250 MB for the program and its vocabulary, and roughly
+0.7–1 MB more per pupil practising. `fly.toml` gives the machine 512 MB, which
+is enough for a family or two classes (≈ 150 at once). For more, set
+`memory = "1gb"` under `[[vm]]` and deploy (about 2 USD a month more).
+
+**When the limit comes near, in this order:**
+
+1. *The cheap fixes, in `server/store.mjs` alone* (a day's work, measured with
+   the same script before and after): hand out the cached users and sessions
+   frozen, as the states already are, instead of copying them on every read,
+   and look a session up by its hash in a `Map`; give each file its own write
+   queue, so a pupil's save never waits behind somebody else's duel. These
+   address the two costs above and should move the ceiling well past 500.
+2. *Then SQLite*, when a school wants more than one server's worth of pupils
+   at once, or the JSON files pass a few hundred megabytes. The plan:
+   - `node:sqlite`, which is built into Node (no package to install; check
+     its status in the Node version of the day — it was still marked
+     experimental in Node 22). One file, `fallaskoli.db`, in the same data
+     folder, in WAL mode. Tables: users, sessions, states (id, rev, at, json),
+     duels, assignments, groups, policies, invites, audit, reports, calibration,
+     the calibration quota and the samples — one per JSON file today.
+   - `server/store.mjs` is the only file that changes: everything the server
+     does with data already passes through it, and its functions keep their
+     names and promises, so the whole test suite runs unchanged against it.
+     A save becomes one synchronous transaction (well under a millisecond);
+     the revision check becomes `UPDATE … WHERE rev = ?`.
+   - Moving over: on the first start with no `fallaskoli.db`, everything in
+     the JSON files is read in one transaction, and the files are renamed
+     `*.pre-sqlite` and deleted after 30 days (the privacy notice's promise
+     about copies). Backups keep their format (`backup.mjs` goes through
+     `exportAll`/`importAll`), so an old backup restores into the new store.
+   - Still one machine and one process: SQLite does not change
+     "never `fly scale count 2`".
+   - Then `tools/load-test.mjs` again, with 1,000 at once on 1 GB as the
+     target, and this section rewritten with what it measures.
+
 ---
 
 ## Part 5 — upgrading to a new version
@@ -611,8 +712,8 @@ On your own machine, with the service file from 2.6:
 
 ```
 systemctl stop fallaskoli
-cd /opt && unzip -o fallaskoli-v6.3-src.zip
-rm -rf /opt/fallaskoli && mv /opt/fallaskoli-v6.3 /opt/fallaskoli
+cd /opt && unzip -o fallaskoli-v<version>-src.zip
+rm -rf /opt/fallaskoli && mv /opt/fallaskoli-v<version> /opt/fallaskoli
 cd /opt/fallaskoli && ./build.sh
 systemctl start fallaskoli
 ```
@@ -677,7 +778,7 @@ So that you know what you are putting on the internet, without varnish:
 | The page does not load | `systemctl status fallaskoli` — is it `active (running)`? |
 | `502 Bad Gateway` | Caddy is running but the server is not. `systemctl restart fallaskoli` |
 | No padlock in the address bar | The domain does not point at the machine yet. Wait and try `ping` |
-| `Beðið eftir samþykki` | Correct behaviour — admit them on the **Gögn** tab |
+| `Beðið eftir samþykki` | Correct behaviour — admit them under **Umsjón → Notendur** (*Hleypa inn*) |
 | The login clears itself and nothing happens, no error | The password was right — the browser threw away the login cookie because the server marked it "https only" while you are on plain `http`. Safari does this; Chrome does not. Fixed in `server/server.mjs`: stop the server with `Ctrl` + `C` and start it again. If it persists, try the same login in Chrome to confirm that is what you are looking at |
 | The child cannot see his progress | Did he log into the right account? See 1.7 |
 | The projector says *Tengist…* and nothing moves, or the pupils' screens lag a question behind | Something between the browser and the server holds the live round's events back. Caddy and Fly.io do not; another proxy must not buffer `text/event-stream` (4.2) |

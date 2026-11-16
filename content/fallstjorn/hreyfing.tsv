@@ -1,0 +1,67 @@
+# Fallstjórn: hreyfing eða kyrrstaða
+#
+# Þolfall (hreyfing) eða þágufall (kyrrstaða) á eftir í, á, undir, yfir. Hver setning
+# verður að hafa EITT rétt svar.
+#
+# Dálkar:
+#   þyngd     1–5
+#   setning   setningin; ___ er nafnorðið
+#   nafnorð   nafnorðið (uppflettimynd)
+#   dálkur    tala og greinir nafnorðsins (ETgr: eintala með greini)
+#   hreyfing  já: hreyfing (þolfall); nei: kyrrstaða (þágufall)
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Motion (þolfall) or rest (þágufall) after í / á / undir / yfir.
+# (level, sentence, noun, column, motion?)
+#
+# Each item must have ONE right answer. A verb of moving (fljúga, skríða,
+# rúlla, ganga, stökkva) can also mean moving about IN a place, and then the
+# þágufall is right too: "Hundurinn skreið undir borðinu" (crawled about
+# under it) is as good as "undir borðið". So every motion item carries a word
+# that fixes the direction: a directional adverb before the preposition (inn,
+# út, upp), a verb of placing (leggja, setja, hengja, stinga, hella), or a
+# goal in the rest of the sentence (til mín, og settist þar). Six motion
+# items were rewritten for this in v6.13 (critique item 6).
+# Level = length; +1 for undir/yfir (less drilled than í/á), +1 where
+# something else in the sentence pulls the other way: a dative object before
+# the preposition (stakk símanum í ___), or an activity at rest (lék sér á ___).
+#
+
+þyngd	setning	nafnorð	dálkur	hreyfing
+1	Ég lagði bókina á ___.	borð	ETgr	já
+1	Bókin liggur á ___.	borð	ETgr	nei
+2	Kötturinn stökk upp í ___ til mín.	rúm	ETgr	já
+1	Kötturinn sefur í ___.	rúm	ETgr	nei
+2	Við fórum í ___ eftir skóla.	búð	ETgr	já
+2	Við hittumst í ___ eftir skóla.	búð	ETgr	nei
+2	Hún setti mjólkina inn í ___.	ísskápur	ETgr	já
+1	Mjólkin er í ___.	ísskápur	ETgr	nei
+1	Strákurinn hljóp út á ___.	gata	ETgr	já
+2	Strákurinn lék sér á ___.	gata	ETgr	nei
+3	Fuglinn flaug upp á ___ og settist þar.	þak	ETgr	já
+1	Fuglinn situr á ___.	þak	ETgr	nei
+1	Ég hengdi myndina á ___.	veggur	ETgr	já
+1	Myndin hangir á ___.	veggur	ETgr	nei
+1	Við keyrðum inn í ___.	bær	ETgr	já
+1	Við búum í ___.	bær	ETgr	nei
+2	Hann stakk símanum í ___.	vasi	ETgr	já
+1	Síminn er í ___.	vasi	ETgr	nei
+2	Boltinn rúllaði inn undir ___.	sófi	ETgr	já
+2	Boltinn liggur undir ___.	sófi	ETgr	nei
+2	Hesturinn stökk yfir ___.	girðing	ETgr	já
+2	Skýið hangir yfir ___.	fjall	ETgr	nei
+1	Krakkarnir hlupu út á ___.	völlur	ETgr	já
+2	Krakkarnir spila fótbolta á ___.	völlur	ETgr	nei
+2	Hún hellti vatni í ___.	glas	ETgr	já
+1	Vatnið er í ___.	glas	ETgr	nei
+2	Hundurinn skreið inn undir ___.	borð	ETgr	já
+2	Hundurinn sefur undir ___.	borð	ETgr	nei
+1	Ég setti diskana í ___.	skápur	ETgr	já
+1	Diskarnir eru í ___.	skápur	ETgr	nei
+2	Við gengum alla leið upp á ___.	hæð	ETgr	já
+1	Við stóðum á ___.	hæð	ETgr	nei

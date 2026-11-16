@@ -1,0 +1,59 @@
+# Fallstjórn: sögn sem stýrir falli
+#
+# Aðeins setningar þar sem SÖGNIN ræður fallinu, ekki forsetning.
+#
+# Dálkar:
+#   þyngd    1–5
+#   setning  setningin; ___ er nafnorðið
+#   sögn     sögnin (nafnháttur)
+#   fall     fallið sem sögnin stýrir
+#   dálkur   tala og greinir nafnorðsins
+#   nafnorð  nafnorðin, aðskilin með kommu
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# A verb that governs a case. {V} is not used: the verb is written out. The
+# noun is asked in the column given (ETgr: singular with the article); the
+# cue is the noun's nominative in that column.
+#
+# Only items where the VERB governs the case. The app explains each one as
+# "Sögnin X stýrir …falli. Prófaðu: X mér/mín", so a case set by a
+# preposition (hlakka TIL e-s: til stýrir eignarfalli) or by a fixed phrase
+# does not belong here; the build stops on a preposition right before the
+# blank. "Ég hlakka til ___" was here until v6.13 (critique item 5); the
+# preposition cloze already asks it from the sentence bank (Ég hlakka til
+# sumarsins / afmælisins / ferðanna), where the lead says "Forsetningin til
+# ræður fallinu".
+# Level = length + 1; +1 for the genitive, +1 for a verb that is not
+# everyday (þarfnast, gæta, njóta) or that takes another case than the verb
+# it resembles (aðstoða þolfall, hjálpa þágufall; óttast þolfall).
+#
+
+þyngd	setning	sögn	fall	dálkur	nafnorð
+3	Ég hjálpaði ___ að bera pokana.	hjálpa	ÞGF	ETgr	kennari, nágranni, stelpa, strákur
+3	Ég sakna ___ mjög mikið.	sakna	EF	ETgr	hundur, köttur, vinur, kennari
+2	Við þökkuðum ___ fyrir matinn.	þakka	ÞGF	ETgr	kokkur, kona, maður
+3	Á leiðinni heim mætti ég ___.	mæta	ÞGF	ET	maður, kona, hundur, lögreglumaður
+4	Við biðum ___ í hálftíma.	bíða	EF	ETgr	strætisvagn, lest, læknir
+4	Hún leitaði ___ um allt hús.	leita	EF	ETgr	lykill, sími, köttur, taska
+2	Ég gleymdi ___ heima.	gleyma	ÞGF	ETgr	sími, nesti, taska, lykill
+2	Strákurinn týndi ___ í gær.	týna	ÞGF	ETgr	lykill, húfa, vettlingur, bolti
+2	Ég treysti ___ fullkomlega.	treysta	ÞGF	ETgr	læknir, þjálfari, kennari
+4	Við nutum ___ í sveitinni.	njóta	EF	ETgr	útsýni, sól:kvk, kyrrð
+2	Hún kastaði ___ yfir girðinguna.	kasta	ÞGF	ETgr	bolti, steinn, spýta
+2	Ég henti ___ í ruslið.	henda	ÞGF	ETgr	blað, flaska, dós
+2	Þjófurinn stal ___.	stela	ÞGF	ETgr	hjól, veski, bíll
+2	Ég heilsaði ___ á ganginum.	heilsa	ÞGF	ETgr	kennari, skólastjóri, húsvörður
+2	Hundurinn fylgdi ___ heim.	fylgja	ÞGF	ETgr	strákur, stelpa, maður
+3	Ég aðstoðaði ___ í eldhúsinu.	aðstoða	ÞF	ETgr	kokkur, bakari, smiður
+3	Ég spurði ___ til vegar.	spyrja	ÞF	ETgr	lögreglumaður, kona, maður
+3	Litla stelpan óttaðist ___.	óttast	ÞF	ETgr	hundur, myrkur, þruma
+4	Garðurinn þarfnast ___.	þarfnast	EF	ET	vatn, umhirða, áburður
+2	Hún bjargaði ___ úr ánni.	bjarga	ÞGF	ETgr	hundur, kettlingur, strákur
+2	Við fögnuðum ___ með köku.	fagna	ÞGF	ETgr	sigur, afmæli, vor
+2	Ég lofaði ___ að koma.	lofa	ÞGF	ETgr	þjálfari, kennari, nágranni
+4	Hann gætti ___ allan daginn.	gæta	EF	ETgr	barn, hundur, búð

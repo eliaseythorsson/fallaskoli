@@ -1,0 +1,35 @@
+# The build container's Python packages, locked (item 80, Dockerfile.build).
+#
+# requirements.txt says WHICH grammar libraries the data is built with and is
+# what a person installs by hand. This file pins the whole set — the three
+# libraries and everything they pull in — to exact files by their SHA-256, for
+# CPython 3.13 on x86_64 Linux, the platform the committed data was built on.
+# `pip install --require-hashes --only-binary=:all:` installs exactly these
+# bytes or stops; nothing is compiled, so no compiler can change a parse.
+#
+# Why the platform is part of the pin: with the very same versions, a build
+# on an ARM Linux VM (where pip compiles reynir's parser from source, because
+# no ARM wheel exists) parsed one token differently from this x86_64 wheel —
+# see the commit "chore: accept the Linux-container parse baseline".
+#
+# Changing a line here is changing the grammar the data is built with: do it
+# together with requirements.txt, run ./build-in-container.sh, and read the
+# parse-diff before `--accept` (CLAUDE.md).
+#
+# Hashes taken from PyPI with `pip download --only-binary=:all:
+#   --python-version 3.13 --platform manylinux_2_28_x86_64 …` and sha256sum.
+
+islenska==1.3.2 \
+    --hash=sha256:1df0528480b988cad6ac1b72a8e221fbd36a02452b5b909fc127ee9c0e845a11
+reynir==3.8.0 \
+    --hash=sha256:10b6c0cab799ec239afa09733f2a8613a7cb179c018297c558cce5851a13042d
+tokenizer==3.6.4 \
+    --hash=sha256:ed99ff113688506f16b754341d9569da194d5926a065a7c0555fb024e0c0d9a1
+cffi==2.1.1 \
+    --hash=sha256:a931079504ecc49efed7744c476a5c343a92fabf66dec2db95edb1b2fdc770e2
+pycparser==3.0 \
+    --hash=sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992
+filelock==4.2.10 \
+    --hash=sha256:9479aaeb4db20b5a53e3da28493edd24720b66b8a0b84030aa56ccdf243d6857
+typing_extensions==4.16.0 \
+    --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8

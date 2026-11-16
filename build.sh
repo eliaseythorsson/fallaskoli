@@ -68,6 +68,7 @@ node --test tests/*.test.js
 
 echo "── 6. bundle ───────────────────────────────────────────────────────"
 node tools/build.mjs          # ES modules -> dist/fallaskoli-v<version>.html
+node tools/review.mjs         # every hand-written item on one page -> dist/review.html
 
 echo "── 7. real Chromium on the built file ──────────────────────────────"
 # The browser test exits 2 when, and only when, no Chromium is available.

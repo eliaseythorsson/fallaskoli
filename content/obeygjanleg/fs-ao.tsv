@@ -1,0 +1,43 @@
+# Óbeygjanleg orð: forsetning eða atviksorð
+#
+# Sama orðið með og án orðs sem það stýrir.
+#
+# Dálkar:
+#   þyngd    1–5
+#   setning  setningin
+#   orð      orðið sem spurt er um
+#   flokkur  fs: forsetning; ao: atviksorð
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Preposition or adverb: the same word with and without a governed word.
+# (level, sentence, the word, "fs" | "ao")
+# Level = length + 1; +1 where the word is part of a fixed phrase (fram hjá,
+# fyrir utan, ganga yfir, fara undir) or stands right before a preposition
+# (upp á) — the hardest contrast.
+#
+
+þyngd	setning	orð	flokkur
+2	Hún hljóp upp stigann.	upp	fs
+2	Hún leit upp.	upp	ao
+2	Við gengum yfir brúna.	yfir	fs
+3	Óveðrið gekk yfir.	yfir	ao
+2	Hún fór niður brekkuna.	niður	fs
+2	Hún datt niður.	niður	ao
+2	Ég fór með mömmu.	með	fs
+2	Má ég koma með?	með	ao
+2	Hún kom eftir matinn.	eftir	fs
+3	Kakan er búin og ekkert er eftir.	eftir	ao
+2	Kötturinn skreið undir rúmið.	undir	fs
+2	Barnið hljóp út.	út	ao
+3	Kötturinn stökk upp á borðið.	upp	ao
+3	Kötturinn stökk upp á borðið.	á	fs
+3	Hann gekk fram hjá húsinu.	hjá	fs
+2	Komdu inn!	inn	ao
+3	Ég beið fyrir utan.	utan	ao
+3	Hann bjó utan bæjarins.	utan	fs
+2	Sólin skein á okkur.	á	fs

@@ -1,0 +1,68 @@
+# Lýsingarorð: rammar
+#
+# Rammar fyrir lo_beyging, lo_stig og lo_samr. Forritið setur nafnorð úr hópunum í
+# {N} og lýsingarorð sem á við það í eyðuna; allar myndir koma úr BÍN.
+#
+# Dálkar:
+#   þyngd    1–5
+#   rammi    setningin; ___ er lýsingarorðið, {N} nafnorðið
+#   mark     BÍN-mark nafnorðsins (fall, tala, greinir)
+#   beyging  stig og beyging lýsingarorðsins: FSB/FVB frumstig sterk/veik, MST miðstig, EVB efsta stig veik
+#   hópar    nafnorðahópar (nafnordahopar.tsv), aðskildir með bili
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# the same with the article
+#
+# what one looks for in the house: not a place or a country
+#
+
+þyngd	rammi	mark	beyging	hópar
+# frumstig, strong: no article
+1	Þetta er ___ {N}.	NFET	FSB	people animals things vehicles soft drinks fruit ideas places rooms
+1	Þetta var ___ {N}.	NFET	FSB	times
+1	Ég sá ___ {N} í gær.	ÞFET	FSB	people animals things vehicles
+1	Ég fann ___ {N}.	ÞFET	FSB	things soft fruit
+1	Þarna er ___ {N}.	NFET	FSB	people animals things vehicles soft fruit drinks
+2	Við bjuggum í ___ {N}.	ÞGFET	FSB	homes
+2	Hér eru ___ {N}.	NFFT	FSB	people animals things vehicles soft fruit
+3	Við fórum til ___ {N} í sumar.	EFET	FSB	places
+3	Við hjálpuðum ___ {N}.	ÞGFFT	FSB	people
+# frumstig, weak: with the article
+1	Ég sá ___ {N} í gær.	ÞFETgr	FVB	people animals things vehicles
+1	Hvar er ___ {N}?	NFETgr	FVB	people animals things vehicles soft rooms fruit drinks
+1	Við töluðum um ___ {N}.	ÞFETgr	FVB	people animals things vehicles soft drinks fruit answers places rooms times
+2	Hvar eru ___ {N}?	NFFTgr	FVB	people animals things vehicles soft rooms fruit drinks
+3	Ég man vel eftir ___ {N}.	ÞGFETgr	FVB	people animals things vehicles soft drinks fruit answers places rooms times
+# frumstig, predicative: strong, agreeing with the subject (lo_samr)
+1	{N} er ___.	NFETgr	FSB	people animals things vehicles soft drinks fruit answers places rooms
+1	{N} var ___.	NFETgr	FSB	times
+1	Mér finnst {N} ___.	NFETgr	FSB	answers times
+2	{N} eru ___.	NFFTgr	FSB	people animals things vehicles soft drinks fruit answers places rooms
+2	{N} voru ___.	NFFTgr	FSB	times
+# miðstig
+2	Hún fékk ___ {N} en ég.	ÞFET	MST	things soft fruit drinks bedroom
+1	Þetta er ___ {N}.	NFET	MST	ideas
+2	{N} er ___ en ég hélt.	NFETgr	MST	people animals things vehicles soft drinks fruit answers places rooms
+2	{N} var ___ en ég hélt.	NFETgr	MST	times
+2	Ég á ___ {N} en þú.	ÞFET	MST	animals things soft
+2	Hún fann ___ {N} en ég.	ÞFET	MST	ideas
+2	Þetta er ___ {N} en ég hélt.	NFET	MST	people animals things vehicles soft drinks fruit ideas places rooms
+3	Hann býr í ___ {N} en ég.	ÞGFET	MST	homes
+3	{N} eru ___ en ég hélt.	NFFTgr	MST	people animals things vehicles soft drinks fruit answers places rooms
+# efsta stig, weak: with the article
+1	Þetta er ___ {N}.	NFETgr	EVB	ideas
+# not people or rooms: "Hvar er sælasti maðurinn?"
+1	Hvar er ___ {N}?	NFETgr	EVB	animals things vehicles soft fruit drinks
+1	Ég tók ___ {N}.	ÞFETgr	EVB	things soft drinks fruit bedroom
+2	Þetta er ___ {N} sem ég þekki.	NFETgr	EVB	people
+2	Þetta var ___ {N} í sumar.	NFETgr	EVB	times
+2	Ég sá ___ {N} í búðinni.	ÞFETgr	EVB	shop
+3	Þetta er ___ {N} sem ég hef séð.	NFETgr	EVB	animals things vehicles soft places rooms
+3	Þetta eru ___ {N} í bænum.	NFFTgr	EVB	town
+3	Við gistum í ___ {N} í bænum.	ÞGFETgr	EVB	house
+3	Við fórum til ___ {N} í heimi.	EFETgr	EVB	places

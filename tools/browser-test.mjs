@@ -206,6 +206,13 @@ try {
 
 /* ---------- 1. Start-up ---------- */
 ok(await page.$("#task .card") !== null, "no task appeared at start-up");
+/* Item 54: installing is for a served program only. Opened by a double
+   click, the file links no manifest and registers no worker — it is the
+   same single file as before (tools/server-test.mjs checks the served case). */
+ok(await page.evaluate(async () => !document.querySelector('link[rel="manifest"], link[rel="apple-touch-icon"]')
+    && !(navigator.serviceWorker && navigator.serviceWorker.controller)
+    && !(navigator.serviceWorker && (await navigator.serviceWorker.getRegistrations().catch(() => [])).length)),
+  "opened from a file, the program linked a manifest or registered a service worker");
 ok((await page.$eval("#lvlname", (e) => e.textContent)).includes("Stig"), "the level label is missing");
 /* The Safari-16.3 shim really was installed — otherwise the check above proves
    nothing about old iPads. Any lookbehind built during start-up would have
