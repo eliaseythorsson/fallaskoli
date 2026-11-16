@@ -32,6 +32,7 @@ import { renderLessons, suggestLesson, wireLessons } from "./ui/lessons.js";
 import { renderDuelBar, renderDuelRoom } from "./ui/duel.js";
 import { duelTasks, signature, settleDuels, duelTotals, dataPrint } from "./core/duel.js";
 import { createPolicy, narrowPolicy } from "./core/policy.js";
+import { levelRanges, applyRanges, visitLevels } from "./core/difficulty.js";
 import { maxOf } from "./core/mix.js";
 import { TASKS } from "./tasks/index.js";
 const typesOfSkill = (id) => new Set(TASKS.filter((t) => t.skill === id || (t.anyOf || []).includes(id)).map((t) => t.id));
@@ -245,6 +246,10 @@ const app = {
     this.drill = null; this.drillOffer = null; this.drillDone = null;
     this.forcedNoun = null;
     this.runDone = null;
+    /* A tab left open overnight: today is a new visit, and each skill starts
+       half a step below where it was left (core/difficulty.js). */
+    if (this.sess && this.sess.visitDay !== todayKey())
+      Object.assign(this.sess, visitLevels(this.S, todayKey()));
     if (topic === MINE.id && !(focus && focus.length))
       focus = activePatterns(this.S, 3).map((p) => p.id);
     this.run = {
@@ -465,9 +470,20 @@ const app = {
    */
   reloadPolicy() { this.policy = null; },
 
+  /**
+   * Where each skill's saved level may go (core/difficulty.js levelRanges).
+   * From the whole policy, not the session's narrowed one: a session aimed at
+   * one error pattern must not cap a skill at what its few types know. Every
+   * question passes through `next`, so the ranges follow a changed switch.
+   */
+  refreshRanges() {
+    if (this.sess) applyRanges(this.sess, levelRanges(effectivePolicy(this.S), TASKS, this.lex.sentences));
+  },
+
   /** Draw the next question. Never leaves the child with a blank screen. */
   next() {
     hideTip();
+    this.refreshRanges();
     /* Kept for the 🚩 report: a child often notices a mistake only after
        pressing Áfram (ui/reports.js). */
     if (this.cur) this.prevTask = { task: this.cur, card: captureCard() };

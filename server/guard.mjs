@@ -25,6 +25,7 @@ import { migrate } from "../src/js/core/state.js";
 import { BADGES } from "../src/js/core/badges.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { sanitiseReview, REVIEW_MAX } from "../src/js/core/review.js";
+import { cleanLevels } from "../src/js/core/difficulty.js";
 
 export const MAX_STATE_BYTES = 2 * 1024 * 1024;
 
@@ -188,6 +189,12 @@ export function cleanState(raw, { today = new Date() } = {}) {
   review.stats = Object.fromEntries(Object.entries(review.stats)
     .filter(([k]) => !k.startsWith("s:") || SKILLS.has(k.slice(2))).slice(0, 100));
   S.review = review;
+
+  /* Saved levels (v6.13, core/difficulty.js): known skills only, the level
+     inside 1–7, the run 0–1, a dozen 1s and 0s, a time and one of three
+     sources. `migrate` already did this; it is said again here because this
+     file is where the server's trust is decided. */
+  S.difficulty = cleanLevels(S.difficulty);
 
   S.counters = Object.fromEntries(pairs(S.counters, 20, 40).map(([k, v]) => [k, n(v)]));
   S.periods = smallJSON(S.periods, 60000) || {};

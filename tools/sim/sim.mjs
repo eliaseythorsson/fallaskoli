@@ -46,6 +46,8 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
       for (let i = 0; i < size; i++) {
         const P = ST.effectivePolicy(S);
         app.policy = narrowPolicy(P, { skills: SKILL_IDS.includes(topic) ? [topic] : null, types: null });
+        // as app.next: the ranges each skill's level may move in (v6.13), from the whole policy
+        if (DF.applyRanges) DF.applyRanges(app.sess, DF.levelRanges(P, TASKS, lex.sentences));
         const ids = DG.activePatterns(S, 3).map((p) => p.id);
         const counts = {}; run.items.forEach((it) => { counts[it.type] = (counts[it.type] || 0) + 1; });
         if (app.forcedNoun && (counts.fill || 0) + 1 > maxOf("fill", size)) app.forcedNoun = null;

@@ -14,6 +14,9 @@ for (const [name, ability] of [["weak", 0.5], ["mid", 0.72], ["strong", 0.9]]) {
   console.log("skills:", pct(cnt(log, (x) => x.skill), log.length));
   console.log("types:", pct(cnt(log, (x) => x.type), log.length));
   console.log("levels asked:", pct(cnt(log, (x) => x.lvl), log.length));
+  const mean = (a) => (a.reduce((t, x) => t + x.lvl, 0) / Math.max(1, a.length)).toFixed(2);
+  const sents = log.filter((x) => x.sent);
+  console.log(`mean level: all ${mean(log)} | sentence questions ${mean(sents)} | sentence questions without Setningagerð (always 6, item 14) ${mean(sents.filter((x) => x.skill !== "setningagerd"))}`);
   const byWeek = [0, 1, 2, 3, 4, 5].map((w) => { const a = log.filter((x) => Math.floor(x.d / 7) === w); return a.length ? `w${w}: lvl ${(a.reduce((s, x) => s + x.lvl, 0) / a.length).toFixed(2)} acc ${(a.filter((x) => x.ok).length / a.length).toFixed(2)}` : ""; });
   console.log("by week:", byWeek.join(" | "));
   const d = (k) => (lv.reduce((s, a) => s + a[k], 0) / lv.length).toFixed(1);

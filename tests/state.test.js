@@ -111,9 +111,11 @@ test("difficulty stays within 1-7 and falls more slowly than it rises", () => {
   assert.ok(bandOf(sess, "nafnord") >= 1 && bandOf(sess, "nafnord") <= 7);
 });
 
-test("the starting difficulty follows the skill's level", () => {
-  const S = blankState();
-  S.skills.nafnord.xp = 5000;
+test("a pupil from before saved levels is placed once from the skill's XP", () => {
+  const raw = blankState();
+  delete raw.difficulty;
+  raw.skills.nafnord.xp = 5000;
+  const S = migrate(raw);
   const d = initDiff(S);
   assert.ok(d.nafnord > d.sagnord, "sterkur flokkur byrjar ofar");
 });

@@ -6,7 +6,7 @@
 import { SKILL_IDS, defaultEnabled } from "./skills.js";
 import { createPolicy, blankPolicy, sanitisePolicy } from "./policy.js";
 import { overallLevel, skillLevel, easeOf } from "./progress.js";
-import { initDiff } from "./difficulty.js";
+import { visitLevels, cleanLevels, levelsFromXp } from "./difficulty.js";
 import { timeContext } from "./calendar.js";
 import { checkDayEnd } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
@@ -90,6 +90,9 @@ export function blankState() {
        is next to be asked — { items: [entry …], stats: { … } }. That file
        describes the shape; nothing else writes to it. */
     review: blankReview(),
+    /* Each skill's level of difficulty, kept between visits (v6.13, critique
+       item 11): { skill: {d, r, h, at, src} } — see core/difficulty.js. */
+    difficulty: {},
   };
 }
 
@@ -162,6 +165,11 @@ export function migrate(raw) {
     /* Rebuilt field by field: a state saved before the queue existed gets an
        empty one, and nothing of the wrong shape survives a load. */
     review: sanitiseReview(raw.review),
+    /* Saved levels (v6.13). A state from before they existed is placed once
+       from its skills' XP; from then on the saved levels are used and XP is
+       not read again. */
+    difficulty: raw.difficulty && typeof raw.difficulty === "object"
+      ? cleanLevels(raw.difficulty) : levelsFromXp(raw.skills),
   });
   S.run = 0;
 
@@ -195,11 +203,14 @@ export function migrate(raw) {
   return S;
 }
 
-export function newSession(S) {
+export function newSession(S, today = todayKey()) {
   const skillRun = {};
   SKILL_IDS.forEach((id) => { skillRun[id] = 0; });
   return {
-    diff: initDiff(S),
+    /* `diff`: each skill's live level, half a step below the saved one, and
+       `warm`, `seenAt`, `visitDay` beside it (core/difficulty.js visitLevels).
+       `range`: where each level may go, set by the app from the policy. */
+    ...visitLevels(S, today), range: null,
     skillRun, wrongRun: 0, sinceTable: 0, sinceMeaning: 0,
     seen: [], badgeAwards: {}, correct: 0, answers: 0, hintFreeRun: 0,
     newWords: 0, worstRun: 0,
