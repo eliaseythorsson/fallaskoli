@@ -2,15 +2,12 @@
 
 import { DATA } from "../../data/data_bundle.js";
 import { buildLexicon } from "./core/lexicon.js";
-import { migrate, blankState, newSession, todayKey, badgeContext, settleDays,
-  noteQuestion, noteLogin, effectivePolicy, chosenPolicy } from "./core/state.js";
+import { migrate, blankState, newSession, todayKey, badgeContext, settleDays, noteQuestion, noteLogin, effectivePolicy } from "./core/state.js";
 import { applyDecay } from "./core/progress.js";
 import { checkBadges, checkLogin, celebrate } from "./core/badges.js";
 import { collectionSummary } from "./core/collection.js";
-import { nextTask, buildTask, drillTask, makeView, withView, applyEffects, planOpening, nextOpening,
-  scheduleReask, nextReask, streakTasks, typeById, enabled } from "./tasks/index.js";
-import { reviewLine, queuePattern } from "./core/review.js";
-import { planToday } from "./core/today.js";
+import { nextTask, buildTask, drillTask, makeView, applyEffects, streakTasks } from "./tasks/index.js";
+import { queuePattern } from "./core/review.js";
 import { STREAK_N, streakPattern, startStreak, stepStreak, streakEntry, streakLine } from "./core/streak.js";
 import { statusOf, weakWords, drillable, startDrill, drillStep, settleDrill } from "./core/wordhealth.js";
 import { grantXp, cleanWeekGoal } from "./core/state.js";
@@ -21,8 +18,7 @@ import { createDefinitions, bundledSource, remoteSource } from "./core/definitio
 import { serverMode, createServer, serverDriver, liftLocalState } from "./core/server.js";
 import { CAL, eventOf, cleanTable, tableIsEmpty, lexHardness } from "./core/calibration.js";
 import { SAMPLE, samplesOf } from "./core/classifiercheck.js";
-import { $, esc, wireGlossary, queueBadges, hideTip, freshEnter, wirePrivacyLinks, openSheet,
-  setKeypadPref, keypadOn, keypadEnv, wireKeys, applyComfort } from "./ui/dom.js";
+import { $, esc, wireGlossary, queueBadges, hideTip, wirePrivacyLinks, openSheet, setKeypadPref, keypadOn, keypadEnv, wireKeys, applyComfort } from "./ui/dom.js";
 import { measurable, badgeWindows, windowsFor } from "./core/rarity.js";
 import { socialContext } from "./core/social.js";
 import { DEFAULT_METRIC } from "./core/leaderboard.js";
@@ -36,33 +32,23 @@ import { renderLogin, renderAdmin, renderAccount, renderShareCard } from "./ui/a
 import { renderTeacher } from "./ui/teacher.js";
 import { renderSkillMap } from "./ui/skillmap.js";
 import { createTour } from "./ui/tour.js";
-import { nodeSession } from "./core/skillmap.js";
-import { nodeById } from "./core/curriculum.js";
 import { startPWA, rememberServer, wasServer, renderOffline } from "./ui/pwa.js";
 import { mergeStates } from "./core/merge.js";
 import { renderLessons, suggestLesson, wireLessons } from "./ui/lessons.js";
 import { renderDuelBar, renderDuelRoom } from "./ui/duel.js";
 import { pollLive, liveAnswer as sendLiveAnswer, renderLiveBar } from "./ui/live.js";
 import { duelTasks, signature, settleDuels, duelTotals, dataPrint } from "./core/duel.js";
-import { createPolicy, narrowPolicy, openFor } from "./core/policy.js";
-import { levelRanges, applyRanges, visitLevels } from "./core/difficulty.js";
-import { maxOf } from "./core/mix.js";
+import { createPolicy } from "./core/policy.js";
+import { levelRanges, applyRanges } from "./core/difficulty.js";
 import { TASKS } from "./tasks/index.js";
-const typesOfSkill = (id) => new Set(TASKS.filter((t) => t.skill === id || (t.anyOf || []).includes(id)).map((t) => t.id));
-import { diagnose, noteDiagnosis, activePatterns, huntPreferFor, focusTypes, pickTargeted,
-  patternById, runReport } from "./core/diagnosis.js";
+import { diagnose, noteDiagnosis } from "./core/diagnosis.js";
 import { noteMending } from "./core/mending.js";
-import { SKILL_IDS } from "./core/skills.js";
-import { renderPicker, renderRunBar, renderSummary, confirmQuit,
-  topics, usable, MINE, MIXED, TODAY, ASSIGNED, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
-import { scopeOf, assignmentPolicy } from "./core/assignment.js";
-import { LESSONS, readCount, lessonById, lessonPractice, practiceSkills, PRACTICE_SIZE } from "./core/lessons.js";
+import { renderRunBar, usable, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
+import { LESSONS, readCount } from "./core/lessons.js";
+import { showFindings, showReview, showMended, showStreakEnd, armNext } from "./ui/verdict.js";
+import { rng } from "./control/rng.js";
+import { sessionControl } from "./control/session.js";
 
-/* The random source of the question builders (tasks/view.js). They never call
-   Math.random themselves: it is handed to them, here for practice and seeded
-   for a duel (core/duel.js). Looked up at each call, not captured, so that the
-   browser test's fixed seed — which replaces Math.random — still takes. */
-const rng = () => Math.random();
 /* A calibration table that changes nothing (see `app.viewCal`). */
 const EMPTY_TABLE = Object.freeze({ v: CAL.v, types: {}, cells: {}, irr: {} });
 
@@ -315,16 +301,6 @@ const app = {
     }
   },
 
-  /* ---- practice sessions (v6.10, ui/session.js) ----
-     `run` is the session in progress: its topic (a skill, "blandad" or
-     "villur"), its size, how far it has got, and what the error diagnosis
-     found on the way. `runDone` is the summary of the one just finished,
-     shown until the child picks something else. Neither is saved; a finished
-     session is written into `S.runs`. */
-  run: null,
-  runDone: null,
-  runNotice: null,
-
   /* ---- "Þrjár í röð" (item 36, core/streak.js) ----
      `streakOffer` is the offer under the verdict just shown, with its three
      questions already built (it is only made when all three can be);
@@ -333,14 +309,6 @@ const app = {
      when the three end. */
   streak: null,
   streakOffer: null,
-
-  /* ---- assignments (item 65, core/assignment.js) ----
-     `assignments` is the server's last answer to GET /assignments: the open
-     homework of this pupil's group, each with the pupil's own result. Only on
-     a server — a pupil with no server has no teacher. `assignmentPending` is
-     a result that could not be sent, retried on the next load. */
-  assignments: [],
-  assignmentPending: null,
 
   /* ---- calibration (item 17, core/calibration.js) ----
      `cal` is the table the server published, cleaned — or null: no server,
@@ -391,336 +359,6 @@ const app = {
            longer counted): nothing more is sent this visit. */
         if (err && err.status && err.status < 500 && this.calInfo) this.calInfo.collect = false;
       });
-  },
-
-  /** Fetch the open assignments; redraw the picker if it is on the screen. */
-  async loadAssignments() {
-    if (!this.server) return;
-    if (this.assignmentPending) await this.sendAssignment(this.assignmentPending);
-    let list;
-    try { list = (await this.server.assignments()).assignments || []; }
-    catch { return; }
-    const changed = JSON.stringify(list) !== JSON.stringify(this.assignments);
-    this.assignments = list;
-    /* The picker is on the board when nothing else is; drawn again only if
-       something changed, so a look every five minutes moves nothing. */
-    if (changed && !this.run && !this.drill && !this.duelRun && !this.liveRun && !this.runDone && !this.cur) renderPicker(this);
-  },
-
-  /** One tap on an assignment: a session of its size, narrowed to its material. */
-  startAssignment(id) {
-    const a = (this.assignments || []).find((x) => x.id === id);
-    const scope = a && scopeOf(a.target);
-    if (!scope) return;
-    /* No opening reviews: the teacher's questions are all about the material. */
-    this.startRun(ASSIGNED.id, a.n, scope.focus, { review: false, assignment: { id: a.id, target: a.target, scope } });
-  },
-
-  /** Send a finished (or abandoned) assignment's numbers; kept and retried if
-      the network fails. A refusal (deadline passed) is not retried.
-      @returns "ok", "retry" or "refused" — the summary says which. */
-  async sendAssignment(p) {
-    try {
-      const r = await this.server.assignmentResult(p.id, { i: p.i, j: p.j, c: p.c });
-      this.assignmentPending = null;
-      const k = (this.assignments || []).findIndex((x) => x.id === p.id);
-      if (k >= 0 && r && r.assignment) this.assignments[k] = r.assignment;
-      return "ok";
-    } catch (err) {
-      const refused = !!(err && err.status && err.status < 500);
-      this.assignmentPending = refused ? null : p;
-      return refused ? "refused" : "retry";
-    }
-  },
-
-  /**
-   * Today's session, planned (core/today.js): the due reviews, the active
-   * error patterns, then new material, about 3 / 4 / 3 of ten — under the
-   * whole curriculum policy, with the registry saying which question types
-   * may be asked.
-   */
-  todayPlan(n = 10) {
-    const P = effectivePolicy(this.S);
-    return planToday(this.S, P, todayKey(), {
-      n, canType: (id) => { const t = typeById(id); return !!t && enabled(P, t); },
-    });
-  },
-
-  /**
-   * Begin a session. `focus`: pattern ids, for a session aimed at them.
-   * `opts.review: false` starts it without the reviews a session otherwise
-   * opens with (core/review.js) — for a caller whose few questions are all
-   * spoken for. `opts.types` (with `opts.skills`, `opts.attrs`) narrows the
-   * session to exactly those question types, and `opts.label` names it in
-   * the bar — "Æfa þetta" on a Lesefni page (item 41, `practiceLesson`).
-   * `opts.review` may also be a list of review keys: the session opens with
-   * exactly those (a node of the skill map opens with its own, item 83).
-   */
-  startRun(topic, n, focus = null, opts = {}) {
-    if (this.duelRun || this.liveRun) { this.openView("practice"); return; }
-    this.drill = null; this.drillOffer = null; this.drillDone = null;
-    this.forcedNoun = null;
-    this.runDone = null;
-    /* A tab left open overnight: today is a new visit, and each skill starts
-       half a step below where it was left (core/difficulty.js). */
-    if (this.sess && this.sess.visitDay !== todayKey())
-      Object.assign(this.sess, visitLevels(this.S, todayKey()));
-    if (topic === MINE.id && !(focus && focus.length))
-      focus = activePatterns(this.S, 3).map((p) => p.id);
-    this.streak = null; this.streakOffer = null;
-    /* Today's session (item 21) is planned slot by slot: its reviews are the
-       opening, and `plan` is what each question after them is about. */
-    const today = topic === TODAY.id ? this.todayPlan(n) : null;
-    if (today) { n = today.n; focus = null; }
-    this.run = {
-      topic, n, focus: focus && focus.length ? focus : null,
-      /* item 65: the assignment this session answers, with its scope. */
-      assignment: opts.assignment || null,
-      i: 0, c: 0, j: 0, xp0: this.S.xp, badges: [], items: [],
-      chances: {}, misses: {}, found: [],
-      before: activePatterns(this.S, 6).map((p) => p.id),
-      startedAt: Date.now(),
-      /* The review queue (core/review.js, tasks/review.js): `review` is the
-         keys of the due entries this session opens with, `reask` the nouns of
-         missed clozes waiting for their turn three to five questions on. */
-      review: [], reask: [],
-      /* item 21: the slots after the opening ({kind: "pattern", p} or
-         {kind: "new", skill}), taken one per question; null outside today's
-         session. item 36: the patterns offered "Þrjár í röð" in this session
-         (once each), and how each run of three went. */
-      plan: today ? today.slots.filter((x) => x.kind !== "review") : null,
-      streaked: [], streaks: [],
-      /* Item 41: a session on given question types, and its name. */
-      types: opts.types || null, skills: opts.skills || null, attrs: opts.attrs || null,
-      label: opts.label || null, lesson: opts.lesson || null,
-      /* Item 84: the placement round of the first run (ui/tour.js). */
-      placement: opts.placement || null,
-    };
-    if (today) this.run.review = today.reviews.slice();
-    else if (Array.isArray(opts.review)) this.run.review = opts.review.slice();
-    else if (opts.review !== false)
-      this.run.review = planOpening(this.S, todayKey(), n, this.reviewPolicy(), this.run.focus);
-    /* The picker remembers the CATEGORY last chosen there, and its size;
-       neither today's session, an assignment, "Villurnar mínar" nor a
-       Lesefni page's five (item 41, `opts.types`) is one. */
-    const picked = !opts.types && !opts.placement && topic !== TODAY.id && topic !== ASSIGNED.id;
-    if (picked && topic !== MINE.id) this.S.settings.runTopic = topic;
-    if (picked) this.S.settings.runSize = n;
-    this.save();
-    this.openView("practice");
-    this.next();
-  },
-
-  /** The curriculum policy, narrowed to what this session is about. */
-  runPolicy() {
-    const r = this.run;
-    /* item 65: an assignment's material, whatever the pupil has switched off
-       (the teacher chose it), within the ceiling (core/assignment.js). */
-    if (r && r.assignment) return narrowPolicy(assignmentPolicy(this.S, r.assignment.target),
-      { types: r.focus ? [...focusTypes(r.focus)] : null });
-    const P = effectivePolicy(this.S);
-    if (!r) return P;
-    /* Item 41: asked for by name, so the child's own switches give way for
-       these types (core/policy.js openFor); the administrator's do not. */
-    if (r.types) {
-      const open = createPolicy(this.S.allowed || null,
-        openFor(chosenPolicy(this.S), { skills: r.skills || [], types: r.types }));
-      return narrowPolicy(open, { skills: r.skills, types: r.types, attrs: r.attrs });
-    }
-    return narrowPolicy(P, {
-      skills: SKILL_IDS.includes(r.topic) ? [r.topic] : null,
-      types: r.focus ? [...focusTypes(r.focus)] : null,
-    });
-  },
-
-  /**
-   * The policy a review is asked under: the session's topic, but not the
-   * narrowing to the question types of the patterns it is aimed at — a review
-   * is asked in the type it was missed in.
-   */
-  reviewPolicy() {
-    const r = this.run;
-    return narrowPolicy(effectivePolicy(this.S), {
-      skills: r && SKILL_IDS.includes(r.topic) ? [r.topic] : null, types: null,
-    });
-  },
-
-  /** Item 42: the question ends after its second try, not in `finish`. */
-  armNext() {
-    const rearm = armNext(this);
-    const r = this.run, b = $("check");
-    if (r && r.i >= r.n && b) b.textContent = "Sjá samantekt →";
-    return rearm;
-  },
-
-  /**
-   * A wrong cloze: its noun comes back three to five questions on, not at
-   * once (critique item 19). Called by the cloze's renderer, which says under
-   * the verdict which of the two it will be. True if the session is long
-   * enough; otherwise the review queue has it for tomorrow.
-   */
-  planReask(task) {
-    if (!this.run || this.drill || this.duelRun || this.liveRun || !task || !task.inRun) return false;
-    return scheduleReask(this.run, task, rng);
-  },
-
-  /**
-   * The next question of a session. Questions that test one of the child's
-   * error patterns are preferred: a few candidates are built and the first
-   * that tests one is kept — most of the time in a session aimed at them,
-   * now and then in any other.
-   *
-   * The builders are pure (tasks/view.js): building a candidate changes
-   * nothing, and each comes with the effects of showing it. Only the one that
-   * IS shown has its effects applied — so a vocabulary item is marked as asked
-   * when the child meets it, not each time it was a candidate (until v6.13
-   * every discarded candidate locked its item for a week).
-   */
-  pickTask() {
-    const r = this.run;
-    /* Item 84: the placement round asks what its staircase says (ui/tour.js). */
-    if (r.placement) return this.tour.pick();
-    this.policy = this.runPolicy();
-    const ids = r.focus || activePatterns(this.S, 3).map((p) => p.id);
-    /* v6.11: the mix rule (core/mix.js) sees what the session has had. */
-    const counts = {};
-    r.items.forEach((it) => { counts[it.type] = (counts[it.type] || 0) + 1; });
-    /* The same noun again after a wrong cloze — unless the session has had
-       its share of clozes. */
-    if (this.forcedNoun && (counts.fill || 0) + 1 > maxOf("fill", r.n)) this.forcedNoun = null;
-    const view = makeView({
-      S: this.S, sess: this.sess, policy: this.policy, forcedNoun: this.forcedNoun,
-      mix: { n: r.n, counts }, inRun: true, huntPrefer: huntPreferFor(ids),
-      cal: this.viewCal(),
-    });
-    const effects = new Map();
-    const buildIn = (v) => () => {
-      const b = nextTask(this.lex, v, rng);
-      if (!b) return null;
-      effects.set(b.task, b.effects);
-      return b.task;
-    };
-    const build = buildIn(view);
-    /* v6.13, the review queue. A session opens with up to three entries that
-       are due; and the noun of a cloze missed earlier in the session comes
-       back when its turn has come. Both are ordinary questions built by the
-       ordinary builders (tasks/review.js) and are outside the mix rule: there
-       are at most three of the first, and the second is held to the share of
-       clozes a session may have. */
-    const rv = withView(view, { policy: this.reviewPolicy(), mix: null });
-    const due = nextOpening(this.lex, rv, rng, r)
-      || nextReask(this.lex, rv, rng, r, (counts.fill || 0) + 1 <= maxOf("fill", r.n));
-    if (due) {
-      applyEffects(this, due.effects);
-      if (r.plan) due.task.today = "review";
-      return due.task;
-    }
-    /* Today's session (item 21): the next slot of the plan. A pattern slot
-       is drawn from the pattern's own question types and must test it; a
-       slot of new material comes from one of the least-practised skills and
-       is not aimed at anything. Either falls back to the plain mix of what
-       is switched on, so the session is always its ten questions long. A
-       missed cloze's noun coming back (above) takes a turn without using a
-       slot; the plan's last slot is then the one not reached. */
-    if (r.plan && !this.forcedNoun) {
-      const slot = r.plan.shift() || { kind: "new", skill: null };
-      let t = null;
-      if (slot.kind === "pattern") {
-        const pv = withView(view, {
-          policy: narrowPolicy(this.policy, { types: [...focusTypes([slot.p])] }),
-          huntPrefer: huntPreferFor([slot.p]),
-        });
-        t = pickTargeted(buildIn(pv), [slot.p], { p: 1, tries: 8, rnd: rng });
-        if (t && !t.targeted) t = null;
-      } else if (slot.skill) {
-        t = buildIn(withView(view, { policy: narrowPolicy(this.policy, { skills: [slot.skill] }) }))();
-      }
-      t ||= build();
-      if (t) { applyEffects(this, effects.get(t)); t.today = t.targeted && slot.kind === "pattern" ? "pattern" : "new"; }
-      return t;
-    }
-    const t = this.forcedNoun ? build()
-      : pickTargeted(build, ids, { p: r.focus ? 0.85 : 0.4, tries: r.focus ? 8 : 5, rnd: rng });
-    if (t) applyEffects(this, effects.get(t));
-    return t;
-  },
-
-  /** A session is over: write it down and show the summary. */
-  endRun(early = false, empty = false) {
-    const r = this.run;
-    this.run = null;
-    this.policy = null;
-    this.streak = null; this.streakOffer = null;
-    if (!r) return;
-    this.flushAnswers();
-    /* Item 84: the placement round has no summary of the usual kind — the
-       first run says what it found and goes on (ui/tour.js). */
-    if (r.placement) { this.tour.placementOver(r); return; }
-    if (!r.i) {
-      this.runDone = null;
-      if (empty) this.runNotice = "Engin spurning fannst í þessu efni með þeim stillingum sem eru á. " +
-        "Kveiktu á fleiri tegundum spurninga eða þyngdarstigum undir Stillingar og námsefni.";
-      this.next();
-      return;
-    }
-    /* Which question types this session could ask: a pattern none of them
-       tests is not "the one thing to remember" (v6.11). */
-    const topicTypes = r.assignment
-      ? (r.assignment.scope.types ? new Set(r.assignment.scope.types)
-        : r.assignment.scope.skills ? new Set(r.assignment.scope.skills.flatMap((x) => [...typesOfSkill(x)])) : null)
-      : r.types ? new Set(r.types)
-      : SKILL_IDS.includes(r.topic) ? typesOfSkill(r.topic) : null;
-    const report = runReport(r, this.S, topicTypes ? (p) => p.types.some((x) => topicTypes.has(x)) : null);
-    const xp = Math.max(0, this.S.xp - r.xp0);
-    (this.S.runs ||= []).push({
-      at: Date.now(), d: todayKey(), topic: r.topic, n: r.i, c: r.c, j: r.j, xp,
-      top: report.found.slice(0, 3).map((f) => f.id),
-    });
-    this.S.runs = this.S.runs.slice(-40);
-    this.save();
-    /* item 65: the teacher gets the numbers — answered, graded, right — and
-       nothing else. Sent whether or not the pupil finished: how far they
-       got is worth knowing too (core/assignment.js `better`). */
-    const sending = r.assignment && this.server
-      ? this.sendAssignment({ id: r.assignment.id, i: r.i, j: r.j, c: r.c }) : null;
-    this.runDone = {
-      assignment: r.assignment ? { id: r.assignment.id, target: r.assignment.target, sent: null } : null,
-      topic: r.topic, n: r.n, i: r.i, c: r.c, j: r.j, xp, focus: r.focus,
-      badges: r.badges, items: r.items, report, early: early || empty,
-      ms: Date.now() - r.startedAt, streaks: r.streaks || [],
-      /* Item 41: "Önnur lota" repeats a page's session as it was. */
-      label: r.label, again: r.types
-        ? { review: false, types: r.types, skills: r.skills, attrs: r.attrs, label: r.label, lesson: r.lesson }
-        : null,
-    };
-    const done = this.runDone;
-    /* The summary says whether the teacher has the result; drawn again when
-       the server has answered, if it is still on the board. */
-    if (sending) sending.then((sent) => {
-      done.assignment.sent = sent;
-      if (this.runDone === done && !this.run && !this.cur) renderSummary(this);
-    });
-    this.next();
-    /* Item 61: the one celebration of the session. The summary is on the
-       screen and lists every badge the session won; the windows come now, over
-       it, within the usual ceiling (`badgeWindows`: the rare ones all, then two
-       more) and the rest are named on the last. Badges still held from a
-       rescue drill outside any session go with them, once. */
-    const held = this.sess.heldBadges || [];
-    this.sess.heldBadges = [];
-    const all = [...r.badges, ...held.filter((h) => !r.badges.some((b) => b.id === h.id))];
-    if (all.length) {
-      const { show, quiet } = badgeWindows(all, this.badgeStats);
-      queueBadges(show, () => {
-        document.querySelector("#task .summary .nextrow button")?.focus();
-      }, quiet);
-    }
-  },
-
-  quitRun() {
-    if (!this.run) return;
-    if (this.run.placement) { this.tour.quitPlacement(); return; }
-    confirmQuit(this, () => { if (this.run) this.endRun(true); });
   },
 
   /* ---- "Þrjár í röð" (critique item 36, core/streak.js) ---------------- */
@@ -791,63 +429,6 @@ const app = {
     this.streak = null;
     this.next();
   },
-
-  /**
-   * "Æfa þetta" on a Lesefni page (item 41): five questions on exactly the
-   * question types of that page's curriculum nodes (core/lessons.js
-   * lessonPractice), without the reviews a session opens with — all five
-   * are the page's.
-   */
-  practiceLesson(id) {
-    const p = lessonPractice(id);
-    const page = lessonById(id);
-    if (!p || !page) return;
-    this.startRun(page.skill, PRACTICE_SIZE, null, {
-      review: false, types: p.types, attrs: p.attrs, skills: practiceSkills(p, TASKS),
-      label: "Lesefni: " + page.nm, lesson: id,
-    });
-  },
-
-  /* ---- the skill map (item 83, core/skillmap.js, ui/skillmap.js) -------- */
-
-  /** The policy a session on these types runs under — the pupil's own
-      switches give way, the administrator's ceiling does not (`runPolicy`). */
-  typesPolicy({ skills, types, attrs }) {
-    const open = createPolicy(this.S.allowed || null,
-      openFor(chosenPolicy(this.S), { skills: skills || [], types }));
-    return narrowPolicy(open, { skills, types, attrs });
-  },
-
-  /** Can a session on this node ask anything at all? No for a locked node,
-      and for one the administrator's ceiling leaves nothing of. */
-  canPractiseNode(id) {
-    const s = nodeSession(nodeById(id), this.S);
-    if (!s) return false;
-    const skills = practiceSkills(s, TASKS);
-    const P = this.typesPolicy({ skills, types: s.types, attrs: s.attrs });
-    return TASKS.some((t) => s.types.includes(t.id) && P.type(t.id) &&
-        (t.anyOf ? t.anyOf.some((x) => P.skill(x)) : P.skill(t.skill))) &&
-      Object.entries(s.attrs || {}).every(([g, keys]) => keys.some((k) => P.attr(g, k)));
-  },
-
-  /**
-   * The button of an opened node: ten questions on exactly its question
-   * types (and, where the node is one feature of them, that feature),
-   * opening with the node's own reviews that are due.
-   */
-  practiseNode(id) {
-    const node = nodeById(id);
-    const s = nodeSession(node, this.S);
-    if (!s) return;
-    this.startRun(SKILL_IDS.includes(node.cat) ? node.cat : MIXED.id, s.n, null, {
-      review: s.review, types: s.types, attrs: s.attrs, skills: practiceSkills(s, TASKS),
-      label: s.label, lesson: s.lesson,
-    });
-  },
-
-  /** "Æfa" beside an error pattern that belongs to no node of the map. */
-  patternUsable(id) { return usable(this, [id]); },
-  practisePattern(id) { this.startRun(MINE.id, 10, [id]); },
 
   /** A Lesefni page was opened for the first time (ui/lessons.js). */
   onRead() {
@@ -1002,25 +583,8 @@ const app = {
       this.endStreak();
       this.streak = null;
     } else this.streak = null;
-    renderDrillBar(this);
-    renderRunBar(this);
-    /* v6.10: practice comes in sessions. With none running, the board shows
-       the summary of the last one, or the picker. */
-    if (this.run) {
-      if (this.run.i >= this.run.n) { this.endRun(); return; }
-      const t = this.pickTask();
-      if (!t) { this.endRun(false, true); return; }
-      t.inRun = true;
-      this.cur = t;
-      renderTask(this);
-      renderRunBar(this);
-      clock.mark();
-      return;
-    }
-    this.policy = null;
-    this.cur = null;
-    if (this.runDone) renderSummary(this);
-    else renderPicker(this);
+    /* The session's next question, its summary, or the picker. */
+    this.runNext();
   },
 
   /**
@@ -1072,27 +636,9 @@ const app = {
     showFindings(findings, extra.correct);
     showReview(review);
     showMended(mendedNow);
+    /* A question of the session: counted once (control/session.js). */
     const r = this.run;
-    const runQuestion = !!(r && this.cur && this.cur.inRun && !this.cur.closed);
-    if (r && this.cur && this.cur.inRun && !this.cur.closed) {
-      this.cur.closed = true;
-      r.i++;
-      if (extra.correct === true) { r.c++; r.j++; }
-      else if (extra.correct === false) r.j++;
-      chances.forEach((id) => { r.chances[id] = (r.chances[id] || 0) + 1; });
-      findings.forEach((f) => {
-        r.misses[f.p] = (r.misses[f.p] || 0) + 1;
-        r.found.push({ p: f.p, ex: f.ex || null });
-      });
-      r.items.push({ type: this.cur.typeId || this.cur.type, skill: this.cur.skill, ok: extra.correct ?? null });
-      /* Item 84: one step of the placement staircase (ui/tour.js). */
-      if (r.placement) this.tour.answered(extra.correct ?? null);
-      renderRunBar(this);
-      if (r.i >= r.n) {
-        const b = $("check");
-        if (b) queueMicrotask(() => { if (b.textContent.startsWith("Áfram")) b.textContent = "Sjá samantekt →"; });
-      }
-    }
+    const runQuestion = this.runAnswered(extra.correct, findings, chances);
     /* Item 36: one of "Þrjár í röð" answered — or a diagnosed miss in the
        session, which may offer them. */
     const st = this.streak;
@@ -1185,59 +731,27 @@ const app = {
   },
 };
 
-/**
- * One line under a wrong answer naming the error pattern (v6.10), so the
- * child sees the diagnosis at the moment it is made, not only in the summary.
+/* ---------- the controllers ---------------------------------------------
+ *
+ * Critique item 76: each part of the practice board has its own controller
+ * (control/*.js), and `app` is where they meet. A controller is a set of
+ * fields and methods mixed into `app`, so `this` in each is the app, they
+ * reach each other through it, and everything else — the renderers, the tour,
+ * the browser and server tests through `window.FALLASKOLI` — goes on calling
+ * `app.startRun(…)` and reading `app.run` as before. `next` and `finish`
+ * above stay here: they are the two places where the controllers take turns.
  */
-function showFindings(findings, verdict) {
-  const v = document.querySelector("#verdict .verdict");
-  if (!v || !findings.length || v.querySelector(".diagline")) return;
-  const real = findings.filter((f) => !f.soft);
-  if (!real.length || verdict === true) return;
-  const names = real.map((f) => (patternById(f.p) || {}).nm).filter(Boolean);
-  v.insertAdjacentHTML("beforeend", `<p class="diagline">🔎 <b>Villugreining:</b> ${
-    names.map(esc).join(" · ")}</p>`);
+function meet(target, ...parts) {
+  for (const part of parts) {
+    for (const k of Object.keys(part)) {
+      /* Two parts with one name would silently overwrite each other. */
+      if (k in target) throw new Error(`app.${k} is defined twice`);
+      target[k] = part[k];
+    }
+  }
+  return target;
 }
-
-/**
- * One line under a right answer that was a review (core/review.js): when it
- * comes next, or that it is done with. `review` is what `noteReview` said
- * happened in the queue; nothing is shown unless an entry moved.
- */
-/**
- * One line under the answer that mended an error pattern (items 56 and 58):
- * the pupil sees it the moment it happens, not only on the badge shelf.
- */
-function showMended(ids) {
-  const v = document.querySelector("#verdict .verdict");
-  if (!v || !ids || !ids.length || v.querySelector(".mendline")) return;
-  const names = ids.map((id) => (patternById(id) || {}).nm).filter(Boolean);
-  if (!names.length) return;
-  v.insertAdjacentHTML("beforeend", `<p class="streakline mendline">🩹 Þú hefur lagað þetta: <b>${
-    names.map(esc).join(" · ")}</b> — tíu rétt svör í röð.</p>`);
-}
-
-function showReview(review) {
-  const v = document.querySelector("#verdict .verdict");
-  if (!v || !review || v.querySelector(".reviewline")) return;
-  const line = reviewLine(review);
-  if (line) v.insertAdjacentHTML("beforeend", `<p class="streakline reviewline">🔁 ${esc(line)}</p>`);
-}
-
-/**
- * The line under the last of "Þrjár í röð" (item 36), and the button that
- * goes on says where it goes: back to the session, or to its summary if the
- * miss that started the three was the session's last question.
- */
-function showStreakEnd(line, last) {
-  const v = document.querySelector("#verdict .verdict");
-  if (v && line && !v.querySelector(".streakend"))
-    v.insertAdjacentHTML("beforeend", `<p class="streakline streakend">💪 ${esc(line)}</p>`);
-  const b = $("check");
-  if (b) queueMicrotask(() => {
-    if (b.textContent.startsWith("Áfram")) b.textContent = last ? "Sjá samantekt →" : "Aftur í lotuna →";
-  });
-}
+meet(app, sessionControl());
 
 /**
  * The accident badges (core/badges.js §14d), counted at the one place that
@@ -1265,60 +779,6 @@ function noteAccidents(S, sess, cur, extra) {
   const goldfish = extra.correct === false && !!rec && (rec.c || 0) >= 5 &&
     (rec.w || 0) === 1;
   return { goldfish, pickChanges: (cur && cur.changes) || 0 };
-}
-
-/* ---------- Enter ------------------------------------------------------
- *
- * Enter in the input submits the answer, exactly like "Athuga", and nothing
- * else. There is no listener on `document`: after the verdict the Áfram button
- * takes the focus, requires a FRESH Enter (`freshEnter` rejects key repeats —
- * a held key sends repeated keydown events, each with a new timestamp) and
- * ignores everything in the first 400 ms so the verdict reaches the screen
- * before it can be dismissed.
- *
- * `armNext` returns a re-arm function and the badge queue calls it when the
- * last window closes: closing a modal drops the focus onto `<body>`, where no
- * Enter listener lives, and the re-arm also restarts the grace window so the
- * press that dismissed the last badge cannot skip the question too.
- */
-const READ_MS = 400;
-
-/**
- * Turn "Athuga" into "Áfram →" and make it the keyboard's next stop.
- * @returns {function} re-arm: give the button the focus back and restart the
- *   read-grace window. Safe to call any number of times, and a no-op if the
- *   question has been re-rendered underneath it.
- */
-function armNext(app) {
-  const noop = () => {};
-  const b = $("check");
-  if (!b) return noop;
-
-  let armedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
-  let used = false;
-  const go = () => {
-    if (used) return;          // a double click on Áfram must not skip a question
-    used = true;
-    app.next();
-  };
-
-  b.textContent = "Áfram →";
-  b.disabled = false;
-  b.onclick = go;
-  b.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter") return;
-    e.preventDefault();        // never the default click — this decides
-    if (!freshEnter(e, armedAt + READ_MS)) return;
-    if (document.querySelector(".scrim")) return;   // a badge window comes first
-    go();
-  });
-  b.focus();
-
-  return () => {
-    if (used || !b.isConnected) return;
-    armedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
-    b.focus();
-  };
 }
 
 /* ---------- tabs --------------------------------------------------------

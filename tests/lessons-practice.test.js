@@ -1,7 +1,7 @@
 /* "Æfa þetta" on a Lesefni page (critique item 41): five questions on
    exactly the question types of that page, read off the curriculum nodes.
-   The session is built here the way app.js builds it (practiceLesson →
-   startRun → runPolicy → pickTask), so what the button asks is tested, not
+   The session is built here the way the session controller builds it
+   (practiceLesson → startRun → runPolicy → pickTask), so what the button asks is tested, not
    only the table it reads. */
 
 import test from "node:test";
@@ -15,14 +15,14 @@ import { NODES } from "../src/js/core/curriculum.js";
 import { TASKS } from "../src/js/tasks/index.js";
 import { seeded } from "../src/js/core/duel.js";
 import { ask } from "./helpers.js";
+import { runPolicy } from "../src/js/core/run.js";
 
 const lex = buildLexicon(DATA);
 
-/** The policy of a page's session, as app.runPolicy makes it. */
+/** The policy of a page's session, as the session controller asks for it
+    (practiceLesson → startRun → core/run.js `runPolicy`). */
 function policyFor(S, p) {
-  const skills = practiceSkills(p, TASKS);
-  const open = createPolicy(S.allowed || null, openFor(chosenPolicy(S), { skills, types: p.types }));
-  return narrowPolicy(open, { skills, types: p.types, attrs: p.attrs });
+  return runPolicy(S, { types: p.types, skills: practiceSkills(p, TASKS), attrs: p.attrs });
 }
 
 /** The questions of one page's session for a new pupil: `n` of them. */

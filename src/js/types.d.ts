@@ -201,6 +201,39 @@ export interface Session {
   [more: string]: any;
 }
 
+/**
+ * A practice session in progress (core/run.js `newRun`, `app.run`). Not saved;
+ * a finished one is written into `S.runs` (core/run.js `writeRun`).
+ */
+export interface Run {
+  topic: string;                  // a skill, or core/run.js TOPIC
+  n: number;                      // its size
+  focus: string[] | null;         // the error patterns it is aimed at
+  assignment: { id: string; target: any; scope: any } | null;   // item 65
+  i: number;                      // questions answered
+  c: number;                      // …right
+  j: number;                      // …graded (not those with no right answer)
+  xp0: number;                    // S.xp when it began
+  badges: any[];                  // won during it, celebrated at its summary (item 61)
+  items: { type: string; skill?: SkillId; ok: boolean | null }[];
+  chances: Record<string, number>;
+  misses: Record<string, number>;
+  found: { p: string; ex: any }[];
+  before: string[];               // the active patterns when it began
+  startedAt: number;
+  review: string[];               // the review keys it opens with
+  reask: any[];                   // missed clozes waiting for their turn
+  plan: any[] | null;             // today's session: the slots after the opening
+  streaked: string[];             // "Þrjár í röð" offered (item 36)
+  streaks: { p: string; c: number; n: number }[];
+  types: string[] | null;         // item 41: exactly these question types
+  skills: SkillId[] | null;
+  attrs: any;
+  label: string | null;
+  lesson: string | null;
+  placement: any;                 // item 84: the first run's placement round
+}
+
 /* ---------- questions -------------------------------------------------------- */
 
 /**

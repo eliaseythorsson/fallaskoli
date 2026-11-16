@@ -23,6 +23,7 @@
     "src/js/core/mastery.js",
     "src/js/core/skillmap.js",
     "src/js/core/today.js",
+    "src/js/core/run.js",
     "src/js/core/curriculum.js",
     "src/js/core/diagnosis.js",
     "src/js/core/merge.js",

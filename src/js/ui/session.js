@@ -21,20 +21,21 @@ import { dueNow } from "./progress.js";
 import { dueLine } from "../core/review.js";
 import { todayLine } from "../core/today.js";
 import { STREAK_N } from "../core/streak.js";
+import { TOPIC } from "../core/run.js";
 import { targetName, KIND_NAME, dueText, assignmentPolicy } from "../core/assignment.js";
 import { writingOfferHTML, wireWritingOffer } from "./writing.js";
 
 export const RUN_SIZES = [10, 15, 20];
 
 /* Two topics that are not a skill. */
-export const MIXED = { id: "blandad", nm: "Blandað", ico: "🎲", ds: "Allt sem er kveikt á, í bland" };
-export const MINE = { id: "villur", nm: "Villurnar mínar", ico: "🎯",
+export const MIXED = { id: TOPIC.MIXED, nm: "Blandað", ico: "🎲", ds: "Allt sem er kveikt á, í bland" };
+export const MINE = { id: TOPIC.MINE, nm: "Villurnar mínar", ico: "🎯",
   ds: "Spurningar sem prófa einmitt það sem hefur farið úrskeiðis hjá þér" };
 /* v6.13 (item 21): today's session — not a card among the others but the
    button above them (core/today.js plans it). */
-export const TODAY = { id: "dagsins", nm: "Dagsins lota", ico: "☀️" };
+export const TODAY = { id: TOPIC.TODAY, nm: "Dagsins lota", ico: "☀️" };
 /* v6.13 (item 65): a session that answers an assignment the teacher set. */
-export const ASSIGNED = { id: "verkefni", nm: "Verkefni", ico: "📌" };
+export const ASSIGNED = { id: TOPIC.ASSIGNED, nm: "Verkefni", ico: "📌" };
 
 export function topicName(id) {
   if (id === MIXED.id) return MIXED.nm;
