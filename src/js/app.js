@@ -21,7 +21,7 @@ import { createDefinitions, bundledSource, remoteSource } from "./core/definitio
 import { serverMode, createServer, serverDriver, liftLocalState } from "./core/server.js";
 import { $, esc, wireGlossary, queueBadges, hideTip, freshEnter, wirePrivacyLinks, openSheet,
   setKeypadPref, keypadOn, keypadEnv, wireKeys, applyComfort } from "./ui/dom.js";
-import { measurable, badgeWindows } from "./core/rarity.js";
+import { measurable, badgeWindows, windowsFor } from "./core/rarity.js";
 import { socialContext } from "./core/social.js";
 import { renderTask, revealTopic } from "./ui/render.js";
 import "./ui/render-more.js";
@@ -145,8 +145,9 @@ const app = {
       this.save();
       this.refresh();
       if (won.length) {
-        const { show, quiet } = badgeWindows(won, this.badgeStats);
-        queueBadges(show, () => {}, quiet);
+        /* Not over a question: a session in progress holds them for its summary. */
+        const { show, quiet } = windowsFor(won, this.badgeStats, { inSession: !!this.run });
+        if (show.length) queueBadges(show, () => {}, quiet);
       }
     }
     if (!this.duelRun) renderDuelBar(this);
@@ -552,6 +553,20 @@ const app = {
       if (this.runDone === done && !this.run && !this.cur) renderSummary(this);
     });
     this.next();
+    /* Item 61: the one celebration of the session. The summary is on the
+       screen and lists every badge the session won; the windows come now, over
+       it, within the usual ceiling (`badgeWindows`: the rare ones all, then two
+       more) and the rest are named on the last. Badges still held from a
+       rescue drill outside any session go with them, once. */
+    const held = this.sess.heldBadges || [];
+    this.sess.heldBadges = [];
+    const all = [...r.badges, ...held.filter((h) => !r.badges.some((b) => b.id === h.id))];
+    if (all.length) {
+      const { show, quiet } = badgeWindows(all, this.badgeStats);
+      queueBadges(show, () => {
+        document.querySelector("#task .summary .nextrow button")?.focus();
+      }, quiet);
+    }
   },
 
   quitRun() {
@@ -655,8 +670,8 @@ const app = {
     this.save();
     if (!won.length) return;
     this.refresh();
-    const { show, quiet } = badgeWindows(won, this.badgeStats);
-    queueBadges(show, () => {}, quiet);
+    const { show, quiet } = windowsFor(won, this.badgeStats, { inSession: !!this.run });
+    if (show.length) queueBadges(show, () => {}, quiet);
   },
 
   /** Begin a rescue drill on one word, from the offer or from the collection. */
@@ -951,6 +966,12 @@ const app = {
        word just missed) is already in the cabinet above, but its window and
        its confetti wait for the next answer that is right. Two pop-ups on a
        child's first two answers, both wrong, read as a reward for missing. */
+    /* Item 61: inside a session NO window opens between questions. Everything
+       won is already in the cabinet and in `run.badges` (`awardBadge`); the
+       summary lists it and celebrates it once (`endRun`). That covers "Þrjár í
+       röð" and the worked example too, which are parts of a session. The
+       v6.9 rule above still governs a rescue drill, which has no summary. */
+    if (this.run) return;
     const c = celebrate(this.sess.heldBadges, won, extra.correct ?? null);
     this.sess.heldBadges = c.held;
     if (!c.show.length) return;
@@ -1352,8 +1373,8 @@ function judgeSocial() {
   app.save();
   if (!won.length) return;
   app.refresh();
-  const { show, quiet } = badgeWindows(won, app.badgeStats);
-  queueBadges(show, () => {
+  const { show, quiet } = windowsFor(won, app.badgeStats, { inSession: !!app.run });
+  if (show.length) queueBadges(show, () => {
     document.querySelector(
       "#task input[type=text]:not([disabled]), #task textarea:not([disabled]), #check")?.focus();
   }, quiet);

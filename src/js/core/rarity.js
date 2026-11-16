@@ -312,6 +312,26 @@ export function badgeWindows(won, stats = null) {
   };
 }
 
+/**
+ * Where the windows of a batch of won badges go (critique item 61).
+ *
+ * Every badge is in the cabinet the moment it is won; this decides only WHEN
+ * its window opens. A window between two questions breaks the thought the
+ * session is made of, so while a session is open (`inSession`: a run, which
+ * also covers "Þrjár í röð" and the worked example, both of which live inside
+ * one) nothing opens: the badges are `held` and the summary, which lists every
+ * one of them, is where they are celebrated, once (`badgeWindows` on what the
+ * run collected). Outside a session — a rescue drill, a duel, the start of the
+ * program — the ceiling above applies as before.
+ *
+ * @returns {{show: object[], quiet: object[], held: object[]}}
+ */
+export function windowsFor(won, stats = null, { inSession = false } = {}) {
+  const list = [].concat(won || []).filter(Boolean);
+  if (inSession) return { show: [], quiet: [], held: list };
+  return { ...badgeWindows(list, stats), held: [] };
+}
+
 /* Word rarity.
  *
  * The corpus frequency score (`q`, from freq_lemmas.json via build_bundle.py)
