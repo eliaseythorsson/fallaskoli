@@ -224,7 +224,7 @@ export function renderPicker(app) {
     a 📖 link in a question opens Lesefni mid-session, and there the tabs are
     the way back. */
 export function sessionLayoutOn(app, practiceShown) {
-  return !!(app && app.run && !app.drill && !app.duelRun && practiceShown);
+  return !!(app && app.run && !app.drill && !app.duelRun && !app.liveRun && practiceShown);
 }
 
 /** Put `body.insession` in step with the app. Called by `renderRunBar` and by
@@ -245,7 +245,7 @@ export function renderRunBar(app) {
   if (!el) return;
   syncSessionLayout(app);
   const r = app.run;
-  if (!r || app.drill || app.duelRun) { el.innerHTML = ""; lastShown = null; return; }
+  if (!r || app.drill || app.duelRun || app.liveRun) { el.innerHTML = ""; lastShown = null; return; }
   if (app.streak) { streakBar(app, el); return; }
   /* Dots for the sizes a child can pick (RUN_SIZES); a longer run (the
      browser test drives one of 100 000) gets the count alone. */

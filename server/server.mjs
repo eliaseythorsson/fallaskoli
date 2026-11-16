@@ -43,6 +43,9 @@ import {
 import { cleanState, suspicion, MAX_STATE_BYTES } from "./guard.mjs";
 import { privacyConfig, privacyPage, CONSENT_AGE, PRIVACY_VERSION } from "./privacy.mjs";
 import { createCalibration } from "./calibrate.mjs";
+import { createLive } from "./live.mjs";
+import { createTeamDuels } from "./teamduel.mjs";
+import { teamOf } from "../src/js/core/teamduel.js";
 import { seal, passphraseProblem } from "./backup.mjs";
 import { dropPrivileges } from "./privs.mjs";
 
@@ -85,6 +88,8 @@ export function createApp({
   dataDir = env.FALLASKOLI_DATA || path.join(HERE, "data"),
   htmlFile = htmlPath(),
   secureCookies = env.FALLASKOLI_INSECURE !== "1",
+  /* For the tests: a clock and limits for the live rounds (server/live.mjs). */
+  liveOptions = {},
 } = {}) {
   const store = createStore(dataDir);
   const lex = buildLexicon(DATA);
@@ -575,6 +580,11 @@ export function createApp({
         .map(({ seed, keys, ...d }) => d),
       errorReports: (await store.reports()).filter((r) => r.by === u.id)
         .map(({ reviewedBy, ...r }) => r),
+      /* v6.13 (item 67): the team duels they are in — the team and their
+         own result; not the seeds, not anybody else's. */
+      teamDuels: (await store.teamDuels()).filter((d) => teamOf(d, u.id))
+        .map((d) => ({ id: d.id, kind: d.kind, team: d.names[teamOf(d, u.id)], target: d.target, n: d.n,
+          created: d.created, deadline: d.deadline || null, result: (d.res || {})[u.id] || null })),
       /* v6.13: the result of each assignment they have sent one for. */
       assignments: (await store.assignments()).filter((a) => a.res && a.res[u.id])
         .map((a) => ({ id: a.id, target: a.target, n: a.n, due: a.due, created: a.created,
@@ -1373,6 +1383,32 @@ export function createApp({
     return json(res, 200, { ok: true, assignment: view });
   });
 
+  /* --- a live class round (v6.13, critique item 64) -------------------------
+   * Everything is in server/live.mjs — the rounds, the clock, the event
+   * streams, the limits — so that this file only lends it the helpers that
+   * decide who is logged in, who teaches whom, and who may be named in front
+   * of the class: the leaderboard's own rule (`visibleStates`). Routes:
+   * GET+POST /teacher/live, POST /teacher/live/:id/{next,close,end},
+   * GET /teacher/live/:id/events; GET /live, POST /live/:id/{join,answer},
+   * GET /live/:id/events. */
+  const live = createLive({
+    store, lexFor: lexForDuels, deps: DUEL_DEPS, judge, groupOf, audit,
+    shownOf: async (u) => shareOf(u).board && !u.review && !(await store.hidden()).includes(u.id),
+    ceiling: () => ceilingFor("*"), ...liveOptions,
+  });
+  live.routes({ on, json, readBody, needUser, needTeacher, securityHeaders });
+
+  /* --- team duels (v6.13, critique item 67) — server/teamduel.mjs ---------
+   * A class split in two, or one class against another, on the duel's own
+   * questions and grading. Routes: GET+POST /teacher/teamduels,
+   * POST /teacher/teamduels/:id/accept, DELETE /teacher/teamduels/:id;
+   * GET /teamduels, POST /teamduels/:id/{start,result}. */
+  const teamDuels = createTeamDuels({
+    store, lexFor: lexForDuels, deps: DUEL_DEPS, judge, groupOf, audit, can,
+    ceiling: () => ceilingFor("*"), dataPrint: DUEL_DATA, groupsNow,
+  });
+  teamDuels.routes({ on, json, readBody, needUser, needTeacher, securityHeaders });
+
   /* --- the curriculum ceiling ------------------------------------------
    *
    * The owner: *"The admin and local admin decide what is possible, within what
@@ -2132,7 +2168,12 @@ export function createApp({
   server.requestTimeout = 60000;
   server.headersTimeout = 20000;
 
-  return { server, store, handler, lex, google, privacy, sweep, calibration };
+  /* A live round's event streams never end by themselves, and `close` waits
+     for every connection: they are ended first (server/live.mjs). */
+  const closeServer = server.close.bind(server);
+  server.close = (cb) => { live.stop(); return closeServer(cb); };
+
+  return { server, store, handler, lex, google, privacy, sweep, calibration, live };
 }
 
 /* ---------- start-up when this file is run directly ---------- */

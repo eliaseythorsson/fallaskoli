@@ -59,7 +59,7 @@ function exampleHTML(ex) {
 function showExample(app) {
   const t = app.cur;
   if (!examples.has(t)) {
-    const ex = app.duelRun ? null : firstMeeting(app.S, t);
+    const ex = app.duelRun || app.liveRun ? null : firstMeeting(app.S, t);
     examples.set(t, ex);
     if (ex) markTypeSeen(app.S, t.typeId, todayKey());
     /* Item 17: a card that opens with its worked example is a first meeting,
@@ -182,6 +182,9 @@ function conclude(app, task, j, draw) {
   const extra = settle(app.S, app.sess, task, j, { ms: took });
   /* A duel keeps the answer itself: the server grades it (item 62). */
   if (task.duel && app.duelAnswer) app.duelAnswer(task, j.given);
+  /* …and so does a live round's (item 64): sent now, the verdict hidden
+     until the question closes on every screen (ui/live.js). */
+  if (task.live && app.liveAnswer) app.liveAnswer(task, j.given);
   draw();
   app.finish(extra);
 }

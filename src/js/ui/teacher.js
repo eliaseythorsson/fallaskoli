@@ -22,6 +22,10 @@ import { patternById, UNREAD } from "../core/diagnosis.js";
 import { YEARS } from "../core/curriculum.js";
 import { ASSIGN, ASSIGNABLE_PATTERNS, ASSIGNABLE_NODES, KIND_NAME, targetName, dueText }
   from "../core/assignment.js";
+/* Item 64: the live class round has its own file; its section sits here. */
+import { drawLiveTeacher } from "./live.js";
+/* …and so has the team duel (item 67). */
+import { drawTeamTeacher } from "./teamduel.js";
 
 const verdict = (text, kind = "bad") =>
   (text ? `<div class="verdict ${kind}"><p>${esc(text)}</p></div>` : "");
@@ -217,6 +221,9 @@ export async function renderTeacher(app) {
     </div>
     <div id="tc-list"><p class="sub faint">Sæki verkefnin…</p></div>
 
+    <div id="tc-live"></div>
+    <div id="tc-team"></div>
+
     <h3 class="sec2">Villumynstur hópsins</h3>
     <p class="sub">Nemendur niður, villumynstur þvert, algengasta villa hópsins fremst. Í hverjum reit:
       hve oft svarið var rangt af síðustu svörum sem prófa mynstrið — sömu tölur og nemandinn sér
@@ -239,6 +246,9 @@ export async function renderTeacher(app) {
       $("tc-table").innerHTML = patternTableHTML(t.pupils, t.columns);
     } catch (e) { $("tc-table").innerHTML = verdict(e.message); }
     $("tc-what").innerHTML = targetOptionsHTML(worst);
+    /* The same material, the class's worst patterns first (item 64). */
+    await Promise.all([drawLiveTeacher(app, group, targetOptionsHTML(worst)),
+      drawTeamTeacher(app, group, targetOptionsHTML(worst))]);
   };
   const drawList = async (msg = "") => {
     let data;

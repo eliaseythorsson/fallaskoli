@@ -35,6 +35,7 @@ import { renderTeacher } from "./ui/teacher.js";
 import { mergeStates } from "./core/merge.js";
 import { renderLessons, suggestLesson, wireLessons } from "./ui/lessons.js";
 import { renderDuelBar, renderDuelRoom } from "./ui/duel.js";
+import { pollLive, liveAnswer as sendLiveAnswer, renderLiveBar } from "./ui/live.js";
 import { duelTasks, signature, settleDuels, duelTotals, dataPrint } from "./core/duel.js";
 import { createPolicy, narrowPolicy, openFor } from "./core/policy.js";
 import { levelRanges, applyRanges, visitLevels } from "./core/difficulty.js";
@@ -111,6 +112,19 @@ const app = {
   duelPending: null,
   duelLex: null,
 
+  /* ---- a live class round (v6.13, item 64; ui/live.js) ----
+     `liveRun` is the round this pupil has joined: its id, the server's last
+     picture of it and the event stream; `liveOffer` a round in the group not
+     yet joined; `liveNote` a line to show when one has ended. None of it is
+     saved: the server holds the round, for the length of a lesson. */
+  liveRun: null,
+  liveOffer: null,
+  liveNote: null,
+  /** Is there a round to join? (ui/live.js `pollLive`) */
+  loadLive() { return pollLive(this); },
+  /** The answer just judged, for the server (ui/render.js `conclude`). */
+  liveAnswer(task, response) { sendLiveAnswer(this, task, response); },
+
   /** The lexicon duels are built from: the filtered vocabulary, for everyone,
       so both players' browsers build the same questions. */
   lexForDuels() {
@@ -129,8 +143,11 @@ const app = {
     if (this.duelPending) await this.sendDuel(this.duelPending);
     let info;
     try { info = await this.server.duels(); } catch { return; }
+    /* v6.13 (item 67): a team duel is played and settled as a duel is; it
+       rides in the same list, marked `team`. */
+    const team = await this.server.teamDuels().then((r) => r.duels || []).catch(() => []);
     this.duelInfo = info;
-    this.duelList = info.duels || [];
+    this.duelList = [...(info.duels || []), ...team];
     /* A hold for review can begin mid-visit (server/guard.mjs); say so now,
        not only after a reload. */
     if (this.profile && "review" in info && !!info.review !== !!this.profile.review) {
@@ -192,7 +209,7 @@ const app = {
     this.openView("practice");
     renderDuelBar(this);                       // "Sæki spurningarnar…"
     let r;
-    try { r = await this.server.duelStart(id); }
+    try { r = await (v.team ? this.server.teamDuelStart(id) : this.server.duelStart(id)); }
     catch (err) {
       this.duelStarting = null;
       return refuse(err && err.status ? err.message
@@ -264,7 +281,8 @@ const app = {
   /** Send the answers; kept and retried on the next load if the network fails. */
   async sendDuel(p) {
     try {
-      const r = await this.server.duelResult(p.view.id, p.answers, p.sig);
+      const r = await (p.view.team ? this.server.teamDuelResult(p.view.id, p.answers, p.sig)
+        : this.server.duelResult(p.view.id, p.answers, p.sig));
       this.duelPending = null;
       /* The score is the server's. It is the same judge on the same
          questions, so it is the number already on the strip — but if the two
@@ -375,7 +393,7 @@ const app = {
     this.assignments = list;
     /* The picker is on the board when nothing else is; drawn again only if
        something changed, so a look every five minutes moves nothing. */
-    if (changed && !this.run && !this.drill && !this.duelRun && !this.runDone && !this.cur) renderPicker(this);
+    if (changed && !this.run && !this.drill && !this.duelRun && !this.liveRun && !this.runDone && !this.cur) renderPicker(this);
   },
 
   /** One tap on an assignment: a session of its size, narrowed to its material. */
@@ -426,7 +444,7 @@ const app = {
    * the bar — "Æfa þetta" on a Lesefni page (item 41, `practiceLesson`).
    */
   startRun(topic, n, focus = null, opts = {}) {
-    if (this.duelRun) { this.openView("practice"); return; }
+    if (this.duelRun || this.liveRun) { this.openView("practice"); return; }
     this.drill = null; this.drillOffer = null; this.drillDone = null;
     this.forcedNoun = null;
     this.runDone = null;
@@ -526,7 +544,7 @@ const app = {
    * enough; otherwise the review queue has it for tomorrow.
    */
   planReask(task) {
-    if (!this.run || this.drill || this.duelRun || !task || !task.inRun) return false;
+    if (!this.run || this.drill || this.duelRun || this.liveRun || !task || !task.inRun) return false;
     return scheduleReask(this.run, task, rng);
   },
 
@@ -693,7 +711,7 @@ const app = {
    */
   offerStreak(findings) {
     const r = this.run, from = this.cur;
-    if (!r || !from || this.streak || this.drill || this.duelRun) return;
+    if (!r || !from || this.streak || this.drill || this.duelRun || this.liveRun) return;
     const p = streakPattern(findings, false,
       { done: r.streaked, canPractise: (id) => usable(this, [id]) });
     if (!p) return;
@@ -785,7 +803,7 @@ const app = {
 
   /** Begin a rescue drill on one word, from the offer or from the collection. */
   startDrill(key) {
-    if (this.duelRun) return;
+    if (this.duelRun || this.liveRun) return;
     const [lemma, cls] = String(key).split("|");
     const entry = this.lex.lookup(lemma, cls);
     if (!entry) return;
@@ -807,7 +825,7 @@ const app = {
 
   /** After a question: offer a drill on a word in trouble, sparingly. */
   considerOffer() {
-    if (this.duelRun || this.run) return;
+    if (this.duelRun || this.liveRun || this.run) return;
     if (this.drill || this.drillOffer || this.drillOffered.size >= 3) return;
     const fresh = (k) => !this.drillOffered.has(k);
     /* The word just answered, if it is in trouble … */
@@ -860,6 +878,9 @@ const app = {
     /* Kept for the 🚩 report: a child often notices a mistake only after
        pressing Áfram (ui/reports.js). */
     if (this.cur) this.prevTask = { task: this.cur, card: captureCard() };
+    /* A live round: the next question comes from the teacher, not from
+       Áfram (ui/live.js). The card stays as it is. */
+    if (this.liveRun) { renderLiveBar(this); return; }
     if (this.duelRun) {
       const run = this.duelRun;
       if (run.i < run.tasks.length) {
@@ -1081,6 +1102,9 @@ const app = {
        röð" and the worked example too, which are parts of a session. The
        v6.9 rule above still governs a rescue drill, which has no summary. */
     if (this.run) return;
+    /* A live round: no window over a question while the clock runs. They
+       wait, as after a wrong answer, for the next one that is right. */
+    if (this.liveRun) { this.sess.heldBadges = celebrate(this.sess.heldBadges, won, false).held; return; }
     const c = celebrate(this.sess.heldBadges, won, extra.correct ?? null);
     this.sess.heldBadges = c.held;
     if (!c.show.length) return;
@@ -1458,6 +1482,7 @@ async function loadSocial() {
   judgeSocial();
   app.loadDuels();
   app.loadAssignments();
+  app.loadLive();
   redrawOpenView();
 }
 
@@ -1588,8 +1613,15 @@ async function init() {
       clock.resume();
       /* Duels: a challenge may have arrived while the tab was away. */
       if (app.server && Date.now() - (app.duelLoadedAt || 0) > 60000) app.loadDuels();
+      /* A live round may have started while the tab was away. */
+      if (app.server) app.loadLive();
     }
   });
+  /* A live round is started in the lesson, so the look for one is frequent:
+     one small request every 15 seconds while the tab is open. */
+  if (app.server) setInterval(() => {
+    if (document.visibilityState === "visible" && !app.liveRun) app.loadLive();
+  }, 15000);
   /* …and while it is open, a look every five minutes. One small request. */
   if (app.server) setInterval(() => {
     if (document.visibilityState === "visible" && !app.duelRun) { app.loadDuels(); app.loadAssignments(); }
