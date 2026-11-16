@@ -384,8 +384,10 @@ export const shapeKey = (t) => { const s = shapeOf(t); return `${s.type}~${s.lvl
  *     case a word governs (the cell is the governing word, and *handa*
  *     always takes the dative), every "which kind is this?" choice, and
  *     "find the subject" (it is nearly always the first word);
- *   - the cell is one hand-written item (fs_sogn, fs_operson): the same
- *     cell is the same question;
+ *   - the cell is one hand-written item (fs_sogn): the same cell is the
+ *     same question. (fs_operson was here until critique item 23 asked each
+ *     impersonal verb with two dozen subjects: *stjórn:langa* is now *mig*,
+ *     *okkur*, *strákinn* …, and the cell no longer gives the answer.);
  *   - so few words share a cell that it comes to the same thing: *four* in
  *     the masculine accusative is *fjóra* whatever the sentence (to_samr,
  *     to_val, fn_stad, lo_beyging).
@@ -402,7 +404,7 @@ export const shapeKey = (t) => { const s = shapeOf(t); return `${s.type}~${s.lvl
 export const CELL_IS_ANSWER = new Set([
   "parse", "revform", "govern", "indecl", "syntax", "ob_fsao", "setn_hlut",
   "fn_flokkar", "no_beyging", "so_mynd", "gerd_tegund", "setn_lidir",
-  "fs_sogn", "fs_operson",
+  "fs_sogn",
   "to_samr", "to_val", "fn_stad", "lo_beyging",
 ]);
 

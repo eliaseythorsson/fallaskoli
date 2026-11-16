@@ -220,6 +220,11 @@ export function impersonalItems() {
     for (const sb of subjects) {
       const a = sb.f[f.case], cue = sb.f.NF[0];
       if (f.case !== "NF" && a.includes(cue)) continue;
+      /* *Barninu er kalt* — but *barnið er kalt* (cold to the touch) is good
+         Icelandic too: the adjective agrees with a neuter singular subject.
+         So no neuter singular in the frames of *vera*/*verða* + adjective
+         (`f.x`, the ones BÍN has no impersonal form for). */
+      if (f.x && sb.c === "hk" && sb.col.startsWith("ET")) continue;
       const vf = f.v["*"] || f.v[sb.p];
       const t = f.t.replace("{V}", vf);
       const why = f.case === "NF"

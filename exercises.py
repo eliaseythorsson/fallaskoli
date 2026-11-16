@@ -371,6 +371,9 @@ VC_VISITED = VC_FAMILY + [("nágranni", "ETgr"), ("læknir", "ETgr")]
 VC_THINGS = [("sími", "ETgr"), ("lykill", "ETgr"), ("taska", "ETgr"), ("bolti", "ETgr"),
              ("húfa", "ETgr"), ("vettlingur", "ETgr"), ("blýantur", "ETgr"), ("veski", "ETgr"),
              ("nesti", "ETgr"), ("úlpa", "ETgr"), ("trefill", "ETgr"), ("bók", "ETgr")]
+# What a thief takes in the night: something worth stealing (not a pencil).
+VC_STOLEN = [("sími", "ETgr"), ("lykill", "ETgr"), ("taska", "ETgr"), ("veski", "ETgr"),
+             ("úlpa", "ETgr"), ("bók", "ETgr")]
 VC_THROWN = [("bolti", "ETgr"), ("húfa", "ETgr"), ("lykill", "ETgr"), ("vettlingur", "ETgr"),
              ("blýantur", "ETgr"), ("trefill", "ETgr")]
 VC_SHUT = [("hurð", "ETgr"), ("gluggi", "ETgr"), ("skápur", "ETgr"), ("taska", "ETgr"),
@@ -404,8 +407,8 @@ VERB_FRAMES = [
     (0, "Litla systir mín gleymdi ___ heima í morgun.", "gleyma", "ÞGF", VC_THINGS),
     (0, "Ég týndi ___ í gær.", "týna", "ÞGF", VC_THINGS),
     (0, "Strákurinn í næsta húsi týndi ___ í gær.", "týna", "ÞGF", VC_THINGS),
-    (0, "Þjófurinn stal ___ í nótt.", "stela", "ÞGF", VC_THINGS),
-    (0, "Þjófurinn stal ___ úr bílnum í nótt.", "stela", "ÞGF", VC_THINGS),
+    (0, "Þjófurinn stal ___ í nótt.", "stela", "ÞGF", VC_STOLEN),
+    (0, "Þjófurinn stal ___ úr bílnum í nótt.", "stela", "ÞGF", VC_STOLEN),
     (0, "Hún kastaði ___ til mín.", "kasta", "ÞGF", VC_THROWN),
     (0, "Strákurinn kastaði ___ langt út í garð.", "kasta", "ÞGF", VC_THROWN),
     (0, "Ég lokaði ___.", "loka", "ÞGF", VC_SHUT),
@@ -583,7 +586,7 @@ ADV_PREP_FRAMES = [
     ("undir",
      [("Kötturinn skreið undir ___.", "ÞF", [("rúm", "ETgr"), ("borð", "ETgr"), ("sófi", "ETgr")]),
       ("Boltinn lá undir ___.", "ÞGF", [("rúm", "ETgr"), ("borð", "ETgr"), ("bekkur", "ETgr")])],
-     ["Báturinn sökk og fór undir."]),
+     ["Liðið okkar var undir í hálfleik."]),
     ("með",
      [("Ég fór í bíó með ___.", "ÞGF", [("vinur", "ETgr"), ("vinkona", "ETgr"), ("amma", "ET"), ("afi", "ET")]),
       ("Hún kom með ___ í skólann.", "ÞF", [("nesti", "ETgr"), ("bolti", "ETgr"), ("hundur", "ETgr")])],
@@ -600,9 +603,6 @@ ADV_PREP_FRAMES = [
     ("við",
      [("Hún talaði lengi við ___.", "ÞF", [("kennari", "ETgr"), ("amma", "ET"), ("nágranni", "ETgr"), ("vinkona", "ETgr")])],
      ["Ég kom við í búðinni.", "Pabbi kom við hjá ömmu."]),
-    ("út",
-     [("Hún horfði út ___.", "ÞF", [("gluggi", "ETgr")])],
-     ["Barnið hljóp út.", "Við fórum út.", "Komdu út!"]),
 ]
 
 # Choose the conjunction. (level, sentence, right, [wrong, wrong, wrong], why)
@@ -740,8 +740,7 @@ CONJ_SAID = ["Hún sagði ___ hún væri svöng.", "Pabbi sagði ___ maturinn v�
 CONJ_CAUSE = [("það rigndi", "við vorum inni"), ("ég var svangur", "ég fékk mér samloku"),
               ("bíllinn bilaði", "við komum of seint"), ("það var hálka", "ég datt"),
               ("ég gleymdi lyklinum", "ég komst ekki inn"), ("hún var veik", "hún fór ekki í skólann"),
-              ("það var kalt", "ég fór í úlpu"), ("ég æfði mig mikið", "ég vann keppnina"),
-              ("ég var þyrstur", "ég fékk mér vatn"), ("sólin skein", "við fórum á ströndina"),
+              ("það var kalt", "ég fór í úlpu"), ("ég var þyrstur", "ég fékk mér vatn"), ("sólin skein", "við fórum á ströndina"),
               ("það rigndi mikið allan daginn", "við vorum inni og spiluðum á spil"),
               ("bíllinn bilaði á leiðinni upp í sveit", "við komum of seint í afmælið hjá ömmu"),
               ("það var mikil hálka á götunum", "margir duttu á leiðinni í skólann í morgun"),
@@ -969,7 +968,7 @@ WORD_IN_CONTEXT_FRAMES = [
      ["ský", "tungl", "himinn", "regnbogi", "vindur", "rigning"]),
     (0, "Ég skrifaði nafnið mitt með ___.", "ÞGFET",
      ["penni", "blýantur", "krít", "tússpenni"],
-     ["ostur", "sokkur", "kartafla", "súpa", "mjólk", "koddi"]),
+     ["ostur", "sokkur", "kartafla", "koddi", "teppi"]),
     (0, "Ég fékk mér ___ úr ísskápnum.", "ÞFET",
      ["mjólk", "jógúrt:hk", "skyr", "ostur", "epli", "safi"],
      ["sófi", "gluggi", "rúm", "klukka", "teppi", "hurð"]),

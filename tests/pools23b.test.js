@@ -64,6 +64,30 @@ test("fs_operson: every subject is BÍN's form in the case asked, and never the 
   for (const x of items.slice(0, 300)) assert.ok(x.why.toLowerCase().includes(x.a[0].toLowerCase()), x.why);
 });
 
+test("fs_operson: no neuter singular with *vera/verða* + adjective (*barnið er kalt* is right too)", () => {
+  const bad = impersonalItems().filter((x) => /^___ (er|var|verður|varð) /.test(x.t) && x.c === "hk" && /ET/.test(x.m));
+  assert.deepEqual(bad.map((x) => x.key), []);
+  assert.ok(impersonalItems().some((x) => /^___ er kalt/.test(x.t) && x.l === "barn" && /FT/.test(x.m)));
+});
+
+test("native reading (item 6 strictness): the distractors that would also be right are gone", () => {
+  /* *ég man þegar ég var lítill*: no *þegar* after *man ekki*; *pabbi sagði
+     þegar …* is arguable: no *þegar* after *sagði/hélt/vona* */
+  for (const x of EX.conjunction) {
+    if (/man ekki ___/.test(x.t)) assert.ok(!x.w.includes("þegar"), x.t);
+    if (/(sagði|hélt|vona) ___/.test(x.t)) assert.ok(!x.w.includes("þegar"), x.t);
+    /* *ég æfði mig mikið af því að ég vann keppnina* can be meant */
+    assert.ok(!/^Ég æfði mig mikið ___ ég vann keppnina\.$/.test(x.t), x.t);
+  }
+  /* *horfði út gluggann* (út um), *báturinn fór undir* */
+  assert.ok(!EX.advPrep.some((x) => /út gluggann|fór undir\./.test(x.t)));
+  /* a thief takes things worth stealing */
+  assert.ok(!EX.verbCase.some((x) => /^Þjófurinn/.test(x.t) && ["blýantur", "vettlingur", "nesti", "húfa", "trefill", "bolti"].includes(x.noun)));
+  /* one can write with milk (invisible ink) */
+  const w = EX.wordInContext.filter((x) => /skrifaði nafnið mitt/.test(x.t) && x.gen);
+  assert.ok(w.length && w.every((x) => !x.w.some((o) => ["mjólk", "súpa"].includes(o.o))));
+});
+
 test("fs_operson: the trap agrees with its subject (*ég hlakka*, *við hlökkum*), the others are third person", () => {
   const byT = (re) => impersonalItems().filter((x) => re.test(x.t));
   /* *hlakka*: ég, and every third person plural (þeir, þær, þau, strákarnir) */

@@ -554,16 +554,21 @@ for frames, right, pool, why in (
 frames, clauses = X.CONJ_WHETHER
 for f in frames:
     for c in clauses:
-        # not *nema*: *ég veit ekki nema hún komi* is an idiom of its own
-        conj_item(f.replace("{C}", c), "hvort", ["ef", "hvort sem", "þegar"],
+        # not *nema*: *ég veit ekki nema hún komi* is an idiom of its own;
+        # and not *þegar* after *man*: *ég man þegar ég var lítill* is good
+        # Icelandic, so *ég man ekki þegar …* is not plainly wrong
+        remember = " man " in f
+        conj_item(f.replace("{C}", c), "hvort", ["ef", "hvort sem", "sem" if remember else "þegar"],
                   "Óbein spurning hefst á *hvort*: *" + f.split(" ___")[0].lower() + " hvort …* — "
-                  "*ef* táknar skilyrði og *þegar* tíma."); k += 1
+                  + ("*ef* táknar skilyrði." if remember else "*ef* táknar skilyrði og *þegar* tíma.")); k += 1
 for t in X.CONJ_RELATIVE:
     noun = t.split(" ___")[0]
     conj_item(t, "sem", rotate(["að", "hvort", "þegar", "nema"], k),
               f"*Sem* tengir tilvísunarsetningu við nafnorð: *{noun.lower()} sem …*."); k += 1
 for t in X.CONJ_SAID:
-    conj_item(t, "að", rotate(["sem", "hvort", "nema", "þegar"], k),
+    # not *þegar*: *pabbi sagði þegar maturinn væri tilbúinn* is near enough
+    # to *sagði til þegar* to be argued over
+    conj_item(t, "að", rotate(["sem", "hvort", "nema", "en"], k),
               "*Að* tengir það sem er sagt, haldið eða vonað við sögnina: *sagði að …*, *vona að …*."); k += 1
 for cause, result in X.CONJ_CAUSE:
     conj_item(f"{result} ___ {cause}.", "af því að", rotate(["svo að", "nema", "hvort sem", "til þess að"], k),
