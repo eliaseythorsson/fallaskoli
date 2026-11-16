@@ -24,8 +24,11 @@
 import { migrate, FRAMES_MAX } from "../src/js/core/state.js";
 import { BADGES } from "../src/js/core/badges.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
-import { sanitiseReview, REVIEW_MAX } from "../src/js/core/review.js";
+import { sanitiseReview, REVIEW_MAX, STATS_MAX } from "../src/js/core/review.js";
 import { cleanLevels } from "../src/js/core/difficulty.js";
+import { cleanByType } from "../src/js/core/mastery.js";
+import { cleanSeenTypes } from "../src/js/core/examples.js";
+import { TYPE_IDS } from "../src/js/core/policy.js";
 
 export const MAX_STATE_BYTES = 2 * 1024 * 1024;
 
@@ -46,6 +49,7 @@ export const LIMITS = {
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const BADGE_IDS = new Set(BADGES.map((b) => b.id));
 const SKILLS = new Set(SKILL_IDS);
+const TYPES = new Set(TYPE_IDS);
 
 const n = (x, max = 1e9) =>
   (typeof x === "number" && Number.isFinite(x) ? Math.min(Math.max(0, Math.round(x)), max) : 0);
@@ -186,8 +190,11 @@ export function cleanState(raw, { today = new Date() } = {}) {
   review.items = review.items
     .filter((e) => e.due <= ahead && e.last <= limit && e.add <= limit && (!e.sk || SKILLS.has(e.sk)))
     .slice(0, REVIEW_MAX);
+  /* Tallies per pattern, per category and (item 44) per question type: a
+     category or a type the program does not have is dropped. */
   review.stats = Object.fromEntries(Object.entries(review.stats)
-    .filter(([k]) => !k.startsWith("s:") || SKILLS.has(k.slice(2))).slice(0, 100));
+    .filter(([k]) => (!k.startsWith("s:") || SKILLS.has(k.slice(2))) &&
+      (!k.startsWith("t:") || TYPES.has(k.slice(2)))).slice(0, STATS_MAX));
   S.review = review;
 
   /* Saved levels (v6.13, core/difficulty.js): known skills only, the level
@@ -200,6 +207,12 @@ export function cleanState(raw, { today = new Date() } = {}) {
      keys and whole counts (core/state.js `cleanFrames`); here the counts are
      held to the same ceiling as every other counter. */
   S.frames = Object.fromEntries(pairs(S.frames, FRAMES_MAX, 8).map(([k, v]) => [k, n(v, 100000)]));
+  /* Per question type (v6.13, item 44): known types only, two counts, twenty
+     letters and a time. Types met (item 41): known types only, one day each,
+     not after tomorrow. Both bounded by the number of question types. */
+  S.byType = cleanByType(S.byType);
+  S.seenTypes = Object.fromEntries(Object.entries(cleanSeenTypes(S.seenTypes))
+    .filter(([, d]) => d <= limit));
 
   S.counters = Object.fromEntries(pairs(S.counters, 20, 40).map(([k, v]) => [k, n(v)]));
   S.periods = smallJSON(S.periods, 60000) || {};

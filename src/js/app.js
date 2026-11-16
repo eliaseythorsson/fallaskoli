@@ -3,7 +3,7 @@
 import { DATA } from "../../data/data_bundle.js";
 import { buildLexicon } from "./core/lexicon.js";
 import { migrate, blankState, newSession, todayKey, badgeContext, settleDays,
-  noteQuestion, noteLogin, effectivePolicy } from "./core/state.js";
+  noteQuestion, noteLogin, effectivePolicy, chosenPolicy } from "./core/state.js";
 import { applyDecay } from "./core/progress.js";
 import { checkBadges, checkLogin, celebrate } from "./core/badges.js";
 import { collectionSummary } from "./core/collection.js";
@@ -34,7 +34,7 @@ import { mergeStates } from "./core/merge.js";
 import { renderLessons, suggestLesson, wireLessons } from "./ui/lessons.js";
 import { renderDuelBar, renderDuelRoom } from "./ui/duel.js";
 import { duelTasks, signature, settleDuels, duelTotals, dataPrint } from "./core/duel.js";
-import { createPolicy, narrowPolicy } from "./core/policy.js";
+import { createPolicy, narrowPolicy, openFor } from "./core/policy.js";
 import { levelRanges, applyRanges, visitLevels } from "./core/difficulty.js";
 import { maxOf } from "./core/mix.js";
 import { TASKS } from "./tasks/index.js";
@@ -45,7 +45,7 @@ import { SKILL_IDS } from "./core/skills.js";
 import { renderPicker, renderRunBar, renderSummary, renderDiagnosisPanel, confirmQuit,
   topics, usable, MINE, MIXED, TODAY, ASSIGNED, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
 import { scopeOf, assignmentPolicy } from "./core/assignment.js";
-import { LESSONS, readCount } from "./core/lessons.js";
+import { LESSONS, readCount, lessonById, lessonPractice, practiceSkills, PRACTICE_SIZE } from "./core/lessons.js";
 
 /* The random source of the question builders (tasks/view.js). They never call
    Math.random themselves: it is handed to them, here for practice and seeded
@@ -313,7 +313,9 @@ const app = {
    * Begin a session. `focus`: pattern ids, for a session aimed at them.
    * `opts.review: false` starts it without the reviews a session otherwise
    * opens with (core/review.js) — for a caller whose few questions are all
-   * spoken for.
+   * spoken for. `opts.types` (with `opts.skills`, `opts.attrs`) narrows the
+   * session to exactly those question types, and `opts.label` names it in
+   * the bar — "Æfa þetta" on a Lesefni page (item 41, `practiceLesson`).
    */
   startRun(topic, n, focus = null, opts = {}) {
     if (this.duelRun) { this.openView("practice"); return; }
@@ -349,14 +351,19 @@ const app = {
          (once each), and how each run of three went. */
       plan: today ? today.slots.filter((x) => x.kind !== "review") : null,
       streaked: [], streaks: [],
+      /* Item 41: a session on given question types, and its name. */
+      types: opts.types || null, skills: opts.skills || null, attrs: opts.attrs || null,
+      label: opts.label || null, lesson: opts.lesson || null,
     };
     if (today) this.run.review = today.reviews.slice();
     else if (opts.review !== false)
       this.run.review = planOpening(this.S, todayKey(), n, this.reviewPolicy(), this.run.focus);
-    /* The picker remembers the CATEGORY last chosen; neither today's session
-       nor "Villurnar mínar" is one. Nor is today's ten the size it offers. */
-    if (topic !== MINE.id && topic !== TODAY.id && topic !== ASSIGNED.id) this.S.settings.runTopic = topic;
-    if (topic !== TODAY.id && topic !== ASSIGNED.id) this.S.settings.runSize = n;
+    /* The picker remembers the CATEGORY last chosen there, and its size;
+       neither today's session, an assignment, "Villurnar mínar" nor a
+       Lesefni page's five (item 41, `opts.types`) is one. */
+    const picked = !opts.types && topic !== TODAY.id && topic !== ASSIGNED.id;
+    if (picked && topic !== MINE.id) this.S.settings.runTopic = topic;
+    if (picked) this.S.settings.runSize = n;
     this.save();
     this.openView("practice");
     this.next();
@@ -371,6 +378,13 @@ const app = {
       { types: r.focus ? [...focusTypes(r.focus)] : null });
     const P = effectivePolicy(this.S);
     if (!r) return P;
+    /* Item 41: asked for by name, so the child's own switches give way for
+       these types (core/policy.js openFor); the administrator's do not. */
+    if (r.types) {
+      const open = createPolicy(this.S.allowed || null,
+        openFor(chosenPolicy(this.S), { skills: r.skills || [], types: r.types }));
+      return narrowPolicy(open, { skills: r.skills, types: r.types, attrs: r.attrs });
+    }
     return narrowPolicy(P, {
       skills: SKILL_IDS.includes(r.topic) ? [r.topic] : null,
       types: r.focus ? [...focusTypes(r.focus)] : null,
@@ -505,6 +519,7 @@ const app = {
     const topicTypes = r.assignment
       ? (r.assignment.scope.types ? new Set(r.assignment.scope.types)
         : r.assignment.scope.skills ? new Set(r.assignment.scope.skills.flatMap((x) => [...typesOfSkill(x)])) : null)
+      : r.types ? new Set(r.types)
       : SKILL_IDS.includes(r.topic) ? typesOfSkill(r.topic) : null;
     const report = runReport(r, this.S, topicTypes ? (p) => p.types.some((x) => topicTypes.has(x)) : null);
     const xp = Math.max(0, this.S.xp - r.xp0);
@@ -524,6 +539,10 @@ const app = {
       topic: r.topic, n: r.n, i: r.i, c: r.c, j: r.j, xp, focus: r.focus,
       badges: r.badges, items: r.items, report, early: early || empty,
       ms: Date.now() - r.startedAt, streaks: r.streaks || [],
+      /* Item 41: "Önnur lota" repeats a page's session as it was. */
+      label: r.label, again: r.types
+        ? { review: false, types: r.types, skills: r.skills, attrs: r.attrs, label: r.label, lesson: r.lesson }
+        : null,
     };
     const done = this.runDone;
     /* The summary says whether the teacher has the result; drawn again when
@@ -607,6 +626,22 @@ const app = {
     this.endStreak();
     this.streak = null;
     this.next();
+  },
+
+  /**
+   * "Æfa þetta" on a Lesefni page (item 41): five questions on exactly the
+   * question types of that page's curriculum nodes (core/lessons.js
+   * lessonPractice), without the reviews a session opens with — all five
+   * are the page's.
+   */
+  practiceLesson(id) {
+    const p = lessonPractice(id);
+    const page = lessonById(id);
+    if (!p || !page) return;
+    this.startRun(page.skill, PRACTICE_SIZE, null, {
+      review: false, types: p.types, attrs: p.attrs, skills: practiceSkills(p, TASKS),
+      label: "Lesefni: " + page.nm, lesson: id,
+    });
   },
 
   /** A Lesefni page was opened for the first time (ui/lessons.js). */

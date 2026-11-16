@@ -137,6 +137,17 @@ src/js/core/streak.js "Þrjár í röð": after a diagnosed miss, three question
                       on its pattern with the rule first (tasks/drill.js
                       builds them), outside the session's count; the
                       pattern then goes into the review queue
+src/js/core/mastery.js  the mastery mark (item 44): per question type the
+                      last twenty answers with the step each was asked at
+                      (`S.byType`), and `masteryOf(S, skill)` /
+                      `masteryOfTypes(S, types)` → 0 "Of fá svör" … 4
+                      "Fullt vald", from recent accuracy at the pupil's
+                      level and reviews passed on time; thresholds at the
+                      top of the file
+src/js/core/examples.js  the worked example on the first card of a type a
+                      pupil has not met (item 41; the texts are in
+                      content/examples.js, every form checked against BÍN
+                      by tests/examples.test.js), and `S.seenTypes`
 src/js/core/mix.js    the mix rule for a session: ≥3 kinds of question, none
                       over ~40%, tables ≤30%, analysis ≤35%
 src/js/core/curriculum.js  the curriculum map as data: the official

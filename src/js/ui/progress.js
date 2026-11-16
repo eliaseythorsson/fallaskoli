@@ -14,6 +14,7 @@ import { holidayName } from "../core/calendar.js";
 import { statusOf } from "../core/wordhealth.js";
 import { dueEntries, dueLine } from "../core/review.js";
 import { typeById, enabled } from "../tasks/index.js";
+import { masteryOf, masteryLine } from "../core/mastery.js";
 
 /** The entries waiting for review that this pupil may be asked now: the same
     test a session's opening applies (tasks/review.js planOpening), so the
@@ -111,20 +112,35 @@ export function renderHeader(app) {
 
 /* ---------- stig eftir flokkum ---------------------------------------- */
 
-export function skillGridHTML(S) {
+/* The mastery mark (item 44, core/mastery.js) beside the stig: four pips
+   and a word, with what it rests on in the title and the line below. The
+   stig is XP and rises with any practice; the mark is how secure the skill
+   is at the pupil's level. Mark 0 says plainly that there is too little. */
+function masteryHTML(m) {
+  const line = masteryLine(m);
+  const pips = [1, 2, 3, 4].map((k) => `<i class="${k <= m.level ? "on" : ""}"></i>`).join("");
+  return `<span class="mastery m${m.level}" title="${esc(line)}" aria-label="${esc(`Vald: ${m.label}. ${line}`)}">
+    <span class="mpips" aria-hidden="true">${pips}</span><b>${esc(m.label)}</b></span>`;
+}
+
+export function skillGridHTML(S, now = Date.now()) {
   const rows = skillSummary(S);
   const best = Math.max(...rows.map((r) => r.level));
   return `<div class="skillgrid">` + rows.map((r) => {
     const pct = Math.round(100 * r.into / r.need);
     const strong = r.level === best && r.answers >= 10;
-    const weak = r.acc != null && r.acc < 0.6 && r.answers >= 10;
-    return `<div class="skillcard${r.enabled ? "" : " off"}">
+    /* The old "þarf æfingu" tag read the skill's accuracy over all time; the
+       mastery mark reads the recent answers at the pupil's level and says
+       the same thing when it is true now (mark 1). */
+    const m = masteryOf(S, r.id, now);
+    return `<div class="skillcard${r.enabled ? "" : " off"}" data-skill="${esc(r.id)}" data-mastery="${m.level}">
       <div class="skhead"><span class="skico">${r.meta.ico}</span>
         <span class="sknm">${esc(r.meta.nm)}</span>
         <span class="skcur">${esc(r.meta.cur)}</span></div>
       <div class="sklvl">Stig ${r.level} · ${esc(r.rank)}
         ${strong ? '<i class="tagstrong">sterkasta</i>' : ""}
-        ${weak ? '<i class="tagweak">þarf æfingu</i>' : ""}</div>
+        ${masteryHTML(m)}</div>
+      <div class="skmeta mline">${esc(masteryLine(m))}</div>
       <div class="skbar"><i style="width:${pct}%"></i></div>
       <div class="skmeta">${r.xp.toLocaleString("is-IS")} XP ·
         ${r.answers ? Math.round(100 * r.acc) + "% rétt af " + r.answers : "ekkert svarað enn"}

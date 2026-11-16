@@ -11,6 +11,8 @@ import { timeContext } from "./calendar.js";
 import { checkDayEnd } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
 import { blankReview, sanitiseReview } from "./review.js";
+import { cleanByType } from "./mastery.js";
+import { cleanSeenTypes } from "./examples.js";
 
 export const STATE_VERSION = 11;
 
@@ -99,6 +101,15 @@ export function blankState() {
        often: { frame key: count } (tasks/frames.js `frameKey`). The reverse
        analysis prefers the ones seen least (v6.13, critique item 24). */
     frames: {},
+    /* Per question type (v6.13, item 44): answers ever, right ones, and the
+       last twenty with the step of difficulty each was asked at —
+       { typeId: {n, c, h, at} }. What the mastery mark reads; see
+       core/mastery.js. */
+    byType: {},
+    /* The question types this pupil has met, { typeId: day } (item 41): a
+       type not in it shows one worked example on its first card
+       (core/examples.js). */
+    seenTypes: {},
   };
 }
 
@@ -190,6 +201,9 @@ export function migrate(raw) {
     difficulty: raw.difficulty && typeof raw.difficulty === "object"
       ? cleanLevels(raw.difficulty) : levelsFromXp(raw.skills),
     frames: cleanFrames(raw.frames),
+    /* Items 44 and 41 (v6.13): rebuilt field by field, known types only. */
+    byType: cleanByType(raw.byType),
+    seenTypes: cleanSeenTypes(raw.seenTypes),
   });
   S.run = 0;
 

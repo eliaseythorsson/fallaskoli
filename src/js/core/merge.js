@@ -21,6 +21,8 @@
 
 import { mergeReview } from "./review.js";
 import { mergeLevels } from "./difficulty.js";
+import { mergeByType } from "./mastery.js";
+import { mergeSeenTypes } from "./examples.js";
 
 const num = (x) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
 const obj = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : {});
@@ -194,6 +196,11 @@ export function mergeStates(base, local, remote) {
   /* Sentences seen as frames (v6.13): counts that only ever grow, added like
      any counter. */
   out.frames = counters(B.frames, L.frames, R.frames, keys(L.frames, R.frames));
+  /* Per question type (v6.13, item 44, core/mastery.js): the counts add, the
+     recent history is the side answered last. Types met (item 41): met on
+     either device is met, on the earlier day. */
+  out.byType = mergeByType(B.byType, L.byType, R.byType);
+  out.seenTypes = mergeSeenTypes(L.seenTypes, R.seenTypes);
 
   out.lastActive = later(L.lastActive, R.lastActive);
   out.settled = later(L.settled, R.settled);

@@ -690,9 +690,14 @@ test("a table: every cell's XP and the bonus are what recording cell by cell gav
       /* The review queue is the one thing `settle` writes that the old
          handlers did not (v6.13, core/review.js): a table with a wrong cell
          leaves one entry — its first wrong cell — and a perfect one none. */
-      const { review, ...rest } = b.S;
-      const { review: none, ...was } = a.S;
+      const { review, byType, ...rest } = b.S;
+      const { review: none, byType: noTypes, ...was } = a.S;
       assert.deepEqual(none.items, []);
+      /* So is the answer by question type (item 44, core/mastery.js): one
+         answer for the whole table, right only when every cell was. */
+      assert.deepEqual(noTypes || {}, {});
+      assert.deepEqual([byType[t.typeId].n, byType[t.typeId].c, byType[t.typeId].h.length],
+        [1, j.ok ? 1 : 0, 1], `${t.title}: the answer by type after a table`);
       assert.deepEqual(review.items.map((e) => [e.t, e.w, e.s]),
         j.ok ? [] : [[t.typeId, t.word, 0]], `${t.title}: the review queue after a table`);
       assert.deepEqual(rest, was, `${t.title}: the state after a table`);

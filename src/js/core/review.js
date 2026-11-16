@@ -24,7 +24,10 @@
  *   S.review = {
  *     items: [ entry, … ],             at most REVIEW_MAX
  *     stats: { "p:<pattern>": tally,   per error pattern (core/diagnosis.js)
- *              "s:<skill>":   tally }  per category
+ *              "s:<skill>":   tally,   per category
+ *              "t:<type>":    tally }  per question type (since item 44: the
+ *                                      mastery mark of a curriculum node,
+ *                                      core/mastery.js)
  *   }
  *
  *   entry   k     its identity (see `keyFor`)
@@ -107,6 +110,8 @@ export const STALE_DAYS = 60;
 export const OPENING_MAX = 3;
 /** A review passed within this many days of its day counts as on time. */
 export const ON_TIME_DAYS = 2;
+/** The most tallies `stats` keeps (patterns, categories and question types). */
+export const STATS_MAX = 240;
 /** After a wrong cloze the noun comes back this many questions later. */
 export const REASK_GAP = [3, 5];
 
@@ -179,7 +184,7 @@ const isDue = (e, today) => e.due <= today;
 const isStale = (e, today) => daysBetween(e.due, today) > STALE_DAYS;
 
 function bump(stats, e, field) {
-  for (const k of [e.p ? "p:" + e.p : null, e.sk ? "s:" + e.sk : null]) {
+  for (const k of [e.p ? "p:" + e.p : null, e.sk ? "s:" + e.sk : null, e.t ? "t:" + e.t : null]) {
     if (!k) continue;
     const r = (stats[k] ||= { a: 0, l: 0, p: 0, t: 0, g: 0, x: 0 });
     r[field] = (r[field] || 0) + 1;
@@ -476,6 +481,11 @@ export const patternReviewStats = (S, now) => figures(S, now, "p:", "p");
     mastery mark (item 44). */
 export const skillReviewStats = (S, now) => figures(S, now, "s:", "sk");
 
+/** The same per question type — for a curriculum node, which is a set of
+    types (core/mastery.js `masteryOfTypes`). Tallied since item 44; entries
+    made before then count under their pattern and category only. */
+export const typeReviewStats = (S, now) => figures(S, now, "t:", "t");
+
 /** The whole queue in one line: how much waits, how much is due. */
 export function reviewSummary(S, now) {
   const today = dayOf(now);
@@ -533,8 +543,10 @@ export function sanitiseReview(raw) {
   if (out.items.length > REVIEW_MAX)
     out.items = [...out.items].sort(byDispensable).slice(out.items.length - REVIEW_MAX);
   const stats = raw.stats && typeof raw.stats === "object" && !Array.isArray(raw.stats) ? raw.stats : {};
-  for (const [k, v] of Object.entries(stats).slice(0, 120)) {
-    if (!/^[ps]:[\wáðéíóúýþæö-]{1,40}$/i.test(k) || !v || typeof v !== "object") continue;
+  /* Bounded: about sixty patterns, twelve categories and sixty question
+     types fit with room to spare. */
+  for (const [k, v] of Object.entries(stats).slice(0, STATS_MAX)) {
+    if (!/^[pst]:[\wáðéíóúýþæö-]{1,40}$/i.test(k) || !v || typeof v !== "object") continue;
     out.stats[k] = { a: int(v.a, 1e6), l: int(v.l, 1e6), p: int(v.p, 1e6), t: int(v.t, 1e6),
       g: int(v.g, 1e6), x: int(v.x, 1e6) };
   }

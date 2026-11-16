@@ -24,7 +24,7 @@ export function nextTask(lex, view, rng) {
   const after = view.forcedNoun ? [FX.clearForcedNoun()] : [];
   if (view.forcedNoun) {
     const b = typeById("fill").build(lex, view, rng);
-    if (b) return built(b.task, [...b.effects, ...after]);
+    if (b) { b.task.typeId = "fill"; return built(b.task, [...b.effects, ...after]); }
     view = withView(view, { forcedNoun: null });
   }
   const P = view.policy;
