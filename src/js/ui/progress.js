@@ -4,7 +4,7 @@ import { CASES, COLS, mark } from "../core/marks.js";
 import {
   overallLevel, overallRank, skillSummary, dayMult,
 } from "../core/progress.js";
-import { dayStreak, dkey, todayKey } from "../core/state.js";
+import { dayStreak, dkey, todayKey, effectivePolicy } from "../core/state.js";
 import { fmtDuration } from "../core/timing.js";
 import { bandOf } from "../core/difficulty.js";
 import { $, esc } from "./dom.js";
@@ -12,6 +12,16 @@ import { crestOf } from "../core/profile.js";
 import { abbr } from "../core/glossary.js";
 import { holidayName } from "../core/calendar.js";
 import { statusOf } from "../core/wordhealth.js";
+import { dueEntries, dueLine } from "../core/review.js";
+import { typeById, enabled } from "../tasks/index.js";
+
+/** The entries waiting for review that this pupil may be asked now: the same
+    test a session's opening applies (tasks/review.js planOpening), so the
+    figure does not promise reviews of material that is switched off. */
+export function dueNow(S, now = todayKey()) {
+  const P = effectivePolicy(S);
+  return dueEntries(S, now, (e) => { const t = typeById(e.t); return !!t && enabled(P, t); }).length;
+}
 
 /* ---------- the top of the board -----------------------------------------
  *
@@ -86,6 +96,9 @@ export function renderHeader(app) {
       : cr.legendary ? "Öll önnur merki unnin." : "";
   }
   $("lvlnext").textContent = (L.need - L.into).toLocaleString("is-IS") + " XP í stig " + (L.level + 1);
+  /* Item 22: what the XP decay used to say, said with the queue instead. */
+  const due = $("duenow");
+  if (due) due.textContent = dueLine(dueNow(S));
   const skill = app.cur?.skill;
   const bd = $("boarddate");
   if (bd) bd.innerHTML = boardDate();

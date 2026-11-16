@@ -57,6 +57,7 @@ function restore(policy, saved) {
  */
 export function renderPolicyEditor(el, policy, {
   ceiling = null, onChange = () => {}, intro = "", showSafeVocab = false,
+  teacherFold = false,
 } = {}) {
   if (!el) return;
   const cap = ceiling || blankPolicy();
@@ -104,21 +105,12 @@ export function renderPolicyEditor(el, policy, {
       title="${esc(over ? PRESET_CAP_NOTE : p.ds)}" ${over ? "disabled" : ""}>${esc(p.nm)}</button>`;
   };
 
-  el.innerHTML = `
-    ${intro ? `<p class="sub">${intro}</p>` : ""}
-
-    <h3 class="sec2">Bekkur</h3>
-    <p class="sub">Veldu bekk. Þá kviknar á því efni sem er yfirleitt kennt í þeim
-      bekk og slokknar á öðru. Þú getur síðan breytt einstökum rofum hér fyrir
-      neðan. Beygingaratriðin neðst breytast ekki.</p>
-    <div class="polactions" id="polpresets">${PRESETS.map(presetBtn).join("")}</div>
-    <p class="sub" id="polpresetnow">${presetLine(now)}</p>
-
-    <h3 class="sec2">Flokkar</h3>
-    <div class="curriculum">${SKILLS.map((s) => row("skills", s.id,
-      `${s.ico} ${esc(s.nm)} <i class="curcode">${esc(s.cur)}</i>`,
-      esc(s.ds), capOn.skills(s.id))).join("")}</div>
-
+  /* Item 50: for the pupil the year and the categories are in the open and
+     the fine switches — question types, levels, inflection features — sit
+     behind a disclosure meant for a teacher or parent. Nothing is locked:
+     who may change what is still decided by the ceiling (the administrator),
+     exactly as before. The administrator's own editor passes no fold. */
+  const fine = `
     <h3 class="sec2">Tegundir spurninga</h3>
     <div class="curriculum">${QUESTION_TYPES.map((t) => row("types", t.id,
       esc(t.nm), esc(t.ds), capOn.types(t.id))).join("")}</div>
@@ -136,7 +128,31 @@ export function renderPolicyEditor(el, policy, {
     ${ATTRIBUTES.map((g) => `<div class="polgroup">
       <h4 class="polhead">${abbr(esc(g.nm), g.term)}</h4>
       <div class="polgrid">${g.keys.map((k) => attrRow(g, k)).join("")}</div>
-    </div>`).join("")}
+    </div>`).join("")}`;
+  /* A redraw (after a year is chosen) keeps the disclosure as it was. */
+  const wasOpen = !!el.querySelector("details.teacherfold[open]");
+
+  el.innerHTML = `
+    ${intro ? `<p class="sub">${intro}</p>` : ""}
+
+    <h3 class="sec2">Bekkur</h3>
+    <p class="sub">Veldu bekk. Þá kviknar á því efni sem er yfirleitt kennt í þeim
+      bekk og slokknar á öðru. Þú getur síðan breytt einstökum rofum hér fyrir
+      neðan. Beygingaratriðin ${teacherFold ? "(undir „Fyrir kennara og foreldra“)" : "neðst"} breytast ekki.</p>
+    <div class="polactions" id="polpresets">${PRESETS.map(presetBtn).join("")}</div>
+    <p class="sub" id="polpresetnow">${presetLine(now)}</p>
+
+    <h3 class="sec2">Flokkar</h3>
+    <div class="curriculum">${SKILLS.map((s) => row("skills", s.id,
+      `${s.ico} ${esc(s.nm)} <i class="curcode">${esc(s.cur)}</i>`,
+      esc(s.ds), capOn.skills(s.id))).join("")}</div>
+
+    ${teacherFold ? `<details class="teacherfold"${wasOpen ? " open" : ""}>
+      <summary>Fyrir kennara og foreldra</summary>
+      <p class="sub">Hér er hægt að stilla einstakar tegundir spurninga, þyngd og
+        beygingaratriði. Bekkjarvalið hér fyrir ofan dugar flestum.</p>
+      ${fine}
+    </details>` : fine}
 
     ${showSafeVocab ? `
     <h3 class="sec2">Orðaforði</h3>
@@ -159,7 +175,7 @@ export function renderPolicyEditor(el, policy, {
   /* Everything is drawn again after a preset: up to sixty switches change at
      once, and one code path for drawing them is one fewer to get wrong. */
   const redraw = (message = "") => {
-    renderPolicyEditor(el, policy, { ceiling, onChange, intro, showSafeVocab });
+    renderPolicyEditor(el, policy, { ceiling, onChange, intro, showSafeVocab, teacherFold });
     const w = el.querySelector("#polwarn");
     if (w) w.textContent = message;
   };

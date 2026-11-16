@@ -297,6 +297,13 @@ export function keypadEnv() {
   };
 }
 
+/* Item 52: reading comfort. One class on <body>; head.html does the rest
+   (larger type, wider spacing, the proportional face where mono was used). */
+export function applyComfort(settings) {
+  if (typeof document === "undefined") return;
+  document.body.classList.toggle("comfort", !!(settings && settings.comfort === true));
+}
+
 /* Who decides is app.js (it holds the state); until it says, the pad shows. */
 let keypadWanted = () => true;
 export function setKeypadPref(fn) { keypadWanted = fn; }

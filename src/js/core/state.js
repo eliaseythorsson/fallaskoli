@@ -53,7 +53,7 @@ export function blankState() {
     allowed: null,
     /* `badgeView`: which view of the badge cabinet is showing (ui/panels.js).
        A child with nothing on the shelf yet is shown the catalogue instead. */
-    settings: { decay: true, audio: true, glossary: true, badgeView: "rarity" },
+    settings: { decay: false, settingsRev: 1, glossary: true, badgeView: "rarity" },
     lastActive: null,
     /* `periods`: the once-per-day / once-per-night ledger (core/badges.js).
        `settled`: the last day whose day-end badges have been judged. */
@@ -198,6 +198,15 @@ export function migrate(raw) {
   S.allowed = raw.allowed ? sanitisePolicy(raw.allowed) : null;
 
   if (raw.settings) Object.assign(S.settings, raw.settings);
+  /* Item 55: `settings.audio` was saved as true and never read by anything.
+     Dropped from every state that carries it. */
+  delete S.settings.audio;
+  /* Item 22: XP decay is off by default now ("N atriði bíða upprifjunar"
+     replaces it). Every state saved before had `decay: true`, which was the
+     old default and not a choice anybody made, so it is switched off once;
+     `settingsRev` records that, and a pupil who then ticks the box again
+     (or a teacher who does) keeps it. */
+  if (raw.settings && !(raw.settings.settingsRev >= 1)) S.settings.decay = false;
   if (raw.profile) Object.assign(S.profile, raw.profile);
   S.bestLevel = Math.max(raw.bestLevel || 1, overallLevel(S.xp).level);
   return S;

@@ -15,7 +15,7 @@ import { wordKey } from "../core/state.js";
 import { wantsHelper, phrase, paradigmWithHelper } from "../core/helpers.js";
 import { settled } from "./frames.js";
 import { built, FX } from "./effects.js";
-import { pick, wpick, shuffle, bandFor, levelFor, forced, drilling, forcedCell, wordWeight, sameInEveryCell,
+import { pairOf, pick, wpick, shuffle, bandFor, levelFor, forced, drilling, forcedCell, wordWeight, sameInEveryCell,
          cap1, caseWord, caseOf, textSentence, fresh, lexWord, isTimeNoun, headsTimePhrase } from "./shared.js";
 
 /* ================= Beygingartafla ======================================== */
@@ -153,21 +153,44 @@ export function fnReplace(lex, view, rng) {
   }, [FX.exSeen(r.s.t + r.i)]);
 }
 
-/** sér / honum, sína / hans — the line under the sentence decides. */
+/* The reflexive bank holds each sentence twice, once where the subject is
+   meant and once where somebody else is (`reflexive` true / false, the
+   `gloss` line says which). Item 43 asks the two together. */
+let REFLEX_PAIRS = null;
+const reflexPairs = () => {
+  if (REFLEX_PAIRS) return REFLEX_PAIRS;
+  const by = new Map();
+  for (const x of EX.reflexive) {
+    if (!by.has(x.t)) by.set(x.t, {});
+    by.get(x.t)[x.reflexive ? "same" : "other"] = x;
+  }
+  return (REFLEX_PAIRS = [...by.values()].filter((p) => p.same && p.other));
+};
+
+/** sér / honum, sína / hans — the line under the sentence decides. Both
+    readings of the sentence are asked on one card; right only when both are. */
 export function fnReflex(lex, view, rng) {
   const P = view.policy;
-  const x = pick(fresh(view, (y) => y.t + y.gloss, EX.reflexive), rng);
-  const { s, i } = textSentence(x.t);
-  return built({
-    type: "choice", skill: "fornofn", s, i, gloss: x.gloss,
-    title: "Afturbeygt eða ekki?", question: "Hvort orðið á við hér?",
-    options: shuffle([x.a, x.w], rng), answer: x.a,
-    why: x.reflexive
-      ? `*${x.a}* vísar aftur til frumlagsins: ${x.gloss.replace(/\.$/, "")}. Afturbeygða fornafnið (*sig, sér, sín*) og *sinn* vísa til frumlags sömu setningar.`
-      : `*${x.a}* vísar til einhvers annars en frumlagsins: ${x.gloss.replace(/\.$/, "")}. *${x.w}* myndi vísa aftur til frumlagsins.`,
+  const pr = pick(fresh(view, (y) => y.same.t + y.same.gloss + y.other.gloss, reflexPairs()), rng);
+  const half = (x) => {
+    const { s, i } = textSentence(x.t);
+    return {
+      s, i, gloss: x.gloss, question: "Hvort orðið á við hér?",
+      options: shuffle([x.a, x.w], rng), answer: x.a,
+      why: x.reflexive
+        ? `*${x.a}* vísar aftur til frumlagsins: ${x.gloss.replace(/\.$/, "")}. Afturbeygða fornafnið (*sig, sér, sín*) og *sinn* vísa til frumlags sömu setningar.`
+        : `*${x.a}* vísar til einhvers annars en frumlagsins: ${x.gloss.replace(/\.$/, "")}. *${x.w}* myndi vísa aftur til frumlagsins.`,
+      miss: ["afturbeyging"],
+    };
+  };
+  const [A, B] = shuffle([pr.same, pr.other], rng).map(half);
+  return built(pairOf({
+    type: "choice", skill: "fornofn", s: A.s, i: A.i, gloss: A.gloss,
+    title: "Afturbeygt eða ekki?", question: A.question,
+    options: A.options, answer: A.answer, why: A.why,
     base: 11, lvl: levelFor(P, 3), cell: "fn:afturbeyging", word: null,
-    tags: ["reflex"], miss: ["afturbeyging"],
-  }, [FX.exSeen(x.t + x.gloss)]);
+    tags: ["reflex"], miss: A.miss,
+  }, B), [FX.exSeen(pr.same.t + pr.same.gloss + pr.other.gloss)]);
 }
 
 /* ================= Hvers konar fornafn? (item 27) ======================== */

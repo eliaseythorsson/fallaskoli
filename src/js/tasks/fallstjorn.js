@@ -12,7 +12,7 @@ import { EX } from "../../../data/exercises.js";
 import { wordKey } from "../core/state.js";
 import { built, FX } from "./effects.js";
 import { nounCloze } from "./cloze.js";
-import { pick, shuffle, levelFor, tokenKey, tokensOf, cap1, caseWord, textSentence, fresh,
+import { pairOf, pick, shuffle, levelFor, tokenKey, tokensOf, cap1, caseWord, textSentence, fresh,
          lexWord, headsTimePhrase } from "./shared.js";
 
 const CASEWORD = { þf: "ÞF", þgf: "ÞG", ef: "EF" };
@@ -83,26 +83,58 @@ export function fsPrepNoun(lex, view, rng) {
   });
 }
 
-/** í/á + motion (þolfall) or rest (þágufall). */
-export function fsMotion(lex, view, rng) {
-  const P = view.policy;
-  if (!P.attr("fall", "ÞF") || !P.attr("fall", "ÞGF")) return null;
-  const x = pick(fresh(view, (y) => y.t, EX.motionRest), rng);
+/* The motion/rest sentences that come in a contrast: the same preposition and
+   noun once with motion (þolfall) and once at rest (þágufall). Item 43 asks
+   them as that pair. A sentence with no partner (yfir girðing, yfir fjall) is
+   not asked on its own any more: alone it is a coin toss. */
+let MOTION_PAIRS = null;
+const motionPairs = () => {
+  if (MOTION_PAIRS) return MOTION_PAIRS;
+  const by = new Map();
+  for (const x of EX.motionRest) {
+    const k = x.prep + "|" + x.noun;
+    if (!by.has(k)) by.set(k, {});
+    by.get(k)[x.motion ? "go" : "stay"] = x;
+  }
+  return (MOTION_PAIRS = [...by.values()].filter((p) => p.go && p.stay));
+};
+
+/** One half of the pair: the question of one sentence. */
+function motionHalf(x) {
   const { s, i } = textSentence(x.t);
   const right = (x.motion ? x.thf : x.thgf)[0];
   const wrong = (x.motion ? x.thgf : x.thf)[0];
-  return built({
-    type: "choice", skill: "fallstjorn", s, i,
-    title: "Hreyfing eða kyrrstaða?", question: `Hvort á að standa á eftir *${x.prep}*?`,
-    options: shuffle([right, wrong], rng), answer: right,
+  return {
+    s, i, right, wrong,
+    question: `Hvort á að standa á eftir *${x.prep}*?`,
+    answer: right,
     why: x.motion
       ? `Hér er **hreyfing** á stað (hvert?) — þá stýrir *${x.prep}* **þolfalli**: *${right}*.`
       : `Hér er **kyrrstaða** á stað (hvar?) — þá stýrir *${x.prep}* **þágufalli**: *${right}*.`,
-    base: 9, lvl: levelFor(P, 1), cell: "stjórn:" + x.prep, word: lexWord(lex, x.noun, x.g),
     m: (x.motion ? "ÞF" : "ÞGF") + x.col, paradigm: EX.para[`${x.noun}|${x.g}`] || null,
     optMarks: ["ÞF" + x.col, "ÞGF" + x.col],
-    tags: ["motion", "gov:fs"], miss: ["hreyfing"],
-  }, [FX.exSeen(x.t)]);
+    miss: ["hreyfing"],
+  };
+}
+
+/** í/á + motion (þolfall) or rest (þágufall) — both sentences of the contrast
+    on one card; right only when both are (item 43). */
+export function fsMotion(lex, view, rng) {
+  const P = view.policy;
+  if (!P.attr("fall", "ÞF") || !P.attr("fall", "ÞGF")) return null;
+  const pr = pick(fresh(view, (y) => y.go.t + y.stay.t, motionPairs()), rng);
+  const [a, b] = shuffle([pr.go, pr.stay], rng).map(motionHalf);
+  const part = (h) => ({ ...h, options: shuffle([h.right, h.wrong], rng) });
+  const [A, B] = [part(a), part(b)];
+  const x = pr.go;
+  return built(pairOf({
+    type: "choice", skill: "fallstjorn", s: A.s, i: A.i,
+    title: "Hreyfing eða kyrrstaða?", question: A.question,
+    options: A.options, answer: A.answer, why: A.why,
+    base: 9, lvl: levelFor(P, 1), cell: "stjórn:" + x.prep, word: lexWord(lex, x.noun, x.g),
+    m: A.m, paradigm: A.paradigm, optMarks: A.optMarks,
+    tags: ["motion", "gov:fs"], miss: A.miss,
+  }, B), [FX.exSeen(pr.go.t + pr.stay.t)]);
 }
 
 /** A verb that governs a case: "Ég hjálpaði ___ (kennarinn)". */

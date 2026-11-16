@@ -780,22 +780,54 @@ JUDGES.indecl = (t, r, h) => onePick(t, r, h, { answer: t.answer,
 JUDGES.clause = (t, r, h) => onePick(t, r, h, { answer: t.answer, word: false,
   respFor: (picked, ok) => ({ kind: "clause", ok, ex: { said: picked, right: t.answer } }) });
 
-JUDGES.choice = (t, r, h) => onePick(t, r, h, { answer: t.answer,
-  respFor: (picked, ok) => {
-    const ex = { said: picked, right: t.answer };
-    /* `missFor`: a wrong option that is itself a known mistake (item 27:
-       *hans* taken for an eignarfornafn) names its own patterns. */
-    const also = ok ? [] : (t.missFor && t.missFor[picked]) || t.miss || [];
-    if (!(t.m && t.paradigm)) return { kind: "patterns", ids: also, ex };
-    const g = gradeForm(picked, { accepted: [t.answer], paradigm: t.paradigm, allowHelpers: false });
-    /* The options say which cell was meant: *borðið* offered against
-       *borðinu* is the accusative, not the nominative it also is. */
-    if (t.optMarks && g.otherMarks) {
-      const only = g.otherMarks.filter((m) => t.optMarks.includes(m));
-      if (only.length) g.otherMarks = only;
-    }
-    return { kind: "form", items: [{ m: t.m, typed: picked, accepted: [t.answer], g }], also, ex };
-  } });
+/* What `diagnose` reads for one choice, wrong or right. `sub` is the task, or
+   the second half of a pair: the fields that differ between them (answer,
+   mark, paradigm, optMarks, miss) are the half's own. */
+function choiceResp(t, sub, picked, ok) {
+  const ex = { said: picked, right: sub.answer };
+  /* `missFor`: a wrong option that is itself a known mistake (item 27:
+     *hans* taken for an eignarfornafn) names its own patterns. */
+  const also = ok ? [] : (sub.missFor && sub.missFor[picked]) || sub.miss || t.miss || [];
+  if (!(sub.m && sub.paradigm)) return { kind: "patterns", ids: also, ex };
+  const g = gradeForm(picked, { accepted: [sub.answer], paradigm: sub.paradigm, allowHelpers: false });
+  /* The options say which cell was meant: *borðið* offered against
+     *borðinu* is the accusative, not the nominative it also is. */
+  if (sub.optMarks && g.otherMarks) {
+    const only = g.otherMarks.filter((m) => sub.optMarks.includes(m));
+    if (only.length) g.otherMarks = only;
+  }
+  return { kind: "form", items: [{ m: sub.m, typed: picked, accepted: [sub.answer], g }], also, ex };
+}
+
+/* Item 43: a choice with `second` is a PAIR — the two sentences of a contrast,
+ * each with its own two options (fs_hreyf, ob_fsao, fn_aftur: tasks/shared.js
+ * `pairOf`). The response is `{ picked, picked2 }` and the answer is right
+ * only when both are; one right half is not paid and not counted as a right
+ * answer, but the wrong half is what `diagnose` reads, so the pattern is
+ * charged to the sentence that was actually missed. Two blind guesses are
+ * right 1 time in 4 (a pupil who sees that the two answers must differ still
+ * has 1 in 2, but has then learnt the contrast, which is the point). */
+function pairPick(t, r, h) {
+  const { picked, picked2 } = r;
+  if (picked == null || picked === "" || picked2 == null || picked2 === "") return pending("incomplete");
+  const b = t.second;
+  const ok1 = picked === t.answer, ok2 = picked2 === b.answer;
+  const ok = ok1 && ok2;
+  const spec = { skill: t.skill, cell: t.cell, ok, xp: xpFor(h, t, { ok }), timed: true, word: t.word };
+  /* The first miss is the one that is reported. */
+  const resp = !ok1 ? choiceResp(t, t, picked, false)
+    : !ok2 ? choiceResp(t, b, picked2, false)
+    : choiceResp(t, t, picked, true);
+  return result(t, {
+    ok, verdict: VERDICT(ok),
+    effects: [rec(spec), bump(t.skill, ok)],
+    resp,
+    detail: { picked, answer: t.answer, picked2, answer2: b.answer, ok1, ok2 },
+  });
+}
+
+JUDGES.choice = (t, r, h) => t.second ? pairPick(t, r, h) : onePick(t, r, h, { answer: t.answer,
+  respFor: (picked, ok) => choiceResp(t, t, picked, ok) });
 
 /* ---- kenni: strong or weak noun (item 27) --------------------------------
  *

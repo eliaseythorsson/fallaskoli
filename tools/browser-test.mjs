@@ -277,6 +277,7 @@ async function answerOne(correct) {
       askRole: c.askRole || null,
       /* v6.11 shapes */
       options: c.options || null, targets: c.targets || null,
+      second: c.second ? { options: c.second.options, answer: c.second.answer } : null,
       items: c.items ? c.items.map((x) => x.cls) : null,
       good: c.s ? c.s.tok.map((x, j) => (x.r === c.askRole ? j : -1)).filter((j) => j >= 0) : [],
     };
@@ -324,11 +325,16 @@ async function answerOne(correct) {
     await page.type("#ans", correct ? t.answers[0] : "xxrangt");
     await tap("#check");
   } else if (t.type === "choice") {
-    await page.evaluate((opts, ans, correct) => {
-      const btns = [...document.querySelectorAll(".opts button")];
-      const k = opts.indexOf(ans);
-      (correct ? btns[k] : btns.find((_, j) => j !== k)).click();
-    }, t.options, t.answer, correct);
+    /* A pair (item 43) has two `.opts` boxes, one per sentence; a wrong answer
+       gets the first half wrong and the second right. */
+    await page.evaluate((halves, correct) => {
+      const boxes = [...document.querySelectorAll(".opts")];
+      halves.forEach((h, n) => {
+        const btns = [...boxes[n].querySelectorAll("button")];
+        const k = h.options.indexOf(h.answer);
+        (correct || n ? btns[k] : btns.find((_, j) => j !== k)).click();
+      });
+    }, (t.second ? [t, t.second] : [t]).map((h) => ({ options: h.options, answer: h.answer })), correct);
     await tap("#check");
   } else if (t.type === "kenni") {
     /* item 27: sterk / veik, and from þyngd 5 the genitive written first. */
@@ -2218,6 +2224,125 @@ await startPractice(page, 15000);
   ok(tabs.count === 5, `${tabs.count} tabs at 360px`);
   ok(!tabs.scrollable || tabs.overflowX === "auto" || tabs.overflowX === "scroll",
     "the tabs are wider than the screen and cannot be scrolled to");
+}
+
+/* ---------- items 50, 51, 52, 43 (v6.13 small UX) -------------------------- */
+{
+  await page.setViewport({ width: 900, height: 900 });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+
+  /* 51: the verdict is a live region before anything is put in it, and the
+     session line has text a screen reader can read. */
+  const live = await page.evaluate(() => {
+    const v = document.getElementById("verdict");
+    const line = document.querySelector("#runbar .runline");
+    return { verdict: v && v.getAttribute("role"), line: line && line.getAttribute("role"),
+             lineText: line ? [...line.querySelectorAll(".sr-only")].map((e) => e.textContent).join("") : "" };
+  });
+  ok(live.verdict === "status", `#verdict has role=status (got ${live.verdict})`);
+  ok(live.line === "status" && /Spurning \d+ af/.test(live.lineText), `the session line is a status with readable text ("${live.lineText}")`);
+
+  /* 51: the contrast of grey text on the board, as the browser computes it. */
+  const contrast = await page.evaluate(() => {
+    const board = document.querySelector(".blackboard");
+    const p = document.createElement("p");
+    p.className = "gloss"; p.textContent = "gloss"; board.appendChild(p);
+    const f = document.createElement("span");
+    f.className = "faint"; f.textContent = "faint"; board.appendChild(f);
+    const rgb = (c) => c.match(/[\d.]+/g).map(Number);
+    const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+    const bg = rgb(getComputedStyle(board).backgroundColor);
+    const ratio = (el) => {
+      const cs = getComputedStyle(el), c = rgb(cs.color), o = parseFloat(cs.opacity);
+      const mixed = c.slice(0, 3).map((v, i) => v * o + bg[i] * (1 - o));
+      const [a, b] = [lum(mixed), lum(bg)].sort((x, y) => y - x);
+      return (a + 0.05) / (b + 0.05);
+    };
+    const out = { gloss: ratio(p), faint: ratio(f) };
+    p.remove(); f.remove();
+    return out;
+  });
+  ok(contrast.gloss >= 4.5, `gloss on the board is ${contrast.gloss.toFixed(2)}:1`);
+  ok(contrast.faint >= 4.5, `faint text on the board is ${contrast.faint.toFixed(2)}:1`);
+
+  /* 43: a two-option type is asked as a pair: two sentences, two sets of
+     options, and a click on only one of them does not submit. */
+  const pair = await page.evaluate(async () => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null;
+    A.startRun("fornofn", 10, ["afturbeyging"]);   // the pattern fn_aftur tests: every question is one
+    for (let k = 0; k < 40; k++) {
+      if (A.cur && A.cur.typeId === "fn_aftur") break;
+      A.next();
+    }
+    const t = A.cur;
+    return t && t.typeId === "fn_aftur"
+      ? { boxes: document.querySelectorAll(".opts").length, second: !!t.second } : null;
+  });
+  ok(!!pair && pair.boxes === 2 && pair.second, `a two-option question is a pair on screen: ${JSON.stringify(pair)}`);
+  if (pair) {
+    await page.evaluate(() => document.querySelector(".opts button").click());
+    await tap("#check");
+    const msg = await page.evaluate(() => document.querySelector("#verdict").textContent);
+    ok(/hvorri setningu/.test(msg), `one answer of two does not submit: "${msg}"`);
+  }
+
+  /* 50: types, levels and features are behind "Fyrir kennara og foreldra". */
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  await page.evaluate(() => window.FALLASKOLI.openView("settings"));
+  const fold = await page.evaluate(() => {
+    const ed = document.getElementById("policyeditor");
+    const d = ed.querySelector("details.teacherfold");
+    const vis = (el) => !!el && el.checkVisibility();
+    const presets = ed.querySelectorAll("button[data-preset]");
+    const typeBox = ed.querySelector('input[data-dim="types"]');
+    const skillBox = ed.querySelector('input[data-dim="skills"]');
+    return { hasFold: !!d, summary: d && d.querySelector("summary").textContent,
+             open: d && d.open, presets: presets.length,
+             typeInside: !!(d && typeBox && d.contains(typeBox)), skillOutside: !!(skillBox && !(d && d.contains(skillBox))),
+             typeVisible: vis(typeBox), skillVisible: vis(skillBox),
+             levelInside: !!(d && ed.querySelector('input[data-dim="levels"]') && d.contains(ed.querySelector('input[data-dim="levels"]'))),
+             attrInside: !!(d && ed.querySelector('input[data-dim="attrs"]') && d.contains(ed.querySelector('input[data-dim="attrs"]'))) };
+  });
+  ok(fold.hasFold && /Fyrir kennara og foreldra/.test(fold.summary), "Stillingar has the 'Fyrir kennara og foreldra' disclosure");
+  ok(fold.open === false, "the disclosure starts closed");
+  ok(fold.presets === 3 && fold.skillOutside && fold.skillVisible, "the year buttons and the categories stay in the open");
+  ok(fold.typeInside && fold.levelInside && fold.attrInside && !fold.typeVisible, `types, levels and features are inside it and hidden: ${JSON.stringify(fold)}`);
+  await page.evaluate(() => document.querySelector("details.teacherfold > summary").click());
+  const opened = await page.evaluate(() => {
+    const b = document.querySelector('details.teacherfold input[data-dim="types"]');
+    return !!b && b.checkVisibility();
+  });
+  ok(opened, "opening it shows the question types");
+  /* A year press redraws the editor; it must stay open. */
+  await page.evaluate(() => document.querySelector("button[data-preset]").click());
+  ok(await page.evaluate(() => document.querySelector("details.teacherfold").open), "the disclosure stays open after choosing a year");
+
+  /* 52: reading comfort. */
+  const before = await page.evaluate(() => {
+    const cs = getComputedStyle(document.body);
+    return { ls: cs.letterSpacing, mono: getComputedStyle(document.querySelector(".stat b")).fontFamily };
+  });
+  await page.evaluate(() => document.getElementById("set-comfort").click());
+  const after = await page.evaluate(() => {
+    const cs = getComputedStyle(document.body);
+    const wrap = getComputedStyle(document.querySelector(".wrap"));
+    return { on: document.body.classList.contains("comfort"), ls: cs.letterSpacing,
+             mono: getComputedStyle(document.querySelector(".stat b")).fontFamily,
+             zoom: wrap.zoom, saved: window.FALLASKOLI.S.settings.comfort };
+  });
+  ok(after.on && after.saved === true, "the reading-comfort switch sets body.comfort and is saved");
+  ok(parseFloat(after.ls) > 0 && before.ls !== after.ls, `letter spacing widens (${before.ls} → ${after.ls})`);
+  ok(/Public Sans/.test(after.mono) && /Plex Mono/.test(before.mono), `word forms use the proportional face (${before.mono} → ${after.mono})`);
+  ok(Number(after.zoom) > 1, `type is larger (zoom ${after.zoom})`);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  ok(await page.evaluate(() => document.body.classList.contains("comfort")), "the setting survives a reload");
+  await page.evaluate(() => { document.getElementById("set-comfort").click(); });
+  ok(await page.evaluate(() => !document.body.classList.contains("comfort")), "and switches off again");
 }
 
 await browser.close();

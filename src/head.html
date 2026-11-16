@@ -41,6 +41,18 @@
   --mono:"IBM Plex Mono",ui-monospace,monospace;
 }
 *{box-sizing:border-box}
+/* Reading comfort (item 52, ui/dom.js applyComfort). A larger size, wider
+   spacing between letters and words, and the proportional face where the
+   monospaced one stood: `--mono` is the name every word form, input and table
+   cell uses, so pointing it at the body face changes all of them at once.
+   `zoom` scales the fixed pixel sizes in step, so nothing is left small. */
+body.comfort{--mono:var(--body);letter-spacing:.04em;word-spacing:.1em;line-height:1.7}
+body.comfort .wrap{zoom:1.15}
+body.comfort .sentence,body.comfort .lemma,body.comfort .tile b,body.comfort h2.sec,
+body.comfort .lsntitle,body.comfort .mystrip b{letter-spacing:.03em}
+body.comfort input,body.comfort textarea,body.comfort button,body.comfort select{letter-spacing:inherit;word-spacing:inherit}
+/* Text for screen readers only (item 51). */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 html,body{margin:0;padding:0}
 body{background-color:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
   /* rúðustrikað: the desk is a sheet of squared paper */
@@ -133,6 +145,8 @@ textarea:focus{outline:2px solid var(--lupine);outline-offset:-1px}
 .qrow{margin-top:16px}
 .qrow>label{display:block;font-size:13px;color:var(--slate);margin-bottom:5px}
 .opts{display:flex;gap:5px;flex-wrap:wrap}
+/* item 43: the line between the two halves of a pair */
+hr.pairrule{border:0;border-top:1px dashed var(--line);margin:18px 0 14px}
 .opts button{font-family:var(--body);font-size:14px;padding:8px 13px;background:var(--sheet);border:1px solid var(--line);border-radius:99px;cursor:pointer;color:var(--ink)}
 .opts button:hover{border-color:var(--lupine)}
 .opts button[aria-pressed="true"]{background:var(--lupine);border-color:var(--lupine);color:var(--on-accent);font-weight:600}
@@ -731,7 +745,12 @@ table.board td.mono{white-space:nowrap}
   background:linear-gradient(#8B6B43 0,#8B6B43 5px,#30363B 5px)}
 
 .blackboard textarea{color:var(--ink)}
-.blackboard input::placeholder,.blackboard textarea::placeholder{color:rgba(243,241,231,.45)}
+/* Item 51, measured (tests/contrast.test.js): chalk-dim on the board is 6.1:1
+   (5.2:1 on the lightest smear), so the gloss and every other grey line is
+   fine. Two things on the board fell below 4.5:1 and are raised: `.faint`
+   (opacity .7 gave 3.8:1) and the placeholder (alpha .45 gave 3.5:1). */
+.blackboard .faint{opacity:.92}
+.blackboard input::placeholder,.blackboard textarea::placeholder{color:rgba(243,241,231,.7)}
 .blackboard table.decl input{border:1px solid rgba(243,241,231,.16)}
 .blackboard input:disabled,.blackboard textarea:disabled{opacity:1;-webkit-text-fill-color:currentColor}
 .blackboard button.go,.blackboard label.go{background:var(--chalk);border-color:var(--chalk);color:var(--board-deep)}
@@ -946,6 +965,10 @@ tr.adminmore td{background:var(--paper-2)}
 .moreform{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1 1 100%}
 .moreform label{font-size:13px;display:flex;align-items:center;gap:6px}
 .moreform input[type=text]{flex:1 1 200px;max-width:300px;font-family:var(--body);font-size:16px;padding:8px 10px}
+/* Item 50: the fine switches for a teacher or parent. */
+details.teacherfold{margin-top:22px;border:1px solid var(--line);border-radius:var(--radius);padding:0 14px 8px;background:var(--paper-2)}
+details.teacherfold>summary{cursor:pointer;font-weight:600;font-size:15px;padding:12px 0;min-height:44px}
+details.teacherfold>summary:focus-visible{outline:2px solid var(--lupine);outline-offset:2px}
 details.adminnew{margin-top:12px}
 details.adminnew>summary,#ad-trail>summary{cursor:pointer;font-weight:600;font-size:14px;padding:6px 0}
 .groupchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:99px;padding:5px 12px;

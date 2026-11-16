@@ -18,7 +18,7 @@ import { createClock } from "./core/timing.js";
 import { createDefinitions, bundledSource, remoteSource } from "./core/definitions.js";
 import { serverMode, createServer, serverDriver, liftLocalState } from "./core/server.js";
 import { $, esc, wireGlossary, queueBadges, hideTip, freshEnter, wirePrivacyLinks, openSheet,
-  setKeypadPref, keypadOn, keypadEnv, wireKeys } from "./ui/dom.js";
+  setKeypadPref, keypadOn, keypadEnv, wireKeys, applyComfort } from "./ui/dom.js";
 import { measurable, badgeWindows } from "./core/rarity.js";
 import { socialContext } from "./core/social.js";
 import { renderTask, revealTopic } from "./ui/render.js";
@@ -864,6 +864,7 @@ function wireSettings() {
   /* Item 53: the letter pad. Once switched either way it is the child's
      choice, kept with the settings; until then ui/dom.js guesses. Redrawn at
      once, so a pad under the open question comes or goes with the switch. */
+  $("set-comfort").onchange = (e) => { app.S.settings.comfort = e.target.checked; app.save(true); applyComfort(app.S.settings); };
   $("set-keys").onchange = (e) => { app.S.settings.keypad = e.target.checked; app.save(true); wireKeys(); };
 
   /* No `confirm()`: a hosted page runs in a frame where dialogs are ignored.
@@ -1115,6 +1116,7 @@ async function init() {
   wireLessons(app);
   wireSettings();
   renderSettings(app);
+  applyComfort(app.S.settings);
 
   addEventListener("resize", () => {
     const c = $("confetti");

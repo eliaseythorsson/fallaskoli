@@ -198,7 +198,8 @@ function rightResponse(t) {
     case "parse": return { picks: Object.fromEntries(parseRows(t.a, t.t).map((r) => [r.key, r.answer])) };
     case "syntax": return { picked: t.s.tok.findIndex((x) => x.r === t.askRole) };
     case "govern": return { picked: t.fall };
-    case "indecl": case "clause": case "choice": return { picked: t.answer };
+    case "indecl": case "clause": return { picked: t.answer };
+    case "choice": return t.second ? { picked: t.answer, picked2: t.second.answer } : { picked: t.answer };
     case "kenni": return t.askGen ? { picked: t.answer, text: t.gen[0] } : { picked: t.answer };
     case "tap": return { sel: t.targets.slice() };
     case "sort": return { picks: Object.fromEntries(t.items.map((it, k) => [k, it.cls])) };
@@ -247,7 +248,8 @@ function wrongResponse(t) {
     case "clause":
       return { response: { picked: t.options.find((o) => o !== t.answer) }, found: ["setningagerd"] };
     case "choice":
-      return { response: { picked: t.options.find((o) => o !== t.answer) }, found: t.miss || [] };
+      /* A pair (item 43): the first half wrong, the second right. */
+      return { response: { picked: t.options.find((o) => o !== t.answer), picked2: t.second && t.second.answer }, found: t.miss || [] };
     case "kenni":
       return { response: { picked: t.options.find((o) => o !== t.answer), text: t.askGen ? t.gen[0] : undefined },
                found: ["beyging_no"] };
@@ -571,7 +573,7 @@ test("choice and gap: the patterns a question knows it tests are found on a miss
     if (t.type === "choice" && t.m && t.paradigm) {
       withMark++;
       const picked = t.options.find((o) => o !== t.answer);
-      const j = judge(t, { picked });
+      const j = judge(t, { picked, picked2: t.second && t.second.answer });
       assert.equal(j.resp.kind, "form");
       assert.equal(j.resp.items[0].typed, picked);
       /* The options say which cell was meant. */

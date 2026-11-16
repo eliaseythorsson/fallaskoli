@@ -141,7 +141,9 @@ export function decayFloor(bestLevel, needFn) {
  * Returns a report so the UI can tell the child gently what happened.
  */
 export function applyDecay(S, todayKey) {
-  if (!S.settings || S.settings.decay === false) return null;
+  /* Item 22: off unless somebody switched it on. A missing value is "off" —
+     the old test (`=== false`) made it default to on. */
+  if (!S.settings || S.settings.decay !== true) return null;
   const idle = daysBetween(S.lastActive, todayKey);
   if (idle <= DECAY.graceDays) return null;
   const floor = decayFloor(S.bestLevel || overallLevel(S.xp).level, overallNeed);
