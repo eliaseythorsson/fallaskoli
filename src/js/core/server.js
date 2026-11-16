@@ -52,12 +52,14 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     me: () => call("GET", "/auth/me").catch(() => null),
 
     /** Is there a Fallaskóli server at this origin, and who am I to it?
-        `{ server: false }` means "run without one". */
+        `{ server: false }` means "run without one"; `offline: true` with it
+        means nobody answered at all (no network), which is not the same as
+        a host that answered without being a server (ui/pwa.js). */
     async probe() {
       let r;
       try {
         r = await fetchImpl(url("/auth/me"), { credentials: "include" });
-      } catch { return { server: false }; }
+      } catch { return { server: false, offline: true }; }
       const type = r.headers && r.headers.get ? (r.headers.get("content-type") || "") : "";
       if (!type.includes("application/json")) return { server: false };
       const data = await r.json().catch(() => null);

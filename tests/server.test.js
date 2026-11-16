@@ -602,9 +602,14 @@ test("a static host (404 page, HTML) means: no server, run locally", async () =>
   assert.deepEqual(await s.probe(), { server: false });
 });
 
-test("a network failure means: no server", async () => {
+test("a network failure means: no server, and says it was no answer at all (item 54)", async () => {
+  /* `offline` is what lets an installed program on a server's address say
+     "no connection" instead of starting a second progress in the browser
+     (ui/pwa.js); a host that answers without being a server has no flag. */
   const s = createServer("", { fetchImpl: async () => { throw new Error("offline"); } });
-  assert.deepEqual(await s.probe(), { server: false });
+  assert.deepEqual(await s.probe(), { server: false, offline: true });
+  const host = createServer("", { fetchImpl: fakeFetch(404, "text/html", "<h1>404</h1>") });
+  assert.deepEqual(await host.probe(), { server: false });
 });
 
 test("a Fallaskóli server answers 401 in JSON when nobody is logged in", async () => {

@@ -810,6 +810,21 @@ GET /personuvernd   -> the notice, in Icelandic (a self-contained page)
 GET /privacy        -> 302 to it
 ```
 
+## Installing the program (v6.13, item 54)
+
+```
+GET /manifest.webmanifest    -> the web app manifest
+GET /sw.js                   -> the service worker, stamped with the hash of the served program
+GET /icon-192.png, /icon-512.png, /icon-maskable-512.png, /apple-touch-icon.png
+```
+
+No session; the same for everybody (`tools/pwa.mjs` makes them from the HTML
+file being served). `Cache-Control: no-cache` with an `ETag`, so a new build is
+seen on the next visit. `sw.js` carries its own policy,
+`default-src 'none'; connect-src 'self'`. The worker answers only the program
+(a page opened at `/` or `/index.html`) and these files; every route above
+goes to the network untouched and nothing a route answers is cached.
+
 ## Every response
 
 carries `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`,

@@ -36,6 +36,19 @@ makes demo1–demo3 for trying several accounts yourself; open each on its own
 address (`http://demo1.localhost:8080`, `http://demo2.localhost:8080` …) to stay
 logged in as all of them at once.
 
+**Installing it (v6.13).** Served over http(s), the program can sit on the
+home screen of a phone or a Chromebook and opens without a network. The build
+writes `dist/web/` for this: the same program as `index.html`, with a manifest,
+icons (the board's tally mark in chalk, drawn by `tools/pwa.mjs`) and a service
+worker (`src/sw.js`). Put that folder's contents on any web host;
+`server/server.mjs` serves the same files by itself. The worker caches the
+program and nothing else — never an answer from the server — and when a new
+version is published it says *Ný útgáfa er tilbúin — endurhlaða* instead of
+swapping it under the pupil. On a server the progress lives on the server, so
+offline the program says it has no connection rather than starting a second
+progress in the browser. Opened from a file, none of this happens: no worker,
+no manifest, the same single file.
+
 For one child on several devices the second row is the simplest: put the file
 anywhere on the web and open the same link everywhere. Progress is then kept
 per device; **Stillingar og námsefni → Færa milli tækja** moves it between devices as

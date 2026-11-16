@@ -54,6 +54,18 @@ test("the Dockerfile copies every file the server imports", () => {
   assert.deepEqual(missing, [], "imported by the server but not in the image — add a COPY line to the Dockerfile");
 });
 
+test("the files the server READS at run time are in the image too (item 54)", async () => {
+  /* tools/pwa.mjs reads src/sw.js with readFileSync — no import names it, so
+     the walk above cannot see it. The module lists what it reads. */
+  assert.ok(reachable("server/server.mjs").includes("tools/pwa.mjs"));
+  const { READS } = await import("../tools/pwa.mjs");
+  assert.ok(READS.includes("src/sw.js"));
+  const tests = copied();
+  assert.deepEqual(READS.filter((f) => !tests.some((t) => t(f))), [],
+    "read by the server but not in the image — add a COPY line to the Dockerfile");
+  for (const f of READS) assert.ok(fs.existsSync(path.join(ROOT, f)), f);
+});
+
 test("nothing the server imports is kept out of the image by .dockerignore", () => {
   const ignore = fs.readFileSync(path.join(ROOT, ".dockerignore"), "utf8").split("\n")
     .map((l) => l.trim()).filter((l) => l && !l.startsWith("#") && !l.startsWith("!"));

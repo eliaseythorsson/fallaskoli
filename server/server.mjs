@@ -80,6 +80,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
     assignment on a whole category tests (core/assignment.js `patternsOf`). */
 const typesOfSkill = (id) => new Set(TASKS.filter((t) => t.skill === id || (t.anyOf || []).includes(id)).map((t) => t.id));
 import { htmlPath, VERSION } from "../tools/version.mjs";
+import { pwaFiles, typeOf as pwaType, ICONS as PWA_ICONS } from "../tools/pwa.mjs";
 
 export const DEFAULT_GROUP = "default";
 export const MAX_ADMINS = 2;
@@ -2155,6 +2156,32 @@ export function createApp({
     res.end(body);
   }
 
+  /* Item 54: the manifest, the icons and the service worker (tools/pwa.mjs),
+     made from the program this server actually serves — the worker's stamp
+     is that file's hash, so a new build is a new worker and the pupil is
+     offered it. Remade when the file changes, as loadApp is. Nothing in them
+     is about anybody: they are the same for every visitor. */
+  const PWA_NAMES = new Set(["sw.js", "manifest.webmanifest", ...PWA_ICONS.map((i) => i.file)]);
+  let pwa = null;
+  async function servePWA(req, res, name) {
+    const f = await loadApp();
+    if (!pwa || pwa.stamp !== f.stamp) pwa = { stamp: f.stamp, ...pwaFiles(f.raw) };
+    const buf = pwa.files.get(name);
+    const etag = '"' + pwa.build + '"';
+    const headers = {
+      ETag: etag, "Cache-Control": "no-cache",
+      /* The worker's own policy: it may fetch from this origin (to fill its
+         cache) and nothing else. Nothing else here is a document. */
+      ...securityHeaders(req, name === "sw.js"
+        ? "default-src 'none'; connect-src 'self'" : undefined),
+    };
+    if (String(req.headers["if-none-match"] || "").includes(etag)) {
+      res.writeHead(304, headers); return res.end();
+    }
+    res.writeHead(200, { "Content-Type": pwaType(name), "Content-Length": buf.length, ...headers });
+    res.end(buf);
+  }
+
   /* ---------- the request handler ---------- */
 
   /* A page on another site must not be able to make a logged-in browser change
@@ -2183,6 +2210,8 @@ export function createApp({
     }
     if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/index.html"))
       return serveApp(req, res);
+    if (req.method === "GET" && PWA_NAMES.has(url.pathname.slice(1)))
+      return servePWA(req, res, url.pathname.slice(1)).catch(() => serveApp(req, res));
     if (req.method === "GET" && url.pathname === "/favicon.ico") {
       res.writeHead(204, { "Cache-Control": "max-age=86400" }); return res.end();
     }
