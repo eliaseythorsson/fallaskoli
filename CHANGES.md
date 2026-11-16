@@ -77,7 +77,7 @@ are graded on the server, each side gets its own questions of equal weight,
 and a lower-level player gets a handicap; a live class round on the projector;
 team duels; Ritun vikunnar (three sentences of the pupil's own, read by
 GreynirCorrect; off unless the teacher turns it on). The privacy notice
-(version 2026-11-21) describes every new data flow.
+(version 2026-11-16) describes every new data flow.
 
 ### Code and build (69–80, 82)
 Grading is a pure module (`core/answer.js`); task builders are pure, one file
