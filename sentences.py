@@ -443,15 +443,18 @@ S = [
 (1, "Kennarinn sagði okkur frá ferðinni.",     "ferð",     "any"),
 (1, "Ég gleymdi alveg bókinni.",               "bók",      "item|food|drink|living|event|text|film|music|money|abstract"),
 (1, "Ég gleymdi alveg bókunum.",               "bók",      "item|food|drink|living|event|text|film|music|money|abstract"),
-# Without and because of (án / vegna / á milli + genitive).
+# Without and because of (án / vegna / á milli + genitive). Not an idea or
+# the sky after *vegna* ("vegna hamingjunnar", "vegna himinsins"): item 30
+# took abstract nouns out of the genitive-with-article frame on purpose. Not a
+# place or a town after *án* ("án lands", "án hverfa"), as item 30 has it.
 (1, "Ég kom heim án lykils.",                  "lykill",   "item|animal|food|drink"),
-(2, "Við komumst ekki af án vatns.",           "vatn",     "being|thing|place|substance|money"),
-(2, "Við komumst ekki af án bíla.",            "bíll",     "being|thing|place|money"),
+(2, "Við komumst ekki af án vatns.",           "vatn",     "being|thing|building|room|substance|money"),
+(2, "Við komumst ekki af án bíla.",            "bíll",     "being|thing|building|room|money"),
 (2, "Ég gæti ekki verið án tónlistar.",        "tónlist",  "being|thing|music|money|text|film"),
 (2, "Ég gæti ekki verið án vina.",             "vinur",    "being|thing|music|text|film"),
 (1, "Leiknum var frestað vegna veðurs.",       "veður",    "weather|event"),
-(1, "Þetta gerðist allt vegna bílsins.",       "bíll",     "being|thing|spot|weather|sky|money|text|film|music|event|abstract"),
-(1, "Þetta gerðist allt vegna bílanna.",       "bíll",     "being|thing|spot|weather|sky|money|text|film|music|event|abstract"),
+(1, "Þetta gerðist allt vegna bílsins.",       "bíll",     "being|thing|spot|weather|money|text|film|music|event"),
+(1, "Þetta gerðist allt vegna bílanna.",       "bíll",     "being|thing|spot|weather|money|text|film|music|event"),
 (2, "Kötturinn faldi sig á milli bílanna.",    "bíll",     "vehicle|struct|building|furniture|object|plant"),
 (2, "Ég man ekki lengur lit bílsins.",         "bíll",     "item|food|plant|animal|struct|building|nature"),
 
