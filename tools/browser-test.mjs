@@ -330,6 +330,16 @@ async function answerOne(correct) {
       (correct ? btns[k] : btns.find((_, j) => j !== k)).click();
     }, t.options, t.answer, correct);
     await tap("#check");
+  } else if (t.type === "kenni") {
+    /* item 27: sterk / veik, and from þyngd 5 the genitive written first. */
+    await page.evaluate((opts, ans, correct) => {
+      const c = window.FALLASKOLI.cur;
+      if (c.askGen) document.getElementById("ans").value = correct ? c.gen[0] : "xxrangt";
+      const btns = [...document.querySelectorAll(".opts button")];
+      const k = opts.indexOf(ans);
+      (correct ? btns[k] : btns.find((_, j) => j !== k)).click();
+    }, t.options, t.answer, correct);
+    await tap("#check");
   } else if (t.type === "tap") {
     await page.evaluate((targets, correct) => {
       const words = [...document.querySelectorAll(".pickw")];
@@ -2131,6 +2141,64 @@ await page.setViewport({ width: 1100, height: 900 });
       "it did not come back in the missed cell and another sentence: " + JSON.stringify([missed, back]));
   }
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.S.review = { items: [], stats: {} }; A.next(); });
+}
+
+/* ---------- item 27: the two new types, drawn, shown and answered ---------
+ * A short session aimed at each new type's error pattern (which narrows the
+ * session to that type), at a low and a high þyngd: the question must come,
+ * look like what it is, take a right answer and a wrong one through real
+ * clicks and typing, and explain itself under both. */
+{
+  const CASES = [
+    { focus: "fn_flokkar", topic: "fornofn", band: 1, type: "choice", options: 3 },
+    { focus: "fn_flokkar", topic: "fornofn", band: 5, type: "choice", options: 6 },
+    { focus: "beyging_no", topic: "nafnord", band: 1, type: "kenni", gen: false },
+    { focus: "beyging_no", topic: "nafnord", band: 5, type: "kenni", gen: true },
+  ];
+  for (const c of CASES) {
+    await dismissModals();
+    await page.evaluate((c) => {
+      const A = window.FALLASKOLI;
+      A.S.enabled[c.topic] = true;
+      A.reloadPolicy();
+      A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+      Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+      A.startRun(c.topic, 10, [c.focus], { review: false });
+    }, c);
+    await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+    const at = `${c.focus} at þyngd ${c.band}`;
+    for (const correct of [true, false]) {
+      const q = await page.evaluate(() => {
+        const t = window.FALLASKOLI.cur;
+        return { type: t.type, typeId: t.typeId, title: t.title, n: (t.options || []).length,
+          buttons: document.querySelectorAll("#task .opts button").length,
+          target: document.querySelector("#task .sentence .target")?.textContent || null,
+          word: t.s && t.i >= 0 ? t.s.tok[t.i].w : null,
+          input: !!document.querySelector("#task #ans"), askGen: !!t.askGen,
+          gloss: document.querySelector("#task .gloss")?.textContent || "" };
+      });
+      ok(q.type === c.type && q.typeId === (c.focus === "beyging_no" ? "no_beyging" : "fn_flokkar"),
+        `${at}: drew ${q.typeId} (${q.type})`);
+      ok(q.buttons === (c.options || 2) && q.n === q.buttons, `${at}: ${q.buttons} option buttons`);
+      if (c.type === "choice") {
+        ok(q.target && q.target === q.word, `${at}: the pronoun is not marked in the sentence (${q.target})`);
+        ok(/Hvers konar fornafn er/.test(q.gloss), `${at}: no instruction line: ${q.gloss}`);
+      } else {
+        ok(q.input === c.gen && q.askGen === c.gen, `${at}: the genitive box is ${q.input ? "there" : "missing"}`);
+        ok(/sterk eða veik/.test(q.gloss), `${at}: no instruction line: ${q.gloss}`);
+      }
+      await answerOneNoNext(correct);
+      await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
+      const v = await page.$eval("#verdict .verdict", (el) => ({ cls: el.className,
+        why: el.querySelector(".why")?.textContent || "" }));
+      ok(correct ? /\bok\b/.test(v.cls) : /\bno\b/.test(v.cls), `${at}: a ${correct ? "right" : "wrong"} answer drew "${v.cls}"`);
+      ok(v.why.length > 30, `${at}: no explanation under the answer`);
+      await dismissModals();
+      await page.evaluate(() => window.FALLASKOLI.next());
+      await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+    }
+  }
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
 }
 
 /* The tabs must stay reachable at the narrowest width — they scroll sideways

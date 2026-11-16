@@ -74,6 +74,8 @@ const ORDER = [
   "gr_smella", "gr_flokka", "fs_fsno", "fs_hreyf", "fs_sogn", "fs_operson",
   "or_heiti", "or_samhengi", "or_myndun", "or_utundan", "setn_hlut", "setn_flokka",
   "gerd_finna", "gerd_upphaf",
+  /* item 27: what Lesefni teaches and practice did not ask */
+  "fn_flokkar", "no_beyging",
 ];
 
 /** What is wrong with the declarations, as sentences; empty when nothing is. */

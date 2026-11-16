@@ -28,9 +28,9 @@ document and the program cannot disagree. Everything else here is prose.
    schools differ.
 3. **Against the one criterion that is about grammar proper, the app is in good
    shape**: all eleven word classes, their inflection and their role are
-   covered by 47 question types and 21 Lesefni pages.
-4. **The gaps** are (a) things Lesefni teaches and no question asks: kinds of
-   pronoun, strong and weak nouns, strong and weak verbs with kennimyndir,
+   covered by 49 question types and 21 Lesefni pages.
+4. **The gaps** are (a) things Lesefni teaches and no question asks: strong
+   and weak verbs with kennimyndir,
    the boðháttur, the þolmynd as something to recognise, compound tenses;
    (b) year 9–10 material that is not in the app at all: kinds of subordinate
    clause, phrases (nafnliður and the rest), word parts and compounds, sound
@@ -116,7 +116,7 @@ every year.
 <!-- curriculum:criteria:start -->
 | Hæfniviðmið (heading in the aðalnámskrá) | Section | Within reach of a drill app? | Nodes | With questions | Fully covered |
 | --- | --- | --- | --- | --- | --- |
-| Orðflokkar | Mál og málnotkun | yes: the app's main subject | 31 | 26 | 21 |
+| Orðflokkar | Mál og málnotkun | yes: the app's main subject | 31 | 28 | 23 |
 | Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 11 | 6 | 5 |
 | Fjölbreytt málnotkun | Mál og málnotkun | partly | 2 | 1 | 1 |
 | Sköpunarkraftur | Mál og málnotkun | partly | 1 | 1 | 1 |
@@ -149,13 +149,13 @@ evidence above. Later years keep practising it.
 | --- | --- | --- | --- | --- | --- | --- |
 | `no-foll` | Föllin fjögur | Orðflokkar | Nafnorð | Settu orðið í rétt horf (`fill`); Veldu rétt fall (`no_val`); Beygingartafla — nafnorð (`tbl_no`) | Föllin fjögur (`foll`) | yes |
 | `no-kyn-tala` | Kyn og tala nafnorða | Orðflokkar | Nafnorð | Greindu orðið sem er merkt (`parse`) | Kyn og tala nafnorða (`kyn-tala`) | in part |
-| `no-beyging` | Sterk og veik beyging nafnorða og kenniföll | Orðflokkar | Nafnorð | none yet | Sterk og veik beyging nafnorða (`nafnord-beyging`) | **no** |
+| `no-beyging` | Sterk og veik beyging nafnorða og kenniföll | Orðflokkar | Nafnorð | Sterkt eða veikt nafnorð (`no_beyging`) | Sterk og veik beyging nafnorða (`nafnord-beyging`) | yes |
 | `lo-beyging` | Sterk og veik beyging lýsingarorða | Orðflokkar | Lýsingarorð | Sterk eða veik beyging (`lo_beyging`); Beygingartafla — lýsingarorð (`tbl_lo`); Greindu beygðu myndina (`revform`) | Sterk og veik beyging lýsingarorða (`lo-beyging`) | yes |
 | `lo-stig` | Stigbreyting | Orðflokkar | Lýsingarorð | Stigbreyting í setningu (`lo_stig`); Beygingartafla — lýsingarorð (`tbl_lo`) | Stigbreyting (`stigbreyting`) | yes |
 | `lo-samraemi` | Samræmi lýsingarorðs og nafnorðs | Orðflokkar | Lýsingarorð | Samræmi lýsingarorðs (`lo_samr`) | Samræmi (`samraemi`) | yes |
 | `fn-personu` | Persónufornöfn í öllum föllum | Orðflokkar | Fornöfn og greinir | Fornafn í eyðu (`fn_eyda`); Fornafn í stað nafnorðs (`fn_stad`); Beygingartafla — fornöfn (`tbl_fn`) | Fornöfn (`fornofn`) | yes |
 | `fn-greinir` | Laus og viðskeyttur greinir | Orðflokkar | Fornöfn og greinir | Beygingartafla — fornöfn (`tbl_fn`) | Greinir (`greinir`) | in part |
-| `fn-flokkar` | Flokkar fornafna | Orðflokkar | Fornöfn og greinir | none yet | Fornöfn (`fornofn`) | **no** |
+| `fn-flokkar` | Flokkar fornafna | Orðflokkar | Fornöfn og greinir | Hvers konar fornafn? (`fn_flokkar`) | Fornöfn (`fornofn`) | yes |
 | `to-frumtolur` | Frumtölur og beyging þeirra | Orðflokkar | Töluorð | Töluorð í eyðu (`to_samr`); Veldu mynd töluorðs (`to_val`); Beygingartafla — töluorð (`tbl_to`) | Töluorð (`toluord`) | yes |
 | `to-radtolur` | Raðtölur og dagsetningar | Orðflokkar | Töluorð | Dagsetningar (`to_dags`); Beygingartafla — töluorð (`tbl_to`) | Töluorð (`toluord`) | yes |
 | `to-fleirtolu` | Töluorð með fleirtöluorðum | Orðflokkar | Töluorð | Töluorð með fleirtöluorðum (`to_flt`) | Töluorð (`toluord`) | yes |
@@ -252,9 +252,7 @@ cannot practise it on its own and the skill map cannot measure it.
 | Node | Efni | Year | Question type | Lesefni page |
 | --- | --- | --- | --- | --- |
 | `no-kyn-tala` | Kyn og tala nafnorða | 8 | only inside `parse` | `kyn-tala` |
-| `no-beyging` | Sterk og veik beyging nafnorða og kenniföll | 8 | **missing** | `nafnord-beyging` |
 | `fn-greinir` | Laus og viðskeyttur greinir | 8 | only inside `tbl_fn` | `greinir` |
-| `fn-flokkar` | Flokkar fornafna | 8 | **missing** | `fornofn` |
 | `so-samsettar-tidir` | Samsettar tíðir | 9 | **missing** | `tid` |
 | `so-bodhattur` | Boðháttur | 9 | only inside `revform` | `hattur` |
 | `so-fallhaettir` | Fallhættir: nafnháttur, lýsingarhættir og sagnbót | 9 | only inside `revform` | `hattur` |
@@ -287,6 +285,12 @@ Notes for whoever takes these on:
   their own Lesefni pages and are asked only inside the word-class analysis,
   a paradigm table and the reverse analysis; `so-samsettar-tidir` is taught on
   the *Tíð sagna* page and never asked.
+- **Done (item 27, first half):** kinds of pronoun (`fn_flokkar`) and strong
+  and weak nouns (`no_beyging`) now have question types of their own. The
+  sentence bank has a single direct question (*Hvaða bók ætlar þú að lesa í
+  kvöld?*), so *spurnarfornafn* is an option in every question from þyngd 3
+  but the right answer of only one; more questions in `sentences.py` would
+  fix that.
 - **The boðháttur**: measured over 1,350 questions, the three types that make
   a pupil produce a verb form (`verb`, `verbslot`, `tbl_so`) ask
   framsöguháttur and viðtengingarháttur, germynd and miðmynd, and never the
@@ -318,9 +322,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 10 of 12 | 37 of 47 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
-| 9. bekkur | 10 of 12 | 41 of 47 | 1–6 | no new category; types `fn_aftur`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 12 of 12 | 47 of 47 | 1–7 | Setningafræði, Setningagerðir; types `syntax`, `setn_hlut`, `setn_flokka`, `clause`, `gerd_finna`, `gerd_upphaf` |
+| 8. bekkur | 10 of 12 | 39 of 49 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
+| 9. bekkur | 10 of 12 | 43 of 49 | 1–6 | no new category; types `fn_aftur`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 12 of 12 | 49 of 49 | 1–7 | Setningafræði, Setningagerðir; types `syntax`, `setn_hlut`, `setn_flokka`, `clause`, `gerd_finna`, `gerd_upphaf` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:

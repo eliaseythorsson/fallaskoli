@@ -5,6 +5,8 @@
               question then counts for that category
      no_val   the same cloze as a choice between the noun's case forms
      tbl_no   beygingartafla: all four cases of one column
+     no_beyging  sterk or veik, by the genitive singular as Lesefni teaches
+              it (item 27); from þyngd 5 the pupil writes the genitive too
 
    The cloze itself is in tasks/cloze.js (Fallstjórn uses it too). */
 
@@ -18,7 +20,7 @@ import { built } from "./effects.js";
 import { withView } from "./view.js";
 import { nounCloze } from "./cloze.js";
 import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, wordWeight,
-         cellWeight, cellEase, cap1 } from "./shared.js";
+         cellWeight, cellEase, cap1, topByRank } from "./shared.js";
 
 /* ================= Cloze — noun (± adjective) =========================== */
 
@@ -153,6 +155,148 @@ export function tableNoun(lex, view, rng) {
   });
 }
 
+/* ================= Sterk eða veik beyging (item 27) ===================== */
+
+/* The rule exactly as Lesefni teaches it (content/lessons.js,
+   "nafnord-beyging"): decline the word in the singular without the article
+   and look at the GENITIVE SINGULAR (til …).
+     - it ends in a consonant, usually -s or -ar  → sterk
+     - the word ends in a vowel in every case of the singular → veik
+   Every noun is sorted by that rule from its BÍN forms. Measured over the
+   lexicon, the two cases cover all but four nouns (strætó, helgi, byrði,
+   fiskveiði, each with a second genitive of the other kind); those, and the
+   five the lesson calls irregular and says are learnt on their own, are
+   never asked. */
+const VOWEL_END = /[aeiouyáéíóúýæö]$/i;
+const NOUN_IRREGULAR = new Set(["faðir", "móðir", "bróðir", "systir", "dóttir"]);
+/* BÍN lists a singular for these, but they are used in the plural:
+   "hér er viðskipti" is not Icelandic. The data has no general mark for such
+   words; this list holds the ones found in the pool by reading it. */
+const NOUN_PLURAL_IN_USE = new Set(["viðskipti", "áhrif"]);
+const SG = ["NFET", "ÞFET", "ÞGFET", "EFET"];
+/* The helper words of the lesson's own examples: hér er hestur — til hests. */
+const SG_HELPER = { NFET: "hér er", ÞFET: "um", ÞGFET: "frá", EFET: "til" };
+
+/** sterk / veik by the lesson's rule, or null when the rule does not settle it. */
+export function nounDeclension(n) {
+  if (!n || NOUN_IRREGULAR.has(n.o) || NOUN_PLURAL_IN_USE.has(n.o)) return null;
+  const sg = SG.map((m) => n.forms[m] || []);
+  if (sg.some((f) => !f.length)) return null;
+  const gen = sg[3];
+  if (gen.every((f) => !VOWEL_END.test(f))) return "sterk";
+  if (sg.every((fs) => fs.every((f) => VOWEL_END.test(f)))) return "veik";
+  return null;
+}
+
+/* The nouns the question may ask, once per lexicon. `trap`: the nominative
+   ends in a vowel and the word is strong all the same — the lesson's
+   warning, *herbergi – herbergis*. */
+const DECL_POOL = new WeakMap();
+function declensionPool(lex) {
+  if (DECL_POOL.has(lex)) return DECL_POOL.get(lex);
+  const list = [];
+  for (const n of lex.nouns) {
+    if (n.nx || !showable(n, "NFET")) continue;
+    const kind = nounDeclension(n);
+    if (!kind) continue;
+    const trap = kind === "sterk" && n.forms.NFET.some((f) => VOWEL_END.test(f));
+    list.push({ n, kind, trap });
+  }
+  DECL_POOL.set(lex, list);
+  return list;
+}
+
+/* The ending of the genitive, said the way the lesson says it. */
+const genEnding = (f) => (/ar$/.test(f) ? "-ar" : /ur$/.test(f) ? "-ur" : /s$/.test(f) ? "-s" : `*${f.slice(-1)}*`);
+
+/** The kenniföll — nf. et., ef. et., nf. ft. — as the lesson writes them. */
+export function kenniföll(n) {
+  const out = [n.forms.NFET[0], n.forms.EFET.join(" / ")];
+  if (showable(n, "NFFT") && n.forms.NFFT) out.push(n.forms.NFFT[0]);
+  return out;
+}
+
+function declensionWhy(x) {
+  const { n, kind, trap } = x;
+  const nf = n.forms.NFET[0], gen = n.forms.EFET;
+  const k = kenniföll(n);
+  const kenni = k.length === 3 ? `Kenniföllin eru *${k.join(", ")}*.`
+    : `Nefnifall og eignarfall eintölu eru *${k.join(", ")}*.`;
+  if (kind === "veik") {
+    const sg = SG.map((m) => n.forms[m][0]).join(", ");
+    return `*til ${gen[0]}*: orðið endar á **sérhljóði** í öllum föllum eintölu (*${sg}*), `
+      + `og þá er beygingin **veik**. ${kenni}`;
+  }
+  const head = `Eignarfall eintölu er *til ${gen.join(" / ")}*. Það endar á **samhljóði** (${genEnding(gen[0])}), `
+    + `og þá er beygingin **sterk**.`;
+  const warn = trap ? ` Nefnifallið *${nf}* endar á sérhljóði, en það er eignarfallið sem ræður.` : "";
+  return `${head}${warn} ${kenni}`;
+}
+
+/**
+ * Sterk eða veik? A noun, and the pupil decides by the genitive singular.
+ *
+ *   þyngd 1–2  the four singular forms are shown (hér er … um … frá … til …),
+ *              common words, no word whose nominative misleads
+ *   þyngd 3–4  only the nominative: the pupil says *til …* in their head.
+ *              About one question in three is a word like *herbergi*
+ *   þyngd 5–   the pupil writes the genitive singular, then decides; rarer
+ *              words
+ */
+export function noDeclension(lex, view, rng) {
+  if (drilling(view) && !forced(view, ["kk", "kvk", "hk"])) return null;
+  const b = bandFor(view, "nafnord");
+  const fw = forced(view, ["kk", "kvk", "hk"]);
+  const fc = forcedCell(view);
+  if (fc && !/^beyging:(sterk|veik)$/.test(fc)) return null;
+  const all = declensionPool(lex);
+  let x;
+  if (fw) {
+    x = all.find((y) => y.n === fw);
+    if (!x || (fc && fc !== "beyging:" + x.kind)) return null;
+  } else {
+    /* Common words at þyngd 1–2 (the commonest fifth of the nouns), every
+       noun from 3. */
+    let pool = all.filter((y) => !fc || fc === "beyging:" + y.kind);
+    if (b < 3) pool = topByRank(pool, 0.2);
+    if (b < 3) pool = pool.filter((y) => !y.trap);
+    else if (rng() < 0.35) {
+      const traps = pool.filter((y) => y.trap);
+      if (traps.length) pool = traps;
+    }
+    if (!pool.length) return null;
+    /* Strong and weak about equally often: the lexicon has twice as many
+       strong nouns, and "sterk" every time would be a guess that pays. */
+    if (!fc && !(b >= 3 && pool.every((y) => y.trap))) {
+      const want = rng() < 0.5 ? "sterk" : "veik";
+      const side = pool.filter((y) => y.kind === want);
+      if (side.length) pool = side;
+    }
+    /* `wordWeight` makes common words many times likelier. From þyngd 5 that
+       falloff is undone, so the rarer words come up as often as the common
+       ones; what the pupil gets wrong still comes back sooner. */
+    const flat = b >= 5 ? (y) => 1 + y.n.r / 150 : () => 1;
+    x = wpick(pool, (y) => wordWeight(lex, view, y.n, "nafnord") * flat(y), rng);
+  }
+  const { n, kind } = x;
+  const ask = b >= 5;
+  return built({
+    type: "kenni", skill: "nafnord", n, word: wordKey(n.o, n.c),
+    title: "Sterkt eða veikt nafnorð?",
+    question: ask
+      ? `Skrifaðu eignarfall eintölu og veldu svo: er beygingin sterk eða veik?`
+      : `Er beygingin sterk eða veik? Skoðaðu eignarfall eintölu.`,
+    show: (b < 3 ? SG : ["NFET"]).map((m) => ({ h: SG_HELPER[m], f: n.forms[m].join(" / ") })),
+    askGen: ask, gen: n.forms.EFET, m: ask ? "EFET" : null, paradigm: ask ? n.forms : null,
+    options: ["sterk", "veik"], answer: kind,
+    why: declensionWhy(x),
+    base: ask ? 10 : 6, lvl: b, cell: "beyging:" + kind,
+    tags: [...(x.trap ? ["nobeyg", "nobeyg:nf"] : ["nobeyg"]), ...(ask ? ["form", "case:EF"] : [])],
+    miss: ["beyging_no"],
+    missFor: x.trap ? { veik: ["beyging_no", "beyging_no_nf"] } : null,
+  });
+}
+
 export const TYPES = [
   { id: "fill", skill: "nafnord", weight: 26, renderer: "fill",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun", "num"],
@@ -166,4 +310,9 @@ export const TYPES = [
     tags: ["case:EF", "case:NF", "case:ÞF", "case:ÞGF", "noun", "num"],
     bands: [1, 2, 3, 4, 5, 6, 7],
     build: noChoice },
+  /* item 27 */
+  { id: "no_beyging", skill: "nafnord", weight: 5, renderer: "kenni",
+    tags: ["case:EF", "form", "nobeyg", "nobeyg:nf"],
+    bands: [1, 3, 5],
+    build: noDeclension },
 ];

@@ -39,7 +39,7 @@ export function lessonFor(task) {
   const m = marksOf(task);
   switch (task.skill) {
     case "nafnord":
-      if (task.type === "table") return first("nafnord-beyging", "foll");
+      if (task.type === "table" || task.type === "kenni") return first("nafnord-beyging", "foll");
       return first("foll");
     case "lysingarord":
       if (/\b(MST|ESB|EVB)-/.test(m)) return first("stigbreyting", "lo-beyging");
