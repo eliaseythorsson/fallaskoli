@@ -1,0 +1,42 @@
+# Fornöfn: frumlög afturbeygðu rammanna
+#
+# Frumlögin sem rammarnir í afturbeygt-sagnir.tsv og afturbeygt-eign.tsv eru sagðir með.
+#
+# Dálkar:
+#   frumlag  uppflettimynd|orðflokkur|BÍN-mark frumlagsins
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# fn_aftur. Each frame is two questions on one card (item 43): the sentence
+# once with a line saying the subject is meant, once with a line saying
+# somebody else is. Both lines are made from the sentence itself — the blank
+# filled with *sjálfan sig* / *sjálfri sér* … or with *annan strák* / *aðra
+# stelpu* … in the case the verb gives — so neither says more than the
+# sentence does. A possessive frame says who owns the thing instead:
+# "Anna á töskuna sjálf." / "Önnur stelpa á töskuna."
+# Level = REFLEXIVE's rule: length + 1; +1 for the possessive, +1 for a
+# plural subject, +1 for the dative.
+#   (lemma, class, mark of the subject's form)
+#
+
+frumlag
+Pétur|kk|NFET
+Jón|kk|NFET
+Davíð|kk|NFET
+Bjarni|kk|NFET
+Ari|kk|NFET
+strákur|kk|NFETgr
+hann|pfn|NFET
+Anna|kvk|NFET
+María|kvk|NFET
+Lóa|kvk|NFET
+Sara|kvk|NFET
+Edda|kvk|NFET
+stelpa|kvk|NFETgr
+hún|pfn|NFET
+strákur|kk|NFFTgr
+stelpa|kvk|NFFTgr

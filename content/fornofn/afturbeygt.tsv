@@ -1,0 +1,48 @@
+# Fornöfn: afturbeygt eða ekki
+#
+# Sama setningin tvisvar, með línu sem segir við hvern er átt. Línan ræður því
+# hvort afturbeygða fornafnið (sig, sinn) eða persónufornafnið er rétt.
+#
+# Dálkar:
+#   þyngd    1–5
+#   setning  setningin; ___ er eyðan
+#   merking  línan sem segir við hvern er átt; hún ræður svarinu
+#   svar     rétta svarið: uppflettimynd|orðflokkur|BÍN-mark
+#   rangt    hinn kosturinn, sem er rangur hér
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Reflexive or not. The same sentence twice, with a line that says who is
+# meant; the line decides. Options are the two forms, both from BÍN.
+# Level = length + 1; +1 for sinn against hans/hennar (the possessive), +1
+# for a plural subject, +1 for the dative (sér, sinni), +1 where the
+# reflexive sits inside a noun phrase (sögu af sér).
+#
+
+þyngd	setning	merking	svar	rangt
+3	Jón þvoði ___ um hendurnar.	Jón þvoði sjálfum sér.	sig|afn|ÞGF	hann|pfn|ÞGFET
+3	Jón þvoði ___ um hendurnar.	Jón þvoði litla bróður sínum.	hann|pfn|ÞGFET	sig|afn|ÞGF
+3	Anna tók töskuna ___.	Anna á töskuna sjálf.	sinn|fn|KVK-ÞFET	hún|pfn|EFET
+3	Anna tók töskuna ___.	Vinkona Önnu á töskuna.	hún|pfn|EFET	sinn|fn|KVK-ÞFET
+4	Strákarnir sóttu hjólin ___.	Strákarnir eiga hjólin sjálfir.	sinn|fn|HK-ÞFFT	hann|pfn|EFFT
+4	Strákarnir sóttu hjólin ___.	Aðrir strákar eiga hjólin.	hann|pfn|EFFT	sinn|fn|HK-ÞFFT
+3	María keypti ___ nýja peysu.	Peysan er handa Maríu sjálfri.	sig|afn|ÞGF	hún|pfn|ÞGFET
+3	María keypti ___ nýja peysu.	Peysan er handa systur Maríu.	hún|pfn|ÞGFET	sig|afn|ÞGF
+2	Pétur sá ___ í speglinum.	Pétur sá sjálfan sig.	sig|afn|ÞF	hann|pfn|ÞFET
+2	Pétur sá ___ í speglinum.	Pétur sá vin sinn í speglinum.	hann|pfn|ÞFET	sig|afn|ÞF
+3	Hún hringdi í mömmu ___.	Hún hringdi í sína eigin mömmu.	sinn|fn|KVK-ÞFET	hún|pfn|EFET
+3	Hún hringdi í mömmu ___.	Hún hringdi í mömmu vinkonu sinnar.	hún|pfn|EFET	sinn|fn|KVK-ÞFET
+3	Kennarinn talaði við nemendurna ___.	Þetta eru nemendur kennarans sjálfs.	sinn|fn|KK-ÞFFT	hann|pfn|EFET
+3	Kennarinn talaði við nemendurna ___.	Þetta eru nemendur annars kennara.	hann|pfn|EFET	sinn|fn|KK-ÞFFT
+3	Stelpurnar klæddu ___ í úlpurnar.	Stelpurnar klæddu sjálfar sig.	sig|afn|ÞF	hún|pfn|ÞFFT
+3	Stelpurnar klæddu ___ í úlpurnar.	Stelpurnar klæddu litlu systur sínar.	hún|pfn|ÞFFT	sig|afn|ÞF
+4	Lóa gleymdi húfunni ___.	Lóa á húfuna sjálf.	sinn|fn|KVK-ÞGFET	hún|pfn|EFET
+4	Lóa gleymdi húfunni ___.	Systir Lóu á húfuna.	hún|pfn|EFET	sinn|fn|KVK-ÞGFET
+4	Afi sagði sögu af ___.	Sagan var um afa sjálfan.	sig|afn|ÞGF	hann|pfn|ÞGFET
+4	Afi sagði sögu af ___.	Sagan var um langafa.	hann|pfn|ÞGFET	sig|afn|ÞGF
+2	Siggi meiddi ___ á fætinum.	Siggi meiddist sjálfur.	sig|afn|ÞF	hann|pfn|ÞFET
+2	Siggi meiddi ___ á fætinum.	Siggi meiddi annan strák í fótbolta.	hann|pfn|ÞFET	sig|afn|ÞF

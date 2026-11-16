@@ -1,0 +1,42 @@
+# Fornöfn: sagnir sem stýra falli fornafnsins
+#
+# Hver lína verður að römmum: frumlag + sögn + ___ + framhald. Fallið er lesið úr
+# government.py, ekki skrifað hér.
+#
+# Dálkar:
+#   sögn      sögnin (nafnháttur)
+#   tíð       NT nútíð eða ÞT þátíð
+#   framhald  það sem kemur á eftir eyðunni, ein útgáfa fyrir hvert, aðskilið með kommu; (ekkert) = ekkert
+#   hver      p: aðeins manneskja passar í eyðuna; pt: manneskja eða hlutur
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# (verb, tense, what follows the blank — one frame each, who)
+#
+
+sögn	tíð	framhald	hver
+sjá	ÞT	(ekkert), í gær, í búðinni	pt
+hitta	ÞT	í gær, í bænum	p
+þekkja	NT	(ekkert), vel	p
+heimsækja	ÞT	í gær, um helgina	p
+finna	ÞT	(ekkert), loksins	pt
+passa	ÞT	um helgina	p
+skilja	NT	(ekkert), vel	pt
+hjálpa	ÞT	(ekkert), með heimavinnuna	p
+gleyma	ÞT	(ekkert), heima	pt
+svara	ÞT	(ekkert), strax	pt
+trúa	NT	(ekkert), alveg	pt
+þakka	ÞT	fyrir hjálpina	p
+fylgja	ÞT	heim	p
+mæta	ÞT	í gær, á leiðinni heim	p
+treysta	NT	(ekkert), alveg	p
+hrósa	ÞT	fyrir verkefnið	p
+bjarga	ÞT	(ekkert)	pt
+sakna	NT	(ekkert), mikið	pt
+bíða	ÞT	lengi	p
+leita	ÞT	lengi, um allan bæ	pt
+gæta	ÞT	vel	p

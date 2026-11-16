@@ -108,215 +108,36 @@ ADJ_FRAMES = _table("lysingarord/rammar.tsv", [
 
 # ---------------------------------------------------------------- Fornöfn
 
-# A personal pronoun in the case the verb or preposition asks for.
-# The cue shown in brackets is the nominative of the same number.
-# Level = length; +1 for a plural pronoun (okkur, ykkur, þeim), +1 for the
-# genitive (mín, hans, okkar).
-PRONOUN_GAP = [
-    (1, "Ég gaf ___ bókina.", ("hún", "pfn", "ÞGFET"), "gefa e-m e-ð: sá sem fær stendur í þágufalli."),
-    (1, "Kennarinn hrósaði ___ fyrir verkefnið.", ("ég", "pfn", "ÞGFET"), "hrósa stýrir þágufalli."),
-    (1, "Viltu hjálpa ___ með heimavinnuna?", ("ég", "pfn", "ÞGFET"), "hjálpa stýrir þágufalli."),
-    (2, "Amma bakaði köku handa ___.", ("ég", "pfn", "ÞGFFT"), "handa stýrir þágufalli."),
-    (3, "Ég hlakka til að hitta ___ á morgun.", ("þú", "pfn", "ÞFET"), "hitta stýrir þolfalli."),
-    (2, "Strákarnir biðu eftir ___ í hálftíma.", ("hún", "pfn", "ÞGFET"), "bíða eftir e-m: eftir stýrir hér þágufalli."),
-    (3, "Hefur þú séð ___ í dag?", ("hann", "pfn", "ÞFFT"), "sjá stýrir þolfalli."),
-    (2, "Ég sakna ___ mikið.", ("þú", "pfn", "EFET"), "sakna stýrir eignarfalli."),
-    (2, "Við töluðum um ___ í gær.", ("hún", "pfn", "ÞFET"), "um stýrir þolfalli."),
-    (3, "Mamma keypti nýja skó handa ___.", ("þú", "pfn", "ÞGFFT"), "handa stýrir þágufalli."),
-    (2, "Hundurinn hljóp á eftir ___.", ("ég", "pfn", "ÞGFFT"), "á eftir stýrir þágufalli."),
-    (2, "Ég sendi ___ bréf.", ("hann", "pfn", "ÞGFFT"), "senda e-m e-ð: sá sem fær stendur í þágufalli."),
-    (3, "Hún saknaði ___ allan daginn.", ("það", "pfn", "EFFT"), "sakna stýrir eignarfalli."),
-    (1, "Ég fékk bréf frá ___.", ("hann", "pfn", "ÞGFET"), "frá stýrir þágufalli."),
-    (1, "Komdu með ___ í bíó!", ("ég", "pfn", "ÞGFET"), "með e-m (ásamt e-m) stýrir þágufalli."),
-    (2, "Pabbi spurði ___ um prófið.", ("ég", "pfn", "ÞFFT"), "spyrja stýrir þolfalli."),
-    (2, "Kötturinn svaf hjá ___ í nótt.", ("þú", "pfn", "ÞGFET"), "hjá stýrir þágufalli."),
-    (1, "Ég þekki ___ vel.", ("hún", "pfn", "ÞFET"), "þekkja stýrir þolfalli."),
-    (3, "Ég fór til ___ í gær.", ("hann", "pfn", "EFET"), "til stýrir eignarfalli."),
-    (1, "Ég treysti ___ alveg.", ("þú", "pfn", "ÞGFET"), "treysta stýrir þágufalli."),
-    (2, "Við heimsóttum ___ um jólin.", ("hann", "pfn", "ÞFFT"), "heimsækja stýrir þolfalli."),
-    (2, "Þjálfarinn óskaði ___ til hamingju.", ("þú", "pfn", "ÞGFFT"), "óska e-m til hamingju: þágufall."),
-    (2, "Hún hringdi í ___ í morgun.", ("ég", "pfn", "ÞFET"), "hringja í e-n: í stýrir hér þolfalli."),
-    (1, "Ég lánaði ___ hjólið mitt.", ("hún", "pfn", "ÞGFET"), "lána e-m e-ð: þágufall."),
-    (3, "Strákurinn leitaði ___ um allan bæ.", ("hún", "pfn", "EFET"), "leita stýrir eignarfalli."),
-    (1, "Við gleymdum ___ á stöðinni.", ("þú", "pfn", "ÞGFET"), "gleyma stýrir þágufalli."),
-    (3, "Ég heyrði í ___ í útvarpinu.", ("hann", "pfn", "ÞGFFT"), "heyra í e-m: í stýrir hér þágufalli."),
-    (4, "Þau fóru í bíó án ___.", ("ég", "pfn", "EFFT"), "án stýrir eignarfalli."),
-    (1, "Hver sagði ___ þetta?", ("þú", "pfn", "ÞGFET"), "segja e-m e-ð: þágufall."),
-    (2, "Ég sá ___ í búðinni.", ("hún", "pfn", "ÞFFT"), "sjá stýrir þolfalli."),
-    (2, "Afi gaf ___ nammi.", ("það", "pfn", "ÞGFFT"), "gefa e-m e-ð: þágufall."),
-    (2, "Mér þykir vænt um ___.", ("þú", "pfn", "ÞFFT"), "um stýrir þolfalli."),
-]
-
-# Reflexive or not. The same sentence twice, with a line that says who is
-# meant; the line decides. Options are the two forms, both from BÍN.
-# Level = length + 1; +1 for sinn against hans/hennar (the possessive), +1
-# for a plural subject, +1 for the dative (sér, sinni), +1 where the
-# reflexive sits inside a noun phrase (sögu af sér).
-REFLEXIVE = [
-    (3, "Jón þvoði ___ um hendurnar.", "Jón þvoði sjálfum sér.",
-     ("sig", "afn", "ÞGF"), ("hann", "pfn", "ÞGFET")),
-    (3, "Jón þvoði ___ um hendurnar.", "Jón þvoði litla bróður sínum.",
-     ("hann", "pfn", "ÞGFET"), ("sig", "afn", "ÞGF")),
-    (3, "Anna tók töskuna ___.", "Anna á töskuna sjálf.",
-     ("sinn", "fn", "KVK-ÞFET"), ("hún", "pfn", "EFET")),
-    (3, "Anna tók töskuna ___.", "Vinkona Önnu á töskuna.",
-     ("hún", "pfn", "EFET"), ("sinn", "fn", "KVK-ÞFET")),
-    (4, "Strákarnir sóttu hjólin ___.", "Strákarnir eiga hjólin sjálfir.",
-     ("sinn", "fn", "HK-ÞFFT"), ("hann", "pfn", "EFFT")),
-    (4, "Strákarnir sóttu hjólin ___.", "Aðrir strákar eiga hjólin.",
-     ("hann", "pfn", "EFFT"), ("sinn", "fn", "HK-ÞFFT")),
-    (3, "María keypti ___ nýja peysu.", "Peysan er handa Maríu sjálfri.",
-     ("sig", "afn", "ÞGF"), ("hún", "pfn", "ÞGFET")),
-    (3, "María keypti ___ nýja peysu.", "Peysan er handa systur Maríu.",
-     ("hún", "pfn", "ÞGFET"), ("sig", "afn", "ÞGF")),
-    (2, "Pétur sá ___ í speglinum.", "Pétur sá sjálfan sig.",
-     ("sig", "afn", "ÞF"), ("hann", "pfn", "ÞFET")),
-    (2, "Pétur sá ___ í speglinum.", "Pétur sá vin sinn í speglinum.",
-     ("hann", "pfn", "ÞFET"), ("sig", "afn", "ÞF")),
-    (3, "Hún hringdi í mömmu ___.", "Hún hringdi í sína eigin mömmu.",
-     ("sinn", "fn", "KVK-ÞFET"), ("hún", "pfn", "EFET")),
-    (3, "Hún hringdi í mömmu ___.", "Hún hringdi í mömmu vinkonu sinnar.",
-     ("hún", "pfn", "EFET"), ("sinn", "fn", "KVK-ÞFET")),
-    (3, "Kennarinn talaði við nemendurna ___.", "Þetta eru nemendur kennarans sjálfs.",
-     ("sinn", "fn", "KK-ÞFFT"), ("hann", "pfn", "EFET")),
-    (3, "Kennarinn talaði við nemendurna ___.", "Þetta eru nemendur annars kennara.",
-     ("hann", "pfn", "EFET"), ("sinn", "fn", "KK-ÞFFT")),
-    (3, "Stelpurnar klæddu ___ í úlpurnar.", "Stelpurnar klæddu sjálfar sig.",
-     ("sig", "afn", "ÞF"), ("hún", "pfn", "ÞFFT")),
-    (3, "Stelpurnar klæddu ___ í úlpurnar.", "Stelpurnar klæddu litlu systur sínar.",
-     ("hún", "pfn", "ÞFFT"), ("sig", "afn", "ÞF")),
-    (4, "Lóa gleymdi húfunni ___.", "Lóa á húfuna sjálf.",
-     ("sinn", "fn", "KVK-ÞGFET"), ("hún", "pfn", "EFET")),
-    (4, "Lóa gleymdi húfunni ___.", "Systir Lóu á húfuna.",
-     ("hún", "pfn", "EFET"), ("sinn", "fn", "KVK-ÞGFET")),
-    (4, "Afi sagði sögu af ___.", "Sagan var um afa sjálfan.",
-     ("sig", "afn", "ÞGF"), ("hann", "pfn", "ÞGFET")),
-    (4, "Afi sagði sögu af ___.", "Sagan var um langafa.",
-     ("hann", "pfn", "ÞGFET"), ("sig", "afn", "ÞGF")),
-    (2, "Siggi meiddi ___ á fætinum.", "Siggi meiddist sjálfur.",
-     ("sig", "afn", "ÞF"), ("hann", "pfn", "ÞFET")),
-    (2, "Siggi meiddi ___ á fætinum.", "Siggi meiddi annan strák í fótbolta.",
-     ("hann", "pfn", "ÞFET"), ("sig", "afn", "ÞF")),
-]
-
-# ---- generated from frames (v6.13, critique item 23) ----------------------
-#
-# PRONOUN_GAP and REFLEXIVE above are 32 and 11 sentences; a pupil met each
-# again within a few sessions. The frames below are filled in by
-# build_exercises.py, every word out of BÍN, and nothing in them is an
-# inflected form written here.
-
-# fn_eyda. A personal pronoun after a verb or a preposition that
-# government.py lists with ONE case. The case is not written here: the build
-# reads it from that table and stops on a verb or preposition it gives two.
-# Each frame is said by every subject below, the verb in BÍN's form for that
-# subject, and the pupil writes any personal pronoun but the subject's own
-# person (tasks/fornofn.js: not *ég* after *ég* or *við*, not *hann* after
-# *hann*).
-#   who  "p": only a person reads naturally in the blank — so not *það* in
-#        the singular ("Ég hrósaði því"); "pt": a person or a thing ("Ég
-#        fann það").
-# Level = length (the subject and the blank one word each), +1 for a plural
-# pronoun, +1 for the genitive — PRONOUN_GAP's rule, applied by the builder.
-PRONOUN_SUBJECTS = [
-    ("ég", "pfn", "NFET"), ("ég", "pfn", "NFFT"), ("hann", "pfn", "NFET"), ("hún", "pfn", "NFET"),
-    ("það", "pfn", "NFFT"),
-    ("mamma", "kvk", "NFET"), ("pabbi", "kk", "NFET"), ("amma", "kvk", "NFET"), ("afi", "kk", "NFET"),
-    ("kennari", "kk", "NFETgr"), ("stelpa", "kvk", "NFETgr"), ("strákur", "kk", "NFETgr"),
-]
-# (verb, tense, what follows the blank — one frame each, who)
-PRONOUN_VERBS = [
-    ("sjá", "ÞT", ["", "í gær", "í búðinni"], "pt"),
-    ("hitta", "ÞT", ["í gær", "í bænum"], "p"),
-    ("þekkja", "NT", ["", "vel"], "p"),
-    ("heimsækja", "ÞT", ["í gær", "um helgina"], "p"),
-    ("finna", "ÞT", ["", "loksins"], "pt"),
-    ("passa", "ÞT", ["um helgina"], "p"),
-    ("skilja", "NT", ["", "vel"], "pt"),
-    ("hjálpa", "ÞT", ["", "með heimavinnuna"], "p"),
-    ("gleyma", "ÞT", ["", "heima"], "pt"),
-    ("svara", "ÞT", ["", "strax"], "pt"),
-    ("trúa", "NT", ["", "alveg"], "pt"),
-    ("þakka", "ÞT", ["fyrir hjálpina"], "p"),
-    ("fylgja", "ÞT", ["heim"], "p"),
-    ("mæta", "ÞT", ["í gær", "á leiðinni heim"], "p"),
-    ("treysta", "NT", ["", "alveg"], "p"),
-    ("hrósa", "ÞT", ["fyrir verkefnið"], "p"),
-    ("bjarga", "ÞT", [""], "pt"),
-    ("sakna", "NT", ["", "mikið"], "pt"),
-    ("bíða", "ÞT", ["lengi"], "p"),
-    ("leita", "ÞT", ["lengi", "um allan bæ"], "pt"),
-    ("gæta", "ÞT", ["vel"], "p"),
-]
-# (preposition, verb, tense, words between the verb and the preposition,
-#  what follows the blank, who)
-PRONOUN_PREPS = [
-    ("um", "tala", "ÞT", "", ["", "í gær"], "pt"),
-    ("um", "hugsa", "ÞT", "", ["", "í allan dag"], "pt"),
-    ("frá", "fá", "ÞT", "bréf", [""], "p"),
-    ("frá", "heyra", "ÞT", "", ["í gær"], "p"),
-    ("hjá", "gista", "ÞT", "", ["í nótt"], "p"),
-    ("hjá", "sitja", "ÞT", "", ["", "í tímanum"], "p"),
-    ("handa", "kaupa", "ÞT", "gjöf", [""], "p"),
-    ("handa", "baka", "ÞT", "köku", [""], "p"),
-    ("án", "fara", "ÞT", "", ["", "í gær"], "p"),
-    ("til", "fara", "ÞT", "", ["í gær"], "p"),
-    ("af", "taka", "ÞT", "mynd", [""], "pt"),
-    ("nálægt", "sitja", "ÞT", "", [""], "pt"),
-    ("gegn", "keppa", "ÞT", "", [""], "p"),
-]
-
-# fn_aftur. Each frame is two questions on one card (item 43): the sentence
-# once with a line saying the subject is meant, once with a line saying
-# somebody else is. Both lines are made from the sentence itself — the blank
-# filled with *sjálfan sig* / *sjálfri sér* … or with *annan strák* / *aðra
-# stelpu* … in the case the verb gives — so neither says more than the
-# sentence does. A possessive frame says who owns the thing instead:
-# "Anna á töskuna sjálf." / "Önnur stelpa á töskuna."
-# Level = REFLEXIVE's rule: length + 1; +1 for the possessive, +1 for a
-# plural subject, +1 for the dative.
-#   (lemma, class, mark of the subject's form)
-REFLEX_SUBJECTS = [
-    ("Pétur", "kk", "NFET"), ("Jón", "kk", "NFET"), ("Davíð", "kk", "NFET"), ("Bjarni", "kk", "NFET"),
-    ("Ari", "kk", "NFET"), ("strákur", "kk", "NFETgr"), ("hann", "pfn", "NFET"),
-    ("Anna", "kvk", "NFET"), ("María", "kvk", "NFET"), ("Lóa", "kvk", "NFET"), ("Sara", "kvk", "NFET"),
-    ("Edda", "kvk", "NFET"), ("stelpa", "kvk", "NFETgr"), ("hún", "pfn", "NFET"),
-    ("strákur", "kk", "NFFTgr"), ("stelpa", "kvk", "NFFTgr"),
-]
+# A personal pronoun in the case the verb or preposition asks for, and
+# reflexive or not: hand-written items (content/fornofn/eyda.tsv,
+# afturbeygt.tsv), then the frames build_exercises.py fills in from BÍN
+# (v6.13, critique item 23): subjects × verbs and prepositions of
+# government.py (eyda-*.tsv), subjects × reflexive verbs and possessed
+# things (afturbeygt-*.tsv). Each file says how its items are levelled.
+#   PRONOUN_GAP        (level, sentence, answer, why)
+#   REFLEXIVE          (level, sentence, who is meant, answer, the other option)
+#   PRONOUN_VERBS      (verb, tense, what follows the blank — one frame each, who)
+#   PRONOUN_PREPS      (preposition, verb, tense, words between, what follows, who)
+#   REFLEX_OBJECT      (verb, case of the object, what follows the blank, plural subjects too?)
+#   REFLEX_POSSESSIVE  (verb, case of the thing owned, the things)
+PRONOUN_GAP = _table("fornofn/eyda.tsv", [
+    ("þyngd", "int"), ("setning", "text"), ("svar", "word:3"), ("skýring", "text")])
+REFLEXIVE = _table("fornofn/afturbeygt.tsv", [
+    ("þyngd", "int"), ("setning", "text"), ("merking", "text"), ("svar", "word:3"), ("rangt", "word:3")])
+PRONOUN_SUBJECTS = _column("fornofn/eyda-frumlog.tsv", ("frumlag", "word:3"))
+PRONOUN_VERBS = _table("fornofn/eyda-sagnir.tsv", [
+    ("sögn", "text"), ("tíð", "text"), ("framhald", "list"), ("hver", "text")])
+PRONOUN_PREPS = _table("fornofn/eyda-forsetningar.tsv", [
+    ("forsetning", "text"), ("sögn", "text"), ("tíð", "text"), ("milli", "str"), ("framhald", "list"),
+    ("hver", "text")])
+REFLEX_SUBJECTS = _column("fornofn/afturbeygt-frumlog.tsv", ("frumlag", "word:3"))
 # Somebody else of the subject's gender and number: *annar strákur* …
 REFLEX_OTHER = {"kk": ("strákur", "annar"), "kvk": ("stelpa", "annar")}
-# (verb, case of the object, what follows the blank, plural subjects too?)
-REFLEX_OBJECT = [
-    ("sjá", "ÞF", "í speglinum", True),
-    ("sjá", "ÞF", "á myndinni", True),
-    ("sjá", "ÞF", "í sjónvarpinu", True),
-    ("þekkja", "ÞF", "á myndinni", True),
-    ("finna", "ÞF", "á myndinni", False),
-    ("klæða", "ÞF", "í úlpuna", False),
-    ("fela", "ÞF", "í skápnum", True),
-    ("læsa", "ÞF", "inni", True),
-    ("kynna", "ÞF", "fyrir bekknum", True),
-    ("teikna", "ÞF", "á blaðið", False),
-    ("mynda", "ÞF", "með símanum", True),
-    ("meiða", "ÞF", "á fætinum", False),
-    ("kaupa", "ÞGF", "nýja peysu", False),
-    ("þvo", "ÞGF", "um hendurnar", True),
-    ("klóra", "ÞGF", "á bakinu", False),
-    ("velja", "ÞGF", "nýja húfu", False),
-]
-# (verb, case of the thing owned, the things) — the possessive frame,
-# "{subject} {verb} {the thing} ___." Each pair of verb and thing is said by
-# three of the subjects, in turn, so the list stays a list of frames and
-# not of names.
-REFLEX_POSSESSIVE = [
-    ("taka", "ÞF", ["taska", "bók", "húfa", "peysa", "sími", "bolti", "úlpa", "hjól"]),
-    ("sækja", "ÞF", ["taska", "hjól", "úlpa", "bolti"]),
-    ("finna", "ÞF", ["taska", "bók", "húfa", "sími", "lykill"]),
-    ("þvo", "ÞF", ["peysa", "húfa", "úlpa", "hjól"]),
-    ("laga", "ÞF", ["hjól", "sími"]),
-    ("týna", "ÞGF", ["taska", "bók", "húfa", "sími", "lykill", "bolti"]),
-    ("gleyma", "ÞGF", ["taska", "bók", "húfa", "peysa", "úlpa"]),
-]
+
+REFLEX_OBJECT = _table("fornofn/afturbeygt-sagnir.tsv", [
+    ("sögn", "text"), ("fall", "text"), ("framhald", "text"), ("fleirtala", "bool")])
+REFLEX_POSSESSIVE = _table("fornofn/afturbeygt-eign.tsv", [
+    ("sögn", "text"), ("fall", "text"), ("hlutir", "list")])
 
 # ---------------------------------------------------------------- Töluorð
 
