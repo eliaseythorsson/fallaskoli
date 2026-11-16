@@ -19,16 +19,25 @@
        can start it from Stillingar;
      * the keyboard stays inside the dialog, the page behind is inert, and
        nothing is animated for a pupil who asked for no motion;
-     * nothing scrolls sideways on any of its screens.
+     * nothing scrolls sideways on any of its screens;
+     * on a server: a new account is met by it, a teacher is not, and the
+       record comes back from the server after a login on another device.
 
    Run with:  CHROME_PATH=/usr/bin/google-chrome node tools/tour-test.mjs
-   `BT_TRACE=1` prints every check. Exit code 2: no Chromium (skipped).       */
+   `BT_TRACE=1` prints every check. `TOUR_SHOTS=/some/folder` saves a picture
+   of every screen at both sizes, to be looked at by a person: whether it is
+   clear and good to look at is not something a check can say.
+   Exit code 2: no Chromium (skipped).                                         */
 
 import puppeteer from "puppeteer-core";
 import path from "node:path";
 import { htmlPath } from "./version.mjs";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
+import fs from "node:fs/promises";
+import os from "node:os";
+import { createApp } from "../server/server.mjs";
+import { hashPassword, newId } from "../server/auth.mjs";
 import { PLACEMENT_SKIP, MIN_QUESTIONS, MAX_QUESTIONS, TOUR_STEPS } from "../src/js/core/placement.js";
 import { TASKS } from "../src/js/tasks/index.js";
 
@@ -47,6 +56,10 @@ const ok = (cond, msg) => {
   if (!cond) problems.push(msg);
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const SHOTS = process.env.TOUR_SHOTS || null;
+const shot = async (page, vp, name) => {
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `${vp.name}-${name}.png`) });
+};
 
 const browser = await puppeteer.launch({
   executablePath: CHROME, headless: "new",
@@ -274,6 +287,7 @@ async function playRound(page, vp, pattern) {
         `${W}: the slim line does not name the round and its length: ${st.line}`);
       ok(st.insession, `${W} does not have the screen to itself (body.insession)`);
       await noSideways(page, W + ", first question");
+      await shot(page, vp, "3-round-first-question");
     }
     ok(PLACEMENT_RENDERERS.has(st.type), `${W} asked a ${st.type} question`);
     const right = pattern(i);
@@ -302,6 +316,8 @@ async function playRound(page, vp, pattern) {
     ok(!after.streak, `${W}: "Þrjár í röð" was offered`);
     ok(!after.scrim, `${W}: a window opened over question ${i + 1}`);
     if (after.i >= after.n) ok(/Sjá byrjunarstaðinn/.test(after.btn), `${W}: the last button says "${after.btn}"`);
+    if (i === 2) await shot(page, vp, "3-round-wrong-answer");
+    if (after.i >= after.n) await shot(page, vp, "3-round-last-answer");
     await click(page, "#check");
     await page.waitForFunction((i) => {
       const A = window.FALLASKOLI;
@@ -353,6 +369,7 @@ async function pointerOK(page, vp, id) {
   if (id === "line") ok(m.run === "dagsins", `${W}: no Dagsins lota is running under it`);
   await dialogOK(page, W);
   await noSideways(page, W);
+  await shot(page, vp, `5-pointer-${TOUR_STEPS.indexOf(id) + 1}-${id}`);
 }
 
 /* ============ 1. the whole first run, at both sizes ========================== */
@@ -369,6 +386,7 @@ for (const [vp, year] of [[PHONE, 8], [DESK, null]]) {
   await sleep(350);
   await dialogOK(page, `${W} welcome`);
   await noSideways(page, `${W} welcome`);
+  await shot(page, vp, "1-welcome");
   const years = await page.$$eval("#tour .touryear", (els) => els.map((e) => e.textContent.replace(/\s+/g, " ").trim()));
   ok(years.length === 4 && /8\./.test(years[0]) && /10\./.test(years[2]) && /veit/.test(years[3]),
     `${W} the welcome does not offer three years and "Ég veit það ekki": ${years}`);
@@ -405,6 +423,7 @@ for (const [vp, year] of [[PHONE, 8], [DESK, null]]) {
   await sleep(350);
   await dialogOK(page, `${W} introduction`);
   await noSideways(page, `${W} introduction`);
+  await shot(page, vp, "2-introduction");
   const intro = await page.$eval("#tour .tourtext", (e) => e.textContent);
   ok(/ekki próf/.test(intro) && /réttan byrjunarstað/.test(intro) && /\d+ stuttar spurningar/.test(intro),
     `${W} the introduction does not frame the round gently: ${intro.slice(0, 120)}`);
@@ -435,6 +454,7 @@ for (const [vp, year] of [[PHONE, 8], [DESK, null]]) {
   await sleep(350);
   await dialogOK(page, `${W} result`);
   await noSideways(page, `${W} result`);
+  await shot(page, vp, "4-result");
   const res = await page.evaluate(() => {
     const A = window.FALLASKOLI, S = A.S;
     const on = Object.keys(S.enabled).filter((k) => S.enabled[k]);
@@ -502,6 +522,7 @@ for (const [vp, year] of [[PHONE, 8], [DESK, null]]) {
   ok(end.won === 0 || end.run.badges >= 1, `${W} the badges won during the first run are not kept for the session's summary`);
   if (!vp.isMobile) ok(end.focus, `${W} the keyboard is not at the question when the first run ends`);
   await noSideways(page, `${W} after the first run`);
+  await shot(page, vp, "6-after");
   /* The session is a real one: its first question can be answered. */
   try { await answer(page, true); ok(true, ""); }
   catch (e) { if (!/shape it should leave out/.test(e.message)) problems.push(`${W} the first question after the tour could not be answered: ${e.message}`); }
@@ -540,6 +561,7 @@ const toResult = async (page) => {
   await page.waitForSelector("#tourquit-yes", { timeout: 4000 });
   const said = await page.$eval(".sheetbody", (e) => e.textContent);
   ok(/svarað 1 af \d+ spurningum/.test(said) && /of lítið/.test(said), `the × of the round does not say what leaving means: ${said.slice(0, 100)}`);
+  await shot(page, PHONE, "7-round-quit");
   await click(page, "#tourquit-yes");
   await waitCard(page, "Þá byrjum við á byrjuninni");
 };
@@ -569,6 +591,7 @@ for (const s of SKIPS) {
         live: window.FALLASKOLI.sess.diff.nafnord }));
       ok(Object.keys(r.d).length === 0 && r.rows === 0 && r.live === 1, `${W}: one answer placed something: ${JSON.stringify(r)}`);
       await noSideways(page, W);
+      await shot(page, vp, "7-result-nothing-placed");
     }
     if (s.step) await pointerOK(page, vp, s.step);
     if (s.how === "esc") await page.keyboard.press("Escape");
@@ -592,6 +615,7 @@ for (const s of SKIPS) {
     if (want === "skipped") ok(/Sýna kynninguna aftur/.test(a.notice), `${W}: nothing says where the first run can be found again`);
     if (s.step === "line") ok(a.seen === 0, `${W}: the question shown behind the pointer counts as a type the pupil has met`);
     await noSideways(page, W + " (after)");
+    if (s.at === "the introduction") await shot(page, vp, "8-skipped");
     await page.evaluate(() => window.FALLASKOLI.save(true));
     await page.reload({ waitUntil: "domcontentloaded" });
     await ready(page);
@@ -645,6 +669,7 @@ for (const s of SKIPS) {
   await sleep(300);
   await dialogOK(page, `${W}, the replay`);
   await noSideways(page, `${W}, the replay`);
+  await shot(page, vp, "9-replay");
   ok(await page.$("#tour .touryear") === null, `${W}: a replay asks for the year again`);
   await click(page, "#tour-go");
   await waitStep(page, "today");
@@ -714,6 +739,95 @@ for (const s of SKIPS) {
   const pulse = await page.evaluate(() => getComputedStyle(document.querySelector("#tour .tourring"), "::after").animationName);
   ok(pulse === "tourpulse", `with motion allowed the ring does not pulse (${pulse})`);
   await ctx.close();
+}
+
+/* ============ 6. on a server ==================================================== */
+/* The same file served by server/server.mjs, behind a login: the first run
+   meets a new pupil's account and not a teacher's; what it wrote is stored
+   by the server (server/guard.mjs keeps the record and the levels), so a
+   second device that logs in is not walked through it again. */
+{
+  const HTML = process.argv[2] ? path.join(root, process.argv[2]) : htmlPath();
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "fallaskoli-tour-"));
+  const app = createApp({ dataDir: dir, htmlFile: HTML, secureCookies: false, env: {} });
+  await app.store.init();
+  const mkUser = async (username, role) => {
+    const { salt, hash } = await hashPassword("lykilordid-mitt");
+    await app.store.updateUsers((users) => {
+      users.push({ id: newId(), username, name: username, role, status: "active", salt, hash,
+        group: "default", share: { board: false, minutes: false },
+        consent: { by: "self", over16: true, at: new Date().toISOString(), how: "admin" } });
+      return users;
+    });
+  };
+  await mkUser("nyr", "learner");
+  await mkUser("kennari", "teacher");
+  await new Promise((r) => app.server.listen(0, r));
+  const BASE = "http://127.0.0.1:" + app.server.address().port;
+  const device = async (username, vp = DESK) => {
+    const ctx = await browser.createBrowserContext();
+    const page = await ctx.newPage();
+    page.on("pageerror", (e) => problems.push(`[server] pageerror: ${e.message}`));
+    page.on("console", (m) => {
+      if (m.type() === "error" && !/favicon|fonts\.g|Failed to load resource/.test(m.text()))
+        problems.push(`[server] console.error: ${m.text()}`);
+    });
+    const { name, ...viewport } = vp;
+    await page.setViewport(viewport);
+    await page.goto(BASE + "/", { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("#lg-user", { timeout: 15000 });
+    await page.type("#lg-user", username);
+    await page.type("#lg-pass", "lykilordid-mitt");
+    await click(page, "#lg-in");
+    await ready(page);
+    return { ctx, page };
+  };
+  try {
+    const A = await device("nyr", PHONE);
+    await A.page.waitForSelector("#tour .tourcard", { timeout: 8000 }).catch(() => {});
+    ok(/Velkomin/.test(await A.page.$eval("#tour h2", (e) => e.textContent).catch(() => "")),
+      "[server] a new pupil's account is not met by the welcome");
+    await sleep(600);                         // the server's picture has arrived by now
+    ok(await A.page.$(".scrim") === null, "[server] a window opened over the welcome");
+    await dialogOK(A.page, "[server] welcome");
+    await noSideways(A.page, "[server] welcome");
+    /* The card is drawn under the server's content policy: it has its
+       colours and its frame (no style was refused). */
+    const look = await A.page.$eval("#tour .tourcard", (e) => {
+      const c = getComputedStyle(e); return { bg: c.backgroundColor, border: c.borderTopWidth };
+    });
+    ok(look.bg !== "rgba(0, 0, 0, 0)" && look.border === "7px", `[server] the welcome is not styled: ${JSON.stringify(look)}`);
+    /* Year 9, no questions, through the pointers to the end. */
+    await toSteps(A.page, 3);
+    await pointerOK(A.page, PHONE, "line");
+    await click(A.page, "#tour-later");
+    await sleep(200);
+    ok(await tourGone(A.page), "[server] the first run did not end");
+    await A.page.evaluate(() => window.FALLASKOLI.save(true));
+    await sleep(300);
+    await A.ctx.close();
+
+    /* Another device, the same account. */
+    const B = await device("nyr");
+    await sleep(500);
+    ok(await B.page.$("#tour") === null, "[server] the first run opened again on a second device");
+    const rec = await tourRec(B.page);
+    ok(rec && rec.st === "done" && rec.year === 9, `[server] the server did not keep the record: ${JSON.stringify(rec)}`);
+    ok(await B.page.evaluate(() => (window.FALLASKOLI.S.policy.levels || {})["7"] === false),
+      "[server] the year chosen in the first run did not reach the second device");
+    await B.ctx.close();
+
+    /* A teacher is not a pupil to be placed. */
+    const T = await device("kennari");
+    await sleep(500);
+    ok(await T.page.$("#tour") === null, "[server] a teacher is walked through the pupils' first run");
+    ok(await tourRec(T.page) === null, "[server] a teacher has a first-run record");
+    await T.ctx.close();
+  } catch (e) {
+    problems.push("[server] " + e.message);
+  }
+  await new Promise((r) => app.server.close(r));
+  await fs.rm(dir, { recursive: true, force: true });
 }
 
 await browser.close();

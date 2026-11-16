@@ -727,6 +727,8 @@ export function createTour(app) {
     setBadgeGate(hold);
     if (!replay) { noteTour(app.S, "open", { day: todayKey() }); app.save(); }
     app.openView("practice");
+    /* From the top: "Sýna kynninguna aftur" is at the bottom of a long tab. */
+    if (typeof window !== "undefined" && window.scrollY > 0) window.scrollTo(0, 0);
     if (!replay) return showWelcome();
     const R = TEXT.replay;
     const root = card({
