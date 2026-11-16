@@ -13,10 +13,10 @@
    ---- the round -------------------------------------------------------------
 
    Twelve to fifteen questions, one skill after another (`placementPlan`):
-   every skill that can be graded once, in the order a pupil knows them, and
-   then the three inflection skills — nouns, verbs, adjectives — a second
-   time. With the ten categories of year 8 that is twelve questions; with the
-   two of year 10 fourteen.
+   every skill once, in the order a pupil knows them, and then the three
+   inflection skills — nouns, verbs, adjectives — a second time. With the ten
+   categories of year 8 that is thirteen questions; with the two that year 10
+   adds, fifteen.
 
    ONE level runs through the whole round, not one per skill: with one or two
    questions in a skill there is nothing a staircase of its own could settle
@@ -49,7 +49,8 @@
      * a skill answered right every time gets half a step on.
    The result is held inside the skill's own range (`ranges`, from
    core/difficulty.js `levelRanges`). A skill that is switched on but could
-   not be asked (Orðaforði is not graded) starts half a step under G.
+   not be asked (every question type the round may use is switched off for
+   it) starts half a step under G.
    `applyPlacement` writes each through `setSkillLevel(…, {source:
    "placement"})` and nothing else: it is the one way in.
 
@@ -59,7 +60,10 @@
 
    `suggestYear`: the app's levels 1–5 are year 8, 6 is year 9 and 7 is year
    10 (core/curriculum.js). A pupil whose general level reaches the top of a
-   year's range is offered the next year's material. A pupil who SAID which
+   year's range is offered the next year's material — if at least three in
+   four of the round's answers were right as well: thirteen questions are
+   few, and a run of lucky guesses in the fast climb must not send a pupil a
+   year ahead. A pupil who SAID which
    year they are in is never offered a lower one — the year is what their
    class is doing, and the levels inside it already start low — and at most
    one year higher. It is a suggestion: the pupil chooses (ui/tour.js).
@@ -93,11 +97,11 @@ export const MIN_QUESTIONS = 12, MAX_QUESTIONS = 15;
 export const MIN_ANSWERS = 6;
 
 /* The order the skills are asked in: what a pupil has known longest first, so
-   the round opens with something familiar, and the two production skills of
-   later years last. */
+   the round opens with something familiar, and the two categories of year
+   10 last. */
 export const PLACEMENT_ORDER = [
   "nafnord", "sagnord", "lysingarord", "greining", "fornofn", "fallstjorn",
-  "toluord", "obeygjanleg", "malbeiting", "setningafraedi", "setningagerd",
+  "toluord", "obeygjanleg", "ordaford", "malbeiting", "setningafraedi", "setningagerd",
 ];
 /** The skills asked a second time: where most of the practice will be. */
 export const PLACEMENT_TWICE = ["nafnord", "sagnord", "lysingarord"];
@@ -298,6 +302,10 @@ export function applyPlacement(S, result, { sess = null, now = Date.now() } = {}
     top of year 8's range is 5 and of year 9's is 6 (core/curriculum.js). */
 export const YEAR_FROM = { 9: 4.5, 10: 6 };
 
+/** The share of the round's answers that must be right before a year above
+    the eighth is suggested. */
+export const YEAR_SHARE = 0.75;
+
 /** The year whose range a general level sits in. */
 export function yearOfLevel(general) {
   if (typeof general !== "number" || !Number.isFinite(general)) return 8;
@@ -318,7 +326,8 @@ export function suggestYear(result, { chosen = null, cap = null } = {}) {
   const said = YEARS.includes(chosen) ? chosen : null;
   const top = YEARS.includes(cap) ? cap : YEARS[YEARS.length - 1];
   if (!result || !result.placed) return said ? Math.min(said, top) : null;
-  const fit = yearOfLevel(result.general);
+  const sure = result.answers > 0 && result.right / result.answers >= YEAR_SHARE;
+  const fit = sure ? yearOfLevel(result.general) : YEARS[0];
   /* Never below the year the pupil is in, and one year above it at most. */
   const year = said ? Math.max(said, Math.min(fit, said + 1)) : fit;
   return Math.min(year, top);
