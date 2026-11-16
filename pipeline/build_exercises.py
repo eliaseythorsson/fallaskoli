@@ -140,9 +140,17 @@ out["reflexive"] = items
 # v6.13 (critique item 23): frames × BÍN. Every word of every sentence below
 # is a BÍN form looked up here, and every sentence is checked word by word.
 
-def length_level(text):
-    """exercises.py LEVELS: the words of the sentence, the blank one word."""
-    n = len(text.split())
+def sentence_level(text):
+    """exercises.py LEVELS and sentences.py's table: the words of the
+    sentence, the blank ___ one word and a verb slot {V} one word; 1–5.
+
+    Until the review of v6.13 (S11) this was two functions: 23a's
+    `length_level` split on spaces and 23b's `frame_level` counted words with
+    WORD, kept apart so that neither half of item 23 moved the other's levels.
+    On every sentence the build gives them (992 calls) the two counts gave the
+    same level, and data/exercises.js was byte-identical with one function.
+    WORD is kept: a dash or a lone comma between spaces is not a word."""
+    n = len(WORD.findall(text.replace("___", "X").replace("{V}", "X")))
     return 1 if n <= 5 else 2 if n <= 7 else 3 if n <= 9 else 4 if n <= 11 else 5
 
 def cap1(w):
@@ -182,7 +190,7 @@ def pronoun_frame(gov, case, who, why, parts, where):
         t = sentence(*parts(sf, p, n))
         check_words(t.replace("___", ""), where)
         if group is None:
-            group = {"g": gov, "case": case, "who": who, "why": why, "lvl": length_level(t), "s": []}
+            group = {"g": gov, "case": case, "who": who, "why": why, "lvl": sentence_level(t), "s": []}
         group["s"].append([t, p, n, pl])
     frames.append(group)
 
@@ -244,7 +252,7 @@ for verb, case, tail, plural_ok in X.REFLEX_OBJECT:
         t = sentence(sf, vf, "___", tail)
         gs = sentence(sf, vf, sjalf(g, n, case, where), r, tail)
         go = sentence(sf, vf, other_np(g, n, case, where), tail)
-        lvl = min(REFLEX_TOP, length_level(t) + 1 + (n == "FT") + (case == "ÞGF"))
+        lvl = min(REFLEX_TOP, sentence_level(t) + 1 + (n == "FT") + (case == "ÞGF"))
         add_pair(t, r, nr, gs, go, lvl, where)
 
 k = 0
@@ -264,7 +272,7 @@ for verb, case, things in X.REFLEX_POSSESSIVE:
             t = sentence(sf, vf, the, "___")
             gs = sentence(sf, owns, the_acc, sjalf(g, n, "NF", where))
             go = sentence(other_np(g, n, "NF", where), owns, the_acc)
-            lvl = min(REFLEX_TOP, length_level(t) + 2 + (n == "FT") + (case == "ÞGF"))
+            lvl = min(REFLEX_TOP, sentence_level(t) + 2 + (n == "FT") + (case == "ÞGF"))
             add_pair(t, r, nr, gs, go, lvl, where)
         k += 1
 out["reflexivePairs"] = pairs
@@ -477,14 +485,6 @@ def built_on_blocked(word):
     block list holds lemmas, and a derived word is a lemma of its own."""
     return any(len(x) >= 5 and x in word for x in VF.BLOCK)
 
-def frame_level(text):
-    """sentences.py's table: the words of the sentence, the blank one word,
-    and a verb slot {V} one word. (Not 23a's `length_level` above, which
-    splits on spaces: two names, so neither half of item 23 moves the
-    other's levels.)"""
-    n = len(WORD.findall(text.replace("___", "X").replace("{V}", "X")))
-    return 1 if n <= 5 else 2 if n <= 7 else 3 if n <= 9 else 4 if n <= 11 else 5
-
 def verb_ids(verb):
     """BÍN's entries for `verb`. A middle-voice verb (*finnast*, *takast*)
     is filed under its active lemma (*finna*): found by its infinitive."""
@@ -566,7 +566,7 @@ for prep, col, goes, stays, nouns in X.MOTION_SETS:
             if blocked_words(text): fail(f"{w}: {blocked_words(text)} is on the block list")
         if ns and not parses_once(t.replace("___", (ns[0]["thf"] if motion else ns[0]["thgf"])[0])):
             fail(f"{w}: Greynir cannot parse it")
-        return {"t": t, "lvl": frame_level(t)}
+        return {"t": t, "lvl": sentence_level(t)}
     sets.append({"prep": prep, "col": col, "go": [frame(t, True) for t in goes],
                  "stay": [frame(t, False) for t in stays], "nouns": ns})
 out["motionSets"] = sets
@@ -617,7 +617,7 @@ for bonus, t, verb, case, group in X.VERB_FRAMES:
     before = re.search(r"(\w+)\s+___", t)
     if before and "fs" in classes_of(before.group(1).lower()):
         fail(f"{where}: '{before.group(1)}' before the blank is a preposition")
-    lvl = frame_level(t) + 1 + (case == "EF") + bonus
+    lvl = sentence_level(t) + 1 + (case == "EF") + bonus
     if lvl > 4: fail(f"{where}: level {lvl} — VERB_CASE stops at 4")
     first = True
     for noun, col in group:
@@ -683,7 +683,7 @@ for bonus, verb, kind, present, past in X.IMPERSONAL_FRAMES:
                                                                    {"ÞF": "Mig", "ÞGF": "Mér"}[case])
         if not parses_once(sample): fail(f"{where}: Greynir cannot parse '{sample}'")
         fr = {"t": t, "verb": verb, "case": case, "tense": tense, "v": v,
-              "lvl": min(5, frame_level(t) + 1 + bonus)}
+              "lvl": min(5, sentence_level(t) + 1 + bonus)}
         # *mér er kalt*: the explanation shows the word that makes it impersonal
         if kind not in ("op", "NF"): fr["x"] = WORD.findall(t.split("{V}", 1)[1])[0]
         frames.append(fr)
@@ -720,13 +720,13 @@ for w, preps, advs in X.ADV_PREP_FRAMES:
             if first and not parses_once(t): fail(f"{where}: Greynir cannot parse '{t}'")
             first = False
             if t not in _old_adv:
-                items.append({"t": t, "w": w, "c": "fs", "lvl": min(5, frame_level(t) + 1)})
+                items.append({"t": t, "w": w, "c": "fs", "lvl": min(5, sentence_level(t) + 1)})
     for t in advs:
         check_words(t, where)
         if w not in [x.lower() for x in WORD.findall(t)]: fail(f"{where}: '{w}' is not in '{t}'")
         if not parses_once(t): fail(f"{where}: Greynir cannot parse '{t}'")
         if t not in _old_adv:
-            items.append({"t": t, "w": w, "c": "ao", "lvl": min(5, frame_level(t) + 1)})
+            items.append({"t": t, "w": w, "c": "ao", "lvl": min(5, sentence_level(t) + 1)})
 out["advPrep"] = items
 
 items = []
@@ -770,7 +770,7 @@ def conj_item(t, right, wrong, why, bonus=0):
     for o in [right] + wrong:
         if not is_conjunction(o): fail(f"{where}: BÍN does not list '{o}' as a conjunction")
     if len(set([right] + wrong)) != 4: fail(f"{where}: four different options")
-    items.append({"t": t, "a": right, "w": wrong, "why": why, "lvl": min(5, frame_level(t) + bonus)})
+    items.append({"t": t, "a": right, "w": wrong, "why": why, "lvl": min(5, sentence_level(t) + bonus)})
 def rotate(pool, k):
     """Three of `pool`, a different three each time (the pools are chosen so
     that no conjunction passes a third of all items — the test holds it)."""
@@ -895,7 +895,7 @@ for bonus, t, mark, fits, cannot in X.WORD_IN_CONTEXT_FRAMES:
         first = False
         rare = _rank.get((a["o"], a["c"]), 99999) > 3000
         items.append({"t": t, "m": mark, "a": a, "w": pool, "gen": True,
-                      "lvl": min(5, frame_level(t) + bonus + rare)})
+                      "lvl": min(5, sentence_level(t) + bonus + rare)})
 out["wordInContext"] = items
 
 # Word formation that the app's lexicon cannot see (critique item 23): the

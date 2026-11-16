@@ -14,9 +14,9 @@
    It never forces a kind that cannot be built: nextTask falls back to every
    available kind if nothing allowed can be made. Pure. */
 
-export const MIN_TYPES = 3;
-export const CAP = 0.4;
-export const CAPS = { table: 0.3, analysis: 0.35 };
+const MIN_TYPES = 3;
+const CAP = 0.4;
+const CAPS = { table: 0.3, analysis: 0.35 };
 const ANALYSIS = new Set(["parse", "revform"]);
 
 /** The share of a session one kind of question may take. */

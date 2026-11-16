@@ -33,13 +33,21 @@ const SO_FAR = ["Engin setning er komin enn.", "Ein setning er komin.", "Tvær s
 
 /* ---------- pure pieces (tests/writing.test.js) ---------------------------------- */
 
-/** The offer in the picker. */
-export function writingOfferHTML(S, week = thisWeek()) {
+/** The line on the offer where there is no server at all (opened from a
+    file, or from a plain web host): nothing can read the text over there,
+    and the offer says so before the pupil starts (review of v6.13, S14). The
+    card stays: three sentences read over against the checklist (`modeHTML`)
+    are still worth writing. */
+export const SELF_ONLY = "Hér er enginn yfirlestur. Þú lest textann sjálf(ur) yfir.";
+
+/** The offer in the picker. `selfOnly`: there is no server (app.server null). */
+export function writingOfferHTML(S, week = thisWeek(), { selfOnly = false } = {}) {
   const done = writingDone(S, week);
   return `<div class="writebox${done ? " done" : ""}">
     <p class="eyebrow"><span>✍️ Ritun vikunnar</span><b>${done ? "lokið í þessari viku" : "þrjár setningar"}</b></p>
     <div class="assignrow">
-      <div class="assignwhat"><b>${esc(promptFor(week))}</b></div>
+      <div class="assignwhat"><b>${esc(promptFor(week))}</b>${selfOnly
+        ? `<br><span class="faint wrselfonly">${SELF_ONLY}</span>` : ""}</div>
       <button type="button" class="${done ? "ghost" : "go"} writego" id="writego">${done ? "Skrifa aftur" : "Skrifa →"}</button>
     </div>
   </div>`;

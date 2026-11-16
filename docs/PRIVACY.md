@@ -83,22 +83,21 @@ without the child switching it on. So, precisely:
 
 **Lawful basis.** It is still consent, the same consent the account was made
 with — but showing a child's results to a teacher is a new recipient, so
-`PRIVACY_VERSION` moved to `2026-11-16` and the notice says it in the child's
+the notice of v6.13 (`PRIVACY_VERSION` `2026-11-16`, §3) says it in the child's
 own words. **Tell the families** before the upgrade goes live. If a family does
 not want it, either give them a group of their own, or erase the account; there
 is deliberately no per-child switch to hide from the teacher, because a teacher
 who sees only the children who opted in sees a class that is doing better than
 it is.
 
-**The skill map (item 83)** went in after the table and moved
-`PRIVACY_VERSION` to `2026-11-19`. The recipient is the same teacher; what is
-new is how much of one child they see: not only which error patterns, but how
+**The skill map (item 83)** is in the same version of the notice. The
+recipient is the same teacher; what is new is how much of one child they see: not only which error patterns, but how
 well the child commands each of the fifty-odd nodes of the curriculum. The
 route is authorised exactly as the class table (a guardian for their own
 group, the administrator for any), the pupil must be an active learner of that
 group, and every other case — another group's pupil, an adult, an id that does
 not exist — gets one and the same 404. The copy sent is smaller than the
-child's own on purpose: the notice has promised since 2026-11-16 that a
+child's own on purpose: the notice promises that a
 teacher does not see *when* a child practises, so "last trained" is not sent,
 and neither are the words a child missed. `tests/skillmap.test.js` and
 `tests/teacher.test.js` hold both. **Tell the families** as for the table.
@@ -139,7 +138,7 @@ anything from you once you have decided the two questions marked **Decide**.
 | **Erasure** | The counts carry no identity, so an erased account's past answers stay in the sums and cannot be taken out — the notice says so. They fade by themselves: every week each count is multiplied by 0.85. |
 
 **Lawful basis, and the decision.** The account's consent, as for everything
-else: `PRIVACY_VERSION` moved to `2026-11-17` and the notice describes the
+else: the notice of v6.13 (`2026-11-16`) describes the
 counting, in the short version too. What is stored is anonymous; the only
 personal processing is receiving the answer and the one-day tally.
 
@@ -150,7 +149,7 @@ personal processing is receiving the answer and the one-day tally.
   version: the notice changed, the families are told, and nobody has to do
   anything. It is the right choice if you tell the families before upgrading.
 - `FALLASKOLI_CALIBRATION=strict` — an account is counted only if its consent
-  was recorded for the notice of 2026-11-17 or later (new accounts; or existing
+  was recorded for the notice of 2026-11-16 or later (new accounts; or existing
   ones after you record consent again under *Meira*), or if the learner ticked
   the box themselves. Choose this if you would rather nobody's practice were
   counted on the strength of a notice they agreed to before it said so. On a
@@ -214,8 +213,8 @@ board as much as for those on it. So, precisely:
   the limit of what a total hides, and it is no more than a teacher saying
   "everybody did it" to the class.
 - **Lawful basis:** the same consent. It is a new recipient (the group) of
-  something derived from a child's progress, so `PRIVACY_VERSION` moved to
-  `2026-11-18` and the notice says it in the child's words, in the summary and
+  something derived from a child's progress, so the notice of v6.13
+  (`2026-11-16`) says it in the child's words, in the summary and
   under *Hver sér hvað?*. **Tell the families** with the rest of v6.13. As with
   §1a there is no per-child switch: a class total that leaves out whoever
   opted out would be one more board the weakest pupils keep off.
@@ -249,7 +248,7 @@ another. It is stored (`teamduels.json`): the teams as user ids, each pupil's
 key to their own questions and their result as numbers (`c` right of `n`), never
 the answers. **The group's teacher sees each of their own pupils' result by
 name** — a new thing a teacher sees, like an assignment's result, so the notice
-says it and `PRIVACY_VERSION` moved to `2026-11-20`. The pupils see their own
+of v6.13 (`2026-11-16`) says it. The pupils see their own
 result and the two teams' means and how many have played, never a classmate's
 or an opponent's score or name. Against another class, that class's teacher
 sees only the teams' figures, and must accept before their pupils are put in
@@ -262,7 +261,7 @@ backup.
 
 ## 1e. Icelandic as a second language (v6.13, item 45) — a separate paragraph
 
-*In the notice from version `2026-11-21` (§3).*
+*In the notice from version `2026-11-16` (§3).*
 
 A pupil can switch on the **second-language mode** under Stillingar, or the
 group's guardian can switch it on for a pupil in Skólastofan. It changes what
@@ -293,7 +292,7 @@ hunt, reading aloud) and nothing else.
 
 ## 1f. Ritun vikunnar: what a pupil writes (v6.13, item 46) — a separate paragraph
 
-*In the notice from version `2026-11-21` (§3). The summary's sentence
+*In the notice from version `2026-11-16` (§3). The summary's sentence
 "Það sem þú skrifar í svörin er ekki geymt" stays true for answers; the short
 version says in its own sentence that the Ritun vikunnar text is sent only with
 the check on and kept only with keeping on, and the notice's own paragraph on
@@ -371,24 +370,23 @@ takes effect immediately; backups follow within 30 days.
 bump `PRIVACY_VERSION` in `server/privacy.mjs`, tell the families, and decide
 whether the change needs fresh consent.
 
-**Versions so far.** `2026-11-16`: the group's teacher sees error patterns and
-assignment results (§1a). `2026-11-17`: the anonymous count of answers and the
-optional sample of wrong answers (§1b), and the sentence that a duel's answers
-are sent to the server to be graded and are not stored (only the score is
-kept). `2026-11-18`: the class goal's weekly total, which every learner of the
-group feeds and the group sees (§1c). `2026-11-19`: the teacher can open one
-pupil's skill map (§1a). `2026-11-20`: live rounds in class (nothing stored; on
-the wall a pupil is named only if on the leaderboard) and team duels (the
-teacher sees each pupil's result) (§1d). `2026-11-21`: the second-language
-flag (§1e) and Ritun vikunnar, the first free text a pupil writes that the
-server may receive, and — with keeping on — store for the teacher (§1f). All arrive with v6.13, so one message
-to the families covers them, and a family is told once, of the last version.
-The date is the notice's version, not the day
-you deploy; set it to your release date if you prefer, and then give
-`CALIBRATION_NOTICE` in the same file that date too. Until then the two
-differ (`2026-11-17` and `2026-11-21`) on purpose: `CALIBRATION_NOTICE` names
-the first version that describes the anonymous count, and must never be
-later than the notice that is live (a test holds it).
+**Versions.** v6.12 and earlier published `2026-11-11`. v6.13 publishes one
+new version, `2026-11-16`, which covers everything it adds: the group's teacher
+sees error patterns, assignment and team-duel results and one pupil's skill map
+(§1a, §1d); the anonymous count of answers, the optional sample of wrong
+answers, and the sentence that a duel's answers are graded on the server and
+not stored (§1b); the class goal's weekly total (§1c); live rounds in class
+(§1d); the second-language flag (§1e) and Ritun vikunnar, the first free text a
+pupil writes that the server may receive and, with keeping on, store for the
+teacher (§1f). One message to the families covers all of it. (While v6.13 was
+being built the date was moved for each of these on the branch; none of those
+dates was ever published, so they are folded into this one.)
+
+The date is the day the notice's text was settled, not the day you deploy, and
+never a day in the future. `CALIBRATION_NOTICE` in the same file names the
+first version that describes the anonymous count — `2026-11-16` as well — and
+stays where it is when the notice changes again for something else; it must
+never be later than the notice that is live (a test holds it).
 
 ---
 

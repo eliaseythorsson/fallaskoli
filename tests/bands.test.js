@@ -2,7 +2,7 @@
    (v6.13, critique item 13).
 
    About twenty of the 47 types built the same questions at þyngd 1, 3 and 5:
-   the hand-written ones (exercises.py) had no level to choose by, and govern
+   the hand-written ones (pipeline/exercises.py) had no level to choose by, and govern
    drew from the whole sentence bank. Now every hand-written item carries a
    level, the builders choose near the band (tasks/shared.js `nearBand`,
    `itemsForBand`), and what the registry declares is measured here as well

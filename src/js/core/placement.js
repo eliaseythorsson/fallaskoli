@@ -46,7 +46,12 @@
        whole step off — this is something the pupil finds harder than the rest;
      * a wrong answer far above G says nothing: the staircase was still
        climbing;
-     * a skill answered right every time gets half a step on.
+     * a skill answered right every time gets half a step on — but only with
+       at least SKILL_UP_MIN answers in it. One right answer at G is no
+       evidence the skill is above the rest (it is mostly the three inflection
+       skills, asked twice, that can earn it); before this, a pupil who never
+       saw a question above 4.5 was shown "þyngd 5" in seven skills on one
+       answer each (review of v6.13, S5).
    The result is held inside the skill's own range (`ranges`, from
    core/difficulty.js `levelRanges`). A skill that is switched on but could
    not be asked (every question type the round may use is switched off for
@@ -231,6 +236,8 @@ export function placementDrop(st) {
 export const NEAR = 1;
 /** What a skill's own answers may move it by, from G. */
 export const SKILL_DOWN = 1, SKILL_UP = 0.5, SKILL_FLOOR = -1.5;
+/** How many answers a skill needs, all right, before SKILL_UP is given. */
+export const SKILL_UP_MIN = 2;
 /** A switched-on skill that was not asked starts this far under G. */
 export const UNASKED = 0.5;
 
@@ -261,7 +268,7 @@ export function placementResult(st, { others = [], ranges = null } = {}) {
   hist.forEach((h) => (bySkill[h.skill] ||= []).push(h));
   for (const [skill, list] of Object.entries(bySkill)) {
     let adj = 0;
-    if (list.every((h) => h.ok)) adj = SKILL_UP;
+    if (list.length >= SKILL_UP_MIN && list.every((h) => h.ok)) adj = SKILL_UP;
     else list.forEach((h) => { if (!h.ok && h.level <= G + NEAR) adj -= SKILL_DOWN; });
     adj = Math.max(SKILL_FLOOR, adj);
     const [lo, hi] = (st.ranges && st.ranges[skill]) || [MIN, MAX];
@@ -278,6 +285,16 @@ export function placementResult(st, { others = [], ranges = null } = {}) {
   }
   return out;
 }
+
+/**
+ * The whole þyngd a placed level is SHOWN as on the result card: rounded
+ * DOWN, so 4.5 is "þyngd 4", inside 1…top. It is also what the pupil meets
+ * first — a visit starts half a step below the saved level (core/difficulty.js
+ * WARMUP) — and it promises nothing the round did not ask.
+ * @param {number} level @param {number} [top]
+ */
+export const shownBand = (level, top = MAX) =>
+  Math.max(MIN, Math.min(top, Math.floor(level + 1e-9)));
 
 /**
  * Write the result into the saved levels — through `setSkillLevel` with the

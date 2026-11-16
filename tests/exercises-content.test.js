@@ -1,4 +1,4 @@
-/* v6.13: the hand-written items in exercises.py, read as a native reader would.
+/* v6.13: the hand-written items in pipeline/exercises.py, read as a native reader would.
    Three defects the critique found (items 5, 6, 25) and the rules that keep
    them from coming back:
      5  a VERB_CASE item whose case is set by a preposition (hlakka TIL e-s)

@@ -26,7 +26,7 @@ function governed(lex, sentences) {
   const cands = [];
   sentences.forEach((s) =>
     s.tok.forEach((t, i) => {
-      /* Verbs: only government the guard confirmed against government.py, and
+      /* Verbs: only government the guard confirmed against pipeline/government.py, and
          only when it is unambiguous (a single governed case). */
       if (t.c === "sagnorð" && t.g && t.g.length === 1) cands.push({ s, i, t });
       /* Prepositions: `pg` is set during the build and only where the case is
@@ -200,8 +200,8 @@ export function fsVerb(lex, view, rng) {
 /* ---------- the impersonal subject (critique item 23) -----------------------
  *
  * Until v6.13 twenty hand-written sentences, and a pupil met the same ones
- * again within a week. Now frames × subjects × tense (exercises.py
- * IMPERSONAL_FRAMES, IMPERSONAL_SUBJECTS): build_exercises.py took every
+ * again within a week. Now frames × subjects × tense (pipeline/exercises.py
+ * IMPERSONAL_FRAMES, IMPERSONAL_SUBJECTS): pipeline/build_exercises.py took every
  * form from BÍN — the verb in each tense (and, for the two traps, in each
  * person), the subject in each case — and checked that the case of the
  * subject is the one BÍN gives the impersonal verb. Here they are put

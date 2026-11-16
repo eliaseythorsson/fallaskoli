@@ -26,6 +26,7 @@ import { PATTERNS, patternById, focusTypes } from "./diagnosis.js";
 import { NODES, nodeById, nodeHasQuestions, presetContent, YEARS } from "./curriculum.js";
 import { createPolicy, narrowPolicy } from "./policy.js";
 import { chosenPolicy } from "./state.js";
+import { utcDay as dayOf } from "./calendar.js";
 
 /* ---------- limits ---------------------------------------------------------
 
@@ -161,7 +162,6 @@ export function assignmentPolicy(S, t) {
 /* ---------- the deadline -------------------------------------------------- */
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
-const dayOf = (ms) => new Date(ms).toISOString().slice(0, 10);
 
 /** The moment a deadline passes: the end of that day. Iceland keeps UTC all
     year, so the end of the day in UTC is the end of the day in Iceland. */

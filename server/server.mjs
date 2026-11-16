@@ -46,6 +46,7 @@ import { createCalibration } from "./calibrate.mjs";
 import { createLive } from "./live.mjs";
 import { createTeamDuels } from "./teamduel.mjs";
 import { teamOf } from "../src/js/core/teamduel.js";
+import { utcDay } from "../src/js/core/calendar.js";
 import { createClassGoal } from "./classgoal.mjs";
 import { createSecondLanguage } from "./secondlang.mjs";
 import { createWriting } from "./writing.mjs";
@@ -87,7 +88,8 @@ import { pwaFiles, typeOf as pwaType, ICONS as PWA_ICONS } from "../tools/pwa.mj
 export const DEFAULT_GROUP = "default";
 export const MAX_ADMINS = 2;
 
-const dayOf = (d = new Date()) => d.toISOString().slice(0, 10);
+/* The UTC day, as the app's (core/calendar.js). */
+const dayOf = utcDay;
 
 export function createApp({
   env = process.env,

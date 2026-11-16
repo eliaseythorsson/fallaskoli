@@ -4,7 +4,7 @@
  * The bank holds ~700 sentences; the vocabulary holds ~3,800 nouns in 16 forms
  * each. A word in a given form can only be *shown* inside a sentence if some
  * sentence has a slot that takes it. The build marks every sentence's slot
- * (`slot`), the classes of noun it accepts (`need`, from noun_classes.py), the
+ * (`slot`), the classes of noun it accepts (`need`, from pipeline/noun_classes.py), the
  * gender it pins (`rk`), the preposition it stands under (`ps`) and whether an
  * adjective or pronoun sits beside it (`fixed`). This module does the swapping
  * and nothing else: the mark stays, the replacement form comes out of BÍN under

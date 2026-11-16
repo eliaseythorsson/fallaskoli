@@ -2,7 +2,7 @@
  *
  * Every test here is a bug the owner reported against v5.7 by name. They are
  * kept together because they are one chain — ÍNO XML -> tools/ino.mjs ->
- * data/ino.json -> build_bundle.py -> data_bundle -> core/definitions.js ->
+ * data/ino.json -> pipeline/build_bundle.py -> data_bundle -> core/definitions.js ->
  * ui/dom.js — and because the chain is exactly where each of them hid: the
  * endpoint was right, the data was wrong, and no test asked the question the
  * SCREEN asks. That is design rule 6, and it is the second time it has had to
@@ -284,7 +284,7 @@ test("no word carries the definition of a different word class", () => {
 /* ---------------------------------------------------------------------------
  * WHAT REPLACED TWO TESTS THAT WERE WRONG, AND WHY IT IS WORTH THE PARAGRAPH
  *
- * Until the owner re-ran `tools/ino.mjs`, `build_bundle.py` suppressed every
+ * Until the owner re-ran `tools/ino.mjs`, `pipeline/build_bundle.py` suppressed every
  * ÍNO entry on a function word, because a file with no word class in it cannot
  * be checked. Two tests here asserted the RESULT of that suppression —
  * "*allur* has no definition", "no function word's definition is a class name"

@@ -5,6 +5,16 @@
    be tested for any year at all.                                           */
 
 const pad = (n) => String(n).padStart(2, "0");
+
+/** The day key of a moment in UTC — "2026-11-16" — from milliseconds or a
+    Date (default: now). Iceland keeps UTC all year, so this is the Icelandic
+    day on any machine; the server's records (last seen, the daily quotas, an
+    assignment's deadline) are kept by it. Not `keyOf` below, nor
+    core/review.js `dayOf`, which read the device's local day. One function
+    for the server and the app (review of v6.13, S11: it was written four
+    times). @param {number|Date} [when] @returns {string} */
+export const utcDay = (when = Date.now()) => new Date(when).toISOString().slice(0, 10);
+
 export const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 /** Easter Sunday (Meeus/Jones/Butcher). Returns a local-time Date. */

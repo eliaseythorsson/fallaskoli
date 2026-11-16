@@ -91,7 +91,7 @@ export function helperForm(lex, kyn, mark, noun = null) {
  * An adjective is not said of everything. Until v6.13 the adjective table put
  * *maður / kona / barn* beside every adjective there is — "ferskustu börnin",
  * "augljós kona", "hálf börn". Now every adjective carries the nouns it is
- * shown with (`h`, written by adj_classes.py: "ávöxtur/appelsína/epli", one
+ * shown with (`h`, written by pipeline/adj_classes.py: "ávöxtur/appelsína/epli", one
  * per gender, "-" for a gender it is not said of), and an adjective that
  * carries none is shown on its own. Nothing is guessed here: no `h`, no
  * helper. */

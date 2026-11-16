@@ -66,6 +66,7 @@
  */
 
 import { CAL, cleanEvents, estimate, decayCounts } from "../src/js/core/calibration.js";
+import { utcDay as dayOf } from "../src/js/core/calendar.js";
 import { SAMPLE, cleanSample, agreement } from "../src/js/core/classifiercheck.js";
 import { TASKS } from "../src/js/tasks/registry.js";
 import { CALIBRATION_NOTICE } from "./privacy.mjs";
@@ -79,7 +80,6 @@ export function calibrationConfig(env = process.env) {
   return { on, strict: on && v === "strict", samples: on && !OFF.has(s) };
 }
 
-const dayOf = (d) => new Date(d).toISOString().slice(0, 10);
 const monthOf = (d) => new Date(d).toISOString().slice(0, 7);
 const LOG_KEEP = 60, LOG_CHANGES = 200;
 

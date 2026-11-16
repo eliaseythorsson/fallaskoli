@@ -2,7 +2,7 @@
 
      tbl_lo      beygingartafla with a helper noun beside every cell — a
                  noun the adjective is said of (*ferskt epli*, *augljóst
-                 svar*; adj_classes.py), or none where no noun suits
+                 svar*; pipeline/adj_classes.py), or none where no noun suits
      revform     "Greindu beygðu myndina": a form straight out of BÍN, analysed.
                  It lives here because Lýsingarorð is the skill it is filed
                  under, but it serves three (`anyOf`): it asks about
@@ -273,14 +273,14 @@ function headSettles(lex, s, i) {
    lo_stig built 12-16 different questions at any band, lo_beyging and
    lo_samr 25-48: the bank has two or three sentences with a comparative or a
    superlative at each level, and the substituted frames (frames.js) take only
-   the fifteen adjectives of FIT_SETS. exercises.py ADJ_FRAMES are short
+   the fifteen adjectives of FIT_SETS. pipeline/exercises.py ADJ_FRAMES are short
    frames written around a NOUN — "Ég á ___ bíl en þú.", "Bókin er ___ en ég
-   hélt." — and here any adjective goes in whose helper noun (adj_classes.py,
-   `h`) in that gender is that noun: adj_classes.py vouches that it is said
+   hélt." — and here any adjective goes in whose helper noun (pipeline/adj_classes.py,
+   `h`) in that gender is that noun: pipeline/adj_classes.py vouches that it is said
    of the noun in every degree and both numbers. An adjective it lists as
-   not compared has no comparison forms in the lexicon (build_lexicon.py),
+   not compared has no comparison forms in the lexicon (pipeline/build_lexicon.py),
    and is not put into any frame (`adjectivesOf`). The noun's form in every
-   frame says its number and its definiteness (build_exercises.py drops
+   frame says its number and its definiteness (pipeline/build_exercises.py drops
    *hús*, *epli*), so the mark below is the only right one.
 
    By band: frames near the band by their level, and adjectives by their
@@ -301,7 +301,7 @@ function adjectivesOf(lex, f) {
     m = new Map();
     for (const a of lex.adjectives) {
       /* Only adjectives that are compared. One that is not names a state one
-         is in or is not (adj_classes.py NO_COMPARE: *tilbúinn, dauður,
+         is in or is not (pipeline/adj_classes.py NO_COMPARE: *tilbúinn, dauður,
          grafkyrr*) and reads oddly in a frame that does not expect it:
          "Hér eru tilbúin börn", "Hvar eru dauðu dýrin?". */
       if (!Object.keys(a.forms).some((k) => k.startsWith("MST-"))) continue;

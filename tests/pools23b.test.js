@@ -9,7 +9,7 @@
    or_samhengi 3-44, or_myndun 11-65, govern 125 at þyngd 1.
 
    The rest holds the generated questions to what the hand-written ones were
-   held to: every form BÍN's (data/exercises.js, which build_exercises.py
+   held to: every form BÍN's (data/exercises.js, which pipeline/build_exercises.py
    looked up), one right answer — for a pair, in both halves — and a review
    gets the item, cell or word it asks for (`view.force`). */
 

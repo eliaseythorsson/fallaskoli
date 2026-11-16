@@ -343,7 +343,7 @@ export function windowsFor(won, stats = null, { inSession = false } = {}) {
 
 /* Word rarity.
  *
- * The corpus frequency score (`q`, from freq_lemmas.json via build_bundle.py)
+ * The corpus frequency score (`q`, from data/freq_lemmas.json via pipeline/build_bundle.py)
  * says how often the lemma occurs in a large body of spoken Icelandic. Rank
  * within a word class, which was used before, measured the wrong thing: the
  * 1,200th commonest masculine noun is not a rare word, and *vindur* came back

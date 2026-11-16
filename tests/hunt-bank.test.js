@@ -3,7 +3,7 @@
    Until now every error in an error hunt was generated: a case, a verb ending
    or an adjective broken at random, and much of it nothing a native speaker
    says (*Stelpan hlaupa mjög hratt*, *Ég borðum epli*). The bank
-   (exercises.py HUNT → EX.hunt) is the slips Icelandic teenagers do make —
+   (pipeline/exercises.py HUNT → EX.hunt) is the slips Icelandic teenagers do make —
    *mér langar*, *ég vill*, *til drottningu*, *tvær buxur*, *læknirar* — each
    one sentence with one error, its correction out of BÍN and an explanation.
 
@@ -143,7 +143,7 @@ test("the errors the critique asked for are all in the bank", () => {
 /* ---------------------------------------------------------------- BÍN */
 
 test("BÍN: every corrected form in the bundled lexicon is the form the lexicon has", () => {
-  /* The build (build_exercises.py) checks every item against the whole of
+  /* The build (pipeline/build_exercises.py) checks every item against the whole of
      BÍN and refuses the bank otherwise — the next test. This one reads the
      result against the lexicon the app ships, for every correction whose
      word is in it. */

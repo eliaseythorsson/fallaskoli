@@ -7,7 +7,7 @@
      fn_flokkar  which kind of pronoun a word of a bank sentence is (item 27)
 
    fn_eyda and fn_aftur are hand-written items (data/exercises.js: every
-   answer, option and cue a BÍN form, checked by build_exercises.py). */
+   answer, option and cue a BÍN form, checked by pipeline/build_exercises.py). */
 
 import { EX } from "../../../data/exercises.js";
 import { CASES, GENDERS, readMark } from "../core/marks.js";
@@ -89,12 +89,12 @@ export function tablePronoun(lex, view, rng) {
 const PRONOUN_CUES = ["ég", "þú", "hann", "hún", "það"].flatMap((l) => [[l, "ET"], [l, "FT"]]);
 
 /* fn_eyda's items: the 32 hand-written sentences of PRONOUN_GAP, and the
-   frames of PRONOUN_VERBS and PRONOUN_PREPS (exercises.py, v6.13, critique
+   frames of PRONOUN_VERBS and PRONOUN_PREPS (pipeline/exercises.py, v6.13, critique
    item 23), each said by twelve subjects, with every personal pronoun but
    the subject's own person in the blank: not *ég* (*mig*, *okkur*) after
    *ég* or *við*, not *hann* after *hann*, *þau* after *þau* — that would be
    *sig* — and no *það* in the singular where only a person reads naturally
-   (`who`). The case is government.py's, read by build_exercises.py. Level:
+   (`who`). The case is pipeline/government.py's, read by pipeline/build_exercises.py. Level:
    PRONOUN_GAP's rule — the frame's length, +1 for a plural pronoun, +1 for
    the genitive. Once per data file. */
 let PRONOUN_ITEMS = null;
@@ -131,7 +131,7 @@ export function fnGap(lex, view, rng) {
   let items = pronounItems().filter((x) => markOk(x.m) && (!fc || fc === "fn:" + x.m));
   if (avoid && items.some((x) => x.t !== avoid)) items = items.filter((x) => x.t !== avoid);
   if (!items.length) return null;
-  /* Near the pupil's band by the item's level (exercises.py): the singular
+  /* Near the pupil's band by the item's level (pipeline/exercises.py): the singular
      after a verb first, the plural and the genitive later. */
   const x = pick(fc ? items : itemsForBand(view, "fornofn", items, gapKey), rng);
   const { s, i } = textSentence(x.t);
@@ -222,7 +222,7 @@ const reflexPairs = () => {
   const hand = [...by.values()].filter((p) => p.same && p.other)
     .map((p) => ({ ...p, lvl: Math.max(p.same.lvl, p.other.lvl) }));
   /* v6.13 (critique item 23): and the pairs made from frames
-     (exercises.py REFLEX_OBJECT, REFLEX_POSSESSIVE), both readings and both
+     (pipeline/exercises.py REFLEX_OBJECT, REFLEX_POSSESSIVE), both readings and both
      lines out of BÍN. */
   const made = (EX.reflexivePairs || []).map((x) => ({
     same: { t: x.t, gloss: x.gs, a: x.r, w: x.nr, reflexive: true, lvl: x.lvl },

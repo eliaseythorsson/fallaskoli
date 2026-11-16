@@ -480,10 +480,10 @@ test("the privacy notice says what the teacher sees, and the version moved", asy
   assert.match(r.text, /aldrei það sem þú skrifar í svörin/);
   assert.match(r.text, new RegExp(`eyðist ${ASSIGN.keepDays} dögum eftir skiladag`));
   assert.doesNotMatch(r.text, /Síðast breytt 2026-11-11/);
-  /* Item 83: the teacher can open the skill map, and the version moved again. */
+  /* Item 83: the teacher can open the skill map, in the same version. */
   assert.match(r.text, /opnað færnikortið þitt/);
   assert.match(r.text, /ekki hvaða orð\s+fóru úrskeiðis hjá þér/);
-  assert.ok(PRIVACY_VERSION >= "2026-11-19" && r.text.includes(`Síðast breytt ${PRIVACY_VERSION}`));
+  assert.ok(PRIVACY_VERSION > "2026-11-11" && r.text.includes(`Síðast breytt ${PRIVACY_VERSION}`));
 });
 
 test("erasure: a pupil's results go; an assignment a guardian set stays, nameless", async () => {

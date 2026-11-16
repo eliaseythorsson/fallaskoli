@@ -19,7 +19,7 @@ import {
   MIN_QUESTIONS, MAX_QUESTIONS, MIN_ANSWERS, PLACEMENT_ORDER, PLACEMENT_TWICE, PLACEMENT_SKIP,
   FAST, UP, DOWN, START, START_UNKNOWN, NEAR, UNASKED, YEAR_SHARE,
   placementTypes, placementPlan, startPlacement, placementDone, placementQuestion,
-  placementAnswer, placementDrop, placementResult, applyPlacement,
+  placementAnswer, placementDrop, placementResult, applyPlacement, SKILL_UP_MIN, shownBand,
   YEAR_FROM, yearOfLevel, suggestYear,
   TOUR_STEPS, cleanTour, mergeTour, isNewPupil, shouldOfferTour, noteTour,
 } from "../src/js/core/placement.js";
@@ -226,7 +226,7 @@ test("the general level is read off the second half, rounded down to a half step
   assert.equal(r.right, 11);
 });
 
-test("a skill answered wrong near the pupil's level starts a step lower; one answered right, half a step higher", () => {
+test("a skill answered wrong near the pupil's level starts a step lower; one answered right twice, half a step higher", () => {
   /* Climb to the top (5), then keep it there: every later answer right,
      except the two we choose. */
   const ranges = Object.fromEntries(YEAR8.map((id) => [id, [1, 7]]));
@@ -239,8 +239,10 @@ test("a skill answered wrong near the pupil's level starts a step lower; one ans
   assert.equal(r.levels[missed].level, G - 1, "the skill that went wrong is not a step under the rest");
   assert.equal(r.levels[missed].history, "0");
   const fine = plan[9];
-  assert.equal(r.levels[fine].level, G + 0.5);
+  assert.equal(plan.filter((s) => s === fine).length, 1);
+  assert.equal(r.levels[fine].level, G, "one right answer is no evidence: no half step (review S5)");
   assert.equal(r.levels.nafnord.history, "11");
+  assert.equal(r.levels.nafnord.level, Math.min(7, G + 0.5), "two right answers earn the half step");
   /* Every skill asked has a level, in halves, inside 1–7. */
   for (const id of new Set(plan)) {
     const v = r.levels[id];
@@ -660,4 +662,44 @@ test("what the pointers name is what the page calls it", () => {
   /* Stillingar has the way back in, by the name the skipped notice gives it. */
   assert.match(body, /id="tour-again">Sýna kynninguna aftur</);
   assert.match(TEXT.skipped, /„Sýna kynninguna aftur“/);
+});
+
+/* ---------- review of v6.13, S5: one answer is not evidence -------------------- */
+
+test("S5: SKILL_UP needs two answers in the skill; the reviewer's pupil is no longer shown þyngd 5 in seven skills", () => {
+  assert.equal(SKILL_UP_MIN, 2);
+  /* 10 of 13 right, the level never above 4.5: what the reviewer saw. Find
+     such a round among all answer strings with three misses. */
+  const plan = placementPlan(YEAR8);
+  let seen = 0;
+  for (let a = 0; a < plan.length; a++) for (let b = a + 1; b < plan.length; b++) for (let c = b + 1; c < plan.length; c++) {
+    const seq = plan.map((_, i) => (i === a || i === b || i === c ? "0" : "1")).join("");
+    const st = play(round(YEAR8), seq);
+    const r = placementResult(st);
+    const by = {};
+    st.hist.forEach((h) => (by[h.skill] ||= []).push(h));
+    for (const [skill, list] of Object.entries(by)) {
+      const v = r.levels[skill];
+      if (list.length === 1) assert.ok(v.level <= r.general, `${seq} ${skill}: one answer raised it`);
+      /* Never shown above the highest level the round asked anything at. */
+      const top = Math.max(...st.hist.map((h) => h.level));
+      assert.ok(shownBand(v.level) <= top, `${seq} ${skill}: shown ${shownBand(v.level)}, round asked at most ${top}`);
+    }
+    if (Math.max(...st.hist.map((h) => h.level)) <= 4.5) {
+      seen++;
+      const fives = Object.values(r.levels).filter((v) => shownBand(v.level) >= 5).length;
+      assert.equal(fives, 0, `${seq}: shown þyngd 5 in ${fives} skills, never asked above 4.5`);
+    }
+  }
+  assert.ok(seen > 0, "the reviewer's case is among the rounds tried");
+});
+
+test("S5: a placed level is shown rounded down, inside 1…top", () => {
+  assert.deepEqual([1, 1.5, 2, 4.5, 5, 6.5, 7].map((l) => shownBand(l)), [1, 1, 2, 4, 5, 6, 7]);
+  assert.equal(shownBand(6.5, 5), 5, "held under the policy's top");
+  assert.equal(shownBand(0.5), 1);
+  /* The result card draws it with this function, not Math.round. */
+  const ui = readFileSync(new URL("../src/js/ui/tour.js", import.meta.url), "utf8");
+  assert.match(ui, /shownBand\(result\.levels\[s\.id\]\.level, top\)/);
+  assert.doesNotMatch(ui, /Math\.round\(result\.levels/);
 });

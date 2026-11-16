@@ -305,9 +305,12 @@ export function createWriting({ store, groupOf, groupsNow, audit, env = process.
            class is not read by the old one's teacher. */
         const names = new Map((await store.users()).filter((x) => groupOf(x) === t.group)
           .map((x) => [x.id, x.name || x.username]));
+        /* The week and the topic, never the time it was sent (`at` is kept
+           only to prune by age): the notice promises the teacher does not
+           see when a pupil practises, and the week is all the card shows. */
         texts = (await keptOf(t.group)).filter((x) => names.has(x.user))
           .map((x) => ({ id: x.id, name: names.get(x.user),
-            week: x.week, topic: x.topic, text: x.text, n: x.n, at: x.at }));
+            week: x.week, topic: x.topic, text: x.text, n: x.n }));
       }
       return json(res, 200, { group: { id: t.group, name: t.name }, ...sw,
         available: sw.check ? ck.available() : (ck.state === "off" ? false : null), texts,

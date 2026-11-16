@@ -48,7 +48,7 @@ import { TODAY } from "./session.js";
 import {
   placementTypes, startPlacement, placementQuestion, placementAnswer, placementDrop,
   placementResult, applyPlacement, suggestYear, shouldOfferTour, noteTour,
-  TOUR_STEPS, MIN_ANSWERS,
+  TOUR_STEPS, MIN_ANSWERS, shownBand,
 } from "../core/placement.js";
 
 /* The builders' random source, as in control/rng.js: looked up at each call, so the
@@ -65,7 +65,7 @@ const PLACEMENT_LABEL = "🧭 Byrjunarstaður";
    Everything a pupil reads in the first run is here, in one place, so that a
    native reader can check it in one sitting. The line under the welcome
    declines "þú" the way the page's tagline declines "skóli" (hér er skóli,
-   um skóla, frá skóla, til skóla); the four forms are BÍN's (lexicon.json:
+   um skóla, frá skóla, til skóla); the four forms are BÍN's (data/lexicon.json:
    þú · þig · þér · þín). */
 export const TEXT = {
   skip: "Sleppa kynningunni",
@@ -506,7 +506,7 @@ export function createTour(app) {
     const P = effectivePolicy(app.S);
     const top = Math.max(MIN, Math.min(MAX, P.maxLevel ?? MAX));
     const rows = SKILLS.filter((s) => result.levels[s.id]).map((s) => {
-      const band = Math.max(MIN, Math.min(top, Math.round(result.levels[s.id].level)));
+      const band = shownBand(result.levels[s.id].level, top);   // 4.5 shows as 4 (review S5)
       const ticks = Array.from({ length: top }, (_, k) => `<i class="${k < band ? "on" : ""}"></i>`).join("");
       return `<li><span class="sr-only">${esc(TEXT.result.level(s.nm, band, top))}</span>
         <span class="tln" aria-hidden="true"><i>${s.ico}</i> ${esc(s.nm)}</span>

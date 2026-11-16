@@ -169,7 +169,7 @@ export function renderPicker(app) {
   el.innerHTML = `<div class="card runpick">
     ${assigned}
     ${today}
-    ${writingOfferHTML(app.S)}
+    ${writingOfferHTML(app.S, undefined, { selfOnly: !app.server })}
     <div class="ownpick${today ? " second" : ""}">
     <p class="eyebrow">${today ? "<span>Eða veldu efni og fjölda spurninga</span>"
       : "<span>Ný æfingalota</span><b>veldu efni og fjölda spurninga</b>"}</p>

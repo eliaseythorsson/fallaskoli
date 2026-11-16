@@ -5,7 +5,7 @@
    án ___* and *Ferðin tafðist vegna ___* a quarter. Now a bank sentence
    carries at most one such question a session, the sentences this pupil has
    met least are preferred, and 40 more frames that take nearly any noun
-   stand in sentences.py. Both rules are effects (tasks/effects.js `frame`),
+   stand in pipeline/sentences.py. Both rules are effects (tasks/effects.js `frame`),
    so the builder stays pure. */
 
 import test from "node:test";

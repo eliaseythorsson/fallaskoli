@@ -4,7 +4,7 @@
      villur      Villuveiðar — two sentences, one above the other, with one
                  or two errors to find and fix: from þyngd 3 the slips
                  Icelandic teenagers really make (the hand-written bank,
-                 exercises.py HUNT), below that a generated wrong case or
+                 pipeline/exercises.py HUNT), below that a generated wrong case or
                  agreement form
      smidja      Setningasmiðja — word cards in their dictionary form
                  ("ég – gefa – vinur – bók"); build the sentence, inflecting
@@ -42,7 +42,7 @@ const PUNCT = new Set([".", "?", "!", ","]);
 const FINITE = /^(GM|MM)-(FH|VH)-(NT|ÞT)-([123]P)-(ET|FT)$/;
 /* Prepositions that govern two cases: the case after them depends on what is
    meant, so a form after one of them is never made wrong on purpose and never
-   asked for without the sentence that decides it. Same list as government.py. */
+   asked for without the sentence that decides it. Same list as pipeline/government.py. */
 const TWO_CASE = new Set(["í", "á", "eftir", "fyrir", "með", "undir", "yfir"]);
 const NOMINAL = new Set(["nafnorð", "lýsingarorð", "fornafn", "greinir", "töluorð"]);
 const MODIFIER = new Set(["lýsingarorð", "fornafn", "greinir", "töluorð"]);
@@ -138,7 +138,7 @@ function block(s, role) {
    and all), so TIME_ADVERBS is matched against the lemma; a time NOUN is
    caught wherever it stands — after a preposition (*í dag*, *um helgina*,
    *á hverjum degi*, *í síðustu viku*) or alone in the accusative (*allan
-   daginn*, *næsta sumar*) — by its semantic class `time` (noun_classes.py)
+   daginn*, *næsta sumar*) — by its semantic class `time` (pipeline/noun_classes.py)
    or, for the nouns that have no class (the weekdays, the months, the
    holidays), by TIME_NOUNS. *Í fyrra* is the one phrase Greynir leaves
    unanalysed (*fyrra* comes out without a mark), so it is matched as the two
@@ -1136,7 +1136,7 @@ export function workshop(lex, s) {
 
 /* Two sources of errors (v6.13, critique item 26).
 
-   THE BANK — exercises.py HUNT, built into EX.hunt: sentences written by hand,
+   THE BANK — pipeline/exercises.py HUNT, built into EX.hunt: sentences written by hand,
    each with one slip a native teenager really makes (*mér langar*, *ég vill*,
    *til drottningu*, *tvær buxur*, *læknirar*), its correction checked against
    BÍN by the build, and an explanation. `bankHunt` below.

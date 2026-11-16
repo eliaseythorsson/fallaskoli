@@ -188,7 +188,7 @@ export function clStart(lex, view, rng) {
  * underlined and the pupil names its kind.
  *
  * The kind is never worked out here. The build writes it on the sentence
- * (`cl`, phrases.py) and only where two things that do not depend on each
+ * (`cl`, pipeline/phrases.py) and only where two things that do not depend on each
  * other agree: the parser's own node for the clause, and a closed table of
  * the conjunctions that have ONE reading. *Þar sem* (cause or place), *svo*
  * without *að*, *því að* and comparisons are not in the data at all, and for
