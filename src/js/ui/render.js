@@ -1238,7 +1238,9 @@ function submitWorkshop(app) {
 
 RENDER.umritun = function (app) {
   const t = app.cur;
-  const shown = t.s.tok.map((tok, j) => {
+  /* v6.13: some kinds show something other than the bank sentence — a
+     passive (`from`), two sentences to join (`lines`), a quotation. */
+  const shown = t.lines ? t.lines.map(esc).join("<br>") : t.from ? esc(t.from) : t.s.tok.map((tok, j) => {
     if (PUNCT.has(tok.w)) return tok.w;
     const sp = j === 0 ? "" : " ";
     const inside = t.focus && j >= t.focus.from && j <= t.focus.to;
@@ -1272,6 +1274,7 @@ RENDER.umritun = function (app) {
 const TRANSFORM_NAME = {
   past: "þátíð", plural: "fleirtala", passive: "þolmynd",
   igaer: "Í gær …", amorgun: "Á morgun …",
+  active: "germynd", question: "spurning", join: "tenging", indirect: "óbein ræða",
 };
 const TRANSFORM_HINT = {
   past: "Finndu sagnirnar sem beygjast í persónu og settu þær í þátíð. Annað breytist ekki.",
@@ -1279,6 +1282,10 @@ const TRANSFORM_HINT = {
   passive: "Andlagið verður frumlag og stendur fremst. Svo kemur *vera* í sömu tíð og sögnin var og lýsingarháttur þátíðar.",
   igaer: "Sögnin stendur alltaf í öðru sæti. Ef *Í gær* er fremst, hvar lendir þá frumlagið? Og í hvaða tíð er sögnin?",
   amorgun: "Sögnin stendur alltaf í öðru sæti. Ef *Á morgun* er fremst, hvar lendir þá frumlagið? Um framtíð notum við oftast nútíð.",
+  active: "Hver gerði það? Sá sem stendur á eftir *af* verður frumlag og fer í nefnifall. Sögnin beygist sjálf, í sömu tíð og *er* eða *var*.",
+  question: "Í já/nei-spurningu kemur sögnin fremst og frumlagið strax á eftir. Annað stendur óbreytt.",
+  join: "Á eftir aukatengingu (*þegar, ef, áður en* …) stendur frumlagið á undan sögninni. Ef aukasetningin er fremst kemur sögnin í aðalsetningunni strax á eftir henni.",
+  indirect: "Byrjaðu á *… að* og slepptu gæsalöppunum. Sögnin fer í viðtengingarhátt, og *ég* verður sá sem talaði.",
 };
 
 /** The model answer with the words that differ from the original in bold. */
@@ -1306,7 +1313,8 @@ function submitTransform(app) {
     $("verdict").innerHTML = `<div class="verdict ${ok ? (slip ? "near" : "ok") : "no"}">${xp ? `<span class="xpop">+${xp} XP</span>` : ""}
     <h3>${ok ? (slip ? "Rétt — en gáðu að broddunum" : cheer(CHEERS_OK)) : cheer(CHEERS_NO)}</h3>
     ${ok && !slip && !short ? "" : `<p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>.</p>`}
-    <p>${ok && !slip ? "" : "Rétt: "}${changedHTML(model, t.s.t)}</p>
+    <p>${ok && !slip ? "" : "Rétt: "}${changedHTML(model, t.from || t.s.t)}</p>
+    ${j.detail.note ? `<p class="streakline">${fmt(j.detail.note)}</p>` : ""}
     ${short ? `<p class="streakline">${fmt("Afgangurinn af setningunni breytist ekki, svo það er í lagi að sleppa honum.")}</p>` : ""}
     ${other}
     ${whyBox(t.why)}

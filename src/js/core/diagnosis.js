@@ -94,7 +94,7 @@ export const PATTERNS = [
     lesson: "tid", tags: ["verb:tense"], types: ["verb", "verbslot", "tbl_so", "umritun"] },
   { id: "hattur", ok: "hætti sagna", nm: "Framsöguháttur og viðtengingarháttur",
     rule: "**Viðtengingarháttur** lýsir því sem er óvisst, ósk eða skilyrði: *ef ég væri, hún sagði að hann kæmi*. **Framsöguháttur** segir frá: *ég er, hann kom*.",
-    lesson: "hattur", tags: ["verb:vh"], types: ["verb", "verbslot", "parse", "revform"] },
+    lesson: "hattur", tags: ["verb:vh"], types: ["verb", "verbslot", "parse", "revform", "umritun"] },
   { id: "mynd", ok: "germynd og miðmynd", nm: "Germynd og miðmynd",
     rule: "**Miðmynd** endar á *-st*: *klæða – klæðast*, *gleðja – gleðjast*, *sjá – sjást*. Germynd hefur enga -st endingu.",
     lesson: "mynd", tags: ["verb:mm"], types: ["verb", "verbslot", "parse", "revform"] },
@@ -308,6 +308,10 @@ export function tagsOf(t) {
       if (t.kind === "plural") { tags.add("verb:agree"); tags.add("num"); }
       if (t.kind === "passive") tags.add("passive");
       if (t.kind === "igaer" || t.kind === "amorgun") { tags.add("v2"); tags.add("verb:tense"); }
+      /* v6.13 (item 29) */
+      if (t.kind === "active") tags.add("passive");
+      if (t.kind === "question" || t.kind === "join") tags.add("v2");
+      if (t.kind === "indirect") tags.add("verb:vh");
       break;
     default: break;
   }
@@ -658,7 +662,9 @@ export function diagnose(task, resp) {
         const at = typed.indexOf(verbWord);
         if (verbWord && at > 2) push("v2", { ex });
         else push("tid", { ex });
-      } else if (task.kind === "passive") push("tholmynd", { ex });
+      } else if (task.kind === "passive" || task.kind === "active") push("tholmynd", { ex });
+      else if (task.kind === "question" || task.kind === "join") push("v2", { ex });
+      else if (task.kind === "indirect") push("hattur", { ex });
       else if (task.kind === "past") push("tid", { ex });
       else if (task.kind === "plural") push("sogn_frumlag", { ex });
       break;
