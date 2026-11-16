@@ -4,81 +4,85 @@
   "2": 179,
   "3": 157,
   "4": 105,
-  "5": 80
+  "5": 80,
+  "6": 139,
+  "7": 78
  },
  "classes": {
   "nafnorð": {
    "possible": 16,
    "seen": 16,
    "reachable": 16,
-   "cells": 80,
-   "filled": 78,
-   "reachableCells": 80,
+   "cells": 112,
+   "filled": 108,
+   "reachableCells": 112,
    "twiceAnywhere": 16,
    "oncePerLevel": {
     "1": 16,
     "2": 16,
     "3": 16,
     "4": 15,
-    "5": 15
+    "5": 15,
+    "6": 16,
+    "7": 14
    },
    "twicePerLevel": {
     "1": 16,
     "2": 16,
     "3": 16,
     "4": 14,
-    "5": 15
+    "5": 15,
+    "6": 15,
+    "7": 12
    },
-   "tokens": 1283,
+   "tokens": 1856,
    "missing": []
   },
   "lýsingarorð": {
    "possible": 120,
-   "seen": 59,
-   "reachable": 59,
-   "cells": 600,
-   "filled": 131,
-   "reachableCells": 295,
-   "twiceAnywhere": 39,
+   "seen": 68,
+   "reachable": 68,
+   "cells": 840,
+   "filled": 175,
+   "reachableCells": 476,
+   "twiceAnywhere": 44,
    "oncePerLevel": {
     "1": 21,
     "2": 25,
     "3": 37,
     "4": 21,
-    "5": 27
+    "5": 27,
+    "6": 29,
+    "7": 15
    },
    "twicePerLevel": {
     "1": 10,
     "2": 11,
     "3": 8,
     "4": 9,
-    "5": 6
+    "5": 6,
+    "6": 14,
+    "7": 7
    },
-   "tokens": 210,
+   "tokens": 300,
    "missing": [
     "FSB-KVK-EFFT",
-    "FSB-HK-ÞGFFT",
     "FSB-HK-EFFT",
     "FVB-KK-ÞFFT",
-    "FVB-KK-EFFT",
-    "FVB-KVK-NFFT",
     "FVB-KVK-ÞFFT",
     "FVB-KVK-ÞGFFT",
     "FVB-KVK-EFFT",
     "FVB-HK-ÞFFT",
     "FVB-HK-ÞGFFT",
     "FVB-HK-EFFT",
-    "MST-KK-NFFT",
     "MST-KK-ÞGFET",
     "MST-KK-ÞGFFT",
     "MST-KK-EFET",
     "MST-KK-EFFT",
-    "MST-KVK-NFFT",
     "MST-KVK-ÞFFT",
     "MST-KVK-ÞGFFT",
     "MST-KVK-EFET",
     "MST-KVK-EFFT",
-    "MST-HK-NFFT",
     "MST-HK-ÞFFT",
     "MST-HK-ÞGFET",
     "MST-HK-ÞGFFT",
@@ -86,7 +90,6 @@
     "MST-HK-EFFT",
     "ESB-KK-ÞFFT",
     "ESB-KK-ÞGFET",
-    "ESB-KK-ÞGFFT",
     "ESB-KK-EFET",
     "ESB-KK-EFFT",
     "ESB-KVK-NFFT",
@@ -95,38 +98,48 @@
     "ESB-KVK-ÞGFET",
     "ESB-KVK-ÞGFFT",
     "ESB-KVK-EFET",
-    "ESB-KVK-EFFT"
+    "ESB-KVK-EFFT",
+    "ESB-HK-NFFT",
+    "ESB-HK-ÞFET",
+    "ESB-HK-ÞFFT",
+    "ESB-HK-ÞGFFT",
+    "ESB-HK-EFET",
+    "ESB-HK-EFFT",
+    "EVB-KK-ÞFET"
    ]
   },
   "sagnorð": {
    "possible": 53,
-   "seen": 30,
-   "reachable": 30,
-   "cells": 265,
-   "filled": 94,
-   "reachableCells": 150,
-   "twiceAnywhere": 21,
+   "seen": 31,
+   "reachable": 31,
+   "cells": 371,
+   "filled": 139,
+   "reachableCells": 217,
+   "twiceAnywhere": 27,
    "oncePerLevel": {
     "1": 14,
     "2": 17,
     "3": 19,
     "4": 23,
-    "5": 21
+    "5": 21,
+    "6": 26,
+    "7": 19
    },
    "twicePerLevel": {
     "1": 13,
     "2": 10,
     "3": 12,
     "4": 16,
-    "5": 16
+    "5": 16,
+    "6": 20,
+    "7": 16
    },
-   "tokens": 1016,
+   "tokens": 1921,
    "missing": [
     "GM-FH-ÞT-2P-FT",
     "GM-VH-NT-1P-FT",
     "MM-FH-NT-1P-ET",
     "MM-FH-NT-2P-ET",
-    "MM-FH-NT-2P-FT",
     "MM-FH-NT-3P-FT",
     "MM-FH-ÞT-1P-ET",
     "MM-FH-ÞT-1P-FT",
@@ -149,34 +162,33 @@
   },
   "fornafn": {
    "possible": 32,
-   "seen": 25,
-   "reachable": 25,
-   "cells": 160,
-   "filled": 86,
-   "reachableCells": 125,
-   "twiceAnywhere": 25,
+   "seen": 30,
+   "reachable": 30,
+   "cells": 224,
+   "filled": 132,
+   "reachableCells": 210,
+   "twiceAnywhere": 29,
    "oncePerLevel": {
     "1": 11,
     "2": 16,
     "3": 19,
     "4": 21,
-    "5": 19
+    "5": 19,
+    "6": 24,
+    "7": 22
    },
    "twicePerLevel": {
     "1": 6,
     "2": 12,
     "3": 16,
     "4": 15,
-    "5": 16
+    "5": 16,
+    "6": 20,
+    "7": 16
    },
-   "tokens": 647,
+   "tokens": 1006,
    "missing": [
-    "KK-EFET",
-    "KVK-NFFT",
-    "KVK-ÞFFT",
     "HK-ÞFFT",
-    "HK-ÞGFFT",
-    "HK-EFET",
     "EFET"
    ]
   },
@@ -184,25 +196,29 @@
    "possible": 24,
    "seen": 10,
    "reachable": 10,
-   "cells": 120,
-   "filled": 36,
-   "reachableCells": 50,
+   "cells": 168,
+   "filled": 41,
+   "reachableCells": 70,
    "twiceAnywhere": 9,
    "oncePerLevel": {
     "1": 8,
     "2": 7,
     "3": 8,
     "4": 7,
-    "5": 6
+    "5": 6,
+    "6": 4,
+    "7": 1
    },
    "twicePerLevel": {
     "1": 6,
     "2": 4,
     "3": 5,
     "4": 2,
-    "5": 2
+    "5": 2,
+    "6": 1,
+    "7": 0
    },
-   "tokens": 61,
+   "tokens": 68,
    "missing": [
     "KK-NFET",
     "KK-ÞFET",
@@ -221,5 +237,5 @@
    ]
   }
  },
- "tokens": 3217
+ "tokens": 5151
 }

@@ -234,7 +234,7 @@ export function tableVerb(lex, view, rng) {
 export const TYPES = [
   { id: "verbslot", skill: "sagnord", weight: 14, renderer: "verbslot",
     tags: ["form", "num", "verb:agree", "verb:mm", "verb:strongpast", "verb:tense", "verb:vh"],
-    bands: [1, 2, 3, 4, 5],
+    bands: [1, 2, 3, 4, 5, 6, 7],
     build: taskVerbSlot },
   { id: "verb", skill: "sagnord", weight: 8, renderer: "verb",
     tags: ["form", "num", "verb:agree", "verb:mm", "verb:strongpast", "verb:tense", "verb:vh"],

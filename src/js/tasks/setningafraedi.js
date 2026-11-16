@@ -97,14 +97,14 @@ export function synSort(lex, view, rng) {
 export const TYPES = [
   { id: "syntax", skill: "setningafraedi", weight: 8, renderer: "syntax",
     tags: ["syn"],
-    bands: [1, 4, 5],
+    bands: [1, 4, 5, 6, 7],
     build: taskSyntax },
   { id: "setn_hlut", skill: "setningafraedi", weight: 5, renderer: "choice",
     tags: ["syn"],
-    bands: [1, 4, 5],
+    bands: [1, 4, 5, 6, 7],
     build: synRole },
   { id: "setn_flokka", skill: "setningafraedi", weight: 4, renderer: "sort",
     tags: ["syn"],
-    bands: [1, 4, 5],
+    bands: [1, 4, 5, 6, 7],
     build: synSort },
 ];

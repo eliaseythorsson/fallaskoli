@@ -249,9 +249,10 @@ export const backlog = (item = null) =>
 /* ---------- the presets, derived ----------------------------------------- */
 
 /* Difficulty by year. This is the app's own convention, written down in
- * core/difficulty.js long before this file: 1–5 is year 8, 6 and 7 are room
- * for years 9 and 10. No sentence at 6 or 7 exists yet, so today the three
- * presets differ in categories and types, not in sentence length. */
+ * core/difficulty.js long before this file: 1–5 is year 8, 6 is year 9 and
+ * 7 is year 10. Since v6.13 the bank has sentences at 6 and 7 (sentences.py),
+ * so the three presets differ in how hard the sentences get as well as in
+ * categories and types. */
 const TOP_LEVEL = { 8: 5, 9: 6, 10: 7 };
 
 /**

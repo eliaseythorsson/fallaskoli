@@ -163,7 +163,11 @@ const SENTS = [1, 2, 3, 4, 5].map((lvl) => ({ lvl }));
 test("ranges: the policy's levels, the declared bands, and one above the hardest sentence", () => {
   const all = levelRanges(createPolicy(null, null), TASKS, SENTS);
   assert.deepEqual(all.nafnord, [1, 6], "sentences end at 5: band 6 still has level-5 sentences, 7 has none");
-  assert.deepEqual(all.setningagerd, [1, 1], "every Setningagerð type declares [1]");
+  /* Until item 14 every Setningagerð type declared [1] and the skill stood
+     still at 1. Its pool now follows the band (tasks/setningagerd.js), the
+     types declare bands up to 7, and the range is the sentences' like any
+     other sentence skill's. tests/levels67.test.js has the real bank. */
+  assert.deepEqual(all.setningagerd, [1, 6], "Setningagerð follows the band since item 14");
   const top = (id) => Math.max(...TASKS.filter((t) => t.skill === id || (t.anyOf || []).includes(id))
     .flatMap((t) => t.bands));
   assert.equal(all.toluord[1], Math.min(6, top("toluord")));

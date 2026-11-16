@@ -131,7 +131,7 @@ export const TYPES = [
     build: taskParse, drill: taskParseWord },
   { id: "gr_smella", skill: "greining", weight: 5, renderer: "tap",
     tags: ["ofl", "ofl:ao_fs"],
-    bands: [1, 2, 3, 4],
+    bands: [1, 2, 3, 4, 5, 6],
     build: grTap },
   { id: "gr_flokka", skill: "greining", weight: 4, renderer: "sort",
     tags: ["ofl"],

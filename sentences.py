@@ -8,10 +8,22 @@ is read out of that annotation — nothing grammatical is written here by hand.
 
     (level, text, slot, need[, options])
 
-  level   1-5; controls length and clause depth
+  level   1-7; controls length and clause depth
             lvl 1  3-5 words      lvl 4   9-11
             lvl 2  5-7            lvl 5   11 and up
             lvl 3  7-9
+          Levels 1-5 are year 8 and are told apart by length. 6 and 7 are
+          years 9 and 10 (docs/CURRICULUM.md) and are told apart from 5 by
+          what is IN the sentence, not by its length alone:
+            lvl 6  11 words and up, and at least one of: two subordinate
+                   clauses, þolmynd ("var frestað", "voru haldnir"),
+                   viðtengingarháttur þátíðar ("ef ég hefði vitað"), óbein
+                   ræða ("sagði að hún kæmi"), a noun phrase of four words
+                   or more ("litli brúni hundurinn hennar ömmu minnar")
+            lvl 7  15 words and up, three clauses or more, as a rule two of
+                   those constructions together
+          The build enforces the two minimum lengths (build_sentences.py
+          MIN_WORDS); the constructions are the writer's to keep.
   slot    the lemma of the noun that may be blanked out and swapped for
           another noun; None when the sentence has no such noun
   need    which nouns may stand in the slot instead of the one written:
@@ -62,6 +74,42 @@ Three rules learned the hard way, kept here so they are not learned again:
   3. A numeral predicative ("Klukkan er þrjú") fixes the number of the
      subject; the build refuses such a sentence. A numeral BESIDE the blank
      is fine — it pins the gender, which the build reads.
+
+WRITING FOR LEVELS 6 AND 7
+--------------------------
+A long sentence gives the parser more room to go wrong, and most of what it
+gets wrong it gets wrong SILENTLY: the guard checks that a mark exists in BÍN,
+not that it is the right reading. Of about 345 candidates written for these two
+levels 217 were kept. Run every candidate through tools/try-sentences.py and
+read every token before it goes in. What turned up, so it need not be found
+again:
+
+  1. A viðtengingarháttur that looks like another word is read as that word:
+     *færi, færum* (færa), *læsi, læsum* (læsa), *kynni* (kynna), *lyki*
+     (lúka), *skylli*, *hefðum* before a bare noun (hefða), *sér þætti* (sjá +
+     þáttur). Use another verb or *myndi* + infinitive.
+  2. A past participle that BÍN also lists as an adjective comes out as a
+     lýsingarorð in the masculine and feminine: *stöðvaður, opnaður, sendur,
+     reknar, spurður, flokkaður, farinn*. A þolmynd with a dative subject
+     ("leiknum var frestað") or one of the participles already in the bank
+     (*byggð, lesin, sýnd, haldinn, skrifuð, bakað, flutt, valin*) is safe.
+  3. *hvers vegna* stops the build; write *af hverju*. *fyrir hundrað árum*
+     stops it too.
+  4. *svo* + adjective + *að*, a relative *þar sem* after a noun in the main
+     clause and a cleft ("það var ekki fyrr en … að") put the clause boundary
+     in the wrong place. *og*, *eða*, *en* after a subordinate clause leave
+     the clause structure unvouched (`ku`).
+  5. A neuter subject of *byrja* ("áður en fríið byrjaði") is marked
+     accusative. Check the case of every subject.
+  6. Read the lemmas as well: *liðsins* came out as *liður*.
+  7. Read the small words too. Nothing checks an uninflected word's class:
+     *sér* in "að sér hefði verið kennt" came out as an adverb, *vita* in
+     "láta sig vita" as an adverb, *upp* in "rétta upp hönd" and *niður* in
+     "skrifa niður allt" as prepositions, a stranded *í* ("sem amma ólst upp
+     í") as an adverb, *þá* in "reiður við þá" as the adverb.
+  8. An adjective right before a noun is a frame other adjectives are put
+     into. Use one only where *góður, ungur, gamall, lítill, stór* would all
+     read well in its place; *margir* and *flestir* count as adjectives.
 
 WHY SOME SLOTS SAY `none`
 -------------------------
@@ -903,4 +951,241 @@ S = [
 (2, "Ég meiddi mig á hendinni í gær.", "hönd", "none"),
 (5, "Kennarinn sagði okkur í gær frá mikilvægi hvíldarinnar fyrir prófið.", "hvíld", "none"),
 (4, "Í lok þessara daga voru allir krakkarnir orðnir mjög þreyttir.", "dagur", "none"),
+
+# =============================================================================
+# LEVEL 6 — year 9: 11 words and up, and one of the constructions the
+# docstring lists (two subordinate clauses, þolmynd, viðtengingarháttur
+# þátíðar, óbein ræða, a long noun phrase). Written for v6.13 (item 14).
+# Every slot is "none": at this length a swapped noun reads wrong more often
+# than not, so the cloze asks for the noun the sentence was written with.
+# For the same reason there is no adjective standing right before a noun in a
+# settled form, except where any fitting adjective reads well ("Gamli
+# maðurinn", "Litli hundurinn"): such a pair becomes an adjective frame
+# (tasks/frames.js) and "í heilan mánuð" comes back as "í langan mánuð",
+# "Flestir vinir mínir" as "Bestir vinir mínir". tests/levels67.test.js lists
+# the frames these two levels give; read the list when it changes.
+# =============================================================================
+(6, "Kennarinn sagði að verkefnunum yrði skilað á föstudaginn ef allir væru búnir.", "verkefni", "none"),
+(6, "Þegar bókasafnið var opnað um morguninn biðu nokkrir nemendur fyrir utan dyrnar.", "morgunn", "none"),
+(6, "Skólastjórinn tilkynnti að nýja íþróttahúsið yrði tekið í notkun strax eftir áramótin.", "skólastjóri", "none"),
+(6, "Okkur var sagt að ferðinni hefði verið frestað vegna veðurs fram í næstu viku.", "ferð", "none"),
+(6, "Verðlaunin voru afhent í íþróttahúsinu um kvöldið eftir að öllum leikjunum var lokið.", "leikur", "none"),
+(6, "Mér var boðið í afmæli til vinar míns sem býr í næsta bæ.", "vinur", "none"),
+(6, "Nemendunum var kennt að leita að heimildum áður en þeir byrjuðu að skrifa ritgerðina.", "heimild", "none"),
+(6, "Myndin sem var sýnd í skólanum í gær var tekin upp á Vestfjörðum.", "skóli", "none"),
+(6, "Húsið var málað rautt í sumar af því að gamla málningin var farin að flagna.", "hús", "none"),
+(6, "Sagan var lesin upphátt fyrir bekkinn á meðan við teiknuðum myndir við hana.", "mynd", "none"),
+(6, "Hjólið mitt var lagað á verkstæðinu við höfnina á meðan ég var á æfingu.", "verkstæði", "none"),
+(6, "Allar tölvurnar í stofunni voru uppfærðar í gær svo að þær ynnu hraðar en áður.", "stofa", "none"),
+(6, "Leikritið var æft á hverjum degi þangað til allir kunnu textann sinn utanbókar.", "dagur", "none"),
+(6, "Sundlauginni var lokað í tvær vikur á meðan verið var að gera við hana.", "sundlaug", "none"),
+(6, "Ef ég hefði vitað að prófið væri svona erfitt hefði ég lesið kaflann aftur.", "kafli", "none"),
+(6, "Ég myndi fara með ykkur í sund ef ég þyrfti ekki að læra fyrir prófið.", "próf", "none"),
+(6, "Ef við ættum heima nær skólanum gæti ég gengið þangað á hverjum morgni.", "morgunn", "none"),
+(6, "Amma sagði að hún kæmi í heimsókn um helgina ef veðrið yrði gott.", "helgi", "none"),
+(6, "Þótt liðið hefði æft vel allan veturinn tapaði það fyrsta leiknum um vorið.", "leikur", "none"),
+(6, "Ég vildi óska þess að sumarfríið væri lengra svo að við gætum ferðast meira.", "sumarfrí", "none"),
+(6, "Það væri gaman ef allir í bekknum gætu farið saman í ferðalag í vor.", "bekkur", "none"),
+(6, "Ég hefði viljað vera lengur hjá afa og ömmu ef skólinn hefði ekki byrjað.", "afi", "none"),
+(6, "Ef ég ætti hund myndi ég fara með hann í göngutúr á hverjum degi.", "dagur", "none"),
+(6, "Þjálfarinn sagði að við myndum vinna leikinn ef við spiluðum eins vel og síðast.", "leikur", "none"),
+(6, "Ég vissi ekki að þú hefðir búið á Akureyri áður en þú fluttir hingað.", None, None),
+(6, "Þótt hann væri yngstur í hópnum hljóp hann hraðar en allir hinir strákarnir.", "hópur", "none"),
+(6, "Við hefðum komist upp á tindinn ef þokan hefði ekki skollið á.", "tindur", "none"),
+(6, "Kennarinn sagði að við ættum að skila ritgerðinni áður en vikan væri liðin.", "ritgerð", "none"),
+(6, "Pabbi sagði að hann hefði aldrei áður séð svona marga fugla á tjörninni við skólann.", "tjörn", "none"),
+(6, "Vinkona mín spurði hvort ég hefði heyrt nýja lagið sem allir voru að tala um.", "lag", "none"),
+(6, "Fréttamaðurinn sagði að búist væri við miklum snjó á öllu landinu um helgina.", "land", "none"),
+(6, "Systir mín hélt því fram að hún hefði slökkt á ofninum áður en við fórum út.", "ofn", "none"),
+(6, "Afi sagðist hafa gengið í skólann á hverjum degi þegar hann var strákur.", "dagur", "none"),
+(6, "Hún sagðist ætla að læra á gítar um leið og hún fengi tíma til þess.", "tími", "none"),
+(6, "Í fréttunum var sagt að vegurinn yfir heiðina yrði lokaður fram á kvöld.", "frétt", "none"),
+(6, "Kennarinn bað okkur að skrifa um allt sem við hefðum lært í ferðinni á safnið.", "ferð", "none"),
+(6, "Þegar ég kom heim sá ég að einhver hafði borðað kökuna sem ég ætlaði að geyma.", "kaka", "none"),
+(6, "Stelpan sem flutti í götuna okkar í haust segir að hún sakni gömlu vinanna sinna.", "vinur", "none"),
+(6, "Maðurinn sem lagaði hjólið mitt sagði að ég þyrfti að skipta um dekk fyrir veturinn.", "vetur", "none"),
+(6, "Ég man ekki hvar ég lagði frá mér lyklana þegar ég kom heim í gærkvöldi.", "lykill", "none"),
+(6, "Áður en við lögðum af stað athugaði mamma hvort allir væru með regnföt og nesti.", "mamma", "none"),
+(6, "Krakkarnir sem æfa sund með mér segja að æfingarnar verði erfiðari eftir áramót.", "æfing", "none"),
+(6, "Þar sem snjórinn var svo mikill gátum við ekki opnað dyrnar fyrr en pabbi hafði mokað.", "pabbi", "none"),
+(6, "Við vissum ekki að safnið væri lokað á mánudögum fyrr en við komum að dyrunum.", "safn", "none"),
+(6, "Kennarinn sem kenndi okkur í fyrra sagði alltaf að æfingin skapaði meistarann.", "meistari", "none"),
+(6, "Ég vona að þið komist á tónleikana þótt þið þurfið að keyra langa leið.", "leið", "none"),
+(6, "Þó að prófið væri langt tókst flestum að ljúka því áður en tíminn rann út.", "tími", "none"),
+(6, "Litli hundurinn hennar ömmu minnar sefur alltaf á gamla teppinu við ofninn í stofunni.", "teppi", "none"),
+(6, "Allir nýju nemendurnir í tíunda bekk fengu stundatöflu og lykil að skápnum sínum.", "skápur", "none"),
+(6, "Gömlu svarthvítu myndirnar úr albúminu hans afa voru teknar þegar hann var á sjónum.", "afi", "none"),
+(6, "Stóra hvíta húsið á horninu við hliðina á bakaríinu hefur staðið autt í mörg ár.", "bakarí", "none"),
+(6, "Báðar eldri systur mínar æfa handbolta með sama liði og frænka okkar.", "systir", "none"),
+(6, "Fyrsti kaflinn í nýju kennslubókinni okkar í náttúrufræði fjallar um hringrás vatnsins.", "vatn", "none"),
+(6, "Næstum allir krakkarnir í hverfinu okkar ganga eða hjóla í skólann á hverjum morgni allan veturinn.", "morgunn", "none"),
+(6, "Síðasta æfing okkar fyrir stóra mótið á Akureyri verður haldin á fimmtudaginn í næstu viku.", "æfing", "none"),
+(6, "Margar af fallegustu gönguleiðum landsins liggja um svæði þar sem engir vegir eru.", "land", "none"),
+(6, "Tveir bestu vinir bróður míns ætla að koma með okkur í sumarbústaðinn um páskana.", "bróðir", "none"),
+(6, "Okkur var kennt að flokka ruslið rétt þegar nýju tunnurnar voru settar upp við skólann.", "skóli", "none"),
+(6, "Mér fannst skrýtið að enginn skyldi hafa tekið eftir villunni í bókinni.", "villa", "none"),
+(6, "Ef þú hefðir sagt mér frá þessu fyrr hefði ég getað hjálpað þér með verkefnið.", None, None),
+(6, "Kennarinn lofaði að við fengjum að fara fyrr heim ef allir ynnu vel í tímanum.", "tími", "none"),
+(6, "Hún spurði mig hvort ég gæti lánað henni bókina þegar ég væri búinn með hana.", "bók", "none"),
+(6, "Ég hefði ekki trúað þessu ef ég hefði ekki séð það með eigin augum.", None, None),
+(6, "Vinur minn sagði að hann kæmist ekki á æfingu vegna þess að hann væri kvefaður.", "vinur", "none"),
+(6, "Nýja bókin hennar var gefin út í haust og hefur þegar verið þýdd á þrjú tungumál.", "tungumál", "none"),
+(6, "Gestunum var boðið upp á heitt kakó og vöfflur þegar þeir komu inn úr kuldanum.", "kuldi", "none"),
+(6, "Þegar búið var að telja atkvæðin kom í ljós að tillagan hafði verið samþykkt.", "tillaga", "none"),
+(6, "Ljósin á jólatrénu í miðbænum voru kveikt við hátíðlega athöfn á sunnudaginn.", "miðbær", "none"),
+(6, "Mér var sagt að gamla kirkjan hefði verið flutt hingað frá öðrum bæ.", "bær", "none"),
+(6, "Krakkarnir voru beðnir um að ganga hljóðlega um gangana á meðan prófin stóðu yfir.", "gangur", "none"),
+(6, "Hún sagði mér að bróðir hennar hefði fengið vinnu á bóndabæ fyrir norðan.", "vinna", "none"),
+(6, "Ef veðrið hefði verið betra hefðum við getað séð alla leið út í eyjarnar.", "veður", "none"),
+(6, "Gamla brúin yfir ána við bæinn var byggð áður en afi minn fæddist.", "bær", "none"),
+(6, "Bréfið var skrifað fyrir mörgum árum en það fannst ekki fyrr en í fyrra.", "bréf", "none"),
+(6, "Glugginn hafði staðið opinn alla nóttina þótt það væri frost úti.", "nótt", "none"),
+(6, "Öllum nemendum í tíunda bekk var boðið á tónleikana sem voru haldnir í kirkjunni.", "kirkja", "none"),
+(6, "Ef strætó hefði komið á réttum tíma hefðum við ekki komið of seint á tónleikana.", "tími", "none"),
+(6, "Ég myndi fara oftar í sund ef sundlaugin væri ekki svona langt í burtu.", "sund", "none"),
+(6, "Læknirinn sagði að ég mætti ekki spila fótbolta fyrr en fóturinn væri gróinn.", "fótbolti", "none"),
+(6, "Kennarinn spurði af hverju enginn hefði boðið sig fram þegar hann leitaði að sjálfboðaliðum.", "sjálfboðaliði", "none"),
+(6, "Þjálfarinn spurði hvort einhver gæti komið fyrr á laugardaginn til að hjálpa við undirbúninginn.", "undirbúningur", "none"),
+(6, "Ég veit ekki hvort bókin sem ég pantaði kemur áður en ég fer í frí.", "frí", "none"),
+(6, "Leiknum var útvarpað beint svo að þeir sem komust ekki gætu hlustað heima.", "leikur", "none"),
+(6, "Hún hefði unnið hlaupið ef hún hefði ekki dottið fyrir framan markið.", "mark", "none"),
+(6, "Pabbi sagði að við myndum fara í útilegu um leið og hann fengi sumarfrí.", "sumarfrí", "none"),
+(6, "Ef ég mætti ráða yrðu alltaf pönnukökur í matinn á föstudögum í skólanum.", "skóli", "none"),
+(6, "Verkefninu sem okkur var sett fyrir í gær á að skila á mánudaginn.", "verkefni", "none"),
+(6, "Mamma sagði að ég mætti fara út þegar ég hefði tekið til í herberginu.", "herbergi", "none"),
+(6, "Um leið og bjallan hringdi hlupu allir út þótt kennarinn væri enn að tala.", "kennari", "none"),
+(6, "Þegar við höfðum borðað spurði pabbi hvort einhver vildi koma með í gönguferð.", "pabbi", "none"),
+(6, "Fundinum var frestað um tvær vikur vegna þess að margir voru veikir.", "fundur", "none"),
+(6, "Mamma sagði að kötturinn hefði legið í glugganum allan daginn og horft á fuglana.", "gluggi", "none"),
+(6, "Ég fór að velta því fyrir mér hvort ég hefði gleymt að loka glugganum.", "gluggi", "none"),
+(6, "Kennarinn spurði hvort við vildum taka þátt í spurningakeppni milli skólanna í bænum.", "bær", "none"),
+(6, "Mig hefur lengi langað til að læra tungumál sem enginn í bekknum mínum kann.", "bekkur", "none"),
+(6, "Strákurinn sem sat fyrir aftan mig í bíóinu hló hátt þegar myndin byrjaði.", "bíó", "none"),
+(6, "Ég spurði bókavörðinn hvort hann ætti bók um eldgos sem hentaði fyrir ritgerðina mína.", "ritgerð", "none"),
+(6, "Mamma spurði hvort ég vildi koma með í búðina eða vera heima hjá ömmu.", "amma", "none"),
+(6, "Okkur var lofað að við fengjum að sjá leikritið þegar æfingunum væri lokið.", "æfing", "none"),
+(6, "Mér var kennt að synda þegar ég var fimm ára og bjó fyrir norðan.", None, None),
+(6, "Öllum bókunum var raðað í hillurnar áður en bókasafnið var opnað aftur.", "bók", "none"),
+(6, "Okkur var sagt að taka með okkur úlpu og húfu af því að spáð var kulda.", None, None),
+(6, "Mér var bent á að ég hefði gleymt að skrifa nafnið mitt á prófið.", "próf", "none"),
+(6, "Henni var þakkað fyrir alla hjálpina þegar verkinu var loksins lokið um kvöldið.", "verk", "none"),
+(6, "Bílnum var lagt fyrir framan húsið á meðan við bárum töskurnar inn.", "bíll", "none"),
+(6, "Leiknum var frestað til morguns af því að völlurinn var á kafi í snjó.", "leikur", "none"),
+(6, "Ég hefði hringt í þig ef ég hefði vitað að þú værir kominn heim.", None, None),
+(6, "Ef þið hefðuð lagt fyrr af stað hefðuð þið náð ferjunni sem fór á hádegi.", "ferja", "none"),
+(6, "Hann sagði að hann hefði aldrei komið til útlanda þótt hann væri tvítugur.", None, None),
+(6, "Ég vissi ekki að hún ætti tvo bræður sem byggju í öðru landi.", "land", "none"),
+(6, "Kennarinn sagði að allir sem vildu gætu tekið prófið aftur í næstu viku.", "próf", "none"),
+(6, "Amma spurði hvort við vildum heldur fisk eða kjöt þegar við kæmum í mat.", "kjöt", "none"),
+(6, "Hann lofaði að hann kæmi aftur um leið og hann hefði lokið vinnunni.", "vinna", "none"),
+(6, "Stelpurnar sögðu að þær hefðu æft dansinn á hverjum degi í fjórar vikur.", "dagur", "none"),
+(6, "Ég held að hann hefði komið í veisluna ef honum hefði verið boðið.", "veisla", "none"),
+(6, "Ef kennarinn hefði ekki hjálpað mér hefði ég aldrei skilið þetta dæmi.", "dæmi", "none"),
+(6, "Það væri betra ef við hittumst fyrir utan bíóið áður en myndin byrjar.", "bíó", "none"),
+(6, "Mér þætti gaman ef þú gætir komið á tónleikana mína á sunnudaginn.", None, None),
+(6, "Hún sagði að sig langaði að verða dýralæknir þegar hún yrði stór.", "dýralæknir", "none"),
+(6, "Við spurðum hvort við mættum fara fyrr heim af því að rútan átti að fara snemma.", "rúta", "none"),
+(6, "Þegar ég var yngri hélt ég að tunglið elti mig þegar ég gekk heim.", "tungl", "none"),
+(6, "Hann sagðist hafa týnt símanum sínum þegar hann var á leiðinni heim úr skólanum.", "skóli", "none"),
+(6, "Þær sögðust ætla að hittast fyrir utan sundlaugina þegar æfingunni væri lokið.", "æfing", "none"),
+(6, "Ég hlakka til þess að sumarið komi svo að við getum farið í útilegu.", "sumar", "none"),
+(6, "Okkur fannst skrýtið að enginn skyldi koma til dyra þegar við hringdum bjöllunni tvisvar.", "bjalla", "none"),
+(6, "Vegna þess að snjórinn var svo mikill komumst við ekki í skólann fyrr en um hádegi.", "hádegi", "none"),
+(6, "Gamli maðurinn sem býr við hliðina á okkur gefur fuglunum brauð á hverjum morgni.", "morgunn", "none"),
+(6, "Kennarinn sem tók við bekknum eftir áramót hafði áður kennt í litlum skóla úti á landi.", "land", "none"),
+(6, "Allir vinir mínir sem æfa fótbolta fara á æfingu þrisvar í viku.", "fótbolti", "none"),
+(6, "Eldri bróðir vinkonu minnar vinnur á bóndabæ fyrir norðan á hverju sumri.", "sumar", "none"),
+(6, "Margir af krökkunum í bekknum mínum hafa aldrei komið upp á jökul.", "bekkur", "none"),
+(6, "Stærsta herbergið á efri hæð gamla hússins var notað sem kennslustofa í mörg ár.", "hús", "none"),
+(6, "Ég skil ekki af hverju hann sagði ekki frá því að hann væri veikur.", None, None),
+(6, "Ég lofaði ömmu að ég skyldi hjálpa henni í garðinum þegar veðrið batnaði.", "garður", "none"),
+(6, "Við ákváðum að bíða inni í skálanum þangað til það hætti að rigna.", "skáli", "none"),
+(6, "Hún gleymdi að segja mér að æfingunni hefði verið frestað til fimmtudags.", "æfing", "none"),
+(6, "Okkur var sýnt hvernig brauð er bakað áður en við fengum að smakka það.", "brauð", "none"),
+(6, "Ef ég þyrfti ekki að vakna snemma myndi ég koma með ykkur í bíó í kvöld.", None, None),
+(6, "Ef við ynnum keppnina fengjum við að fara í ferð til Akureyrar.", "keppni", "none"),
+
+# =============================================================================
+# LEVEL 7 — year 10: 15 words and up, three clauses or more, usually two of
+# the level-6 constructions at once (þolmynd inside óbein ræða, a relative
+# clause inside a conditional …).
+# =============================================================================
+(7, "Ef ég hefði vitað að leiknum yrði frestað hefði ég ekki flýtt mér svona mikið heim úr skólanum.", "skóli", "none"),
+(7, "Amma sagði mér að þegar hún var lítil hefði mjólkin verið sótt á næsta bæ á hverjum morgni.", "morgunn", "none"),
+(7, "Þegar við komum loksins á áfangastað var okkur sagt að herbergin yrðu ekki tilbúin fyrr en búið væri að þrífa þau.", "herbergi", "none"),
+(7, "Bókin sem okkur var sagt að lesa fyrir prófið var svo löng að fáir náðu að klára hana í tæka tíð.", "próf", "none"),
+(7, "Kennarinn útskýrði að orðin sem við hefðum lært um haustið yrðu notuð í verkefninu sem við ættum að vinna eftir jól.", "verkefni", "none"),
+(7, "Hún sagðist hafa haldið að fundinum hefði verið aflýst þar sem enginn var mættur þegar hún kom.", "fundur", "none"),
+(7, "Ef mér hefði verið sagt frá keppninni fyrr hefði ég skráð mig áður en fresturinn rann út.", "keppni", "none"),
+(7, "Afi sagði okkur að bærinn þar sem hann ólst upp hefði verið yfirgefinn þegar vegurinn var lagður hinum megin við fjörðinn.", "vegur", "none"),
+(7, "Þegar búið var að tilkynna úrslitin sagði dómarinn að aldrei hefðu svona margir tekið þátt í keppninni áður.", "keppni", "none"),
+(7, "Vinur minn sagði að ef hann hefði ekki verið minntur á afmælið hefði hann gleymt að kaupa gjöf handa systur sinni.", "systir", "none"),
+(7, "Mér var sagt að stelpan sem vann upplestrarkeppnina í fyrra hefði æft sig fyrir framan spegil á hverju kvöldi.", "kvöld", "none"),
+(7, "Kennarinn sagði að þeim sem skiluðu verkefninu á réttum tíma yrði leyft að velja sér efni í næstu ritgerð.", "tími", "none"),
+(7, "Ég vissi ekki að brauðið sem við borðum á hverjum morgni væri bakað í litla bakaríinu við höfnina.", "bakarí", "none"),
+(7, "Þótt spáð hefði verið rigningu ákváðu skipuleggjendurnir að hátíðin yrði haldin úti eins og til stóð.", "hátíð", "none"),
+(7, "Læknirinn sagði að ef ég hvíldi fótinn í tvær vikur gæti ég byrjað að æfa aftur áður en mótið hæfist.", "vika", "none"),
+(7, "Mér finnst ótrúlegt að handritin sem voru skrifuð á skinn fyrir mörgum öldum skuli enn vera læsileg.", "öld", "none"),
+(7, "Safnvörðurinn sagði okkur að munirnir sem fundust við uppgröftinn hefðu verið notaðir af fólki sem bjó þar á landnámsöld.", "fólk", "none"),
+(7, "Ef ég hefði ekki verið beðinn um að passa litlu systur mína hefði ég farið með ykkur á skauta.", "systir", "none"),
+(7, "Okkur var bent á að þeir sem ætluðu að taka þátt í ferðinni þyrftu að skrá sig áður en vikan væri liðin.", "ferð", "none"),
+(7, "Ef brúin hefði ekki verið byggð þyrftu íbúarnir enn að keyra langa leið til að komast í næsta bæ.", "leið", "none"),
+(7, "Af því að rafmagnið fór af öllu hverfinu var okkur sagt að prófinu yrði frestað til næsta dags.", "próf", "none"),
+(7, "Hann sagðist ekki hafa vitað að bréfið sem lá á borðinu hefði verið ætlað honum fyrr en hann sá nafnið sitt á því.", "borð", "none"),
+(7, "Þótt mér hefði verið ráðlagt að byrja snemma á ritgerðinni beið ég með hana fram á kvöldið áður en ég átti að skila henni.", "ritgerð", "none"),
+(7, "Ef ég væri beðinn um að velja skemmtilegustu bókina sem ég hef lesið í vetur gæti ég ekki ákveðið mig strax.", "bók", "none"),
+(7, "Þjálfarinn sagði að leikmönnunum sem meiddust í síðasta leik yrði gefið frí þangað til þeir hefðu jafnað sig.", "leikmaður", "none"),
+(7, "Pabbi sagði að þegar hann var á mínum aldri hefði honum verið kennt að synda í köldum sjónum fyrir neðan bæinn.", "sjór", "none"),
+(7, "Ég vissi ekki að tónlistin sem er spiluð í byrjun þáttarins hefði verið samin af konu sem býr í næstu götu.", "kona", "none"),
+(7, "Ef okkur hefði verið sagt að taka með nesti hefðum við ekki þurft að leita að búð sem var opin á sunnudegi.", "búð", "none"),
+(7, "Kennarinn sagði að ritgerðunum sem við höfðum skrifað um bókina yrði skilað aftur þegar búið væri að fara yfir þær.", "ritgerð", "none"),
+(7, "Skólastjórinn sagði að ef fleiri nemendur skráðu sig í kórinn gætum við haldið tónleika fyrir jólin.", "kór", "none"),
+(7, "Þjálfarinn sagði að þeir sem hefðu komið á allar æfingarnar í vetur fengju að spila fyrsta leikinn á mótinu.", "mót", "none"),
+(7, "Okkur var sagt að sýningunni yrði frestað ef leikarinn sem fór með aðalhlutverkið væri enn veikur um helgina.", "sýning", "none"),
+(7, "Þótt ég hefði lesið alla kaflana tvisvar var ég ekki viss um að ég myndi ná prófinu.", "próf", "none"),
+(7, "Fréttamaðurinn sagði að vegurinn yrði lokaður þangað til búið væri að moka snjónum sem féll um nóttina.", "snjór", "none"),
+(7, "Þegar ég spurði af hverju búðinni hefði verið lokað svaraði konan að eigandinn væri fluttur úr bænum.", "bær", "none"),
+(7, "Systir mín heldur því fram að hún hefði náð strætó ef ég hefði ekki þurft að leita að skónum mínum.", "skór", "none"),
+(7, "Kennarinn bað þá sem höfðu lokið verkefninu að hjálpa hinum sem voru enn að skrifa.", "verkefni", "none"),
+(7, "Kennarinn sagði að sagan sem við ættum að lesa hefði verið skrifuð áður en höfundurinn varð frægur.", "höfundur", "none"),
+(7, "Kennarinn spurði hvort einhver gæti útskýrt af hverju laufin skiptu um lit á haustin áður en þau féllu af trjánum.", "tré", "none"),
+(7, "Konan sem rekur bókabúðina sagði að bækurnar sem við pöntuðum kæmu ekki til landsins fyrr en eftir jól.", "land", "none"),
+(7, "Vísindamennirnir sögðu að ef jöklarnir héldu áfram að bráðna myndu sumir þeirra hverfa áður en öldin væri liðin.", "öld", "none"),
+(7, "Kennarinn sagði að ef við skoðuðum textann vandlega myndum við sjá að höfundurinn hefði falið vísbendingar í fyrsta kaflanum.", "kafli", "none"),
+(7, "Þegar ég spurði afa hvernig hann hefði lært að tefla sagði hann að honum hefði verið kennt það á sjónum.", "sjór", "none"),
+(7, "Ef allir sem lofuðu að hjálpa til hefðu komið hefði verkinu verið lokið áður en gestirnir komu.", "verk", "none"),
+(7, "Ef snjónum hefði verið mokað af vellinum um morguninn hefði leikurinn getað byrjað á réttum tíma.", "tími", "none"),
+(7, "Bókin fjallar um strák sem kemst að því að afi hans hafði verið frægur skákmaður þegar hann var ungur.", "strákur", "none"),
+(7, "Ég spurði kennarann hvort ég mætti skila verkefninu eftir helgi af því að ég hafði verið veikur alla vikuna.", "verkefni", "none"),
+(7, "Bóndinn sagði að ef sumarið yrði þurrt þyrfti hann að vökva túnin á hverjum degi svo að grasið sprytti.", "dagur", "none"),
+(7, "Hún sagði að þótt æfingarnar væru erfiðar ætlaði hún ekki að hætta í liðinu fyrr en tímabilinu væri lokið.", "tímabil", "none"),
+(7, "Mig langar að vita hvort myndin sem var sýnd í sjónvarpinu í gær verður sýnd aftur um næstu helgi.", "sjónvarp", "none"),
+(7, "Þegar gestirnir voru farnir sagði mamma að hún væri ánægð með að við hefðum hjálpað til án þess að kvarta.", "mamma", "none"),
+(7, "Stjórnandi kórsins sagði að lagið sem yrði flutt á hátíðinni hefði verið valið af nemendunum sjálfum.", "nemandi", "none"),
+(7, "Kennarinn bað okkur að hringja í sig ef við sæjum einhvern sem þyrfti á hjálp að halda á leiðinni.", "leið", "none"),
+(7, "Þótt fáir hefðu búist við því að liðið kæmist í úrslit var því fagnað vel þegar það kom heim.", "lið", "none"),
+(7, "Kennarinn sagði að ef veðrið yrði gott á föstudaginn yrði íþróttatíminn haldinn úti á vellinum fyrir aftan skólann.", "völlur", "none"),
+(7, "Mér var sagt að bókin sem ég bað um hefði verið lánuð öðrum nemanda áður en ég kom á bókasafnið.", "nemandi", "none"),
+(7, "Ef okkur hefði verið sagt að prófinu yrði flýtt hefðum við byrjað að lesa fyrir það miklu fyrr.", "próf", "none"),
+(7, "Þegar búið var að slökkva ljósin sagði leiðsögumaðurinn að við skyldum bíða þangað til augun hefðu vanist myrkrinu.", "myrkur", "none"),
+(7, "Afi sagði að þegar hann var ungur hefði öllum börnunum í sveitinni verið kennt að synda í lauginni við ána.", "laug", "none"),
+(7, "Ég hefði ekki vitað að leiknum hefði verið frestað ef vinur minn hefði ekki hringt í mig um morguninn.", "leikur", "none"),
+(7, "Mamma sagði að ef ég kláraði heimanámið áður en hún kæmi heim mætti ég bjóða vinum mínum í mat.", "vinur", "none"),
+(7, "Hann sagði að ef honum hefði verið boðið fyrr hefði hann getað tekið sér frí úr vinnunni til að koma.", "vinna", "none"),
+(7, "Okkur var sagt að safnið sem við ætluðum að skoða væri lokað vegna þess að verið væri að gera við þakið.", "þak", "none"),
+(7, "Ég hélt að ég hefði týnt lyklunum þangað til mér var sagt að þeir hefðu fundist í íþróttahúsinu.", "lykill", "none"),
+(7, "Ef ég hefði ekki séð það sjálfur hefði ég ekki trúað því að hundurinn gæti opnað dyrnar.", "hundur", "none"),
+(7, "Systir mín sagði að hún myndi lána mér hjólið sitt ef ég lofaði að skila því áður en æfingin hennar byrjaði.", "hjól", "none"),
+(7, "Kennarinn sagði að verkefnin sem hefðu verið valin yrðu hengd upp á vegg svo að foreldrarnir gætu skoðað þau.", "verkefni", "none"),
+(7, "Þegar við spurðum hvenær húsið hefði verið byggt sagði eigandinn að það hefði staðið þar frá því að afi hans var barn.", "barn", "none"),
+(7, "Mér var sagt að ef ég æfði mig á hverjum degi gæti ég spilað lagið villulaust áður en tónleikarnir yrðu haldnir.", "dagur", "none"),
+(7, "Ég vissi ekki að bókin sem ég fékk í jólagjöf hefði verið skrifuð af konu sem ólst upp í sömu götu og ég.", "kona", "none"),
+(7, "Stelpan sem vann keppnina sagði að hún hefði aldrei trúað því að hún kæmist svona langt þegar hún byrjaði að æfa.", "keppni", "none"),
+(7, "Ef strákarnir hefðu sagt frá því strax að rúðan hefði brotnað hefði enginn orðið reiður.", "rúða", "none"),
+(7, "Ég hefði viljað að mér hefði verið sagt frá breytingunni áður en ég keypti miðann á leikinn.", "breyting", "none"),
+(7, "Hún sagði að ef hún mætti velja myndi hún búa í litlu húsi við sjóinn þar sem hún gæti átt hesta.", "hús", "none"),
+(7, "Mér var ráðlagt að lesa spurningarnar vandlega áður en ég byrjaði að skrifa svo að ég misskildi ekkert.", "spurning", "none"),
+(7, "Þeim sem komu of seint var sagt að bíða fyrir utan þangað til hléið byrjaði svo að þeir trufluðu ekki hina.", None, None),
+(7, "Þegar okkur var sagt að ferðinni yrði aflýst ef færri en tíu skráðu sig fórum við strax að hringja í vini okkar.", "ferð", "none"),
+(7, "Hún sagði að henni hefði verið sagt að bíða þangað til nafnið hennar yrði kallað upp.", "nafn", "none"),
 ]

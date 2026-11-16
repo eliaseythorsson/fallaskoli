@@ -332,11 +332,16 @@ What a preset does not do, so nobody is surprised:
   them off under *Beygingaratriði*. Making the presets set those switches too
   is possible (the nodes carry the features in `attrs`), and was left out
   because it would overwrite an adult's own choices there.
-- **Levels 6 and 7 are empty today.** The levels follow the convention already
-  in `core/difficulty.js` (1–5 is year 8, 6–7 is room for years 9 and 10), but
-  no sentence at level 6 or 7 exists, so the year-9 and year-10 presets do not
-  yet give longer or harder sentences than year 8. They differ in categories
-  and types only.
+- **Levels 6 and 7 are sentence levels, not new material.** The levels follow
+  the convention in `core/difficulty.js` (1–5 is year 8, 6 is year 9, 7 is
+  year 10). Since v6.13 the bank has 139 sentences at level 6 and 78 at
+  level 7: two subordinate clauses, þolmynd, viðtengingarháttur þátíðar,
+  óbein ræða, longer noun phrases (`sentences.py` says what earns a level).
+  So the year-9 and year-10 presets now give harder sentences in the cloze,
+  the analysis and Setningagerðir as the pupil's difficulty rises. They are
+  the same question types asked about harder sentences: the constructions
+  themselves (`so-tholmynd`, `mb-raeda` …) are still in the backlog above.
+  A pupil on no preset has every level switched on, 6 and 7 included.
 - **Year 9 adds only four question types.** That is an honest picture of the
   app: it was built for year 8, and most year-9 and year-10 material is in the
   backlog above.

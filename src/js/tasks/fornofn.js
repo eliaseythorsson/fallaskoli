@@ -180,7 +180,7 @@ export const TYPES = [
     build: fnGap },
   { id: "fn_stad", skill: "fornofn", weight: 6, renderer: "gap",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3, 4],
+    bands: [1, 2, 3, 4, 5, 6],
     build: fnReplace },
   { id: "fn_aftur", skill: "fornofn", weight: 5, renderer: "choice",
     tags: ["reflex"],
