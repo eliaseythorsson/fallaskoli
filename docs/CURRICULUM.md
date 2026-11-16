@@ -290,7 +290,7 @@ Notes for whoever takes these on:
   and weak nouns (`no_beyging`) now have question types of their own. The
   sentence bank has a single direct question (*Hvaða bók ætlar þú að lesa í
   kvöld?*), so *spurnarfornafn* is an option in every question from þyngd 3
-  but the right answer of only one; more questions in `sentences.py` would
+  but the right answer of only one; more questions in the sentence bank (`content/setningar/`) would
   fix that.
 - **Done (item 27, second half):** strong and weak verbs with their
   kennimyndir (`so_beyging`), the three myndir with the þolmynd to recognise
@@ -300,7 +300,7 @@ Notes for whoever takes these on:
   `tbl_so`) still never ask the boðháttur; `so_bodhattur` does, outside a
   sentence, because the bank has no imperative sentence. Most þolmynd
   sentences are at level 6–7, so at þyngd 1–2 `so_mynd` asks the eight
-  shortest of them; more short þolmynd sentences in `sentences.py` would
+  shortest of them; more short þolmynd sentences in the bank (`content/setningar/`) would
   widen that.
 - **Item 28's candidates are all confirmed** as material that textbooks or
   plans for years 9–10 cover: kinds of subordinate clause, phrases, word parts
@@ -430,7 +430,7 @@ not reliable enough to hang a right-or-wrong answer on. None is ever asked.
   for an atvikssetning; *þar sem* listed among the orsakartengingar; the
   warning that *þótt* takes the subjunctive; the two indirect questions on
   the *raeda* page.
-- The 91 sentences added to `sentences.py` for the clause kinds (the block
+- The 91 sentences added to the bank (`content/setningar/setningar.tsv`) for the clause kinds (the block
   "KINDS OF SUBORDINATE CLAUSE"). They are short on purpose. Whether each
   *svo að* sentence reads as purpose or result to a native ear, as its mood
   says: *Pabbi hélt á mér svo að ég sæi yfir girðinguna* (purpose), *Það

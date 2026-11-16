@@ -109,7 +109,11 @@ Leita: `Nafnliður, sagnliður og forsetningarliður` · `Tegundir aukasetninga`
 Úr: feat/28-years-9-10 (atriði 28)
 
 Þrjár nýjar síður fyrir 10. bekk. Sérstaklega reglan um *hefði farið* í
-óbeinni ræðu. Nánar í docs/CURRICULUM.md, „What item 28 built“.
+óbeinni ræðu. Sama grein bætti 91 setningu um tegundir aukasetninga í
+setningabankann (kaflinn „KINDS OF SUBORDINATE CLAUSE“ í
+content/setningar/setningar.tsv): lestu hvort hver *svo að*-setning er um
+tilgang eða afleiðingu eins og hátturinn segir. Nánar í docs/CURRICULUM.md,
+„What item 28 built“.
 
 ## „Setningarliðir“: heiti síðunnar
 Leita: `Setningarliðir`
