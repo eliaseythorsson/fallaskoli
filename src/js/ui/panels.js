@@ -18,6 +18,7 @@ import { renderPolicyEditor } from "./policyui.js";
 import { holidayName } from "../core/calendar.js";
 import { weekGoalOf } from "../core/state.js";
 import { LICENSES } from "../../../data/licenses.js";
+import { renderL2Setting } from "./secondlang.js";
 
 /* ---------- dates on badges --------------------------------------------- */
 
@@ -771,6 +772,7 @@ export function renderSettings(app) {
   /* Item 53: the box shows what is in force, the guess included, so ticking
      it always does what it looks like it will. */
   $("set-keys").checked = keypadOn(S.settings, keypadEnv());
+  renderL2Setting(app);                     // item 45, ui/secondlang.js
 
   S.policy ||= { skills: {}, types: {}, levels: {}, attrs: {}, safeVocab: null };
   const view = {

@@ -161,6 +161,9 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     /* --- the class goal (v6.13, item 59): totals only, core/classgoal.js --- */
     classGoal: () => call("GET", "/classgoal"),
     teacherClassGoal: (group) => call("GET", `/teacher/classgoal?group=${enc(group)}`),
+    /* Item 45: the second-language mode of each pupil, set by the teacher. */
+    teacherSecondLanguage: (group) => call("GET", `/teacher/secondlanguage?group=${enc(group)}`),
+    setSecondLanguage: (group, user, on) => call("POST", "/teacher/secondlanguage", { group, user, on }),
     setClassGoal: (group, kind, n) => call("POST", "/teacher/classgoal", { group, kind, n }),
     removeClassGoal: (group) => call("DELETE", `/teacher/classgoal?group=${enc(group)}`),
     /* error reports (v6.8) */

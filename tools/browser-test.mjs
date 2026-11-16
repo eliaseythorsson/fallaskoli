@@ -3049,6 +3049,133 @@ await page.setViewport({ width: 1100, height: 900 });
   await tap('nav.tabs button[data-view="practice"]');
 }
 
+/* ---------- item 45: the second-language mode ---------------------------------
+ * Off: the sentence is plain text and there is no speak button. On (the box
+ * under Stillingar): every content word of the sentence is a tap target, and a
+ * real tap opens the window with the word's dictionary form; without an
+ * Icelandic voice on the device there is still no button. With a voice that
+ * runs on the device (stubbed in a page of its own) the button is there and
+ * reads the sentence — the blank as a pause — and a network voice is not used. */
+{
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  const realTap = async (sel) => {
+    const at = await page.evaluate((s) => {
+      const el = document.querySelector(s);
+      if (!el) return null;
+      el.scrollIntoView({ block: "center" });
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }, sel);
+    if (!at) { ok(false, "item 45: nothing to tap at " + sel); return; }
+    await page.mouse.click(at.x, at.y);
+  };
+  /* Answer until a question shows a sentence with a content word in it. */
+  const toSentence = () => page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    for (let k = 0; k < 60; k++) {
+      const s = document.querySelector("#task .card .sentence");
+      if (s && A.cur && A.cur.s && A.cur.s.tok.some((t) => ["nafnorð", "sagnorð", "lýsingarorð", "atviksorð"].includes(t.c))
+        && !document.querySelector("#task #picker") && A.cur.type !== "hunt") return A.cur.type;
+      A.finish({ correct: true }); A.next();
+    }
+    return null;
+  });
+  const off = await page.evaluate(() => ({
+    voices: (window.speechSynthesis ? speechSynthesis.getVoices() : []).filter((v) => /^is/i.test(v.lang)).length,
+    on: window.FALLASKOLI.S.settings.secondLanguage === true,
+  }));
+  ok(!off.on, "item 45: the second-language mode is on before anybody switched it on");
+  const t0 = await toSentence();
+  ok(!!t0, "item 45: no question with a sentence in sixty");
+  const plain = await page.evaluate(() => ({ l2w: document.querySelectorAll("#task .l2w").length, btn: !!document.getElementById("l2speak") }));
+  ok(plain.l2w === 0 && !plain.btn, `item 45: with the mode off the sentence has glosses or a speak button: ${JSON.stringify(plain)}`);
+
+  /* The box under Stillingar, as a pupil ticks it. */
+  await page.evaluate(() => { const b = document.getElementById("set-l2"); b.checked = true; b.dispatchEvent(new Event("change")); });
+  const saved = await page.evaluate(() => window.FALLASKOLI.S.settings.secondLanguage);
+  ok(saved === true, "item 45: ticking the box did not switch the mode on");
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.finish({ correct: true }); A.next(); });
+  const t1 = await toSentence();
+  const on = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    const words = [...document.querySelectorAll("#task .card .sentence .l2w")];
+    const content = A.cur.s.tok.filter((t, j) => j !== A.cur.i && t.l && ["nafnorð", "sagnorð", "lýsingarorð", "atviksorð"].includes(t.c)).length;
+    return { type: A.cur.type, n: words.length, content, texts: words.map((w) => w.textContent),
+      btn: !!document.getElementById("l2speak"),
+      voices: (window.speechSynthesis ? speechSynthesis.getVoices() : []).filter((v) => /^is/i.test(v.lang) && v.localService).length };
+  });
+  ok(on.n > 0 && on.n === on.content, `item 45: ${on.type}: ${on.n} glossed words, ${on.content} content words in the sentence (${on.texts.join(" ")})`);
+  ok(on.btn === (on.voices > 0), `item 45: the speak button is ${on.btn ? "shown" : "hidden"} with ${on.voices} local Icelandic voices`);
+  if (on.n) {
+    await realTap("#task .card .sentence .l2w");
+    await page.waitForFunction(() => { const t = document.querySelector(".tip"); return t && !t.hidden; }, { timeout: 3000 })
+      .catch(() => ok(false, "item 45: tapping a word did not open its gloss"));
+    const tip = await page.evaluate(() => {
+      const t = document.querySelector(".tip");
+      const w = JSON.parse(document.querySelector("#task .card .sentence .l2w").dataset.dfn);
+      const r = t.getBoundingClientRect();
+      return { head: t.querySelector("h4") && t.querySelector("h4").textContent, nm: w.nm, def: w.def,
+        text: t.innerText, fits: r.left >= 0 && r.right <= innerWidth };
+    });
+    ok(tip.head && tip.head.startsWith(tip.nm), `item 45: the gloss should be headed by the dictionary form ${tip.nm}: ${tip.head}`);
+    ok(tip.def ? tip.text.includes(tip.def.slice(0, 30)) : /Engin skýring/.test(tip.text), `item 45: the gloss does not show the definition: ${tip.text.slice(0, 120)}`);
+    ok(tip.fits, "item 45: the gloss does not fit a 390 px phone");
+    await realTap("#task .card .sentence .l2w");
+    const closed = await page.evaluate(() => { const t = document.querySelector(".tip"); return !t || t.hidden; });
+    ok(closed, "item 45: a second tap on the word did not close its gloss");
+  }
+  ok(errors.length === 0, `item 45: errors with the mode on: ${errors.join(" | ")}`);
+  await page.close();
+
+  /* A device with an Icelandic voice of its own (stubbed), and a network one. */
+  const p2 = await browser.newPage();
+  const errors2 = [];
+  p2.on("pageerror", (e) => errors2.push(e.message));
+  await p2.evaluateOnNewDocument(() => {
+    const voices = [
+      { name: "Netrödd", lang: "is-IS", localService: false, default: false, voiceURI: "net" },
+      { name: "Guðrún", lang: "is-IS", localService: true, default: false, voiceURI: "local" },
+    ];
+    window.__spoken = [];
+    const fake = {
+      getVoices: () => voices, cancel() {}, speak(u) { window.__spoken.push({ text: u.text, voice: u.voice && u.voice.name, lang: u.lang }); },
+      addEventListener() {}, removeEventListener() {},
+    };
+    Object.defineProperty(window, "speechSynthesis", { value: fake, configurable: true });
+    /* The real utterance accepts only a real voice object. */
+    window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; } };
+  });
+  await p2.goto(FILE, { waitUntil: "domcontentloaded" });
+  await p2.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess", { timeout: 15000 });
+  await p2.evaluate(() => { const A = window.FALLASKOLI; A.S.settings.secondLanguage = true; A.save(true); });
+  await p2.reload({ waitUntil: "domcontentloaded" });
+  await startPractice(p2, 15000);
+  const found = await p2.evaluate(() => {
+    const A = window.FALLASKOLI;
+    for (let k = 0; k < 80; k++) {
+      if (document.querySelector("#task .card .sentence .blank") && document.getElementById("l2speak")) return true;
+      A.finish({ correct: true }); A.next();
+    }
+    return !!document.getElementById("l2speak");
+  });
+  ok(found, "item 45: with a local Icelandic voice the speak button should be there");
+  if (found) {
+    await p2.evaluate(() => document.getElementById("l2speak").click());
+    const said = await p2.evaluate(() => ({ spoken: window.__spoken, shown: document.querySelector("#task .card .sentence").textContent }));
+    const last = said.spoken[said.spoken.length - 1] || {};
+    ok(last.voice === "Guðrún" && /^is/i.test(last.lang || ""), `item 45: read with ${last.voice}, not the device's own Icelandic voice`);
+    ok(last.text && !/\?/.test(last.text.replace(/\?\s*$/, "")) && last.text.length > 5,
+      `item 45: what was read: "${last.text}" for "${said.shown}"`);
+  }
+  ok(errors2.length === 0, `item 45: errors with a voice: ${errors2.join(" | ")}`);
+  await p2.close();
+}
+
 /* ---------- item 17: with no server there is no calibration at all ----------
  * Opened from a file the program must run on exactly what it was built with:
  * no table, the build's own scores in the lexicon, no question marked for

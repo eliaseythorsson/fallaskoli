@@ -383,6 +383,25 @@ the table is not. Erasing a user removes their results; an assignment a
 guardian set stays with the group, its `by` cleared. Deleting a group deletes
 its assignments. All of it is in the backup.
 
+## The second-language mode, set by the teacher (v6.13)
+
+Item 45. The mode itself is `src/js/core/profile.js` (`secondLanguage`): word
+glosses, a gentler level ramp, the generated error hunts, reading aloud. A pupil
+switches it on under Stillingar (`settings.secondLanguage`, in the state); the
+group's teacher (`needTeacher`) can switch it on for a pupil of their own group.
+Code: `server/secondlang.mjs`.
+
+```
+GET  /teacher/secondlanguage?group=g   -> { group: { id, name }, pupils: [{ id, name, on }] }
+POST /teacher/secondlanguage           { group?, user, on: true|false } -> { ok, user, on }
+                                       400 `on` not a boolean · 404 not an active learner of that group
+```
+
+Kept as `l2: true` on the account (absent when off) and sent to the pupil in
+`/auth/me` as `profile.secondLanguage`; the app copies it into
+`settings.l2Teacher` at start-up. In the export as
+`account.secondLanguageByTeacher`. Setting it is in the audit trail.
+
 ## The class goal (v6.13)
 
 Item 59. A weekly target the whole group reaches together, set by its teacher

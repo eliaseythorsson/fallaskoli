@@ -47,6 +47,7 @@ import { createLive } from "./live.mjs";
 import { createTeamDuels } from "./teamduel.mjs";
 import { teamOf } from "../src/js/core/teamduel.js";
 import { createClassGoal } from "./classgoal.mjs";
+import { createSecondLanguage } from "./secondlang.mjs";
 import { seal, passphraseProblem } from "./backup.mjs";
 import { dropPrivileges } from "./privs.mjs";
 
@@ -245,6 +246,8 @@ export function createApp({
     provider: u.google ? "google" : "password",
     group: groupOf(u), share: shareOf(u),
     review: !!u.review,
+    /* Item 45: the teacher switched the second-language mode on (secondlang.mjs). */
+    secondLanguage: u.l2 === true,
   });
 
   /** ...and what the administrator sees in the list. */
@@ -576,6 +579,8 @@ export function createApp({
            null when they never touched it. */
         countedInStatistics: typeof u.stats === "boolean" ? u.stats : null,
         heldForReview: u.review || null,
+        /* Item 45: the teacher switched the second-language mode on. */
+        secondLanguageByTeacher: u.l2 === true,
       },
       curriculumCeiling: policies[u.id] || null,
       /* Without the seeds: they are not about the person, and while a duel
@@ -1448,6 +1453,11 @@ export function createApp({
     ceiling: () => ceilingFor("*"), dataPrint: DUEL_DATA, groupsNow,
   });
   teamDuels.routes({ on, json, readBody, needUser, needTeacher, securityHeaders });
+
+  /* --- the second-language mode, set by the teacher (item 45) -------------
+   * GET + POST /teacher/secondlanguage. Everything is in server/secondlang.mjs. */
+  createSecondLanguage({ store, groupOf, audit })
+    .routes({ on, json, readBody, needTeacher });
 
   /* --- the curriculum ceiling ------------------------------------------
    *

@@ -291,7 +291,10 @@ src/js/ui/            rendering: render.js (one renderer per task type;
                       skillmap.js (Merki og framvinda), teacher.js, live.js,
                       teamduel.js, duel.js, classgoal.js (Skólastofan),
                       lessons.js (Lesefni), drill.js, reports.js, pwa.js,
-                      dom.js, panels.js, progress.js, account.js, policyui.js
+                      dom.js, panels.js, progress.js, account.js, policyui.js,
+                      secondlang.js (item 45: the second-language mode — a
+                      gloss on every content word, reading aloud with an
+                      on-device Icelandic voice; the switch is core/profile.js)
 src/js/content/       hand-written texts in the program: the worked examples
                       and the Lesefni pages
 src/head.html         the stylesheet

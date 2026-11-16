@@ -277,6 +277,8 @@ export function privacyPage(cfg) {
       greiningartól né samfélagsmiðlahnappa.</li>
 </ul>
 
+${SECOND_LANGUAGE_NOTICE}
+
 <h2>Hve lengi?</h2>
 <ul>
   <li>Á meðan aðgangurinn þinn er til.</li>
@@ -315,3 +317,17 @@ export function privacyPage(cfg) {
    ef það gæti skipt þig máli.</p>
 </main></body></html>`;
 }
+
+/* ---------- item 45: Icelandic as a second language — a paragraph of its own ----
+ * Added by item 45 without moving PRIVACY_VERSION (other v6.13 branches move
+ * it; the merge moves it once). docs/PRIVACY.md §1e says the same for the
+ * person who runs the server. */
+const SECOND_LANGUAGE_NOTICE = `<h2>Íslenska sem annað mál</h2>
+<p>Ef íslenska er annað tungumálið þitt getur þú kveikt á því undir <i>Stillingar</i>, eða
+   kennari hópsins þíns kveikt á því fyrir þig. Þá er geymt eitt já eða nei: með stillingunum
+   þínum ef þú kveiktir á því, eða með aðganginum þínum ef kennarinn gerði það. Það er aðeins
+   notað til að sýna skýringar á orðum, láta þyngdina hækka hægar og velja villuveiðar við hæfi.
+   Aðrir nemendur sjá það aldrei. Kennarinn sér það aðeins fyrir nemendur í sínum hópi.
+   Það fylgir með þegar þú sækir gögnin þín og eyðist með aðganginum.</p>
+<p>Þegar setning er lesin upphátt gerir tækið þitt það sjálft. Setningin er ekki send neitt,
+   og ef tækið á enga íslenska rödd er hnappurinn ekki sýndur.</p>`;

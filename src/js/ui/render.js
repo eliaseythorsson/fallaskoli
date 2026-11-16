@@ -20,6 +20,7 @@ import { firstMeeting, markTypeSeen } from "../core/examples.js";
 import { skillName } from "../core/skills.js";
 import { conjugationNote } from "../tasks/explain.js";
 import { reportButtonHTML } from "./reports.js";
+import { l2On, glossToken, decorateTask } from "./secondlang.js";
 import {
   $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO, CHEERS_TRY, hideTip,
   defBox, unlockDefBox, freshEnter, stopConfetti,
@@ -80,8 +81,13 @@ export function renderTask(app) {
   stopConfetti();
   const fn = RENDER[app.cur.type];
   if (!fn) throw new Error("Enginn birtir fyrir " + app.cur.type);
+  /* Item 45: in the second-language mode every content word of the sentence
+     carries its gloss (ui/secondlang.js). Set for the whole life of the
+     question, so the sentence drawn again with the answer keeps them. */
+  glossFor = l2On(app) ? glossToken(app) : null;
   fn(app);
   showExample(app);
+  decorateTask(app);
   /* Item 51: the verdict is a live region, so a screen reader says "Rétt" or
      "Ekki alveg" when it is written. Set here, once, rather than in each of
      the renderers that draw an empty #verdict: the region is in the page
@@ -121,6 +127,11 @@ export function revealTopic(app) {
 /* A full stop, a question mark or a comma stands against the word before it. */
 const PUNCT = new Set([".", "?", "!", ","]);
 
+/* Item 45: a token → its HTML with a gloss (second-language mode), or null.
+   Null whenever the mode is off, and then every word is plain text. */
+let glossFor = null;
+const wordHTML = (t) => (glossFor && glossFor(t)) || esc(t.w);
+
 function sentenceHTML(s, i, replacement) {
   return s.tok.map((t, j) => {
     if (PUNCT.has(t.w)) return t.w;
@@ -130,7 +141,7 @@ function sentenceHTML(s, i, replacement) {
     if (j === i) return sp + (/^\p{Lu}/u.test(t.w)
       ? replacement.replace(/^((?:<[^>]*>)*)(\p{Ll})/u, (_, tags, c) => tags + c.toUpperCase())
       : replacement);
-    return sp + esc(t.w);
+    return sp + wordHTML(t);
   }).join("");
 }
 
@@ -1243,7 +1254,7 @@ RENDER.clause = function (app) {
     if (PUNCT.has(tok.w)) return tok.w;
     const sp = j === 0 ? "" : " ";
     const inside = j >= t.span.from && j <= t.span.to;
-    return sp + (inside ? `<span class="clausemark">${esc(tok.w)}</span>` : esc(tok.w));
+    return sp + (inside ? `<span class="clausemark">${wordHTML(tok)}</span>` : wordHTML(tok));
   }).join("");
 
   $("task").innerHTML = `
@@ -1515,7 +1526,7 @@ RENDER.umritun = function (app) {
     if (PUNCT.has(tok.w)) return tok.w;
     const sp = j === 0 ? "" : " ";
     const inside = t.focus && j >= t.focus.from && j <= t.focus.to;
-    return sp + (inside ? `<span class="clausemark">${esc(tok.w)}</span>` : esc(tok.w));
+    return sp + (inside ? `<span class="clausemark">${wordHTML(tok)}</span>` : wordHTML(tok));
   }).join("");
   $("task").innerHTML = `
   <div class="card">

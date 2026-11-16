@@ -258,6 +258,40 @@ backup.
 
 ---
 
+## 1e. Icelandic as a second language (v6.13, item 45) — a separate paragraph
+
+*Added by item 45 on its own; the notice's version has not been moved by this
+branch — whoever merges it moves `PRIVACY_VERSION` once for v6.13.*
+
+A pupil can switch on the **second-language mode** under Stillingar, or the
+group's guardian can switch it on for a pupil in Skólastofan. It changes what
+the program shows (word glosses, a slower climb in difficulty, the kind of error
+hunt, reading aloud) and nothing else.
+
+- **What is stored:** one yes/no. The pupil's own switch is a setting in the
+  progress (`settings.secondLanguage`), like every other setting. The guardian's
+  is one flag on the account (`l2` in `users.json`), returned to the pupil's
+  app as `profile.secondLanguage` and copied into the settings at start-up. It
+  is in the pupil's own export and goes with the account. Turning it on or
+  off is written to the audit trail, by id.
+- **Why it is worth a paragraph:** "learns Icelandic as a second language" can
+  hint at a child's background. It is not a special category (Art. 9) by
+  itself, but it is the kind of fact a family may not want recorded without
+  being asked. So: it is never shown to other pupils, never on the board,
+  never in the class table or the skill map; the guardian sees it only for
+  their own group's pupils; and **agree with the pupil (and the family) before
+  switching it on** — the pupil can always do it themselves, which is the
+  better route.
+- **Reading aloud** uses only a voice that runs on the device itself
+  (`localService`); a browser's network voice, which would send the sentence
+  to a company to be spoken, is not used, and with no on-device Icelandic
+  voice the button is not shown. Nothing is sent anywhere.
+- **The glosses** come from the dictionary bundled in the program (or the
+  server's `/definitions`, which already exists); looking a word up sends
+  nothing new.
+
+---
+
 ## 2. Record of processing (Art. 30) — *vinnsluskrá*
 
 Fill in the bracketed parts and keep it with your papers. If Persónuvernd ever
