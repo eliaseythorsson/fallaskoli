@@ -70,6 +70,11 @@ adjective against it:
   6. four that are compared only in a figurative sense the helper noun does
      not have ("opnustu gluggarnir", "auðustu göturnar"): *opinn, auður,
      ómögulegur, sköllóttur*
+  7. (v6.13, item 23, when the comparison frames put every compared
+     adjective into "___ en ég hélt") *fatlaður, blindur, haltur,
+     þunglyndur* under rule 2 — and "fatlaðri maður en ég hélt" is not a
+     sentence to drill; *lasinn, kvefaður, innilokaður* under rule 2; and
+     *ágætur*, whose *ágætari* has gone out of use
 
 Some of these can be compared in play or for emphasis ("íslenskari en allt
 íslenskt"); a drill is not the place for that. An adjective is left OUT of
@@ -308,6 +313,7 @@ rómanskur mexíkóskur kaþólskur helvískur
 dauður velkominn tilbúinn viðbúinn reiðubúinn ómeiddur óhultur óléttur
 ófrískur nakinn aleinn uppgefinn hólpinn feigur syndur allsgáður andsetinn
 útvalinn meðfæddur ólæs einstæður
+fatlaður blindur haltur þunglyndur lasinn kvefaður innilokaður
 
 eilífur endalaus óendanlegur ódauðlegur dauðlegur ósýnilegur sjáanlegur
 ómetanlegur óbreyttur ótakmarkaður órjúfanlegur ólýsanlegur óhjákvæmilegur
@@ -323,6 +329,8 @@ líffræðilegur læknisfræðilegur sálfræðilegur sjónrænn fjárhagslegur
 færanlegur ósjálfráður óbeinn óvirkur yfirnáttúrulegur sígildur samfelldur
 
 opinn auður ómögulegur sköllóttur
+
+ágætur
 
 appelsínugulur fjólublár
 """)

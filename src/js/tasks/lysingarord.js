@@ -12,15 +12,16 @@
      lo_stig     … in the comparative or the superlative
      lo_samr     … agreeing with its noun or its subject */
 
+import { EX } from "../../../data/exercises.js";
 import { CASES, GENDERS, readMark } from "../core/marks.js";
 import { diffOf } from "../core/difficulty.js";
 import { wordKey } from "../core/state.js";
-import { adjectiveHelperForm, adjectiveGenders } from "../core/helpers.js";
+import { adjectiveHelperForm, adjectiveGenders, adjectiveHelperLemma } from "../core/helpers.js";
 import { explainDegree } from "./explain.js";
 import { nounSentence, adjectiveSentence, nounFrames, adjectiveFrames, showable, frameKey } from "./frames.js";
 import { built, FX } from "./effects.js";
 import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, cellWanted,
-         topByRank, wordWeight, cellEase, nearBand, cap1, caseWord } from "./shared.js";
+         topByRank, wordWeight, cellEase, nearBand, cap1, caseWord, classRankLevel, textSentence } from "./shared.js";
 
 /* ================= Beygingartafla ======================================== */
 
@@ -267,7 +268,99 @@ function headSettles(lex, s, i) {
   return new Set(marks.map((a) => a.tala)).size <= 1 && new Set(marks.map((a) => !!a.greinir)).size <= 1;
 }
 
-function adjSlot(lex, view, rng, want, { pred = null, frames = true } = {}) {
+/* ---------- frames × adjectives (v6.13, critique item 23) -----------------
+
+   lo_stig built 12-16 different questions at any band, lo_beyging and
+   lo_samr 25-48: the bank has two or three sentences with a comparative or a
+   superlative at each level, and the substituted frames (frames.js) take only
+   the fifteen adjectives of FIT_SETS. exercises.py ADJ_FRAMES are short
+   frames written around a NOUN — "Ég á ___ bíl en þú.", "Bókin er ___ en ég
+   hélt." — and here any adjective goes in whose helper noun (adj_classes.py,
+   `h`) in that gender is that noun: adj_classes.py vouches that it is said
+   of the noun in every degree and both numbers. An adjective it lists as
+   not compared has no comparison forms in the lexicon (build_lexicon.py),
+   and is not put into any frame (`adjectivesOf`). The noun's form in every
+   frame says its number and its definiteness (build_exercises.py drops
+   *hús*, *epli*), so the mark below is the only right one.
+
+   By band: frames near the band by their level, and adjectives by their
+   rank among the adjectives (shared.js `classRankLevel`: the 150 commonest
+   at þyngd 1, 350 at 2 …); the question is as hard as the harder of the two. */
+
+const KYN = { kk: "KK", kvk: "KVK", hk: "HK" };
+/* How often a question comes from a real sentence of the bank rather than a frame. */
+const BANK_SHARE = 0.3;
+/** The adjective's mark in a frame: its degree, the noun's gender, case and number. */
+export const frameMark = (f) => `${f.deg}-${KYN[f.g]}-${f.nm.replace(/gr$/, "")}`;
+
+/* noun lemma|gender -> the adjectives said of it, commonest first; once per lexicon */
+const SAID_OF = new WeakMap();
+function adjectivesOf(lex, f) {
+  let m = SAID_OF.get(lex);
+  if (!m) {
+    m = new Map();
+    for (const a of lex.adjectives) {
+      /* Only adjectives that are compared. One that is not names a state one
+         is in or is not (adj_classes.py NO_COMPARE: *tilbúinn, dauður,
+         grafkyrr*) and reads oddly in a frame that does not expect it:
+         "Hér eru tilbúin börn", "Hvar eru dauðu dýrin?". */
+      if (!Object.keys(a.forms).some((k) => k.startsWith("MST-"))) continue;
+      for (const g of ["kk", "kvk", "hk"]) {
+        const n = adjectiveHelperLemma(a, g);
+        if (!n) continue;
+        const key = `${n}|${g}`;
+        if (!m.has(key)) m.set(key, []);
+        m.get(key).push(a);
+      }
+    }
+    for (const list of m.values()) list.sort((x, y) => x.r - y.r);
+    SAID_OF.set(lex, m);
+  }
+  return m.get(`${f.n}|${f.g}`) || [];
+}
+
+/* the adjectives that have the frame's form, per frame; once per lexicon */
+const FOR_FRAME = new WeakMap();
+function adjectivesFor(lex, f) {
+  let m = FOR_FRAME.get(lex);
+  if (!m) FOR_FRAME.set(lex, (m = new Map()));
+  if (!m.has(f)) m.set(f, adjectivesOf(lex, f).filter((a) => a.forms[frameMark(f)]));
+  return m.get(f);
+}
+/* A function remembered for the length of one build. */
+const memo = (fn) => { const seen = new Map(); return (k) => (seen.has(k) ? seen.get(k) : (seen.set(k, fn(k)), seen.get(k))); };
+
+/**
+ * A frame of ADJ_FRAMES with an adjective put in, as an `adjSlot` result, or
+ * null. `want` tests the adjective's mark; `place` is "pred", "attr" or null
+ * (either). A review's cell (`fc`) and word (`fw`) are honoured exactly.
+ */
+export function framedAdjective(lex, view, rng, want, { place = null, fc = null, fw = null } = {}) {
+  const P = view.policy;
+  const b = bandFor(view, "lysingarord");
+  const adjLevel = (a) => classRankLevel(a.r);
+  const fits = (f) => {
+    const all = adjectivesFor(lex, f);
+    return fw ? all.filter((a) => a.o === fw.o && a.c === fw.c) : all;
+  };
+  const markOk = memo((m) => want.test(m) && P.mark(m));
+  const frames = (EX.adjFrames || []).filter((f) => {
+    const m = frameMark(f);
+    return markOk(m) && P.level(f.lvl) && (!fc || m === fc)
+      && (place === null || (place === "pred") === !!f.p) && fits(f).length;
+  });
+  if (!frames.length) return null;
+  const f = pick(fc || fw ? frames : nearBand(frames, (x) => x.lvl, b, 12), rng);
+  const m = frameMark(f);
+  const all = fits(f);
+  /* the commonest adjectives at a low band; the rest come in a step at a time */
+  const near = fc || fw ? all : all.filter((a) => adjLevel(a) <= Math.max(1, b));
+  const w = wpick(near.length ? near : all.slice(0, 12), (x) => wordWeight(lex, view, x, "lysingarord"), rng);
+  const { s, i } = textSentence(f.t);
+  return { s, i, w, m, lvl: Math.max(f.lvl, Math.min(adjLevel(w), P.maxLevel)), framed: true };
+}
+
+function adjSlot(lex, view, rng, want, { pred = null, frames = true, place = null } = {}) {
   const P = view.policy;
   const b = bandFor(view, "lysingarord");
   const firm = (t) => !(t.u || []).length && !t.rj;
@@ -281,6 +374,8 @@ function adjSlot(lex, view, rng, want, { pred = null, frames = true } = {}) {
     && asked(r));
   if (fc || fw) {
     if (bank.length) { const r = pick(bank, rng); return { s: r.s, i: r.i, w: r.w, m: r.t.m, lvl: r.s.lvl }; }
+    const gen = framedAdjective(lex, view, rng, want, { place, fc, fw });
+    if (gen) return gen;
     if (!frames || !fc || !want.test(fc) || !P.mark(fc)) return null;
     /* Into a frame: the review's adjective, or a common one that has the form. */
     const words = fw ? [fw] : lex.adjectives.filter((w) => w.r <= 300 + 150 * b && w.forms[fc]);
@@ -302,11 +397,19 @@ function adjSlot(lex, view, rng, want, { pred = null, frames = true } = {}) {
      reached level 4 at þyngd 1 (and level 6 for the predicative). */
   const low = bank.filter((r) => r.s.lvl <= b + 1);
   const near = nearBand(low.length ? low : bank, (r) => r.s.lvl, b, 12);
-  if (near.length && (!frames || rng() < 0.55)) {
+  /* Real sentences a third of the time, the ADJ_FRAMES the rest (item 23):
+     at 55% the dozen bank sentences near a band were most of what a pupil
+     met. */
+  if (near.length && rng() < BANK_SHARE) {
     const r = pick(near, rng);
     return { s: r.s, i: r.i, w: r.w, m: r.t.m, lvl: r.s.lvl };
   }
-  if (!frames) return null;
+  const gen = framedAdjective(lex, view, rng, want, { place });
+  if (gen) return gen;
+  if (!frames) {
+    if (near.length) { const r = pick(near, rng); return { s: r.s, i: r.i, w: r.w, m: r.t.m, lvl: r.s.lvl }; }
+    return null;
+  }
   const pool = lex.adjectives.filter((w) => w.r <= 300 + 150 * b);
   for (let k = 0; k < 25; k++) {
     const w = pick(pool, rng);
@@ -334,7 +437,7 @@ function adjGap(slot, opts) {
 }
 
 export function loStrongWeak(lex, view, rng) {
-  const slot = adjSlot(lex, view, rng, /^(FSB|FVB)-/, { pred: (r) => r.t.r !== "sagnfylling" });
+  const slot = adjSlot(lex, view, rng, /^(FSB|FVB)-/, { pred: (r) => r.t.r !== "sagnfylling", place: "attr" });
   if (!slot) return null;
   return adjGap(slot, (a) => ({
     title: "Sterk eða veik beyging?",
@@ -364,9 +467,9 @@ export function loAgree(lex, view, rng) {
      adjective before a feminine or neuter noun, where the ending shows. */
   const pred = rng() < 0.6;
   const slot = pred
-    ? adjSlot(lex, view, rng, /^FSB-/, { pred: (r) => r.t.r === "sagnfylling", frames: false })
-    : adjSlot(lex, view, rng, /^FSB-(KVK|HK)-/, { pred: (r) => r.t.r !== "sagnfylling" });
-  const use = slot || adjSlot(lex, view, rng, /^FSB-(KVK|HK)-/, {});
+    ? adjSlot(lex, view, rng, /^FSB-/, { pred: (r) => r.t.r === "sagnfylling", frames: false, place: "pred" })
+    : adjSlot(lex, view, rng, /^FSB-(KVK|HK)-/, { pred: (r) => r.t.r !== "sagnfylling", place: "attr" });
+  const use = slot || adjSlot(lex, view, rng, /^FSB-(KVK|HK)-/, { place: "attr" });
   if (!use) return null;
   return adjGap(use, (a) => ({
     title: "Samræmi lýsingarorðs",

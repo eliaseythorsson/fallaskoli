@@ -16,6 +16,8 @@ the blanks and the short explanations.
 import json, re, sys, itertools, collections
 from islenska import Bin
 import exercises as X
+import government as GOV
+import noun_classes as NC
 
 b = Bin()
 ERR = []
@@ -42,7 +44,9 @@ def paradigm(lemma, ofl):
         ent.sort(key=lambda e: (e.mark, e.bmynd))
         forms = collections.defaultdict(list)
         for e in ent:
-            m = re.sub(r'\d', '', e.mark)
+            # BÍN numbers a second form of a cell (NFET2); a verb's person is a
+            # digit too (GM-FH-ÞT-3P-ET), and must stay.
+            m = re.sub(r'\d+$', '', e.mark)
             if e.bmynd not in forms[m]: forms[m].append(e.bmynd)
         if len(forms) > len(best): best = dict(forms)
     _cache[key] = best
@@ -128,6 +132,139 @@ for lvl, t, gloss, (l1, c1, m1), (l2, c2, m2) in X.REFLEXIVE:
                   "reflexive": c1 in ("afn",) or l1 == "sinn", "lvl": lvl})
 out["reflexive"] = items
 
+# ---------------------------------------------------------------- generated
+# v6.13 (critique item 23): frames × BÍN. Every word of every sentence below
+# is a BÍN form looked up here, and every sentence is checked word by word.
+
+def length_level(text):
+    """exercises.py LEVELS: the words of the sentence, the blank one word."""
+    n = len(text.split())
+    return 1 if n <= 5 else 2 if n <= 7 else 3 if n <= 9 else 4 if n <= 11 else 5
+
+def cap1(w):
+    return w[:1].upper() + w[1:]
+
+CASE_UP = {"nf": "NF", "þf": "ÞF", "þgf": "ÞGF", "ef": "EF"}
+CASE_WORD = {"ÞF": "þolfalli", "ÞGF": "þágufalli", "EF": "eignarfalli"}
+
+def one_case(table, lemma, where):
+    """The one case government.py gives this word — or a failure: a verb or
+    preposition with two cases cannot be asked about without its meaning."""
+    cases = table.get(lemma)
+    if not cases or len(cases) != 1:
+        fail(f"{where}: government.py gives '{lemma}' {sorted(cases) if cases else 'no case'}; one is needed")
+        return None
+    return CASE_UP[next(iter(cases))]
+
+def sentence(*words):
+    t = " ".join(w for w in words if w)
+    return t[:1].upper() + t[1:] + "."
+
+# fn_eyda: grouped by frame, one sentence per subject
+PRONOUN_LEMMAS = ["ég", "þú", "hann", "hún", "það"]
+for l in PRONOUN_LEMMAS: keep(l, "pfn")
+def pronoun_subject(l, c, m, where):
+    f = form(l, c, m, where)[0]
+    num = "FT" if "FT" in m else "ET"
+    person = (1 if l == "ég" else 2 if l == "þú" else 3) if c == "pfn" else 3
+    return f, person, num, (l if c == "pfn" else "")
+
+frames = []
+def pronoun_frame(gov, case, who, why, parts, where):
+    """parts(subject form, person, number) -> the words of the sentence."""
+    group = None
+    for sl, sc, sm in X.PRONOUN_SUBJECTS:
+        sf, p, n, pl = pronoun_subject(sl, sc, sm, where)
+        t = sentence(*parts(sf, p, n))
+        check_words(t.replace("___", ""), where)
+        if group is None:
+            group = {"g": gov, "case": case, "who": who, "why": why, "lvl": length_level(t), "s": []}
+        group["s"].append([t, p, n, pl])
+    frames.append(group)
+
+for verb, tense, tails, who in X.PRONOUN_VERBS:
+    where = f"PRONOUN_VERBS {verb}"
+    case = one_case(GOV.VERB_CASES, verb, where)
+    if not case: continue
+    for tail in tails:
+        pronoun_frame(verb, case, who, f"*{verb}* stýrir {CASE_WORD[case]}.",
+                      lambda sf, p, n: [sf, form(verb, "so", f"GM-FH-{tense}-{p}P-{n}", where)[0], "___", tail],
+                      f"{where} {tail}")
+for prep, verb, tense, between, tails, who in X.PRONOUN_PREPS:
+    where = f"PRONOUN_PREPS {prep} {verb}"
+    case = one_case(GOV.PREP_CASES, prep, where)
+    if not case: continue
+    for tail in tails:
+        pronoun_frame(prep, case, who, f"*{prep}* stýrir {CASE_WORD[case]}.",
+                      lambda sf, p, n: [sf, form(verb, "so", f"GM-FH-{tense}-{p}P-{n}", where)[0],
+                                        between, prep, "___", tail],
+                      f"{where} {tail}")
+out["pronounFrames"] = frames
+
+# fn_aftur: pairs. Somebody else of the subject's gender and number, and the
+# subject's own personal pronoun (hann, hún; þeir, þær).
+GENDER_OF = {"hann": "kk", "hún": "kvk"}
+PRONOUN_OF_GENDER = {"kk": "hann", "kvk": "hún"}
+KYN = {"kk": "KK", "kvk": "KVK", "hk": "HK"}
+keep("sinn", "fn")
+def reflex_subject(l, c, m, where):
+    f = form(l, c, m, where)[0]
+    g = GENDER_OF[l] if c == "pfn" else c
+    return f, g, ("FT" if "FT" in m else "ET")
+def other_np(g, n, case, where):
+    noun, adj = X.REFLEX_OTHER[g]
+    return (form(adj, "fn", f"{KYN[g]}-{case}{n}", where)[0] + " " +
+            form(noun, g, f"{case}{n}", where)[0])
+def sjalf(g, n, case, where):
+    return form("sjálfur", "fn", f"{KYN[g]}-{case}{n}", where)[0]
+
+# REFLEXIVE's own items stop at 4, and so do these: the few that would be 5
+# (a plural subject AND a dative possessive) are too few to make þyngd 5 a
+# step of its own.
+REFLEX_TOP = 4
+pairs = []
+def add_pair(t, r, nr, gs, go, lvl, where):
+    if r == nr: fail(f"{where}: both readings have the same form '{r}'")
+    for x in (t.replace("___", r), gs, go): check_words(x, where)
+    level(lvl, where)
+    pairs.append({"t": t, "r": r, "nr": nr, "gs": gs, "go": go, "lvl": lvl})
+
+for verb, case, tail, plural_ok in X.REFLEX_OBJECT:
+    for sl, sc, sm in X.REFLEX_SUBJECTS:
+        where = f"REFLEX_OBJECT {verb} {tail} / {sl} {sm}"
+        sf, g, n = reflex_subject(sl, sc, sm, where)
+        if n == "FT" and not plural_ok: continue
+        vf = form(verb, "so", f"GM-FH-ÞT-3P-{n}", where)[0]
+        r = form("sig", "afn", case, where)[0]
+        nr = form(PRONOUN_OF_GENDER[g], "pfn", f"{case}{n}", where)[0]
+        t = sentence(sf, vf, "___", tail)
+        gs = sentence(sf, vf, sjalf(g, n, case, where), r, tail)
+        go = sentence(sf, vf, other_np(g, n, case, where), tail)
+        lvl = min(REFLEX_TOP, length_level(t) + 1 + (n == "FT") + (case == "ÞGF"))
+        add_pair(t, r, nr, gs, go, lvl, where)
+
+k = 0
+for verb, case, things in X.REFLEX_POSSESSIVE:
+    for thing in things:
+        tg = noun_gender(thing, f"REFLEX_POSSESSIVE {thing}")
+        for j in range(3):
+            sl, sc, sm = X.REFLEX_SUBJECTS[(3 * k + j) % len(X.REFLEX_SUBJECTS)]
+            where = f"REFLEX_POSSESSIVE {verb} {thing} / {sl} {sm}"
+            sf, g, n = reflex_subject(sl, sc, sm, where)
+            vf = form(verb, "so", f"GM-FH-ÞT-3P-{n}", where)[0]
+            owns = form("eiga", "so", f"GM-FH-NT-3P-{n}", where)[0]
+            the = form(thing, tg, f"{case}{n}gr", where)[0]
+            the_acc = form(thing, tg, f"ÞF{n}gr", where)[0]
+            r = form("sinn", "fn", f"{KYN[tg]}-{case}{n}", where)[0]
+            nr = form(PRONOUN_OF_GENDER[g], "pfn", f"EF{n}", where)[0]
+            t = sentence(sf, vf, the, "___")
+            gs = sentence(sf, owns, the_acc, sjalf(g, n, "NF", where))
+            go = sentence(other_np(g, n, "NF", where), owns, the_acc)
+            lvl = min(REFLEX_TOP, length_level(t) + 2 + (n == "FT") + (case == "ÞGF"))
+            add_pair(t, r, nr, gs, go, lvl, where)
+        k += 1
+out["reflexivePairs"] = pairs
+
 # ---------------------------------------------------------------- Töluorð
 CARD = {1: ("einn", "to"), 2: ("tveir", "to"), 3: ("þrír", "to"), 4: ("fjórir", "to")}
 KYN = {"kk": "KK", "kvk": "KVK", "hk": "HK"}
@@ -178,6 +315,101 @@ for lvl, t, case, ns, nouns in X.NUMERAL_PLURAL_ONLY:
             items.append({"t": t2, "n": n, "noun": noun.split(":")[0], "g": g, "case": case,
                           "a": a, "plain": plain, "lvl": lvl})
 out["pluralOnly"] = items
+
+# to_samr / to_val: frames × nouns by meaning (exercises.py NUMERAL_FRAMES).
+LEXICON_NOUNS = sorted((w for w in json.load(open("lexicon.json"))["w"] if w["c"] in ("kk", "kvk", "hk")),
+                       key=lambda w: w.get("r", 1e9))
+LEXICON_NOUN_SET = {w["o"] for w in LEXICON_NOUNS}
+def nouns_of(spec, where):
+    if isinstance(spec, list):
+        for n in spec:
+            if n.split(":")[0] not in LEXICON_NOUN_SET: fail(f"{where}: '{n}' is not a noun of the lexicon")
+        return spec
+    classes = set(spec.split())
+    for c in classes:
+        if c not in NC.CLASSES: fail(f"{where}: no noun class '{c}'")
+    got = [w["o"] for w in LEXICON_NOUNS
+           if NC.klass(w["o"]) in classes and NC.reviewed(w["o"]) and not NC.excluded(w["o"])
+           and w["o"] not in X._NUMERAL_SKIP]
+    return got[:X.NUMERAL_TAKE]
+
+frames = []
+for lvl, t, case, ns, spec, *skip in X.NUMERAL_FRAMES:
+    where = f"NUMERAL_FRAMES {t}"
+    level(lvl, where)
+    nouns = []
+    skip = set(skip[0] if skip else []) | X._NUMERAL_SKIP
+    for noun in nouns_of(spec, where):
+        if noun in skip: continue
+        g = noun_gender(noun, where)
+        if not g: continue
+        p = paradigm(noun, g)
+        sg = (p.get(case + "ET") or [""])[0]
+        pl = "" if NC.no_plural(noun.split(":")[0]) else (p.get(case + "FT") or [""])[0]
+        if not sg: continue                       # plural-only: to_flt's business
+        if not pl and not any(n == 1 for n in ns): continue
+        for f in (sg, pl):
+            if f: check_words(t.replace("___", "").replace("{N}", f), where)
+        nouns.append([noun.split(":")[0], g, sg if 1 in ns else "", pl])
+    if len(nouns) < 3: fail(f"{where}: only {len(nouns)} nouns")
+    frames.append({"t": t, "case": case, "ns": ns, "lvl": lvl, "nouns": nouns})
+out["numeralFrames"] = frames
+
+# to_flt: frames × the plural-only nouns of a group.
+PLURAL_FORMS = {}
+for n, (l, c) in X.PLURAL_NUMERALS.items():
+    for g in ("kk", "kvk", "hk"):
+        for case in ("NF", "ÞF", "ÞGF", "EF"):
+            m = f"FSB-{KYN[g]}-{case}FT" if c == "lo" else f"{KYN[g]}-{case}FT"
+            PLURAL_FORMS[f"{n}|{KYN[g]}-{case}"] = form(l, c, m, f"PLURAL_NUMERALS {n}")
+            if n > 1:
+                cl, cc = CARD[n]
+                PLURAL_FORMS[f"{n}|{KYN[g]}-{case}|plain"] = form(cl, cc, f"{KYN[g]}-{case}FT", "CARD")
+out["pluralNumerals"] = PLURAL_FORMS
+frames = []
+for lvl, t, case, ns, groups in X.PLURAL_ONLY_FRAMES:
+    where = f"PLURAL_ONLY_FRAMES {t}"
+    level(lvl, where)
+    nouns = []
+    for grp in groups.split():
+        for noun in X.PLURAL_ONLY_GROUPS[grp]:
+            g = noun_gender(noun, where)
+            p = paradigm(noun, g) if g else {}
+            if any(k.startswith(("NFET", "ÞFET", "ÞGFET", "EFET")) for k in p):
+                fail(f"{where}: '{noun}' has singular forms in BÍN"); continue
+            f = (p.get(case + "FT") or [""])[0]
+            if not f: fail(f"{where}: BÍN has no {case}FT of '{noun}'"); continue
+            check_words(t.replace("___", "").replace("{N}", f), where)
+            nouns.append([noun, g, f])
+    frames.append({"t": t, "case": case, "ns": ns, "lvl": lvl, "nouns": nouns})
+out["pluralFrames"] = frames
+
+# lo_beyging / lo_stig / lo_samr: adjective frames × the helper nouns of
+# adj_classes.py. The adjective is put in by the builder.
+frames = []
+for lvl, t, nm, deg, groups in X.ADJ_FRAMES:
+    where = f"ADJ_FRAMES {t} {nm}"
+    level(lvl, where)
+    seen = set()
+    for grp in groups.split():
+        for noun in X.ADJ_NOUN_GROUPS[grp]:
+            if noun in seen: continue
+            seen.add(noun)
+            g = noun_gender(noun, where)
+            p = paradigm(noun, g) if g else {}
+            f = (p.get(nm) or [""])[0]
+            if not f: fail(f"{where}: BÍN has no {nm} of '{noun}'"); continue
+            # The noun's form must say its number and its definiteness: *hús*
+            # is singular and plural, and the adjective would be both.
+            read = [m for m, ff in p.items() if f in ff]
+            if len({("FT" in m, m.endswith("gr")) for m in read}) > 1: continue
+            t2 = t.replace("{N}", f)
+            if t2.startswith(f): t2 = cap1(t2)
+            check_words(t2.replace("___", ""), where)
+            item = {"t": t2, "n": noun, "g": g, "nm": nm, "deg": deg, "lvl": lvl}
+            if t.index("___") > t.index("{N}"): item["p"] = 1      # predicative
+            frames.append(item)
+out["adjFrames"] = frames
 
 ORD = {}
 def ord_forms(n, case):
@@ -373,9 +605,8 @@ def _std(e):
 _hcache = {}
 def hunt_paradigm(lemma, ofl):
     """{mark: [forms]}, core standard forms only — as `paradigm`, but the
-    person stays in the mark (GM-FH-NT-1P-ET): `paradigm` strips every digit,
-    which is right for the numbered variants (NFET2) and folds *vil* and
-    *vill* into one cell. Only a digit that is not a person is a variant."""
+    person stays in the mark (GM-FH-NT-1P-ET), as in `paradigm`, and a digit
+    that is not a person is a variant (NFET2) wherever it stands."""
     key = (lemma, ofl)
     if key in _hcache: return _hcache[key]
     ids = sorted({e.bin_id for e in _entries(lemma) if e.ofl == ofl})

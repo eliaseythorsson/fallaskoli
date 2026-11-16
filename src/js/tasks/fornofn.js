@@ -12,7 +12,7 @@
 import { EX } from "../../../data/exercises.js";
 import { CASES, GENDERS, readMark } from "../core/marks.js";
 import { wordKey } from "../core/state.js";
-import { wantsHelper, phrase, paradigmWithHelper } from "../core/helpers.js";
+import { wantsHelper, phrase, paradigmWithHelper, helperChoices } from "../core/helpers.js";
 import { settled } from "./frames.js";
 import { built, FX } from "./effects.js";
 import { pairOf, pick, wpick, shuffle, bandFor, levelFor, forced, drilling, forcedCell, wordWeight, sameInEveryCell,
@@ -66,12 +66,15 @@ export function tablePronoun(lex, view, rng) {
     if (sameInEveryCell(w, cells)) continue;
     if (!view.policy.marks(cells.map((c) => c.m))) continue;
     const withHelper = withKyn && wantsHelper(w, num);
-    const lead = withHelper ? phrase(lex, w, `${kyn}-${(num === "ET" ? "NFET" : "NFFT")}`) : null;
+    /* The noun beside it: *maður / kona / barn* or another everyday noun of
+       the gender (core/helpers.js, item 23). */
+    const noun = withHelper ? pick(helperChoices(w, kyn), rng) : null;
+    const lead = withHelper ? phrase(lex, w, `${kyn}-${(num === "ET" ? "NFET" : "NFFT")}`, noun) : null;
     return built({
       type: "table", kind: w.c === "gr" ? "gr" : "fn", skill: "fornofn", w, cells,
       title: `${lead?.text || w.o} · ${withKyn ? GENDERS[kyn.toLowerCase()] + " " : ""}${num === "ET" ? "eintala" : "fleirtala"}`,
       base: 5, word: wordKey(w.o, w.c), lvl: bandFor(view, "fornofn"), paradigm: w.forms,
-      helperRows: withHelper ? paradigmWithHelper(lex, w, kyn, num) : null,
+      helperRows: withHelper ? paradigmWithHelper(lex, w, kyn, num, noun) : null,
       helperLemma: lead?.helperLemma || null,
     });
   }
@@ -80,14 +83,57 @@ export function tablePronoun(lex, view, rng) {
 
 /* ================= In a sentence (v6.11) ================================= */
 
+/* The personal pronouns a pupil writes, as the cue shows them: *ég* … in
+   the singular, *við*, *þið*, *þeir*, *þær*, *þau* in the plural (BÍN files
+   the plural under the singular). */
+const PRONOUN_CUES = ["ég", "þú", "hann", "hún", "það"].flatMap((l) => [[l, "ET"], [l, "FT"]]);
+
+/* fn_eyda's items: the 32 hand-written sentences of PRONOUN_GAP, and the
+   frames of PRONOUN_VERBS and PRONOUN_PREPS (exercises.py, v6.13, critique
+   item 23), each said by twelve subjects, with every personal pronoun but
+   the subject's own person in the blank: not *ég* (*mig*, *okkur*) after
+   *ég* or *við*, not *hann* after *hann*, *þau* after *þau* — that would be
+   *sig* — and no *það* in the singular where only a person reads naturally
+   (`who`). The case is government.py's, read by build_exercises.py. Level:
+   PRONOUN_GAP's rule — the frame's length, +1 for a plural pronoun, +1 for
+   the genitive. Once per data file. */
+let PRONOUN_ITEMS = null;
+export function pronounItems() {
+  if (PRONOUN_ITEMS) return PRONOUN_ITEMS;
+  const out = [...EX.pronounGap];
+  for (const f of EX.pronounFrames || []) {
+    for (const [t, person, num, subject] of f.s) {
+      for (const [l, n] of PRONOUN_CUES) {
+        if (person === 1 && l === "ég") continue;
+        if (subject === l && num === n) continue;
+        if (f.who === "p" && l === "það" && n === "ET") continue;
+        const para = EX.para[`${l}|pfn`] || {};
+        const m = f.case + n;
+        if (!para[m] || !para["NF" + n]) continue;
+        out.push({ t, l, c: "pfn", m, a: para[m], cue: para["NF" + n][0], why: f.why,
+          lvl: Math.min(5, f.lvl + (n === "FT" ? 1 : 0) + (f.case === "EF" ? 1 : 0)), framed: true });
+      }
+    }
+  }
+  return (PRONOUN_ITEMS = out);
+}
+/* A frame carries ten questions, one per pronoun: the key says which. */
+const gapKey = (y) => (y.framed ? `${y.t}|${y.l}|${y.m}` : y.t);
+
 /** "Ég gaf ___ (hún) bókina." → henni */
 export function fnGap(lex, view, rng) {
   const P = view.policy;
-  const items = EX.pronounGap.filter((x) => P.mark(x.m));
+  /* A review (tasks/review.js) asks for its cell ("fn:ÞGFET"), in another
+     sentence than the one missed if it can. */
+  const fc = forcedCell(view), avoid = view.force && view.force.avoid;
+  const marks = new Map();          // ten marks among thousands of items: ask the policy once each
+  const markOk = (m) => { if (!marks.has(m)) marks.set(m, P.mark(m)); return marks.get(m); };
+  let items = pronounItems().filter((x) => markOk(x.m) && (!fc || fc === "fn:" + x.m));
+  if (avoid && items.some((x) => x.t !== avoid)) items = items.filter((x) => x.t !== avoid);
   if (!items.length) return null;
   /* Near the pupil's band by the item's level (exercises.py): the singular
      after a verb first, the plural and the genitive later. */
-  const x = pick(itemsForBand(view, "fornofn", items, (y) => y.t), rng);
+  const x = pick(fc ? items : itemsForBand(view, "fornofn", items, gapKey), rng);
   const { s, i } = textSentence(x.t);
   return built({
     type: "gap", skill: "fornofn", s, i, cue: x.cue, answers: x.a, m: x.m,
@@ -97,7 +143,7 @@ export function fnGap(lex, view, rng) {
     why: x.why.replace(/^([^:]+):/, "*$1*:"),
     base: 10, lvl: levelFor(P, x.lvl), cell: "fn:" + x.m,
     word: lexWord(lex, x.l, x.c), tags: [], cap: i === 0,
-  }, [FX.exSeen(x.t)]);
+  }, [FX.exSeen(gapKey(x))]);
 }
 
 /* Replace the noun with a pronoun: generated from the sentence bank. A noun
@@ -173,15 +219,30 @@ const reflexPairs = () => {
     by.get(x.t)[x.reflexive ? "same" : "other"] = x;
   }
   /* A pair is as hard as its harder reading (item 13: chosen by band). */
-  return (REFLEX_PAIRS = [...by.values()].filter((p) => p.same && p.other)
-    .map((p) => ({ ...p, lvl: Math.max(p.same.lvl, p.other.lvl) })));
+  const hand = [...by.values()].filter((p) => p.same && p.other)
+    .map((p) => ({ ...p, lvl: Math.max(p.same.lvl, p.other.lvl) }));
+  /* v6.13 (critique item 23): and the pairs made from frames
+     (exercises.py REFLEX_OBJECT, REFLEX_POSSESSIVE), both readings and both
+     lines out of BÍN. */
+  const made = (EX.reflexivePairs || []).map((x) => ({
+    same: { t: x.t, gloss: x.gs, a: x.r, w: x.nr, reflexive: true, lvl: x.lvl },
+    other: { t: x.t, gloss: x.go, a: x.nr, w: x.r, reflexive: false, lvl: x.lvl },
+    lvl: x.lvl,
+  }));
+  return (REFLEX_PAIRS = [...hand, ...made]);
 };
+const pairKey = (y) => y.same.t + y.same.gloss + y.other.gloss;
 
 /** sér / honum, sína / hans — the line under the sentence decides. Both
     readings of the sentence are asked on one card; right only when both are. */
 export function fnReflex(lex, view, rng) {
   const P = view.policy;
-  const pr = pick(itemsForBand(view, "fornofn", reflexPairs(), (y) => y.same.t + y.same.gloss + y.other.gloss), rng);
+  /* A review asks for "fn:afturbeyging", in another sentence if it can. */
+  const fc = forcedCell(view), avoid = view.force && view.force.avoid;
+  if (fc && fc !== "fn:afturbeyging") return null;
+  let pairs = reflexPairs();
+  if (avoid && pairs.some((y) => y.same.t !== avoid)) pairs = pairs.filter((y) => y.same.t !== avoid);
+  const pr = pick(itemsForBand(view, "fornofn", pairs, pairKey), rng);
   const half = (x) => {
     const { s, i } = textSentence(x.t);
     return {
@@ -200,7 +261,7 @@ export function fnReflex(lex, view, rng) {
     options: A.options, answer: A.answer, why: A.why,
     base: 11, lvl: levelFor(P, pr.lvl), cell: "fn:afturbeyging", word: null,
     tags: ["reflex"], miss: A.miss,
-  }, B), [FX.exSeen(pr.same.t + pr.same.gloss + pr.other.gloss)]);
+  }, B), [FX.exSeen(pairKey(pr))]);
 }
 
 /* ================= Hvers konar fornafn? (item 27) ======================== */

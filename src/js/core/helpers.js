@@ -7,6 +7,30 @@
 
 export const HELPER_NOUNS = { kk: "maður", kvk: "kona", hk: "barn" };
 
+/* v6.13 (critique item 23): the pronoun table at þyngd 1 was the same 32
+   tables over and over — eight pronouns, three genders, always *maður /
+   kona / barn*. These everyday nouns, a person, an animal and things, stand
+   beside every pronoun that takes a noun (*þessi hundur, enginn bíll, allar
+   bækur, hinn strákurinn*) as naturally as *maður* does. The possessives
+   keep *maður / kona / barn* (`helperChoices`). Every one must be in the
+   lexicon with all sixteen forms (tests/pools23.test.js). */
+export const MORE_HELPER_NOUNS = {
+  kk: ["maður", "strákur", "vinur", "hundur", "köttur", "hestur", "fugl", "bíll", "bolti", "stóll",
+    "sími", "dagur"],
+  kvk: ["kona", "stelpa", "vinkona", "kisa", "kýr", "mús", "bók", "taska", "peysa", "mynd", "borg",
+    "saga"],
+  hk: ["barn", "dýr", "lamb", "hús", "hjól", "borð", "epli", "bréf", "lag", "skip", "tré", "land"],
+};
+/* *minn maður*, *þinn maður*: the possessive before its noun is a style of
+   its own; with any other noun it reads as poetry. */
+const OWN_HELPER_ONLY = new Set(["minn", "þinn", "sinn"]);
+
+/** The nouns that may stand beside this pronoun in its table, in this gender. */
+export function helperChoices(entry, kyn) {
+  const g = String(kyn).toLowerCase();
+  return entry && OWN_HELPER_ONLY.has(entry.o) ? [HELPER_NOUNS[g]] : MORE_HELPER_NOUNS[g] || [HELPER_NOUNS[g]];
+}
+
 /* Pronouns that never take a noun with them. Personal pronouns (pfn) are
    excluded by their word class alone; these are the ones filed under `fn` that
    behave like nouns themselves — they stand *instead of* the noun, not with
@@ -53,8 +77,8 @@ export function wantsHelper(entry, num = null) {
  * `null` if the word or the mark does not exist — no help is given rather than
  * a guess made.
  */
-export function helperForm(lex, kyn, mark) {
-  const lemma = HELPER_NOUNS[String(kyn).toLowerCase()];
+export function helperForm(lex, kyn, mark, noun = null) {
+  const lemma = noun || HELPER_NOUNS[String(kyn).toLowerCase()];
   if (!lemma || !mark) return null;
   const w = lex.lookup(lemma, String(kyn).toLowerCase());
   if (!w) return null;
@@ -111,12 +135,12 @@ export function adjectiveHelperForm(lex, adj, kyn, mark) {
  * `NFET`. The agreement is not computed here from a rule — it is read out of
  * the mark itself, which is the same mark the question is built on.
  */
-export function phrase(lex, entry, pmark) {
+export function phrase(lex, entry, pmark, noun = null) {
   const pf = entry.forms?.[pmark];
   if (!pf || !pf[0]) return null;
   const m = /^(KK|KVK|HK)-(NF|ÞF|ÞGF|EF)(ET|FT)$/.exec(pmark);
   if (!m || !wantsHelper(entry, m[3])) return { text: pf[0], pronoun: pf[0], helper: null };
-  const h = helperForm(lex, m[1], m[2] + m[3] + (DEFINITE_HELPER.has(entry.o) ? "gr" : ""));
+  const h = helperForm(lex, m[1], m[2] + m[3] + (DEFINITE_HELPER.has(entry.o) ? "gr" : ""), noun);
   if (!h) return { text: pf[0], pronoun: pf[0], helper: null };
   return { text: `${pf[0]} ${h.form}`, pronoun: pf[0], helper: h.form, helperLemma: h.lemma };
 }
@@ -126,11 +150,11 @@ export function phrase(lex, entry, pmark) {
  * answered: the question asks about gender and number without showing how the
  * helper changes; the change is shown in the explanation.
  */
-export function paradigmWithHelper(lex, entry, kyn, num) {
+export function paradigmWithHelper(lex, entry, kyn, num, noun = null) {
   const out = [];
   for (const c of ["NF", "ÞF", "ÞGF", "EF"]) {
     const pmark = `${kyn}-${c}${num}`;
-    const p = phrase(lex, entry, pmark);
+    const p = phrase(lex, entry, pmark, noun);
     if (p) out.push({ mark: pmark, fall: c, ...p });
   }
   return out;

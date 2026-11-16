@@ -109,7 +109,12 @@ definitions.py        a handful of hand-written definitions; the rest are ÍNO
 exercises.py          hand-written items for the v6.11 question types (pronouns,
                       numerals, dates, government, synonyms …): sentences and
                       lemma + class + BÍN mark only; build_exercises.py
-                      resolves every form in BÍN and checks every word
+                      resolves every form in BÍN and checks every word.
+                      Also frames that build_exercises.py fills in from BÍN
+                      (v6.13): pronouns after the verbs and prepositions of
+                      government.py, reflexive pairs, numerals × nouns by
+                      meaning, adjective frames around the helper nouns of
+                      adj_classes.py
 vocab_filter.py       lemma errors and words for acts of violence (always
                       removed), the coarse-word block list (on by default,
                       the administrator can switch it off), and the words
