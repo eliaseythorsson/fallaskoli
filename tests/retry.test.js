@@ -89,7 +89,7 @@ function play(pupil, task, first, second = undefined) {
  * 1. Which types, and never in a duel
  * ====================================================================== */
 
-const TYPED = new Set(["fill", "verb", "verbslot", "gap", "umritun"]);
+const TYPED = new Set(["fill", "verb", "verbslot", "gap", "umritun", "smidja"]);
 
 /** A wrong response for each type, enough to be judged wrong. */
 function wrongFor(t) {
@@ -153,7 +153,9 @@ test("a second try is offered for written answers only, decided type by type", (
   for (const k of ["fill", "verb", "verbslot", "gap", "umritun", "slots", "slots+opts", "kenni", "choice",
                    "govern", "table", "villur", "smidja"])
     assert.ok(seen.has(k), `no ${k} task in the bank`);
-  assert.deepEqual(Object.keys(RETRY_TYPES).sort(), ["fill", "gap", "slots", "umritun", "verb", "verbslot"]);
+  assert.deepEqual(Object.keys(RETRY_TYPES).sort(), ["fill", "gap", "slots", "smidja", "umritun", "verb", "verbslot"]);
+  /* Villuveiðar and the table stay without one, on purpose (core/answer.js §7). */
+  assert.ok(!("villur" in RETRY_TYPES) && !("table" in RETRY_TYPES));
 });
 
 test("a right answer, a pending one and an answer already retried are not offered a second try", () => {
@@ -324,6 +326,33 @@ test("every written type: a right second try is half, a wrong one nothing; no re
     n++;
   }
   assert.ok(n >= 10, `only ${n} written tasks were tried`);
+});
+
+test("Setningasmiðja (review S7): one card wrong, then right — the card's miss stays on record, the retry is half XP and records nothing", () => {
+  let n = 0;
+  for (const t of BANK.filter((x) => x.type === "smidja")) {
+    const words = t.answers[0].split(" ");
+    const k = t.cards.findIndex((c) => !c.fixed && c.answers[0] !== c.text && words.includes(c.answers[0]));
+    if (k < 0) continue;
+    const c = t.cards[k];
+    const first = words.map((w) => (w === c.answers[0] ? c.text : w)).join(" ");      // the card's dictionary form
+    const p = freshPupil();
+    const j1 = judge(t, { text: first }, p);
+    if (j1.ok !== false) continue;
+    assert.equal(retryAllowed(t, j1), true, t.typeId);
+    assert.ok(!j1.detail.g.per[k].ok, "the card that was not inflected is the one marked");
+    settle(p.S, p.sess, t, j1);
+    const after1 = JSON.stringify({ cells: p.S.cells, words: p.S.words, total: p.S.totalAnswers, review: p.S.review });
+    assert.equal(p.S.cells[c.m].w >= 1, true, "the miss is recorded on the card's cell");
+    const j2 = judgeRetry(t, { text: t.answers[0] }, { text: first }, p);
+    assert.equal(j2.ok, true);
+    assert.equal(j2.xp, Math.max(1, Math.round(judge(t, { text: t.answers[0] }, p).xp * RETRY_XP)));
+    settle(p.S, p.sess, t, j2);
+    assert.equal(JSON.stringify({ cells: p.S.cells, words: p.S.words, total: p.S.totalAnswers, review: p.S.review }), after1,
+      "the second try wrote a record");
+    n++;
+  }
+  assert.ok(n > 0, "no Setningasmiðja in the bank had a card to get wrong");
 });
 
 /* ========================================================================

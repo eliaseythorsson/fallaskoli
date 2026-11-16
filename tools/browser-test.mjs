@@ -912,6 +912,66 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
 }
 
+/* ---------- 2e'. Setningasmiðja's second try (review of v6.13, S7) -------
+ *
+ * One card's word left in its dictionary form: the retry marks that card red
+ * and no other, says how many were right, keeps the box open with the focus
+ * in it — and gives neither the model sentence nor the right form away.
+ * "Sýna svarið" then shows them. */
+{
+  await dismissModals();
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    A.openView("practice");
+    A.startRun("malbeiting", 5, null, { types: ["smidja"], skills: ["malbeiting"], label: "Setningasmiðja" });
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  const plan = await page.evaluate(() => {
+    const t = window.FALLASKOLI.cur;
+    if (!t || t.type !== "smidja") return null;
+    const words = t.answers[0].split(" ");
+    const k = t.cards.findIndex((c) => !c.fixed && c.answers[0] !== c.text && words.includes(c.answers[0]));
+    if (k < 0) return null;
+    const c = t.cards[k];
+    return { k, form: c.answers[0], model: t.answers[0],
+      first: words.map((w) => (w === c.answers[0] ? c.text : w)).join(" ") };
+  });
+  if (!plan) problems.push("could not draw a Setningasmiðja with a card to get wrong — its second try is untested");
+  else {
+    await page.type("#ans", plan.first);
+    await tap("#check");
+    await page.waitForSelector("#verdict .verdict.retry", { timeout: 4000 });
+    const got = await page.evaluate((plan) => {
+      const v = document.querySelector("#verdict .verdict");
+      const cards = [...document.querySelectorAll("#task .wcards .wcard")];
+      const inp = document.getElementById("ans");
+      return { text: v.textContent, red: cards.map((c, k) => c.classList.contains("wrongpick") ? k : -1).filter((k) => k >= 0),
+        green: cards.filter((c) => c.classList.contains("right")).length,
+        open: !inp.disabled, focused: document.activeElement === inp, reveal: !!document.getElementById("reveal"),
+        note: (document.getElementById("retrynote") || {}).textContent || "" };
+    }, plan);
+    ok(got.red.length === 1 && got.red[0] === plan.k && got.green === 0,
+      `the retry should mark card ${plan.k} red and nothing green: red ${got.red}, green ${got.green}`);
+    ok(got.open && got.focused && got.reveal, "the Setningasmiðja retry: box not open and focused, or no Sýna svarið");
+    ok(/rauðu spjöldunum/.test(got.note) && /orðum rétt beygð/.test(got.text), `the retry prompt: "${got.note}"`);
+    ok(!got.text.includes(plan.model) && !got.text.toLowerCase().split(/[^\p{L}]+/u).includes(plan.form.toLowerCase()),
+      "the Setningasmiðja retry gives the answer away");
+    await tap("#reveal");
+    await page.waitForFunction("!document.querySelector('#reveal') && !document.querySelector('#verdict .retry')", { timeout: 4000 });
+    const end = await page.evaluate(() => ({ text: document.querySelector("#verdict .verdict").textContent,
+      locked: document.getElementById("ans").disabled }));
+    ok(end.text.includes(plan.model) && end.locked, "Sýna svarið did not show the model sentence and close the box");
+  }
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    A.openView("practice");
+    A.startRun("blandad", 100000);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+}
+
 /* ---------- 2d. The one celebration, at the summary (item 61) -----------
  *
  * Badge windows used to open between questions. They now wait: the hundred

@@ -267,6 +267,8 @@ const SAME_AGAIN = "Þetta er sama svarið og áðan. Breyttu því — eða sme
  *   why       the rule to show (default `t.why`); the answer is taken out
  *   label     its label (default "af hverju")
  *   note      HTML of a note that names what was off and not the answer
+ *   prompt    the first line of the prompt, when "Lestu regluna …" does not
+ *             fit (Setningasmiðja: there is no rule, the cards are marked)
  *   inputs    the boxes that stay open; the first takes the focus
  *   lock      buttons to disable while the retry is open (the hint)
  *   onMiss    run while the miss is drawn, before `app.finish`
@@ -278,7 +280,7 @@ function offerRetry(app, t, j, o) {
   t.retrying = { first: o.response };
   const why = hideAnswer(o.why === undefined ? t.why : o.why, t);
   /* "Lestu regluna" only when there is one to read. */
-  const read = why || o.note ? "Lestu regluna og skrifaðu svarið aftur." : "Skrifaðu svarið aftur.";
+  const read = o.prompt || (why || o.note ? "Lestu regluna og skrifaðu svarið aftur." : "Skrifaðu svarið aftur.");
   conclude(app, t, j, () => {
     if (o.onMiss) o.onMiss();
     $("verdict").innerHTML = `<div class="verdict no retry">
@@ -1515,8 +1517,29 @@ function submitWorkshop(app) {
   const t = app.cur;
   const val = $("ans").value;
   if (!val.trim() || t.done) return;
-  const j = judge(t, { text: val }, app);
+  const response = { text: val };
+  const j = judgeTry(app, t, response);
+  if (j.verdict === "same") return say(t, SAME_AGAIN);
   if (j.pending) return;
+  const draw = () => drawWorkshop(app, t, j);
+  if (t.retrying) return endRetry(app, t, j, draw);
+  /* Item 42, extended (review of v6.13, S7): the cards whose word is not
+     right go red, and that is all — not the form, not the case. The pupil
+     then writes those forms from nothing, as in a cloze's second try. */
+  const { g, right, total } = j.detail;
+  if (offerRetry(app, t, j, {
+    response, why: "",
+    prompt: "Lagaðu orðin á rauðu spjöldunum og skrifaðu setninguna aftur.",
+    note: `<div class="why"><b>athugið</b>${right} af ${total} orðum rétt beygð.${g.extra.length
+      ? ` Þessi orð áttu ekki heima í setningunni: ${g.extra.map(esc).join(", ")}` : ""}</div>`,
+    inputs: [$("ans")], reveal: draw,
+    onMiss: () => { document.querySelector("#task .wcards").innerHTML = t.cards.map((c, k) =>
+      cardHTML(c, !c.fixed && !g.per[k].ok ? "wrongpick" : "")).join('<span class="wdash">–</span>'); },
+  })) return;
+  conclude(app, t, j, draw);
+}
+
+function drawWorkshop(app, t, j) {
   t.done = true;
   const { g, right, total } = j.detail;
   const ok = j.ok, xp = j.xp;
@@ -1529,17 +1552,18 @@ function submitWorkshop(app) {
        ${g.per[k].misformed ? `<span class="faint">(þú skrifaðir <span class="forms">${esc(g.per[k].typed)}</span> — rangt beygt)</span>` : ""}
        <span class="faint">${fmt(describeMark(c.m, c.e && ["kk", "kvk", "hk"].includes(c.e.c) ? "nafnorð" : null))}</span></li>` : "").join("");
   const slips = g.per.filter((p) => p.ok && p.slip);
-  conclude(app, t, j, () => {
-    $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}">${xp ? `<span class="xpop">+${xp} XP</span>` : ""}
-    <h3>${ok ? cheer(CHEERS_OK) : `${right} af ${total} orðum rétt beygð`}</h3>
-    <p>${ok && g.inOrder ? "" : "Rétt: "}<b>${esc(model)}</b></p>
+  const head = ok && j.retry ? retryRightHTML(xp)
+    : `${xp ? `<span class="xpop">+${xp} XP</span>` : ""}
+    <h3>${ok ? cheer(CHEERS_OK) : `${right} af ${total} orðum rétt beygð`}</h3>`;
+  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}">${head}
+    <p>${ok && g.inOrder && !j.retry ? "" : "Rétt: "}<b>${esc(model)}</b></p>
     ${ok && !g.inOrder ? `<p class="streakline">Öll orðin eru rétt beygð. Röðin hér að ofan er sú sem spjöldin sýndu.</p>` : ""}
     ${misses ? `<ul class="huntlist">${misses}</ul>` : ""}
     ${slips.length ? `<p class="streakline">Gáðu að broddunum: ${slips.map((p) => `<span class="forms">${esc(p.typed)}</span> → <span class="forms">${esc(p.form)}</span>`).join(", ")}</p>` : ""}
     ${g.extra.length ? `<p class="streakline">Þessi orð áttu ekki heima í setningunni: ${g.extra.map(esc).join(", ")}</p>` : ""}
     ${whyBox(structureNote(t.s), "bygging")}
+    ${ok && j.retry ? RETRY_STILL_MISS : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
-  });
 }
 
 /* ---------- Umritun ------------------------------------------------------- */

@@ -1164,15 +1164,30 @@ export function judgeBonus(task, text, pupil = null) {
  *   slots without options       yes (the boðháttur): forms written in boxes.
  *   umritun                     yes: a sentence rewritten; the note on what
  *                               went wrong (`transformNote`) is the hint.
+ *   smidja                      yes (review of v6.13, S7): a sentence built
+ *                               from dictionary forms. The retry marks the
+ *                               cards whose word is wrong and says how many
+ *                               were right — not the form, not the case — so
+ *                               each wrong word is then written from nothing,
+ *                               as in a cloze's second try (where it is just
+ *                               as plain WHICH word was wrong: there is one).
  *   slots with options, kenni   no: half the answer is a pick between two
  *                               (sterk / veik). After a miss the other one is
  *                               a certainty, not an answer.
  *   choice, govern, indecl,     no: a pick among two to four. A second try
  *   clause, parse, syntax,      is a near-guess and would teach guessing.
  *   tap, sort
- *   table, smidja, villur       no: the verdict colours every cell, card and
- *                               word, so a second try would be made with the
- *                               wrong ones already pointed out.
+ *   table                       no: up to twelve cells, each a pick among
+ *                               the word's few forms; once the wrong cells
+ *                               are coloured, filling them is a near-guess.
+ *   villur                      no: the card already says how many errors
+ *                               there are, one per sentence, and the task IS
+ *                               finding them. A second try that points at
+ *                               nothing adds nothing; one that points at the
+ *                               sentence still in error leaves a pick among
+ *                               its few words — a guess, which the retry
+ *                               must not teach. The verdict shows each error
+ *                               with its rule instead.
  *   meaning                     no: there is no wrong answer.
  *
  * Never in a duel (`task.duel`, core/duel.js): a duel is one attempt per
@@ -1208,6 +1223,7 @@ export const RETRY_TYPES = {
   verbslot: () => true,
   gap: () => true,
   umritun: () => true,
+  smidja: () => true,
   slots: (t) => !t.options,
 };
 
