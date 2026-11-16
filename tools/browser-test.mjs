@@ -239,6 +239,28 @@ async function answerOneNoNext(correct) {
   try { await answerOne(correct); } finally { stayAfter = false; }
 }
 
+/* v6.13 (items 1, 49): Greindu orðið is answered in turns. The class first,
+   committed with the button; then the rows of the right class, one open at
+   a time, each answered by a tap; then the button again. A wrong answer is
+   a wrong class, with every row after it right. */
+async function answerParse(correct) {
+  await page.evaluate((correct) => {
+    const c = window.FALLASKOLI.cur;
+    const fl = [...document.querySelectorAll('.opts[data-q="fl"] button')];
+    (correct ? fl.find((b) => b.dataset.v === c.rows[0].answer) : fl.find((b) => b.dataset.v !== c.rows[0].answer)).click();
+    document.getElementById("check").click();
+  }, correct);
+  const n = await page.evaluate(() => window.FALLASKOLI.cur.rows.length);
+  for (let k = 1; k < n; k++) {
+    await page.evaluate((k) => {
+      const r = window.FALLASKOLI.cur.rows[k];
+      const box = document.querySelector(`.opts[data-q="${r.key}"]`);
+      if (!box) throw new Error("Greining: row " + r.key + " did not open in its turn");
+      [...box.querySelectorAll("button")].find((b) => b.dataset.v === r.answer).click();
+    }, k);
+  }
+  if (await page.evaluate(() => !window.FALLASKOLI.cur.parseDone)) await tap("#check");
+}
 async function answerOne(correct) {
   await dismissModals();
   const t = await page.evaluate(() => {
@@ -278,15 +300,7 @@ async function answerOne(correct) {
     }
     await tap("#check");
   } else if (t.type === "parse") {
-    for (const r of t.rows) {
-      const val = correct ? r.answer : "__engin__";
-      await page.evaluate((key, v) => {
-        const box = document.querySelector(`.opts[data-q="${key}"]`);
-        const btns = [...box.querySelectorAll("button")];
-        (btns.find((b) => b.dataset.v === v) || btns[0]).click();
-      }, r.key, val);
-    }
-    await tap("#check");
+    await answerParse(correct);
   } else if (t.type === "govern" || t.type === "indecl") {
     const want = t.type === "govern" ? t.fall : t.answer;
     await page.evaluate((v, correct) => {
@@ -439,7 +453,14 @@ async function forceNounCloze() {
     const hit = await page.evaluate((lemma) => {
       const app = window.FALLASKOLI;
       app.forcedNoun = app.lex.lookup(lemma, "kk");
-      app.next();
+      /* At the top noun level the cloze draws from the rarer words and never
+         takes *bíll* (0 in 30 at level 6, 18 in 30 at level 2). Where the
+         long session above leaves that level depends on the seed — it moved
+         when Greining began to be answered in turns (v6.13) — so the word
+         is drawn at a moderate level, and the level is put back. */
+      const was = app.sess.diff.nafnord;
+      app.sess.diff.nafnord = Math.min(was, 2);
+      try { app.next(); } finally { app.sess.diff.nafnord = was; }
       const c = app.cur;
       return !!(c && c.type === "fill" && c.n && c.n.o === lemma && !c.extra);
     }, TEST_NOUN);
@@ -779,7 +800,48 @@ if (glossCount > 0) {
  * Three things are asserted, and the third is the one that would be forgotten:
  * the trigger is gone, hovering really does open nothing, and the definition
  * comes BACK once the answer is in.                                        */
-for (const want of ["parse", "indecl"]) {
+/* v6.13 (item 1): Greindu orðið goes further. Even the short text gave the
+   class away ("vera í láréttri stellingu" is a verb), so until the class is
+   answered there is no definition on the page at all — and no feature row,
+   since Mynd, Háttur and Tíð name a verb as surely. Once the class is
+   committed the definition comes back, open. Drawn until a word with a
+   definition comes up, so the last check cannot pass by having nothing to
+   look at. */
+{
+  await dismissModals();
+  await tap(`nav.tabs button[data-view="practice"]`);
+  let seen = 0, before = null, after = null;
+  for (let draw = 0; draw < 40 && !after; draw++) {
+    const found = await page.evaluate(() => {
+      for (let i = 0; i < 400; i++) { window.FALLASKOLI.next(); if (window.FALLASKOLI.cur.type === "parse") return true; }
+      return false;
+    });
+    if (!found) break;
+    seen++;
+    before = await page.evaluate(() => ({
+      def: !!document.querySelector("#task .defline, #task #defbox"),
+      rows: [...document.querySelectorAll("#task .opts")].map((b) => b.dataset.q),
+    }));
+    ok(!before.def, "parse: a definition is on the page before the class is answered");
+    ok(before.rows.length === 1 && before.rows[0] === "fl",
+      `parse: rows on the page before the class is answered: ${before.rows.join(", ")}`);
+    await page.evaluate(() => {
+      const c = window.FALLASKOLI.cur;
+      [...document.querySelectorAll('.opts[data-q="fl"] button')].find((b) => b.dataset.v === c.rows[0].answer).click();
+      document.getElementById("check").click();
+    });
+    after = await page.evaluate(() => {
+      const b = document.querySelector("#task .defline");
+      return b ? { open: !!b.querySelector(".dfn"), locked: !!b.querySelector(".dfnlocked") } : null;
+    });
+  }
+  ok(seen > 0, "parse: no Greindu orðið question could be drawn");
+  ok(after !== null, "parse: no word in 40 draws had a definition after its class — nothing was proved");
+  if (after) ok(after.open && !after.locked, "parse: the definition did not come back open after the class");
+  await dismissModals();
+}
+
+for (const want of ["indecl"]) {
   await dismissModals();
   await tap(`nav.tabs button[data-view="practice"]`);
   /* Draw this type until one of them actually has a definition box. Not every
@@ -847,19 +909,12 @@ for (const want of ["parse", "indecl"]) {
     }, want);
   }
   if (!again) continue;
-  await page.evaluate((w) => {
+  await page.evaluate(() => {
     const c = window.FALLASKOLI.cur;
-    if (w === "parse") {
-      c.rows.forEach((r) => {
-        const b = document.querySelector(`.opts[data-q="${r.key}"]`);
-        [...b.querySelectorAll("button")].find((x) => x.dataset.v === r.answer)?.click();
-      });
-    } else {
-      [...document.querySelectorAll(".opts button")]
-        .find((x) => x.dataset.v === c.answer)?.click();
-    }
+    [...document.querySelectorAll(".opts button")]
+      .find((x) => x.dataset.v === c.answer)?.click();
     document.getElementById("check").click();
-  }, want);
+  });
   await new Promise((r) => setTimeout(r, 250));
   const afterAnswer = await page.evaluate(() => {
     const b = document.querySelector("#task .defline");
@@ -1716,6 +1771,107 @@ await page.setViewport({ width: 1100, height: 900 });
       `${vp.nm}: back on Æfa mid-session, the slim line did not return`);
     await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
   }
+  await page.setViewport({ width: 1100, height: 900 });
+}
+
+/* ---------- v6.13: Greindu orðið on a phone, in turns (items 1, 49) -------
+ * The analysis question used to show every row at once — and only the rows
+ * of the right class, so a verb arrived with Mynd, Háttur, Tíð and Persóna
+ * above the class chips — and on a 390 × 844 phone the eleven class chips
+ * and up to six rows took more than two screens, with Athuga at the bottom.
+ * Now: before the class is answered, no feature row and no definition is in
+ * the page; after it, one row is open at a time, and that row and the button
+ * are on the screen at every step. Three questions: a right class, a wrong
+ * class, and a verb with four rows or more. Screenshots in /tmp. */
+{
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await dismissModals();
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+    A.S.enabled.greining = true;
+    A.reloadPolicy();
+    A.openView("practice");
+    A.startRun("blandad", 10);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  const where = () => page.evaluate(() => {
+    const box = (e) => { if (!e || !e.getClientRects().length) return null;
+      const r = e.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; };
+    const row = document.querySelector("#parserows .qopen");
+    return {
+      vh: window.innerHeight, row: box(row), key: row ? row.dataset.row : null,
+      go: box(document.getElementById("check")),
+      opts: [...document.querySelectorAll("#task .opts")].map((b) => b.dataset.q),
+      def: !!document.querySelector("#task .defline, #task #defbox"),
+    };
+  });
+  const seen = (b, vh) => !!b && b.top >= 0 && b.bottom <= vh;
+  for (const kind of ["right", "wrong", "verb"]) {
+    const got = await page.evaluate((kind) => {
+      const A = window.FALLASKOLI;
+      for (let i = 0; i < 3000; i++) {
+        A.next();
+        const c = A.cur;
+        if (!c || c.type !== "parse") continue;
+        if (kind === "verb" ? c.t.c === "sagnorð" && c.rows.length >= 4 : c.rows.length >= 3)
+          return { cls: c.rows[0].answer, rows: c.rows.map((r) => ({ key: r.key, answer: r.answer })) };
+      }
+      return null;
+    }, kind);
+    ok(!!got, `phone / Greining (${kind}): no such question could be drawn`);
+    if (!got) continue;
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await new Promise((r) => setTimeout(r, 60));
+    let m = await where();
+    ok(!m.def, `phone / Greining (${kind}): a definition is on the page before the class`);
+    ok(m.opts.length === 1 && m.opts[0] === "fl",
+      `phone / Greining (${kind}): rows on the page before the class: ${m.opts.join(", ")}`);
+    ok(seen(m.row, m.vh) && seen(m.go, m.vh),
+      `phone / Greining (${kind}): the class row or its button is off the screen: ${JSON.stringify(m)}`);
+    await page.screenshot({ path: `/tmp/fallaskoli-parse-390-${kind}-0.png` }).catch(() => {});
+    const said = kind === "wrong"
+      ? await page.evaluate((cls) => [...document.querySelectorAll('.opts[data-q="fl"] button')]
+          .map((b) => b.dataset.v).find((v) => v !== cls), got.cls)
+      : got.cls;
+    await tap(`.opts[data-q="fl"] button[data-v="${said}"]`);
+    m = await where();
+    ok(m.opts.length === 1, `phone / Greining (${kind}): a tap on a class chip opened rows without the button`);
+    await tap("#check");
+    for (let k = 1; k < got.rows.length; k++) {
+      m = await where();
+      const r = got.rows[k];
+      ok(m.key === r.key, `phone / Greining (${kind}): row ${k} should be ${r.key}, is ${m.key}`);
+      ok(m.opts.length === 1, `phone / Greining (${kind}): ${m.opts.length} rows open at once: ${m.opts.join(", ")}`);
+      ok(seen(m.row, m.vh), `phone / Greining (${kind}): the open row ${r.key} is off the screen: ${JSON.stringify(m.row)}`);
+      ok(seen(m.go, m.vh), `phone / Greining (${kind}): the button is off the screen at row ${r.key}: ${JSON.stringify(m.go)}`);
+      if (k === 1) {
+        const mark = await page.evaluate(() => ({
+          wrong: !!document.querySelector("#parserows .qcls .qpick.wrongpick"),
+          right: document.querySelector("#parserows .qcls .qpick.right")?.textContent.trim() || null,
+        }));
+        ok(mark.right === got.cls, `phone / Greining (${kind}): the right class is not shown after the class step`);
+        ok(mark.wrong === (kind === "wrong"), `phone / Greining (${kind}): the class mark is wrong: ${JSON.stringify(mark)}`);
+        await page.screenshot({ path: `/tmp/fallaskoli-parse-390-${kind}-1.png` }).catch(() => {});
+      }
+      if (k === got.rows.length - 1)
+        await page.screenshot({ path: `/tmp/fallaskoli-parse-390-${kind}-last.png` }).catch(() => {});
+      await tap(`.opts[data-q="${r.key}"] button[data-v="${r.answer}"]`);
+    }
+    m = await where();
+    ok(m.opts.length === 0 && seen(m.go, m.vh),
+      `phone / Greining (${kind}): after the last row the button is not on the screen: ${JSON.stringify(m)}`);
+    await tap("#check");
+    const v = await page.evaluate(() => ({
+      verdict: !!document.querySelector("#verdict .verdict.ok, #verdict .verdict.no"),
+      ok: !!document.querySelector("#verdict .verdict.ok"),
+    }));
+    ok(v.verdict, `phone / Greining (${kind}): no verdict after the last button`);
+    ok(v.ok === (kind !== "wrong"), `phone / Greining (${kind}): the verdict is ${v.ok ? "right" : "wrong"}`);
+    await page.screenshot({ path: `/tmp/fallaskoli-parse-390-${kind}-verdict.png`, fullPage: true }).catch(() => {});
+    await dismissModals();
+  }
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
   await page.setViewport({ width: 1100, height: 900 });
 }
 

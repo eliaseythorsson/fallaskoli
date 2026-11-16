@@ -35,7 +35,8 @@
  *   table                       { cells: [text, …] }   one per ASKED cell, in
  *                               the order of `askedCells(task)` — or an
  *                               object keyed by BÍN mark
- *   parse                       { picks: { fl, kyn, tala, … } }
+ *   parse                       { picks: { fl, kyn, tala, … } } — the class
+ *                               (`fl`) first and alone; see JUDGES.parse
  *   sort                        { picks: { 0: bucket, 1: bucket, … } }
  *   syntax                      { picked: tokenIndex }
  *   govern, indecl, clause,
@@ -517,10 +518,41 @@ JUDGES.gap = (t, r, h) => writtenForm(t, r, h, { gap: true, flags: () => ({}) })
 
 /* ---- Greining ------------------------------------------------------------ */
 
+/* v6.13 (items 1, 49): the word class is asked FIRST and alone. Until then
+ * the pupil sees no other row — Mynd, Háttur, Tíð and Persóna above the
+ * class chips said "sagnorð" before it was asked — and no definition.
+ *
+ * The answer therefore arrives in two steps, both through `judge`:
+ *
+ *   { picks: {} }                    pending, step "class": nothing chosen
+ *   { picks: { fl } }                pending, step "rows": the class is
+ *                                    committed. `detail.cls` says whether it
+ *                                    was right and what it is, `detail.ask`
+ *                                    the rows to show next
+ *   { picks: { fl, kyn, … } }        the answer, judged as before
+ *
+ * The rows asked after the class are ALWAYS those of the right class. Rows
+ * "for the class the pupil chose" cannot be asked when the choice is wrong —
+ * a verb has no case to be right about — so a wrong class is marked, the
+ * right one is named, and the pupil analyses the word as what it is.
+ *
+ * What a wrong class costs. Every row earns its share of XP, as before; the
+ * class row earns none when it is wrong, and the question as a whole counts
+ * as wrong (the record, the run, the difficulty, the badge). The feature
+ * rows after a wrong class earn their full share, and that is deliberate:
+ * from the moment the class is committed, the pupil knows it either way —
+ * on the right path because they found it, on the wrong one because they
+ * were told — so the rows are exactly as hard on both paths and are worth
+ * the same. Nothing can be gained by missing the class on purpose: it costs
+ * the class row, the run and the "right" answer, and shows nothing the
+ * right path does not. */
 JUDGES.parse = (t, response, hist) => {
   const rows = parseRows(t.a, t.t);
   const picks = response.picks || {};
-  if (rows.some((r) => !picks[r.key])) return pending("incomplete", { rows });
+  if (!picks.fl) return pending("incomplete", { step: "class", rows });
+  const cls = { picked: picks.fl, answer: rows[0].answer, ok: picks.fl === rows[0].answer };
+  const ask = rows.slice(1);
+  if (ask.some((r) => !picks[r.key])) return pending("incomplete", { step: "rows", rows, cls, ask });
   const right = rows.filter((r) => picks[r.key] === r.answer).length;
   const perfect = right === rows.length;
   /* XP for every row that is right; the question counts as right only when
@@ -539,7 +571,7 @@ JUDGES.parse = (t, response, hist) => {
     ],
     resp: { kind: "rows", rows: rows.map((r) => ({ key: r.key, answer: r.answer, picked: picks[r.key] })) },
     finish: { perfectParse: perfect },
-    detail: { rows, right, total: rows.length },
+    detail: { rows, right, total: rows.length, cls },
   });
 };
 

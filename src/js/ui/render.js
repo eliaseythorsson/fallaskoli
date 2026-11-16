@@ -28,9 +28,12 @@ export const RENDER = {};
 
 /* A question whose answer includes the word class may not offer the word's
  * dictionary entry until it has been answered: the entry names the class in
- * its heading and usually again in its text. The shortened definition stays
- * on the page as context; the hover window, the class and the lookup links
- * go, and come back with the verdict (`unlockDefBox`). */
+ * its heading and usually again in its text. In "Í hvaða orðflokki" the
+ * shortened definition stays on the page as context; the hover window, the
+ * class and the lookup links go, and come back with the verdict
+ * (`unlockDefBox`). v6.13: "Greindu orðið" shows no definition at all until
+ * the class is answered — even the short text gave it away ("vera í
+ * láréttri stellingu" is a verb) — see RENDER.parse. */
 const CLASS_IS_THE_ANSWER = new Set(["parse", "indecl"]);
 export const definitionLocked = (task) =>
   !!task && CLASS_IS_THE_ANSWER.has(task.type);
@@ -412,13 +415,52 @@ function submitVerbSlot(app) {
 /* ================= 3. Greining ========================================= */
 
 /* Which rows a word is asked about, with their labels, options and answers,
-   is decided in core/answer.js (`parseRows`) — the judge needs the same rows. */
+   is decided in core/answer.js (`parseRows`) — the judge needs the same rows.
+
+   v6.13 (items 1 and 49). The question used to show every row at once, and
+   only the rows that fit the right answer: a verb arrived with Mynd, Háttur,
+   Tíð and Persóna under the class chips, and the definition beside it read
+   "vera í láréttri stellingu". On a 390 px phone the eleven class chips and
+   up to six rows also took more than two screens, with Athuga at the bottom.
+
+   Now the question is asked in turns:
+
+   1. Orðflokkur, alone. No other row and no definition is on the page —
+      not hidden, not there — so neither the eye nor the page source can
+      read the class off them.
+   2. The class is committed with its own button and judged on the spot
+      (`judge` → step "rows"): a right class turns green, a wrong one is
+      struck through beside the right one. The definition comes back, open,
+      because the class is no secret any more.
+   3. The rows of the RIGHT class follow, one at a time; a tap answers a row
+      and opens the next. Answered rows stay above as one-line summaries that
+      reopen when tapped. The current row and the button under it are
+      scrolled into view after every step.
+
+   What a wrong class costs is decided, and explained, in JUDGES.parse. */
+
+/** The label a row shows for one of its values. */
+function optLabel(r, v) {
+  const o = r.opts().find((x) => (typeof x === "string" ? x : x.v) === v);
+  return o == null ? v : typeof o === "string" ? o : o.label;
+}
+
+const chipsHTML = (r, picked) => r.opts().map((o) => {
+  const v = typeof o === "string" ? o : o.v;
+  const lab = typeof o === "string" ? o : o.label;
+  return `<button type="button" data-v="${esc(v)}" aria-pressed="${v === picked}">${fmt(lab)}</button>`;
+}).join("");
 
 RENDER.parse = function (app) {
   const t = app.cur;
   t.rows = parseRows(t.a, t.t);
+  t.picks = {};
+  /* `cls` is the judged class once it is committed; `open` the key of the
+     row being answered. */
+  t.cls = null;
+  t.open = "fl";
   /* Two variants: the word highlighted inside a sentence, or a standalone
-   inflected form out of BÍN. */
+     inflected form out of BÍN. */
   const stage = t.standalone
     ? `<p class="sentence"><span class="target">${esc(t.t.w)}</span></p>
        <p class="gloss">Þetta er beygingarmynd af orðinu <b>${esc(t.t.l)}</b>, tekin beint úr BÍN.
@@ -428,62 +470,144 @@ RENDER.parse = function (app) {
   <div class="card">
     <p class="eyebrow"><span>${t.standalone ? "Greindu beygðu myndina" : "Greindu orðið sem er merkt"}</span>${skillTag(t)}</p>
     ${stage}
-    ${defBox(app, focusEntry(app, t), { locked: true })}
+    <div id="defslot"></div>
     ${t.homograph ? `<p class="gloss">Athugaðu: ${esc(t.t.l)} getur verið fleiri en einn orðflokkur. ${t.standalone ? "Hér er spurt um myndina eins og hún er gefin upp hér að ofan." : "Farðu eftir setningunni."}</p>` : ""}
-    ${t.rows.map((r) => `<div class="qrow"><label>${abbr(r.label, r.term)}</label>
-      <div class="opts" data-q="${esc(r.key)}">
-      ${r.opts().map((o) => {
-        const v = typeof o === "string" ? o : o.v;
-        const lab = typeof o === "string" ? o : o.label;
-        return `<button type="button" data-v="${esc(v)}">${fmt(lab)}</button>`;
-      }).join("")}
-    </div></div>`).join("")}
-    <div class="answer"><button class="go" id="check">Athuga greininguna</button></div>
+    <div class="parserows" id="parserows"></div>
+    <div class="answer" id="parsego"><button class="go" id="check">Athuga orðflokkinn</button></div>
     <div id="verdict"></div>
   </div>`;
-  wireOptions(t);
+  drawParseRows(t);
+  $("parserows").onclick = (e) => onParseTap(app, e);
   $("check").onclick = () => submitParse(app);
+  /* After each step the keyboard lands on the next row's first option, so a
+     held Enter would answer row after row with whatever comes first. Only a
+     fresh press counts. (`armNext` listens on the button with its own guard
+     once the verdict is in.) */
+  const noRepeat = (e) => { if (e.key === "Enter" && e.repeat) e.preventDefault(); };
+  $("parserows").onkeydown = noRepeat;
+  $("check").onkeydown = noRepeat;
 };
 
-function wireOptions(t) {
-  document.querySelectorAll(".opts").forEach((box) => {
-    box.onclick = (e) => {
-      const b = e.target.closest("button");
-      if (!b || b.disabled) return;
-      box.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-      t.picks[box.dataset.q] = b.dataset.v;
-    };
-  });
+/** Draw the rows as they stand: summaries of what is answered, the open
+    row, nothing of what is still to come. */
+function drawParseRows(t, judged = null) {
+  const box = $("parserows");
+  if (!box) return;
+  const [flRow, ...rest] = t.rows;
+  const n = rest.length;
+  let h;
+  if (!t.cls) {
+    h = `<div class="qrow qopen" data-row="fl"><label>${abbr(flRow.label, flRow.term)}</label>
+      <div class="opts" data-q="fl">${chipsHTML(flRow, t.picks.fl)}</div></div>`;
+  } else {
+    const c = t.cls;
+    h = `<div class="qsum qcls ${c.ok ? "ok" : "no"}" data-row="fl"><span class="qlab">${esc(flRow.label)}</span>
+      ${c.ok ? "" : `<span class="qpick wrongpick">${fmt(c.picked)}</span>`}<span class="qpick right">${fmt(c.answer)}</span></div>
+      ${c.ok ? "" : `<p class="qnote">Orðið er ${fmt(c.answer)}.${n ? " Haltu áfram með greininguna." : ""}</p>`}`;
+    rest.forEach((r, k) => {
+      const picked = t.picks[r.key];
+      const step = `<span class="qstep">${k + 1}/${n}</span>`;
+      if (judged) {
+        const ok = picked === r.answer;
+        h += `<div class="qsum ${ok ? "ok" : "no"}" data-row="${esc(r.key)}"><span class="qlab">${esc(r.label)}</span>
+          ${ok ? "" : `<span class="qpick wrongpick">${fmt(optLabel(r, picked))}</span>`}<span class="qpick right">${fmt(optLabel(r, r.answer))}</span></div>`;
+      } else if (t.open === r.key) {
+        h += `<div class="qrow qopen" data-row="${esc(r.key)}"><label>${abbr(r.label, r.term)} ${step}</label>
+          <div class="opts" data-q="${esc(r.key)}">${chipsHTML(r, picked)}</div></div>`;
+      } else if (picked) {
+        h += `<button type="button" class="qsum" data-reopen="${esc(r.key)}" aria-label="${esc(r.label)}: ${esc(optLabel(r, picked))} — breyta">
+          <span class="qlab">${esc(r.label)}</span><span class="qpick">${esc(optLabel(r, picked))}</span><span class="qedit">breyta</span></button>`;
+      }
+      /* A row not reached yet is not drawn at all. */
+    });
+  }
+  box.innerHTML = h;
+}
+
+/** After every step: the row being answered and the button under it in view,
+    and the keyboard on the row's first option. */
+function showParseStep() {
+  const row = document.querySelector("#parserows .qopen");
+  const go = $("parsego");
+  if (go) go.scrollIntoView({ block: "nearest", behavior: "instant" });
+  if (row) {
+    row.scrollIntoView({ block: "nearest", behavior: "instant" });
+    const first = row.querySelector("button[aria-pressed='true']") || row.querySelector("button");
+    if (first) first.focus({ preventScroll: true });
+  } else if ($("check")) $("check").focus({ preventScroll: true });
+}
+
+function onParseTap(app, e) {
+  const t = app.cur;
+  if (t.closed || t.parseDone) return;
+  const again = e.target.closest("[data-reopen]");
+  if (again) {
+    t.open = again.dataset.reopen;
+    drawParseRows(t);
+    showParseStep();
+    return;
+  }
+  const b = e.target.closest(".opts button");
+  if (!b || b.disabled) return;
+  const key = b.closest(".opts").dataset.q;
+  t.picks[key] = b.dataset.v;
+  if (key === "fl") {
+    /* The class is not committed by a tap: eleven chips on a phone are easy
+       to miss by one, and the class decides what follows. The button does. */
+    b.parentNode.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    return;
+  }
+  /* A feature row is answered by the tap; the next row still unanswered
+     opens. When none is left, the button is what remains. */
+  const next = t.rows.slice(1).find((r) => !t.picks[r.key]);
+  t.open = next ? next.key : null;
+  drawParseRows(t);
+  showParseStep();
 }
 
 function submitParse(app) {
   const t = app.cur;
   const j = judge(t, { picks: t.picks }, app);
   if (j.pending) {
+    if (j.detail.step === "class") {
+      $("verdict").innerHTML = `<div class="verdict neutral"><p>Veldu orðflokk fyrst.</p></div>`;
+      return;
+    }
+    if (!t.cls) {
+      /* The class has just been committed. */
+      t.cls = j.detail.cls;
+      t.open = j.detail.ask[0].key;
+      $("verdict").innerHTML = "";
+      $("check").textContent = "Athuga greininguna";
+      /* The class is no secret now: the definition may come, and open. */
+      const entry = focusEntry(app, t);
+      if (entry) $("defslot").innerHTML = defBox(app, entry);
+      revealTopic(app);
+      drawParseRows(t);
+      showParseStep();
+      return;
+    }
     $("verdict").innerHTML = `<div class="verdict neutral"><p>Veldu svar í öllum röðunum.</p></div>`;
+    showParseStep();
     return;
   }
   const { rows, right } = j.detail;
   const perfect = j.ok, xp = j.xp;
-  document.querySelectorAll(".opts").forEach((box) => {
-    const r = rows.find((x) => x.key === box.dataset.q);
-    if (!r) return;
-    box.querySelectorAll("button").forEach((b) => {
-      b.disabled = true;
-      if (b.dataset.v === r.answer) b.classList.add("right");
-      else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
-      b.removeAttribute("aria-pressed");
-    });
-  });
+  t.parseDone = true;
+  /* A word with no row but its class is finished by the class button. */
+  if (!t.cls) {
+    t.cls = j.detail.cls;
+    const entry = focusEntry(app, t);
+    if (entry) $("defslot").innerHTML = defBox(app, entry);
+  }
   conclude(app, t, j, () => {
+    drawParseRows(t, j);
     const sum = rows.map((r) => r.answer).join(", ");
     $("verdict").innerHTML = `<div class="verdict ${perfect ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${right} / ${rows.length}${perfect ? " — " + cheer(CHEERS_OK) : ""}</h3>
     <p><span class="forms">${esc(t.t.w)}</span> er ${fmt(sum)}.</p>
     ${t.t.m ? `<div class="why"><b>mark í BÍN</b><span class="forms mk">${markHTML(t.t.m)}</span> — ${fmt(describeMark(t.t.m, t.t.c))}</div>` : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
-    /* The answer is in — the dictionary entry may come back now. */
-    unlockDefBox(app, focusEntry(app, t));
   });
 }
 
