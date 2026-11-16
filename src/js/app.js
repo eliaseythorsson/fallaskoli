@@ -15,7 +15,8 @@ import { createStore } from "./storage/index.js";
 import { createClock } from "./core/timing.js";
 import { createDefinitions, bundledSource, remoteSource } from "./core/definitions.js";
 import { serverMode, createServer, serverDriver, liftLocalState } from "./core/server.js";
-import { $, esc, wireGlossary, queueBadges, hideTip, freshEnter, wirePrivacyLinks, openSheet } from "./ui/dom.js";
+import { $, esc, wireGlossary, queueBadges, hideTip, freshEnter, wirePrivacyLinks, openSheet,
+  setKeypadPref, keypadOn, keypadEnv, wireKeys } from "./ui/dom.js";
 import { measurable, badgeWindows } from "./core/rarity.js";
 import { socialContext } from "./core/social.js";
 import { renderTask, revealTopic } from "./ui/render.js";
@@ -36,7 +37,7 @@ import { diagnose, noteDiagnosis, activePatterns, huntPreferFor, focusTypes, pic
   patternById, runReport } from "./core/diagnosis.js";
 import { SKILL_IDS } from "./core/skills.js";
 import { renderPicker, renderRunBar, renderSummary, renderDiagnosisPanel, confirmQuit,
-  topics, MINE, MIXED } from "./ui/session.js";
+  topics, MINE, MIXED, syncSessionLayout } from "./ui/session.js";
 import { LESSONS, readCount } from "./core/lessons.js";
 
 /* The random source of the question builders (tasks/view.js). They never call
@@ -731,6 +732,9 @@ function openView(view, arg) {
   document.querySelectorAll("nav.tabs button")
     .forEach((x) => x.setAttribute("aria-selected", x.dataset.view === view));
   VIEWS.forEach((v) => { $("view-" + v).hidden = v !== view; });
+  /* The slim session line replaces the header only on the board itself
+     (ui/session.js); anywhere else mid-session the tabs are the way back. */
+  syncSessionLayout(app);
   hideTip();
   if (DRAW[view]) DRAW[view](arg);
 }
@@ -777,6 +781,10 @@ function wireSettings() {
   };
   $("set-decay").onchange = (e) => { app.S.settings.decay = e.target.checked; app.save(true); };
   $("set-gloss").onchange = (e) => { app.S.settings.glossary = e.target.checked; app.save(true); };
+  /* Item 53: the letter pad. Once switched either way it is the child's
+     choice, kept with the settings; until then ui/dom.js guesses. Redrawn at
+     once, so a pad under the open question comes or goes with the switch. */
+  $("set-keys").onchange = (e) => { app.S.settings.keypad = e.target.checked; app.save(true); wireKeys(); };
 
   /* No `confirm()`: a hosted page runs in a frame where dialogs are ignored.
      The button asks twice instead. */
@@ -1020,6 +1028,7 @@ async function init() {
   app.S.lastSessionSkills = 0;
 
   wireGlossary(() => app.S.settings.glossary !== false);
+  setKeypadPref(() => keypadOn(app.S.settings, keypadEnv()));
   wirePrivacyLinks();
   wireReports(app);
   wireTabs();

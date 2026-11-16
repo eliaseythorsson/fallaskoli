@@ -123,6 +123,7 @@ button.go:focus-visible,button.ghost:focus-visible{outline:2px solid var(--lupin
 button.ghost,label.ghost{font-family:var(--body);font-size:14px;background:var(--sheet);border:1px solid var(--line);padding:11px 16px;cursor:pointer;color:var(--ink);border-radius:var(--radius)}
 button.ghost:hover,label.ghost:hover{border-color:var(--ink)}
 .keys{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+.keys[hidden]{display:none}
 .keys button{font-family:var(--mono);font-size:14px;width:32px;height:30px;cursor:pointer;background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
 .keys button:hover{background:var(--lupine-soft);border-color:var(--lupine)}
 textarea{width:100%;font-family:var(--body);font-size:16px;padding:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--sheet);resize:vertical}
@@ -857,9 +858,10 @@ details.about[open]>summary{color:var(--ink);font-weight:600;margin-bottom:10px}
   .qrow{margin-bottom:12px}
   .qrow label{font-size:11px}
 
-  /* íslensku stafirnir: fastir við neðri kant, alltaf innan handar */
-  .keys{position:sticky;bottom:0;background:var(--board);padding:8px 0 10px;
-    z-index:5;border-top:1px solid var(--line);margin-top:10px}
+  /* íslensku stafirnir: undir svarreitnum, í flæðinu. Fram að v6.13 voru
+     þeir límdir við neðri kantinn (sticky) og lágu þá ofan á svarreitnum og
+     fyrstu línu taflna (atriði 2, 53). */
+  .keys{margin-top:10px}
   .keys button{min-width:40px;min-height:44px;font-size:17px}
 
   /* töflur */
@@ -1142,6 +1144,39 @@ ul.huntlist .mk.ok{color:var(--moss)} ul.huntlist .mk.no{color:var(--rust)}
   .runpick .answer{position:sticky;bottom:0;z-index:5;background:var(--paper);padding:8px 0;margin-bottom:-8px}
 }
 .drillstrip.runstrip{border-left-color:var(--chalk-yellow);background:var(--paper-2)}
+
+/* ---- v6.13 (atriði 2, 47, 48): spurningin fær skjáinn ----
+   Á meðan lota stendur yfir víkur allt sem er ofan við spurninguna — nafnið,
+   tölurnar fjórar, stigaslánin, fliparnir, dagsetningin — fyrir einni mjórri
+   línu á töflunni: efni, 3/10 og lítill ×. Í 390 px síma byrjaði spurningin
+   590 px niðri. Samantektin sýnir allt aftur. ui/session.js setur klasann,
+   og aðeins meðan taflan sjálf er opin (📖-tengill í spurningu opnar
+   Lesefni, og þar eru fliparnir leiðin til baka). */
+body.insession .topbar,body.insession .levelbar,body.insession .levelmeta,
+body.insession nav.tabs,body.insession .boardhead,body.insession footer{display:none}
+body.insession .wrap{padding-top:10px}
+body.insession .blackboard{padding-top:8px}
+.runline{position:relative;display:flex;align-items:center;gap:10px;min-height:40px;
+  padding:2px 0 4px;border-bottom:1px dashed var(--line);font-size:14px;color:var(--chalk-dim)}
+.runico{font-size:17px;line-height:1;flex:0 0 auto}
+.runtopic{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-family:var(--display);font-weight:600;color:var(--chalk)}
+.rundots{flex:0 1 auto;flex-wrap:nowrap;margin:0}
+.runcount{flex:0 0 auto;font-family:var(--mono);font-size:13.5px;white-space:nowrap}
+.runcount b{color:var(--chalk);font-weight:600}
+/* Hætta, sem var stærsti hnappurinn á skjánum: nú lítill × aftast í línunni.
+   Hann spyr enn hvort barnið vilji hætta (confirmQuit). */
+.runx{flex:0 0 auto;width:34px;height:34px;padding:0;display:inline-grid;place-items:center;
+  background:none;border:1px solid transparent;border-radius:var(--radius);
+  color:var(--chalk-dim);font-family:var(--body);font-size:22px;line-height:1;cursor:pointer}
+.runx:hover,.runx:focus-visible{border-color:var(--line);color:var(--chalk)}
+/* Krítarstrik sem sýnir hve langt er komið — í síma í stað punktanna. */
+.runprog{position:absolute;left:0;bottom:-1px;height:2px;background:var(--chalk-yellow);display:none}
+@media (max-width:600px){
+  .rundots,.runok{display:none}
+  .runprog{display:block}
+}
+@media (pointer:coarse){ .runx{width:44px;height:44px} }
 .drilldots i.now{border-color:var(--chalk-yellow);box-shadow:0 0 0 2px rgba(242,217,107,.35)}
 .drilldots i.due{opacity:.55}
 .diagline{margin:8px 0 0;font-size:13.5px}
