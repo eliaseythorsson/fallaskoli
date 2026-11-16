@@ -24,6 +24,7 @@ import { SAMPLE } from "../src/js/core/classifiercheck.js";
 import { TEAM } from "../src/js/core/teamduel.js";
 import { LIVE } from "../src/js/core/live.js";
 import { CLASS_GOAL } from "../src/js/core/classgoal.js";
+import { WRITING } from "../src/js/core/writing.js";
 
 export const RETENTION = {
   pendingDays: 30,      // an unanswered request for access
@@ -154,6 +155,8 @@ export function privacyPage(cfg) {
   <p>Engar auglýsingar, engin rakning, ekkert selt. Þú getur sótt gögnin þín eða
      eytt aðganginum hvenær sem er.</p>
 </div>
+
+${WRITING_NOTICE}
 
 <h2>Hver ber ábyrgð?</h2>
 <p>${who} rekur þennan Fallaskóla og ber ábyrgð á gögnunum (er „ábyrgðaraðili“).
@@ -331,3 +334,22 @@ const SECOND_LANGUAGE_NOTICE = `<h2>Íslenska sem annað mál</h2>
    Það fylgir með þegar þú sækir gögnin þín og eyðist með aðganginum.</p>
 <p>Þegar setning er lesin upphátt gerir tækið þitt það sjálft. Setningin er ekki send neitt,
    og ef tækið á enga íslenska rödd er hnappurinn ekki sýndur.</p>`;
+
+/* ---------- item 46: Ritun vikunnar — what a pupil writes, a paragraph of its own ----
+ * Added by item 46 without moving PRIVACY_VERSION (the merge moves it once).
+ * Placed straight after the short version, because it is the one exception
+ * to "what you write is not kept", and a pupil should meet it early. The
+ * numbers are the ones server/writing.mjs acts on. docs/PRIVACY.md §1f. */
+const WRITING_NOTICE = `<h2>Ritun vikunnar: textinn sem þú skrifar</h2>
+<p>Einu sinni í viku getur þú skrifað þrjár setningar um efni vikunnar. Sjálfgefið er slökkt á
+   yfirlestri. Þá er textinn ekki sendur neitt og ekki geymdur.</p>
+<p>Ef kennari hópsins þíns kveikir á yfirlestri er textinn sendur á þennan netþjón þegar þú ýtir á
+   <i>Lesa yfir</i>. Þar les forritið GreynirCorrect hann yfir og sendir athugasemdirnar til baka.
+   Enginn annar fær textann. Hann er hvorki skrifaður í skrá né annál og gleymist um leið og
+   yfirlestrinum er lokið, nema kennarinn hafi líka kveikt á því að geyma textana.</p>
+<p>Ef kennarinn geymir textana stendur það á skjánum áður en þú sendir. Þá er textinn geymdur með
+   aðganginum þínum, ásamt viku og efni, svo að kennarinn geti lesið hann. Aðeins kennari hópsins og
+   umsjónarmaður sjá hann. Mest ${WRITING.keepPerPupil} textar frá þér eru geymdir og enginn lengur en
+   ${WRITING.keepDays} daga. Textarnir fylgja með þegar þú sækir gögnin þín, þeir eyðast með aðganginum,
+   og öllum textum hópsins er eytt um leið og kennarinn slekkur á því að geyma þá.
+   Skrifaðu um hversdagslega hluti, ekki um neitt sem er einkamál.</p>`;

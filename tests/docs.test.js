@@ -36,7 +36,7 @@ test("every file a document names in backticks exists", () => {
   /* Files the server or the build writes while it runs; they are in no checkout. */
   const RUNTIME = new Set(["index.html", "groups.json", "teamduels.json", "samples.json",
     "calibration.json", "calibration-quota.json",
-    "users.json"]);                                       // item 45
+    "users.json", "writing.json"]);                       // items 45, 46
   const missing = [];
   for (const f of DOCS) {
     const seen = new Set();

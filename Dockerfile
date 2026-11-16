@@ -8,7 +8,7 @@
 #   ./build.sh          on your computer, first
 #   fly deploy          then this file is used        (docs/HOSTING.md)
 
-FROM node:22-alpine
+FROM node:22-alpine AS plain
 
 WORKDIR /app
 
@@ -49,3 +49,43 @@ ENV NODE_ENV=production \
 # server/server.mjs.
 EXPOSE 8080
 CMD ["node", "server/server.mjs"]
+
+# ---------------------------------------------------------------------------
+# Optional (critique item 46): the same server WITH the writing check.
+#
+#   docker build --target greynir -t fallaskoli:greynir .
+#   fly deploy --build-target greynir          (and a VM with ≥ 1 GB: the
+#                                               checker alone holds ~400 MB)
+#
+# GreynirCorrect (`reynir-correct`) and the libraries under it ship Linux
+# wheels for glibc only — none for Alpine's musl — so this target is Debian
+# slim with Python, and the image is several hundred MB larger. That is why
+# it is a separate target and not the default: a server whose teachers never
+# switch the check on does not need it, and without it the app offers the
+# weekly task unchecked. server/writing.mjs starts server/greynir_worker.py
+# the first time a group with the check on needs it (docs/SERVER.md).
+FROM node:22-bookworm-slim AS greynir
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip \
+ && rm -rf /var/lib/apt/lists/*
+# The build's own pins first, so GreynirCorrect cannot move reynir/islenska.
+COPY requirements.txt /tmp/req/requirements.txt
+COPY server/requirements-writing.txt /tmp/req/requirements-writing.txt
+RUN pip3 install --break-system-packages --no-cache-dir \
+      -r /tmp/req/requirements.txt -r /tmp/req/requirements-writing.txt \
+ && rm -rf /tmp/req /root/.cache
+WORKDIR /app
+COPY --from=plain /app /app
+COPY server/greynir_worker.py ./server/greynir_worker.py
+ENV NODE_ENV=production \
+    PORT=8080 \
+    FALLASKOLI_DATA=/data \
+    FALLASKOLI_TRUST_PROXY=1 \
+    FALLASKOLI_UID=1000 \
+    FALLASKOLI_GID=1000 \
+    FALLASKOLI_WRITING_PYTHON=python3
+EXPOSE 8080
+CMD ["node", "server/server.mjs"]
+
+# The default image is the plain one above, unchanged: the last stage is what
+# `docker build` and `fly deploy` build when no target is named.
+FROM plain

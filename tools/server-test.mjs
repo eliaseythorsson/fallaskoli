@@ -1462,6 +1462,73 @@ async function closeWindows(page) {
   }
 }
 
+/* ---------- items 45 and 46: a teacher's two switches, and a real read-over ----------
+ * In Skólastofan a guardian ticks "Íslenska sem annað mál" for a pupil and
+ * switches on the writing check for the group. The pupil logs in: the mode
+ * is on, and the box under Stillingar is ticked and cannot be unticked. The
+ * pupil writes three sentences, presses "Lesa yfir", and GreynirCorrect —
+ * the real one, in its Python worker — marks "Mér langar"; "Laga í
+ * textanum" selects it and typing the fix deals with it. Nothing of the text
+ * is stored on the server (keeping is off). Skipped, with a note, where
+ * reynir-correct is not installed. */
+{
+  const { execFileSync } = await import("node:child_process");
+  let haveGC = true;
+  try { execFileSync("python3", ["-I", "-c", "import reynir_correct"], { stdio: "ignore", timeout: 60000 }); }
+  catch { haveGC = false; }
+  await app.store.updateGroups((g) => ({ ...g, h10w: { name: "10. W" } }));
+  const inW = async (u) => {
+    await app.store.updateUsers((list) => { list.find((y) => y.id === u.id).group = "h10w"; return list; });
+    return u;
+  };
+  await inW(await mkUser("wkennari", "guardian"));
+  const wn = await inW(await mkUser("wnemi", "learner"));
+
+  const T = await fresh();
+  await login(T.page, "wkennari");
+  await openTab(T.page, "class");
+  await T.page.waitForSelector(`#tc-l2 [data-l2pupil="${wn.id}"]`, { timeout: 15000 });
+  await T.page.click(`#tc-l2 [data-l2pupil="${wn.id}"]`);
+  await T.page.waitForFunction(async (id) => (await (await fetch("/teacher/secondlanguage")).json()).pupils.some((p) => p.id === id && p.on),
+    { timeout: 10000 }, wn.id).catch(() => ok(false, "item 45: the teacher's box did not switch the mode on"));
+  await T.page.waitForSelector("#tc-wr-check", { timeout: 15000 });
+  ok(!(await T.page.$eval("#tc-wr-check", (e) => e.checked)), "item 46: the writing check is on before the teacher switched it on");
+  await T.page.click("#tc-wr-check");
+  await T.page.waitForFunction(() => document.getElementById("tc-wr-check")?.checked && !document.getElementById("tc-wr-keep")?.disabled,
+    { timeout: 10000 }).catch(() => ok(false, "item 46: the teacher's box did not switch the check on"));
+  ok((await app.store.groups()).h10w.writing?.check === true, "item 46: the switch is not on the group");
+  await T.ctx.close();
+
+  const P = await fresh();
+  await login(P.page, "wnemi");
+  const l2 = await P.page.evaluate(() => ({ t: window.FALLASKOLI.S.settings.l2Teacher,
+    box: document.getElementById("set-l2")?.checked, locked: document.getElementById("set-l2")?.disabled }));
+  ok(l2.t === true && l2.box === true && l2.locked === true, "item 45: the teacher's switch did not reach the pupil: " + JSON.stringify(l2));
+  /* Back to the picker, as "Velja annað efni" does after a session. */
+  await P.page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.cur = null; A.next(); });
+  await P.page.waitForSelector("#writego", { timeout: 10000 });
+  await P.page.click("#writego");
+  await P.page.waitForFunction(() => { const b = document.getElementById("wr-check"); return b && !b.hidden; }, { timeout: 10000 })
+    .catch(() => ok(false, "item 46: 'Lesa yfir' did not appear for a group with the check on"));
+  ok(/ekki<\/b> geymdur|ekki geymdur/.test(await P.page.$eval("#wr-mode", (e) => e.innerHTML)), "item 46: the pupil is not told the text is not kept");
+  if (!haveGC) {
+    console.log("  (item 46: reynir-correct is not installed here — the read-over round trip was not run)");
+  } else {
+    await P.page.type("#wr-text", "Mér langar að fara í sund. Ég á hund. Hann heitir Snati.");
+    await P.page.click("#wr-check");
+    await P.page.waitForSelector(".wrnote mark", { timeout: 90000 })
+      .catch(() => ok(false, "item 46: no remark came back from GreynirCorrect"));
+    const mark = await P.page.$eval(".wrnote mark", (e) => e.textContent).catch(() => null);
+    ok(mark === "Mér", `item 46: GreynirCorrect should mark "Mér" (langa takes the accusative): ${mark}`);
+    await P.page.click("#wr-fix");
+    await P.page.keyboard.type("Mig");
+    await P.page.waitForFunction(() => /lagaðir 1/.test(document.getElementById("wr-notes").innerText), { timeout: 5000 })
+      .catch(() => ok(false, "item 46: fixing the remark was not noticed"));
+    ok((await app.store.writing()).length === 0, "item 46: a text was stored with keeping off");
+  }
+  await P.ctx.close();
+}
+
 await browser.close();
 await new Promise((r) => app.server.close(r));
 await fs.rm(dir, { recursive: true, force: true });

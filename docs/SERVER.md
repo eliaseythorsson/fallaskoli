@@ -702,6 +702,80 @@ is enough for a family or two classes (≈ 150 at once). For more, set
    - Then `tools/load-test.mjs` again, with 1,000 at once on 1 GB as the
      target, and this section rewritten with what it measures.
 
+### 4.5 Íslenska sem annað mál (v6.13, item 45)
+
+Nothing to set up. A pupil can switch the second-language mode on under
+*Stillingar*; a teacher can switch it on for a pupil in *Skólastofan →
+Íslenska sem annað mál* (a box beside each name). It gives a gloss on every
+word of the sentence (ÍNO's definitions, already in the program), a slower
+climb in difficulty and the generated kind of error hunt, and reads the
+sentence aloud **if the pupil's device has an Icelandic voice of its own**
+(some do and many do not; the button simply does not appear without one, and
+a voice that would send the text to a company to be spoken is not used). Nothing is sent anywhere to be spoken. Agree with the
+pupil and the family before switching it on for them (`docs/PRIVACY.md` §1e).
+
+### 4.6 Ritun vikunnar — the writing check (v6.13, item 46)
+
+Once a week every pupil is offered "Skrifaðu þrjár setningar um …" on an
+everyday topic. Without anything set up it works offline: the pupil writes,
+reads their text against a short checklist and finishes. Nothing is sent.
+
+A teacher can switch on **yfirlestur** for their group in *Skólastofan →
+Ritun vikunnar*. Then the text is read over on this server by
+**GreynirCorrect** (Miðeind's open-source checker, `reynir-correct`), and the
+pupil fixes its remarks one by one. A second box, **geyma textana**, keeps
+the checked texts for the teacher to read (at most 12 per pupil, 60 days;
+switching it off deletes them all). Both are off by default; read
+`docs/PRIVACY.md` §1f before switching keeping on, and tell the families.
+
+**The checker has to be installed** — it is Python, like the build:
+
+```
+pip install -r requirements.txt -r server/requirements-writing.txt
+```
+
+(in the program's folder; add `--break-system-packages` on a Debian/Ubuntu
+whose Python refuses, or use a virtual environment and point
+`FALLASKOLI_WRITING_PYTHON` at its `python`). The build's own pins come first
+so GreynirCorrect cannot move the grammar libraries under the build.
+
+How it runs, so you know what to expect from the machine:
+
+- `server/writing.mjs` starts **one** Python process, `server/greynir_worker.py`,
+  the first time a group with the check on needs it, and keeps it. It holds
+  about **400 MB** of memory and takes a few seconds to start; after that a text
+  takes a fraction of a second. On a small VPS give the machine 1 GB.
+- Every text has a strict limit: 600 characters, 8 seconds. A text that takes
+  longer gets "tók of langan tíma", and the worker is killed and started
+  again for the next one, so one odd text cannot hold up the class. At most
+  four texts are checked at once (more get "reyndu aftur eftir smástund"),
+  and one account may ask 30 times an hour.
+- If Python or the package is missing, the teacher's card says the check is
+  not installed, and pupils simply write without it. The server tries again
+  five minutes later.
+- The text is passed to the worker over a pipe and is written to no file and
+  no log; the worker's own error output is thrown away.
+
+Settings (environment variables, all optional):
+
+| variable | default | |
+|---|---|---|
+| `FALLASKOLI_WRITING` | on | `off` switches the check off on this server whatever teachers choose |
+| `FALLASKOLI_WRITING_PYTHON` | `python3` | the Python that has `reynir-correct` |
+| `FALLASKOLI_WRITING_WORKER` | `server/greynir_worker.py` | the worker script |
+| `FALLASKOLI_WRITING_TIMEOUT_MS` | `8000` | per text, at most 60000 |
+
+**On Fly.io (or any container host)** the default image is the small Alpine
+one, without Python: GreynirCorrect ships no wheels for Alpine. The
+Dockerfile has a second target with it:
+
+```
+fly deploy --build-target greynir
+```
+
+and give the machine at least 1 GB (`fly scale memory 1024`). Without the
+target everything else works, and the weekly task is offered unchecked.
+
 ---
 
 ## Part 5 — upgrading to a new version

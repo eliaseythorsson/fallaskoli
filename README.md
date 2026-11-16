@@ -294,7 +294,11 @@ src/js/ui/            rendering: render.js (one renderer per task type;
                       dom.js, panels.js, progress.js, account.js, policyui.js,
                       secondlang.js (item 45: the second-language mode — a
                       gloss on every content word, reading aloud with an
-                      on-device Icelandic voice; the switch is core/profile.js)
+                      on-device Icelandic voice; the switch is core/profile.js),
+                      writing.js (item 46: Ritun vikunnar, the pupil's own
+                      three sentences; rules in core/writing.js, the
+                      GreynirCorrect check in server/writing.mjs and
+                      server/greynir_worker.py)
 src/js/content/       hand-written texts in the program: the worked examples
                       and the Lesefni pages
 src/head.html         the stylesheet

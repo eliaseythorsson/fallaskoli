@@ -164,6 +164,11 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     /* Item 45: the second-language mode of each pupil, set by the teacher. */
     teacherSecondLanguage: (group) => call("GET", `/teacher/secondlanguage?group=${enc(group)}`),
     setSecondLanguage: (group, user, on) => call("POST", "/teacher/secondlanguage", { group, user, on }),
+    /* Item 46: the week's three sentences, read over by GreynirCorrect. */
+    writingStatus: () => call("GET", "/writing"),
+    checkWriting: (text) => call("POST", "/writing/check", { text }),
+    teacherWriting: (group) => call("GET", `/teacher/writing?group=${enc(group)}`),
+    setWriting: (group, check, keep) => call("POST", "/teacher/writing", { group, check, keep }),
     setClassGoal: (group, kind, n) => call("POST", "/teacher/classgoal", { group, kind, n }),
     removeClassGoal: (group) => call("DELETE", `/teacher/classgoal?group=${enc(group)}`),
     /* error reports (v6.8) */

@@ -3176,6 +3176,124 @@ await page.setViewport({ width: 1100, height: 900 });
   await p2.close();
 }
 
+/* ---------- item 46: Ritun vikunnar ----------------------------------------------
+ * Offline (this file has no server): the picker offers the week's three
+ * sentences; the card says the text is sent nowhere and offers no check;
+ * fewer than three sentences cannot be finished; three can, and the picker
+ * then says it is done — with the week, and not a word of the text, in the
+ * saved progress. Then the remarks, with a stand-in for the server's answer:
+ * shown one at a time, marked in their sentence; "Laga í textanum" selects
+ * the stretch; typing the fix moves to the next; "Sleppa" passes one; and a
+ * redraw of the picker (an assignment arriving) does not wipe the text. */
+{
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess && document.querySelector('#task .card')", { timeout: 15000 });
+  const tapIn = async (sel) => {
+    const at = await page.evaluate((s) => {
+      const el = document.querySelector(s);
+      if (!el) return null;
+      el.scrollIntoView({ block: "center" });
+      const r = el.getBoundingClientRect();
+      return r.width && r.height ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null;
+    }, sel);
+    if (!at) { ok(false, "item 46: nothing to tap at " + sel); return false; }
+    await page.mouse.click(at.x, at.y);
+    return true;
+  };
+  await page.evaluate(() => { const A = window.FALLASKOLI; delete A.S.settings.writingDone; A.save(true); A.openView("practice"); A.next(); });
+  const offer = await page.evaluate(() => { const b = document.querySelector(".writebox"); return b ? b.innerText : null; });
+  ok(offer && /Skrifaðu þrjár setningar um/.test(offer) && /Skrifa →/.test(offer), `item 46: the picker should offer the week's writing: ${offer}`);
+  await tapIn("#writego");
+  await page.waitForSelector("#wr-text", { timeout: 3000 }).catch(() => ok(false, "item 46: the writing card did not open"));
+  const card = await page.evaluate(() => ({
+    mode: document.getElementById("wr-mode").innerText,
+    check: !document.getElementById("wr-check").hidden,
+    fits: document.querySelector(".writecard").getBoundingClientRect().right <= innerWidth + 1,
+    wide: document.getElementById("wr-text").getBoundingClientRect().width,
+  }));
+  ok(/ekki sendur neitt og ekki geymdur/.test(card.mode), `item 46: offline the card must say the text goes nowhere: ${card.mode}`);
+  ok(!card.check, "item 46: offline there is no 'Lesa yfir'");
+  ok(card.fits && card.wide > 250, `item 46: the card does not fit a 390 px phone (${card.wide}px box)`);
+  await page.focus("#wr-text");
+  await page.keyboard.type("Ég á hund sem heitir Snati. Hann er brúnn.");
+  await tapIn("#wr-done");
+  const early = await page.evaluate(() => ({ msg: document.getElementById("wr-notes").innerText, open: !!document.getElementById("wr-text"),
+    count: document.getElementById("wr-count").innerText }));
+  ok(early.open && /Tvær setningar eru komnar/.test(early.msg), `item 46: two sentences should not finish the task: ${early.msg}`);
+  ok(/^2 af 3 setningum/.test(early.count), `item 46: the count says ${early.count}`);
+  /* An assignment arriving redraws the picker — not over the text. */
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.assignments = [{ id: "x", open: true, target: { kind: "skill", id: "nafnord" }, n: 5, due: "2099-01-01" }]; });
+  await page.evaluate(() => window.FALLASKOLI.next());      // no run: draws the picker again
+  const kept = await page.evaluate(() => { const b = document.getElementById("wr-text"); return b && b.value; });
+  ok(kept && kept.includes("Snati"), "item 46: the text was wiped");
+  await page.evaluate(() => { const b = document.getElementById("wr-text"); b.focus(); b.setSelectionRange(b.value.length, b.value.length); });
+  await page.keyboard.type(" Hann leikur sér úti.");
+  await tapIn("#wr-done");
+  await page.waitForSelector(".writebox", { timeout: 3000 }).catch(() => ok(false, "item 46: finishing did not go back to the picker"));
+  const done = await page.evaluate(() => ({
+    offer: document.querySelector(".writebox").innerText,
+    week: window.FALLASKOLI.S.settings.writingDone,
+    stored: JSON.stringify(localStorage).includes("Snati") || JSON.stringify(window.FALLASKOLI.S).includes("Snati"),
+  }));
+  ok(/lokið í þessari viku/.test(done.offer) && /^\d{4}-\d{2}-\d{2}$/.test(done.week || ""), `item 46: done is not shown or not saved: ${done.week}`);
+  ok(!done.stored, "item 46: the text the pupil wrote was saved on the device");
+
+  /* The remarks, with a stand-in for the server's answer. */
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    window.__sent = [];
+    A.server = {
+      writingStatus: async () => ({ check: true, keep: false, available: true }),
+      checkWriting: async (text) => {
+        window.__sent.push(text);
+        const at = (w) => text.indexOf(w);
+        const notes = [];
+        if (at("Mér") >= 0) notes.push({ start: at("Mér"), end: at("Mér") + 3, code: "P_WRONG_CASE_þgf_þf", msg: "Á líklega að vera 'Mig'", detail: "Sögnin 'að langa' er ópersónuleg.", suggest: "Mig" });
+        if (at("skólan ") >= 0) notes.push({ start: at("skólan "), end: at("skólan ") + 6, code: "N4NN-END", msg: "Stafsetningarvilla: 'skólan' -> 'skólann'", suggest: "skólann" });
+        if (at("vill") >= 0) notes.push({ start: at("vill"), end: at("vill") + 4, code: "S005", msg: "Rita á 'vill' sem 'vil'", suggest: "vil" });
+        return { sentences: 3, annotations: notes, kept: false };
+      },
+    };
+  });
+  await tapIn("#writego");
+  await page.waitForFunction(() => { const b = document.getElementById("wr-check"); return b && !b.hidden; }, { timeout: 3000 })
+    .catch(() => ok(false, "item 46: with the check on, 'Lesa yfir' did not appear"));
+  const mode2 = await page.evaluate(() => document.getElementById("wr-mode").innerText);
+  ok(/sendur á netþjóninn/.test(mode2) && /ekki geymdur/.test(mode2), `item 46: the card must say where the text goes before sending: ${mode2}`);
+  await page.focus("#wr-text");
+  await page.keyboard.type("Mér langar að fara í sund.\nÉg fór í skólan í gær.\nÉg vill fara heim.");
+  await tapIn("#wr-check");
+  await page.waitForSelector(".wrnote", { timeout: 3000 }).catch(() => ok(false, "item 46: no remark was shown"));
+  const n1 = await page.evaluate(() => ({ head: document.querySelector(".wrnote .eyebrow").innerText,
+    mark: (document.querySelector(".wrnote mark") || {}).textContent, sent: window.__sent[0],
+    box: document.getElementById("wr-text").value }));
+  ok(/Athugasemd 1 af 3/.test(n1.head) && n1.mark === "Mér", `item 46: first remark ${n1.head} / ${n1.mark}`);
+  ok(n1.sent === n1.box && !/\n/.test(n1.sent), "item 46: the text sent is not the tidied text in the box");
+  await tapIn("#wr-fix");
+  const sel = await page.evaluate(() => { const b = document.getElementById("wr-text"); return b.value.slice(b.selectionStart, b.selectionEnd); });
+  ok(sel === "Mér", `item 46: 'Laga í textanum' should select the stretch: "${sel}"`);
+  await page.keyboard.type("Mig");
+  const n2 = await page.evaluate(() => ({ head: document.querySelector(".wrnote .eyebrow").innerText, mark: (document.querySelector(".wrnote mark") || {}).textContent }));
+  ok(/Athugasemd 2 af 3/.test(n2.head) && n2.mark === "skólan", `item 46: after the fix the next remark: ${n2.head} / ${n2.mark}`);
+  await tapIn("#wr-skip");
+  const n3 = await page.evaluate(() => (document.querySelector(".wrnote mark") || {}).textContent);
+  ok(n3 === "vill", `item 46: 'Sleppa' should go to the third: ${n3}`);
+  await tapIn("#wr-fix");
+  await page.keyboard.type("vil");
+  const fin = await page.evaluate(() => ({ notes: document.getElementById("wr-notes").innerText, box: document.getElementById("wr-text").value }));
+  ok(/lagaðir 2 og slepptir 1/.test(fin.notes), `item 46: the summary after the remarks: ${fin.notes}`);
+  ok(fin.box === "Mig langar að fara í sund. Ég fór í skólan í gær. Ég vil fara heim.", `item 46: the text after fixing: ${fin.box}`);
+  await tapIn("#wr-check");
+  await page.waitForFunction(() => /Athugasemd 1 af 1/.test((document.querySelector(".wrnote .eyebrow") || {}).innerText || ""), { timeout: 3000 })
+    .catch(() => ok(false, "item 46: reading over again did not show the one remark left"));
+  ok(errors.length === 0, `item 46: errors: ${errors.join(" | ")}`);
+  await page.close();
+}
+
 /* ---------- item 17: with no server there is no calibration at all ----------
  * Opened from a file the program must run on exactly what it was built with:
  * no table, the build's own scores in the lexicon, no question marked for

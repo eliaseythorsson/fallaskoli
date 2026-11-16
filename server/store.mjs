@@ -66,6 +66,7 @@ export function createStore(root) {
     calibration: path.join(root, "calibration.json"),
     calibrationQuota: path.join(root, "calibration-quota.json"),
     samples: path.join(root, "samples.json"),
+    writing: path.join(root, "writing.json"),       // item 46, server/writing.mjs
   };
 
   /* One queue for every write. Node is single-threaded, but `await` gives other
@@ -143,6 +144,7 @@ export function createStore(root) {
   const calibrationFile = smallFile(file.calibration, {});
   const quotaFile = smallFile(file.calibrationQuota, {});
   const samplesFile = smallFile(file.samples, { list: [], seen: 0 });
+  const writingFile = smallFile(file.writing, []);
 
   const safeId = (id) => /^[a-zA-Z0-9_-]{1,64}$/.test(String(id));
   const statePath = (id) => path.join(dir.states, id + ".json");
@@ -319,6 +321,15 @@ export function createStore(root) {
     samples: () => samplesFile.read(),
     updateSamples: (fn) => samplesFile.update(fn),
 
+    /* ---------- kept texts (v6.13, item 46; server/writing.mjs) ----------
+     * What a pupil WROTE, kept only for a group whose teacher switched
+     * keeping on: the pupil's id, the group, the week, the topic and the
+     * text. Pruned by age and count on every read and write; a group's
+     * texts are deleted when keeping is switched off; a pupil's go with
+     * the account (`eraseUser`) and are in their export. */
+    writing: () => writingFile.read(),
+    updateWriting: (fn) => writingFile.update(fn),
+
     /* ---------- the monthly rarity snapshot ---------- */
     rarityHistory: () => readJSON(file.rarity, []),
     appendRarity(entry, keep = 24) {
@@ -388,6 +399,11 @@ export function createStore(root) {
         if (!q.by || !(uid in q.by)) return null;
         delete q.by[uid]; return q;
       });
+      /* Kept texts (item 46): everything they wrote goes. */
+      await this.updateWriting((list) => {
+        const rest = (list || []).filter((x) => x.user !== uid);
+        return rest.length !== (list || []).length ? rest : null;
+      });
       const hidden = await this.hidden();
       if (hidden.includes(uid)) await this.setHidden(hidden.filter((x) => x !== uid));
       await this.updateInvites((list) => {
@@ -415,6 +431,7 @@ export function createStore(root) {
         reports: await this.reports(), assignments: await this.assignments(),
         teamDuels: await this.teamDuels(),
         calibration: await this.calibration(), samples: await this.samples(),
+        writing: await this.writing(),
         dataset: await this.dataset(), datasetStatus: await this.datasetStatus(),
         states: st,
       };
@@ -439,6 +456,7 @@ export function createStore(root) {
         await writeJSON(file.teamDuels, all.teamDuels || []);
         await writeJSON(file.calibration, all.calibration || {});
         await writeJSON(file.samples, all.samples || { list: [], seen: 0 });
+        await writeJSON(file.writing, all.writing || []);
         await fs.rm(file.calibrationQuota, { force: true });
         if (all.dataset) await writeJSON(file.dataset, all.dataset);
         if (all.datasetStatus) await writeJSON(file.datasetStatus, all.datasetStatus);

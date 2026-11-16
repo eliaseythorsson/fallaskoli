@@ -290,6 +290,33 @@ hunt, reading aloud) and nothing else.
   server's `/definitions`, which already exists); looking a word up sends
   nothing new.
 
+## 1f. Ritun vikunnar: what a pupil writes (v6.13, item 46) — a separate paragraph
+
+*Added by item 46 on its own; this branch has not moved `PRIVACY_VERSION` —
+whoever merges it moves it once for v6.13. Note that the summary's sentence
+"Það sem þú skrifar í svörin er ekki geymt" stays true for answers; the
+notice's own paragraph on Ritun vikunnar states the one exception.*
+
+Once a week the pupil writes three sentences of their own on an everyday topic.
+This is the first place the server can receive **free text a child wrote**, so
+the defaults are the strictest available:
+
+| | |
+|---|---|
+| **Default** | **Off for every group.** The task is still offered; the pupil reads their text against a short checklist, and nothing is sent. |
+| **The check** (`groups.json`: `writing.check`) | Switched on per group by its guardian (or the administrator). Then "Lesa yfir" sends the text to **this server**, where GreynirCorrect (Miðeind's open-source checker, run as a local process: `server/greynir_worker.py`) reads it and the remarks come back. **No third party** receives it; it is not a new processor. The text is held in memory for one request, passed to the worker over a pipe, and **not written to any file or log** (errors are logged by kind only; the worker's stderr is discarded). |
+| **Keeping** (`writing.keep`) | A second, separate switch, only possible with the check on. Then each checked text is stored in `writing.json` with the pupil's id, the group, the week and the topic, for the group's guardian (and the administrator) to read in Skólastofan. At most **12 per pupil**, none older than **60 days** (`WRITING.keepPerPupil`, `WRITING.keepDays` in `src/js/core/writing.js`; pruned on every read and write and by the daily sweep). Switching keeping (or the check) **off deletes every kept text of the group at once.** |
+| **What the pupil is told** | Before sending, the card says whether the text will be kept, in so many words. The notice (`/personuvernd`) has its own paragraph. |
+| **Rights** | Kept texts are in the pupil's own export (`keptTexts`) and are erased with the account (`eraseUser`); a pupil moved to another group is no longer shown to the old group's guardian. They are in backups for as long as a backup lives (§6). |
+| **The progress** | Records only the Monday of the week the task was finished (`settings.writingDone`), never the text or the topic. |
+
+**Before switching keeping on**, tell the families: it is the one place where
+a pupil's own words, rather than numbers, are stored. Advise pupils (the card
+does) to write about everyday things and nothing private; the topics are
+chosen so that nothing private is needed. Abuse limits: 30 checks an hour per
+account, 600 characters per text, 8 seconds per check, after which the worker
+is killed and restarted.
+
 ---
 
 ## 2. Record of processing (Art. 30) — *vinnsluskrá*

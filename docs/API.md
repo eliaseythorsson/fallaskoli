@@ -402,6 +402,34 @@ Kept as `l2: true` on the account (absent when off) and sent to the pupil in
 `settings.l2Teacher` at start-up. In the export as
 `account.secondLanguageByTeacher`. Setting it is in the audit trail.
 
+## Ritun vikunnar: the pupil's own sentences (v6.13)
+
+Item 46. Once a week, "Skrifaðu þrjár setningar um …" on the week's topic
+(`src/js/core/writing.js`: `topicFor`, the limits `WRITING`). Where the group's
+teacher has switched it on, the text is read over by GreynirCorrect in a Python
+worker the server keeps (`server/greynir_worker.py`, started by
+`server/writing.mjs`). **Off by default per group.**
+
+```
+GET  /writing                 -> { check, keep, available, week, limits }   anybody logged in
+POST /writing/check           { text } -> { sentences, annotations, kept }
+                              400 no text · 403 { off: true } the group has not switched it on
+                              413 body over 4 KB or text over 600 characters
+                              429 over 30 an hour · 503 { busy } or { unavailable } · 504 over the timeout
+GET  /teacher/writing?group=g -> { group, check, keep, available, texts, limits }
+POST /teacher/writing         { group?, check, keep? } -> { ok, check, keep }
+                              keeping only with the check; switching keeping off deletes the group's kept texts
+```
+
+An annotation is `{ start, end, code, msg, detail, suggest }`: `start`/`end`
+character offsets `[start, end)` into the text **as tidied** (`cleanText`:
+line breaks and runs of spaces become one space), or both null when a remark
+could not be placed. `available` is true (the worker is up), false (it cannot
+start, or `FALLASKOLI_WRITING=off`) or null (not started yet; GET starts it).
+`texts` (only while keeping is on, only pupils now in the group):
+`{ id, name, week, topic, text, n, at }`. Kept texts live in `writing.json`
+and are in the export as `keptTexts`; `docs/PRIVACY.md` §1f.
+
 ## The class goal (v6.13)
 
 Item 59. A weekly target the whole group reaches together, set by its teacher

@@ -1,0 +1,9 @@
+# The server's writing check (item 46): GreynirCorrect, run by
+# server/greynir_worker.py. Only needed on a server whose teachers switch the
+# check on; the build (./build.sh) does not use it. Installed on top of the
+# build's own pins, which it must not move:
+#   pip install -r requirements.txt -r server/requirements-writing.txt
+# (from the repository root; the Dockerfile's `greynir` target does the same).
+# reynir-correct 4.2.0 needs reynir>=3.7.0 and accepts the pinned 3.8.0.
+reynir-correct==4.2.0
+icegrams==2.3.0

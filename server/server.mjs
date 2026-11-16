@@ -48,6 +48,7 @@ import { createTeamDuels } from "./teamduel.mjs";
 import { teamOf } from "../src/js/core/teamduel.js";
 import { createClassGoal } from "./classgoal.mjs";
 import { createSecondLanguage } from "./secondlang.mjs";
+import { createWriting } from "./writing.mjs";
 import { seal, passphraseProblem } from "./backup.mjs";
 import { dropPrivileges } from "./privs.mjs";
 
@@ -583,6 +584,10 @@ export function createApp({
         secondLanguageByTeacher: u.l2 === true,
       },
       curriculumCeiling: policies[u.id] || null,
+      /* Item 46: texts they wrote that their teacher keeps (none unless the
+         teacher switched keeping on). */
+      keptTexts: (await store.writing()).filter((x) => x.user === u.id)
+        .map(({ user, ...x }) => x),
       /* Without the seeds: they are not about the person, and while a duel
          is open they are its questions and answers (core/duel.js). */
       duels: (await store.duels()).filter((d) => d.a === u.id || d.b === u.id)
@@ -1459,6 +1464,14 @@ export function createApp({
   createSecondLanguage({ store, groupOf, audit })
     .routes({ on, json, readBody, needTeacher });
 
+  /* --- the pupil's own sentences, read over by GreynirCorrect (item 46) ----
+   * Off by default, per group; the text is checked and forgotten unless the
+   * teacher keeps texts. GET /writing, POST /writing/check, GET + POST
+   * /teacher/writing. Everything — the Python worker, the limits, the
+   * timeout, what is kept — is in server/writing.mjs. */
+  const writing = createWriting({ store, groupOf, groupsNow, audit, env });
+  writing.routes({ on, json, readBody, needUser, needTeacher });
+
   /* --- the curriculum ceiling ------------------------------------------
    *
    * The owner: *"The admin and local admin decide what is possible, within what
@@ -1889,6 +1902,7 @@ export function createApp({
       const rest = list.filter((a) => a.group !== id);
       return rest.length !== list.length ? rest : null;
     });
+    await writing.dropGroup(id);              // item 46: its kept texts
     await audit(me.id, "eyddi hópi");
     res.writeHead(204, securityHeaders(req)); res.end();
   });
@@ -2078,6 +2092,8 @@ export function createApp({
       for (const [k, v] of Object.entries(s)) if (v.exp < now.getTime()) { delete s[k]; hit = true; }
       return hit ? s : null;
     });
+    /* Item 46: kept texts past their days (server/writing.mjs pruneKept). */
+    await writing.prune(now.getTime());
     return { erased };
   }
 
@@ -2251,7 +2267,9 @@ export function createApp({
   const closeServer = server.close.bind(server);
   server.close = (cb) => { live.stop(); return closeServer(cb); };
 
-  return { server, store, handler, lex, google, privacy, sweep, calibration, live };
+  /* Item 46: the GreynirCorrect worker goes with the server. */
+  server.on("close", () => writing.checker.stop());
+  return { server, store, handler, lex, google, privacy, sweep, calibration, live, writing };
 }
 
 /* ---------- start-up when this file is run directly ---------- */
