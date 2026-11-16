@@ -97,7 +97,7 @@ export const easeMult = (ease) => 1.25 - 0.7 * Math.min(1, Math.max(0, ease));
 /**
  * One place where an answer's XP is decided.
  * base   — worth of the exercise type
- * lvl    — sentence/table difficulty 1..5
+ * lvl    — sentence/table difficulty 1..7
  * ease   — 0..1 from easeOf()
  */
 export function computeXp({ base, lvl = 1, hinted = false, ease = 0.5, run = 0, streak = 0 }) {

@@ -151,7 +151,7 @@ export const TYPES = [
     build: taskIndecl, drill: taskIndeclWord },
   { id: "ob_smella", skill: "obeygjanleg", weight: 4, renderer: "tap",
     tags: ["ofl", "ofl:ao_fs"],
-    bands: [1, 2, 3, 4],
+    bands: [1, 2, 3, 4, 5, 6],
     build: obTap },
   { id: "ob_fsao", skill: "obeygjanleg", weight: 4, renderer: "choice",
     tags: ["ofl", "ofl:ao_fs"],

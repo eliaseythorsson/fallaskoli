@@ -50,7 +50,9 @@ test("the builder returns a task and never the same token twice in a span", () =
     if (t.type !== "clause") continue;
     seen++;
     assert.ok(t.span.to > t.span.from, "the span is one token — that is not a clause");
-    assert.ok(t.lvl >= 6, "material for years 9-10 should sit above difficulty 5");
+    /* Until v6.13 every question was stamped þyngd 6 whatever its sentence
+       (item 14); the level is the sentence's own. tests/levels67.test.js. */
+    assert.equal(t.lvl, t.s.lvl, "the question carries the level of its sentence");
   }
   assert.ok(seen > 0, "the builder returned no task");
 });

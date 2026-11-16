@@ -281,6 +281,10 @@ test("under í or á only a noun with that convention is substituted", () => {
     if (!t || !t.s || !t.s.ps) continue;
     const slot = t.s.derived ? t.i : t.s.slot;
     const tok = t.s.tok[slot];
+    /* The rule is about nouns. A sentence derived by swapping an ADJECTIVE
+       ("Gamli maðurinn … á hverjum morgni" asked as "Ungi maðurinn …") keeps
+       its own noun under the preposition, and the swapped word is not it. */
+    if (t.s.derived && tok.c !== "nafnorð") continue;
     const w = lex.lookup(tok.l, tok.x) || lex.lookup(tok.l, "nafnorð");
     const original = byText.get(t.s.t) && byText.get(t.s.t).tok[slot].l === tok.l;
     if (!original && (!w || w.p !== t.s.ps)) bad.push(`${t.s.t} <- ${tok.l}`);

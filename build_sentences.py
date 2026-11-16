@@ -562,6 +562,14 @@ def confirm_verb_government(toks, paths):
 NEGATIONS = ('ekki', 'aldrei')
 
 
+# The two words that stand before *að* in a three-word causal conjunction.
+# The parse makes them a prepositional phrase of the main clause and starts
+# the subordinate clause at *að*; school grammar counts all three words as the
+# conjunction. *vegna þess* was added with the level 6-7 sentences (v6.13),
+# the first in the bank to use it.
+CAUSAL_HEADS = {('af', 'því'), ('vegna', 'þess')}
+
+
 def tidy_clauses(toks, paths):
     """Clause boundaries, where the parse attaches a phrase one clause too high.
 
@@ -575,7 +583,7 @@ def tidy_clauses(toks, paths):
          ég]") is a phrase of the clause around it.
       c. The negation before a conjunction belongs to the main clause: "Ég
          veit [ekki] hvort …".
-      d. *af því* belongs with the *að* that follows it.
+      d. *af því* and *vegna þess* belong with the *að* that follows them.
       e. After a fronted subordinate clause the main clause begins at its verb
          (V2), and words trailing a subordinate clause at the very end of the
          sentence, with no verb among them, belong to that clause: "að þið
@@ -613,10 +621,11 @@ def tidy_clauses(toks, paths):
         if a > 0 and k[a] != 'aðalsetning' and toks[a]['w'].lower() in NEGATIONS \
                 and k[a - 1] == 'aðalsetning':
             k[a] = k[a - 1]
-    # d. af því + að
+    # d. af því + að, vegna þess + að: the conjunction is all three words
+    #    (orsakartenging), so the clause begins at *af* / *vegna*.
     for a, b in runs():
         if a >= 2 and k[a] == 'aukasetning' and toks[a]['w'].lower() == 'að' \
-                and toks[a - 1]['w'].lower() == 'því' and toks[a - 2]['w'].lower() == 'af':
+                and (toks[a - 2]['w'].lower(), toks[a - 1]['w'].lower()) in CAUSAL_HEADS:
             k[a - 1] = k[a - 2] = 'aukasetning'
     # e. V2 after a fronted clause; trailing words at the end
     rr = runs()
@@ -941,14 +950,20 @@ def annotate(lvl, text, slot, need, opts=None):
 
 # The longest a sentence at each level may be. Levels above 5 have no ceiling.
 MAX_WORDS = {1: 5, 2: 7, 3: 9, 4: 11}
+# The shortest a sentence at levels 6 and 7 may be, counted as words in the
+# text (the parser joins "í gær" and "eins og" into one token, so tokens would
+# undercount). Length is not what makes these levels harder — the
+# constructions are, see sentences.py — but a short sentence cannot hold them,
+# and a level-7 label on nine words would pay the þyngd-7 bonus for nothing.
+MIN_WORDS = {6: 11, 7: 15}
 # Below this many words a sentence is not wrong, but it is where the flashcard
 # captions live, so the build says how many there are.
 SHORT_AT = 4
 
 
 def check_lengths(records):
-    """Level ceilings, enforced; the short tail, reported."""
-    over, short = [], []
+    """Level ceilings and the level 6-7 floors, enforced; the short tail, reported."""
+    over, short, under = [], [], []
     for r in records:
         n = sum(1 for t in r['tok'] if t['w'] != '.')
         cap = MAX_WORDS.get(r['lvl'])
@@ -956,8 +971,18 @@ def check_lengths(records):
             over.append((r['lvl'], n, cap, r['t']))
         if n < SHORT_AT:
             short.append((r['lvl'], n, r['t']))
+        floor = MIN_WORDS.get(r['lvl'])
+        if floor is not None and len(r['t'].split()) < floor:
+            under.append((r['lvl'], len(r['t'].split()), floor, r['t']))
     if short:
         print('stuttar setningar (< %d orð):' % SHORT_AT, len(short))
+    if under:
+        print('OF STUTTAR SETNINGAR:', len(under))
+        for lvl, n, floor, text in under:
+            print(f'   þyngd {lvl}: {n} orð (lágmark {floor}) — {text!r}')
+        raise SystemExit(
+            'Setning á þyngd 6 eða 7 er styttri en þyngdarstigið krefst. '
+            'Færðu hana niður um þyngdarstig — sjá lengdartöfluna í sentences.py.')
     if over:
         print('OF LANGAR SETNINGAR:', len(over))
         for lvl, n, cap, text in over:

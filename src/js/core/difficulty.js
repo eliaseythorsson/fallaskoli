@@ -69,8 +69,12 @@
 import { SKILL_IDS } from "./skills.js";
 import { skillLevel } from "./progress.js";
 
-/* Difficulty runs 1-7: 1-5 is year 8, 6-7 is room for years 9 and 10. No
- * sentence at level 6-7 exists yet; the builders clip to what exists. */
+/* Difficulty runs 1-7: 1-5 is year 8, 6 is year 9 and 7 is year 10
+ * (core/curriculum.js TOP_LEVEL). Levels 6 and 7 have sentences of their own
+ * since v6.13: two subordinate clauses, þolmynd, viðtengingarháttur þátíðar,
+ * óbein ræða (sentences.py says what earns a sentence its level). A pupil
+ * reaches them only where the policy has them switched on: `levelRanges`
+ * below stops each skill at the policy's highest þyngd. */
 export const MIN = 1, MAX = 7;
 export const clamp = (v, a = MIN, b = MAX) => Math.max(a, Math.min(b, v));
 
