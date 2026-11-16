@@ -171,3 +171,22 @@ def groups(rel, key_col, columns):
     for r in rows(rel, columns):
         out.setdefault(r[key_col], []).append(r)
     return out
+
+
+if __name__ == "__main__":
+    # A quick check for whoever just edited a file: read everything the way
+    # the build does, without BÍN or Greynir, and say what was read or what
+    # is wrong (file and line). ./build.sh still has to run for the real check.
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    try:
+        import sentences, exercises
+    except ContentError as e:
+        print("Villa / error:", e, file=sys.stderr)
+        sys.exit(1)
+    n_ex = sum(len(v) for k, v in vars(exercises).items()
+               if k.isupper() and isinstance(v, (list, dict)) and not k.startswith("VC_"))
+    print("Allt lesið / all read: %d setningar, %d atriði í Villuveiðum, %d færslur í öðrum listum."
+          % (len(sentences.S), len(exercises.HUNT), n_ex - len(exercises.HUNT)))
+    print("Keyrðu ./build.sh: þá er efnið borið saman við BÍN og greint með Greyni / "
+          "run ./build.sh for the full check.")
