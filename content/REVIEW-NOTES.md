@@ -115,12 +115,13 @@ content/setningar/setningar.tsv): lestu hvort hver *svo að*-setning er um
 tilgang eða afleiðingu eins og hátturinn segir. Nánar í docs/CURRICULUM.md,
 „What item 28 built“.
 
-## „Setningarliðir“: heiti síðunnar
-Leita: `Setningarliðir`
-Úr: docs/39-curriculum-map, feat/28-years-9-10 (atriði 28, 39)
+## „Setningarhlutar“: heiti síðunnar
+Leita: `Setningarhlutar`
+Úr: docs/39-curriculum-map, feat/28-years-9-10, fix/review-content (atriði 28, 39; rýni S12)
 
-Eldri síðan heitir *Setningarliðir* og rekst nú á nýju síðuna um nafnlið,
-sagnlið og forsetningarlið. Ætti hún að heita *Setningarhlutar*?
+Síðan um frumlag, umsögn, andlag og sagnfyllingu hét *Setningarliðir* og
+rakst á síðuna um nafnlið, sagnlið og forsetningarlið. Hún heitir nú
+*Setningarhlutar*. Er það orðið sem skólinn notar?
 
 ## Aðalsetning og aukasetning
 Leita: `Aukasetning getur ekki staðið ein`
@@ -137,6 +138,55 @@ Skrá: `src/js/content/examples.js`
 
 Sýnidæmið sem birtist við fyrstu spurningu hverrar tegundar. Öll þarf að lesa:
 spurninguna, svarið og leiðina að því.
+
+## Orð í samhengi: hvaða merking orðabókarinnar
+Skrá: `content/ordafordi/samhengi.tsv` · `content/ordafordi/samhengi-rammar.tsv`
+Úr: fix/review-content (rýni M1)
+
+Skýringin eftir rétt svar er nú sú merking ÍNO sem setningin á við (dálkurinn
+`merking`, eða `lag=2` í römmunum), ekki fyrsta merkingin. Lestu hvort valið
+passar, sérstaklega: *fiskur* sem matur („vatna- og sjávardýr“), *blóm* sem
+er vökvað („(skrautlegur) hluti plöntu eða trés“), *vatn* sem synt er í
+(„vökvi gerður úr …“) og *leikur* í sjónvarpinu („keppni tveggja liða“). Þar
+sem engin merking ÍNO á við er engin skýring sýnd (`-`): *kort* sent ömmu,
+*hjól* (reiðhjól), *diskur* í uppþvottavél, *búð*, *olía* á bílinn og
+*peningum*. Er til betri merking fyrir eitthvert þeirra?
+
+## Börn og nemendur í römmum setningabankans
+Leita: `hjálpaði ég þremur strákum með heimalærdóminn` · `Allir krakkarnir fóru út í frímínútum` · `Kennarinn hjálpaði þremur nemendum` · `Gamli maðurinn sefur` · `Eldri bróðir minn er í tíunda bekk`
+Úr: fix/review-content (rýni S2)
+
+Nýr merkingarflokkur, `child` (barn, krakki, strákur, stelpa, drengur,
+piltur, stúlka, telpa, unglingur, táningur, smábarn, smákrakki, smástelpa,
+stráklingur, stráksi, nemandi, nemi, busi), er notaður í römmum um skóla og
+lítil börn. Rammar með *gamall* taka fullorðna, og rammar með skyldmenni og
+*minn* (*Eldri bróðir minn …*) halda sínu orði. Er listinn réttur, og eru
+fleiri rammar sem ættu aðeins að taka börn?
+
+## Ný setning: „Bókin fjallar um eldfjall.“
+Leita: `Bókin fjallar um eldfjall`
+Úr: fix/review-content (rýni S2)
+
+Bætt við svo að þolfall eintölu án greinis af veðri, himingeimnum, peningum
+og myndum eigi sér ramma eftir að *Þetta er saga um ___* var þrengt (sagan
+fjallar nú um einhvern, hugmynd eða atburð). Lestu hvort *Bókin fjallar um
+storm / loftstein / gjaldmiðil / sjónvarpsþátt* hljómar eðlilega.
+
+## Dagsetningar á skóladagatalinu
+Leita: `Skólinn byrjar ___ {M}` · `Frá ___ {M} er sumarfrí`
+Úr: fix/review-content (rýni S2)
+
+Skólinn byrjar nú aðeins 18.–31. ágúst eða 3.–6. janúar og sumarfríið hefst
+28. maí–15. júní (dálkurinn `dagar`). Passa þau bil við skóladagatal
+grunnskóla?
+
+## Sýnidæmi umritunar, eitt fyrir hverja gerð
+Leita: `Hún las bókina og fór svo að sofa` · `Strákarnir eru glaðir` · `Húsið var byggt` · `Pabbi lagaði hjólið` · `Bjargaði hún kettinum` · `Þegar ég kom heim var mamma að elda` · `Í gær fór ég í sund`
+Úr: fix/review-content (rýni S3)
+
+Níu ný sýnidæmi, eitt fyrir hverja gerð umritunar. Lestu orðalagið í *Svona:*
+línunum, sérstaklega skýringuna á þolmynd („Það má bæta við *af smiðunum*“)
+og á tengingu með *þegar*.
 
 # Utan síðunnar
 
@@ -194,3 +244,48 @@ smelltu á það og skrifaðu það rétt.“) og reglan um sögn í öðru sæt
 
 Texti kennarans, markmið bekkjarins, einvígi og forgjöf, lifandi umferð,
 færnikortið og nýju efnisgreinarnar í persónuverndartilkynningunni.
+
+## „Hvert á ekki heima í hópnum?“: skýringin og hóparnir
+Úr: fix/review-content (rýni M2)
+
+Skýringin er nú „*hundur*, *köttur* og *hestur*: þetta eru allt dýr. *Stóll*
+er ekki dýr.“ (og „þetta er allt matur“). Störf heita þar *starfsheiti*.
+Hóparnir voru lesnir og hreinsaðir (src/js/tasks/ordaford.js, `ODD_SKIP`):
+heimilistæki, rúmföt og baðkar eru ekki húsgögn, skór og stígvél ekki föt,
+tár, hár og roð ekki líkamshlutar, sveppur og lauf ekki plöntur, myrkur, alda
+og jarðskjálfti ekki veðurfyrirbæri. Lestu listann og nokkrar spurningar; er
+*kál* planta, *rjómi* matur og *kaldi* (vindur) veðurfyrirbæri í huga barns?
+
+## Miðmynd sagna: hvaða sagnir eru spurðar í öllum persónum
+Úr: fix/review-content (rýni S1)
+
+`PERSONAL_MM` í src/js/tasks/sagnord.js telur 116 sagnir sem eru notaðar í
+miðmynd um persónu (*ég sest, þú sest*, *ég kynnist*). Aðrar fá hvorki
+miðmyndartöflu né miðmynd í 1. og 2. persónu. Lestu listann: vantar algengar
+sagnir eða eru einhverjar þar sem *ég …st* hljómar ekki eðlilega
+(*ég læst*, *ég heyrist*, *ég sést*)? Skýringarnar undir töflunum eru nýjar,
+ein fyrir hverja tíð (`tableNote`): „Í nútíð fleirtölu endar 1. persóna á
+*-um* …“, „Viðtengingarháttur þátíðar er myndaður af þátíð fleirtölu í
+framsöguhætti: við *tókum* – þótt ég *tæki*.“, „Miðmynd endar á *-st* …“.
+
+## Boðháttur: sagnir sem eru ekki spurðar
+Úr: fix/review-content (rýni S2)
+
+`BH_SKIP` í src/js/tasks/sagnord.js var lengdur (*kúga*, *kvelja*, *svindla*,
+*heita*, *líða* …) og á þyngd 5 er aldrei farið út fyrir algengustu 60%
+sagnanna. Lestu 100 boðháttarspurningar og athugaðu hvort eitthvað sé enn
+óeðlilegt að skipa barni að gera.
+
+## Hugtakaskýringar fyrir sterk og veik nafnorð og sagnir
+Úr: fix/review-content (rýni S4)
+
+Nýjar skýringar í src/js/core/glossary.js: *Sterkt nafnorð*, *Veikt nafnorð*,
+*Beyging nafnorða*, *Beyging sagna*. Á spurningum og síðum um nafnorð og
+sagnir vísa *sterk*, *veik* og *beyging* á þær.
+
+## „Á morgun skiptir fjölskyldan mig miklu máli“
+Úr: fix/review-content (sást við yfirferð, ekki lagað)
+
+Umritun *Á morgun …* tekur líka setningar um ástand sem á ekki heima á
+morgun. Er rétt að sleppa *Á morgun* við setningar með *skipta máli*, *vera*
+o.þ.h.?

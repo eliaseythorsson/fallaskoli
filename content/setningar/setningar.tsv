@@ -72,11 +72,11 @@
 1	Kennarinn breytist aldrei.	kennari	any
 1	Veturinn er alltaf langur.	vetur	time|event		rk kk
 1	Hundurinn fylgir stráknum.	strákur	being
-1	Gamli maðurinn sefur.	maður	person		pinned
-1	Gamla konan les bók.	kona	person		pinned
-1	Litla barnið sefur.	barn	person		pinned
-1	Gamla konan brosti.	kona	person		pinned
-1	Litli strákurinn hljóp.	strákur	person		pinned
+1	Gamli maðurinn sefur.	maður	=person|job		pinned
+1	Gamla konan les bók.	kona	=person|job		pinned
+1	Litla barnið sefur.	barn	child		pinned
+1	Gamla konan brosti.	kona	=person|job		pinned
+1	Litli strákurinn hljóp.	strákur	child		pinned
 1	Nýja húsið er bjart.	hús	place		pinned
 1	Hesturinn er gamall.	hestur	living		rk kk
 1	Strákurinn er þreyttur.	strákur	living		rk kk
@@ -88,7 +88,7 @@
 1	Stelpan er glaðari núna.	stelpa	living		rk kvk
 1	Bókin er skemmtileg.	bók	text|film|event		rk kvk
 1	Þetta er stærsti hesturinn.	hestur	living		pinned
-1	Þetta er yngsta barnið mitt.	barn	person		pinned
+1	Þetta er yngsta barnið mitt.	barn	child		pinned
 1	Þetta er bókin mín.	bók	thing|animal		pinned
 1	Bíllinn hennar er nýr.	bíll	thing		pinned
 1	Mín bók er horfin.	bók	thing		pinned
@@ -115,7 +115,7 @@
 1	Húsin eru hvít.	hús	item|plant|struct|building
 1	Börnin eru lítil.	barn	living		rk hk
 1	Húsin eru gömul.	hús	item|plant|struct|building
-1	Litlu börnin sofa.	barn	person		pinned
+1	Litlu börnin sofa.	barn	child		pinned
 1	Stóru hestarnir sofa.	hestur	living		pinned
 1	Öll húsin eru auð.	hús	place
 1	Dagarnir líða hratt.	dagur	time
@@ -143,7 +143,7 @@
 1	Hann á hjól heima.	hjól	animal|object
 1	Stelpan teiknar mynd.	mynd	none
 1	Amma bakar köku handa mér.	kaka	none
-1	Þetta er saga um vináttu.	vinátta	any
+1	Þetta er saga um vináttu.	vinátta	abstract|event
 1	Ég sá stóran hund.	hundur	living		pinned
 1	Ég las gamla bók.	bók	text		pinned
 1	Ég á rauðan bíl.	bíll	thing		pinned
@@ -191,7 +191,7 @@
 1	Ég man dagana vel.	dagur	time|event
 1	Ég sá börn úti.	barn	living
 1	Ég sá kennarana í morgun.	kennari	sight
-1	Þetta er saga um krakka.	krakki	any
+1	Þetta er saga um krakka.	krakki	being|critter
 1	Við töluðum um dagana.	dagur	any
 1	Ég hugsa oft um krakkana.	krakki	any
 1	Ég hugsa oft um hugmyndir.	hugmynd	any
@@ -248,8 +248,8 @@
 1	Þetta gengur ekki án bíla.	bíll	any
 1	Ferðin tafðist vegna bílsins.	bíll	any
 1	Ferðin tafðist vegna bílanna.	bíll	any
-1	Þetta er mynd af hesti.	hestur	concrete|sky
-1	Þetta er mynd af hestum.	hestur	concrete|sky
+1	Þetta er mynd af hesti.	hestur	being|critter|plant|body|food|clothing|vehicle|furniture|object|book|spot|sky
+1	Þetta er mynd af hestum.	hestur	being|critter|plant|body|food|clothing|vehicle|furniture|object|book|spot|sky
 1	Ég spurði um fjölda bílanna.	bíll	any
 1	Á myndinni sást fjöldi bíla.	bíll	sight|item|nature|sky|struct|furniture
 # ---- more frames that take nearly any noun (v6.13, critique item 24) ---------
@@ -280,19 +280,20 @@
 # Talking, knowing, learning (um + accusative).
 2	Við lærðum um eldfjöll í skólanum.	eldfjall	concrete|abstract|event|weather|sky|music|film|text
 1	Bókin fjallar um drauga.	draugur	concrete|abstract|event|weather|sky|music|film|text
+1	Bókin fjallar um eldfjall.	eldfjall	concrete|abstract|event|weather|sky|music|film|text|money		v6.13 (S2): eina ÞFET-ramminn fyrir veður, himin, peninga og myndir eftir að „saga um“ var þrengd
 1	Ég veit ekkert um hesta.	hestur	concrete|abstract|event|weather|sky|music|film|text
 1	Ég veit ekkert um hestana.	hestur	any
 1	Mamma spurði mig um hestana.	hestur	any
 1	Við ræddum hugmyndirnar í tímanum.	hugmynd	any
 1	Við fórum að skoða hestana.	hestur	animal|critter|vehicle|building|plant|item|nature|struct
 # Pictures, stories, telling, forgetting (af / frá + dative, gleyma).
-1	Ég teiknaði mynd af hesti.	hestur	concrete|sky
-1	Ég teiknaði mynd af hestum.	hestur	concrete|sky
-1	Ég teiknaði mynd af hestinum.	hestur	concrete|sky
+1	Ég teiknaði mynd af hesti.	hestur	being|critter|plant|body|food|clothing|vehicle|furniture|object|book|spot|sky
+1	Ég teiknaði mynd af hestum.	hestur	being|critter|plant|body|food|clothing|vehicle|furniture|object|book|spot|sky
+1	Ég teiknaði mynd af hestinum.	hestur	being|critter|plant|body|food|clothing|vehicle|furniture|object|book|spot|sky
 2	Ég hef heyrt margar sögur af draugum.	draugur	living|critter|vehicle|building|settlement
 1	Ég hef gaman af hestum.	hestur	animal|vehicle|book|text|film|music|event|plant
 1	Ég safna steinum.	steinn	object|book
-1	Ég sagði mömmu frá hestunum.	hestur	any
+1	Ég sagði mömmu frá hestunum.	hestur	abstract|event|place|being|weather|film|music|text
 1	Kennarinn sagði okkur frá ferðinni.	ferð	any
 1	Ég gleymdi alveg bókinni.	bók	item|food|drink|living|event|text|film|music|money|abstract
 1	Ég gleymdi alveg bókunum.	bók	item|food|drink|living|event|text|film|music|money|abstract
@@ -383,7 +384,7 @@
 2	Snjórinn féll á jörðina.	snjór	none
 2	Stelpan las söguna upphátt.	saga	text
 2	Pabbi lagaði hjólið mitt.	hjól	thing		pinned
-2	Kennarinn hrósaði nemendunum.	nemandi	living
+2	Kennarinn hrósaði nemendunum.	nemandi	child
 2	Hesturinn stóð úti á túni.	hestur	living
 2	Barnið sofnaði í bílnum.	barn	living
 2	Bókin liggur á borðinu.	bók	small
@@ -400,14 +401,14 @@
 2	Hún er fljótust í sundi.	sund	none
 2	Þetta hús er stærst í götunni.	hús	struct|place		pinned
 2	Besti vinur minn heitir Jón.	vinur	person		pinned
-2	Gömlu mennirnir sitja á bekknum.	maður	person		pinned
+2	Gömlu mennirnir sitja á bekknum.	maður	=person|job		pinned
 2	Nýja húsið okkar stendur við sjóinn.	hús	struct|place		pinned
 2	Fyrsti dagurinn í skólanum var langur.	dagur	none		pinned
 2	Þriðja bókin var skemmtilegust.	bók	text|film		pinned
 2	Það eru fjögur börn í hópnum.	barn	living		pinned
 2	Sú kona vinnur í búðinni.	kona	person		pinned
 1	Það hús er til sölu.	hús	building		pinned
-2	Allir krakkarnir fóru út í frímínútum.	krakki	person		pinned
+2	Allir krakkarnir fóru út í frímínútum.	krakki	child		pinned
 2	Hesturinn beið fyrir utan hesthúsið.	hesthús	building
 2	Konan gekk heim eftir vinnu.	vinna	event
 2	Tvö hús standa við enda götunnar.	hús	building
@@ -468,17 +469,17 @@
 2	Krakkarnir hlupu út á völl.	völlur	none
 2	Ég las söguna fyrir bróður minn.	saga	text
 2	Ég sá gamlan hest í garðinum.	hestur	living		pinned
-2	Ég sá gamla konu á bekknum.	kona	living		pinned
+2	Ég sá gamla konu á bekknum.	kona	=person|job|animal		pinned
 2	Ég sá gamalt hús við götuna.	hús	struct|place		pinned
 2	Hann keypti nýjan bíl í fyrra.	bíll	thing		pinned
 2	Hún keypti nýja tösku fyrir skólann.	taska	thing		pinned
 2	Við keyptum nýtt borð í eldhúsið.	borð	thing		pinned
-2	Ég sá gamla manninn í búðinni.	maður	person		pinned
-2	Ég sá gömlu konuna í garðinum.	kona	person		pinned
+2	Ég sá gamla manninn í búðinni.	maður	=person|job		pinned
+2	Ég sá gömlu konuna í garðinum.	kona	=person|job		pinned
 2	Ég sá litla barnið í vagninum.	barn	living		pinned
 2	Ég vil fá stærri skó.	skór	thing		pinned
 2	Ég sá stærri hest en þennan.	hestur	concrete		pinned
-2	Ég gaf litlu stelpunni fallega bók.	stelpa	person		pinned
+2	Ég gaf litlu stelpunni fallega bók.	stelpa	child		pinned
 2	Ég sá skólann í gær.	skóli	sight
 2	Ég sá steinana í fjörunni.	steinn	small|animal
 2	Við hittum tvo stráka í búðinni.	strákur	person		pinned
@@ -491,7 +492,7 @@
 2	Ég sá kennarana í gær.	kennari	sight
 2	Við hugsum mikið um kennarann.	kennari	any
 2	Ég skil ekki þessa hugmynd.	hugmynd	any		pinned
-2	Þetta er saga um krakkana.	krakki	any
+2	Þetta er saga um krakkana.	krakki	being|critter
 2	Við ræddum hugmyndina lengi.	hugmynd	abstract|event|text
 2	Við ræddum hugmyndirnar lengi.	hugmynd	abstract|event|text
 2	Hann nefndi aldrei vandamálið.	vandamál	abstract|event|text
@@ -507,7 +508,7 @@
 2	Ég sagði frá kennurunum í gær.	kennari	any
 2	Krakkarnir fóru í ferðina án kennaranna.	kennari	person
 2	Ég gaf tveimur hundum vatn í gær.	hundur	living		pinned
-2	Kennarinn hjálpaði þremur nemendum í morgun.	nemandi	person		pinned
+2	Kennarinn hjálpaði þremur nemendum í morgun.	nemandi	child		pinned
 2	Ég gaf þremur börnum kökur í dag.	barn	person
 2	Kennarinn talaði við þrjár konur í morgun.	kona	person		pinned
 2	Ég sagði systur minni frá þessu.	systir	being		pinned
@@ -517,9 +518,9 @@
 2	Ég hef lengi haft áhuga á myndinni.	mynd	any
 2	Við höfum alltaf haft gaman af krökkunum.	krakki	living
 2	Þú lofaðir mér nýju hjóli.	hjól	thing		pinned
-2	Ég gaf gömlum manni sætið mitt.	maður	person		pinned
-2	Ég talaði við litlu stelpuna í gær.	stelpa	person		pinned
-2	Litlu börnin sofnuðu strax eftir matinn.	barn	person		pinned
+2	Ég gaf gömlum manni sætið mitt.	maður	=person|job		pinned
+2	Ég talaði við litlu stelpuna í gær.	stelpa	child		pinned
+2	Litlu börnin sofnuðu strax eftir matinn.	barn	child		pinned
 2	Ég talaði lengi við kennarann.	kennari	being
 # ---- genitive --------------------------------------------------------------
 2	Ég man ekki nafn kennarans.	kennari	named
@@ -529,7 +530,7 @@
 2	Bílar tveggja kennara stóðu fyrir utan skólann.	kennari	person		pinned
 2	Nöfn þriggja stráka stóðu efst á listanum.	strákur	person		pinned
 2	Verð hjólanna hækkaði mikið.	hjól	thing
-2	Kennarinn safnaði verkefnum nemenda í möppu.	nemandi	person
+2	Kennarinn safnaði verkefnum nemenda í möppu.	nemandi	child
 2	Nöfn kennaranna standa á blaðinu.	kennari	named
 2	Hann talaði um sögu bæjarins.	bær	settlement|building
 2	Hann talaði um sögu bæjanna.	bær	settlement|building
@@ -567,13 +568,13 @@
 3	Hann sagðist ekki muna eftir bókinni.	bók	any
 3	Dagar líða hratt á sumrin.	dagur	time
 3	Í garðinum stóðu tvö há tré alveg við húsið.	tré	plant		pinned
-3	Litla systir mín er miklu duglegri en ég var.	systir	person		pinned
+3	Litla systir mín er miklu duglegri en ég var.	systir	none		pinned
 3	Þetta var erfiðasta verkefnið í öllu prófinu.	verkefni	any		pinned
 3	Þetta er stærsti hesturinn í hesthúsinu.	hestur	animal		pinned
-3	Eldri bróðir minn er í tíunda bekk.	bróðir	person		pinned
-3	Yngri systir mín byrjar í skóla í haust.	systir	person		pinned
+3	Eldri bróðir minn er í tíunda bekk.	bróðir	none		pinned
+3	Yngri systir mín byrjar í skóla í haust.	systir	none		pinned
 3	Veðrið var betra í dag en í gær.	veður	none
-3	Elsta systir mín er tvítug í dag.	systir	person		pinned
+3	Elsta systir mín er tvítug í dag.	systir	none		pinned
 3	Bílarnir höfðu verið þvegnir fyrir utan húsið.	bíll	vehicle		rk kk
 3	Þakið á húsinu er nýtt.	þak	none
 3	Hesturinn er hvergi sjáanlegur í dag.	hestur	living|item
@@ -778,7 +779,7 @@
 4	Í byrjun vetrar var snjórinn þegar kominn í fjöllin.	vetur	none
 4	Í morgun komu þrír kennarar í heimsókn í skólann okkar.	kennari	person		pinned
 4	Í gær sá ég þrjá fugla sitja uppi á þakinu.	fugl	none
-3	Í gær hjálpaði ég þremur strákum með heimalærdóminn.	strákur	person
+3	Í gær hjálpaði ég þremur strákum með heimalærdóminn.	strákur	child
 4	Kennarinn sagði okkur frá þremur bókum sem við ættum að lesa.	bók	text		pinned
 4	Þegar tíminn var búinn fóru fjórar stelpur beint út í frímínútur.	stelpa	person		pinned
 4	Ég veit ekki hvort einhver krakki í bekknum á þessa tösku.	krakki	person		pinned

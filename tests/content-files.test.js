@@ -121,7 +121,8 @@ print(json.dumps(out))`);
   };
   for (const [k, n] of Object.entries(want)) assert.equal(got[k], n, k);
   /* the sizes at the move (v6.13): a file that suddenly reads short is a bug */
-  assert.equal(got.S, 1130);
+  /* 1131 since the v6.13 review (S2): "Bókin fjallar um eldfjall." */
+  assert.equal(got.S, 1131);
   assert.equal(got.HUNT, 134);
   /* the VC_* groups the builders know by name are all still there */
   for (const k of ["VC_FAMILY", "VC_OTHERS", "VC_PEOPLE", "VC_ANIMALS", "VC_PETS", "VC_VISITED", "VC_THINGS",

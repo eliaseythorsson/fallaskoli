@@ -271,25 +271,36 @@ export function toDate(lex, view, rng) {
     (!forcedCell(view) || forcedCell(view) === "to:dags-" + f.case));
   if (!frames.length) return null;
   const f = pick(forcedCell(view) ? frames : nearBand(frames, (y) => y.lvl, b, 2), rng);
-  const mi = randInt(12, rng);
   /* Up to 20 at first; the compounds (21., 22. …) from þyngd 2. */
-  const top = b >= 2 ? D.days[mi] : Math.min(20, D.days[mi]);
-  const d = 1 + randInt(top, rng);
+  const cap = (mi) => (b >= 2 ? D.days[mi] : Math.min(20, D.days[mi]));
+  let mi, d;
+  if (f.when && f.when.length) {
+    /* A frame on the school calendar takes only the days it can be true on
+       (content/toluord/dagsetningar.tsv `dagar`; v6.13 review, S2: "Skólinn
+       byrjar sextánda júní"). Within them the band's cap where it leaves any. */
+    const [m0, a, z] = pick(f.when, rng);
+    const hi = cap(m0) >= a ? Math.min(z, cap(m0)) : z;
+    mi = m0;
+    d = a + randInt(hi - a + 1, rng);
+  } else {
+    mi = randInt(12, rng);
+    d = 1 + randInt(cap(mi), rng);
+  }
   const answers = D.ord[d][f.case];
   const { s, i } = textSentence(f.t.replace("{M}", D.months[mi]));
-  const cap = i === 0;
+  const capital = i === 0;
   const para = {};
   ["NF", "ÞF", "ÞGF", "EF"].forEach((c) => { para[`KK-${c}ET`] = D.ord[d][c]; });
   const m = `KK-${f.case}ET`;
   return built({
     type: "gap", skill: "toluord", s, i, cue: `${d}.`,
-    answers: answers.map((x) => (cap ? cap1(x) : x)), m, paradigm: para,
+    answers: answers.map((x) => (capital ? cap1(x) : x)), m, paradigm: para,
     title: "Skrifaðu dagsetninguna", lemmaLabel: "raðtala",
     hint: "Raðtalan í dagsetningu er í karlkyni (dagurinn). Fallið fer eftir setningunni.",
     why: `${f.why} ${d === 2 || d === 22 ? "*Annar* beygist sterkt: annar, annan, öðrum, annars." : "Raðtölur beygjast eins og veik lýsingarorð: *þriðji, þriðja*."}`,
     /* the frame's level, and one more for a compound ordinal */
     base: 10, lvl: levelFor(P, Math.min(5, f.lvl + (d > 20 ? 1 : 0))),
-    cell: "to:dags-" + f.case, word: null, tags: [], cap,
+    cell: "to:dags-" + f.case, word: null, tags: [], cap: capital,
   });
 }
 

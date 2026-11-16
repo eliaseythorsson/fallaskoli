@@ -143,8 +143,9 @@ GROUPS = {
     "thing": "object clothing food drink book furniture vehicle plant",
     # fits in a hand or a bag
     "small": "object clothing food book",
-    # a human being: `job` is the part of `person` that names an occupation
-    "person": "job",
+    # a human being: `job` is the part of `person` that names an occupation,
+    # `child` the part that is a child or a pupil (v6.13 review, S2)
+    "person": "job child",
     # people and animals
     "living": "person job animal",
     # people, animals and collectives

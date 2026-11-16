@@ -11,14 +11,14 @@
 
 import { CASES, COLS, mark, describeMark, caseName } from "../core/marks.js";
 import { lessonLinkHTML } from "./lessons.js";
-import { abbr, markHTML } from "../core/glossary.js";
+import { abbr, markHTML, setGlossContext } from "../core/glossary.js";
 import { agreementNote, normalise } from "../core/grading.js";
 import { judge, settle, parseRows, judgeSyntax, judgeRetry, retryAllowed, hideAnswer } from "../core/answer.js";
 import { runMult, dayMult } from "../core/progress.js";
 import { dayStreak, todayKey } from "../core/state.js";
 import { firstMeeting, markTypeSeen } from "../core/examples.js";
 import { skillName } from "../core/skills.js";
-import { conjugationNote } from "../tasks/explain.js";
+import { conjugationNoteFor } from "../tasks/explain.js";
 import { reportButtonHTML } from "./reports.js";
 import { l2On, glossToken, decorateTask } from "./secondlang.js";
 import {
@@ -85,6 +85,10 @@ export function renderTask(app) {
      carries its gloss (ui/secondlang.js). Set for the whole life of the
      question, so the sentence drawn again with the answer keeps them. */
   glossFor = l2On(app) ? glossToken(app) : null;
+  /* *sterk*, *veik*, *beyging* in a question of nafnorð or sagnorð are that
+     class's (v6.13 review, S4). Set for the life of the question: its verdict
+     is drawn later, under the same subject. */
+  setGlossContext(app.cur.skill);
   fn(app);
   showExample(app);
   decorateTask(app);
@@ -608,7 +612,7 @@ function submitVerb(app) {
   if (t.retrying) return endRetry(app, t, j, draw);
   /* The rule for a verb on its own is its conjugation (*sterk sögn: …*). */
   if (offerRetry(app, t, j, {
-    response, why: conjugationNote(t.v.o, t.conj), label: "beyging",
+    response, why: conjugationNoteFor(t.v.o, t.conj, t.m), label: "beyging",
     note: nearNote(j.detail.v), inputs: [$("ans")], reveal: draw,
   })) return;
   conclude(app, t, j, draw);
@@ -617,7 +621,7 @@ function submitVerb(app) {
 function drawVerb(app, t, j) {
   const { v, xpFull } = j.detail;
   const ok = j.ok, xp = j.xp;
-  const conj = conjugationNote(t.v.o, t.conj);
+  const conj = conjugationNoteFor(t.v.o, t.conj, t.m);
   const head = ok && j.retry ? retryRightHTML(xp)
     : `<span class="xpop">+${xp} XP</span>
     <h3>${v.slip ? esc(v.slip.head) : ok ? cheer(CHEERS_OK) : cheer(CHEERS_NO)}</h3>`;
@@ -695,7 +699,7 @@ function submitVerbSlot(app) {
   noteTry(t, j, val);
   const draw = () => drawVerbSlot(app, t, j, val);
   if (t.retrying) return endRetry(app, t, j, draw);
-  const conj = conjugationNote(t.shown || t.v.o, t.conj);
+  const conj = conjugationNoteFor(t.shown || t.v.o, t.conj, t.m);
   if (offerRetry(app, t, j, {
     response, inputs: [$("ans")], lock: [$("hint")], reveal: draw,
     note: nearNote(j.detail.v) + whyBox(hideAnswer(conj, t), "beyging"),
@@ -707,7 +711,7 @@ function drawVerbSlot(app, t, j, val) {
   const { v, xpFull } = j.detail;
   const ok = j.ok, xp = j.xp;
   const full = sentenceHTML(t.s, t.i, `<b>${esc(t.answers[0])}</b>`);
-  const conj = conjugationNote(t.shown || t.v.o, t.conj);
+  const conj = conjugationNoteFor(t.shown || t.v.o, t.conj, t.m);
   if (ok && !j.retry) {
     $("verdict").innerHTML = `<div class="verdict ${v.klass}"><span class="xpop">+${xp} XP</span>
     <h3>${v.slip ? esc(v.slip.head) : cheer(CHEERS_OK)}</h3><p>${full}</p>

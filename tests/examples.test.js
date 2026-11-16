@@ -26,11 +26,41 @@ test("every question type has a worked example: a question, its answer and how",
     assert.ok(ex.q.length <= 160 && ex.how.length <= 240, `${id}: too long for the card`);
   }
   for (const id of Object.keys(EXAMPLES)) assert.ok(TYPE_IDS.includes(id), `an example for ${id}, which is no question type`);
+  /* and the examples of a kind (umritun, v6.13 review S3) are held the same way */
+  for (const [id, kind, ex] of KINDED) {
+    for (const f of ["q", "a", "how"]) assert.ok(typeof ex[f] === "string" && ex[f].trim().length > 0, `${id}.${kind}.${f}`);
+    assert.ok(ex.q.length <= 160 && ex.how.length <= 240, `${id}.${kind}: too long for the card`);
+  }
+});
+
+/* Every example of a kind, as [typeId, kind, example]. */
+const KINDED = Object.entries(EXAMPLES).flatMap(([id, ex]) =>
+  Object.entries(ex.byKind || {}).map(([kind, k]) => [id, kind, k]));
+
+test("umritun: the example is of the question's own kind (review S3)", async () => {
+  const { typeById } = await import("../src/js/tasks/index.js");
+  const { freshView, poolLex } = await import("./pools.js");
+  const { seeded } = await import("../src/js/core/duel.js");
+  const kinds = new Set();
+  for (let s = 0; s < 800; s++) {
+    const b = typeById("umritun").build(poolLex(), freshView(1 + (s % 7)), seeded(45000 + s));
+    if (b) kinds.add(b.task.kind);
+  }
+  assert.ok(kinds.size >= 8, [...kinds].join(", "));
+  for (const k of kinds) {
+    assert.ok(EXAMPLES.umritun.byKind[k], `no worked example for the umritun kind ${k}`);
+    assert.equal(firstMeeting(blankState(), { typeId: "umritun", kind: k }), EXAMPLES.umritun.byKind[k]);
+  }
+  /* the first question indirect speech, the example indirect speech too */
+  assert.match(exampleFor("umritun", "indirect").q, /óbeina ræðu/);
+  assert.match(exampleFor("umritun", "passive").q, /þolmynd/);
+  assert.equal(exampleFor("umritun", "no-such-kind"), EXAMPLES.umritun);
+  assert.equal(exampleFor("fill", "past"), EXAMPLES.fill);
 });
 
 test("every form an example states is BÍN's form for that word and mark", () => {
   let n = 0;
-  for (const [id, ex] of Object.entries(EXAMPLES)) {
+  for (const [id, ex] of [...Object.entries(EXAMPLES), ...KINDED.map(([id, kind, k]) => [`${id}.${kind}`, k])]) {
     for (const spec of ex.forms) {
       const m = /^([^|]+)\|([^|]+)\|([^=]+)=(.+)$/.exec(spec);
       assert.ok(m, `${id}: "${spec}" is not lemma|class|mark=form`);

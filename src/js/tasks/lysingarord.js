@@ -18,6 +18,7 @@ import { diffOf } from "../core/difficulty.js";
 import { wordKey } from "../core/state.js";
 import { adjectiveHelperForm, adjectiveGenders, adjectiveHelperLemma } from "../core/helpers.js";
 import { explainDegree } from "./explain.js";
+import { personalMM } from "./sagnord.js";
 import { nounSentence, adjectiveSentence, nounFrames, adjectiveFrames, showable, frameKey } from "./frames.js";
 import { built, FX } from "./effects.js";
 import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, cellWanted,
@@ -158,6 +159,10 @@ export function taskReverse(lex, view, rng) {
        middle voice of a verb that has none in use, and the first and second
        person of a weather verb (*snjóum*). */
     if (p.cls === "so" && !w.mm) marks = marks.filter((m) => !/^MM/.test(m));
+    /* …and the first and second person of a miðmynd said only impersonally,
+       reciprocally or of things (*líst* is a word, *ég líst* is not):
+       tasks/sagnord.js `personalMM` (v6.13 review, S1). */
+    if (p.cls === "so" && !personalMM(w)) marks = marks.filter((m) => !/^MM-.*-(1P|2P)-/.test(m));
     if (p.cls === "so" && w.t3) marks = marks.filter((m) => !/-(1P|2P)-|-3P-FT$|-BH-/.test(m));
     marks = marks.filter((m) => askable(P, m) && cellWanted(view, m));
     if (["kk", "kvk", "hk"].includes(p.cls)) marks = marks.filter((m) => showable(w, m));

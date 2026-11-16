@@ -78,8 +78,9 @@ test("the bank has sentences at every level, 80 or more at 6 and 50 or more at 7
   /* Exact, so that a sentence lost to a parse change is noticed here and not
      three releases later. Change the numbers when you add or drop sentences. */
   /* item 28: 91 short sentences at 2-5; item 24: 31 "any noun" frames at 1 and 9 at 2;
-     item 23: 49 at 1 with a verb or preposition that governs one case */
-  assert.deepEqual(LEVELS.map(count), [292, 207, 192, 133, 89, 139, 78]);
+     item 23: 49 at 1 with a verb or preposition that governs one case;
+     v6.13 review S2: "Bókin fjallar um eldfjall." at 1 */
+  assert.deepEqual(LEVELS.map(count), [293, 207, 192, 133, 89, 139, 78]);
   assert.equal(Math.max(...lex.sentences.map((s) => s.lvl)), MAX, "a sentence above the top of the scale");
 });
 

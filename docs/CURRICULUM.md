@@ -209,7 +209,7 @@ evidence above. Later years keep practising it.
 | `or-ordhlutar` | Orðhlutar og samsett orð | Einkenni málsins | Orðaforði | none yet | none yet | **no** |
 | `or-hljodbreytingar` | Hljóðbreytingar og skyldleiki orða | Einkenni málsins | Orðaforði | none yet | none yet | **no** |
 | `mb-raeda` | Bein og óbein ræða | Einkenni málsins | Málbeiting | Bein og óbein ræða (`raeda`) | Bein og óbein ræða (`raeda`) | yes |
-| `setn-hlutar` | Frumlag, umsögn, andlag og sagnfylling | Einkenni málsins | Setningafræði | Smelltu á rétta orðið (`syntax`); Hvaða setningarhluti? (`setn_hlut`); Flokkaðu setningarhluta (`setn_flokka`) | Setningarliðir (`setningalidir`) | yes |
+| `setn-hlutar` | Frumlag, umsögn, andlag og sagnfylling | Einkenni málsins | Setningafræði | Smelltu á rétta orðið (`syntax`); Hvaða setningarhluti? (`setn_hlut`); Flokkaðu setningarhluta (`setn_flokka`) | Setningarhlutar (`setningarhlutar`) | yes |
 | `setn-ordarod` | Orðaröð | Einkenni málsins | Setningafræði | Umritun (`umritun`) | Málfræðin í notkun (`malbeiting`) | in part |
 | `setn-lidir` | Nafnliður, sagnliður og forsetningarliður | Einkenni málsins | Setningafræði | Hvers konar liður? (`setn_lidir`); Finndu forsetningarliðinn (`lid_finna`) | Nafnliður, sagnliður og forsetningarliður (`lidir`) | yes |
 | `gerd-adal-auka` | Aðalsetning, aukasetning og nafnháttarsetning | Einkenni málsins | Setningagerðir | Hvers konar setning er þetta? (`clause`); Finndu aukasetninguna (`gerd_finna`); Hvar hefst setningin? (`gerd_upphaf`) | Setningagerðir (`setningagerdir`) | yes |
@@ -569,16 +569,16 @@ and which words were missed; `docs/PRIVACY.md` §1a says why.
 - The Icelandic wording of the seven criteria against the official page.
 - The node names in `src/js/core/curriculum.js` (the *Efni* column). They are
   what pupils read on the skill map (item 83).
-- **Setningarliðir or setningarhlutar?** The Lesefni page on frumlag, umsögn,
-  andlag and sagnfylling is titled *Setningarliðir*. Málvísir uses
-  *setningarliðir* for nafnliður, sagnliður, forsetningarliður, atviksliður
-  and tengiliður, and treats frumlag, andlag, sagnfylling and umsögn as roles;
-  one school plan calls them *setningarhlutar*. Phrases now have a page of
-  their own (*Nafnliður, sagnliður og forsetningarliður*, `lidir`), so the app
-  has a page called *Setningarliðir* that is about roles and another that is
-  about what Málvísir calls setningarliðir. The new page says how the two
-  differ ("Liður eða hlutverk?"); the old page's title was not changed, and
-  should be (to *Setningarhlutar*, if that is the school's word).
+- **Setningarhlutar.** The Lesefni page on frumlag, umsögn, andlag and
+  sagnfylling was titled *Setningarliðir*. Málvísir uses *setningarliðir* for
+  nafnliður, sagnliður, forsetningarliður, atviksliður and tengiliður, and
+  treats frumlag, andlag, sagnfylling and umsögn as roles; one school plan
+  calls them *setningarhlutar*. Phrases have a page of their own
+  (*Nafnliður, sagnliður og forsetningarliður*, `lidir`), so since the v6.13
+  review (S12) the roles page is *Setningarhlutar* (`setningarhlutar`; the
+  old id still opens it and a pupil's read mark moves with it). The
+  diagnosis pattern keeps its internal id `setningalidir`. A teacher may
+  still check that *setningarhlutar* is the school's word.
 - Whether *fallsetningar, tilvísunarsetningar* and *atvikssetningar* (Málvísir)
   or *skýringar-, tilvísunar-, tíðar-, skilyrðis-* and *orsakarsetningar* (the
   critique) is the division your school's book uses for `gerd-tegundir`. The

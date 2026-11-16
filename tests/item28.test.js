@@ -626,7 +626,7 @@ test("each question opens the Lesefni page that teaches it, and the three pages 
   assert.equal(lessonFor(SPEECH.get(1)[0]), "raeda");
   /* the older questions of the same categories keep their pages */
   assert.equal(lessonFor(typeById("clause").build(lex, viewAt(4), seeded(1)).task), "setningagerdir");
-  assert.equal(lessonFor(typeById("setn_hlut").build(lex, viewAt(4), seeded(1)).task), "setningalidir");
+  assert.equal(lessonFor(typeById("setn_hlut").build(lex, viewAt(4), seeded(1)).task), "setningarhlutar");
   assert.equal(lessonFor(typeById("smidja").build(lex, viewAt(2), seeded(1)).task), "malbeiting");
   const ids = new Set(LESSONS.map((l) => l.id));
   for (const [id, skill] of [["aukasetningar", "setningagerd"], ["lidir", "setningafraedi"], ["raeda", "malbeiting"]]) {

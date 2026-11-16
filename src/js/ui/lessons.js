@@ -9,6 +9,7 @@ import { LESSONS, lessonById, lessonFor, buildTable, markRead, readCount, lesson
 import { QUESTION_TYPES } from "../core/policy.js";
 import { SKILLS, skillName } from "../core/skills.js";
 import { $, esc, fmt, hideTip } from "./dom.js";
+import { setGlossContext } from "../core/glossary.js";
 
 function tableHTML(t) {
   return `<figure class="lsntable">
@@ -83,7 +84,10 @@ export function renderLessons(app, id) {
   if (!l) { $("lsnindex").innerHTML = ""; $("lsnbody").innerHTML = ""; return; }
   app.lessonOpen = l.id;
   $("lsnindex").innerHTML = indexHTML(app, l.id);
+  /* *sterk* on the page about nouns is the noun's (core/glossary.js) */
+  setGlossContext(l.skill);
   $("lsnbody").innerHTML = pageHTML(app, l);
+  setGlossContext(null);
   watchReading(app, l.id);
 }
 

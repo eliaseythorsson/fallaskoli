@@ -43,14 +43,14 @@
 1	Ég á ___ {N}.	ÞF	1, 2, 3, 4	köttur, hundur, hestur, fiskur, páfagaukur, systir, bróðir, frænka, frændi, vinur, vinkona
 1	Ég á ___ {N}.	ÞF	1, 2, 3, 4		object book clothing
 1	Hér eru ___ {N}.	NF	2, 3, 4		object book clothing
-1	___ {N} komu í heimsókn.	NF	2, 3, 4		person job
-1	Ég hitti ___ {N} í gær.	ÞF	1, 2, 3, 4		person job
+1	___ {N} komu í heimsókn.	NF	2, 3, 4		person job child
+1	Ég hitti ___ {N} í gær.	ÞF	1, 2, 3, 4		person job child
 1	Á bænum eru ___ {N}.	NF	2, 3, 4	kýr, hestur, kind, hæna, svín, hundur, köttur, geit, hani, kálfur, lamb, gæs, önd
 1	Ég beið í ___ {N}.	ÞF	1, 2, 3, 4	dagur, vika, mínúta, klukkutími, mánuður, sekúnda
 2	Hún keypti ___ {N} í búðinni.	ÞF	1, 2, 3, 4		object book clothing	bréf
 2	Í garðinum eru ___ {N}.	NF	2, 3, 4	tré, blóm, runni, fugl, köttur, bekkur
 2	Ég las ___ {N} í sumar.	ÞF	1, 2, 3, 4	bók, saga, blað, teiknimyndasaga, ljóð
-2	Við hjálpuðum ___ {N}.	ÞGF	1, 2, 3, 4		person job
+2	Við hjálpuðum ___ {N}.	ÞGF	1, 2, 3, 4		person job child
 2	Ég gaf ___ {N} mat.	ÞGF	1, 2, 3, 4	köttur, hundur, hestur, kind, hæna, fugl, fiskur, kýr, geit, önd, gæs
 3	Hún bjó hjá ___ {N} í sumar.	ÞGF	1, 2, 3, 4	vinur, vinkona, frænka, frændi, bróðir, systir, félagi, nágranni, strákur, stelpa
 3	Þetta eru hjól ___ {N}.	EF	2, 3, 4	strákur, stelpa, krakki, barn, drengur, vinur, vinkona, bróðir, systir, nemandi

@@ -167,9 +167,18 @@ export async function collect() {
       text: e.q, answer: e.a, explain: e.how,
       fields: [["gerð", type], ["myndir", (e.forms || []).join(", ")]].filter(([, v]) => v), above: [],
     });
+    /* a type whose questions come in kinds has one example per kind (umritun) */
+    for (const [kind, k] of Object.entries(e.byKind || {})) {
+      items.push({
+        kind: "synidaemi", list: "Sýnidæmi: eitt við hverja spurningagerð", file: examplesRel,
+        line: lineOf(esrc, `\n      ${kind}: {`) + 1, level: "", levelName: "",
+        text: k.q, answer: k.a, explain: k.how,
+        fields: [["gerð", `${type} · ${kind}`], ["myndir", (k.forms || []).join(", ")]].filter(([, v]) => v), above: [],
+      });
+    }
   }
   lists.push({ file: examplesRel, title: "Sýnidæmi: eitt við hverja spurningagerð",
-    n: Object.keys(EXAMPLES).length });
+    n: Object.values(EXAMPLES).reduce((n, e) => n + 1 + Object.keys(e.byKind || {}).length, 0) });
 
   items.forEach((it, i) => { it.id = i; });
   return { items, lists };

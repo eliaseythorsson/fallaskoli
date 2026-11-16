@@ -170,11 +170,15 @@ export function ordContext(lex, view, rng) {
   const cap = i === 0;
   const fix = (f) => (cap ? cap1(f) : f);
   const right = lex.lookup(x.a.o, x.a.c);
+  /* The definition printed is the item's own (`x.d`, the sense the sentence
+     means, chosen in content/ordafordi/samhengi*.tsv), never the word's
+     first sense: *lagið í útvarpinu* printed "*lag*: partur af stafla …"
+     until the v6.13 review (M1). An item without one says only why. */
   return built({
     type: "choice", skill: "ordaford", s, i,
     title: "Orð í samhengi", question: "Hvaða orð passar í setninguna?",
     options: shuffle([x.a, ...wrong].map((o) => fix(o.f)), rng), answer: fix(x.a.f),
-    why: right && right.d ? `*${x.a.o}*: ${right.d}` : `Aðeins *${x.a.f}* gefur setningunni merkingu.`,
+    why: x.d ? `*${x.a.o}*: ${x.d}` : `Aðeins *${x.a.f}* gefur setningunni merkingu.`,
     base: 8, lvl: levelFor(P, x.lvl), cell: "orð:samhengi", word: right ? wordKey(right.o, right.c) : null,
     tags: ["vocab"], miss: ["merking"], bonus: right,
   }, [v.fx]);
@@ -221,7 +225,7 @@ function formationPairs(lex) {
   }
   for (const w of lex.byClass.kk || []) {
     const m = w.o.match(/^(.+)(ari|andi)$/);
-    if (!m || !w.d || !["job", "person"].includes(w.s)) continue;
+    if (!m || !w.d || !["job", "person", "child"].includes(w.s)) continue;
     const v = lex.lookup(m[1] + "a", "so");
     const f3 = v && (v.forms["GM-FH-NT-3P-ET"] || [])[0];
     if (v && f3 && (w.d.includes(f3) || w.d.includes(v.o))) agent.push({ from: v, to: w, f3, sfx: "-" + m[2] });
@@ -305,25 +309,88 @@ export function ordFormation(lex, view, rng) {
   }, [v.fx]);
 }
 
-/** Odd one out: three nouns of one kind and one of a kind far from it. */
-const KIND_NAME = {
-  animal: "dýr", drink: "drykkir", food: "matur", vehicle: "farartæki", clothing: "föt",
-  furniture: "húsgögn", body: "líkamshlutar", plant: "plöntur", job: "störf",
-  weather: "veðurfyrirbæri", building: "byggingar",
+/** Odd one out: three nouns of one kind and one of a kind far from it.
+
+    The explanation (v6.13 review, M2) was "*a, b, c* eru öll ${KIND}", which
+    agrees with almost nothing: "eru öll drykkir", "eru öll matur". It is now
+    built from two fixed phrases per kind that are right whatever the words:
+    "*hundur*, *köttur* og *hestur*: þetta eru allt dýr. *Stóll* er ekki dýr."
+    After "þetta" the verb agrees with what follows: "þetta eru allt dýr"
+    (plural), "þetta er allt matur" (a mass noun, singular). `sg` is the kind
+    in the singular, said of the odd word, which is never of the kind. */
+const KIND = {
+  animal: { all: "eru allt dýr", sg: "dýr" },
+  drink: { all: "eru allt drykkir", sg: "drykkur" },
+  food: { all: "er allt matur", sg: "matur" },
+  vehicle: { all: "eru allt farartæki", sg: "farartæki" },
+  clothing: { all: "eru allt föt", sg: "flík" },
+  furniture: { all: "eru allt húsgögn", sg: "húsgagn" },
+  body: { all: "eru allt líkamshlutar", sg: "líkamshluti" },
+  plant: { all: "eru allt plöntur", sg: "planta" },
+  job: { all: "eru allt starfsheiti", sg: "starfsheiti" },
+  weather: { all: "eru allt veðurfyrirbæri", sg: "veðurfyrirbæri" },
+  building: { all: "eru allt byggingar", sg: "bygging" },
 };
+/* Kinds far enough apart that the odd word cannot be one of the three's
+   kind. Body parts and food or drink are not: *lifur*, *tunga* and *hjarta*
+   are eaten, and "Lifur er ekki matur" is false (review M2). */
 const ODD_FAR = {
   animal: ["furniture", "vehicle", "clothing", "drink", "building", "weather"],
-  drink: ["animal", "vehicle", "clothing", "furniture", "body", "building", "job"],
-  food: ["vehicle", "clothing", "furniture", "body", "building", "job", "weather"],
+  drink: ["animal", "vehicle", "clothing", "furniture", "building", "job"],
+  food: ["vehicle", "clothing", "furniture", "building", "job", "weather"],
   vehicle: ["animal", "drink", "food", "clothing", "body", "plant", "job"],
   clothing: ["animal", "drink", "food", "vehicle", "furniture", "plant", "weather"],
   furniture: ["animal", "drink", "food", "clothing", "body", "plant", "weather", "job"],
-  body: ["drink", "food", "vehicle", "furniture", "building", "weather", "job"],
+  body: ["vehicle", "furniture", "building", "weather", "job"],
   plant: ["vehicle", "clothing", "furniture", "body", "building", "drink", "job"],
   job: ["drink", "food", "vehicle", "clothing", "furniture", "plant", "weather"],
   weather: ["animal", "food", "vehicle", "clothing", "furniture", "body", "job"],
   building: ["animal", "drink", "food", "clothing", "body", "plant", "weather", "job"],
 };
+/* Nouns of a kind (pipeline/noun_classes.py) that are not what the sentence
+   says they are, read one by one for the v6.13 review (M2). The classes are
+   made for generated sentences, where a mirror stands where a sofa stands;
+   here the label is a claim. Never used in this question, in either role:
+   - the kind's own name or a word for the whole (*dýr*, *matur*, *drykkur*,
+     *bygging*, *líkami*, *planta*, *farartæki*, *fatnaður*, *veður* …);
+   - a second spelling of one word (*baðkar/baðker*, *kisa/kisi*,
+     *hauskúpa/höfuðkúpa*; *kló* is two nouns, the claw and the toilet);
+   - what is not of the kind: appliances, bedding, rugs and the bath are
+     not húsgögn; tears, sweat, saliva, flesh, skin, hair, a fingerprint and
+     fish skin (*roð*) are not líkamshlutar, nor (here) the parts only animals
+     have; a mushroom, seaweed and the parts of a plant (leaf, root, seed,
+     grain, needles) are not plöntur; darkness, heat, light, a wave, a flood,
+     steam, climate and an earthquake are not veðurfyrirbæri; a home, a
+     collection (*safn*), a notepad-or-block (*blokk*) and a summer school are
+     not byggingar; a caravan and a cart (*kerra*, also a pram) not farartæki;
+   - a word whose everyday sense here is not its usual one (*sneið*, *beygla*,
+     *greni* the fox's den, *rif* the reef, *leggur*, *armur*, *bumba* the drum). */
+const ODD_SKIP = Object.fromEntries(Object.entries({
+  animal: "dýr gæludýr kisi",
+  drink: "drykkur",
+  food: "matur máltíð sneið beygla",
+  vehicle: "farartæki ökutæki hjólhýsi kerra",
+  clothing: "fatnaður flík skór stígvél",
+  furniture: "spegill ísskápur ofn frystir eldavél þvottavél þurrkari örbylgjuofn teppi koddi sæng dýna motta baðkar baðker",
+  body: "líkami líffæri skrokkur kroppur búkur tár sviti munnvatn hold skinn húð roð taug sin fingrafar hár skegg "
+    + "yfirvaraskegg skalli tagl vængur kló stél loppa rófa hali sporður goggur uggi vömb hauskúpa höfuðleður rif leggur "
+    + "armur bumba",
+  plant: "planta jurt sveppur þörungur korn fræ lauf barr sproti rót grasker kjarr greni",
+  job: "",
+  weather: "veður myrkur hiti alda hitastig loftslag sólarljós jarðskjálfti dagsljós gufa flóð birta brim bylgja skin "
+    + "flóðbylgja hlýja ylur",
+  building: "bygging heimili safn skýli blokk sumarskóli",
+}).map(([k, v]) => [k, new Set(v.split(" ").filter(Boolean))]));
+/* Words that may be the odd one out but whose dictionary definition (the
+   first sense, all the lexicon has) is another word: *kisa* "sá eða sú sem
+   er viðkvæmur fyrir kulda", *hross* "… hasta, óþýða framkomu", *vör*
+   "lendingarstaður báta", *búð* "bækistöðvar til bráðabirgða". No
+   definition is printed for them. */
+const ODD_NO_DEF = new Set(("kaffi verslun búð blóm hjól bolur kisa hross þumall vör kviður").split(" "));
+/** Whether noun `w` may stand in this question as one of kind `k`. */
+export const oddMember = (w, k) => !!KIND[k] && w.s === k && !w.nx && !ODD_SKIP[k].has(w.o)
+  && !!(w.forms && w.forms.NFET);
+export const ODD_KINDS = Object.keys(KIND);
 /* The words come from the band's window of rarity: at least one of the four
    from inside it when the kind has one, the rest from anything commoner.
    Until v6.13 all four came from one cap of 600 + 500 × band, and a noun's
@@ -343,11 +410,11 @@ export function ordOdd(lex, view, rng) {
   const capOdd = CLASS_RANK_CAP[Math.min(b + 1, 5)];
   const by = {}, byOdd = {};
   lex.nouns.forEach((w) => {
-    if (w.nx || !KIND_NAME[w.s]) return;
+    if (!oddMember(w, w.s)) return;
     if (w.r <= cap) (by[w.s] ||= []).push(w);
     if (w.r <= capOdd) (byOdd[w.s] ||= []).push(w);
   });
-  const kinds = Object.keys(KIND_NAME).filter((k) => (by[k] || []).length >= 3);
+  const kinds = ODD_KINDS.filter((k) => (by[k] || []).length >= 3);
   const rare = (list) => list.filter((w) => w.r > floor);
   for (let k = 0; k < 10; k++) {
     const A = pick(kinds, rng);
@@ -365,8 +432,9 @@ export function ordOdd(lex, view, rng) {
       type: "choice", skill: "ordaford", s: null,
       title: "Hvert á ekki heima í hópnum?", question: "Þrjú orðanna eiga eitthvað sameiginlegt. Hvert á **ekki** heima í hópnum?",
       options: shuffle([...three, odd].map((w) => w.o), rng), answer: odd.o,
-      why: `*${three.map((w) => w.o).join(", ")}* eru öll ${KIND_NAME[A]} — *${odd.o}* ekki.`,
-      defs: [odd].filter((e) => e.d),
+      why: `*${three[0].o}*, *${three[1].o}* og *${three[2].o}*: þetta ${KIND[A].all}. `
+        + `*${cap1(odd.o)}* er ekki ${KIND[A].sg}.`,
+      defs: [odd].filter((e) => e.d && !ODD_NO_DEF.has(e.o)),
       base: 7, lvl: levelFor(P, classRankLevel(Math.max(odd.r, ...three.map((w) => w.r)))),
       cell: "orð:útundan", word: wordKey(odd.o, odd.c),
       tags: ["vocab"], miss: ["merking"], bonus: odd,

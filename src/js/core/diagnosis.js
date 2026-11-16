@@ -139,9 +139,12 @@ export const PATTERNS = [
   { id: "ao_fs", ok: "atviksorð og forsetningar", nm: "Atviksorð eða forsetning",
     rule: "**Forsetning** stendur með fallorði og stýrir falli þess: *í húsinu*. **Atviksorð** stendur eitt og stýrir engu: *hann fór inn*.",
     lesson: "obeygjanleg", tags: ["ofl:ao_fs"], types: ["indecl", "parse", "ob_fsao", "ob_smella", "ob_flokka"] },
+  /* The id is the old name of the Lesefni page (now *Setningarhlutar*, v6.13
+     review S12). It is never shown, and it is stored in pupils' progress
+     and in the teacher's pattern exports, so it stays. */
   { id: "setningalidir", ok: "setningarhluta", nm: "Frumlag, andlag og umsögn",
     rule: "Finndu sögnina (umsögnina) fyrst. Spurðu svo *hver/hvað gerir?* → frumlag, og *hvern/hvað?* → andlag.",
-    lesson: "setningalidir", tags: ["syn"], types: ["syntax", "setn_hlut", "setn_flokka"] },
+    lesson: "setningarhlutar", tags: ["syn"], types: ["syntax", "setn_hlut", "setn_flokka"] },
   { id: "setningagerd", ok: "setningagerðir", nm: "Setningagerðir",
     rule: "Aðalsetning getur staðið ein. Aukasetning hefst oftast á samtengingu (*að, sem, þegar, ef*) og er liður í annarri setningu.",
     lesson: "setningagerdir", tags: ["clause"], types: ["clause", "gerd_finna", "gerd_upphaf"] },
