@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Fold lexicon + sentences + semantics + definitions into one JS payload."""
-import json, os, collections, noun_classes, definitions, vocab_filter
+import json, os, re, collections, noun_classes, definitions, vocab_filter
 
 lex = json.load(open('lexicon.json'))
 sents = json.load(open('sentences.json'))
@@ -110,18 +110,80 @@ if INO and INO_FORMAT < 2:
 elif ino_rejected:
     print('ÍNO rejected:', dict(ino_rejected))
 
+# A dictionary example that uses a blocked or UNFIT word is not shown (v6.13,
+# item 9). The examples come from ÍNO, written for adults: *kæfa* had
+# "morðinginn í myndinni kæfði konuna", *rannsókn* "rannsókn morðsins …".
+# The word keeps its definition; only the example goes. Definitions are left
+# alone and printed: there a word is used in its literal sense (*hún* "… t.d.
+# stelpa eða tík", the dog), and tests/safevocab.test.js lists the ones
+# allowed. A form that a kept word also has (*drullu*, the mud) does not count.
+def _coarse_forms():
+    """The forms an example may not contain. For a blocked word in the
+    lexicon: its forms there, minus any form a kept word also has (*drullu*
+    is the mud as well). For an UNFIT word, which never reaches the lexicon:
+    the forms whose every BÍN reading is an UNFIT word (*morð*, not *ára*)."""
+    from islenska import Bin
+    b = Bin()
+    blocked = lambda w: w['o'] in vocab_filter.BLOCK or (w['o'], w['c']) in vocab_filter.BLOCK_PAIRS
+    cells = lambda w: {f.lower() for cell in str(w['f']).split(';') for f in cell.split('|') if f}
+    kept, out = set(), set()
+    for w in lex['w']:
+        (out if blocked(w) else kept).update(cells(w) | ({w['o']} if blocked(w) else set()))
+    out -= kept
+    for lemma in sorted(vocab_filter.UNFIT):
+        _, ms = b.lookup_lemmas(lemma)
+        for bid in sorted({m.bin_id for m in ms if m.ord == lemma}):
+            for f in {e.bmynd.lower() for e in b.lookup_id(bid)}:
+                _, rs = b.lookup(f)
+                if rs and all(r.ord in vocab_filter.UNFIT for r in rs) and f not in kept:
+                    out.add(f)
+    return out
+_COARSE = _coarse_forms()
+_words = lambda s: re.findall('[a-záðéíóúýþæö]+', str(s).lower())
+# Definitions that tools/ino.mjs attached to the wrong sense, where the wrong
+# sense is one a child should not be shown: *bera* the verb got ÍNO's *bera
+# sig* ("láta sjást í nekt sína", "hún beraði brjóst sín") instead of "to
+# carry". Dropped, definition and example, until the converter picks the
+# right entry; the app asks no meaning question about a word without one.
+WRONG_SENSE = {('bera', 'so')}
+for w in lex['w']:
+    if (w['o'], w['c']) in WRONG_SENSE and w.get('d'):
+        print('definition dropped (wrong sense): %s·%s: %s' % (w['o'], w['c'], w['d']))
+        for k in ('d', 'x', 'ds'):
+            w.pop(k, None)
+
+dropped_examples, coarse_defs = [], []
+for w in lex['w']:
+    if w['o'] in vocab_filter.BLOCK or (w['o'], w['c']) in vocab_filter.BLOCK_PAIRS:
+        continue                      # hidden with its example
+    if w.get('x') and any(t in _COARSE for t in _words(w['x'])):
+        dropped_examples.append('%s: %s' % (w['o'], w['x']))
+        w['x'] = ''
+    if w.get('d') and any(t in _COARSE for t in _words(w['d'])):
+        coarse_defs.append('%s: %s' % (w['o'], w['d']))
+print('dictionary examples dropped for a blocked word: %d' % len(dropped_examples))
+for x in dropped_examples: print('   ', x)
+if coarse_defs:
+    print('definitions that use a blocked word (kept; literal senses):')
+    for x in coarse_defs: print('   ', x)
+
 have = {w['o'] for w in lex['w']}
 missing = [k for k in definitions.D if k not in have]
 
-# The optional decency filter travels WITH the data rather than being applied
-# to it. See the header of vocab_filter.py: the owner asked for a switch an
+# The decency filter travels WITH the data rather than being applied to it.
+# See the header of vocab_filter.py: the owner asked for a switch an
 # administrator can set for one group and not another, and a build-time filter
-# cannot be two things at once. Only lemmas the vocabulary actually contains are
-# listed, so the list in the bundle is the useful part of it and no longer.
+# cannot be two things at once. It is on unless switched off (v6.13). Only
+# lemmas the vocabulary actually contains are listed, so the list in the bundle
+# is the useful part of it and no longer. An entry is a lemma (every word class
+# it has) or "lemma|class" for one reading of a homograph (BLOCK_PAIRS) — the
+# same key as `wordKey` in core/state.js.
 have_lemmas = {w['o'] for w in lex['w']}
-blocked = sorted(l for l in vocab_filter.BLOCK if l in have_lemmas)
-print('optional vocabulary filter: %d of %d listed lemmas are in the corpus'
-      % (len(blocked), len(vocab_filter.BLOCK)))
+have_pairs = {(w['o'], w['c']) for w in lex['w']}
+blocked = sorted([l for l in vocab_filter.BLOCK if l in have_lemmas]
+                 + ['%s|%s' % p for p in vocab_filter.BLOCK_PAIRS if p in have_pairs])
+print('vocabulary filter: %d of %d listed entries are in the corpus'
+      % (len(blocked), len(vocab_filter.BLOCK) + len(vocab_filter.BLOCK_PAIRS)))
 
 # Whether the definitions in this bundle could be CHECKED. `tools/ino.mjs`
 # records the word class from format 2 onwards; without it, a definition may be

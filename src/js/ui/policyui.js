@@ -142,13 +142,13 @@ export function renderPolicyEditor(el, policy, {
     <h3 class="sec2">Orðaforði</h3>
     <p class="sub">Beygingargögnin koma úr BÍN og BÍN er lýsing á íslensku eins og
       hún er — þar á meðal á orðum sem eiga ekki heima í kennslustund hjá öllum
-      hópum. Þessi rofi tekur stuttan, tilgreindan lista af niðrandi orðum og
-      blótsyrðum úr umferð hjá þeim sem þakið gildir um. Notandinn sjálfur getur
-      ekki slökkt á honum.</p>
+      hópum. Þessi rofi tekur tilgreindan lista af grófum orðum, niðrandi orðum,
+      fíkniefnaorðum og blótsyrðum úr umferð hjá þeim sem þakið gildir um.
+      Notandinn sjálfur getur ekki slökkt á honum.</p>
     <label class="polsw">
-      <input type="checkbox" id="pol-safevocab" ${policy.safeVocab === true ? "checked" : ""}>
-      <span><b>Sía út niðrandi orð og blótsyrði</b><br>
-        <small>Sjálfgefið slökkt. Listinn er í <code>vocab_filter.py</code> og
+      <input type="checkbox" id="pol-safevocab" ${policy.safeVocab !== false ? "checked" : ""}>
+      <span><b>Sía út gróf orð, niðrandi orð og blótsyrði</b><br>
+        <small>Sjálfgefið kveikt. Listinn er í <code>vocab_filter.py</code> og
           ferðast með gögnunum, svo hann er sýnilegur og hægt að ræða hann.</small></span>
     </label>` : ""}
 

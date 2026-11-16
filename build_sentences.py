@@ -24,7 +24,7 @@ def engines():
         g = Greynir()
         b = Bin()
         freq = json.load(open('freq_lemmas.json'))
-        score = {(o, c): s for _bid, (o, c, s) in freq.items()}
+        score = {(o, c): s for _bid, (o, c, s, _k) in freq.items()}   # the corpus score, not the rank key
         guard = parse_guard.Guard(b, overrides=parse_overrides,
                                   score=lambda lemma, ofl: score.get((lemma, ofl), 0))
     return g, b, guard

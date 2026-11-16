@@ -294,7 +294,7 @@ def pos_of(lemma, pos, where):
 # the child's level rises. A word the list does not have gets 99999.
 _freq = json.load(open("freq_lemmas.json"))
 _rank = {}
-for _i, (_l, _c, _n) in enumerate(sorted(_freq.values(), key=lambda x: -x[2])):
+for _i, (_l, _c, _n, _k) in enumerate(sorted(_freq.values(), key=lambda x: -x[3])):   # by rank key (build_freq.py)
     _rank.setdefault((_l, _c), _i + 1)
 def vocab_word(w, pos, where):
     c = pos_of(w, pos, where)

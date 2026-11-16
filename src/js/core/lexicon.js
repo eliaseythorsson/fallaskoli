@@ -10,17 +10,21 @@ import { normalise } from "./grading.js";
 
 /**
  * @param DATA          the bundle
- * @param opts.hide     lemmas to leave out entirely — the optional vocabulary
- *                      filter (`DATA.blocked`, switched on per user by the
- *                      administrator's `safeVocab`). Removed before anything
- *                      indexes the corpus, so they are absent from the
- *                      exercises, the collection and the totals alike.
+ * @param opts.hide     words to leave out entirely — the vocabulary filter
+ *                      (`DATA.blocked`, on unless the administrator's
+ *                      `safeVocab` says false). An entry is a lemma, which
+ *                      hides it in every word class, or "lemma|class", which
+ *                      hides one reading of a homograph (*drulla* the verb,
+ *                      not the noun). Removed before anything indexes the
+ *                      corpus, so they are absent from the exercises, the
+ *                      collection and the totals alike.
  */
 export function buildLexicon(DATA, { hide = null } = {}) {
   const ORD = DATA.lex.orders;
   const skip = hide && hide.size ? hide : null;
 
-  const W = (skip ? DATA.lex.w.filter((w) => !skip.has(w.o)) : DATA.lex.w).map((w) => {
+  const hidden = (w) => skip.has(w.o) || skip.has(`${w.o}|${w.c}`);
+  const W = (skip ? DATA.lex.w.filter((w) => !hidden(w)) : DATA.lex.w).map((w) => {
     const key = ordKey(w.c);
     const cells = String(w.f).split(";");
     const forms = {};

@@ -56,7 +56,9 @@ Linux wheels for x86_64 only.
 What the build does, in order:
 
 1. `build_freq.py` — the committed frequency list (`freq_raw.txt`, OpenSubtitles)
-   → `freq_lemmas.json`
+   → `freq_lemmas.json`, ranked towards school reading: words the hand-written
+   sentences, exercises and definitions use ×3, film register (vocab_filter.py
+   `SUBTITLE_REGISTER`, and ÍNO's *niðrandi*/*gróft*) ×0.1
 2. `build_lexicon.py` — every attested lemma's paradigm out of BÍN → `lexicon.json`
 3. `build_sentences.py` — every sentence in `sentences.py` parsed by Greynir
    and checked by `parse_guard.py` → `sentences.json`
@@ -91,7 +93,9 @@ exercises.py          hand-written items for the v6.11 question types (pronouns,
                       lemma + class + BÍN mark only; build_exercises.py
                       resolves every form in BÍN and checks every word
 vocab_filter.py       lemma errors and words for acts of violence (always
-                      removed), and the optional block list
+                      removed), the coarse-word block list (on by default,
+                      the administrator can switch it off), and the words
+                      build_freq.py ranks down as film-subtitle register
 
 src/js/app.js         start-up and wiring; the only holder of state
 src/js/core/          pure modules, no DOM: marks, lexicon, grading, leniency,

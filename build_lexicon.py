@@ -4,7 +4,8 @@ from islenska import Bin
 import json, collections, os, vocab_filter as vf
 b=Bin()
 freq=json.load(open('freq_lemmas.json'))
-rows=[(int(bid),o,c,s) for bid,(o,c,s) in freq.items()]
+# [lemma, class, corpus score, rank key]; the file is in rank-key order (build_freq.py)
+rows=[(int(bid),o,c,s) for bid,(o,c,s,_k) in freq.items()]
 
 CASES=['NF','ÞF','ÞGF','EF']
 # Slot order for a noun paradigm: singular then plural, indefinite then
