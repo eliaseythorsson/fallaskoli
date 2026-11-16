@@ -39,8 +39,9 @@ test("word formation: the prompt does not name the affix; the hint does", () => 
   for (let k = 0; k < 120; k++) {
     const t = show(ctx, MORE.ordFormation);
     if (!t) continue;
-    assert.ok(!/\bó-|-ari\b|-un\b|-ing\b/.test(t.prompt), `affix in the prompt: ${t.prompt}`);
-    assert.ok(t.tip && /ó-|-ari|-un|-ing/.test(t.tip), `no affix in the hint: ${t.tip}`);
+    /* item 23 added -andi, -lega and -ni */
+    assert.ok(!/\bó-|-ari\b|-andi\b|-un\b|-ing\b|-lega\b|-ni\b/.test(t.prompt), `affix in the prompt: ${t.prompt}`);
+    assert.ok(t.tip && /ó-|-ari|-andi|-un|-ing|-lega|-ni/.test(t.tip), `no affix in the hint: ${t.tip}`);
     assert.equal(gradeForm(t.answers[0], { accepted: t.answers }).verdict, "correct");
   }
 });

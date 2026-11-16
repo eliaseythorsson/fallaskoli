@@ -18,6 +18,7 @@ import { mixGate, mixReport, maxOf, capOf } from "../src/js/core/mix.js";
 import { gradeForm } from "../src/js/core/grading.js";
 import { diagnose, runReport, chancesIn } from "../src/js/core/diagnosis.js";
 import { bonusVerdict } from "../src/js/ui/render-more.js";
+import { impersonalItems } from "../src/js/tasks/fallstjorn.js";
 
 const lex = buildLexicon(DATA);
 const NEW = TASKS.filter((t) => t.build && !["fill", "verbslot", "verb", "parse", "revform", "govern", "indecl",
@@ -172,7 +173,7 @@ test("exercises.js: every hand-written item resolved to BÍN forms", () => {
   EX.numeralAgree.forEach((x) => assert.ok(!bad(x.a), x.t));
   EX.pluralOnly.forEach((x) => assert.ok(!bad(x.a), x.t));
   EX.verbCase.forEach((x) => assert.ok(!bad(x.a), x.t + x.noun));
-  EX.impersonal.forEach((x) => assert.ok(!bad(x.a), x.t));
+  impersonalItems().forEach((x) => assert.ok(!bad(x.a), x.t));   // frames × subjects (item 23)
   EX.motionRest.forEach((x) => assert.notEqual(x.thf[0], x.thgf[0], x.t));
   EX.reflexive.forEach((x) => assert.notEqual(x.a, x.w, x.t));
   for (let d = 1; d <= 31; d++) ["NF", "ÞF", "ÞGF", "EF"].forEach((c) => assert.ok(!bad(EX.dates.ord[d][c]), `${d}. ${c}`));

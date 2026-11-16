@@ -21,6 +21,7 @@ import { createPolicy } from "../src/js/core/policy.js";
 import { seeded } from "../src/js/core/duel.js";
 import { TASKS, typeById, makeView } from "../src/js/tasks/index.js";
 import { nearBand, itemsForBand, classRankLevel } from "../src/js/tasks/shared.js";
+import { impersonalItems } from "../src/js/tasks/fallstjorn.js";
 
 const lex = buildLexicon(DATA);
 const allOn = {};
@@ -86,7 +87,7 @@ test("every hand-written item carries a level 1-5", () => {
   const lists = {
     pronounGap: EX.pronounGap, reflexive: EX.reflexive, numeralAgree: EX.numeralAgree,
     pluralOnly: EX.pluralOnly, dates: EX.dates.frames, motionRest: EX.motionRest,
-    verbCase: EX.verbCase, impersonal: EX.impersonal, advPrep: EX.advPrep,
+    verbCase: EX.verbCase, impersonal: impersonalItems(), advPrep: EX.advPrep,
     conjunction: EX.conjunction, wordInContext: EX.wordInContext,
   };
   for (const [name, list] of Object.entries(lists)) {

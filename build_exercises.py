@@ -201,6 +201,88 @@ for lvl, t, case, why in X.DATE_FRAMES:
     frames.append({"t": t, "case": case, "why": why, "lvl": lvl})
 out["dates"] = {"ord": ORD, "months": X.MONTHS, "days": X.DAYS_IN, "frames": frames}
 
+def _std(e):
+    return (e.birting == 'K' and e.einkunn == 1 and e.beinkunn == 1
+            and not e.malsnid and not e.bmalsnid)
+
+def subject_cases(verb):
+    """The cases BÍN lists for the subject of `verb` used impersonally."""
+    out = set()
+    for bid in {e.bin_id for e in _entries(verb) if e.ofl == "so"}:
+        for e in b.lookup_id(bid):
+            if e.mark.startswith("OP-") and _std(e): out.add(e.mark.split("-")[1])
+    return out
+
+_greynir = None
+def parses(text):
+    global _greynir
+    if _greynir is None:
+        from reynir import Greynir
+        _greynir = Greynir()
+    s = _greynir.parse_single(text)
+    return bool(s and s.tree is not None)
+
+# Helpers of the generated lists (critique item 23).
+import vocab_filter as VF
+def blocked_words(text):
+    """The words of `text` the coarse-word filter keeps from a pupil
+    (vocab_filter.py BLOCK), by any of their lemmas — every generated item
+    passes this (critique item 9)."""
+    out = []
+    for w in WORD.findall(text):
+        _, ms = b.lookup(w.lower())
+        if any(e.ord in VF.BLOCK or (e.ord, e.ofl) in VF.BLOCK_PAIRS for e in ms) and \
+           not any(e.ord not in VF.BLOCK and (e.ord, e.ofl) not in VF.BLOCK_PAIRS for e in ms):
+            out.append(w)
+    return out
+
+def built_on_blocked(word):
+    """A word made from a blocked one (*djöfullegur* from *djöfull*): the
+    block list holds lemmas, and a derived word is a lemma of its own."""
+    return any(len(x) >= 5 and x in word for x in VF.BLOCK)
+
+def length_level(text):
+    """sentences.py's table: the words of the sentence, the blank one word."""
+    n = len(WORD.findall(text.replace("___", "X").replace("{V}", "X")))
+    return 1 if n <= 5 else 2 if n <= 7 else 3 if n <= 9 else 4 if n <= 11 else 5
+
+def verb_ids(verb):
+    """BÍN's entries for `verb`. A middle-voice verb (*finnast*, *takast*)
+    is filed under its active lemma (*finna*): found by its infinitive."""
+    ids = {e.bin_id for e in _entries(verb) if e.ofl == "so"}
+    if not ids:
+        _, ms = b.lookup(verb)
+        ids = {e.bin_id for e in ms if e.ofl == "so" and e.mark == "MM-NH"}
+    return sorted(ids)
+
+def verb_forms(verb, mark):
+    """The standard BÍN forms of `verb` with exactly this mark (the person
+    kept: `paradigm` folds 1P/2P/3P into one cell)."""
+    out = []
+    for bid in verb_ids(verb):
+        for e in b.lookup_id(bid):
+            if e.mark == mark and e.birting == 'K' and e.einkunn == 1 and not e.malsnid \
+               and e.bmynd not in out:
+                out.append(e.bmynd)
+    return out
+
+def op_case(verb):
+    """The one oblique case BÍN gives the impersonal subject of `verb`, and
+    the voice (a verb in -st is middle voice: *líða* has *mér líður* and
+    *mér líðst*, two things), or (None, None)."""
+    voice = "MM" if verb.endswith("st") else "GM"
+    found = set()
+    for bid in verb_ids(verb):
+        for e in b.lookup_id(bid):
+            mm = re.match(r"OP-(ÞF|ÞGF)-" + voice + r"-FH-NT-3P-ET$", e.mark)
+            if mm and e.einkunn == 1: found.add(mm.group(1))
+    return (found.pop(), voice) if len(found) == 1 else (None, None)
+
+_parsed = {}
+def parses_once(text):
+    if text not in _parsed: _parsed[text] = parses(text)
+    return _parsed[text]
+
 # ---------------------------------------------------------------- Fallstjórn
 items = []
 for lvl, t, noun, col, motion in X.MOTION_REST:
@@ -218,13 +300,48 @@ for lvl, t, noun, col, motion in X.MOTION_REST:
                   "thf": thf, "thgf": thgf, "prep": prep.group(1) if prep else "", "lvl": lvl})
 out["motionRest"] = items
 
+# The sets (critique item 23): every sentence × every noun checked here,
+# the pairs put together by the builder (tasks/fallstjorn.js).
+sets = []
+for prep, col, goes, stays, nouns in X.MOTION_SETS:
+    where = f"MOTION_SETS {prep} {nouns[0]}…"
+    ns = []
+    for noun in nouns:
+        g = noun_gender(noun, where)
+        if not g: continue
+        thf = form(noun, g, "ÞF" + col, where); thgf = form(noun, g, "ÞGF" + col, where)
+        if set(thf) & set(thgf): fail(f"{where} {noun}: þolfall and þágufall are the same form")
+        keep(noun, g)
+        ns.append({"noun": noun, "g": g, "thf": thf, "thgf": thgf})
+    def frame(t, motion):
+        w = f"{where}: {t}"
+        if t.count("___") != 1: fail(f"{w}: exactly one blank")
+        m = re.search(r"\b(\w+)\s+___", t)
+        if not m or m.group(1) != prep: fail(f"{w}: '{prep}' must stand right before the blank")
+        if prep == "yfir": fail(f"{w}: yfir takes both cases in motion (item 6)")
+        if prep == "undir" and motion and not re.search(r"\binn undir ___", t):
+            fail(f"{w}: undir in motion only as *inn undir* (item 6)")
+        for n in ns:
+            text = t.replace("___", (n["thf"] if motion else n["thgf"])[0])
+            check_words(text, w)
+            if blocked_words(text): fail(f"{w}: {blocked_words(text)} is on the block list")
+        if ns and not parses_once(t.replace("___", (ns[0]["thf"] if motion else ns[0]["thgf"])[0])):
+            fail(f"{w}: Greynir cannot parse it")
+        return {"t": t, "lvl": length_level(t)}
+    sets.append({"prep": prep, "col": col, "go": [frame(t, True) for t in goes],
+                 "stay": [frame(t, False) for t in stays], "nouns": ns})
+out["motionSets"] = sets
+
 CASEW = {"NF": "nefnifall", "ÞF": "þolfall", "ÞGF": "þágufall", "EF": "eignarfall"}
 items = []
 def verb_in(text, verb):
-    """True when some word of `text` is a BÍN form of the verb `verb`."""
+    """True when some word of `text` is a BÍN form of the verb `verb` (a
+    middle-voice verb, *kynnast*, by its entry: BÍN files it under *kynna*)."""
+    ids = set(verb_ids(verb))
     for w in WORD.findall(text):
         _, ms = b.lookup(w)
-        if any(e.ofl == "so" and e.ord == verb for e in ms): return True
+        if any(e.ofl == "so" and (e.ord == verb or (e.bin_id in ids and "MM" in e.mark and
+               verb.endswith("st"))) for e in ms): return True
     return False
 for lvl, t, verb, case, col, nouns in X.VERB_CASE:
     level(lvl, f"VERB_CASE {t}")
@@ -245,23 +362,93 @@ for lvl, t, verb, case, col, nouns in X.VERB_CASE:
         if not g: continue
         a = form(noun, g, case + col, where)
         cue = form(noun, g, "NF" + col, where)[0]
+        # the answer is the cue (*óttaðist myrkrið*): copying is not knowing
+        # the case, as VERB_FRAMES below (critique item 23)
+        if cue in a: continue
         check_words(t.replace("___", a[0]), where)
         keep(noun, g)
         items.append({"t": t, "verb": verb, "case": case, "noun": noun.split(":")[0], "g": g,
                       "m": case + col, "a": a, "cue": cue, "lvl": lvl})
+# VERB_FRAMES (critique item 23): frames × noun groups, checked as VERB_CASE
+# is, and with the level worked out by the rule rather than written.
+_old = {(x["t"], x["noun"]) for x in items}
+for bonus, t, verb, case, group in X.VERB_FRAMES:
+    where = f"VERB_FRAMES {t}"
+    if not verb_in(t, verb): fail(f"{where}: no form of '{verb}' in the sentence")
+    before = re.search(r"(\w+)\s+___", t)
+    if before and "fs" in classes_of(before.group(1).lower()):
+        fail(f"{where}: '{before.group(1)}' before the blank is a preposition")
+    lvl = length_level(t) + 1 + (case == "EF") + bonus
+    if lvl > 4: fail(f"{where}: level {lvl} — VERB_CASE stops at 4")
+    first = True
+    for noun, col in group:
+        g = noun_gender(noun, where)
+        if not g: continue
+        a = form(noun, g, case + col, where)
+        cue = form(noun, g, "NF" + col, where)[0]
+        if cue in a or (t, noun) in _old: continue
+        text = t.replace("___", a[0])
+        check_words(text, where)
+        if blocked_words(text): fail(f"{where}: {blocked_words(text)} is on the block list")
+        if first and not parses_once(text): fail(f"{where}: Greynir cannot parse '{text}'")
+        first = False
+        keep(noun, g)
+        items.append({"t": t, "verb": verb, "case": case, "noun": noun, "g": g,
+                      "m": case + col, "a": a, "cue": cue, "lvl": lvl})
 out["verbCase"] = items
 
-items = []
-for lvl, t, (l, c, m), verb, why in X.IMPERSONAL:
-    where = f"IMPERSONAL {t}"
-    level(lvl, where)
-    a = form(l, c, m, where)
-    check_words(t.replace("___", a[0]), where)
-    if "so" not in classes_of(verb): fail(f"{where}: '{verb}' is not a verb")
+# Impersonal verbs (critique item 23): frames × subjects × tense, every form
+# out of BÍN. Written out as frames and subjects; the builder
+# (tasks/fallstjorn.js) puts them together, and everything it can put
+# together is checked here.
+PERSON = {"ég": "1", "þú": "2", "hann": "3", "hún": "3", "það": "3"}
+subjects = []
+for l, c, col, add in X.IMPERSONAL_SUBJECTS:
+    where = f"IMPERSONAL_SUBJECTS {l} {col}"
+    num = "FT" if col.startswith("FT") else "ET"
+    p = (PERSON[l] if c == "pfn" else "3") + num
+    f = {k: form(l, c, k + col, where) for k in ("NF", "ÞF", "ÞGF")}
     keep(l, c)
-    items.append({"t": t, "l": l, "c": c, "m": m, "a": a, "cue": nf_cue(l, c, m),
-                  "verb": verb, "why": why, "lvl": lvl})
-out["impersonal"] = items
+    subjects.append({"l": l, "c": c, "col": col, "p": p, "add": add, "f": f})
+frames = []
+for bonus, verb, kind, present, past in X.IMPERSONAL_FRAMES:
+    for tense, t in (("NT", present), ("ÞT", past)):
+        if t is None: continue
+        where = f"IMPERSONAL_FRAMES {t} ({tense})"
+        if t.count("___") != 1 or not t.startswith("___ {V} "):
+            fail(f"{where}: the frame opens with the subject and the verb"); continue
+        if kind == "op":
+            case, voice = op_case(verb)
+            if not case:
+                fail(f"{where}: BÍN gives '{verb}' no single impersonal subject case"); continue
+            v = {"*": verb_forms(verb, f"OP-{case}-{voice}-FH-{tense}-3P-ET")}
+        elif kind == "NF":
+            case = "NF"
+            if subject_cases(verb) & {"ÞF", "ÞGF"}:
+                fail(f"{where}: BÍN lists '{verb}' with an oblique subject — not a trap")
+            v = {s["p"]: verb_forms(verb, f"GM-FH-{tense}-{s['p'][0]}P-{s['p'][1:]}") for s in subjects}
+        else:
+            case = kind
+            v = {"*": verb_forms(verb, f"GM-FH-{tense}-3P-ET")}
+        if any(not fs for fs in v.values()):
+            fail(f"{where}: BÍN has no {tense} form of '{verb}' for every subject"); continue
+        v = {k: fs[0] for k, fs in v.items()}
+        # every subject, every word: in BÍN, not blocked, and the frame parses
+        for s in subjects:
+            vf = v.get("*") or v[s["p"]]
+            a = s["f"][case][0]
+            text = t.replace("{V}", vf).replace("___", a[:1].upper() + a[1:])
+            check_words(text, where)
+            if blocked_words(text): fail(f"{where}: {blocked_words(text)} is on the block list")
+        sample = t.replace("{V}", v.get("*") or v["1ET"]).replace("___", "Ég" if case == "NF" else
+                                                                   {"ÞF": "Mig", "ÞGF": "Mér"}[case])
+        if not parses_once(sample): fail(f"{where}: Greynir cannot parse '{sample}'")
+        fr = {"t": t, "verb": verb, "case": case, "tense": tense, "v": v,
+              "lvl": min(5, length_level(t) + 1 + bonus)}
+        # *mér er kalt*: the explanation shows the word that makes it impersonal
+        if kind not in ("op", "NF"): fr["x"] = WORD.findall(t.split("{V}", 1)[1])[0]
+        frames.append(fr)
+out["impersonal"] = {"frames": frames, "subjects": subjects}
 
 # ---------------------------------------------------------------- Óbeygjanleg
 items = []
@@ -275,6 +462,32 @@ for lvl, t, w, cls in X.ADV_OR_PREP:
     other = "ao" if cls == "fs" else "fs"
     if other not in classes_of(w): fail(f"{where}: BÍN does not list '{w}' as {other} — no contrast")
     items.append({"t": t, "w": w, "c": cls, "lvl": lvl})
+# ADV_PREP_FRAMES (critique item 23): the sentences, generated; the builder
+# makes the pairs.
+_old_adv = {x["t"] for x in items}
+for w, preps, advs in X.ADV_PREP_FRAMES:
+    where = f"ADV_PREP_FRAMES {w}"
+    if not {"fs", "ao"} <= classes_of(w): fail(f"{where}: BÍN does not list '{w}' as both fs and ao")
+    for frame, case, nouns in preps:
+        if not re.search(r"\b" + w + r" ___", frame): fail(f"{where}: {frame}: '{w}' must stand right before the blank")
+        first = True
+        for noun, col in nouns:
+            g = noun_gender(noun, where)
+            if not g: continue
+            t = frame.replace("___", form(noun, g, case + col, where)[0])
+            keep(noun, g)
+            check_words(t, where)
+            if blocked_words(t): fail(f"{where}: {t}: a word on the block list")
+            if first and not parses_once(t): fail(f"{where}: Greynir cannot parse '{t}'")
+            first = False
+            if t not in _old_adv:
+                items.append({"t": t, "w": w, "c": "fs", "lvl": min(5, length_level(t) + 1)})
+    for t in advs:
+        check_words(t, where)
+        if w not in [x.lower() for x in WORD.findall(t)]: fail(f"{where}: '{w}' is not in '{t}'")
+        if not parses_once(t): fail(f"{where}: Greynir cannot parse '{t}'")
+        if t not in _old_adv:
+            items.append({"t": t, "w": w, "c": "ao", "lvl": min(5, length_level(t) + 1)})
 out["advPrep"] = items
 
 items = []
@@ -298,6 +511,70 @@ for lvl, t, right, wrong, why in X.CONJUNCTION:
     for o in opts:
         if not is_conjunction(o): fail(f"{where}: BÍN does not list '{o}' as a conjunction")
     items.append({"t": t, "a": right, "w": wrong, "why": why, "lvl": lvl})
+# The generated contrast sets (critique item 23, exercises.py CONJ_*). Every
+# word checked in BÍN, the comparative taken from it; the wrong options of a
+# set rotated (item 25: none in more than a third of all items).
+_cap = lambda t: t[:1].upper() + t[1:]
+def nf(lemma, col):
+    """A noun's nominative in the column, or a pronoun / phrase as written."""
+    if col is None: return lemma
+    g = noun_gender(lemma, "CONJ")
+    return form(lemma, g, "NF" + col, "CONJ")[0] if g else "?"
+def gender_of(lemma, col):
+    return {"kk": "KK", "kvk": "KVK", "hk": "HK"}.get(noun_gender(lemma, "CONJ")) if col else "KK"
+def conj_item(t, right, wrong, why, bonus=0):
+    where = f"CONJ {t}"
+    t = _cap(t)
+    check_words(t.replace("___", right), where)
+    if blocked_words(t): fail(f"{where}: a word on the block list")
+    if not parses_once(t.replace("___", right)): fail(f"{where}: Greynir cannot parse it")
+    for o in [right] + wrong:
+        if not is_conjunction(o): fail(f"{where}: BÍN does not list '{o}' as a conjunction")
+    if len(set([right] + wrong)) != 4: fail(f"{where}: four different options")
+    items.append({"t": t, "a": right, "w": wrong, "why": why, "lvl": min(5, length_level(t) + bonus)})
+def rotate(pool, k):
+    """Three of `pool`, a different three each time (the pools are chosen so
+    that no conjunction passes a third of all items — the test holds it)."""
+    return [pool[(k + j) % len(pool)] for j in range(3)]
+
+k = 0
+for adj, pairs in X.CONJ_COMPARE:
+    for (x, xc), (y, yc) in pairs:
+        comp = form(adj, "lo", f"MST-{gender_of(x, xc)}-NFET", f"CONJ_COMPARE {adj}")[0]
+        conj_item(f"{nf(x, xc)} er {comp} ___ {nf(y, yc)}.", "en",
+                  rotate(["og", "né", "eða", "ef", "hvort sem"], k),
+                  f"Á eftir miðstigi kemur *en*: *{comp} en {nf(y, yc)}*."); k += 1
+for frames, right, pool, why in (
+        (X.CONJ_BOTH, "og", ["né", "eða", "en", "sem"], "*Bæði* og *og* fylgjast að: *bæði … og*."),
+        (X.CONJ_NEITHER, "né", ["eða", "og", "en", "sem"], "*Hvorki* og *né* fylgjast að: *hvorki … né*."),
+        (X.CONJ_EITHER, "eða", ["né", "og", "en", "sem"], "*Annaðhvort* og *eða* fylgjast að: *annaðhvort … eða*.")):
+    for f in frames:
+        for a, b_ in X.CONJ_PAIRS:
+            conj_item(f.replace("{A}", a).replace("{B}", b_), right, rotate(pool, k), why); k += 1
+frames, clauses = X.CONJ_WHETHER
+for f in frames:
+    for c in clauses:
+        # not *nema*: *ég veit ekki nema hún komi* is an idiom of its own
+        conj_item(f.replace("{C}", c), "hvort", ["ef", "hvort sem", "þegar"],
+                  "Óbein spurning hefst á *hvort*: *" + f.split(" ___")[0].lower() + " hvort …* — "
+                  "*ef* táknar skilyrði og *þegar* tíma."); k += 1
+for t in X.CONJ_RELATIVE:
+    noun = t.split(" ___")[0]
+    conj_item(t, "sem", rotate(["að", "hvort", "þegar", "nema"], k),
+              f"*Sem* tengir tilvísunarsetningu við nafnorð: *{noun.lower()} sem …*."); k += 1
+for t in X.CONJ_SAID:
+    conj_item(t, "að", rotate(["sem", "hvort", "nema", "þegar"], k),
+              "*Að* tengir það sem er sagt, haldið eða vonað við sögnina: *sagði að …*, *vona að …*."); k += 1
+for cause, result in X.CONJ_CAUSE:
+    conj_item(f"{result} ___ {cause}.", "af því að", rotate(["svo að", "nema", "hvort sem", "til þess að"], k),
+              f"*Af því að* segir hvers vegna: {cause} — þess vegna {result}.", 1); k += 1
+    conj_item(f"{cause} ___ {result}.", "svo að", rotate(["af því að", "nema", "hvort", "til þess að"], k),
+              f"*Svo að* segir hvað leiddi af: {cause}, og því {result}.", 1); k += 1
+for first, then, then2, first2 in X.CONJ_ORDER:
+    conj_item(f"{first} ___ {then}.", "áður en", rotate(["eftir að", "nema", "hvort", "þótt"], k),
+              f"*Áður en* segir hvað gerðist fyrst: fyrst {first}, svo {then}.", 1); k += 1
+    conj_item(f"{then2} ___ {first2}.", "eftir að", rotate(["áður en", "nema", "hvort", "þótt"], k),
+              f"*Eftir að* segir hvað gerðist á undan: fyrst {first2}, svo {then2}.", 1); k += 1
 out["conjunction"] = items
 
 # ---------------------------------------------------------------- Orðaforði
@@ -351,7 +628,48 @@ for lvl, t, mark, right, wrong in X.WORD_IN_CONTEXT:
     if len({o["f"] for o in opts}) != len(opts): fail(f"{where}: two options with the same form")
     if opts: check_words(t.replace("___", opts[0]["f"]), where)
     items.append({"t": t, "m": mark, "a": opts[0] if opts else None, "w": opts[1:], "lvl": lvl})
+# WORD_IN_CONTEXT_FRAMES (critique item 23): one item per noun that fits,
+# the nouns that cannot fit as the pool of its wrong options.
+for bonus, t, mark, fits, cannot in X.WORD_IN_CONTEXT_FRAMES:
+    where = f"WORD_IN_CONTEXT_FRAMES {t}"
+    def opt(lemma):
+        g = noun_gender(lemma, where)
+        return {"o": lemma.split(":")[0], "c": g, "f": form(lemma, g, mark, where)[0]} if g else None
+    bad = [o for o in map(opt, cannot) if o]
+    if len(bad) < 3: fail(f"{where}: fewer than three nouns that cannot fit")
+    if set(fits) & set(cannot): fail(f"{where}: a noun both fits and cannot")
+    first = True
+    for lemma in fits:
+        a = opt(lemma)
+        if not a: continue
+        pool = [o for o in bad if o["f"] != a["f"]]
+        text = t.replace("___", a["f"])
+        check_words(text, where)
+        if blocked_words(text + " " + " ".join(o["f"] for o in pool)):
+            fail(f"{where}: a word on the block list")
+        if first and not parses_once(text[:1].upper() + text[1:]): fail(f"{where}: Greynir cannot parse '{text}'")
+        first = False
+        rare = _rank.get((a["o"], a["c"]), 99999) > 3000
+        items.append({"t": t, "m": mark, "a": a, "w": pool, "gen": True,
+                      "lvl": min(5, length_level(t) + bonus + rare)})
 out["wordInContext"] = items
+
+# Word formation that the app's lexicon cannot see (critique item 23): the
+# lexicon holds the adverbs a text has used, not the adverb every adjective
+# in *-legur* makes. For or_myndun: *rólegur – rólega*, the adjective one
+# the lexicon has (so a pupil has met it), the adverb one BÍN lists as an
+# adverb, in the standard form. Nothing else is claimed, so the answer is
+# certain.
+_lexw = json.load(open("lexicon.json"))["w"]
+lega = []
+for w in sorted((w for w in _lexw if w["c"] == "lo" and w["o"].endswith("legur")), key=lambda w: w["r"]):
+    adv = w["o"][:-2] + "a"
+    _, ms = b.lookup_ksnid(adv)
+    if not any(e.ofl == "ao" and e.ord == adv and _std(e) for e in ms): continue
+    if blocked_words(w["o"] + " " + adv) or built_on_blocked(w["o"]): continue
+    lega.append({"from": w["o"], "to": adv, "r": w["r"]})
+if len(lega) < 100: fail(f"formation: only {len(lega)} adjectives in -legur with an adverb in -lega")
+out["formation"] = {"lega": lega}
 
 # ---------------------------------------------------------------- Villuveiðar
 # HUNT (critique item 26): one sentence, one error a native teenager makes,
@@ -366,10 +684,6 @@ out["wordInContext"] = items
 #     the wrong cell, or another word);
 #   * what the explanation claims about the verb or preposition (an oblique
 #     subject, the case governed) is what BÍN and government.py say.
-def _std(e):
-    return (e.birting == 'K' and e.einkunn == 1 and e.beinkunn == 1
-            and not e.malsnid and not e.bmalsnid)
-
 _hcache = {}
 def hunt_paradigm(lemma, ofl):
     """{mark: [forms]}, core standard forms only — as `paradigm`, but the
@@ -397,23 +711,6 @@ def standard_word(w):
         _, ks = b.lookup_ksnid(x)
         if any(_std(k) for k in ks): return True
     return False
-
-def subject_cases(verb):
-    """The cases BÍN lists for the subject of `verb` used impersonally."""
-    out = set()
-    for bid in {e.bin_id for e in _entries(verb) if e.ofl == "so"}:
-        for e in b.lookup_id(bid):
-            if e.mark.startswith("OP-") and _std(e): out.add(e.mark.split("-")[1])
-    return out
-
-_greynir = None
-def parses(text):
-    global _greynir
-    if _greynir is None:
-        from reynir import Greynir
-        _greynir = Greynir()
-    s = _greynir.parse_single(text)
-    return bool(s and s.tree is not None)
 
 import government as GOV
 HUNT_TOKEN = re.compile(r"[A-Za-zÁÉÍÓÚÝÞÆÖÐáéíóúýþæöð]+(?:-[A-Za-zÁÉÍÓÚÝÞÆÖÐáéíóúýþæöð]+)*|[.,!?;:]")

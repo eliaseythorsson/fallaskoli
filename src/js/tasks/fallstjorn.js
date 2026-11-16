@@ -14,7 +14,7 @@ import { wordKey } from "../core/state.js";
 import { built, FX } from "./effects.js";
 import { nounCloze } from "./cloze.js";
 import { pairOf, pick, shuffle, levelFor, sentPool, tokenKey, tokensOf, cap1, caseWord, textSentence,
-         itemsForBand, lexWord, headsTimePhrase } from "./shared.js";
+         itemsForBand, lexWord, headsTimePhrase, forcedItem, forcedCell } from "./shared.js";
 
 const CASEWORD = { þf: "ÞF", þgf: "ÞG", ef: "EF" };
 
@@ -100,9 +100,14 @@ export function fsPrepNoun(lex, view, rng) {
 /* The motion/rest sentences that come in a contrast: the same preposition and
    noun once with motion (þolfall) and once at rest (þágufall). Item 43 asks
    them as that pair. A sentence with no partner (yfir girðing, yfir fjall) is
-   not asked on its own any more: alone it is a coin toss. */
+   not asked on its own any more: alone it is a coin toss.
+
+   Two sources (critique item 23): the hand-written pairs of MOTION_REST, and
+   the sets of MOTION_SETS — every motion sentence of a set × every rest
+   sentence × every noun, each sentence with every noun checked by the build.
+   Fifteen pairs became some six hundred. */
 let MOTION_PAIRS = null;
-const motionPairs = () => {
+export const motionPairs = () => {
   if (MOTION_PAIRS) return MOTION_PAIRS;
   const by = new Map();
   for (const x of EX.motionRest) {
@@ -111,8 +116,18 @@ const motionPairs = () => {
     by.get(k)[x.motion ? "go" : "stay"] = x;
   }
   /* A pair is as hard as its harder sentence (item 13: chosen by band). */
-  return (MOTION_PAIRS = [...by.values()].filter((p) => p.go && p.stay)
-    .map((p) => ({ ...p, lvl: Math.max(p.go.lvl, p.stay.lvl) })));
+  const out = [...by.values()].filter((p) => p.go && p.stay)
+    .map((p) => ({ ...p, lvl: Math.max(p.go.lvl, p.stay.lvl), key: p.go.t + p.stay.t }));
+  for (const set of EX.motionSets || []) {
+    for (const n of set.nouns) {
+      const half = (f, motion) => ({ t: f.t, noun: n.noun, g: n.g, col: set.col, motion,
+        thf: n.thf, thgf: n.thgf, prep: set.prep, lvl: f.lvl });
+      for (const go of set.go) for (const stay of set.stay)
+        out.push({ go: half(go, true), stay: half(stay, false), lvl: Math.max(go.lvl, stay.lvl),
+          key: `${go.t}${stay.t}|${n.noun}` });
+    }
+  }
+  return (MOTION_PAIRS = out);
 };
 
 /** One half of the pair: the question of one sentence. */
@@ -138,7 +153,13 @@ function motionHalf(x) {
 export function fsMotion(lex, view, rng) {
   const P = view.policy;
   if (!P.attr("fall", "ÞF") || !P.attr("fall", "ÞGF")) return null;
-  const pr = pick(itemsForBand(view, "fallstjorn", motionPairs(), (y) => y.go.t + y.stay.t), rng);
+  /* A review asks for the very pair (`force.item`), or one about the same
+     preposition (`force.cell`) or noun (`view.drillWord`). */
+  const want = forcedItem(view), cell = forcedCell(view), dw = view.drillWord;
+  const pairs = motionPairs().filter((y) => (!want || y.key === want) &&
+    (!cell || cell === "stjórn:" + y.go.prep) && (!dw || (dw.o === y.go.noun && dw.c === y.go.g)));
+  if (!pairs.length) return null;
+  const pr = pick(want ? pairs : itemsForBand(view, "fallstjorn", pairs, (y) => y.key), rng);
   const [a, b] = shuffle([pr.go, pr.stay], rng).map(motionHalf);
   const part = (h) => ({ ...h, options: shuffle([h.right, h.wrong], rng) });
   const [A, B] = [part(a), part(b)];
@@ -148,17 +169,22 @@ export function fsMotion(lex, view, rng) {
     title: "Hreyfing eða kyrrstaða?", question: A.question,
     options: A.options, answer: A.answer, why: A.why,
     base: 9, lvl: levelFor(P, pr.lvl), cell: "stjórn:" + x.prep, word: lexWord(lex, x.noun, x.g),
-    m: A.m, paradigm: A.paradigm, optMarks: A.optMarks,
+    m: A.m, paradigm: A.paradigm, optMarks: A.optMarks, item: pr.key,
     tags: ["motion", "gov:fs"], miss: A.miss,
-  }, B), [FX.exSeen(pr.go.t + pr.stay.t)]);
+  }, B), [FX.exSeen(pr.key)]);
 }
 
 /** A verb that governs a case: "Ég hjálpaði ___ (kennarinn)". */
 export function fsVerb(lex, view, rng) {
   const P = view.policy;
-  const items = EX.verbCase.filter((x) => P.mark(x.m));
+  /* VERB_CASE by hand and VERB_FRAMES × noun groups (critique item 23). A
+     review asks for the very item, the verb (`force.cell`) or the noun. */
+  const want = forcedItem(view), cell = forcedCell(view), dw = view.drillWord;
+  const key = (y) => y.t + y.noun;
+  const items = EX.verbCase.filter((x) => P.mark(x.m) && (!want || key(x) === want) &&
+    (!cell || cell === "stjórn:" + x.verb) && (!dw || (dw.o === x.noun && dw.c === x.g)));
   if (!items.length) return null;
-  const x = pick(itemsForBand(view, "fallstjorn", items, (y) => y.t + y.noun), rng);
+  const x = pick(want ? items : itemsForBand(view, "fallstjorn", items, key), rng);
   const { s, i } = textSentence(x.t);
   return built({
     type: "gap", skill: "fallstjorn", s, i, cue: x.cue, answers: x.a, m: x.m,
@@ -167,26 +193,71 @@ export function fsVerb(lex, view, rng) {
     hint: `Hvaða falli stýrir sögnin *${x.verb}*?`,
     why: `Sögnin *${x.verb}* stýrir **${caseWord(x.case)}i**: *${x.a[0]}*. Prófaðu: *${x.verb} ${{ ÞF: "mig", ÞGF: "mér", EF: "mín" }[x.case]}*.`,
     base: 11, lvl: levelFor(P, x.lvl), cell: "stjórn:" + x.verb,
-    word: lexWord(lex, x.noun, x.g), tags: ["gov:so"], cap: false,
-  }, [FX.exSeen(x.t + x.noun)]);
+    word: lexWord(lex, x.noun, x.g), item: key(x), tags: ["gov:so"], cap: false,
+  }, [FX.exSeen(key(x))]);
 }
 
-/** "___ (ég) langar í ís." → Mig. Two traps take the nominative. */
+/* ---------- the impersonal subject (critique item 23) -----------------------
+ *
+ * Until v6.13 twenty hand-written sentences, and a pupil met the same ones
+ * again within a week. Now frames × subjects × tense (exercises.py
+ * IMPERSONAL_FRAMES, IMPERSONAL_SUBJECTS): build_exercises.py took every
+ * form from BÍN — the verb in each tense (and, for the two traps, in each
+ * person), the subject in each case — and checked that the case of the
+ * subject is the one BÍN gives the impersonal verb. Here they are put
+ * together, once.
+ *
+ * A subject whose form in the asked case is its nominative (*barnið
+ * langar*, *þær vantar*) is left out unless the answer IS the nominative —
+ * the two traps, *ég hlakka til*: copying the cue is not knowing the case. */
+const CASE_IS = { ÞF: "þolfall", ÞGF: "þágufall", NF: "nefnifall" };
+let IMPERSONAL = null;
+export function impersonalItems() {
+  if (IMPERSONAL) return IMPERSONAL;
+  const { frames, subjects } = EX.impersonal;
+  const out = [];
+  for (const f of frames) {
+    for (const sb of subjects) {
+      const a = sb.f[f.case], cue = sb.f.NF[0];
+      if (f.case !== "NF" && a.includes(cue)) continue;
+      const vf = f.v["*"] || f.v[sb.p];
+      const t = f.t.replace("{V}", vf);
+      const why = f.case === "NF"
+        ? `${CASE_IS.NF}: *${cue} ${vf}* — ekki *${sb.f.ÞGF[0]} ${f.v["3ET"]}*. Sögnin lagar sig að frumlaginu.`
+        : `${CASE_IS[f.case]}: *${a[0]} ${vf}${f.x ? " " + f.x : ""}*.`;
+      out.push({
+        key: `${t}|${sb.l}|${sb.col}`, t, verb: f.verb, l: sb.l, c: sb.c,
+        m: f.case + sb.col, a, cue, why, trap: f.case === "NF",
+        lvl: Math.min(5, f.lvl + sb.add),
+      });
+    }
+  }
+  return (IMPERSONAL = out);
+}
+
+/** "___ (ég) langar í ís." → Mig. Two traps take the nominative. A review
+    (tasks/review.js) asks for the very item (`view.force.item`), one of the
+    same verb (`force.cell`, "stjórn:langa"), or the same subject
+    (`view.drillWord`, which a review sets for `force.word`). */
 export function fsImpers(lex, view, rng) {
   const P = view.policy;
-  const items = EX.impersonal.filter((x) => P.mark(x.m));
+  const want = forcedItem(view), cell = forcedCell(view), dw = view.drillWord;
+  const items = impersonalItems().filter((x) => P.mark(x.m) &&
+    (!want || x.key === want) && (!cell || "stjórn:" + x.verb === cell) &&
+    (!dw || (dw.o === x.l && dw.c === x.c)));
   if (!items.length) return null;
-  const x = pick(itemsForBand(view, "fallstjorn", items, (y) => y.t), rng);
+  const x = pick(want ? items : itemsForBand(view, "fallstjorn", items, (y) => y.key), rng);
   const { s, i } = textSentence(x.t);
   return built({
     type: "gap", skill: "fallstjorn", s, i, cue: x.cue, answers: x.a.map(cap1), m: x.m,
     paradigm: EX.para[`${x.l}|${x.c}`] || null,
-    title: "Frumlag í réttu falli", lemmaLabel: "fornafn",
+    title: "Frumlag í réttu falli", lemmaLabel: x.c === "pfn" ? "fornafn" : "nafnorð",
     hint: "Sumar sagnir vilja ekki frumlag í nefnifalli.",
     why: `*${x.verb}*: ${x.why}`,
     base: 11, lvl: levelFor(P, x.lvl), cell: "stjórn:" + x.verb, word: lexWord(lex, x.l, x.c),
+    item: x.key,
     tags: ["impers"], cap: true, missOther: ["opersonuleg"],
-  }, [FX.exSeen(x.t)]);
+  }, [FX.exSeen(x.key)]);
 }
 
 export const TYPES = [
@@ -208,6 +279,6 @@ export const TYPES = [
     build: fsVerb },
   { id: "fs_operson", skill: "fallstjorn", weight: 5, renderer: "gap",
     tags: ["case:NF", "case:ÞF", "case:ÞGF", "form", "impers", "noun", "num"],
-    bands: [1, 3, 4],
+    bands: [1, 3, 4, 5],
     build: fsImpers },
 ];

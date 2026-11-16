@@ -16,7 +16,7 @@ import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { createPolicy } from "../src/js/core/policy.js";
-import { fsVerb, fsPrepNoun, fsMotion } from "../src/js/tasks/fallstjorn.js";
+import { fsVerb, fsPrepNoun, fsMotion, motionPairs } from "../src/js/tasks/fallstjorn.js";
 import { obConj } from "../src/js/tasks/obeygjanleg.js";
 import { show } from "./helpers.js";
 
@@ -111,7 +111,10 @@ test("item 6: the built question offers exactly the two forms and the right one 
   for (let k = 0; k < 200; k++) {
     const t = show(ctx(), fsMotion);
     if (!t) continue;
-    const x = EX.motionRest.find((y) => y.t === t.s.t);
+    /* a set's sentence stands with many nouns (item 23): the half is the
+       one whose forms include the answer */
+    const x = motionPairs().flatMap((p) => [p.go, p.stay])
+      .find((y) => y.t === t.s.t && [...y.thf, ...y.thgf].includes(t.answer));
     assert.deepEqual([...t.options].sort(), [x.thf[0], x.thgf[0]].sort());
     assert.equal(t.answer, (x.motion ? x.thf : x.thgf)[0]);
   }
