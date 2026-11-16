@@ -85,7 +85,8 @@ cd <the path to the fallaskoli folder>
 ```
 
 This takes a few minutes the first time. **You should see** the line
-`built fallaskoli-v6.3.html` at the end. If it stops, the message says why: a
+`built dist/fallaskoli-v<version>.html` at the end (the version is in
+`package.json`). If it stops, the message says why: a
 missing Python, a data change waiting for `--accept`, or a failing test.
 
 ### 1.4 Create your administrator account
@@ -161,8 +162,9 @@ first time he logs in **in the same browser he practised in**: the progress move
 up to the server and the local copy is left untouched.
 
 If it is a different browser or a different computer: open the old file there, go
-to the **Gögn** tab, press **Flytja út**, then log in on the server and press
-**Flytja inn** with the file that was produced.
+to **Stillingar og námsefni → Færa milli tækja** and press **Afrita framvindu**
+(the progress is copied as text; save it in a file), then log in on the server,
+open the same place and press **Líma inn framvindu** or **Lesa inn skrá** with it.
 
 Do this **before** you start using the server in earnest. Moving progress is the
 only operation in the whole program that can lose data, and it is simple while
@@ -242,17 +244,17 @@ The easiest way is to copy across the zip file you were given. On **your own
 computer**, in a new command window:
 
 ```
-scp fallaskoli-v6.3-src.zip root@203.0.113.45:/opt/
+scp fallaskoli-v<version>-src.zip root@203.0.113.45:/opt/   # the zip you were given
 ```
 
 Then, back on the machine:
 
 ```
-cd /opt && apt install -y unzip && unzip fallaskoli-v6.3-src.zip
-mv fallaskoli-v6.3 fallaskoli && cd fallaskoli && ./build.sh
+cd /opt && apt install -y unzip && unzip fallaskoli-v<version>-src.zip
+mv fallaskoli-v<version> fallaskoli && cd fallaskoli && ./build.sh
 ```
 
-The build takes a few minutes. **You should see** `built fallaskoli-v6.3.html`.
+The build takes a few minutes. **You should see** `built dist/fallaskoli-v<version>.html`.
 
 ### 2.5 Create the accounts and try it
 
@@ -311,7 +313,7 @@ WantedBy=multi-user.target
 END
 ```
 
-(`/opt/fallaskoli` is the folder from 2.4, renamed from `fallaskoli-v6.3` so the
+(`/opt/fallaskoli` is the folder from 2.4, renamed from `fallaskoli-v<version>` so the
 name does not change with every version. Run the admin tool as the same user
 and with the same data folder:
 `sudo -u fallaskoli FALLASKOLI_DATA=/var/lib/fallaskoli node server/admin.mjs listi`.)
@@ -446,7 +448,7 @@ and anything already pointed at it keeps working.)
 
 ### 4.1 The admin page
 
-It is at the bottom of the **Gögn** tab and **only you can see it**. It holds:
+It is the **Umsjón** section of **Stillingar og námsefni** and **only you can see it**. It holds:
 
 - **The data set** — one button. You choose the JSON file once and it goes up
   whole. After that every word definition comes from there and the program
@@ -710,8 +712,8 @@ On your own machine, with the service file from 2.6:
 
 ```
 systemctl stop fallaskoli
-cd /opt && unzip -o fallaskoli-v6.3-src.zip
-rm -rf /opt/fallaskoli && mv /opt/fallaskoli-v6.3 /opt/fallaskoli
+cd /opt && unzip -o fallaskoli-v<version>-src.zip
+rm -rf /opt/fallaskoli && mv /opt/fallaskoli-v<version> /opt/fallaskoli
 cd /opt/fallaskoli && ./build.sh
 systemctl start fallaskoli
 ```
@@ -776,7 +778,7 @@ So that you know what you are putting on the internet, without varnish:
 | The page does not load | `systemctl status fallaskoli` — is it `active (running)`? |
 | `502 Bad Gateway` | Caddy is running but the server is not. `systemctl restart fallaskoli` |
 | No padlock in the address bar | The domain does not point at the machine yet. Wait and try `ping` |
-| `Beðið eftir samþykki` | Correct behaviour — admit them on the **Gögn** tab |
+| `Beðið eftir samþykki` | Correct behaviour — admit them under **Umsjón → Notendur** (*Hleypa inn*) |
 | The login clears itself and nothing happens, no error | The password was right — the browser threw away the login cookie because the server marked it "https only" while you are on plain `http`. Safari does this; Chrome does not. Fixed in `server/server.mjs`: stop the server with `Ctrl` + `C` and start it again. If it persists, try the same login in Chrome to confirm that is what you are looking at |
 | The child cannot see his progress | Did he log into the right account? See 1.7 |
 | The projector says *Tengist…* and nothing moves, or the pupils' screens lag a question behind | Something between the browser and the server holds the live round's events back. Caddy and Fly.io do not; another proxy must not buffer `text/event-stream` (4.2) |
