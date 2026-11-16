@@ -119,27 +119,72 @@ export function renderPicker(app) {
   $("runstart").focus();
 }
 
-/* ---------- the strip above a session -------------------------------------- */
+/* ---------- the line above a session --------------------------------------
+
+   v6.13 (items 2, 47, 48): while a session runs, the question gets the
+   screen. On a 390 px phone the title, the four stat tiles, the level bar,
+   the tabs, the date and the old session strip took 590 px before the
+   question began, and the answer box ended up under the letter pad. Now the
+   whole of that is one slim line — topic, 3/10, a small × — and the rest is
+   hidden by `body.insession` (src/head.html) until the summary, which shows
+   the header again with the XP the session earned.
+
+   The × is what Hætta was: the same confirmation, but no longer the largest
+   control on the screen, sitting directly above the question. */
+
+/** Is the session layout wanted right now? Only for a session proper (a drill
+    or a duel draws its own strip) and only while the board is on the screen:
+    a 📖 link in a question opens Lesefni mid-session, and there the tabs are
+    the way back. */
+export function sessionLayoutOn(app, practiceShown) {
+  return !!(app && app.run && !app.drill && !app.duelRun && practiceShown);
+}
+
+/** Put `body.insession` in step with the app. Called by `renderRunBar` and by
+    `openView` (app.js), the two moments it can change. */
+export function syncSessionLayout(app) {
+  if (typeof document === "undefined" || !document.body) return;
+  const view = $("view-practice");
+  document.body.classList.toggle("insession", sessionLayoutOn(app, !!view && !view.hidden));
+}
+
+/* The question last drawn under the line: a new one is scrolled to the top of
+   the page, so the child never starts a question half-way down the screen
+   (after the verdict and the Áfram button the page is often scrolled). */
+let lastShown = null;
 
 export function renderRunBar(app) {
   const el = $("runbar");
   if (!el) return;
+  syncSessionLayout(app);
   const r = app.run;
-  if (!r || app.drill || app.duelRun) { el.innerHTML = ""; return; }
+  if (!r || app.drill || app.duelRun) { el.innerHTML = ""; lastShown = null; return; }
+  /* Dots for the sizes a child can pick (RUN_SIZES); a longer run (the
+     browser test drives one of 100 000) gets the count alone. */
   const dots = [];
-  for (let i = 0; i < r.n; i++) {
+  for (let i = 0; i < (r.n <= 40 ? r.n : 0); i++) {
     const it = r.items[i];
     const cls = !it ? (i === r.i ? "now" : "due") : it.ok === true ? "ok" : it.ok === false ? "no" : "opt";
     dots.push(`<i class="${cls}"></i>`);
   }
   const shown = Math.min(r.n, r.i + (app.cur && app.cur.inRun && !app.cur.closed ? 1 : 0)) || 1;
-  el.innerHTML = `<div class="drillstrip runstrip" role="status">
-    <span class="drillico">${topicIco(r.topic)}</span>
-    <div class="drilltext"><b>${esc(topicName(r.topic))}${r.focus && r.focus.length === 1 ? `: ${esc(patternById(r.focus[0]).nm)}` : ""}</b>
-      <span class="drillnums">Spurning ${shown} af ${r.n}${r.j ? ` · ${r.c} rétt` : ""}</span>
-      <span class="drilldots" aria-hidden="true">${dots.join("")}</span></div>
-    <button type="button" class="ghost" id="runstop">Hætta</button></div>`;
+  const name = `${topicName(r.topic)}${r.focus && r.focus.length === 1 ? `: ${patternById(r.focus[0]).nm}` : ""}`;
+  const said = `${name}. Spurning ${shown} af ${r.n}${r.j ? `, ${r.c} rétt` : ""}.`;
+  /* The dots say which were right; on a phone there is no room for twenty of
+     them, so a thin bar along the bottom of the line says how far instead
+     (head.html decides which of the two shows). */
+  el.innerHTML = `<div class="runline" role="status" aria-label="${esc(said)}" title="${esc(said)}">
+    <span class="runico" aria-hidden="true">${topicIco(r.topic)}</span>
+    <b class="runtopic" aria-hidden="true">${esc(name)}</b>
+    <span class="drilldots rundots" aria-hidden="true">${dots.join("")}</span>
+    <span class="runcount" aria-hidden="true"><b>${shown}</b>/${r.n}${r.j ? `<span class="runok"> · ${r.c} rétt</span>` : ""}</span>
+    <button type="button" class="runx" id="runstop" aria-label="Hætta í lotunni" title="Hætta í lotunni">×</button>
+    <i class="runprog" aria-hidden="true" style="width:${Math.round((100 * r.i) / r.n)}%"></i></div>`;
   $("runstop").onclick = () => app.quitRun();
+  if (app.cur && app.cur !== lastShown) {
+    lastShown = app.cur;
+    if (typeof window !== "undefined" && window.scrollY > 0) window.scrollTo(0, 0);
+  }
 }
 
 /** "Hætta?" — what is answered is kept and summed up. */

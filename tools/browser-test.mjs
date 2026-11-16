@@ -75,6 +75,16 @@ await page.setViewport({ width: 1100, height: 900 });
  * real coordinates. It is the same trusted `Input.dispatchMouseEvent` the
  * helper would have sent; what is gone is the wait that could not finish. */
 async function tap(selector) {
+  /* v6.13: during a session the tabs are hidden (body.insession, items 2 and
+     47) and the only way off the board is the × and its summary. Most of the
+     sections below visit a tab with the long test session still running; for
+     them, a hidden tab is opened the way the program itself opens one. The
+     session layout has its own section, which taps nothing of the sort. */
+  const tab = /^nav\.tabs button\[data-view="(\w+)"\]$/.exec(selector);
+  if (tab && await page.evaluate(() => document.body.classList.contains("insession"))) {
+    await page.evaluate((v) => window.FALLASKOLI.openView(v), tab[1]);
+    return;
+  }
   const at = await page.evaluate((sel) => {
     const el = document.querySelector(sel);
     if (!el) return null;
@@ -1554,7 +1564,7 @@ await page.setViewport({ width: 1100, height: 900 });
   await tap('.sizeb[data-size="10"]');
   await tap("#runstart");
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
-  ok(await page.$("#runbar .runstrip") !== null, "no strip above a session in progress");
+  ok(await page.$("#runbar .runline") !== null, "no line above a session in progress");
   const skills = new Set();
   for (let i = 0; i < 10; i++) {
     skills.add(await page.evaluate(() => window.FALLASKOLI.cur && window.FALLASKOLI.cur.skill));
@@ -1575,6 +1585,170 @@ await page.setViewport({ width: 1100, height: 900 });
   await tap('#task [data-next="pick"]');
   ok(await page.$("#task .runpick") !== null, "„Velja annað efni“ does not go back to the picker");
   await startPractice(page, 5000);
+}
+
+/* ---------- v6.13: the question gets the screen (items 2, 47, 48, 53) ----
+ * On a 390 × 844 phone the question used to start 590 px down, under the
+ * title, four stat tiles, the level bar, the tabs, the date and the session
+ * strip, and the á ð é í … pad was stuck to the bottom of the screen — on top
+ * of the answer box and of a table's first row. Now, during a session:
+ * nothing of the header shows, the question starts near the top, the pad is
+ * in the flow below the input, and Hætta is a small × that still asks. Checked
+ * on a phone and a laptop, for a typed question, a table and a choice. The
+ * device keyboard is not there in headless Chrome; on a phone it takes about
+ * the lower 40 % of the screen, so the answer box must end above that line. */
+{
+  const KEYBOARD = 0.4;
+  const drawOf = async (types) => page.evaluate((types) => {
+    const A = window.FALLASKOLI;
+    for (let i = 0; i < 600; i++) { A.next(); if (types.includes(A.cur && A.cur.type)) return A.cur.type; }
+    return null;
+  }, types);
+  for (const vp of [{ nm: "phone 390", w: 390, h: 844, touch: true }, { nm: "laptop 1280", w: 1280, h: 800, touch: false }]) {
+    await page.setViewport({ width: vp.w, height: vp.h, isMobile: vp.touch, hasTouch: vp.touch,
+                             deviceScaleFactor: 1 });
+    await dismissModals();
+    await page.evaluate(() => {
+      const A = window.FALLASKOLI;
+      A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+      A.S.enabled.toluord = true; A.S.enabled.greining = true;
+      /* A settled pad setting from elsewhere would hide what is measured. */
+      A.S.settings.keypad = true;
+      A.reloadPolicy();
+      A.openView("practice");
+      A.startRun("blandad", 10);
+    });
+    await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+    const chrome = await page.evaluate(() => {
+      const shown = (sel) => { const e = document.querySelector(sel); return !!e && e.getClientRects().length > 0; };
+      const x = document.getElementById("runstop");
+      const r = x ? x.getBoundingClientRect() : null;
+      return {
+        insession: document.body.classList.contains("insession"),
+        visible: [".topbar", ".stats", ".levelbar", ".levelmeta", "nav.tabs", ".boardhead"].filter(shown),
+        line: shown("#runbar .runline"), count: document.querySelector("#runbar .runcount")?.textContent || "",
+        x: r && { w: Math.round(r.width), h: Math.round(r.height), text: x.textContent.trim(),
+                  label: x.getAttribute("aria-label") || "" },
+        lineH: Math.round(document.querySelector("#runbar .runline")?.getBoundingClientRect().height || 0),
+      };
+    });
+    ok(chrome.insession, `${vp.nm}: the session layout is not on during a session`);
+    ok(chrome.visible.length === 0, `${vp.nm}: still shown during a session: ${chrome.visible.join(", ")}`);
+    ok(chrome.line && /^1\/10/.test(chrome.count), `${vp.nm}: the session line does not say 1/10: "${chrome.count}"`);
+    ok(chrome.lineH > 0 && chrome.lineH <= 52, `${vp.nm}: the session line is ${chrome.lineH}px tall — it should be one slim line`);
+    ok(chrome.x && chrome.x.text === "×" && chrome.x.w <= 48 && chrome.x.h <= 48 && /Hætta/.test(chrome.x.label),
+      `${vp.nm}: Hætta is not a small × in the line: ${JSON.stringify(chrome.x)}`);
+
+    for (const [kind, types] of [["typed", ["fill", "verb", "verbslot"]], ["table", ["table"]],
+                                 ["choice", ["choice", "parse", "govern", "clause", "indecl"]]]) {
+      const got = await drawOf(types);
+      ok(!!got, `${vp.nm}: could not draw a ${kind} question in a mixed session`);
+      if (!got) continue;
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await new Promise((r) => setTimeout(r, 60));
+      const m = await page.evaluate(() => {
+        const box = (e) => { if (!e) return null; const r = e.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, h: r.height }; };
+        const keys = document.getElementById("keys");
+        const inp = document.querySelector("#ans, table.decl input:not([disabled]), #task textarea");
+        const row = document.querySelector("table.decl tr");
+        /* What is drawn on top of the middle of each cell of the first row:
+           it must be the row itself, not the pad or anything else. */
+        const cover = row ? [...row.cells].map((c) => {
+          const r = c.getBoundingClientRect();
+          const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return el && row.contains(el) ? null : (el ? el.tagName + "." + el.className : "nothing");
+        }).filter(Boolean) : [];
+        return {
+          q: box(document.querySelector("#task .card")), input: box(inp),
+          keys: keys && keys.getClientRects().length ? box(keys) : null,
+          keysPos: keys ? getComputedStyle(keys).position : null,
+          cover, vh: window.innerHeight,
+        };
+      });
+      ok(m.q && m.q.top <= 120, `${vp.nm} / ${kind} (${got}): the question starts ${m.q && Math.round(m.q.top)}px down`);
+      if (m.input) {
+        ok(m.keys && m.keys.h > 0, `${vp.nm} / ${kind}: no letter pad under a typed answer with the pad switched on`);
+        if (m.keys) {
+          const meet = m.input.left < m.keys.right && m.keys.left < m.input.right &&
+                       m.input.top < m.keys.bottom && m.keys.top < m.input.bottom;
+          ok(!meet, `${vp.nm} / ${kind}: the answer box and the letter pad overlap`);
+          ok(m.keys.top >= m.input.bottom, `${vp.nm} / ${kind}: the letter pad is not below the answer box`);
+          ok(m.keysPos === "static", `${vp.nm} / ${kind}: the letter pad is ${m.keysPos}, not in the flow`);
+        }
+        if (vp.touch && kind === "typed")
+          ok(m.input.bottom <= m.vh * (1 - KEYBOARD),
+            `${vp.nm} / ${kind}: the answer box ends at ${Math.round(m.input.bottom)}px, under the device keyboard`);
+      }
+      if (kind === "table") ok(m.cover.length === 0, `${vp.nm}: the first table row is covered by ${m.cover.join(", ")}`);
+      if (vp.touch) await page.screenshot({ path: `/tmp/fallaskoli-session-${vp.w}-${kind}.png` }).catch(() => {});
+    }
+
+    /* The × asks; "Halda áfram" keeps the session; "Já, hætta" ends it, and
+       the summary shows the header again. */
+    await tap("#runstop");
+    ok(await page.$("#runquit-no") !== null, `${vp.nm}: the × did not ask before stopping the session`);
+    if (await page.$("#runquit-no")) await tap("#runquit-no");
+    ok(await page.evaluate(() => !!window.FALLASKOLI.run), `${vp.nm}: "Halda áfram" ended the session`);
+    await answerOneNoNext(true);
+    await tap("#runstop");
+    if (await page.$("#runquit-yes")) await tap("#runquit-yes");
+    await dismissModals();
+    const after = await page.evaluate(() => ({
+      run: !!window.FALLASKOLI.run, summary: !!document.querySelector("#task .summary"),
+      insession: document.body.classList.contains("insession"),
+      header: document.querySelector(".topbar").getClientRects().length > 0,
+      tabs: document.querySelector("nav.tabs").getClientRects().length > 0,
+    }));
+    ok(!after.run && after.summary, `${vp.nm}: "Já, hætta" did not end in a summary`);
+    ok(!after.insession && after.header && after.tabs, `${vp.nm}: the header and tabs did not come back for the summary`);
+
+    /* A 📖 link mid-session opens Lesefni with the tabs back (the way out);
+       Æfa returns to the slim line. */
+    await page.evaluate(() => { const A = window.FALLASKOLI; A.runDone = null; A.startRun("blandad", 10); });
+    await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+    await page.evaluate(() => window.FALLASKOLI.openView("lessons", "foll"));
+    ok(await page.evaluate(() => !document.body.classList.contains("insession") &&
+      document.querySelector("nav.tabs").getClientRects().length > 0),
+      `${vp.nm}: Lesefni opened mid-session has no tabs to come back by`);
+    await page.evaluate(() => document.querySelector('nav.tabs button[data-view="practice"]').click());
+    ok(await page.evaluate(() => document.body.classList.contains("insession")),
+      `${vp.nm}: back on Æfa mid-session, the slim line did not return`);
+    await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+  }
+  await page.setViewport({ width: 1100, height: 900 });
+}
+
+/* Item 53: on a touch device set to Icelandic the pad is off until the child
+   switches it on; the switch in Stillingar shows what is in force and brings
+   the pad back at once. A page of its own, so the language stays there. */
+{
+  const p2 = await browser.newPage();
+  await p2.evaluateOnNewDocument(() => {
+    Object.defineProperty(Navigator.prototype, "language", { get: () => "is-IS" });
+  });
+  await p2.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await p2.goto(FILE, { waitUntil: "domcontentloaded" });
+  await p2.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess && document.querySelector('#task .card')", { timeout: 20000 });
+  const pad = await p2.evaluate(() => {
+    const A = window.FALLASKOLI;
+    document.querySelectorAll(".scrim").forEach((s) => s.remove());
+    delete A.S.settings.keypad;
+    A.startRun("blandad", 10);
+    for (let i = 0; i < 600 && !(A.cur && ["fill", "verb", "verbslot"].includes(A.cur.type)); i++) A.next();
+    const k = () => { const e = document.getElementById("keys"); return !!e && e.getClientRects().length > 0; };
+    const before = { lang: navigator.language, coarse: matchMedia("(pointer: coarse)").matches, shown: k() };
+    A.openView("settings");
+    const box = document.getElementById("set-keys").checked;
+    document.getElementById("set-keys").click();
+    A.openView("practice");
+    return { ...before, box, saved: A.S.settings.keypad, after: k() };
+  });
+  ok(pad.lang === "is-IS" && pad.coarse, "could not pose as a touch device set to Icelandic: " + JSON.stringify(pad));
+  ok(!pad.shown, "the letter pad shows on a touch device set to Icelandic, where the keyboard has the letters");
+  ok(pad.box === false, "the pad setting does not show that the pad is off");
+  ok(pad.saved === true && pad.after, "switching the pad on in Stillingar did not bring it back: " + JSON.stringify(pad));
+  await p2.close();
 }
 
 /* ---------- v6.11: every category mixes its questions ------------------

@@ -11,7 +11,7 @@ import { crestOf } from "../core/profile.js";
 import { ALL_CLASSES } from "../core/marks.js";
 import { collectionByClass } from "../core/collection.js";
 import { vocabScore, weakWords, HEALTH, DRILL, STATUS_LABEL } from "../core/wordhealth.js";
-import { $, esc } from "./dom.js";
+import { $, esc, keypadOn, keypadEnv } from "./dom.js";
 import { renderPolicyEditor } from "./policyui.js";
 import { holidayName } from "../core/calendar.js";
 import { LICENSES } from "../../../data/licenses.js";
@@ -742,6 +742,9 @@ export function renderSettings(app) {
   $("goalin").value = S.goal;
   $("set-decay").checked = S.settings.decay !== false;
   $("set-gloss").checked = S.settings.glossary !== false;
+  /* Item 53: the box shows what is in force, the guess included, so ticking
+     it always does what it looks like it will. */
+  $("set-keys").checked = keypadOn(S.settings, keypadEnv());
 
   S.policy ||= { skills: {}, types: {}, levels: {}, attrs: {}, safeVocab: null };
   const view = {

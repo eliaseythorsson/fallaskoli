@@ -268,10 +268,47 @@ if (typeof document !== "undefined") {
   });
 }
 
+/* Item 53: the pad only where it helps. A phone or tablet set to Icelandic
+   almost always has an Icelandic keyboard with every one of these letters on
+   it, and there the pad only pushes the rest of the question down. So the
+   guess is: off on a touch device whose language is Icelandic, on everywhere
+   else (a laptop, or a tablet set to English, where á and þ are hard to
+   reach). The child can switch it either way under Stillingar, and from then
+   on the switch decides. */
+
+/** The guess, before anybody has chosen. Pure, so it can be tested. */
+export function keypadDefault({ coarse = false, lang = "" } = {}) {
+  return !(coarse && /^is(?:[-_]|$)/i.test(String(lang)));
+}
+
+/** The pad is shown when the setting says so, or — with no setting — when
+    the guess does. `settings.keypad` is only ever true, false or absent. */
+export function keypadOn(settings, env) {
+  const v = settings && settings.keypad;
+  return typeof v === "boolean" ? v : keypadDefault(env);
+}
+
+/** What this device is: a finger or a mouse, and the language it is set to. */
+export function keypadEnv() {
+  if (typeof window === "undefined") return {};
+  return {
+    coarse: !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches),
+    lang: (typeof navigator !== "undefined" && navigator.language) || "",
+  };
+}
+
+/* Who decides is app.js (it holds the state); until it says, the pad shows. */
+let keypadWanted = () => true;
+export function setKeypadPref(fn) { keypadWanted = fn; }
+
 export function wireKeys() {
   const box = $("keys");
   if (!box) return;
-  box.innerHTML = ["á", "ð", "é", "í", "ó", "ú", "ý", "þ", "æ", "ö"]
+  /* `hidden` rather than removing the box: the renderers lay the question out
+     around it, and the switch in Stillingar redraws it in place. */
+  if (!keypadWanted()) { box.hidden = true; box.innerHTML = ""; return; }
+  box.hidden = false;
+  box.innerHTML =["á", "ð", "é", "í", "ó", "ú", "ý", "þ", "æ", "ö"]
     .map((c) => `<button type="button" data-c="${c}">${c}</button>`).join("");
   box.onclick = (e) => {
     const b = e.target.closest("button");
