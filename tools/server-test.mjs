@@ -1111,8 +1111,16 @@ async function closeWindows(page) {
     });
   }
   await P1.page.waitForFunction(() => /Þú fékkst 10 af 10/.test(document.getElementById("duelbar")?.innerText || ""), { timeout: 15000 });
-  const graded = (await app.store.teamDuels()).find((d) => d.id === td.id).res;
   const lifaId = (await app.store.users()).find((u) => u.username === "lifa").id;
+  /* The strip's count is the browser's own until the server answers
+     (app.js `endDuel`), so it can be on the screen before the result is in
+     the store: wait for the server's record rather than read it at once. */
+  let graded = {};
+  for (let k = 0; k < 100; k++) {
+    graded = (await app.store.teamDuels()).find((d) => d.id === td.id).res || {};
+    if (graded[lifaId]) break;
+    await new Promise((r) => setTimeout(r, 100));
+  }
   ok(graded[lifaId] && graded[lifaId].c === 10 && graded[lifaId].n === 10,
     "the server did not grade the team duel as played: " + JSON.stringify(graded));
   await T.page.evaluate(() => document.getElementById("tc-team").dataset.stale = "1");
