@@ -62,6 +62,10 @@ function showExample(app) {
     const ex = app.duelRun ? null : firstMeeting(app.S, t);
     examples.set(t, ex);
     if (ex) markTypeSeen(app.S, t.typeId, todayKey());
+    /* Item 17: a card that opens with its worked example is a first meeting,
+       answered with a model beside it — not a measure of how hard the type
+       is, so it is not offered to the count (app.js `noteAnswer`). */
+    if (ex) delete t.calBand;
   }
   const ex = examples.get(t);
   const card = document.querySelector("#task .card");
@@ -171,6 +175,10 @@ function spend(app) {
  */
 function conclude(app, task, j, draw) {
   const took = j.effects.some((e) => e.timed) ? spend(app) : 0;
+  /* Item 17: a first answer to a fresh question is offered to the anonymous
+     count (app.js `noteAnswer` decides whether it goes anywhere). Here, on
+     the one path, so a second try (`endRetry`) is never counted. */
+  if (app.noteAnswer) app.noteAnswer(task, j);
   const extra = settle(app.S, app.sess, task, j, { ms: took });
   /* A duel keeps the answer itself: the server grades it (item 62). */
   if (task.duel && app.duelAnswer) app.duelAnswer(task, j.given);

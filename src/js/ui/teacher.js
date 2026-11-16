@@ -127,6 +127,46 @@ export function targetOptionsHTML(worst = []) {
     <optgroup label="Allt efni bekkjar">${YEARS.map((y) => opt("year", y, targetName({ kind: "year", id: y }))).join("")}</optgroup>`;
 }
 
+/* ---------- the sample of wrong answers (item 38) ---------------------------
+ *
+ * The one place in the program where something a pupil typed can be kept,
+ * and so it is the teacher's decision for their own group, off until they
+ * make it, and said in plain words — to the teacher here, and to the pupil
+ * under Aðgangurinn minn and in the privacy notice. */
+
+export function samplesCardHTML(info) {
+  if (!info || !info.available) return "";
+  return `<h3 class="sec2">Sýni af röngum svörum</h3>
+    <p class="sub">Fallaskóli geymir annars aldrei það sem nemendur skrifa. Ef þú kveikir á þessu geymir
+      þjónninn lítið, <b>nafnlaust</b> sýni af röngum beygingarmyndum úr þessum hópi: orðið sem spurt var um,
+      myndina sem átti að skrifa, myndina sem nemandinn skrifaði og hvernig villugreiningin flokkaði
+      villuna. Hvergi er skráð hver skrifaði eða hvenær, og aðeins stök orð sem líkjast beygingarmynd
+      orðsins eru geymd. Sýnið er eingöngu notað til að prófa sjálfkrafa hvort villugreiningin flokkar
+      villur rétt. Nemandi getur sleppt því að vera með undir <b>Aðgangurinn minn</b>.
+      Láttu nemendur og forsjáraðila vita áður en þú kveikir á þessu.</p>
+    <div class="filters"><label><input type="checkbox" id="tc-samples-on"${info.on ? " checked" : ""}>
+      Geyma nafnlaust sýni af röngum svörum úr þessum hópi</label></div>
+    <div id="tc-samples-note"></div>`;
+}
+
+async function drawSamples(app, group) {
+  const box = $("tc-samples");
+  if (!box) return;
+  let info;
+  try { info = await app.server.teacherSamples(group); } catch { box.innerHTML = ""; return; }
+  box.innerHTML = samplesCardHTML(info);
+  const sw = $("tc-samples-on");
+  if (!sw) return;
+  sw.onchange = async () => {
+    try {
+      const r = await app.server.setTeacherSamples(group, sw.checked);
+      $("tc-samples-note").innerHTML = verdict(r.on
+        ? "Kveikt. Röng svör úr hópnum geta nú lent í nafnlausa sýninu."
+        : "Slökkt. Ekkert nýtt er geymt úr þessum hópi.", "good");
+    } catch (e) { sw.checked = !sw.checked; $("tc-samples-note").innerHTML = verdict(e.message); }
+  };
+}
+
 /* ---------- drawing -------------------------------------------------------- */
 
 let chosenGroup = null;
@@ -184,7 +224,8 @@ export async function renderTeacher(app) {
       og ▼ verra en áður. <b>Ógreint</b> er hve mörg röng svör villugreiningin kunni ekki að
       flokka — það er ekki villa nemandans.</p>
     <div id="tc-table"><p class="sub faint">Sæki töfluna…</p></div>
-    <p><a class="ghost filelabel" id="tc-csv" href="${esc(app.server.classPatternsCsvUrl(group))}" download>Sækja töfluna (CSV)</a></p>`;
+    <p><a class="ghost filelabel" id="tc-csv" href="${esc(app.server.classPatternsCsvUrl(group))}" download>Sækja töfluna (CSV)</a></p>
+    <div id="tc-samples"></div>`;
 
   const sel = $("tc-group");
   if (sel) sel.onchange = () => { chosenGroup = sel.value; renderTeacher(app); };
@@ -237,5 +278,5 @@ export async function renderTeacher(app) {
   };
 
   $("tc-what").innerHTML = targetOptionsHTML();
-  await Promise.all([drawTable(), drawList()]);
+  await Promise.all([drawTable(), drawList(), drawSamples(app, group)]);
 }

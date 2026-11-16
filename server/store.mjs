@@ -62,6 +62,9 @@ export function createStore(root) {
     duels: path.join(root, "duels.json"),
     reports: path.join(root, "reports.json"),
     assignments: path.join(root, "assignments.json"),
+    calibration: path.join(root, "calibration.json"),
+    calibrationQuota: path.join(root, "calibration-quota.json"),
+    samples: path.join(root, "samples.json"),
   };
 
   /* One queue for every write. Node is single-threaded, but `await` gives other
@@ -135,6 +138,9 @@ export function createStore(root) {
   const duelsFile = smallFile(file.duels, []);
   const reportsFile = smallFile(file.reports, []);
   const assignmentsFile = smallFile(file.assignments, []);
+  const calibrationFile = smallFile(file.calibration, {});
+  const quotaFile = smallFile(file.calibrationQuota, {});
+  const samplesFile = smallFile(file.samples, { list: [], seen: 0 });
 
   const safeId = (id) => /^[a-zA-Z0-9_-]{1,64}$/.test(String(id));
   const statePath = (id) => path.join(dir.states, id + ".json");
@@ -279,6 +285,31 @@ export function createStore(root) {
     assignments: () => assignmentsFile.read(),
     updateAssignments: (fn) => assignmentsFile.update(fn),
 
+    /* ---------- calibration and the answer sample (v6.13, server/calibrate.mjs) ----------
+     * Three files, and the difference between them is the point:
+     *
+     *   calibration.json        ANONYMOUS. Counts of right and wrong answers
+     *                           per question type, level, cell and
+     *                           irregularity score; the published table; the
+     *                           log of what each run changed. No user id, no
+     *                           group, no time of an answer. Part of a backup.
+     *   samples.json            ANONYMOUS. A bounded sample of wrong word
+     *                           forms, kept only for groups whose teacher
+     *                           switched it on. No id, no group; the month.
+     *                           Part of a backup.
+     *   calibration-quota.json  PERSONAL, for one day: how much each account
+     *                           has contributed TODAY, so that the caps can
+     *                           be held. It is replaced when the day changes,
+     *                           an erased account is taken out of it at once
+     *                           (`eraseUser`), and it is NOT part of a backup.
+     */
+    calibration: () => calibrationFile.read(),
+    updateCalibration: (fn) => calibrationFile.update(fn),
+    calibrationQuota: () => quotaFile.read(),
+    updateCalibrationQuota: (fn) => quotaFile.update(fn),
+    samples: () => samplesFile.read(),
+    updateSamples: (fn) => samplesFile.update(fn),
+
     /* ---------- the monthly rarity snapshot ---------- */
     rarityHistory: () => readJSON(file.rarity, []),
     appendRarity(entry, keep = 24) {
@@ -295,7 +326,8 @@ export function createStore(root) {
     /* ---------- erasure ----------
      * Everything that names one person, in every file. What is left afterwards
      * is the anonymous monthly rarity count, the audit line saying an erasure
-     * happened, and whatever backups have not yet expired (docs/PRIVACY.md). */
+     * happened, the anonymous calibration counts and answer sample, and
+     * whatever backups have not yet expired (docs/PRIVACY.md). */
     async eraseUser(id) {
       const uid = String(id);
       let existed = false;
@@ -328,6 +360,12 @@ export function createStore(root) {
         }
         return hit ? list : null;
       });
+      /* Today's contribution count (calibration). The counts themselves and
+         the answer sample carry no id and cannot be traced back: they stay. */
+      await this.updateCalibrationQuota((q) => {
+        if (!q.by || !(uid in q.by)) return null;
+        delete q.by[uid]; return q;
+      });
       const hidden = await this.hidden();
       if (hidden.includes(uid)) await this.setHidden(hidden.filter((x) => x !== uid));
       await this.updateInvites((list) => {
@@ -353,6 +391,7 @@ export function createStore(root) {
         groups: await this.groups(), audit: await this.audit(),
         rarity: await this.rarityHistory(), duels: await this.duels(),
         reports: await this.reports(), assignments: await this.assignments(),
+        calibration: await this.calibration(), samples: await this.samples(),
         dataset: await this.dataset(), datasetStatus: await this.datasetStatus(),
         states: st,
       };
@@ -374,6 +413,9 @@ export function createStore(root) {
         await writeJSON(file.duels, all.duels || []);
         await writeJSON(file.reports, all.reports || []);
         await writeJSON(file.assignments, all.assignments || []);
+        await writeJSON(file.calibration, all.calibration || {});
+        await writeJSON(file.samples, all.samples || { list: [], seen: 0 });
+        await fs.rm(file.calibrationQuota, { force: true });
         if (all.dataset) await writeJSON(file.dataset, all.dataset);
         if (all.datasetStatus) await writeJSON(file.datasetStatus, all.datasetStatus);
         for (const n of await fs.readdir(dir.states).catch(() => []))

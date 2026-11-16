@@ -3018,6 +3018,31 @@ await page.setViewport({ width: 1100, height: 900 });
   await tap('nav.tabs button[data-view="practice"]');
 }
 
+/* ---------- item 17: with no server there is no calibration at all ----------
+ * Opened from a file the program must run on exactly what it was built with:
+ * no table, the build's own scores in the lexicon, no question marked for
+ * counting and nothing queued to be sent anywhere. */
+{
+  const page = await browser.newPage();
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  const st = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    const marked = [];
+    for (let k = 0; k < 12 && A.run; k++) { marked.push(A.cur && A.cur.calBand); A.finish({ correct: true }); A.next(); }
+    A.flushAnswers();
+    return { server: !!A.server, cal: A.cal, info: A.calInfo, viewCal: A.viewCal(), marked,
+      queued: A.calQueue.length + A.calSamples.length,
+      adjusted: (A.lex.nouns || []).filter((w) => w.irrBuilt !== undefined).length };
+  });
+  ok(st.server === false && st.cal === null && st.info === null && st.viewCal === null,
+    "a program with no server has a calibration table: " + JSON.stringify({ cal: st.cal, info: st.info }));
+  ok(st.marked.every((b) => b == null), "a question was marked for counting with no server: " + st.marked);
+  ok(st.queued === 0, "answers were queued for a server that does not exist");
+  ok(st.adjusted === 0, `${st.adjusted} words carry a calibrated score with no server`);
+  await page.close();
+}
+
 await browser.close();
 
 console.log(`\n${checks} checks, ${problems.length} problems`);

@@ -215,6 +215,8 @@ All optional except the first two. Set them under `[env]` in `fly.toml`.
 | `FALLASKOLI_PENDING_DAYS` | An unanswered request for access is erased | 30 |
 | `FALLASKOLI_BACKUP_DAYS` | What the notice says about backups; keep equal to `snapshot_retention` | 30 |
 | `FALLASKOLI_OPEN_REGISTRATION` | `1` lets anybody ask for an account without an invitation; they wait for you | off |
+| `FALLASKOLI_CALIBRATION` | `0` switches off the anonymous counting of answers and the weekly adjustment of difficulty; `strict` counts only consent given to the notice that describes it (`docs/SERVER.md` §4.3) | on |
+| `FALLASKOLI_SAMPLES` | `0` forbids the sample of wrong answers a teacher can otherwise switch on for their group | allowed |
 | `FALLASKOLI_DATA` | Where the data lives | `/data` in the container |
 | `FALLASKOLI_TRUST_PROXY` | Believe the proxy about the visitor's address | `1` in the container |
 | `FALLASKOLI_UID` | The user the server becomes after starting | `1000` in the container |
