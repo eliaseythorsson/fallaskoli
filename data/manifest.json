@@ -5,6 +5,7 @@
   "reynir": "3.8.0",
   "tokenizer": "3.6.4",
   "esbuild": "0.28.2",
+  "typescript": "7.0.2",
   "puppeteer-core": "25.7.0"
  },
  "inputs": {
