@@ -1,12 +1,12 @@
 # Fornöfn: sagnir sem stýra falli fornafnsins
 #
-# Hver lína verður að römmum: frumlag + sögn + ___ + framhald. Fallið er lesið úr
+# Úr hverri línu verða til rammar: frumlag + sögn + ___ + framhald. Fallið er lesið úr
 # government.py, ekki skrifað hér.
 #
 # Dálkar:
 #   sögn      sögnin (nafnháttur)
 #   tíð       NT nútíð eða ÞT þátíð
-#   framhald  það sem kemur á eftir eyðunni, ein útgáfa fyrir hvert, aðskilið með kommu; (ekkert) = ekkert
+#   framhald  það sem kemur á eftir eyðunni, einn rammi fyrir hvert, aðskilið með kommu; (ekkert) = ekkert
 #   hver      p: aðeins manneskja passar í eyðuna; pt: manneskja eða hlutur
 #
 # Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru

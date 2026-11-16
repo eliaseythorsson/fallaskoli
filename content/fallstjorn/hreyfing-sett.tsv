@@ -1,7 +1,7 @@
 # Fallstjórn: hreyfing og kyrrstaða í settum
 #
 # Ein forsetning, setningar um hreyfingu, setningar um kyrrstöðu og nafnorð sem passa
-# í þær allar. Hver hreyfingarsetning × hver kyrrstöðusetning × hvert nafnorð er eitt par.
+# í þær allar. Hver hreyfingarsetning og hver kyrrstöðusetning mynda par með hverju nafnorði.
 #
 # Dálkar:
 #   sett        númer settsins; línur með sama númeri eiga saman

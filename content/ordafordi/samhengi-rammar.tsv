@@ -1,7 +1,7 @@
 # Orðaforði: orð í samhengi, rammar
 #
-# Hvert nafnorð sem passar verður að spurningu, með þremur sem passa ekki sem röngum
-# kostum. Prófið á röngu orði er „ómögulegt“, ekki „óvenjulegt“.
+# Úr hverju nafnorði sem passar verður spurning, og þrjú nafnorð sem passa ekki eru
+# röngu kostirnir. Rangt orð þarf að vera ómögulegt í setningunni, ekki bara óvenjulegt.
 #
 # Dálkar:
 #   bónus        0 eða 1: einu stigi þyngra (vísbending sem er ekki hversdagslegt orð)

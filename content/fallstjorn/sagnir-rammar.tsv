@@ -3,7 +3,7 @@
 # Sama spurning og í sagnir.tsv, en hver rammi er spurður með hverju nafnorði hópsins.
 #
 # Dálkar:
-#   bónus    0 eða 1: einu stigi þyngra (sögn sem er ekki hversdagsleg eða villir á sér heimildir)
+#   bónus    0 eða 1: einu stigi þyngra (sögn sem er ekki hversdagsleg eða stýrir öðru falli en svipuð sögn)
 #   setning  setningin; ___ er nafnorðið
 #   sögn     sögnin (nafnháttur)
 #   fall     fallið sem sögnin stýrir

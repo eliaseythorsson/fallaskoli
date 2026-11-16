@@ -339,14 +339,14 @@ def kind_fornofn():
     rel = "fornofn/eyda-frumlog.tsv"
     doc(rel, "uppflettimynd|orðflokkur|BÍN-mark frumlagsins")
     simple("x", "PRONOUN_SUBJECTS", rel, "Fornöfn: frumlög rammanna",
-           ["Frumlögin sem rammarnir í eyda-sagnir.tsv og eyda-forsetningar.tsv eru sagðir með."],
+           ["Frumlögin sem sett eru í rammana í eyda-sagnir.tsv og eyda-forsetningar.tsv."],
            [("frumlag", "word")], lambda e: {"frumlag": e})
     rel = "fornofn/eyda-sagnir.tsv"
     doc(rel, "sögnin (nafnháttur)", "NT nútíð eða ÞT þátíð",
-        "það sem kemur á eftir eyðunni, ein útgáfa fyrir hvert, aðskilið með kommu; (ekkert) = ekkert",
+        "það sem kemur á eftir eyðunni, einn rammi fyrir hvert, aðskilið með kommu; (ekkert) = ekkert",
         "p: aðeins manneskja passar í eyðuna; pt: manneskja eða hlutur")
     simple("x", "PRONOUN_VERBS", rel, "Fornöfn: sagnir sem stýra falli fornafnsins",
-           ["Hver lína verður að römmum: frumlag + sögn + ___ + framhald. Fallið er lesið úr",
+           ["Úr hverri línu verða til rammar: frumlag + sögn + ___ + framhald. Fallið er lesið úr",
             "government.py, ekki skrifað hér."],
            [("sögn", "text"), ("tíð", "text"), ("framhald", "list"), ("hver", "text")],
            lambda e: dict(zip(["sögn", "tíð", "framhald", "hver"], e)))
@@ -356,14 +356,14 @@ def kind_fornofn():
         "það sem kemur á eftir eyðunni, aðskilið með kommu; (ekkert) = ekkert",
         "p: aðeins manneskja passar í eyðuna; pt: manneskja eða hlutur")
     simple("x", "PRONOUN_PREPS", rel, "Fornöfn: forsetningar sem stýra falli fornafnsins",
-           ["Hver lína verður að römmum: frumlag + sögn + (orð) + forsetning + ___ + framhald."],
+           ["Úr hverri línu verða til rammar: frumlag + sögn + (orð) + forsetning + ___ + framhald."],
            [("forsetning", "text"), ("sögn", "text"), ("tíð", "text"), ("milli", "str"),
             ("framhald", "list"), ("hver", "text")],
            lambda e: dict(zip(["forsetning", "sögn", "tíð", "milli", "framhald", "hver"], e)))
     rel = "fornofn/afturbeygt-frumlog.tsv"
     doc(rel, "uppflettimynd|orðflokkur|BÍN-mark frumlagsins")
     simple("x", "REFLEX_SUBJECTS", rel, "Fornöfn: frumlög afturbeygðu rammanna",
-           ["Frumlögin sem rammarnir í afturbeygt-sagnir.tsv og afturbeygt-eign.tsv eru sagðir með."],
+           ["Frumlögin sem sett eru í rammana í afturbeygt-sagnir.tsv og afturbeygt-eign.tsv."],
            [("frumlag", "word")], lambda e: {"frumlag": e})
     rel = "fornofn/afturbeygt-sagnir.tsv"
     doc(rel, "sögnin (nafnháttur)", "fall andlagsins: ÞF eða ÞGF", "það sem kemur á eftir eyðunni",
@@ -376,7 +376,7 @@ def kind_fornofn():
     rel = "fornofn/afturbeygt-eign.tsv"
     doc(rel, "sögnin (nafnháttur)", "fall hlutarins: ÞF eða ÞGF", "hlutirnir, aðskildir með kommu")
     simple("x", "REFLEX_POSSESSIVE", rel, "Fornöfn: eignarfornafn, sinn eða hans/hennar",
-           ["{frumlag} {sögn} {hluturinn} ___. Línan segir hver á hlutinn."],
+           ["{frumlag} {sögn} {hluturinn} ___. Lína á spjaldinu segir hver á hlutinn."],
            [("sögn", "text"), ("fall", "text"), ("hlutir", "list")],
            lambda e: dict(zip(["sögn", "fall", "hlutir"], e)))
 
@@ -468,7 +468,7 @@ def kind_fallstjorn():
                           {"sett": str(k), "forsetning": prep, "dálkur": col, "gerð": g, "texti": t}))
     write(rel, "Fallstjórn: hreyfing og kyrrstaða í settum",
           ["Ein forsetning, setningar um hreyfingu, setningar um kyrrstöðu og nafnorð sem passa",
-           "í þær allar. Hver hreyfingarsetning × hver kyrrstöðusetning × hvert nafnorð er eitt par."],
+           "í þær allar. Hver hreyfingarsetning og hver kyrrstöðusetning mynda par með hverju nafnorði."],
           cols, items, S.notes("MOTION_SETS"), after)
 
     rel = "fallstjorn/sagnir.tsv"
@@ -495,7 +495,7 @@ def kind_fallstjorn():
           [("hópur", "text"), ("nafnorð", "words")], items, [])
 
     rel = "fallstjorn/sagnir-rammar.tsv"
-    doc(rel, "0 eða 1: einu stigi þyngra (sögn sem er ekki hversdagsleg eða villir á sér heimildir)",
+    doc(rel, "0 eða 1: einu stigi þyngra (sögn sem er ekki hversdagsleg eða stýrir öðru falli en svipuð sögn)",
         "setningin; ___ er nafnorðið", "sögnin (nafnháttur)", "fallið sem sögnin stýrir",
         "nafnorðahópur úr sagnir-hopar.tsv; fleiri tengdir með +")
     _, node = S.node("VERB_FRAMES")
@@ -660,8 +660,8 @@ def kind_ordafordi():
         "setningin; ___ er nafnorðið", "BÍN-mark nafnorðanna",
         "nafnorð sem passa, aðskilin með kommu", "nafnorð sem geta ALDREI passað, aðskilin með kommu")
     simple("x", "WORD_IN_CONTEXT_FRAMES", rel, "Orðaforði: orð í samhengi, rammar",
-           ["Hvert nafnorð sem passar verður að spurningu, með þremur sem passa ekki sem röngum",
-            "kostum. Prófið á röngu orði er „ómögulegt“, ekki „óvenjulegt“."],
+           ["Úr hverju nafnorði sem passar verður spurning, og þrjú nafnorð sem passa ekki eru",
+            "röngu kostirnir. Rangt orð þarf að vera ómögulegt í setningunni, ekki bara óvenjulegt."],
            [("bónus", "int"), ("setning", "text"), ("mark", "text"), ("passar", "list"), ("passar ekki", "list")],
            lambda e: dict(zip(["bónus", "setning", "mark", "passar", "passar ekki"], e)))
 
