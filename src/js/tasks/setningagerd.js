@@ -3,12 +3,13 @@
      clause       what kind of clause is the marked run of words
      gerd_finna   click every word of the subordinate clause
      gerd_upphaf  on which word does the clause begin
+     gerd_tegund  what KIND of subordinate clause the marked one is (item 28)
 
    The clause type (`k` on each token) comes from the parse and passed the
    guard like everything else; the builders read it and infer nothing. */
 
-import { built } from "./effects.js";
-import { pick, shuffle, bandFor, forcedCell, cellWanted, PUNCT } from "./shared.js";
+import { built, FX } from "./effects.js";
+import { pick, wpick, shuffle, bandFor, forcedCell, cellWanted, fresh, PUNCT } from "./shared.js";
 
 const CLAUSE_KINDS = ["aðalsetning", "aukasetning", "nafnháttarsetning"];
 
@@ -181,6 +182,169 @@ export function clStart(lex, view, rng) {
   });
 }
 
+/* ================= Kinds of subordinate clause (item 28) ==================
+ *
+ * "Hvers konar aukasetning?" — a subordinate clause of a bank sentence is
+ * underlined and the pupil names its kind.
+ *
+ * The kind is never worked out here. The build writes it on the sentence
+ * (`cl`, phrases.py) and only where two things that do not depend on each
+ * other agree: the parser's own node for the clause, and a closed table of
+ * the conjunctions that have ONE reading. *Þar sem* (cause or place), *svo*
+ * without *að*, *því að* and comparisons are not in the data at all, and for
+ * *svo að* the verb must SHOW its mood (*komst* / *kæmist*), because that is
+ * the whole difference between result and purpose.
+ *
+ * Three steps of difficulty, and each asks something else:
+ *
+ *   þyngd 1–3  the three main classes of Málvísir: fallsetning,
+ *              tilvísunarsetning, atvikssetning. Sentences up to level 5,
+ *              no clause with another clause inside it.
+ *   þyngd 4–5  the kinds by name: skýringar-, spurnar-, tilvísunar-, tíðar-,
+ *              skilyrðis-, orsakar- and viðurkenningarsetning. Sentences up
+ *              to level 6.
+ *   þyngd 6–7  also tilgangssetning and afleiðingarsetning, which share the
+ *              conjunction *svo að* and differ in the mood of the verb; every
+ *              sentence, and clauses with a clause inside them.
+ */
+
+/* `nm` is the kind as the build writes it; `grp` its main class. `ask` is
+   the question the clause answers, `why` the rule in the words of the
+   Lesefni page (content/lessons.js "aukasetningar"). */
+const SUB_KINDS = [
+  { nm: "skýringarsetning", grp: "fallsetning", from: 4,
+    why: "**Skýringarsetning** stendur oftast sem andlag sagna eins og *segja, halda, vita* og *vona* og svarar spurningunni *hvað?* Tengingin er *að*." },
+  { nm: "spurnarsetning", grp: "fallsetning", from: 4,
+    why: "**Spurnarsetning** er spurning sem er orðin hluti af annarri setningu (óbein spurning). Hún hefst á *hvort* eða spurnarorði: *hver, hvað, hvar, hvenær, hvernig, hvert, hvaðan, af hverju*." },
+  { nm: "tilvísunarsetning", grp: "tilvísunarsetning", from: 1,
+    why: "**Tilvísunarsetning** vísar til orðs sem stendur rétt á undan henni og segir nánar frá því. Tengingin er *sem*." },
+  { nm: "tíðarsetning", grp: "atvikssetning", from: 4,
+    why: "**Tíðarsetning** segir **hvenær** eitthvað gerist. Hún hefst á tíðartengingu: *þegar, áður en, eftir að, á meðan, þangað til, um leið og, fyrr en*." },
+  { nm: "skilyrðissetning", grp: "atvikssetning", from: 4,
+    why: "**Skilyrðissetning** segir með hvaða **skilyrði** eitthvað gerist. Hún hefst á *ef* eða *nema*." },
+  { nm: "orsakarsetning", grp: "atvikssetning", from: 4,
+    why: "**Orsakarsetning** segir **af hverju** eitthvað gerist. Hún hefst á *af því að* eða *vegna þess að*." },
+  { nm: "viðurkenningarsetning", grp: "atvikssetning", from: 4,
+    why: "**Viðurkenningarsetning** segir frá einhverju sem hefði getað komið í veg fyrir það sem aðalsetningin segir, en gerði það ekki. Hún hefst á *þótt*, *þó að* eða *enda þótt* og sögnin er í viðtengingarhætti." },
+  { nm: "tilgangssetning", grp: "atvikssetning", from: 6,
+    why: "**Tilgangssetning** segir **til hvers** eitthvað er gert. Hún hefst á *svo að* eða *til þess að* og sögnin er í **viðtengingarhætti**." },
+  { nm: "afleiðingarsetning", grp: "atvikssetning", from: 6,
+    why: "**Afleiðingarsetning** segir hvað **leiddi af** því sem aðalsetningin segir. Hún hefst á *svo að* og sögnin er í **framsöguhætti**." },
+];
+const SUB_BY_NM = new Map(SUB_KINDS.map((k) => [k.nm, k]));
+const SUB_GROUPS = ["fallsetning", "tilvísunarsetning", "atvikssetning"];
+const GROUP_WHY = {
+  fallsetning: "**Fallsetning** gegnir sama hlutverki og fallorð: hún er oftast andlag sagnarinnar (*Ég veit **hvað**?*). Fallsetningar hefjast á *að*, *hvort* eða spurnarorði.",
+  tilvísunarsetning: "**Tilvísunarsetning** vísar til orðs sem stendur rétt á undan henni og segir nánar frá því. Tengingin er *sem*.",
+  atvikssetning: "**Atvikssetning** gegnir sama hlutverki og atviksorð: hún segir hvenær, hvers vegna, með hvaða skilyrði, til hvers eða þrátt fyrir hvað eitthvað gerist.",
+};
+/* The step a session is on: 1 (the three classes), 4 (seven kinds), 6 (nine). */
+const subStep = (band) => (band >= 6 ? 6 : band >= 4 ? 4 : 1);
+const SUB_TOP_LEVEL = { 1: 5, 4: 6, 6: 7 };
+
+/* The words the clause opens with, for the explanation: the conjunction is
+   what the pupil is to look at. Longest first. */
+const SUB_OPENERS = ["um leið og", "af því að", "vegna þess að", "til þess að", "enda þótt",
+  "þangað til", "áður en", "eftir að", "á meðan", "fyrr en", "þó að", "svo að", "af hverju"];
+function openerOf(s, c) {
+  const words = [];
+  for (let j = c.a; j <= c.b; j++) words.push(...s.tok[j].w.toLowerCase().split(" "));
+  const text = words.join(" ") + " ";
+  return SUB_OPENERS.find((o) => text.startsWith(o + " ")) || words[0];
+}
+
+/* Every clause of the bank whose kind the build vouches for, once per lexicon. */
+const SUB_SLOTS = new WeakMap();
+function subSlots(lex) {
+  if (SUB_SLOTS.has(lex)) return SUB_SLOTS.get(lex);
+  const list = [];
+  for (const s of lex.sentences) {
+    if (s.ku) continue;
+    for (const c of s.cl || []) {
+      const kind = SUB_BY_NM.get(c.t);
+      if (!kind) continue;
+      list.push({ s, c, kind, nested: !!c.n, key: `tegund:${s.t}#${c.a}` });
+    }
+  }
+  SUB_SLOTS.set(lex, list);
+  return list;
+}
+
+function subWhy(x, step) {
+  const opener = openerOf(x.s, x.c);
+  const head = `Aukasetningin hefst á *${opener}*. `;
+  if (step === 1) {
+    return head + GROUP_WHY[x.kind.grp]
+      + (x.kind.grp === x.kind.nm ? "" : ` Nánar tiltekið er þetta **${x.kind.nm}**.`);
+  }
+  let tail = "";
+  if (x.kind.nm === "tilgangssetning" && opener === "svo að")
+    tail = " Með framsöguhætti væri þetta afleiðingarsetning.";
+  if (x.kind.nm === "afleiðingarsetning")
+    tail = " Með viðtengingarhætti væri þetta tilgangssetning.";
+  return head + x.kind.why + tail;
+}
+
+/** "Hvers konar aukasetning er undirstrikaði hlutinn?" */
+export function clKind(lex, view, rng) {
+  const P = view.policy;
+  const step = subStep(bandFor(view, "setningagerd"));
+  const fc = forcedCell(view);
+  if (fc && !fc.startsWith("tegund:")) return null;
+  const avoid = view.force && view.force.avoid;
+  const usable = subSlots(lex).filter((x) => P.level(x.s.lvl) && x.s.t !== avoid);
+  let pool;
+  if (fc) {
+    /* A review asks for the kind that was missed and does not wait for the
+       difficulty: from the step's own sentences if they have it, else any. */
+    const of = usable.filter((x) => "tegund:" + x.kind.nm === fc);
+    const near = of.filter((x) => x.s.lvl <= SUB_TOP_LEVEL[step] && (step === 6 || !x.nested));
+    pool = near.length ? near : of;
+  } else {
+    pool = usable.filter((x) => x.s.lvl <= SUB_TOP_LEVEL[step]
+      && (step === 6 || !x.nested)
+      /* A kind that is not among the options of this step is not asked. */
+      && (step === 1 || x.kind.from <= step));
+  }
+  if (!pool.length) return null;
+  /* A kind first, then a clause of that kind: a third of the clauses are
+     tíðarsetningar, and ten of those running teach nothing. The square root
+     keeps the common kinds commoner without drowning the rest. */
+  const groups = new Map();
+  /* At the first step the answer is one of three classes, so the class is
+     drawn first: six of the nine kinds are atvikssetningar. */
+  const keyOf = (x) => (step === 1 && !fc ? x.kind.grp : x.kind.nm);
+  for (const x of pool) {
+    if (!groups.has(keyOf(x))) groups.set(keyOf(x), []);
+    groups.get(keyOf(x)).push(x);
+  }
+  const g = wpick([...groups.keys()], (k) => Math.sqrt(groups.get(k).length), rng);
+  const x = pick(fresh(view, (y) => y.key, groups.get(g)), rng);
+  /* The options of the step — and if a review brought a kind from a higher
+     step, the options that have it. */
+  const optStep = step === 1 ? 1 : Math.max(step, x.kind.from);
+  const options = optStep === 1 ? SUB_GROUPS
+    : SUB_KINDS.filter((k) => k.from <= optStep).map((k) => k.nm);
+  const answer = optStep === 1 ? x.kind.grp : x.kind.nm;
+  const svo = ["tilgangssetning", "afleiðingarsetning"];
+  return built({
+    type: "choice", skill: "setningagerd", s: x.s, i: -1,
+    span: { from: x.c.a, to: x.c.b, kind: "aukasetning" }, markSpan: true,
+    title: "Hvers konar aukasetning?",
+    question: "Hvers konar aukasetning er **undirstrikaði** hlutinn?",
+    options, answer, sub: x.kind.nm,
+    why: subWhy(x, optStep),
+    base: optStep === 1 ? 12 : optStep === 4 ? 14 : 16,
+    lvl: x.s.lvl, cell: "tegund:" + x.kind.nm, word: null,
+    tags: optStep === 6 && svo.includes(x.kind.nm) ? ["subkind", "subkind:svo"] : ["subkind"],
+    miss: ["aukasetn_tegund"],
+    /* Purpose taken for result or the other way round is the mistake the
+       lesson warns of: the mood decides. */
+    missFor: optStep === 6 && svo.includes(x.kind.nm)
+      ? { [svo.find((k) => k !== x.kind.nm)]: ["aukasetn_tegund", "svo_ad"] } : null,
+  }, [FX.exSeen(x.key)]);
+}
+
 export const TYPES = [
   { id: "clause", skill: "setningagerd", weight: 8, renderer: "clause",
     tags: ["clause"],
@@ -194,4 +358,9 @@ export const TYPES = [
     tags: ["clause"],
     bands: [1, 5, 6, 7],
     build: clStart },
+  /* item 28 */
+  { id: "gerd_tegund", skill: "setningagerd", weight: 7, renderer: "choice",
+    tags: ["subkind", "subkind:svo"],
+    bands: [1, 4, 6],
+    build: clKind },
 ];

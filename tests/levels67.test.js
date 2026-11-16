@@ -77,7 +77,7 @@ test("the bank has sentences at every level, 80 or more at 6 and 50 or more at 7
   assert.ok(count(7) >= 50, `þyngd 7: ${count(7)} sentences, at least 50 were asked for`);
   /* Exact, so that a sentence lost to a parse change is noticed here and not
      three releases later. Change the numbers when you add or drop sentences. */
-  assert.deepEqual(LEVELS.map(count), [212, 179, 157, 105, 80, 139, 78]);
+  assert.deepEqual(LEVELS.map(count), [212, 198, 192, 133, 89, 139, 78]);   // item 28: 91 short sentences at 2-5
   assert.equal(Math.max(...lex.sentences.map((s) => s.lvl)), MAX, "a sentence above the top of the scale");
 });
 

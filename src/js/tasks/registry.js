@@ -77,6 +77,8 @@ const ORDER = [
   /* item 27: what Lesefni teaches and practice did not ask */
   "fn_flokkar", "no_beyging",
   "so_beyging", "so_mynd", "so_bodhattur",
+  /* item 28: years 9 and 10 */
+  "gerd_tegund", "setn_lidir", "lid_finna", "raeda",
 ];
 
 /** What is wrong with the declarations, as sentences; empty when nothing is. */

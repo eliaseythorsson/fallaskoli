@@ -1188,4 +1188,118 @@ S = [
 (7, "Þeim sem komu of seint var sagt að bíða fyrir utan þangað til hléið byrjaði svo að þeir trufluðu ekki hina.", None, None),
 (7, "Þegar okkur var sagt að ferðinni yrði aflýst ef færri en tíu skráðu sig fórum við strax að hringja í vini okkar.", "ferð", "none"),
 (7, "Hún sagði að henni hefði verið sagt að bíða þangað til nafnið hennar yrði kallað upp.", "nafn", "none"),
+
+# =============================================================================
+# KINDS OF SUBORDINATE CLAUSE (v6.13, item 28) — levels 2-5
+# =============================================================================
+# Written for "Tegundir aukasetninga" (tasks/setningagerd.js). The bank had 11
+# orsakarsetningar, 16 viðurkenningarsetningar and not one clause of purpose or
+# of result whose kind the build could vouch for, and nearly all of what it had
+# stood at levels 6 and 7. These are short on purpose: the question is what
+# KIND of clause, not how long a sentence a pupil can hold.
+#
+# What makes a clause count (phrases.py): the conjunction is one with a single
+# reading, and for *svo að* the verb SHOWS its mood — *komst / kæmist*, *sat /
+# sæti*, never *heyrði* or *gleymdi*, where the indicative and the subjunctive
+# look alike. Result has the indicative, purpose the subjunctive.
+# No slots: none of these is a cloze frame.
+# afleiðingarsetningar: *svo að* + framsöguháttur
+(3, "Ég gleymdi lyklunum svo að ég komst ekki inn.", None, None),
+(3, "Snjórinn var djúpur svo að bíllinn sat fastur.", None, None),
+(4, "Strætó kom of seint svo að ég náði ekki fyrsta tímanum.", None, None),
+(5, "Ég svaf illa í nótt svo að ég er syfjaður í dag.", None, None),
+(3, "Hundurinn gelti alla nóttina svo að enginn gat sofið.", None, None),
+(5, "Það var hált úti svo að margir duttu á leiðinni í skólann.", None, None),
+(4, "Vegurinn var lokaður svo að við urðum að snúa við.", None, None),
+(3, "Bókin var uppseld svo að ég fékk hana ekki.", None, None),
+(3, "Kennarinn var veikur svo að tíminn féll niður.", None, None),
+(4, "Glugginn stóð opinn svo að það var kalt í stofunni.", None, None),
+(4, "Ég gleymdi nestinu heima svo að ég var svangur allan daginn.", None, None),
+(4, "Veðrið var vont svo að við vorum inni allan daginn.", None, None),
+(4, "Rafmagnið fór af svo að við gátum ekki horft á myndina.", None, None),
+(4, "Það snjóaði mikið í nótt svo að jörðin er hvít.", None, None),
+(4, "Mamma keyrði okkur svo að við þurftum ekki að ganga.", None, None),
+(4, "Ég æfði mig vel svo að mér gekk vel í prófinu.", None, None),
+(3, "Brúin var lokuð svo að við fórum aðra leið.", None, None),
+(4, "Taskan var þung svo að ég gat varla borið hana.", None, None),
+# tilgangssetningar: *svo að* / *til þess að* + viðtengingarháttur
+(4, "Ég vaknaði snemma svo að ég kæmi ekki of seint.", None, None),
+(3, "Mamma talaði hægt svo að amma gæti skilið hana.", None, None),
+(3, "Við lokuðum glugganum svo að kötturinn kæmist ekki út.", None, None),
+(3, "Kennarinn talar hátt svo að allir heyri í honum.", None, None),
+(5, "Ég lána þér bókina svo að þú getir lesið hana um helgina.", None, None),
+(4, "Pabbi hélt á mér svo að ég sæi yfir girðinguna.", None, None),
+(3, "Við kveiktum ljósið svo að við sæjum betur.", None, None),
+(3, "Við töluðum lágt til þess að barnið gæti sofið.", None, None),
+(5, "Ég fór snemma að sofa til þess að ég gæti vaknað snemma.", None, None),
+(5, "Hún æfir á hverjum degi til þess að hún komist í liðið.", None, None),
+(5, "Við tókum með okkur nesti til þess að við yrðum ekki svöng.", None, None),
+(4, "Ég stillti klukkuna til þess að ég svæfi ekki yfir mig.", None, None),
+(5, "Ég skrifaði nafnið mitt í bókina til þess að enginn tæki hana.", None, None),
+(4, "Kennarinn las hægt til þess að allir gætu skrifað textann niður.", None, None),
+(4, "Við lögðum snemma af stað svo að við næðum ferjunni.", None, None),
+(3, "Ég læsti hjólinu svo að enginn tæki það.", None, None),
+(4, "Ég setti á mig húfu svo að mér yrði ekki kalt.", None, None),
+(4, "Pabbi lyfti litlu systur minni upp svo að hún sæi fuglana.", None, None),
+# orsakarsetningar: *af því að*, *vegna þess að*
+(4, "Ég fór snemma heim af því að ég var veikur.", None, None),
+(3, "Við vorum inni vegna þess að veðrið var vont.", None, None),
+(5, "Við komum of seint af því að bíllinn fór ekki í gang.", None, None),
+(3, "Ég er glaður af því að sólin skín.", None, None),
+(3, "Hundurinn gelti af því að hann heyrði í bílnum.", None, None),
+(3, "Stelpan grét af því að hún týndi bangsanum sínum.", None, None),
+(3, "Leikurinn féll niður vegna þess að völlurinn var blautur.", None, None),
+(4, "Ég gat ekki sofið vegna þess að hundurinn gelti alla nóttina.", None, None),
+(4, "Af því að ég var veikur fór ég ekki í skólann.", None, None),
+(4, "Vegna þess að veðrið var gott borðuðum við úti í garði.", None, None),
+(5, "Mamma var glöð af því að ég tók til í herberginu mínu.", None, None),
+(4, "Krakkarnir hlógu af því að hundurinn elti skottið á sér.", None, None),
+(4, "Við fórum í sund vegna þess að sólin skein allan daginn.", None, None),
+(4, "Ég keypti bókina af því að vinur minn mælti með henni.", None, None),
+(3, "Kennarinn hrósaði okkur vegna þess að allir skiluðu verkefninu.", None, None),
+# viðurkenningarsetningar: *þótt*, *þó að*, *enda þótt*
+(2, "Ég fór út þótt það væri kalt.", None, None),
+(3, "Hún kom í skólann þótt hún væri veik.", None, None),
+(3, "Hann borðaði fiskinn þótt honum þætti hann vondur.", None, None),
+(3, "Við unnum leikinn þótt besti leikmaðurinn væri veikur.", None, None),
+(2, "Amma prjónar enn þótt hún sjái illa.", None, None),
+(4, "Ég skil þetta ekki þótt ég hafi lesið kaflann tvisvar.", None, None),
+(3, "Þótt húsið sé lítið búa þar sex manns.", None, None),
+(3, "Þó að ég væri veikur kláraði ég verkefnið.", None, None),
+(4, "Strákurinn hélt áfram að hlaupa þó að hann væri orðinn svangur.", None, None),
+(3, "Þó að bíllinn sé gamall gengur hann vel.", None, None),
+(2, "Hún brosti þó að hún væri leið.", None, None),
+(3, "Enda þótt veðrið væri vont komu allir á æfingu.", None, None),
+(3, "Þótt það væri orðið dimmt vildi enginn fara heim.", None, None),
+(3, "Við fórum í gönguferð þó að veðrið væri leiðinlegt.", None, None),
+# skilyrðissetningar: *ef*, *nema*
+(2, "Ég kem með þér ef ég má.", None, None),
+(2, "Við förum ekki út nema veðrið batni.", None, None),
+(3, "Þú færð ekki eftirrétt nema þú klárir matinn.", None, None),
+(4, "Ég lána þér hjólið mitt ef þú lofar að fara varlega.", None, None),
+(2, "Hundurinn bítur ekki nema einhver stríði honum.", None, None),
+(3, "Ef þú ert svangur getur þú fengið brauð.", None, None),
+(4, "Ef það verður gott veður á morgun förum við í sund.", None, None),
+(2, "Ef þú flýtir þér nærð þú strætó.", None, None),
+# spurnarsetningar
+(2, "Ég veit ekki hvenær rútan kemur.", None, None),
+(2, "Mamma spurði hvar ég hefði verið.", None, None),
+(3, "Kennarinn spurði hvenær við ætluðum að skila verkefninu.", None, None),
+(3, "Pabbi spurði hvort ég væri búinn að læra.", None, None),
+(2, "Ég skil ekki hvernig þetta tæki virkar.", None, None),
+(3, "Hún vildi vita hvort við kæmum í afmælið.", None, None),
+(2, "Ég man ekki hvar ég lagði símann.", None, None),
+# skýringarsetningar
+(2, "Ég veit að þú segir satt.", None, None),
+(2, "Mamma heldur að ég sé svangur.", None, None),
+(3, "Mér finnst að við ættum að fara heim.", None, None),
+(2, "Kennarinn sagði að prófið væri á föstudaginn.", None, None),
+(2, "Hún lofaði að hún kæmi á morgun.", None, None),
+(3, "Ég vona að þú komir í afmælið mitt.", None, None),
+# tilvísunarsetningar
+(3, "Hundurinn sem býr í næsta húsi geltir mikið.", None, None),
+(2, "Þetta er strákurinn sem vann keppnina.", None, None),
+(2, "Kakan sem amma bakaði var mjög góð.", None, None),
+(2, "Ég þekki stelpuna sem situr við gluggann.", None, None),
+(2, "Bíllinn sem pabbi keypti er rauður.", None, None),
 ]

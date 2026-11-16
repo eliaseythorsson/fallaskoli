@@ -33,7 +33,7 @@ import { normalise } from "../core/grading.js";
 import { wordKey } from "../core/state.js";
 import { explainVerbForm } from "./explain.js";
 import { built, FX } from "./effects.js";
-import { pick, shuffle, askable, bandFor, sentPool, levelFor, fresh } from "./shared.js";
+import { pick, shuffle, askable, bandFor, sentPool, levelFor, fresh, forced, drilling, forcedCell } from "./shared.js";
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -847,7 +847,11 @@ const GENDER_OF = (m) => { const x = /(?:^|-)(KK|KVK|HK)-/.exec(m || ""); return
     present tense; its finite verbs go to the subjunctive — of the past
     after *sagði*, of the present after *segir* — and *ég* becomes the
     speaker. */
-export function transformIndirect(lex, s) {
+export function transformIndirect(lex, s, opts = {}) {
+  /* `opts.frame` ("past" | "present") fixes the tense of *segja*; without it
+     the sentence's own hash chooses, as Umritun has it. `opts.quote: "past"`
+     asks for a quote in the PAST tense instead (item 28): see below. */
+  const quotePast = opts.quote === "past";
   if (!endsPlain(s) || hasConjunction(s) || !mainOnly(s) || saysWhen(lex, s)) return null;
   if (s.tok.some((t) => DEIXIS.has(lower(t.l)) || DEIXIS.has(lower(t.w)))) return null;
   const F = subjectRun(lex, s, 0);
@@ -884,7 +888,8 @@ export function transformIndirect(lex, s) {
   const gender = genders.size ? [...genders][0]
     : others.size ? (others.has("KK") ? "KVK" : "KK")
       : (h % 2 ? "KVK" : "KK");
-  const pastFrame = h % 3 !== 0;          // two in three after *sagði*, one after *segir*
+  const pastFrame = opts.frame ? opts.frame === "past"
+    : h % 3 !== 0;                         // two in three after *sagði*, one after *segir*
   const speaker = lex.lookup(gender === "KK" ? "hann" : "hún", "pfn");
   const segja = lex.lookup("segja", "so");
   const sp = formsOf(speaker, "NFET")[0];
@@ -895,9 +900,52 @@ export function transformIndirect(lex, s) {
   const changes = [];
   const checks = [];
   let finite = 0;
+  /* A quote in the past tense (item 28). What was said in the past is over
+     when it is reported, so the verb becomes *hafa* in the subjunctive and
+     the supine: *„Ég fór heim.“* → *að hún hefði farið heim* (after *segir*:
+     *hafi farið*). One finite verb only, and nothing after it that would
+     have to stand between *hefði* and the supine: a sentence adverb (*fór
+     ekki* → *hefði ekki farið*) or a floating *allir*. A sentence that has a
+     supine already (*hafði lesið*) is left out. */
+  const hafa = quotePast ? lex.lookup("hafa", "so") : null;
+  if (quotePast && (!hafa || s.tok.some((t) => /SAGNB/.test(t.m || "")))) return null;
   for (let j = 0; j < s.tok.length - 1; j++) {
     const t = s.tok[j];
     if (eg && j === 0) { slots.push([sp]); continue; }
+    if (quotePast && t.c === "sagnorð" && FINITE.test(t.m || "")) {
+      const x = FINITE.exec(t.m);
+      const e = confirmed(lex, t);
+      /* The mood of a past form is often the same in both moods (*keypti*);
+         in a main clause that stands alone it is the indicative. */
+      if (!e || finite || x[3] !== "ÞT" || x[2] !== "FH" || !firm(t, ["háttur"])) return null;
+      if (["skulu", "munu", "hafa"].includes(e.o)) return null;
+      let p = x[4];
+      if (p === "1P") { if (!eg || x[5] !== "ET") return null; p = "3P"; }
+      if (p === "2P") return null;
+      const next = s.tok[j + 1];
+      const follows = !next || isPunct(next) || ["nafnorð", "lýsingarorð", "töluorð", "greinir",
+        "forsetning", "nafnháttarmerki"].includes(next.c) || (next.c === "fornafn" && next.x === "pfn");
+      if (!follows) return null;
+      const supine = formsOf(e, `${x[1]}-SAGNB`);
+      const cell = (tense) => `GM-VH-${tense}-${p}-${x[5]}`;
+      const aux = formsOf(hafa, cell(pastFrame ? "ÞT" : "NT"));
+      const otherAux = formsOf(hafa, cell(pastFrame ? "NT" : "ÞT"));
+      const plain = [...formsOf(e, `${x[1]}-VH-ÞT-${p}-${x[5]}`), ...formsOf(e, `${x[1]}-FH-ÞT-${p}-${x[5]}`)];
+      if (!supine.length || !aux.length || !otherAux.length) return null;
+      slots.push(aux, supine);
+      finite++;
+      changes.push({ i: j, from: lower(t.w), to: `${aux[0]} ${supine[0]}`, m: cell(pastFrame ? "ÞT" : "NT"), e: hafa });
+      checks.push({ hasAny: [lower(t.w), ...plain].filter((w) => !supine.includes(w) && !aux.includes(w)), lacks: supine,
+        note: `Það sem sagt var í þátíð er liðið þegar sagt er frá því. Þá er notuð sögnin *hafa* í viðtengingarhætti og sagnbót: *${aux[0]} ${supine[0]}*, ekki *${lower(t.w)}*.` });
+      const hafaFh = [...formsOf(hafa, `GM-FH-ÞT-${p}-${x[5]}`), ...formsOf(hafa, `GM-FH-NT-${p}-${x[5]}`)];
+      checks.push({ hasAny: hafaFh.filter((w) => !aux.includes(w)), lacks: aux,
+        note: `Í óbeinni ræðu fer hjálparsögnin í **viðtengingarhátt**: *${aux[0]} ${supine[0]}*.` });
+      checks.push({ hasAny: otherAux.filter((w) => !aux.includes(w)), lacks: aux,
+        note: pastFrame
+          ? `Á eftir *${say}* (þátíð) fer hjálparsögnin í viðtengingarhátt **þátíðar**: *${aux[0]}*, ekki *${otherAux[0]}*.`
+          : `Á eftir *${say}* (nútíð) fer hjálparsögnin í viðtengingarhátt **nútíðar**: *${aux[0]}*, ekki *${otherAux[0]}*.` });
+      continue;
+    }
     if (t.c === "sagnorð" && FINITE.test(t.m || "")) {
       const x = FINITE.exec(t.m);
       const e = confirmed(lex, t);
@@ -932,12 +980,14 @@ export function transformIndirect(lex, s) {
   const without = combinations([[Sp], [say], ...slots, ["."]]);
   const tenseWord = pastFrame ? "þátíðar, af því að *" + say + "* er í þátíð" : "nútíðar, af því að *" + say + "* er í nútíð";
   return {
-    kind: "indirect", s,
+    kind: "indirect", s, frame: pastFrame ? "past" : "present", quote: quotePast ? "past" : "present",
     from: `${Sp} ${say}: „${s.t}“`,
     instruction: "Settu orðin í **óbeina ræðu**: án gæsalappa, í aukasetningu sem byrjar á *að*.",
     answers: [...withAd, ...without], model: withAd[0], speaker: sp,
     why: "Í óbeinni ræðu segjum við frá orðum annarra án gæsalappa, í aukasetningu sem hefst á *að*. " +
-      `Sögnin fer í **viðtengingarhátt** ${tenseWord}: ${changes.map((c) => `*${c.from}* → *${c.to}*`).join(", ")}.` +
+      (quotePast
+        ? `Það sem sagt var í **þátíð** er liðið þegar sagt er frá því. Þá kemur sögnin *hafa* í viðtengingarhætti ${tenseWord}, og aðalsögnin í sagnbót: ${changes.map((c) => `*${c.from}* → *${c.to}*`).join(", ")}.`
+        : `Sögnin fer í **viðtengingarhátt** ${tenseWord}: ${changes.map((c) => `*${c.from}* → *${c.to}*`).join(", ")}.`) +
       (eg ? ` Persónan breytist líka: sá sem sagði *ég* er nú *${sp}*, og sögnin fer í 3. persónu.` : "") +
       " *Að* má sleppa, en í rituðu máli er það oftast haft með.",
     checks,
@@ -1564,11 +1614,23 @@ export function taskTransform(lex, view, rng) {
   const P = view.policy;
   const band = bandFor(view, PROD);
   const pool = sentPool(lex, view, PROD);
-  const kinds = transformKinds(band);
+  /* A review (tasks/review.js) asks for the kind of rewrite that was missed:
+     "umritun:passive". Until item 28 the builder did not know the hook and
+     the review built at random until the kind came up — or did not. */
+  const fc = forcedCell(view);
+  const wanted = fc && fc.startsWith("umritun:") ? fc.slice(8) : null;
+  if (fc && !(wanted && TRANSFORMS[wanted])) return null;
+  const kinds = wanted ? [wanted] : transformKinds(band);
   /* The kind first, so a rare one (the passive: about thirty sentences) is
      asked as often as a common one. */
   for (const kind of shuffle(kinds, rng)) {
-    for (const s of shuffle(pool, rng).slice(0, 150)) {
+    /* A review does not wait for the difficulty: the band's sentences first,
+       all of them, then every sentence the pupil may meet. */
+    const from = wanted
+      ? [...shuffle(pool, rng), ...shuffle(lex.sentences.filter((s) => P.level(s.lvl) && !pool.includes(s)), rng)]
+      : shuffle(pool, rng).slice(0, 150);
+    for (const s of from) {
+      if (wanted && view.force.avoid === s.t) continue;
       const r = TRANSFORMS[kind].build(lex, s);
       if (!r || !r.answers.length) continue;
       if (!(r.marks || []).every((c) => askable(P, c.m))) continue;
@@ -1581,11 +1643,82 @@ export function taskTransform(lex, view, rng) {
   return null;
 }
 
+/* ============================================ BEIN OG ÓBEIN RÆÐA (item 28) ==
+ *
+ * "Settu í óbeina ræðu" as a question type of its own, so that the node
+ * *Bein og óbein ræða* (core/curriculum.js `mb-raeda`) can be practised on
+ * its own. Nothing is made here: every question is `transformIndirect`
+ * above, which Umritun also draws from þyngd 3 — the same sentences, the
+ * same accepted answers, the same notes under a wrong one.
+ *
+ * What this type adds is the other tense and both frames:
+ *
+ *   þyngd 1–3  the quote is in the PRESENT tense. The verb goes to the
+ *              subjunctive — of the past after *sagði*, of the present
+ *              after *segir*. Each sentence is asked in both frames.
+ *   þyngd 4–7  the quote is in the PAST tense: *„Ég fór heim.“* → *að hún
+ *              hefði farið heim* (after *segir*: *hafi farið*). About one
+ *              question in four is still of the first kind.
+ *
+ * The cell is the subjunctive cell the answer needs and the word its verb,
+ * so the review queue (tasks/review.js) can ask for either again. */
+
+/* Every way a sentence can be asked, once per lexicon: which sentences pass
+   is decided by `transformIndirect` and by nothing else. */
+const SPEECH = new WeakMap();
+function speechItems(lex) {
+  if (SPEECH.has(lex)) return SPEECH.get(lex);
+  const list = [];
+  for (const s of lex.sentences) {
+    for (const quote of ["present", "past"]) for (const frame of ["past", "present"]) {
+      const r = transformIndirect(lex, s, { frame, quote });
+      if (r && r.answers.length) list.push({ s, quote, frame, marks: r.marks, key: `raeda:${quote}:${frame}:${s.t}` });
+    }
+  }
+  SPEECH.set(lex, list);
+  return list;
+}
+
+export function taskSpeech(lex, view, rng) {
+  const P = view.policy;
+  const fw = forced(view, ["so"]);
+  if (drilling(view) && !fw) return null;
+  const fc = forcedCell(view);
+  const avoid = view.force && view.force.avoid;
+  const hard = bandFor(view, PROD) >= 4;
+  const usable = speechItems(lex).filter((x) => P.level(x.s.lvl) && x.s.t !== avoid
+    && x.marks.every((c) => askable(P, c.m)));
+  let pool;
+  if (fc || fw) {
+    /* A review: the subjunctive cell that was missed, the verb, or both. */
+    pool = usable.filter((x) => x.marks.some((c) => (!fc || c.m === fc)
+      && (!fw || c.word === wordKey(fw.o, "so"))));
+  } else {
+    const past = usable.filter((x) => x.quote === "past");
+    const present = usable.filter((x) => x.quote === "present");
+    pool = !hard ? present : (past.length && (!present.length || rng() < 0.75)) ? past : present;
+    if (!pool.length) pool = usable;
+  }
+  if (!pool.length) return null;
+  const x = pick(fresh(view, (y) => y.key, pool), rng);
+  const r = transformIndirect(lex, x.s, { frame: x.frame, quote: x.quote });
+  const past = x.quote === "past";
+  return built({
+    type: "umritun", skill: PROD, ...r, kind: "indirect",
+    title: "Bein og óbein ræða",
+    hint: past
+      ? "Byrjaðu á *… að* og slepptu gæsalöppunum. Orðin voru sögð í þátíð: notaðu *hafa* í viðtengingarhætti og sagnbót (*hefði farið*, *hafi farið*)."
+      : null,
+    base: past ? 18 : 16, lvl: x.s.lvl,
+    cell: r.marks[0].m, word: r.marks[0].word,
+  }, [FX.exSeen(x.key)]);
+}
+
 export const TYPES = [
   /* v6.9: production. Writing the Icelandic tests understanding rather than
      recall, so these three together weigh about as much as the cloze. */
   { id: "umritun", skill: "malbeiting", weight: 10, renderer: "umritun",
-    tags: ["num", "passive", "v2", "verb:agree", "verb:tense", "verb:vh"],
+    tags: ["num", "passive", "speech", "v2", "verb:agree", "verb:tense", "verb:vh"],
     bands: [1, 2, 3, 4, 5, 6, 7],
     build: taskTransform },
   { id: "smidja", skill: "malbeiting", weight: 8, renderer: "smidja",
@@ -1606,4 +1739,9 @@ export const TYPES = [
        each step adding the items written for it. Nothing new above 5. */
     bands: [1, 2, 3, 4, 5],
     build: taskHunt },
+  /* item 28: bein og óbein ræða, on its own */
+  { id: "raeda", skill: "malbeiting", weight: 5, renderer: "umritun",
+    tags: ["speech", "verb:vh"],
+    bands: [1, 4],
+    build: taskSpeech },
 ];

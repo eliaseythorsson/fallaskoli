@@ -956,7 +956,8 @@ JUDGES.tap = (t, response, hist) => {
   const extra = sel.filter((j) => !want.has(j));
   const missed = t.targets.filter((j) => !has.has(j));
   const ok = !extra.length && !missed.length;
-  const ids = ok ? [] : t.tags.includes("clause") ? ["setningagerd"]
+  /* `miss`: the builder names the pattern (item 28: the phrases). */
+  const ids = ok ? [] : t.miss ? t.miss : t.tags.includes("clause") ? ["setningagerd"]
     : (AO_FS.includes(t.cls) && [...extra, ...missed].some((j) => AO_FS.includes(t.s.tok[j].c))
       ? ["ao_fs"] : ["ordflokkur"]);
   return result(t, {

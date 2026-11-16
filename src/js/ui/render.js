@@ -1254,7 +1254,7 @@ RENDER.umritun = function (app) {
   }).join("");
   $("task").innerHTML = `
   <div class="card">
-    <p class="eyebrow"><span>Umritun · ${esc(TRANSFORM_NAME[t.kind] || "")}</span>${skillTag(t)}<b>þyngd ${t.lvl}</b></p>
+    <p class="eyebrow"><span>${esc(t.title || "Umritun · " + (TRANSFORM_NAME[t.kind] || ""))}</span>${skillTag(t)}<b>þyngd ${t.lvl}</b></p>
     <p class="sentence">${shown}</p>
     <p class="gloss">${fmt(t.instruction)}</p>
     <div class="answer">
@@ -1272,7 +1272,7 @@ RENDER.umritun = function (app) {
     t.hinted = true;
     $("hint").disabled = true;
     $("verdict").innerHTML = `<div class="verdict neutral"><h3>Vísbending</h3>
-      <p>${fmt(TRANSFORM_HINT[t.kind] || "")}</p>
+      <p>${fmt(t.hint || TRANSFORM_HINT[t.kind] || "")}</p>
       <p class="streakline">Vísbending gefur helmingi minna XP — hún telst ekki sem villa.</p></div>`;
   };
 };

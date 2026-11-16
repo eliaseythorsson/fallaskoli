@@ -34,6 +34,14 @@ document and the program cannot disagree. Everything else here is prose.
    (b) year 9–10 material that is not in the app at all: kinds of subordinate
    clause, phrases (nafnliður and the rest), word parts and compounds, sound
    changes, direct and indirect speech, register, idioms and proverbs;
+   covered by 49 question types and 21 Lesefni pages.
+4. **The gaps** are (a) things Lesefni teaches and no question asks: strong
+   and weak verbs with kennimyndir,
+   the boðháttur, the þolmynd as something to recognise, compound tenses;
+   (b) year 9–10 material that is not in the app at all: word parts and
+   compounds, sound changes, register, idioms and proverbs, kinds of adverb
+   (kinds of subordinate clause, phrases and direct and indirect speech were
+   on this list until item 28 built them: see "What item 28 built");
    (c) spelling and punctuation, which has an official criterion of its own
    and no category in the app.
 5. **Two labels were wrong.** Setningafræði and Setningagerðir said `9.b`. The
@@ -117,6 +125,8 @@ every year.
 | --- | --- | --- | --- | --- | --- |
 | Orðflokkar | Mál og málnotkun | yes: the app's main subject | 31 | 29 | 26 |
 | Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 11 | 6 | 5 |
+| Orðflokkar | Mál og málnotkun | yes: the app's main subject | 31 | 28 | 23 |
+| Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 11 | 9 | 8 |
 | Fjölbreytt málnotkun | Mál og málnotkun | partly | 2 | 1 | 1 |
 | Sköpunarkraftur | Mál og málnotkun | partly | 1 | 1 | 1 |
 | Orðtök og málshættir | Mál og málnotkun | partly | 1 | 0 | 0 |
@@ -200,12 +210,12 @@ evidence above. Later years keep practising it.
 | --- | --- | --- | --- | --- | --- | --- |
 | `or-ordhlutar` | Orðhlutar og samsett orð | Einkenni málsins | Orðaforði | none yet | none yet | **no** |
 | `or-hljodbreytingar` | Hljóðbreytingar og skyldleiki orða | Einkenni málsins | Orðaforði | none yet | none yet | **no** |
-| `mb-raeda` | Bein og óbein ræða | Einkenni málsins | Málbeiting | none yet | none yet | **no** |
+| `mb-raeda` | Bein og óbein ræða | Einkenni málsins | Málbeiting | Bein og óbein ræða (`raeda`) | Bein og óbein ræða (`raeda`) | yes |
 | `setn-hlutar` | Frumlag, umsögn, andlag og sagnfylling | Einkenni málsins | Setningafræði | Smelltu á rétta orðið (`syntax`); Hvaða setningarhluti? (`setn_hlut`); Flokkaðu setningarhluta (`setn_flokka`) | Setningarliðir (`setningalidir`) | yes |
 | `setn-ordarod` | Orðaröð | Einkenni málsins | Setningafræði | Umritun (`umritun`) | Málfræðin í notkun (`malbeiting`) | in part |
-| `setn-lidir` | Nafnliður, sagnliður og forsetningarliður | Einkenni málsins | Setningafræði | none yet | none yet | **no** |
+| `setn-lidir` | Nafnliður, sagnliður og forsetningarliður | Einkenni málsins | Setningafræði | Hvers konar liður? (`setn_lidir`); Finndu forsetningarliðinn (`lid_finna`) | Nafnliður, sagnliður og forsetningarliður (`lidir`) | yes |
 | `gerd-adal-auka` | Aðalsetning, aukasetning og nafnháttarsetning | Einkenni málsins | Setningagerðir | Hvers konar setning er þetta? (`clause`); Finndu aukasetninguna (`gerd_finna`); Hvar hefst setningin? (`gerd_upphaf`) | Setningagerðir (`setningagerdir`) | yes |
-| `gerd-tegundir` | Tegundir aukasetninga | Einkenni málsins | Setningagerðir | none yet | none yet | **no** |
+| `gerd-tegundir` | Tegundir aukasetninga | Einkenni málsins | Setningagerðir | Hvers konar aukasetning? (`gerd_tegund`) | Tegundir aukasetninga (`aukasetningar`) | yes |
 <!-- curriculum:nodes:end -->
 
 ### Why each year is what it is
@@ -264,10 +274,7 @@ cannot practise it on its own and the skill map cannot measure it.
 | `or-ordhlutar` | Orðhlutar og samsett orð | 10 | **missing** | **missing** |
 | `or-hljodbreytingar` | Hljóðbreytingar og skyldleiki orða | 10 | **missing** | **missing** |
 | `mb-malsnid` | Málsnið: talmál og ritmál | 9 | **missing** | **missing** |
-| `mb-raeda` | Bein og óbein ræða | 10 | **missing** | **missing** |
 | `setn-ordarod` | Orðaröð | 10 | only inside `umritun` | `malbeiting` |
-| `setn-lidir` | Nafnliður, sagnliður og forsetningarliður | 10 | **missing** | **missing** |
-| `gerd-tegundir` | Tegundir aukasetninga | 10 | **missing** | **missing** |
 | `st-n-nn` | n eða nn | 8 | **missing** | **missing** |
 | `st-y` | y, ý og ey | 8 | **missing** | **missing** |
 | `st-stor-stafur` | Stór og lítill stafur | 8 | **missing** | **missing** |
@@ -303,11 +310,142 @@ Notes for whoever takes these on:
   adds four the critique did not list: `or-hljodbreytingar` (one year-10
   plan, Málvísir), `ob-atviksord` (Neistar ch. 2), `mb-malsnid` and
   `or-ordtok` (each an official criterion in its own right).
+- **Built (item 28):** `gerd-tegundir`, `setn-lidir` and `mb-raeda`. What was
+  built, what was left out of each and why is under "What item 28 built"
+  below. The other candidates were not built, for the reasons given there.
 - **Root and stem** are in the critique's list. Málvísir has rót, stofn,
   forskeyti, viðskeyti and beygingarending; they are one node,
   `or-ordhlutar`, to be split when the questions are designed.
 - **Spelling** needs a decision before it needs questions: it is a category
   the app does not have (`stafsetning` in `PLANNED_CATEGORIES`).
+
+## What item 28 built
+
+Three nodes of the year-10 map went from "no questions, no page" to covered.
+Each has a Lesefni page, a diagnosis pattern for the mistake the page warns
+of, and a place in the year-10 preset.
+
+| Node | Question type | Steps of difficulty | Different questions per step | Lesefni |
+| --- | --- | --- | --- | --- |
+| `gerd-tegundir` | Hvers konar aukasetning? (`gerd_tegund`) | 1–3 the three classes of Málvísir (fall-, tilvísunar-, atvikssetning); 4–5 seven kinds by name; 6–7 also tilgangs- and afleiðingarsetning, and clauses with a clause inside | 236 / 324 / 507 | `aukasetningar` |
+| `setn-lidir` | Hvers konar liður? (`setn_lidir`) | 1–2 nafnliður, sagnliður, forsetningarliður in short sentences; 3–4 atviksliður too, a pronoun alone, and the nafnliður inside a forsetningarliður; 5–7 the same in sentences of level 4 and up | about 650 / 920 / 780 | `lidir` |
+| `setn-lidir` | Finndu forsetningarliðinn (`lid_finna`) | 1–3 one phrase, sentences up to level 4; 4–7 two phrases, or a long sentence | 166 / 188 | `lidir` |
+| `mb-raeda` | Bein og óbein ræða (`raeda`) | 1–3 the quote is in the present tense, after *sagði* and after *segir*; 4–7 the quote is in the past tense (*hefði farið*, *hafi farið*) | 196 / about 430 | `raeda` |
+
+### Where the answers come from
+
+Nothing in these four types is decided in the browser. The kind of a clause
+and the extent of a phrase are written on the sentence by the build
+(`phrases.py`: `cl` and `ph` in `sentences.json`), and only where two things
+that do not depend on each other agree: the parser's own node over exactly
+those words, and a closed table of what such a clause or phrase looks like.
+`tools/try-sentences.py` prints both for a candidate sentence. The indirect
+speech is the rewrite Umritun already had (`transformIndirect`), with every
+form taken from BÍN.
+
+### What is left out on purpose, and why
+
+Each of these is a place where school grammars differ, or where the parse is
+not reliable enough to hang a right-or-wrong answer on. None is ever asked.
+
+*Kinds of clause*
+
+- ***þar sem***: cause (*þar sem snjórinn var mikill*) or place (*svæði þar
+  sem engir vegir eru*). The parser calls both a cause.
+- ***því að***, ***enda***, ***úr því að***, ***fyrst***, ***síðan***: each has
+  a second reading, as an adverb or as a conjunction between main clauses.
+- ***svo*** without ***að***, and ***svo að*** where the verb does not show its
+  mood (*heyrði*, *gleymdi*): purpose and result differ only in the mood, so
+  a verb whose indicative and subjunctive look alike decides nothing.
+- ***að*** after *því*, *þess*, *það* other than *af því að*, *vegna þess að*
+  and *til þess að* (*trúði því að …*), and *svo … að* (*svo löng að fáir
+  náðu að klára hana*): books name these differently.
+- ***til þess að*** after a word that takes *til* (*hlakka til þess að …*).
+- **Samanburðarsetningar** (*en*, *eins og*): nearly all in the bank are
+  phrases without a verb (*stærri en hinn*). The page names them and says
+  they are not asked.
+- *þegar* after a noun of time or after *muna* (*deginum þegar við fluttum*).
+- Any clause whose end the parse leaves open: a clause followed by another
+  clause that may belong inside it.
+
+*Phrases*
+
+- **The wide sagnliður.** Málvísir defines the sagnliður as "sögn ásamt
+  andlagi eða fyllilið" and gives no example with an adverbial in it. So only
+  the verb with its objects or predicative, to the end of a one-clause
+  sentence, is asked (*Stelpan [las bókina]*, *Húsið [er stórt]*): 92 of them.
+  The build records another 390 that run on through an adverbial (*[sá gamla
+  hesta á vellinum í morgun]*); they are in the data and are not asked.
+- **Lýsingarliður** and **tengiliður**: the first is not in Málvísir, the
+  second is one conjunction and teaches nothing.
+- A preposition with an adverb before it (*út í garð*, *úti á túni*), a time
+  expression the parser gives as one word (*í gær*, *á morgun*), and a phrase
+  with a clause or another phrase inside it: whether these are one phrase,
+  and of which kind, is where the books differ.
+- A noun phrase used as an adverbial (*alla nóttina*): a nafnliður by form, an
+  atviksliður by function.
+- The adverbs *ekki*, the question words and the particles of verbs (*stóð
+  upp*, *hélt áfram*) as atviksliðir.
+- In "Finndu forsetningarliðinn": every sentence in which some preposition
+  does not open a phrase the build vouches for, since that preposition would
+  be a second candidate.
+
+*Indirect speech*
+
+- Quotes with *þú*, *við*, *minn*, *hér*, *þetta* or a word of time (*í gær*
+  would become *daginn áður*): what they turn into is not settled by the
+  sentence. Only *ég* as the subject is changed.
+- Questions and commands (*spurði hvort …*, *bað mig að …*): the page shows
+  two examples and says that only statements are practised.
+- A past-tense quote with something that would have to stand between *hefði*
+  and the supine (*fór ekki* → *hefði ekki farið*), or with a supine already
+  (*hafði lesið*).
+- The other direction (indirect to direct): the answer would need quotation
+  marks, which the keyboard helper does not have.
+
+### What was not built
+
+- **Orðhlutar and compounds** (`or-ordhlutar`). BÍN gives the forms of a word
+  and not its parts, so every split (*skóla-taska*, *bóka-búð*) would have to
+  be typed by hand, and the questions the textbooks ask (what is the stem,
+  is this a stofnsamsetning or an eignarfallssamsetning) have answers on which
+  the books differ for common words: the stem of *skóli* is *skól-* in one
+  and *skóla* in another. It needs a hand-checked word list from a teacher
+  before it needs code. `or_myndun` already asks prefixes and suffixes.
+- **Spelling and punctuation** (the four `st-` nodes). Not a question of
+  code first: spelling has no category in the app, and adding a thirteenth
+  category changes the presets, the skill map and every saved policy. Decision
+  3 below is still open. When it is taken, *n eða nn* in the article and in
+  adjectives (*hesturinn*, *bókin*; *fyndinn*, *fyndin*) can be generated
+  from BÍN with certainty and is the place to start; the diagnosis already
+  has the patterns `n_nn` and `y_i` from the error hunt. No comma rule
+  was found that could be drilled as right or wrong: as far as could be
+  told without reading the official ritreglur, a comma before a subordinate
+  clause is mostly left out or optional in current usage. A teacher should
+  say which punctuation rules are worth a question.
+- **Sound changes, register, idioms, kinds of adverb**: not attempted.
+
+### For a native reader
+
+- The three pages in `src/js/content/lessons.js` (`lidir`, `aukasetningar`,
+  `raeda`), every sentence. In particular: *Við förum heim þá* as the test
+  for an atvikssetning; *þar sem* listed among the orsakartengingar; the
+  warning that *þótt* takes the subjunctive; the two indirect questions on
+  the *raeda* page.
+- The 91 sentences added to `sentences.py` for the clause kinds (the block
+  "KINDS OF SUBORDINATE CLAUSE"). They are short on purpose. Whether each
+  *svo að* sentence reads as purpose or result to a native ear, as its mood
+  says: *Pabbi hélt á mér svo að ég sæi yfir girðinguna* (purpose), *Það
+  snjóaði mikið í nótt svo að jörðin er hvít* (result).
+- The rule the app now teaches for a past-tense quote: *„Ég fór heim.“* →
+  *að hún hefði farið heim* after *sagði*, *hafi farið* after *segir*.
+- The explanations under the answers (`SUB_KINDS` in
+  `src/js/tasks/setningagerd.js`, `phraseWhy` in
+  `src/js/tasks/setningafraedi.js`) and the five new rules in
+  `src/js/core/diagnosis.js` (`aukasetn_tegund`, `svo_ad`, `lidir`,
+  `lidir_fl`, `obein_raeda`).
+- Idioms asked as phrases: *kemur [í ljós]* is offered as a
+  forsetningarliður, *skiptir [mestu máli]* as part of a sagnliður.
 
 ## The three presets (generated table)
 
@@ -323,6 +461,9 @@ nodes are switched on and everything else off.
 | 8. bekkur | 10 of 12 | 39 of 52 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
 | 9. bekkur | 10 of 12 | 46 of 52 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
 | 10. bekkur | 12 of 12 | 52 of 52 | 1–7 | Setningafræði, Setningagerðir; types `syntax`, `setn_hlut`, `setn_flokka`, `clause`, `gerd_finna`, `gerd_upphaf` |
+| 8. bekkur | 10 of 12 | 39 of 53 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
+| 9. bekkur | 10 of 12 | 43 of 53 | 1–6 | no new category; types `fn_aftur`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 12 of 12 | 53 of 53 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:
@@ -341,12 +482,15 @@ What a preset does not do, so nobody is surprised:
   óbein ræða, longer noun phrases (`sentences.py` says what earns a level).
   So the year-9 and year-10 presets now give harder sentences in the cloze,
   the analysis and Setningagerðir as the pupil's difficulty rises. They are
-  the same question types asked about harder sentences: the constructions
-  themselves (`so-tholmynd`, `mb-raeda` …) are still in the backlog above.
+  the same question types asked about harder sentences. Of the constructions
+  themselves, óbein ræða and the kinds of subordinate clause have question
+  types of their own since item 28; the þolmynd (`so-tholmynd`) is still in
+  the backlog above.
   A pupil on no preset has every level switched on, 6 and 7 included.
 - **Year 9 adds only four question types.** That is an honest picture of the
-  app: it was built for year 8, and most year-9 and year-10 material is in the
-  backlog above.
+  app: it was built for year 8, and most year-9 material is in the backlog
+  above. Year 10 adds ten: the six on setningarhlutar and setningagerðir, and
+  the four of item 28.
 - **A new pupil is not on a preset.** A fresh account has the year-8
   categories with every question type on, as before; the editor then says
   that no year is chosen. Items 50 and 84 decide what a new pupil starts on.
@@ -378,12 +522,18 @@ What a preset does not do, so nobody is surprised:
   andlag and sagnfylling is titled *Setningarliðir*. Málvísir uses
   *setningarliðir* for nafnliður, sagnliður, forsetningarliður, atviksliður
   and tengiliður, and treats frumlag, andlag, sagnfylling and umsögn as roles;
-  one school plan calls them *setningarhlutar*. If phrases are added
-  (`setn-lidir`), the page title will clash with them. The page was not
-  changed here.
+  one school plan calls them *setningarhlutar*. Phrases now have a page of
+  their own (*Nafnliður, sagnliður og forsetningarliður*, `lidir`), so the app
+  has a page called *Setningarliðir* that is about roles and another that is
+  about what Málvísir calls setningarliðir. The new page says how the two
+  differ ("Liður eða hlutverk?"); the old page's title was not changed, and
+  should be (to *Setningarhlutar*, if that is the school's word).
 - Whether *fallsetningar, tilvísunarsetningar* and *atvikssetningar* (Málvísir)
   or *skýringar-, tilvísunar-, tíðar-, skilyrðis-* and *orsakarsetningar* (the
-  critique) is the division your school's book uses for `gerd-tegundir`.
+  critique) is the division your school's book uses for `gerd-tegundir`. The
+  question asks both: the three classes up to þyngd 3, the kinds by name
+  from þyngd 4.
+- Everything under "For a native reader" in "What item 28 built".
 
 ## Keeping this up to date
 
