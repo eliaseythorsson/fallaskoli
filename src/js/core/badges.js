@@ -580,6 +580,14 @@ export function buildBadges() {
   social("soc_twins", "👯", "Samferða",
     "Þú og einhver annar funduð sama leynimerkið í sömu vikunni",
     0.12, (s) => s.twins, { once: true });
+  /* v6.13, item 59: the one badge on this shelf nobody wins against anybody.
+     The group's teacher sets a weekly goal (core/classgoal.js); when the
+     group's bar is full, every learner in it gets this, whatever each put
+     in. Once a week (`goalweek`: the week the goal was met, from the
+     server's answer), so a class that keeps meeting its goal keeps winning. */
+  social("soc_classgoal", "🎯", "Saman í mark",
+    "Hópurinn þinn náði markmiði vikunnar sem kennarinn setti",
+    0.30, (s) => !!s.goalWeek, { hidden: false, period: "goalweek" });
 
   /* ---- 14f. Which words, not how many (v6.6) ----
      The collection read for patterns: whole themes, many words of one kind,
@@ -749,6 +757,52 @@ export function buildBadges() {
         (c.collection.health || 0) >= 90 },
   );
 
+  /* ---- 14j. Getting better (v6.13, critique item 56) ----
+     Everything above pays for turning up and for collecting; these pay for
+     the thing that went wrong going right. Three kinds, all visible from the
+     start, because each is a signpost to something worth doing:
+
+       mending   an error pattern that was "algengt núna" (active) and has
+                 since been right ten times in a row, on a later day than it
+                 went wrong (core/mending.js says why). Counted in DIFFERENT
+                 patterns, so mending the same one twice is not two rungs.
+       reviews   reviews passed on time (core/review.js: within two days of
+                 the day they were due — a review due on Saturday and done
+                 on Monday is on time, as everywhere else in the program)
+       mastery   each skill's mastery mark (core/mastery.js) reaching
+                 "Gott vald" (3) and "Fullt vald" (4). Tied to the skill, so
+                 it is judged on an answer in that skill.
+
+     Kept in one block on purpose: other work changes the streak ladders
+     above, and this block touches none of them. */
+  const better = (b) => B.push({ group: "framfarir", hidden: false, once: true, ...b });
+  [[1, "🩹", "Fyrsta viðgerðin",
+    "Villa sem þú gerðir oft er horfin: tíu rétt svör í röð við því sem áður fór úrskeiðis"],
+   [3, "🔧", "Verkstæðið",
+    "Þrjú ólík villumynstur löguð — hvert þeirra var algengt hjá þér og þú hefur síðan haft það rétt tíu sinnum í röð"],
+   [10, "🧰", "Á bak og burt",
+    "Tíu ólík villumynstur löguð — hvert þeirra var algengt hjá þér og þú hefur síðan haft það rétt tíu sinnum í röð"],
+  ].forEach(([n, ico, nm, ds]) => better({
+    id: `mend${n}`, ico, nm, ds, fam: "mend", n, title: n >= 10,
+    test: (c) => (c.mended || 0) >= n,
+  }));
+  [[10, "⏰", "Stundvís"], [50, "🗓️", "Minnið heldur"], [200, "🧠", "Langtímaminni"]]
+    .forEach(([n, ico, nm]) => better({
+      id: `review${n}`, ico, nm, fam: "reviewontime", n, title: n >= 200,
+      ds: `${n} upprifjanir sem tókust á réttum tíma — í síðasta lagi tveimur dögum eftir daginn sem þær áttu að koma`,
+      test: (c) => (c.reviewsOnTime || 0) >= n,
+    }));
+  SKILLS.forEach((s) => {
+    [[3, "Gott vald", "að minnsta kosti 75% nýlegra svara rétt á þinni þyngd"],
+     [4, "Fullt vald", "að minnsta kosti 90% af síðustu tuttugu svörum rétt á þinni þyngd, og upprifjanirnar á réttum tíma"],
+    ].forEach(([n, label, what]) => better({
+      id: `mastery_${s.id}_${n}`, ico: n === 4 ? "🌟" : s.ico, nm: `${s.nm}: ${label.toLowerCase()}`,
+      ds: `${label} í flokknum ${s.nm.toLowerCase()}: ${what}`,
+      skill: s.id, fam: "mastery", n,
+      test: (c) => typeof c.mastery === "function" && c.mastery(s.id) >= n,
+    }));
+  });
+
   /* ---- 15. The two meta badges ----
      Visible from day one. `all_badges` is a self-reference, so `checkBadges`
      computes `c.allOtherBadges` from the catalogue minus these two. */
@@ -837,7 +891,19 @@ export const RETIRED_IDS = new Set([
   "s_solstodur", "s_late", "th_eltingaleikur", "th_morgunmatur", "th_attir",
   "rescue10", "drill_three", "tot2500",
 ]);
-export const isRetired = (id) => RETIRED_IDS.has(id) || RETIRED_RULES.some((r) => r.test(id));
+/* v6.13, item 56: room for the badges of §14j. The thinnest rungs of the
+   collection: the six per-class word counts, single rungs left of ladders
+   already cut in v6.9 and saying again what the overall count says; the
+   first overall rung (25 words, met in the first sessions), and 1,500, which
+   sat between 400 and 4,000 and was the step nobody aimed at. Kept as their
+   own list so the change reads, and merges, on its own. Whoever won one keeps
+   it on the shelf, as with every retired badge. */
+export const RETIRED_56 = new Set([
+  "coll25", "coll1500",
+  "coll_kk_100", "coll_kvk_100", "coll_hk_100", "coll_lo_100", "coll_so_100", "coll_ao_100",
+]);
+export const isRetired = (id) => RETIRED_IDS.has(id) || RETIRED_56.has(id) ||
+  RETIRED_RULES.some((r) => r.test(id));
 
 /** What `c.collection.sets` looks like before anything is collected. */
 const NO_SETS = { themes: [], sayings: [], opposites: 0, kinds: {}, anagrams: 0,
@@ -868,6 +934,11 @@ export function periodKey(badge, time, ctx = null) {
   if (badge.period === "week") {
     const wk = ctx && ctx.social && ctx.social.lastWeek;
     return wk ? `week:${wk}` : null;
+  }
+  /* The class goal (item 59): the week in which the group met it. */
+  if (badge.period === "goalweek") {
+    const wk = ctx && ctx.social && ctx.social.goalWeek;
+    return wk ? `goal:${wk}` : null;
   }
   if (!time) return null;
   const date = `${time.year}-${pad2((time.month ?? 0) + 1)}-${pad2(time.date)}`;

@@ -1327,8 +1327,18 @@ button.ghost.small{padding:5px 10px;font-size:13px}
 .assignsent{font-size:14.5px;margin:0 0 10px}
 @media (max-width:600px){ .assignrow .assigngo{width:100%} }
 
+/* ---- v6.13 (atriði 59): markmið vikunnar, ein stika fyrir allan hópinn ---- */
+#classgoal:not(:empty) ~ h2.sec.first,#teacher:not(:empty) + #classgoal h2.sec.first{margin-top:34px}
+.goalcard{background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;max-width:640px}
+.goalcard.met{border-color:var(--lupine)}
+.goalwhat{margin:0 0 8px;font-size:16px}
+.goalbar{height:12px;background:var(--paper-2);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.goalbar i{display:block;height:100%;background:var(--lupine);transition:width .4s}
+.goalline{margin:8px 0 0;font-size:14px}
+@media (prefers-reduced-motion:reduce){ .goalbar i{transition:none} }
+
 /* ---- v6.13 (atriði 37 og 65): kennarahlutinn í Skólastofunni ---- */
-#teacher:not(:empty) + h2.sec.first{margin-top:34px}
+#teacher:not(:empty) ~ h2.sec.first{margin-top:34px}
 .assignform{background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;max-width:640px}
 .assignform select,.assignform input[type=date],#tc-group{font:inherit;font-size:16px;padding:9px 10px;min-height:40px;
   max-width:100%;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);color:var(--ink)}

@@ -43,12 +43,13 @@ import {
 import { cleanState, suspicion, MAX_STATE_BYTES } from "./guard.mjs";
 import { privacyConfig, privacyPage, CONSENT_AGE, PRIVACY_VERSION } from "./privacy.mjs";
 import { createCalibration } from "./calibrate.mjs";
+import { createClassGoal } from "./classgoal.mjs";
 import { seal, passphraseProblem } from "./backup.mjs";
 import { dropPrivileges } from "./privs.mjs";
 
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
-import { scorecard, rank, METRICS } from "../src/js/core/leaderboard.js";
+import { scorecard, rank, METRICS, DEFAULT_METRIC } from "../src/js/core/leaderboard.js";
 import { aggregate, contribution, MIN_USERS, MIN_DAYS, measurable, monthKey, nextRefresh }
   from "../src/js/core/rarity.js";
 import { ROLES, can } from "../src/js/core/profile.js";
@@ -827,7 +828,8 @@ export function createApp({
   on("GET", "/leaderboard", async (req, res, { url }) => {
     const u = await needUser(req, res);
     if (!u) return;
-    const metric = url.searchParams.get("metric") || "week";
+    /* Item 58: a board opens on "Framfarir", not on volume. */
+    const metric = url.searchParams.get("metric") || DEFAULT_METRIC;
     let list = await cards(u);
     if (metric === "minutes") list = list.filter((c) => c.minutes != null);
     list = rank(list, metric);
@@ -1372,6 +1374,13 @@ export function createApp({
     if (problem) return json(res, problem[0], { error: problem[1] });
     return json(res, 200, { ok: true, assignment: view });
   });
+
+  /* --- the class goal (v6.13, critique item 59) --------------------------
+   * A weekly target the group reaches together, set by its teacher; one bar
+   * of totals, one badge for everyone. Everything is in server/classgoal.mjs.
+   * Routes: GET /classgoal, GET+POST+DELETE /teacher/classgoal. */
+  createClassGoal({ store, groupOf, groupsNow, audit })
+    .routes({ on, json, readBody, needUser, needTeacher });
 
   /* --- the curriculum ceiling ------------------------------------------
    *

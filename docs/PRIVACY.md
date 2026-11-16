@@ -44,6 +44,7 @@ It is not legal advice. For a real question, Persónuvernd answers them:
 | No third parties | The page loads nothing from anybody: fonts are inside the file. No analytics, no advertising. One cookie, strictly necessary, so no cookie banner. |
 | Accountability | *Atburðaskrá* records every administrative action, by id. |
 | Statistics without people (v6.13) | Right and wrong answers are counted per question type, level, inflection cell and irregularity score, with no account, group or time, to set the difficulty automatically. A learner can switch their own contribution off. See §1b. |
+| A class goal shows totals only (v6.13) | When a guardian sets a weekly goal, the group sees one total its learners' answers feed into — never who put in what, and nothing in a group of fewer than five. See §1c. |
 | A teacher sees only what helps them teach (v6.13) | The guardian of a group sees, for the learners of that group only, the error-pattern figures the child sees themselves, and the scores of assignments — never anything typed, never a date. The child's account page names who that is. See §1a. |
 
 What it does **not** do, and you should know:
@@ -167,6 +168,44 @@ downloaded file is ever put in the public repository, look through it first
 
 ---
 
+## 1c. The class goal: one total the whole group sees (v6.13, item 59)
+
+A group's guardian can set a **weekly goal the group reaches together** — "2.000
+right answers together", or "everyone finishes three sessions" — and every
+member of the group sees one bar in Skólastofan. When it is full, every learner
+in the group gets the same badge. This is the first thing on the server that
+every learner's progress feeds into **whether or not they switched the board
+on**: that is deliberate, because the goal is for the pupils who keep off the
+board as much as for those on it. So, precisely:
+
+| The group sees | Not |
+|---|---|
+| The goal the guardian set, and **one total for the current week** (Monday–Sunday): the group's right answers added up, or how many learners have finished the number of sessions, out of how many | Who put in what — no names, no per-pupil figure, no order; nothing about any other week except whether last week's goal was met |
+
+- **Who is counted:** the learners of the group whose account is active (not
+  pending, not blocked) and not held for review (implausible numbers, which
+  keep a pupil off the board too). The sum is computed on request from the day records
+  and the session list the state already holds; nothing new is stored about a
+  pupil. The goal itself is kept on the group's record (`groups.json`: kind,
+  size and the Monday it applies from), with no pupil id; who set or removed it
+  is in the audit trail, by id.
+- **Small groups:** with fewer than five learners nothing is shown and no goal
+  can be set (`CLASS_GOAL.minPupils`, `src/js/core/classgoal.js`). In a group of
+  three, "2 of 3 have finished" would tell a pupil who has not that both the
+  others have. Five is the program's figure elsewhere for "nobody else here".
+  A total can still be read at its extremes ("0 of 24", "24 of 24"); that is
+  the limit of what a total hides, and it is no more than a teacher saying
+  "everybody did it" to the class.
+- **Lawful basis:** the same consent. It is a new recipient (the group) of
+  something derived from a child's progress, so `PRIVACY_VERSION` moved to
+  `2026-11-18` and the notice says it in the child's words, in the summary and
+  under *Hver sér hvað?*. **Tell the families** with the rest of v6.13. As with
+  §1a there is no per-child switch: a class total that leaves out whoever
+  opted out would be one more board the weakest pupils keep off.
+- **Offline and hosted-page pupils** have no group and no goal.
+
+---
+
 ## 2. Record of processing (Art. 30) — *vinnsluskrá*
 
 Fill in the bracketed parts and keep it with your papers. If Persónuvernd ever
@@ -180,7 +219,7 @@ asks for it they may want it in Icelandic; the content is what matters.
 | **Data subjects** | Invited learners (mostly teenagers); their parents or guardians (name only, as the consent record); administrators. |
 | **Data** | Username; nickname; password hash; role, group, status; date created; day last seen; consent record (who, when, how, notice version); visibility choices; progress (XP, levels, badges with dates, which words and inflection cells were practised and how often right or wrong, answers and minutes per day, settings); results of assignments set by the group's guardian (answered, right, finished); the learner's own choice about being counted in the statistics. For one day: how many of the account's answers have been counted that day (§1b). Transiently: IP address, for rate-limiting, in memory only. **Anonymous, not personal data:** the counts of right and wrong answers; and, only for groups whose teacher switched it on, the sample of wrong word forms (§1b). |
 | **Not collected** | Email, real name, date of birth, kennitala, phone, photos, free text (the sample of §1b keeps single word forms that resemble the word asked about, and nothing else a pupil types). No special categories. |
-| **Recipients** | Other users of the same group, only what the user switches on. The guardian(s) of the user's own group: the error-pattern figures and assignment results (§1a). Processor: Fly.io, Inc. (hosting). Nobody else. |
+| **Recipients** | Other users of the same group, only what the user switches on. The guardian(s) of the user's own group: the error-pattern figures and assignment results (§1a). The whole group, only when its guardian sets a weekly goal: one total for the week that the user's right answers or sessions are part of (§1c). Processor: Fly.io, Inc. (hosting). Nobody else. |
 | **Transfers outside the EEA** | Data is stored in Amsterdam. The processor is a US company certified under the EU–US Data Privacy Framework and bound by its data processing agreement (check the signed copy for the transfer terms). |
 | **Retention** | While the account exists; erased after 18 months without a login; unanswered access requests after 30 days; backups at most 30 days. The one-day tally: until the next day. Anonymous counts fade by 15 % a week; a sampled answer is kept at most 12 months. |
 | **Security** | See §1. |
@@ -221,10 +260,14 @@ whether the change needs fresh consent.
 assignment results (§1a). `2026-11-17`: the anonymous count of answers and the
 optional sample of wrong answers (§1b), and the sentence that a duel's answers
 are sent to the server to be graded and are not stored (only the score is
-kept) — all arrive with v6.13, so one message
+kept). `2026-11-18`: the class goal's weekly total, which every learner of the
+group feeds and the group sees (§1c). All arrive with v6.13, so one message
 to the families covers them. The date is the notice's version, not the day
-you deploy; set it to your release date if you prefer, and keep
-`CALIBRATION_NOTICE` in the same file equal to it.
+you deploy; set it to your release date if you prefer, and then give
+`CALIBRATION_NOTICE` in the same file that date too. Until then the two
+differ (`2026-11-17` and `2026-11-18`) on purpose: `CALIBRATION_NOTICE` names
+the first version that describes the anonymous count, and must never be
+later than the notice that is live.
 
 ---
 
