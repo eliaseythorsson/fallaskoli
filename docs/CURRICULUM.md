@@ -124,8 +124,6 @@ every year.
 | Hæfniviðmið (heading in the aðalnámskrá) | Section | Within reach of a drill app? | Nodes | With questions | Fully covered |
 | --- | --- | --- | --- | --- | --- |
 | Orðflokkar | Mál og málnotkun | yes: the app's main subject | 31 | 29 | 26 |
-| Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 11 | 6 | 5 |
-| Orðflokkar | Mál og málnotkun | yes: the app's main subject | 31 | 28 | 23 |
 | Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 11 | 9 | 8 |
 | Fjölbreytt málnotkun | Mál og málnotkun | partly | 2 | 1 | 1 |
 | Sköpunarkraftur | Mál og málnotkun | partly | 1 | 1 | 1 |
@@ -458,12 +456,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 10 of 12 | 39 of 52 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
-| 9. bekkur | 10 of 12 | 46 of 52 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 12 of 12 | 52 of 52 | 1–7 | Setningafræði, Setningagerðir; types `syntax`, `setn_hlut`, `setn_flokka`, `clause`, `gerd_finna`, `gerd_upphaf` |
-| 8. bekkur | 10 of 12 | 39 of 53 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
-| 9. bekkur | 10 of 12 | 43 of 53 | 1–6 | no new category; types `fn_aftur`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 12 of 12 | 53 of 53 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
+| 8. bekkur | 10 of 12 | 39 of 56 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
+| 9. bekkur | 10 of 12 | 46 of 56 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 12 of 12 | 56 of 56 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:
