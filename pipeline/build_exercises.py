@@ -860,8 +860,57 @@ for pos, pairs in X.ANTONYMS.items():
 out["synonyms"] = syn
 out["antonyms"] = ant
 
+# Which sense of the answer the sentence means (v6.13 review M1). The app
+# printed the word's dictionary definition after the answer, and that is
+# ÍNO's FIRST sense: *Ég hlustaði á lagið í útvarpinu* → "*lag*: partur af
+# stafla …", *póstur* who brings the letters → "flutningskerfi
+# póstþjónustunnar". Each item now names its sense (samhengi.tsv `merking`,
+# samhengi-rammar.tsv `lag=2`), or "-" where none of ÍNO's fits (*hjól*:
+# "hringur sem snýst um miðpunkt sinn" for a bicycle). An answer whose word
+# has several senses and names none stops the build. The item carries the
+# chosen definition as `d` (null: none is printed). The senses are read
+# from data/ino.json the way build_bundle.py attaches them: by bin_id, and
+# only where ÍNO's word class is the lexicon's.
+_LEX_BY = {(w["o"], w["c"]): w for w in json.load(open("data/lexicon.json"))["w"]}
+try:
+    _ino = json.load(open("data/ino.json", encoding="utf-8"))
+    _INO = _ino["entries"] if isinstance(_ino.get("entries"), dict) else _ino
+except FileNotFoundError:
+    _INO = {}
+import definitions as _DEFS
+
+def senses_of(o, c):
+    """ÍNO's senses of the lexicon's word (o, c): a list of definitions."""
+    w = _LEX_BY.get((o, c))
+    e = _INO.get(str(w.get("i"))) if w else None
+    if not isinstance(e, dict) or not e.get("def") or e.get("cls") not in (None, c):
+        return []
+    return [x["def"] for x in (e.get("senses") or [{"def": e["def"]}]) if x.get("def")]
+
+def context_def(o, c, sense, where):
+    """The definition to print after the answer *o*: sense number `sense`
+    (a string, "1" …), "-" for none, "" for the word's only sense."""
+    if sense == "-":
+        return None
+    ss = senses_of(o, c)
+    if sense:
+        if not sense.isdigit() or not 1 <= int(sense) <= len(ss):
+            fail(f"{where}: '{o}' has {len(ss)} sense(s) in ÍNO, not '{sense}'")
+            return None
+        return ss[int(sense) - 1]
+    if len(ss) > 1:
+        fail(f"{where}: '{o}' has {len(ss)} senses in ÍNO — name the one the sentence means "
+             f"(merking, or {o}=N / {o}=- in samhengi-rammar.tsv): "
+             + " | ".join(f"{k}. {d[:50]}" for k, d in enumerate(ss, 1)))
+        return None
+    if ss:
+        return ss[0]
+    w = _LEX_BY.get((o, c))
+    hand = _DEFS.D.get(o) if w else None
+    return hand[0] if hand else None
+
 items = []
-for lvl, t, mark, right, wrong in X.WORD_IN_CONTEXT:
+for lvl, t, mark, right, wrong, sense in X.WORD_IN_CONTEXT:
     where = f"WORD_IN_CONTEXT {t}"
     level(lvl, where)
     opts = []
@@ -871,7 +920,8 @@ for lvl, t, mark, right, wrong in X.WORD_IN_CONTEXT:
         opts.append({"o": lemma.split(":")[0], "c": g, "f": form(lemma, g, mark, where)[0]})
     if len({o["f"] for o in opts}) != len(opts): fail(f"{where}: two options with the same form")
     if opts: check_words(t.replace("___", opts[0]["f"]), where)
-    items.append({"t": t, "m": mark, "a": opts[0] if opts else None, "w": opts[1:], "lvl": lvl})
+    d = context_def(opts[0]["o"], opts[0]["c"], sense, where) if opts else None
+    items.append({"t": t, "m": mark, "a": opts[0] if opts else None, "w": opts[1:], "lvl": lvl, "d": d})
 # WORD_IN_CONTEXT_FRAMES (critique item 23): one item per noun that fits,
 # the nouns that cannot fit as the pool of its wrong options.
 for bonus, t, mark, fits, cannot in X.WORD_IN_CONTEXT_FRAMES:
@@ -881,11 +931,13 @@ for bonus, t, mark, fits, cannot in X.WORD_IN_CONTEXT_FRAMES:
         return {"o": lemma.split(":")[0], "c": g, "f": form(lemma, g, mark, where)[0]} if g else None
     bad = [o for o in map(opt, cannot) if o]
     if len(bad) < 3: fail(f"{where}: fewer than three nouns that cannot fit")
-    if set(fits) & set(cannot): fail(f"{where}: a noun both fits and cannot")
+    if {f.partition("=")[0] for f in fits} & set(cannot): fail(f"{where}: a noun both fits and cannot")
     first = True
-    for lemma in fits:
+    for fit in fits:
+        lemma, _, sense = fit.partition("=")
         a = opt(lemma)
         if not a: continue
+        d = context_def(a["o"], a["c"], sense, where)
         pool = [o for o in bad if o["f"] != a["f"]]
         text = t.replace("___", a["f"])
         check_words(text, where)
@@ -895,7 +947,7 @@ for bonus, t, mark, fits, cannot in X.WORD_IN_CONTEXT_FRAMES:
         first = False
         rare = _rank.get((a["o"], a["c"]), 99999) > 3000
         items.append({"t": t, "m": mark, "a": a, "w": pool, "gen": True,
-                      "lvl": min(5, frame_level(t) + bonus + rare)})
+                      "lvl": min(5, frame_level(t) + bonus + rare), "d": d})
 out["wordInContext"] = items
 
 # Word formation that the app's lexicon cannot see (critique item 23): the

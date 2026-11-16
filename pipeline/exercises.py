@@ -384,10 +384,12 @@ ANTONYMS = _by_class("ordafordi/andheiti.tsv", [("orðflokkur", "text"), ("orð"
 # Word in context: exactly one option makes sense, every option a noun in the
 # same BÍN mark. Hand-written (content/ordafordi/samhengi.tsv) and generated
 # from what fits and what cannot (samhengi-rammar.tsv, critique item 23).
-#   WORD_IN_CONTEXT         (level, sentence, mark, right, [wrong, wrong, wrong])
-#   WORD_IN_CONTEXT_FRAMES  (bonus, sentence, mark, [fits], [cannot])
+#   WORD_IN_CONTEXT         (level, sentence, mark, right, [wrong, wrong, wrong], sense)
+#   WORD_IN_CONTEXT_FRAMES  (bonus, sentence, mark, [fits], [cannot]); a fit
+#                           may end in =N or =- (the ÍNO sense, review M1)
 WORD_IN_CONTEXT = _table("ordafordi/samhengi.tsv", [
-    ("þyngd", "int"), ("setning", "text"), ("mark", "text"), ("svar", "text"), ("rangt", "list")])
+    ("þyngd", "int"), ("setning", "text"), ("mark", "text"), ("svar", "text"), ("rangt", "list"),
+    ("merking", "str")])
 WORD_IN_CONTEXT_FRAMES = _table("ordafordi/samhengi-rammar.tsv", [
     ("bónus", "int"), ("setning", "text"), ("mark", "text"), ("passar", "list"), ("passar ekki", "list")])
 

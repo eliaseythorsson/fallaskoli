@@ -170,11 +170,15 @@ export function ordContext(lex, view, rng) {
   const cap = i === 0;
   const fix = (f) => (cap ? cap1(f) : f);
   const right = lex.lookup(x.a.o, x.a.c);
+  /* The definition printed is the item's own (`x.d`, the sense the sentence
+     means, chosen in content/ordafordi/samhengi*.tsv), never the word's
+     first sense: *lagið í útvarpinu* printed "*lag*: partur af stafla …"
+     until the v6.13 review (M1). An item without one says only why. */
   return built({
     type: "choice", skill: "ordaford", s, i,
     title: "Orð í samhengi", question: "Hvaða orð passar í setninguna?",
     options: shuffle([x.a, ...wrong].map((o) => fix(o.f)), rng), answer: fix(x.a.f),
-    why: right && right.d ? `*${x.a.o}*: ${right.d}` : `Aðeins *${x.a.f}* gefur setningunni merkingu.`,
+    why: x.d ? `*${x.a.o}*: ${x.d}` : `Aðeins *${x.a.f}* gefur setningunni merkingu.`,
     base: 8, lvl: levelFor(P, x.lvl), cell: "orð:samhengi", word: right ? wordKey(right.o, right.c) : null,
     tags: ["vocab"], miss: ["merking"], bonus: right,
   }, [v.fx]);
