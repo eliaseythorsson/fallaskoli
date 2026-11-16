@@ -315,7 +315,7 @@ export function nodePanelHTML(node, d, { teacher = false, cat = null, canPractis
     : `<div class="answer smactions">
         ${canPractise
           ? `<button type="button" class="go" data-nodego="${esc(node.id)}">✎ Æfa þetta · ${NODE_RUN} spurningar</button>`
-          : `<p class="smhint">Þetta efni er ekki opið í námsefninu þínu. Því er breytt undir <b>Stillingar og námsefni</b>.</p>`}
+          : `<p class="smhint">Þetta efni er lokað í námsefninu þínu, svo hér er ekki hægt að æfa það.</p>`}
         ${lessonBtn}</div>`;
 
   /* The button comes straight after the three facts: a pupil who opened a
