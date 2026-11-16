@@ -391,6 +391,15 @@ export function dueEntries(S, now, can = null) {
     .sort(byUrgency);
 }
 
+/** "12 atriði bíða upprifjunar" — Icelandic agreement: the verb is singular
+    after a number ending in 1 but not 11 ("1 atriði bíður", "21 atriði
+    bíður", "11 atriði bíða"). "" when nothing is due, so nothing is drawn. */
+export function dueLine(n) {
+  const k = Math.max(0, Math.floor(n || 0));
+  if (!k) return "";
+  return `${k} atriði ${k % 10 === 1 && k % 100 !== 11 ? "bíður" : "bíða"} upprifjunar`;
+}
+
 /** How many entries are waiting to be reviewed today — "N atriði bíða
     upprifjunar" (item 22). */
 export const dueCount = (S, now, can = null) => dueEntries(S, now, can).length;

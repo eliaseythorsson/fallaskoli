@@ -10,7 +10,7 @@ import { EX } from "../../../data/exercises.js";
 import { wordKey } from "../core/state.js";
 import { built, FX } from "./effects.js";
 import { tapTask } from "./tap.js";
-import { pick, shuffle, levelFor, sentPool, tokenKey, tokensOf, cap1, textSentence, fresh, lexWord,
+import { pairOf, pick, shuffle, levelFor, sentPool, tokenKey, tokensOf, cap1, textSentence, fresh, lexWord,
          clean } from "./shared.js";
 
 /* ================= Which class =========================================== */
@@ -65,40 +65,67 @@ function bothClasses(lex) {
   return set;
 }
 
+/** The pairs of the hand-written bank: the same word once as a preposition
+    (fs) and once as an adverb (ao), in two different sentences. */
+let ADVPREP_PAIRS = null;
+const advPrepPairs = () => {
+  if (ADVPREP_PAIRS) return ADVPREP_PAIRS;
+  const out = [];
+  const by = new Map();
+  for (const x of EX.advPrep) { if (!by.has(x.w)) by.set(x.w, []); by.get(x.w).push(x); }
+  for (const xs of by.values())
+    for (const f of xs.filter((x) => x.c === "fs"))
+      for (const a of xs.filter((x) => x.c === "ao")) out.push({ fs: f, ao: a });
+  return (ADVPREP_PAIRS = out);
+};
+
+/** Forsetning eða atviksorð? Asked as a pair (item 43): the same word in two
+    sentences, once in each role; right only when both are. */
 export function obAdvPrep(lex, view, rng) {
   const P = view.policy;
   const OPTS = ["atviksorð", "forsetning"];
   const why = (cls, w) => cls === "forsetning"
     ? `Hér stendur *${w}* með fallorði og stýrir falli þess — það er **forsetning**.`
     : `Hér stendur *${w}* eitt; ekkert fallorð fylgir því — það er **atviksorð**.`;
+  const half = (s, i, answer) => ({
+    s, i, mark: true, question: `Í hvaða orðflokki er *${s.tok[i].w}* hér?`,
+    options: OPTS, answer, why: why(answer, s.tok[i].w), miss: ["ao_fs"],
+  });
+  const head = (A, extra) => ({
+    type: "choice", skill: "obeygjanleg", s: A.s, i: A.i, mark: true,
+    title: "Forsetning eða atviksorð?", question: A.question,
+    options: A.options, answer: A.answer, why: A.why,
+    base: 9, tags: ["ofl", "ofl:ao_fs"], miss: A.miss, ...extra,
+  });
   if (rng() < 0.5) {
-    const x = pick(fresh(view, (y) => y.t + y.w, EX.advPrep), rng);
-    const { s } = textSentence(x.t);
-    const i = s.tok.findIndex((t) => t.w.toLowerCase() === x.w);
-    const answer = x.c === "fs" ? "forsetning" : "atviksorð";
-    return built({
-      type: "choice", skill: "obeygjanleg", s, i, mark: true,
-      title: "Forsetning eða atviksorð?", question: `Í hvaða orðflokki er *${s.tok[i].w}* hér?`,
-      options: OPTS, answer, why: why(answer, s.tok[i].w),
-      base: 9, lvl: levelFor(P, 2), cell: "ofl:" + answer, word: null,
-      tags: ["ofl", "ofl:ao_fs"], miss: ["ao_fs"],
-    }, [FX.exSeen(x.t + x.w)]);
+    const pr = pick(fresh(view, (y) => y.fs.t + y.ao.t, advPrepPairs()), rng);
+    const mk = (x) => {
+      const { s } = textSentence(x.t);
+      return half(s, s.tok.findIndex((t) => t.w.toLowerCase() === x.w), x.c === "fs" ? "forsetning" : "atviksorð");
+    };
+    const [A, B] = shuffle([pr.fs, pr.ao], rng).map(mk);
+    return built(pairOf(head(A, { lvl: levelFor(P, 2), cell: "ofl:" + A.answer, word: null }), B),
+      [FX.exSeen(pr.fs.t + pr.ao.t)]);
   }
   const both = bothClasses(lex);
-  const hits = [];
+  const byWord = new Map();
   lex.sentences.forEach((s) => {
     if (!P.level(s.lvl)) return;
-    s.tok.forEach((t, i) => { if (both.has(t.l) && OPTS.includes(t.c) && !t.rj) hits.push({ s, i, t }); });
+    s.tok.forEach((t, i) => {
+      if (!(both.has(t.l) && OPTS.includes(t.c) && !t.rj)) return;
+      if (!byWord.has(t.l)) byWord.set(t.l, { fs: [], ao: [] });
+      byWord.get(t.l)[t.c === "forsetning" ? "fs" : "ao"].push({ s, i, t });
+    });
   });
-  if (!hits.length) return null;
-  const h = pick(hits, rng);
-  return built({
-    type: "choice", skill: "obeygjanleg", s: h.s, i: h.i, mark: true,
-    title: "Forsetning eða atviksorð?", question: `Í hvaða orðflokki er *${h.t.w}* hér?`,
-    options: OPTS, answer: h.t.c, why: why(h.t.c, h.t.w),
-    base: 9, lvl: h.s.lvl, cell: "ofl:" + h.t.c, word: lexWord(lex, h.t.l, h.t.c === "forsetning" ? "fs" : "ao"),
-    tags: ["ofl", "ofl:ao_fs"], miss: ["ao_fs"],
-  });
+  const words = [...byWord.keys()].filter((l) => byWord.get(l).fs.length && byWord.get(l).ao.length);
+  if (!words.length) return null;
+  const l = pick(words, rng);
+  const [A, B] = shuffle([pick(byWord.get(l).fs, rng), pick(byWord.get(l).ao, rng)], rng)
+    .map((h) => ({ ...half(h.s, h.i, h.t.c), t: h.t }));
+  return built(pairOf(head(A, {
+    lvl: Math.max(A.s.lvl, B.s.lvl), cell: "ofl:" + A.answer,
+    word: lexWord(lex, A.t.l, A.t.c === "forsetning" ? "fs" : "ao"),
+  }), B));
 }
 
 /** Choose the conjunction: every wrong option makes the sentence wrong. */

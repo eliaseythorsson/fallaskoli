@@ -15,6 +15,8 @@ import { lessonById } from "../core/lessons.js";
 import { weakWords } from "../core/wordhealth.js";
 import { activePatterns, standings, patternById, focusTypes } from "../core/diagnosis.js";
 import { $, esc, fmt, openSheet } from "./dom.js";
+import { dueNow } from "./progress.js";
+import { dueLine } from "../core/review.js";
 
 export const RUN_SIZES = [10, 15, 20];
 
@@ -84,6 +86,7 @@ export function renderPicker(app) {
       <span class="topicnm">${esc(s.nm)}${lvl ? ` <small>stig ${lvl}</small>` : ""}</span>
       <span class="topicds">${esc(ds)}</span>${flagFor(s)}</button>`;
   };
+  const dueText = dueLine(dueNow(app.S));
   const recent = (app.S.runs || []).slice(-4).reverse();
   el.innerHTML = `<div class="card runpick">
     <p class="eyebrow"><span>Ný æfingalota</span><b>veldu efni og fjölda spurninga</b></p>
@@ -93,6 +96,7 @@ export function renderPicker(app) {
         `<button type="button" class="sizeb" data-size="${n}" aria-pressed="${n === size}">${n}</button>`).join("")}
     </div>
     <div class="answer"><button type="button" class="go" id="runstart">Byrja lotu →</button></div>
+    ${dueText ? `<p class="runnote">📚 ${esc(dueText)}.</p>` : ""}
     ${act.length ? `<p class="runnote">🔎 Villumynstur sem fylgst er með: ${act.map((p) =>
       `<b>${esc(p.nm)}</b> <span class="faint">(${p.misses} af síðustu ${p.seen})</span>`).join(", ")}.
       Spurningar um þau koma oftar þangað til þau lagast.</p>` : ""}
@@ -174,6 +178,7 @@ export function renderRunBar(app) {
      them, so a thin bar along the bottom of the line says how far instead
      (head.html decides which of the two shows). */
   el.innerHTML = `<div class="runline" role="status" aria-label="${esc(said)}" title="${esc(said)}">
+    <span class="sr-only">${esc(said)}</span>
     <span class="runico" aria-hidden="true">${topicIco(r.topic)}</span>
     <b class="runtopic" aria-hidden="true">${esc(name)}</b>
     <span class="drilldots rundots" aria-hidden="true">${dots.join("")}</span>

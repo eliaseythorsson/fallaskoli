@@ -112,6 +112,7 @@ test("applyDecay reduces the total and the skills in the same proportion", () =>
   S.skills.nafnord.xp = 2000;
   S.skills.sagnord.xp = 2000;
   S.lastActive = "2026-01-01";
+  S.settings.decay = true;     // item 22: off by default, so this test switches it on
   const rep = applyDecay(S, "2026-01-21");
   assert.ok(rep && rep.lost > 0);
   assert.equal(S.xp, 4000 - rep.lost);

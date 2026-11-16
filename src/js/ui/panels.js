@@ -740,8 +740,9 @@ function wordChip(w, stats) {
 export function renderSettings(app) {
   const S = app.S;
   $("goalin").value = S.goal;
-  $("set-decay").checked = S.settings.decay !== false;
+  $("set-decay").checked = S.settings.decay === true;
   $("set-gloss").checked = S.settings.glossary !== false;
+  $("set-comfort").checked = S.settings.comfort === true;
   /* Item 53: the box shows what is in force, the guess included, so ticking
      it always does what it looks like it will. */
   $("set-keys").checked = keypadOn(S.settings, keypadEnv());
@@ -755,6 +756,7 @@ export function renderSettings(app) {
   };
   renderPolicyEditor($("policyeditor"), view, {
     ceiling: S.allowed || null,
+    teacherFold: true,        // item 50: types, levels and features behind a disclosure
     /* The policy app.js keeps for the builders is now stale — say so, or the next
        question is drawn from the material that was just switched off. */
     onChange: () => { app.reloadPolicy(); app.save(); },
