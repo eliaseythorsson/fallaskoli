@@ -12,7 +12,10 @@ Two rules hold throughout:
 * **Nothing a child wrote ever leaves its own state.** The leaderboard, the
   roster and the badge statistics carry sortable numbers and identifiers only.
   `tests/guarded.test.js` pins that with an allowlist, so adding a field to the
-  scorecard fails a test until somebody decides it belongs there.
+  scorecard fails a test until somebody decides it belongs there. Two
+  exceptions, both the sender's own act or opt-in: an error report (🚩), and —
+  only in a group whose teacher has switched it on — an anonymous wrong word
+  form in `POST /calibration/answers` (below).
 
 Error bodies are always `{ "error": "<message in Icelandic>" }`. The messages are
 shown to the user, which is why they are the one part of this document that is
@@ -191,25 +194,102 @@ that threshold the app falls back to the base rarity computed in
 `src/js/core/rarity.js`, and says so. The aggregation itself is
 `aggregate()` in that module, imported by the server, so the two cannot drift.
 
-## Duels (v6.7)
+## Duels (v6.7; graded by the server since v6.13)
 
 Only between users in the same group who are both on the leaderboard
 (`share.board`), the same rule as `/leaderboard`. See `src/js/core/duel.js`.
 
 ```
 GET  /duels                          -> { duels: [ view, ... ], canChallenge: [ { id, name } ], shown,
-                                          sizes: [10,20,30], hours: 24, maxOpen: 10 }
+                                          sizes: [10,15,20], hours: 24, maxOpen: 10 }
 POST /duels   { opponent, topic, n } -> { ok, duel: view }   400 bad topic/size · 403 not on the board
                                                               404 not challengeable · 409 10 open duels
-POST /duels/:id/result { c, n, sig } -> { ok, duel: view }   once per player, before the deadline
+POST /duels/:id/start                -> { ok, duel: view, seed, key, sig }
+                                                              404 not a party · 409 over, or already answered
+POST /duels/:id/result { answers, sig } -> { ok, duel: view } once per player, before the deadline
+                                                              400 not answers · 409 not started, or other
+                                                              questions (`sig`) · 413 too big
 ```
 
-A `view` is `{ id, challenger, opponent: { id, name }, topic, n, seed, level, data, created,
-deadline, status: open|done, mine: {c,n}|null, theirs: {c,n}|null, theyPlayed, outcome: w|l|t|null,
-sameQuestions }`. `theirs` is withheld until the viewer has answered or the duel is over.
-The questions are not stored: both browsers build them from `seed` and `level`. Void duels
-(nobody answered within 24 hours) are deleted on the next read; finished ones after 30 days.
-Erasing a user erases their duels; `/account/export` includes them.
+A `view` is `{ id, side, challenger, opponent: { id, name }, topic, n, level, data, skills, created,
+deadline, status: open|done, mine: {c,n}|null, theirs: {c,n}|null, theyPlayed,
+handicap: { mine, theirs }, outcome: w|l|t|null }`. `theirs` is withheld until the viewer has
+answered or the duel is over. A view never carries a seed.
+
+**The questions.** They are not stored. The duel holds a `seed` and one `key` per player. The
+seed makes the *plan*: which type of question, at which level, about which inflection cell, in
+which order. Each player's own questions are built from the plan and that player's key
+(`duelTasks`): the same type and level on every line and the same cell, about other words and
+other sentences. Every word and sentence of the data belongs to one of the two players in a given
+duel (`halfOf`), so the two sets do not overlap where the data allows it. Where the same cell
+means the same answer — the cell *is* the answer ("strong or weak?", "which case does *handa*
+govern?", an analysis), or so few words share it that it comes to the same thing (*four* in the
+masculine accusative is *fjóra* in any sentence) — giving both players the plan's cell would give
+the second player the first one's answer. For those types the plan fixes the kind of cell and
+each player's cell is their own draw (`CELL_IS_ANSWER`, eighteen types; a test measures every
+type and holds the list to the builders).
+
+**Starting.** `POST /duels/:id/start` hands a player `seed` and their own `key` — not the other
+player's — and records the moment once (`started`). The browser builds its questions and compares
+their signature with `sig`, the signature of what the server built; if they differ (an old tab
+after an update) the pupil is asked to reload before the first question. Starting again returns
+the same seeds: a reload in the middle of a duel continues with the same questions.
+
+**Grading.** `answers` is a list, one entry per question in order: the response in the shape
+`src/js/core/answer.js` lists for the question's type (`{ text }`, `{ picked }`, `{ cells: […] }`,
+…), or `null` for a question not answered. The server builds the player's questions again from
+the seeds and judges every response with the same `judge` the browser used (`gradeDuel`). Only a
+right answer counts; a missing, unfinished or malformed one is wrong; `n` is always the number of
+questions. Nothing else in the body is read — a `c` or `n` beside the answers is ignored, and a
+body without `answers` (what browsers posted before v6.13) is refused. The answers are graded and
+dropped: the duel keeps `{ c, n, at }` per player, never anything a pupil typed.
+
+Limits: a response may only have the keys `text, hinted, cells, texts, picked, picked2, picks,
+sel, edits`, each of its own kind (a string of at most 300 characters; a list or a flat object
+of at most 64 short entries), and at most 2 000 bytes as JSON (`cleanResponse`, `ANSWER_LIMITS`);
+the whole body at most ~44 kB; never more answers than questions.
+
+**A fair result (handicap).** A duel is played at the mean of the two players' levels in the
+topic, which favours the stronger. The duel stores both levels (`lv`), and the player on the
+lower one is given right answers in advance: none while they are within one level of each other,
+then 5% of the questions per level between them, in whole answers, at least 1 and at most 30% of
+the questions (`handicap`, `DUEL.fair`). The winner is the one with more right answers *plus
+handicap*; `mine` and `theirs` stay the right answers, and `handicap` says what was added, from
+the moment the duel is made. The 5% is a judgement, not a measurement.
+
+**What this stops, and what it does not.** Said plainly, because a teacher may rely on it:
+
+- *Stopped:* posting a score. Nobody can claim ten out of ten without giving ten right answers
+  to their own ten questions.
+- *Stopped:* reading the questions before pressing play. Until `/start` the browser holds
+  nothing they could be built from, and `/account/export` leaves the seeds out.
+- *Stopped, as far as the data allows:* the first player telling the second the answers. They
+  are answers to other questions. Measured over every topic, a player who types in the other
+  player's right answers gets about one in six right (17%) — mostly choices with two to four
+  options, where that is what guessing gives — against all of them before. The limits: closed
+  classes are small (four numerals decline, a handful of pronouns) and some hand-written
+  exercises have a dozen items, so now and then both players meet the same word or sentence —
+  about 3% of the lines in the same measurement. And 4% of the lines are a shade off the plan
+  (a neighbouring level, or another cell of the same kind) because the exact one could not be
+  had twice.
+- *Not stopped:* a pupil who can use the developer tools after pressing play. The program shows
+  the right answer the moment a question is answered, so the questions arrive with their answers;
+  from `/start` on the browser holds both, and they can be read out of memory and typed in.
+  Closing that would mean the server judging each answer as it is given and the browser never
+  holding one, which is a different program (and no duel on a poor connection). This is the same
+  as before v6.13; what is new is that it takes a programmer rather than one line.
+- *Not stopped:* looking, then answering later. A pupil can press play, read the questions,
+  reload, and take the 24 hours to find the answers — or ask somebody. `started` records when
+  play was first pressed, and nothing acts on it yet: a limit ("answer within an hour of
+  starting") is one comparison in `/result`, but it would also cost the child whose bell rang.
+- *Not stopped:* help from a person, a book or another tab. No server can.
+- *Not stopped:* two accounts in one hand. One pupil with a second account, or two friends
+  sharing passwords, can each see "their" duel.
+
+Void duels (nobody answered within 24 hours) are deleted on the next read; finished ones after
+30 days. Erasing a user erases their duels; `/account/export` includes them, without the seeds.
+A duel made before v6.13 has no keys and no levels: it gets keys when first started, and no
+handicap.
 
 ## The teacher: the class's patterns and assignments (v6.13)
 
@@ -278,6 +358,116 @@ Setting and deleting an assignment is written to the audit trail; looking at
 the table is not. Erasing a user removes their results; an assignment a
 guardian set stays with the group, its `by` cleared. Deleting a group deletes
 its assignments. All of it is in the backup.
+
+## Calibration from real answers, and the answer sample (v6.13)
+
+Items 17 and 38. `server/calibrate.mjs` holds the routes; the arithmetic is
+`src/js/core/calibration.js` and the classifier check
+`src/js/core/classifiercheck.js`.
+
+```
+GET    /calibration            -> { on, table, collect, samples, canCount, choice, byDefault }
+POST   /calibration/answers    { events: [event], samples?: [sample] }
+                               -> { ok, counted, records, samples, collect }   429 over 150 requests today
+POST   /account/stats          { on: boolean } -> { ok, choice, collect }
+
+GET    /teacher/samples        ?group= -> { group: { id, name }, on, available }
+POST   /teacher/samples        { group?, on: boolean } -> { ok, on }   409 FALLASKOLI_SAMPLES=0 · audited
+
+GET    /admin/calibration             -> report                     canAdminUsers
+GET    /admin/classifier/samples.json -> { v: 1, about, samples: [sample] }   (attachment)
+DELETE /admin/classifier/samples      -> { ok }                     audited
+```
+
+**`GET /calibration`** is asked once per load. `on` is false when the server
+runs with `FALLASKOLI_CALIBRATION=0`; `table` is then null. `collect`: this
+account's answers are counted, so the browser sends them (it sends nothing
+otherwise). `samples`: the teacher of this account's group has switched the
+answer sample on, and the account is counted. `canCount`, `choice` (the
+account's own switch: true, false, or null when never touched) and `byDefault`
+(what applies while it is null) are for *Aðgangurinn minn*. The request also
+runs the weekly estimate if it is due.
+
+The **table** is `{ v: 1, at, types, cells, irr }` or null:
+
+| Field | Meaning | Bounds |
+|---|---|---|
+| `types` | `{ "<typeId>": { "<level 1–7>": shift } }` — a pupil whose skill stands at that level gets this type built as if the level were `level + shift` (held inside the skill's range) | −1 … +1, in quarters |
+| `cells` | `{ "<BÍN mark>": score }` — replaces the build's hardness of that cell (`lexicon.cellHardness`) | 1–5, within ±1 of the build's |
+| `irr` | `{ "<1–5>": score }` — what a word's built-in irregularity score counts as | 1–5, within ±1, never out of order |
+
+Only entries that differ from the built-in values are present; an empty table
+changes nothing. The browser rebuilds it field by field (`cleanTable`) and
+anything else — a 404 from an older server, a damaged body, `v` it does not
+know — is treated as no table: built-in values throughout. Duels never apply
+it.
+
+An **event** is one judged answer to a fresh question of ordinary practice:
+
+```
+{ t: "<typeId>", l: <level 1–7>, ok: <boolean>, recs: [ [ "<BÍN mark or ''>", <irr 0–5>, 0|1 ] ] }
+```
+
+`l` is the level the question's skill stood at; `recs` has one entry per
+record the answer made (a table: one per cell) with the cell, the word's
+built-in irregularity score, and right or wrong. The server keeps only what
+passes `cleanEvents`: a type the registry has, a whole level, a mark the
+bundle has, a score 0–5. No other field is read, so there is nothing an answer
+could travel in. At most 40 events per request and 30 records per event.
+
+What is counted, and what stops a flood: an account must be `counted` (a
+learner, active, with a consent record, not switched off, not held for review;
+with `strict`, consent to notice ≥ 2026-11-17 or the account's own yes). Per
+account per day: 150 requests, 400 questions, 2,500 records — and towards one
+type-and-level 12, one cell 8, one irregularity bucket 150. The per-account
+tally lives in `calibration-quota.json` for that day only and is not in the
+backup; the counts themselves (`calibration.json`) hold no account, group or
+time: `types["fill|3"] = [right, total]`, `cells["fill|3|EFFT|4"] = [right,
+total]`, and per number the largest count of different accounts seen on one
+day. At most 8,000 cell keys.
+
+**The run** happens when a week has passed since the last (checked on `GET
+/calibration`, at start-up and every 12 hours). It needs ≥ 3 counted learners
+active in the last two periods; then per number ≥ 40 answers (types) or ≥ 60
+(cells, irregularity), ≥ 3 different accounts on one day, a reference of ≥ 3
+other types at that level (or cells of the same built-in score), and a
+difference larger than 3 points of share right and than 1.645 posterior
+standard deviations of a beta-binomial estimate whose prior weighs 40 (types)
+or 60 answers. A value then moves 0.25, never beyond ±1 of the built-in. After
+the run every count is multiplied by 0.85, and a type-and-level whose shift
+changed starts counting afresh.
+
+The **report** (`GET /admin/calibration`):
+`{ on, strict, samplesOn, periodDays, minPupils, lastRun, nextRun, due, runs,
+table, totals: { questions, records, keys, maxKeys }, log: [run], classifier }`.
+A `run` is `{ at, run, pupils, questions, records, changes: [change], slope?,
+note? }`; a `change` is `{ k: "type", id, band, from, to, n, p, base }` or
+`{ k: "cell"|"irr", id, from, to, builtIn, n, p, dev }`. The last 60 runs are
+kept. `classifier` is `{ kept, cap, offered, groupsOn, n, disagree, rate,
+ambiguous, byPattern: [ { p, name, n, disagree, ambiguous, rate } ], byKind }`.
+
+A **sample** (item 38) is `{ t, w, m, typed, right, p, conj? }`: the question
+type, the word as `lemma|class`, the cell asked for, the wrong form typed, the
+form expected, the pattern ids the classifier gave, and for a verb its
+conjugation. It is kept only if the account's group has `samples: true`
+(`POST /teacher/samples`, by the group's guardian or the administrator;
+default false), and only if it passes `cleanSample`: `w` is a word of the
+lexicon, `m` one of its cells, `right` one of that cell's forms, and `typed`
+one word of Icelandic letters, at most 32, that is not the right answer and
+resembles a form of the word (it begins as one of them does — three letters,
+two for a short form — or is within two letters of one). At most 6 per request and 20 per account per day; the server
+keeps 500 as a reservoir sample in random order, each with the month it was
+taken and nothing else, for 12 months. `samples.json` is in the backup.
+
+The classifier check compares each sample with every form of its word
+(`ruleReading`) and reports where that reading and the classifier's patterns
+cannot both be right (`agreement`); `classifiercheck.js` says what the measure
+can and cannot show. The downloaded file is the format of
+`tests/fixtures/wrong-answers.json`.
+
+`/account/export` carries the account's own switch as
+`account.countedInStatistics`. Erasing an account removes it from today's
+tally; the anonymous counts and samples cannot be traced to it and stay.
 
 ## Error reports (v6.8)
 

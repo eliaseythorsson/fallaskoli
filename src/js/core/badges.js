@@ -41,6 +41,9 @@ export const YULE_LADS = [
 export const JOL_IDS = YULE_LADS.map((_, i) => `jol_${i + 1}`);
 
 /** Every badge: {id, ico, nm, ds, skill?, once?, cap?, test(ctx)} */
+/* Rungs of the week ladders: 2, 4, 8, 12, 20 and 30 weeks in a row. */
+export const WEEK_RUNGS = [2, 4, 8, 12, 20, 30];
+
 export function buildBadges() {
   const B = [];
 
@@ -113,6 +116,39 @@ export function buildBadges() {
           : `Svaraðir að minnsta kosti einni spurningu ${n} daga í röð`,
       group: "dagar", fam: "answerstreak", n, once: true,
       test: (c) => c.answerStreak >= n,
+    });
+  });
+
+  /* ---- 3b. The same three ladders, counted in weeks (critique item 57) ----
+   * Days in a row punish a school child for weekends, holidays and a cold, so
+   * the three ladders above are retired (below): nobody can win them again,
+   * everybody who did keeps them, and `LEGACY_STREAKS` credits the weeks they
+   * stand for. The streak is now WEEKS in which the weekly goal was met
+   * (core/state.js `weekStreak`; default four days of seven, 2-7 in the
+   * settings). The same three promises as before, in the same order of
+   * difficulty: opened it, answered, met the daily goal.
+   * `once` and `>=`, for the reason given at the login ladder. */
+  WEEK_RUNGS.forEach((n) => {
+    B.push({
+      id: `wk${n}`, ico: n >= 20 ? "🏔️" : n >= 8 ? "🌳" : "🌱",
+      nm: `${n} vikur í röð`,
+      ds: `Vikumarkmiði náð ${n} vikur í röð — nógu margir dagar í hverri viku þar sem dagsmarkmiði var náð`,
+      group: "dagar", fam: "weekstreak", n, once: true,
+      test: (c) => c.weekStreak >= n,
+    });
+    B.push({
+      id: `wkans${n}`, ico: n >= 20 ? "🏅" : n >= 8 ? "🗓️" : "✍️",
+      nm: `Svör ${n} vikur`,
+      ds: `Svaraðir spurningum nógu marga daga í hverri viku til að ná vikumarkmiðinu, ${n} vikur í röð`,
+      group: "dagar", fam: "weekanswer", n, once: true,
+      test: (c) => c.weekAnswerStreak >= n,
+    });
+    B.push({
+      id: `wklogin${n}`, ico: n >= 20 ? "🗝️" : n >= 8 ? "📅" : "🚪",
+      nm: `Heimsóknir ${n} vikur`,
+      ds: `Opnaðir Fallaskóla nógu marga daga í hverri viku til að ná vikumarkmiðinu, ${n} vikur í röð`,
+      group: "dagar", fam: "weeklogin", n, once: true, when: "login",
+      test: (c) => c.weekLoginStreak >= n,
     });
   });
 
@@ -752,7 +788,36 @@ const RETIRED_RULES = [
   /^slvl_.*_(3|7)$/,                   // per skill: keep level 5
   /^run_.*_20$/,                       // per skill: keep 10 in a row
   /^coll_(kk|kvk|hk|lo|so|ao)_(25|250)$/,
+  /* v6.13, item 57: the three ladders of calendar days in a row. Kept on the
+     shelf of whoever won them, never awarded again; `wk*` replaces them. */
+  /^day\d+$/, /^login\d+$/, /^ansday\d+$/,
 ];
+
+/* What the retired day ladders are worth in weeks: a pupil who won `day30`
+   (thirty days in a row) has done at least four weeks of seven days, so they
+   are credited `wk4` and every lower rung. The rule is `weeks * 7 <= n`. */
+export const LEGACY_STREAKS = [
+  { re: /^day(\d+)$/, to: "wk" },
+  { re: /^ansday(\d+)$/, to: "wkans" },
+  { re: /^login(\d+)$/, to: "wklogin" },
+];
+
+/** The week badges a set of already-won badges stands for: id -> the old record. */
+export function legacyStreakCredit(owned) {
+  const out = {};
+  for (const [id, rec] of Object.entries(owned || {})) {
+    for (const { re, to } of LEGACY_STREAKS) {
+      const m = re.exec(id);
+      if (!m) continue;
+      for (const w of WEEK_RUNGS) {
+        if (w * 7 > Number(m[1])) continue;
+        const key = `${to}${w}`;
+        if (!owned[key] && !(out[key])) out[key] = rec;
+      }
+    }
+  }
+  return out;
+}
 export const RETIRED_IDS = new Set([
   "s_dawn", "s_weekend", "s_holiday", "s_firstword", "s_newword50", "s_13",
   "s_palindrome", "s_long18", "s_short2", "s_allvowels", "s_thorn3", "s_noaccent",

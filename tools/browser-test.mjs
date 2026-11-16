@@ -11,6 +11,9 @@ import { htmlPath } from "./version.mjs";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 import { QUESTION_TYPES } from "../src/js/core/policy.js";
+import { lessonPractice } from "../src/js/core/lessons.js";
+import { EXAMPLES } from "../src/js/content/examples.js";
+const EXAMPLE_TYPES = new Set(Object.keys(EXAMPLES));
 const QT_COUNT = QUESTION_TYPES.length;
 
 /* v6.10: practice comes in sessions picked on the Æfa tab. The program now
@@ -411,12 +414,12 @@ async function answerOne(correct) {
     await page.waitForFunction("!document.querySelector('#reveal') && !document.querySelector('#verdict .retry')", { timeout: 4000 });
   }
 
-  /* v6.9: celebration follows success. A wrong answer never opens a badge
-     window, whatever it earned; the windows wait for the next right answer. */
-  if (!correct && ["fill", "verb", "verbslot", "smidja", "umritun", "govern", "indecl", "syntax", "gap", "choice", "tap", "sort"].includes(t.type)) {
-    await new Promise((r) => setTimeout(r, 60));
-    if (await page.$(".scrim")) problems.push(`a badge window opened on a wrong answer (${t.type})`);
-  }
+  /* Item 61: NO badge window opens between questions, right answer or wrong.
+     Whatever was won waits in the cabinet and on the summary (section 2d). */
+  await new Promise((r) => setTimeout(r, 40));
+  if (await page.$(".scrim #badgeok") && await page.evaluate(() => !!window.FALLASKOLI.run))
+    problems.push(`a badge window opened between questions (${t.type}, ${correct ? "right" : "wrong"}): ${
+      await page.evaluate(() => document.querySelector(".scrim h3")?.textContent + " | run.i=" + (window.FALLASKOLI.run && window.FALLASKOLI.run.i) + " " + (window.FALLASKOLI.run && window.FALLASKOLI.run.label))}`);
 
   await dismissModals();
   if (stayAfter) return;
@@ -464,7 +467,7 @@ ok(after.badges < 52, `${after.badges} badges in 100 answers — too many`);
    NOTE what this does NOT say: nothing is lost. `after.badges` above counts the
    badges in the CABINET, and it is unchanged by the ceiling — which is the
    whole design. */
-ok(worstQueue <= 6, `${worstQueue} badge windows opened for one answer`);
+ok(worstQueue <= 6, `${worstQueue} badge windows opened for one answer`);   // always 0 here since v6.13 (item 61)
 
 /* ---------- 2a2. Answers that are right enough (v5.9) -------------------
  *
@@ -889,71 +892,87 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
 }
 
-/* ---------- 2d. Enter after a badge window ------------------------------
+/* ---------- 2d. The one celebration, at the summary (item 61) -----------
  *
- * The owner, on v5.5: *"Enter does correctly work as 'Athuga' but if a badge is
- * won, enter will cycle through and acknowledge the badges but will not trigger
- * 'Áfram', so the user is forced to use the mouse."*
+ * Badge windows used to open between questions. They now wait: the hundred
+ * answers above won badges (the cabinet has them, and no window opened while
+ * the session ran, checked in `answerOne`), and ending the session opens them
+ * once, over the summary, which lists every one.
  *
- * The cause was focus, not keys. The only Enter listener lives on the Áfram
- * button; the badge window took the focus, and closing it handed the focus back
- * to `<body>`, where nothing was listening. Every keystroke after that went
- * nowhere.
- *
- * This check fails on v5.5 and passes on v5.6, which is design rule 4: it
- * exercises the whole path with real keystrokes — answer, win a badge, dismiss
- * it with Enter, then press Enter once more and require a new question.      */
+ * This is also where the v5.6 keyboard rule lives now. The owner, on v5.5:
+ * *"Enter does correctly work as 'Athuga' but if a badge is won, enter will
+ * cycle through and acknowledge the badges but will not trigger 'Áfram', so
+ * the user is forced to use the mouse."* The cause was focus: closing a window
+ * drops it on <body>, where nothing listens. The windows are dismissed here with
+ * real Enter presses, and then the focus must be on the summary's first button
+ * and one more Enter must do what that button says.                         */
 {
   await dismissModals();
+  /* A fresh session, and one badge to win in it: the cheap `once` badge for
+     fifty right answers is taken off the shelf, so the next right answer wins
+     it again. It must come with NO window, and wait for the summary. */
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    delete A.S.badges.tot50;
+    A.openView("practice");
+    A.startRun("blandad", 100000);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  for (let i = 0; i < 6; i++) await answerOne(true);
+  const before = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    return { won: A.run.badges.length, run: !!A.run, shelf: !!A.S.badges.tot50 };
+  });
+  ok(before.run && before.shelf && before.won > 0,
+    `the session won ${before.won} badges (tot50 on the shelf: ${before.shelf}), no window opened`);
+  await page.evaluate(() => window.FALLASKOLI.endRun(true));
+  await new Promise((r) => setTimeout(r, 300));
+  const sum = await page.evaluate(() => ({
+    summary: !!document.querySelector("#task .summary"),
+    listed: document.querySelectorAll("#task .summary .sumbadges .runchip").length,
+    windows: !!document.querySelector(".scrim #badgeok"),
+    run: !!window.FALLASKOLI.run,
+  }));
+  ok(sum.summary && !sum.run, "ending the session did not draw the summary");
+  ok(sum.listed === before.won, `the summary lists ${sum.listed} badges, the session won ${before.won}`);
+  ok(sum.windows, "the session's badges were not celebrated at the summary");
 
-  /* Work forward until an answer both used the keyboard and won a badge. Early
-     sessions win badges constantly, so this normally takes one or two goes. */
-  let staged = false;
-  for (let i = 0; i < 60 && !staged; i++) {
-    if (!(await page.$("#ans"))) { await answerOne(true); continue; }
-    const t = await page.evaluate(() => window.FALLASKOLI.cur.answers?.[0] ?? null);
-    if (t == null) { await answerOne(true); continue; }
-    await tap("#ans");
-    await page.type("#ans", t);
+  /* One celebration: the ceiling of core/rarity.js holds for the whole session. */
+  let windows = 0;
+  for (let i = 0; i < 80 && (await page.$(".scrim")); i++) {
     await page.keyboard.press("Enter");
-    await new Promise((r) => setTimeout(r, 350));
-    if (await page.$(".scrim")) staged = true;
-    else { await dismissModals(); await page.evaluate(() => window.FALLASKOLI.next()); }
+    await new Promise((r) => setTimeout(r, 140));
+    windows++;
   }
+  ok(!(await page.$(".scrim")), "Enter did not close the badge windows");
+  ok(windows > 0, "no badge window was open, so nothing was proved");
+  worstQueue = Math.max(worstQueue, windows);
+  ok(worstQueue <= 6, `${worstQueue} badge windows opened at the summary`);
 
-  if (!staged) {
-    problems.push("could not win a badge from a typed answer — 2d never ran");
-  } else {
-    await page.evaluate(() => { window.__q = window.FALLASKOLI.cur; });
+  const focused = await page.evaluate(() => {
+    const e = document.activeElement;
+    return e && e.closest && e.closest(".nextrow") ? "nextrow" : (e && (e.id || e.tagName));
+  });
+  ok(focused === "nextrow", `focus went to "${focused}" after the last badge window, not to the summary's buttons`);
 
-    /* Dismiss every badge window with real Enter presses, exactly as a child
-       would. `freshEnter` rejects anything older than the window itself, so the
-       pauses matter. */
-    let windows = 0;
-    for (let i = 0; i < 80 && (await page.$(".scrim")); i++) {
-      await page.keyboard.press("Enter");
-      await new Promise((r) => setTimeout(r, 140));
-      windows++;
-    }
-    ok(!(await page.$(".scrim")), "Enter did not close the badge windows");
-    ok(windows > 0, "no badge window was open, so nothing was proved");
+  /* The next Enter does what the focused button says: a new session begins. */
+  await new Promise((r) => setTimeout(r, 600));
+  await page.keyboard.press("Enter");
+  await new Promise((r) => setTimeout(r, 600));
+  await dismissModals();
+  ok(await page.evaluate(() => !!window.FALLASKOLI.run || !!window.FALLASKOLI.cur),
+    "Enter on the summary's first button did nothing — the mouse was still required");
 
-    /* The keyboard must be back on the Áfram button the moment the last window
-       goes. This is the assertion that fails on v5.5. */
-    const focused = await page.evaluate(() => document.activeElement?.id || "");
-    ok(focused === "check",
-      `focus went to "${focused || "<body>"}" after the badge window, not to Áfram`);
-
-    /* And the next Enter must actually draw a new question. Wait past the
-       400 ms read-grace first — the same press must not do both jobs. */
-    await new Promise((r) => setTimeout(r, 600));
-    await page.keyboard.press("Enter");
-    await new Promise((r) => setTimeout(r, 400));
-    await dismissModals();
-    const advanced = await page.evaluate(() => window.FALLASKOLI.cur !== window.__q);
-    ok(advanced, "Enter after a badge window did not trigger Áfram — the mouse was still required");
-    ok(await page.$("#task .card") !== null, "no task on screen after Áfram");
-  }
+  /* Back to one long session for what follows. */
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    A.openView("practice");
+    A.startRun("blandad", 100000);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  ok(await page.$("#task .card") !== null, "no task on screen after the new session");
 }
 
 /* ---------- 3. The glossary tooltip ---------- */
@@ -1843,6 +1862,7 @@ await page.setViewport({ width: 1100, height: 900 });
   ok(sum.run === null && sum.last && sum.last.topic === pickTopic && sum.last.n === 10,
     "the session was not written down: " + JSON.stringify(sum.last));
   ok(sum.diag > 0, "the error diagnosis kept nothing");
+  await dismissModals();      // item 61: the session's badges are celebrated over its summary
   await tap('#task [data-next="pick"]');
   ok(await page.$("#task .runpick") !== null, "„Velja annað efni“ does not go back to the picker");
   await startPractice(page, 5000);
@@ -2380,6 +2400,7 @@ await page.setViewport({ width: 1100, height: 900 });
   ok(setup.focused, "„Dagsins lota“ does not have the focus");
   ok(/^3 upprifjanir, \d spurningar um villurnar þínar og \d nýjar spurningar\.$/.test(setup.line),
     `the line under the button does not say what the session holds: "${setup.line}"`);
+  const graded0 = await page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {}).reduce((a, x) => a + x.n, 0));
   await tap("#todaystart");
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
   const kinds = [];
@@ -2404,6 +2425,10 @@ await page.setViewport({ width: 1100, height: 900 });
   ok(end.summary && end.last && end.last.topic === "dagsins" && end.last.n === 10,
     "today's session did not end in its summary: " + JSON.stringify(end.last));
   ok(end.runTopic !== "dagsins", "today's session took the place of the category the picker remembers");
+  /* Item 44: today's answers count toward the mastery mark like any others. */
+  const graded1 = await page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {}).reduce((a, x) => a + x.n, 0));
+  ok(end.last.j > 0 && graded1 - graded0 === end.last.j,
+    `the mastery record counted ${graded1 - graded0} of today's ${end.last.j} graded answers`);
   ok(end.due === 0, `${end.due} of the reviews it opened with are still at the first step`);
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null;
     A.S.review = { items: [], stats: {} }; delete A.S.diag.thf_thgf; A.next(); });
@@ -2461,7 +2486,24 @@ await page.setViewport({ width: 1100, height: 900 });
       ok(intro.card && intro.rule.length > 20, "the rule is not shown before the first of the three");
       ok(intro.lesson, "the rule has no link to its Lesefni page");
       ok(/^Þrjár í röð: /.test(intro.bar), `the session's line did not give way to the three's own: "${intro.bar}"`);
+      /* Items 36 + 41: the first of the three may be the first question of
+         its type the pupil meets (the three are drawn from all the
+         pattern's types). It then opens with its worked example, like any
+         first meeting: once, on the streak's own card, and the type is met
+         afterwards. The rule card before it does not count as a meeting. */
+      const exType = await page.evaluate(() => { const A = window.FALLASKOLI;
+        const id = A.streak.queue[0].task.typeId; if (A.S.seenTypes) delete A.S.seenTypes[id]; return id; });
       await tap("#streakbegin");
+      const ex = await page.evaluate(() => { const A = window.FALLASKOLI;
+        return { n: document.querySelectorAll("#task .workedex").length, streak: !!A.cur.streak,
+          typeId: A.cur.typeId, met: !!(A.S.seenTypes && A.S.seenTypes[A.cur.typeId]),
+          bar: (document.querySelector("#runbar .streakrun .runcount") || {}).textContent || "" }; });
+      ok(ex.typeId === exType && ex.streak && ex.n === (EXAMPLE_TYPES.has(exType) ? 1 : 0) && ex.met === EXAMPLE_TYPES.has(exType)
+        && ex.bar.trim() === "1/3",
+        "the first of the three, of a type not met before, did not open with its one worked example: " + JSON.stringify({ exType, ...ex }));
+      const answered = () => page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {})
+        .reduce((a, x) => a + x.n, 0));
+      const byType0 = await answered();
       const seen = [];
       for (let k = 0; k < 3; k++) {
         const q = await page.evaluate(() => { const A = window.FALLASKOLI;
@@ -2475,6 +2517,9 @@ await page.setViewport({ width: 1100, height: 900 });
         "the three are not all questions on the pattern: " + JSON.stringify(seen));
       ok(seen.map((q) => q.count.trim()).join(",") === "1/3,2/3,3/3", "the three do not count 1/3, 2/3, 3/3: " + seen.map((q) => q.count).join(","));
       ok(seen.every((q) => q.i === miss.i + 1), "the session's count moved during the three: " + JSON.stringify(seen.map((q) => q.i)));
+      /* Item 44: the three are answers like any other for the mastery mark. */
+      const byType1 = await answered();
+      ok(byType1 - byType0 === 3, `the mastery record counted ${byType1 - byType0} of the three answers`);
       const done = await page.evaluate((p) => ({
         line: (document.querySelector("#verdict .streakend") || {}).textContent || "",
         button: document.getElementById("check").textContent,
@@ -2610,7 +2655,8 @@ await page.setViewport({ width: 1100, height: 900 });
         ok(q.fits, `${at}: the page scrolls sideways`);
         ok(q.visible, `${at}: a box or a button is off the screen`);
         ok(!q.narrow, `${at}: ${q.narrow} answer boxes narrower than 120 px`);
-        ok(q.gloss.length > 20, `${at}: no instruction line`);
+        /* "Í hvaða mynd er sá?" is 19 characters: the length is the word's, not a sign of a missing line. */
+        ok(q.gloss.length > 12, `${at}: no instruction line: "${q.gloss}"`);
         if (c.type === "so_mynd") ok(q.marked && q.targets.join(" ") === q.marked.join(" "),
           `${at}: the verb phrase is not marked (${q.targets.join(" ")})`);
         await answerOneNoNext(correct);
@@ -2906,6 +2952,114 @@ await startPractice(page, 15000);
   ok(await page.evaluate(() => document.body.classList.contains("comfort")), "the setting survives a reload");
   await page.evaluate(() => { document.getElementById("set-comfort").click(); });
   ok(await page.evaluate(() => !document.body.classList.contains("comfort")), "and switches off again");
+}
+
+/* ---------- items 41 and 44: "Æfa þetta", the worked example, the mastery mark
+ * A Lesefni page's button starts five questions of exactly that page's types;
+ * the first card of a type not met before opens with a worked example, and
+ * that type never shows it again; "Önnur lota" repeats the page's session;
+ * and every category in Framvinda carries a mastery mark beside its stig. */
+await page.setViewport({ width: 1100, height: 900 });
+{
+  await tap('nav.tabs button[data-view="practice"]');
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null;
+    A.S.seenTypes = {};            // a pupil who has met no type yet
+    A.openView("lessons", "foll");
+  });
+  const want = lessonPractice("foll").types;
+  const btns = await page.evaluate(() => [...document.querySelectorAll("#lsnbody [data-practice]")]
+    .map((b) => ({ id: b.dataset.practice, text: b.innerText })));
+  ok(btns.length === 2 && btns.every((b) => b.id === "foll" && /Æfa þetta/.test(b.text)),
+    `the Föll page has no "Æfa þetta" button: ${JSON.stringify(btns)}`);
+  await tap("#lsnbody section.lsnpractice [data-practice]");
+  await page.waitForFunction("window.FALLASKOLI.cur && window.FALLASKOLI.run", { timeout: 5000 });
+  const run = await page.evaluate(() => {
+    const r = window.FALLASKOLI.run;
+    return { n: r.n, types: r.types, label: r.label,
+      practice: !document.getElementById("view-practice").hidden,
+      bar: document.querySelector("#runbar .runtopic")?.textContent || "" };
+  });
+  ok(run.n === 5 && run.practice, `"Æfa þetta" did not start a five-question session: ${JSON.stringify(run)}`);
+  ok(JSON.stringify([...run.types].sort()) === JSON.stringify([...want].sort()), `the session's types are not the page's: ${run.types}`);
+  ok(/Lesefni: Föllin fjögur/.test(run.bar), `the session bar does not name the page: "${run.bar}"`);
+  const cards = [];
+  for (let i = 0; i < 5; i++) {
+    await dismissModals();
+    cards.push(await page.evaluate(() => {
+      const ex = document.querySelector("#task .card .workedex");
+      return { type: window.FALLASKOLI.cur.typeId, example: !!ex,
+        first: !!ex && ex.previousElementSibling && ex.previousElementSibling.classList.contains("eyebrow"),
+        text: ex ? ex.innerText : "" };
+    }));
+    await answerOne(true);
+  }
+  ok(cards.every((c) => want.includes(c.type)), `the page's session asked other types: ${cards.map((c) => c.type)}`);
+  ok(cards[0].example && cards[0].first && /Svar:/.test(cards[0].text),
+    `the first card of a type not met before has no worked example under its heading: ${JSON.stringify(cards[0])}`);
+  const met = new Set();
+  for (const c of cards) {
+    ok(c.example === !met.has(c.type), `${c.type}: worked example ${c.example ? "shown again" : "missing on the first meeting"}`);
+    met.add(c.type);
+  }
+  const seen = await page.evaluate(() => window.FALLASKOLI.S.seenTypes);
+  ok([...met].every((t) => /^\d{4}-\d{2}-\d{2}$/.test(seen[t] || "")), `the types met were not written down: ${JSON.stringify(seen)}`);
+  const sum = await page.evaluate(() => ({
+    head: document.querySelector("#task .summary .eyebrow")?.innerText || "",
+    again: document.querySelector('#task [data-next="again"]')?.innerText || "",
+  }));
+  ok(/Föllin fjögur/.test(sum.head) && /Föllin fjögur · 5/.test(sum.again), `the summary does not name the page: ${JSON.stringify(sum)}`);
+  /* "Önnur lota": the same page, the same five, and no example for a type met. */
+  await dismissModals();      // item 61
+  await tap('#task [data-next="again"]');
+  await page.waitForFunction("window.FALLASKOLI.cur && window.FALLASKOLI.run", { timeout: 5000 });
+  const again = await page.evaluate(() => ({ n: window.FALLASKOLI.run.n, types: window.FALLASKOLI.run.types,
+    type: window.FALLASKOLI.cur.typeId, example: !!document.querySelector("#task .workedex") }));
+  ok(again.n === 5 && JSON.stringify([...again.types].sort()) === JSON.stringify([...want].sort()),
+    `"Önnur lota" did not repeat the page's session: ${JSON.stringify(again)}`);
+  ok(!(met.has(again.type) && again.example), `${again.type}: the worked example came back a second session`);
+  /* The picker remembers what was picked there, not the page's five. */
+  ok(await page.evaluate(() => window.FALLASKOLI.S.settings.runSize !== 5), "the page's session size leaked into the picker");
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+
+  /* 44: the mastery mark beside every category's stig. */
+  await page.evaluate(() => window.FALLASKOLI.openView("progress"));
+  const marks = await page.evaluate(() => [...document.querySelectorAll("#skillgrid .skillcard")].map((c) => ({
+    skill: c.dataset.skill, level: Number(c.dataset.mastery),
+    mark: c.querySelector(".sklvl .mastery b")?.innerText || "", line: c.querySelector(".mline")?.innerText || "",
+    pips: c.querySelectorAll(".mastery .mpips i").length,
+  })));
+  ok(marks.length === 12 && marks.every((m) => m.mark && m.line && m.pips === 4 && m.level >= 0 && m.level <= 4),
+    `every category should carry a mastery mark beside its stig: ${JSON.stringify(marks.slice(0, 3))}`);
+  const no = marks.find((m) => m.skill === "nafnord");
+  ok(no && /rétt á þyngd|svör á þyngd|vantar/.test(no.line), `Nafnorð's mark does not say what it rests on: ${JSON.stringify(no)}`);
+  await tap('nav.tabs button[data-view="practice"]');
+}
+
+/* ---------- item 17: with no server there is no calibration at all ----------
+ * Opened from a file the program must run on exactly what it was built with:
+ * no table, the build's own scores in the lexicon, no question marked for
+ * counting and nothing queued to be sent anywhere. */
+{
+  const page = await browser.newPage();
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  const st = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    const marked = [];
+    for (let k = 0; k < 12 && A.run; k++) { marked.push(A.cur && A.cur.calBand); A.finish({ correct: true }); A.next(); }
+    A.flushAnswers();
+    return { server: !!A.server, cal: A.cal, info: A.calInfo, viewCal: A.viewCal(), marked,
+      queued: A.calQueue.length + A.calSamples.length,
+      adjusted: (A.lex.nouns || []).filter((w) => w.irrBuilt !== undefined).length };
+  });
+  ok(st.server === false && st.cal === null && st.info === null && st.viewCal === null,
+    "a program with no server has a calibration table: " + JSON.stringify({ cal: st.cal, info: st.info }));
+  ok(st.marked.every((b) => b == null), "a question was marked for counting with no server: " + st.marked);
+  ok(st.queued === 0, "answers were queued for a server that does not exist");
+  ok(st.adjusted === 0, `${st.adjusted} words carry a calibrated score with no server`);
+  await page.close();
 }
 
 await browser.close();

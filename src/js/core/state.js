@@ -7,10 +7,12 @@ import { SKILL_IDS, defaultEnabled } from "./skills.js";
 import { createPolicy, blankPolicy, sanitisePolicy } from "./policy.js";
 import { overallLevel, skillLevel, easeOf } from "./progress.js";
 import { visitLevels, cleanLevels, levelsFromXp } from "./difficulty.js";
-import { timeContext } from "./calendar.js";
-import { checkDayEnd } from "./badges.js";
+import { timeContext, mondayOf, weekKeys, isBreakWeek } from "./calendar.js";
+import { checkDayEnd, legacyStreakCredit } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
 import { blankReview, sanitiseReview } from "./review.js";
+import { cleanByType } from "./mastery.js";
+import { cleanSeenTypes } from "./examples.js";
 
 export const STATE_VERSION = 11;
 
@@ -40,6 +42,9 @@ export function blankState() {
        about correctness. See core/spacing.js. */
     vocab: {},
     goal: 10, run: 0, bestRun: 0,
+    /* The weekly goal (item 57): days of seven on which the daily goal is met.
+       The main streak counts weeks in which it was met. See `weekStreak`. */
+    weekGoal: WEEK_GOAL_DEFAULT,
     totalAnswers: 0, totalCorrect: 0,
     /* Consecutive sessions touching three or more skills (multi-skill badges). */
     multiSessionRun: 0, lastSessionSkills: null,
@@ -99,6 +104,15 @@ export function blankState() {
        often: { frame key: count } (tasks/frames.js `frameKey`). The reverse
        analysis prefers the ones seen least (v6.13, critique item 24). */
     frames: {},
+    /* Per question type (v6.13, item 44): answers ever, right ones, and the
+       last twenty with the step of difficulty each was asked at —
+       { typeId: {n, c, h, at} }. What the mastery mark reads; see
+       core/mastery.js. */
+    byType: {},
+    /* The question types this pupil has met, { typeId: day } (item 41): a
+       type not in it shows one worked example on its first card
+       (core/examples.js). */
+    seenTypes: {},
   };
 }
 
@@ -154,11 +168,20 @@ export function migrate(raw) {
       /* `lg` — the program was opened on this day, whether or not anything was
          answered. A day with answers also counts as opened (`loginStreak`). */
       lg: d.lg ? 1 : 0,
+      /* `wg` — the weekly goal in force on that day, as `g` is for the daily
+         one: raising the goal later must not un-meet a week already won. */
+      wg: d.wg ?? null,
     }])),
     cells: raw.cells || {},
     words: cleanWordKeys(raw.words),
-    badges: raw.badges || {},
+    /* Item 57: whoever won a day-streak badge keeps it, and is credited the
+       week badges it stands for (`legacyStreakCredit`, core/badges.js). */
+    badges: (() => {
+      const own = raw.badges && typeof raw.badges === "object" ? raw.badges : {};
+      return { ...legacyStreakCredit(own), ...own };
+    })(),
     goal: raw.goal || 10,
+    weekGoal: cleanWeekGoal(raw.weekGoal),
     bestRun: raw.bestRun || 0,
     totalAnswers: raw.totalAnswers || 0,
     totalCorrect: raw.totalCorrect || 0,
@@ -190,6 +213,9 @@ export function migrate(raw) {
     difficulty: raw.difficulty && typeof raw.difficulty === "object"
       ? cleanLevels(raw.difficulty) : levelsFromXp(raw.skills),
     frames: cleanFrames(raw.frames),
+    /* Items 44 and 41 (v6.13): rebuilt field by field, known types only. */
+    byType: cleanByType(raw.byType),
+    seenTypes: cleanSeenTypes(raw.seenTypes),
   });
   S.run = 0;
 
@@ -281,10 +307,10 @@ export function idleDaysOf(S, today = todayKey()) {
    and `nw` (new words met that day). Older records have neither and get 0 — the
    charts then simply show nothing for those days rather than lying. */
 export const dayRec = (S, key = todayKey()) => {
-  const d = (S.days[key] ||= { a: 0, c: 0, xp: 0, ms: 0, nw: 0, sk: {}, g: null, lg: 0 });
+  const d = (S.days[key] ||= { a: 0, c: 0, xp: 0, ms: 0, nw: 0, sk: {}, g: null, lg: 0, wg: null });
   /* The goal in force on this day, stamped on first use and kept up to date
      while the day is still running. See the note in `migrate`. */
-  if (key === todayKey()) d.g = S.goal || 10;
+  if (key === todayKey()) { d.g = S.goal || 10; d.wg = weekGoalOf(S); }
   return d;
 };
 
@@ -345,6 +371,83 @@ function streakBack(S, from, qualifies) {
   if (!qualifies(S.days[dkey(d)])) d.setDate(d.getDate() - 1);
   while (qualifies(S.days[dkey(d)])) { n++; d.setDate(d.getDate() - 1); }
   return n;
+}
+
+/* ---- the weekly goal and the week streak (critique item 57) ------------
+ *
+ * Calendar days in a row punish a school child for weekends, holidays and a
+ * cold. The main streak is now counted in WEEKS: a week (Monday to Sunday) is
+ * met when at least `weekGoal` of its days met the daily goal (default four
+ * of seven). Days off inside a week break nothing.
+ *
+ * Three counters, as the day streaks were three: weeks met, weeks in which
+ * the program was opened often enough, weeks in which questions were answered
+ * often enough — the two easier ones judged by the same weekly goal.
+ *
+ * Counted like the day streaks: back from this week, and a week that is not
+ * yet met is skipped rather than counted as a miss — a streak is not broken
+ * on Tuesday. Two more kindnesses: a week lying wholly in a school break or
+ * on holidays (calendar.js `isBreakWeek`) is passed over, neither counted nor
+ * breaking; and a week is judged against the weekly goal in force during it
+ * (the lowest stamped on its days), so raising the goal cannot undo a week.
+ */
+export const WEEK_GOAL_DEFAULT = 4, WEEK_GOAL_MIN = 2, WEEK_GOAL_MAX = 7;
+
+/** A saved or typed weekly goal as a whole number from 2 to 7. */
+export function cleanWeekGoal(v) {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n < 1) return WEEK_GOAL_DEFAULT;
+  return Math.max(WEEK_GOAL_MIN, Math.min(WEEK_GOAL_MAX, n));
+}
+export const weekGoalOf = (S) => cleanWeekGoal(S && S.weekGoal);
+
+/* The three things a day can be, for the three week counters. */
+const dayAtGoal = (S) => (d) => !!d && (d.a || 0) >= (d.g ?? (S.goal || 10));
+const dayAnswered = () => (d) => !!d && (d.a || 0) >= 1;
+const dayOpened = () => (d) => !!d && !!(d.lg || d.a > 0);
+
+/** The weekly goal that applies to the week starting `monday`. */
+function weekGoalFor(S, monday) {
+  let g = null;
+  for (const k of weekKeys(monday)) {
+    const w = S.days[k] && S.days[k].wg;
+    if (w) g = g == null ? w : Math.min(g, w);
+  }
+  return g == null ? weekGoalOf(S) : cleanWeekGoal(g);
+}
+
+/** How many days of the week starting `monday` satisfy `qualifies`. */
+const daysIn = (S, monday, qualifies) =>
+  weekKeys(monday).reduce((n, k) => n + (qualifies(S.days[k]) ? 1 : 0), 0);
+
+function weeksBack(S, from, qualifies) {
+  const keys = Object.keys(S.days || {}).sort();
+  if (!keys.length) return 0;
+  const first = mondayOf(new Date(keys[0] + "T00:00:00"));
+  const met = (m) => daysIn(S, m, qualifies) >= weekGoalFor(S, m);
+  let m = mondayOf(from), n = 0;
+  if (!met(m)) m.setDate(m.getDate() - 7);          // this week is not over yet
+  while (m >= first) {
+    if (met(m)) n++;
+    else if (!isBreakWeek(m)) break;
+    m.setDate(m.getDate() - 7);
+  }
+  return n;
+}
+
+/** Consecutive weeks in which the weekly goal was met (days at the daily goal). */
+export const weekStreak = (S, from = new Date()) => weeksBack(S, from, dayAtGoal(S));
+/** Consecutive weeks with enough days on which something was answered. */
+export const weekAnswerStreak = (S, from = new Date()) => weeksBack(S, from, dayAnswered());
+/** Consecutive weeks with enough days on which the program was opened. */
+export const weekLoginStreak = (S, from = new Date()) => weeksBack(S, from, dayOpened());
+
+/** This week so far, for the interface: { done, goal, met }. */
+export function weekProgress(S, from = new Date()) {
+  const m = mondayOf(from);
+  const done = daysIn(S, m, dayAtGoal(S));
+  const goal = weekGoalFor(S, m);
+  return { done, goal, met: done >= goal };
 }
 
 /** Consecutive days on which the daily goal was reached. */
@@ -625,6 +728,9 @@ export function badgeContext(S, sess, extra = {}, now = new Date()) {
     run: S.run,
     skillRun: sess.skillRun,
     dayStreak: dayStreak(S, now),
+    weekStreak: weekStreak(S, now),
+    weekAnswerStreak: weekAnswerStreak(S, now),
+    weekLoginStreak: weekLoginStreak(S, now),
     answerStreak: answerStreak(S, now),
     loginStreak: loginStreak(S, now),
     dayAnswers: day.a,

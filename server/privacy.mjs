@@ -20,6 +20,7 @@
  */
 
 import { ASSIGN } from "../src/js/core/assignment.js";
+import { SAMPLE } from "../src/js/core/classifiercheck.js";
 
 export const RETENTION = {
   pendingDays: 30,      // an unanswered request for access
@@ -58,7 +59,16 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
 /* 2026-11-16 (v6.13, items 37 and 65): the group's teacher or guardian sees
    the error patterns and assignment results of the learners in the group. A
    new recipient, so the version moves (docs/PRIVACY.md §3). */
-export const PRIVACY_VERSION = "2026-11-16";
+export const PRIVACY_VERSION = "2026-11-17";
+
+/* 2026-11-17 (v6.13, items 17 and 38): right and wrong answers are counted
+   anonymously to set the difficulty of the questions, and a group's teacher
+   may switch on an anonymous sample of wrong word forms. New processing, so
+   the version moves again. The same version says that a duel's answers are
+   sent to the server to be graded and are not stored (items 62, 63, 66). This is the first version that describes the
+   counting: with FALLASKOLI_CALIBRATION=strict only consent given to this
+   version or a later one counts (server/calibrate.mjs). */
+export const CALIBRATION_NOTICE = "2026-11-17";
 
 export function privacyPage(cfg) {
   const missing = (what) => `<mark>[vantar: ${what}]</mark>`;
@@ -99,7 +109,12 @@ export function privacyPage(cfg) {
   <p>Fallaskóli geymir eins lítið um þig og hægt er: notandanafn, gælunafn,
      lykilorð (sem enginn getur lesið) og hvernig þér gengur að æfa þig.</p>
   <p>Það sem þú skrifar í svörin er <b>ekki</b> geymt — bara hvort svarið var rétt —
-     nema þú sendir sjálf(ur) villutilkynningu með 🚩.</p>
+     nema þú sendir sjálf(ur) villutilkynningu með 🚩, eða kennari hópsins þíns hafi kveikt á
+     nafnlausu sýni af röngum svörum (sjá neðar).</p>
+  <p>Í einvígi eru svörin þín send á þjóninn svo hann geti metið þau. Hann geymir aðeins
+     hve mörg voru rétt — ekki svörin sjálf.</p>
+  <p>Fallaskóli telur nafnlaust hve oft spurningum er svarað rétt og rangt, til að stilla
+     hve erfiðar þær eru. Þú getur slökkt á því fyrir þig.</p>
   <p>Enginn annar nemandi sér neitt um þig nema þú kveikir sjálf(ur) á stigatöflunni.</p>
   <p>Kennari eða forsjáraðili hópsins þíns sér hvernig þér gengur í villumynstrum og
      verkefnum, svo hann geti hjálpað þér — en aldrei það sem þú skrifar.</p>
@@ -131,6 +146,30 @@ export function privacyPage(cfg) {
         þú laukst verkefninu</td>
     <td>Svo sá sem setti verkefnið sjái hver hefur lokið því og hvernig gekk. Verkefni
         eyðist ${ASSIGN_KEEP_DAYS} dögum eftir skiladag, með niðurstöðunum.</td></tr>
+<tr><td>Nafnlaus talning: hve oft hverri gerð spurninga, á hverri þyngd og í hverri
+        beygingarmynd, er svarað rétt og rangt — lagt saman fyrir alla notendur. Þar stendur
+        hvorki hver svaraði, í hvaða hópi né hvenær, og ekkert sem þú skrifaðir</td>
+    <td>Til að forritið stilli sjálfkrafa hve erfiðar spurningarnar eru. Þú getur slökkt á
+        þessu fyrir þig undir <i>Aðgangurinn minn</i>. Tölurnar eru ekki merktar þér og verða
+        því eftir þótt aðganginum þínum sé eytt.</td></tr>
+<tr><td>Í einn dag: hve mörg af svörunum þínum hafa verið talin með þann daginn</td>
+    <td>Svo enginn geti skekkt talninguna með því að senda inn mjög mörg svör. Þessu er
+        eytt daginn eftir.</td></tr>
+<tr><td><b>Aðeins ef kennari hópsins þíns kveikir á því:</b> nafnlaust sýni af röngum
+        svörum — orðið sem spurt var um, myndin sem átti að skrifa, myndin sem þú skrifaðir
+        og hvernig villan var flokkuð. Aðeins stök orð sem líkjast beygingarmynd orðsins eru
+        geymd, mest ${SAMPLE.keep} svör alls, og hvorki nafn, hópur né dagsetning fylgir
+        (aðeins mánuðurinn)</td>
+    <td>Til að prófa sjálfkrafa hvort villugreiningin flokkar villur rétt. Sjálfgefið er
+        slökkt á þessu. Undir <i>Aðgangurinn minn</i> sérðu hvort kveikt er á því í hópnum
+        þínum, og ef þú slekkur á talningunni þar er ekkert geymt frá þér. Svar í sýninu er
+        ekki merkt þér. Þess vegna er ekki hægt að finna það aftur til að eyða því
+        sérstaklega, en það eyðist sjálfkrafa eftir ${SAMPLE.months} mánuði.</td></tr>
+<tr><td>Einvígi: við hvern þú kepptir, um hvaða efni og hve mörg svör voru rétt hjá hvoru
+        ykkar. Svörin þín í einvígi eru send á þjóninn til að hann meti þau, en þau eru
+        <b>ekki</b> geymd</td>
+    <td>Svo úrslitin séu rétt hjá ykkur báðum og enginn geti sent inn stig sem hann vann
+        ekki fyrir.</td></tr>
 <tr><td>Dagurinn sem þú skráðir þig og dagurinn sem þú varst síðast inni</td>
     <td>Til að hægt sé að eyða aðgangi sem enginn notar lengur.</td></tr>
 <tr><td>Villutilkynningar sem þú sendir með 🚩: það sem þú skrifar, spurningin
@@ -173,7 +212,9 @@ export function privacyPage(cfg) {
       eða hve lengi þú æfir þig. Undir <i>Aðgangurinn minn</i> stendur hver það er.
       Forsjáraðilar í öðrum hópum sjá ekkert um þig.</li>
   <li><b>Umsjónarmaður</b> sér notendalistann og getur skoðað framvinduna þína ef
-      þess þarf, til dæmis til að laga villu. Hann sér aldrei lykilorðið.</li>
+      þess þarf, til dæmis til að laga villu. Hann sér aldrei lykilorðið. Hann sér líka
+      nafnlausu talninguna og sýnið af röngum svörum, ef kveikt er á því — en ekki hver
+      á hvaða svar.</li>
   <li><b>Hýsingaraðili</b> geymir gögnin fyrir okkur og má ekki nota þau í neitt
       annað („vinnsluaðili“). ${host}</li>
   <li><b>Enginn annar.</b> Gögnin eru ekki seld, ekki afhent og ekki notuð í
@@ -189,6 +230,8 @@ export function privacyPage(cfg) {
   <li>Beiðni um aðgang sem er ekki samþykkt innan <b>${cfg.pendingDays} daga</b> er eytt.</li>
   <li>Þegar aðgangi er eytt hverfur hann strax af þjóninum. Öryggisafrit sem
       innihalda hann eyðast innan <b>${cfg.backupDays} daga</b>.</li>
+  <li>Í nafnlausu talningunni vega eldri svör minna með hverri viku og hverfa að lokum.
+      Svar í sýninu af röngum svörum eyðist eftir <b>${SAMPLE.months} mánuði</b>.</li>
 </ul>
 
 <h2>Réttindin þín</h2>
@@ -197,6 +240,7 @@ export function privacyPage(cfg) {
   <li><b>Sjá og sækja</b> allt sem er geymt um þig, í einni skrá.</li>
   <li><b>Leiðrétta</b> gælunafnið og skipta um lykilorð.</li>
   <li><b>Ráða</b> hvort þú sést á stigatöflunni.</li>
+  <li><b>Ráða</b> hvort svörin þín eru talin með í nafnlausu talningunni.</li>
   <li><b>Eyða</b> aðganginum og öllu sem honum fylgir.</li>
 </ul>
 <p>Foreldri eða forsjáraðili barns yngra en ${CONSENT_AGE} ára getur beðið um

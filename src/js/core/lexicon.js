@@ -38,12 +38,19 @@ const hardScore = (v) => (typeof v === "number" && Number.isFinite(v)
  *                      a word by `wordKey` (lemma|class), a cell by its BÍN
  *                      mark. Fractions are fine; values are held to 1–5 and
  *                      anything that is not a number is ignored.
+ *                      `irr: { 3: 3.25 }` says what a build score is WORTH:
+ *                      every word the build scored 3 counts as 3.25 (the
+ *                      calibration table, core/calibration.js `lexHardness`).
+ *                      A word named in `words` keeps the score given there.
+ *                      Where a score is replaced the build's own stays
+ *                      readable as `w.irrBuilt`.
  */
 export function buildLexicon(DATA, { hide = null, hardness = null } = {}) {
   const ORD = DATA.lex.orders;
   const skip = hide && hide.size ? hide : null;
   const adjWord = (hardness && hardness.words) || {};
   const adjCell = (hardness && hardness.cells) || {};
+  const adjIrr = (hardness && hardness.irr) || {};
 
   /* mark → hardness. The same mark means the same cell wherever it stands
      (a noun's NFET and a personal pronoun's), and the build gives it the
@@ -70,8 +77,8 @@ export function buildLexicon(DATA, { hide = null, hardness = null } = {}) {
       forms.OBEYGJANLEGT = [w.f];
     }
     const out = { ...w, lemma: w.o, forms, fl: CLASSNAME[w.c] || w.c };
-    const adj = hardScore(adjWord[`${w.o}|${w.c}`]);
-    if (adj != null) out.irr = adj;
+    const adj = hardScore(adjWord[`${w.o}|${w.c}`]) ?? hardScore(adjIrr[w.irr]);
+    if (adj != null && adj !== w.irr) { out.irrBuilt = w.irr; out.irr = adj; }
     return out;
   });
 

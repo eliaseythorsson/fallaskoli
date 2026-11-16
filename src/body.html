@@ -11,7 +11,7 @@
     <div class="stat xp"><b id="s-xp">0</b><span>XP</span></div>
     <div class="stat"><b id="s-acc">—</b><span>Rétt í dag</span></div>
     <div class="stat"><b id="s-run">0</b><span>Rétt í röð</span></div>
-    <div class="stat flame"><b id="s-days">0</b><span>Dagar í röð</span></div>
+    <div class="stat flame" id="s-weeks"><b id="s-days">0</b><span>Vikur í röð</span></div>
   </div>
 </header>
 <div class="levelbar"><i id="lvlbar" style="width:0%"></i></div>
@@ -172,6 +172,16 @@
     <div class="answer">
       <input type="text" id="goalin" inputmode="numeric" style="flex:0 0 90px;font-size:16px">
       <button class="ghost" id="goalsave">Vista dagsmarkmið</button>
+    </div>
+  </div>
+  <!-- Item 57: the main streak counts weeks in which this many days met the daily goal. -->
+  <div class="setrow">
+    <label for="weekin">Vikumarkmið, dagar í viku sem dagsmarkmiði er náð</label>
+    <div class="answer">
+      <select id="weekin" style="flex:0 0 90px;font-size:16px">
+        <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+        <option value="5">5</option><option value="6">6</option><option value="7">7</option>
+      </select>
     </div>
   </div>
   <div class="filters">

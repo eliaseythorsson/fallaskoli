@@ -15,6 +15,40 @@ const left = (v, now = Date.now()) => {
   return `${n} ${n === 1 ? "klukkustund" : "klukkustundir"} eftir`;
 };
 const score = (r) => (r ? `${r.c}/${r.n}` : "—");
+
+/* ---- the handicap (critique item 66, core/duel.js `handicap`) -------------
+ *
+ * A duel is played at the mean of the two players' levels, so the one on the
+ * lower level is given a few right answers in advance. That has to be said —
+ * before, so nobody is surprised, and after, so the sum can be checked — and
+ * said kindly to both: it is not a penalty for the one and not charity for
+ * the other, it is what makes the duel even.
+ *
+ * The word is *forgjöf*, as in golf and chess. Names stay in the nominative
+ * (see RESULT below), so every sentence is built around "þú" or has the name
+ * as its subject. */
+const answers = (h) => (h === 1 ? "1 rétt svar" : `${h} rétt svör`);
+const given = (v) => (v && v.handicap) || { mine: 0, theirs: 0 };
+
+/** Before and during the duel: who starts with what, in one sentence. */
+function handicapAhead(v) {
+  const h = given(v);
+  if (h.mine) return `Þú færð ${answers(h.mine)} í forgjöf af því að þú ert á lægra stigi í þessu efni.`;
+  if (h.theirs) return `${esc(v.opponent.name)} er á lægra stigi en þú í þessu efni og fær því ${answers(h.theirs)} í forgjöf.`;
+  return "";
+}
+
+/** After the duel: the sum, and why. Empty when nobody was given anything. */
+function handicapAfter(v) {
+  const h = given(v);
+  if (!v.mine || !v.theirs || (!h.mine && !h.theirs)) return "";
+  if (h.mine) {
+    return `Þú fékkst ${answers(h.mine)} í forgjöf (${v.mine.c} + ${h.mine} = ${v.mine.c + h.mine}) af því að þú ert
+      á lægra stigi í þessu efni. Þannig verður einvígið jafnara.`;
+  }
+  return `${esc(v.opponent.name)} er á lægra stigi en þú í þessu efni og fékk því ${answers(h.theirs)}
+    í forgjöf (${v.theirs.c} + ${h.theirs} = ${v.theirs.c + h.theirs}). Þannig verður einvígið jafnara.`;
+}
 /* Names are never declined by the program (v6.10): *Þú vannst Dísa!* needs
    *Dísu*. So a name stands alone, in the nominative, after a "·" or a colon. */
 const RESULT = {
@@ -41,28 +75,37 @@ export function renderDuelBar(app) {
       <div class="drilltext"><b>Einvígi · <em>${esc(v.opponent.name)}</em> · ${esc(topicName(v.topic))}</b>
         <span class="drillnums">Spurning ${Math.min(run.i + 1, run.tasks.length)} af ${run.tasks.length} · ${run.c} rétt</span>
         ${dots(run)}
-        <span class="drillneed">Sömu spurningar og ${esc(v.opponent.name)} fær. Fleiri rétt svör vinna.</span></div>
+        <span class="drillneed">Þið fáið jafnþungar spurningar en ekki þær sömu. Fleiri rétt svör vinna.
+          ${handicapAhead(v)}</span></div>
       <button type="button" class="ghost" id="duelquit">Hætta</button></div>`;
     $("duelquit").onclick = () => app.quitDuel();
     return;
   }
 
   const parts = [];
+  /* Between pressing play and the first question: the seeds are fetched and
+     the questions built (app.js `startDuel`). */
+  if (app.duelStarting) {
+    parts.push(`<div class="drillstrip duel" role="status"><span class="drillico">⚔️</span>
+      <div class="drilltext"><b>Sæki spurningarnar…</b></div></div>`);
+  }
   for (const news of app.duelNews || []) {
     const v = news.view;
     const [cls, ico, words] = RESULT[news.outcome];
     const how = news.outcome === "f" ? ""
       : !v.theirs ? ` — ${esc(v.opponent.name)} svaraði ekki innan ${DUEL.hours} klukkustunda`
         : ` · þú ${score(v.mine)}, ${esc(v.opponent.name)} ${score(v.theirs)}`;
+    const fair = news.outcome === "f" ? "" : handicapAfter(v);
     parts.push(`<div class="drillstrip duel ${cls}" role="status"><span class="drillico">${ico}</span>
       <div class="drilltext"><b>${words} · <em>${esc(v.opponent.name)}</em></b>
-        <span class="drillnums">${esc(topicName(v.topic))}, ${v.n} spurningar${how}${news.xp ? ` · +${news.xp} XP` : ""}</span></div>
+        <span class="drillnums">${esc(topicName(v.topic))}, ${v.n} spurningar${how}${news.xp ? ` · +${news.xp} XP` : ""}</span>
+        ${fair ? `<span class="drillneed duelfair">${fair}</span>` : ""}</div>
       <button type="button" class="ghost" data-duelclose="${esc(v.id)}">Loka</button></div>`);
   }
   if (app.duelSent) {
     const s = app.duelSent;
     parts.push(`<div class="drillstrip duel" role="status"><span class="drillico">📨</span>
-      <div class="drilltext"><b>Þú fékkst ${s.c} af ${s.n} · mótherji: <em>${esc(s.view.opponent.name)}</em></b>
+      <div class="drilltext"><b>${s.unplayed ? "Einvígið hófst ekki" : `Þú fékkst ${s.c} af ${s.n}`} · mótherji: <em>${esc(s.view.opponent.name)}</em></b>
         <span class="drillneed">${s.error ? esc(s.error)
           : `Niðurstaðan kemur þegar ${esc(s.view.opponent.name)} hefur svarað — eða tíminn rennur út.`}</span></div>
       <button type="button" class="ghost" id="duelsentclose">Loka</button></div>`);
@@ -76,7 +119,7 @@ export function renderDuelBar(app) {
         : `<b><em>${esc(v.opponent.name)}</em> skorar á þig!</b>`}
         <span class="drillnums">${v.n} spurningar · ${esc(topicName(v.topic))} · ${left(v)}</span>
         <span class="drillneed">${v.theyPlayed ? `${esc(v.opponent.name)} er búin(n) að svara. ` : ""}Ef þú svarar ekki
-          innan ${DUEL.hours} klukkustunda frá áskoruninni tapar þú einvíginu.</span></div>
+          innan ${DUEL.hours} klukkustunda frá áskoruninni tapar þú einvíginu. ${handicapAhead(v)}</span></div>
       <button type="button" class="go" data-duelgo="${esc(v.id)}">${v.challenger ? "Spila núna" : "Taka áskoruninni"}</button>
       <button type="button" class="ghost" data-duelskip="${esc(v.id)}">Seinna</button></div>`);
   });
@@ -129,7 +172,12 @@ export function renderDuelRoom(app) {
       ? (!v.mine ? `<button type="button" class="go small" data-duelgo="${esc(v.id)}">Spila</button> · ${left(v)}`
         : `Bíður svars · ${left(v)}`)
       : ({ w: "🏆 Sigur", l: "Tap", t: "🤝 Jafntefli" }[v.outcome] || "")
-        + (!v.mine ? " (svaraðir ekki)" : !v.theirs ? " (hinn svaraði ekki)" : "");
+        + (!v.mine ? " (svaraðir ekki)" : !v.theirs ? " (hinn svaraði ekki)" : "")
+        /* The score columns show right answers; where a handicap was added
+           to one of them, say so, or "6/10 against 7/10: Sigur" reads as a
+           mistake. */
+        + (v.mine && v.theirs && given(v).mine ? ` · forgjöf þín: +${given(v).mine}`
+          : v.mine && v.theirs && given(v).theirs ? ` · forgjöf hins: +${given(v).theirs}` : "");
     return `<tr><td>${v.challenger ? "→" : "←"} ${esc(v.opponent.name)}</td>
       <td>${esc(topicName(v.topic))}</td><td class="right mono">${v.n}</td>
       <td class="right mono">${score(v.mine)}</td><td class="right mono">${v.mine || v.status === "done" ? score(v.theirs) : "?"}</td>

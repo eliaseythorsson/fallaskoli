@@ -3,25 +3,27 @@
 import { DATA } from "../../data/data_bundle.js";
 import { buildLexicon } from "./core/lexicon.js";
 import { migrate, blankState, newSession, todayKey, badgeContext, settleDays,
-  noteQuestion, noteLogin, effectivePolicy } from "./core/state.js";
+  noteQuestion, noteLogin, effectivePolicy, chosenPolicy } from "./core/state.js";
 import { applyDecay } from "./core/progress.js";
 import { checkBadges, checkLogin, celebrate } from "./core/badges.js";
 import { collectionSummary } from "./core/collection.js";
-import { nextTask, drillTask, makeView, withView, applyEffects, planOpening, nextOpening,
+import { nextTask, buildTask, drillTask, makeView, withView, applyEffects, planOpening, nextOpening,
   scheduleReask, nextReask, streakTasks, typeById, enabled } from "./tasks/index.js";
 import { reviewLine, queuePattern } from "./core/review.js";
 import { planToday } from "./core/today.js";
 import { STREAK_N, streakPattern, startStreak, stepStreak, streakEntry, streakLine } from "./core/streak.js";
 import { statusOf, weakWords, drillable, startDrill, drillStep, settleDrill } from "./core/wordhealth.js";
-import { grantXp } from "./core/state.js";
+import { grantXp, cleanWeekGoal } from "./core/state.js";
 import { renderDrillBar } from "./ui/drill.js";
 import { createStore } from "./storage/index.js";
 import { createClock } from "./core/timing.js";
 import { createDefinitions, bundledSource, remoteSource } from "./core/definitions.js";
 import { serverMode, createServer, serverDriver, liftLocalState } from "./core/server.js";
+import { CAL, eventOf, cleanTable, tableIsEmpty, lexHardness } from "./core/calibration.js";
+import { SAMPLE, samplesOf } from "./core/classifiercheck.js";
 import { $, esc, wireGlossary, queueBadges, hideTip, freshEnter, wirePrivacyLinks, openSheet,
   setKeypadPref, keypadOn, keypadEnv, wireKeys, applyComfort } from "./ui/dom.js";
-import { measurable, badgeWindows } from "./core/rarity.js";
+import { measurable, badgeWindows, windowsFor } from "./core/rarity.js";
 import { socialContext } from "./core/social.js";
 import { renderTask, revealTopic } from "./ui/render.js";
 import "./ui/render-more.js";
@@ -34,7 +36,7 @@ import { mergeStates } from "./core/merge.js";
 import { renderLessons, suggestLesson, wireLessons } from "./ui/lessons.js";
 import { renderDuelBar, renderDuelRoom } from "./ui/duel.js";
 import { duelTasks, signature, settleDuels, duelTotals, dataPrint } from "./core/duel.js";
-import { createPolicy, narrowPolicy } from "./core/policy.js";
+import { createPolicy, narrowPolicy, openFor } from "./core/policy.js";
 import { levelRanges, applyRanges, visitLevels } from "./core/difficulty.js";
 import { maxOf } from "./core/mix.js";
 import { TASKS } from "./tasks/index.js";
@@ -45,13 +47,15 @@ import { SKILL_IDS } from "./core/skills.js";
 import { renderPicker, renderRunBar, renderSummary, renderDiagnosisPanel, confirmQuit,
   topics, usable, MINE, MIXED, TODAY, ASSIGNED, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
 import { scopeOf, assignmentPolicy } from "./core/assignment.js";
-import { LESSONS, readCount } from "./core/lessons.js";
+import { LESSONS, readCount, lessonById, lessonPractice, practiceSkills, PRACTICE_SIZE } from "./core/lessons.js";
 
 /* The random source of the question builders (tasks/view.js). They never call
    Math.random themselves: it is handed to them, here for practice and seeded
    for a duel (core/duel.js). Looked up at each call, not captured, so that the
    browser test's fixed seed — which replaces Math.random — still takes. */
 const rng = () => Math.random();
+/* A calibration table that changes nothing (see `app.viewCal`). */
+const EMPTY_TABLE = Object.freeze({ v: CAL.v, types: {}, cells: {}, irr: {} });
 
 let store = createStore();
 /* Browser storage itself, kept separately so that older progress can be lifted
@@ -110,9 +114,13 @@ const app = {
   /** The lexicon duels are built from: the filtered vocabulary, for everyone,
       so both players' browsers build the same questions. */
   lexForDuels() {
-    if (!(DATA.blocked || []).length) return this.lex;
-    if (effectivePolicy(this.S).safeVocab) return this.lex;
-    return (this.duelLex ||= buildLexicon(DATA, { hide: new Set(DATA.blocked) }));
+    /* v6.13 (item 17): …and never with calibrated scores. This browser's
+       table may be a week older than the opponent's, and the server builds
+       from none; `this.lex` is only shared when it carries no table. */
+    const plain = !lexHardness(this.cal);
+    const blocked = (DATA.blocked || []).length;
+    if (plain && (!blocked || effectivePolicy(this.S).safeVocab)) return this.lex;
+    return (this.duelLex ||= buildLexicon(DATA, { hide: blocked ? new Set(DATA.blocked) : null }));
   },
 
   /** Fetch the duels, settle any that have finished, redraw. */
@@ -145,8 +153,9 @@ const app = {
       this.save();
       this.refresh();
       if (won.length) {
-        const { show, quiet } = badgeWindows(won, this.badgeStats);
-        queueBadges(show, () => {}, quiet);
+        /* Not over a question: a session in progress holds them for its summary. */
+        const { show, quiet } = windowsFor(won, this.badgeStats, { inSession: !!this.run });
+        if (show.length) queueBadges(show, () => {}, quiet);
       }
     }
     if (!this.duelRun) renderDuelBar(this);
@@ -160,26 +169,61 @@ const app = {
     return r;
   },
 
-  /** Begin answering a duel: build its questions from the seed. */
-  startDuel(id) {
+  /**
+   * Begin answering a duel. The seeds are fetched now and not before
+   * (POST /duels/:id/start): a browser that holds them holds the questions.
+   * This player's questions are then built here, exactly as the server
+   * builds them to grade the answers (core/duel.js `duelTasks`).
+   */
+  async startDuel(id) {
     const v = (this.duelList || []).find((x) => x.id === id);
-    if (!v || v.status !== "open" || v.mine) return;
-    if (v.data && v.data !== dataPrint(DATA)) {
-      this.duelSent = { view: v, c: 0, n: v.n,
-        error: "Einvígið var búið til með nýrri útgáfu af forritinu. Endurhladdu síðuna (F5) og reyndu aftur." };
+    if (!v || v.status !== "open" || v.mine || this.duelRun || this.duelStarting) return;
+    /* Not started: said on the strip, with the reason. */
+    const refuse = (error) => {
+      this.duelSent = { view: v, c: 0, n: v.n, unplayed: true, error };
       this.openView("practice");
       renderDuelBar(this);
-      return;
+    };
+    if (v.data && v.data !== dataPrint(DATA)) {
+      return refuse("Einvígið var búið til með nýrri útgáfu af forritinu. Endurhladdu síðuna (F5) og reyndu aftur.");
     }
-    const tasks = duelTasks(this.lexForDuels(), v,
-      { nextTask, makeView, applyEffects, blankState, newSession, createPolicy });
-    if (!tasks.length) return;
+    this.duelStarting = id;
+    this.duelSent = null;
+    this.openView("practice");
+    renderDuelBar(this);                       // "Sæki spurningarnar…"
+    let r;
+    try { r = await this.server.duelStart(id); }
+    catch (err) {
+      this.duelStarting = null;
+      return refuse(err && err.status ? err.message
+        : "Náði ekki sambandi við þjóninn. Reyndu aftur eftir smástund.");
+    }
+    this.duelStarting = null;
+    const view = r.duel || v;
+    const tasks = duelTasks(this.lexForDuels(), { ...view, seed: r.seed, key: r.key },
+      { nextTask, buildTask, makeView, applyEffects, blankState, newSession, createPolicy });
+    if (!tasks.length) return renderDuelBar(this);
+    const sig = signature(tasks);
+    /* The server says what it will grade. If this browser built something
+       else, better to hear it now than after twenty answers. */
+    if (r.sig && r.sig !== sig) {
+      return refuse("Spurningarnar stemma ekki við þjóninn. Endurhladdu síðuna (F5) og reyndu aftur.");
+    }
     this.drill = null; this.drillOffer = null; this.drillDone = null;
-    this.duelRun = { view: v, tasks, i: 0, c: 0, marks: [] };
+    this.duelSent = null;
+    this.duelRun = { view, tasks, sig, i: 0, c: 0, marks: [], answers: [] };
     this.duelSkipped.delete(id);
     this.openView("practice");
     renderDrillBar(this);
     this.next();
+  },
+
+  /** The answer just judged, kept for the server (ui/render.js `conclude`).
+      A copy: the renderers hand over their own live objects. */
+  duelAnswer(task, response) {
+    const run = this.duelRun;
+    if (!run || run.tasks[run.i] !== task) return;
+    run.answers[run.i] = JSON.parse(JSON.stringify(response ?? null));
   },
 
   /** Give up half-way: what is unanswered counts as wrong, and it is sent. */
@@ -207,19 +251,32 @@ const app = {
   endDuel() {
     const run = this.duelRun;
     this.duelRun = null;
-    const payload = { view: run.view, c: run.c, n: run.tasks.length, sig: signature(run.tasks) };
+    /* One answer per question, in order; what was never answered is null,
+       and the server counts it wrong. The count shown meanwhile is this
+       browser's own — the server's replaces it when it answers. */
+    const answers = run.tasks.map((_, i) => run.answers[i] ?? null);
+    const payload = { view: run.view, answers, sig: run.sig };
     this.duelSent = { view: run.view, c: run.c, n: run.tasks.length };
     renderDuelBar(this);
     this.sendDuel(payload).then(() => this.loadDuels());
   },
 
-  /** Send a result; kept and retried on the next load if the network fails. */
+  /** Send the answers; kept and retried on the next load if the network fails. */
   async sendDuel(p) {
     try {
-      await this.server.duelResult(p.view.id, p.c, p.n, p.sig);
+      const r = await this.server.duelResult(p.view.id, p.answers, p.sig);
       this.duelPending = null;
+      /* The score is the server's. It is the same judge on the same
+         questions, so it is the number already on the strip — but if the two
+         ever differ, the server's is the one that counts and the one shown. */
+      const mine = r && r.duel && r.duel.mine;
+      if (mine && this.duelSent && this.duelSent.view.id === p.view.id) {
+        this.duelSent.c = mine.c; this.duelSent.n = mine.n;
+        this.duelSent.view = r.duel;
+      }
     } catch (err) {
-      /* 409: already sent or the time ran out — nothing to retry. */
+      /* 4xx: already sent, the time ran out, or the questions do not match —
+         nothing to retry. */
       if (err && err.status && err.status < 500) {
         this.duelPending = null;
         if (this.duelSent) this.duelSent.error = err.message;
@@ -255,6 +312,57 @@ const app = {
      a result that could not be sent, retried on the next load. */
   assignments: [],
   assignmentPending: null,
+
+  /* ---- calibration (item 17, core/calibration.js) ----
+     `cal` is the table the server published, cleaned — or null: no server,
+     no table yet, the switch is off, or the answer was not a table. With
+     null everything runs on the values the program was built with.
+     `calInfo` is the server's whole answer: whether this account's answers
+     are counted (`collect`) and whether its group's teacher has switched on
+     the sample of wrong answers (`samples`). The two queues hold what has
+     not been sent yet; nothing in them is saved, and what cannot be sent is
+     dropped — a lost count costs nothing. */
+  cal: null,
+  calInfo: null,
+  calQueue: [],
+  calSamples: [],
+
+  /** The table a view of ordinary practice carries (tasks/view.js `cal`):
+      the published one, or an empty one when there is none but this
+      account's answers are counted, so that its questions are still marked. */
+  viewCal() {
+    return this.cal || (this.calInfo && this.calInfo.collect ? EMPTY_TABLE : null);
+  },
+
+  /** One judged answer, offered to the count. Only a fresh question of
+      ordinary practice carries `calBand` (tasks/next.js), and only once. */
+  noteAnswer(task, j) {
+    const info = this.calInfo;
+    if (!this.server || !info || !info.collect || !task || task.calCounted) return;
+    const e = eventOf(task, j, this.lex);
+    if (!e) return;
+    task.calCounted = true;
+    this.calQueue.push(e);
+    if (info.samples) {
+      const room = SAMPLE.perPost - this.calSamples.length;
+      if (room > 0) this.calSamples.push(...samplesOf(task, j, this.lex).slice(0, room));
+    }
+    if (this.calQueue.length >= 8) this.flushAnswers();
+  },
+
+  /** Send what has been collected. Best effort: a failure is not retried. */
+  flushAnswers() {
+    if (!this.server || !this.calQueue.length) return;
+    const events = this.calQueue.splice(0, CAL.perPost);
+    const samples = this.calSamples.splice(0, SAMPLE.perPost);
+    this.server.sendAnswers({ events, ...(samples.length ? { samples } : {}) })
+      .then((r) => { if (r && r.collect === false && this.calInfo) this.calInfo.collect = false; })
+      .catch((err) => {
+        /* Refused (today's allowance is used up, or the account is no
+           longer counted): nothing more is sent this visit. */
+        if (err && err.status && err.status < 500 && this.calInfo) this.calInfo.collect = false;
+      });
+  },
 
   /** Fetch the open assignments; redraw the picker if it is on the screen. */
   async loadAssignments() {
@@ -313,7 +421,9 @@ const app = {
    * Begin a session. `focus`: pattern ids, for a session aimed at them.
    * `opts.review: false` starts it without the reviews a session otherwise
    * opens with (core/review.js) — for a caller whose few questions are all
-   * spoken for.
+   * spoken for. `opts.types` (with `opts.skills`, `opts.attrs`) narrows the
+   * session to exactly those question types, and `opts.label` names it in
+   * the bar — "Æfa þetta" on a Lesefni page (item 41, `practiceLesson`).
    */
   startRun(topic, n, focus = null, opts = {}) {
     if (this.duelRun) { this.openView("practice"); return; }
@@ -349,14 +459,19 @@ const app = {
          (once each), and how each run of three went. */
       plan: today ? today.slots.filter((x) => x.kind !== "review") : null,
       streaked: [], streaks: [],
+      /* Item 41: a session on given question types, and its name. */
+      types: opts.types || null, skills: opts.skills || null, attrs: opts.attrs || null,
+      label: opts.label || null, lesson: opts.lesson || null,
     };
     if (today) this.run.review = today.reviews.slice();
     else if (opts.review !== false)
       this.run.review = planOpening(this.S, todayKey(), n, this.reviewPolicy(), this.run.focus);
-    /* The picker remembers the CATEGORY last chosen; neither today's session
-       nor "Villurnar mínar" is one. Nor is today's ten the size it offers. */
-    if (topic !== MINE.id && topic !== TODAY.id && topic !== ASSIGNED.id) this.S.settings.runTopic = topic;
-    if (topic !== TODAY.id && topic !== ASSIGNED.id) this.S.settings.runSize = n;
+    /* The picker remembers the CATEGORY last chosen there, and its size;
+       neither today's session, an assignment, "Villurnar mínar" nor a
+       Lesefni page's five (item 41, `opts.types`) is one. */
+    const picked = !opts.types && topic !== TODAY.id && topic !== ASSIGNED.id;
+    if (picked && topic !== MINE.id) this.S.settings.runTopic = topic;
+    if (picked) this.S.settings.runSize = n;
     this.save();
     this.openView("practice");
     this.next();
@@ -371,6 +486,13 @@ const app = {
       { types: r.focus ? [...focusTypes(r.focus)] : null });
     const P = effectivePolicy(this.S);
     if (!r) return P;
+    /* Item 41: asked for by name, so the child's own switches give way for
+       these types (core/policy.js openFor); the administrator's do not. */
+    if (r.types) {
+      const open = createPolicy(this.S.allowed || null,
+        openFor(chosenPolicy(this.S), { skills: r.skills || [], types: r.types }));
+      return narrowPolicy(open, { skills: r.skills, types: r.types, attrs: r.attrs });
+    }
     return narrowPolicy(P, {
       skills: SKILL_IDS.includes(r.topic) ? [r.topic] : null,
       types: r.focus ? [...focusTypes(r.focus)] : null,
@@ -433,6 +555,7 @@ const app = {
     const view = makeView({
       S: this.S, sess: this.sess, policy: this.policy, forcedNoun: this.forcedNoun,
       mix: { n: r.n, counts }, inRun: true, huntPrefer: huntPreferFor(ids),
+      cal: this.viewCal(),
     });
     const effects = new Map();
     const buildIn = (v) => () => {
@@ -493,6 +616,7 @@ const app = {
     this.policy = null;
     this.streak = null; this.streakOffer = null;
     if (!r) return;
+    this.flushAnswers();
     if (!r.i) {
       this.runDone = null;
       if (empty) this.runNotice = "Engin spurning fannst í þessu efni með þeim stillingum sem eru á. " +
@@ -505,6 +629,7 @@ const app = {
     const topicTypes = r.assignment
       ? (r.assignment.scope.types ? new Set(r.assignment.scope.types)
         : r.assignment.scope.skills ? new Set(r.assignment.scope.skills.flatMap((x) => [...typesOfSkill(x)])) : null)
+      : r.types ? new Set(r.types)
       : SKILL_IDS.includes(r.topic) ? typesOfSkill(r.topic) : null;
     const report = runReport(r, this.S, topicTypes ? (p) => p.types.some((x) => topicTypes.has(x)) : null);
     const xp = Math.max(0, this.S.xp - r.xp0);
@@ -524,6 +649,10 @@ const app = {
       topic: r.topic, n: r.n, i: r.i, c: r.c, j: r.j, xp, focus: r.focus,
       badges: r.badges, items: r.items, report, early: early || empty,
       ms: Date.now() - r.startedAt, streaks: r.streaks || [],
+      /* Item 41: "Önnur lota" repeats a page's session as it was. */
+      label: r.label, again: r.types
+        ? { review: false, types: r.types, skills: r.skills, attrs: r.attrs, label: r.label, lesson: r.lesson }
+        : null,
     };
     const done = this.runDone;
     /* The summary says whether the teacher has the result; drawn again when
@@ -533,6 +662,20 @@ const app = {
       if (this.runDone === done && !this.run && !this.cur) renderSummary(this);
     });
     this.next();
+    /* Item 61: the one celebration of the session. The summary is on the
+       screen and lists every badge the session won; the windows come now, over
+       it, within the usual ceiling (`badgeWindows`: the rare ones all, then two
+       more) and the rest are named on the last. Badges still held from a
+       rescue drill outside any session go with them, once. */
+    const held = this.sess.heldBadges || [];
+    this.sess.heldBadges = [];
+    const all = [...r.badges, ...held.filter((h) => !r.badges.some((b) => b.id === h.id))];
+    if (all.length) {
+      const { show, quiet } = badgeWindows(all, this.badgeStats);
+      queueBadges(show, () => {
+        document.querySelector("#task .summary .nextrow button")?.focus();
+      }, quiet);
+    }
   },
 
   quitRun() {
@@ -609,6 +752,22 @@ const app = {
     this.next();
   },
 
+  /**
+   * "Æfa þetta" on a Lesefni page (item 41): five questions on exactly the
+   * question types of that page's curriculum nodes (core/lessons.js
+   * lessonPractice), without the reviews a session opens with — all five
+   * are the page's.
+   */
+  practiceLesson(id) {
+    const p = lessonPractice(id);
+    const page = lessonById(id);
+    if (!p || !page) return;
+    this.startRun(page.skill, PRACTICE_SIZE, null, {
+      review: false, types: p.types, attrs: p.attrs, skills: practiceSkills(p, TASKS),
+      label: "Lesefni: " + page.nm, lesson: id,
+    });
+  },
+
   /** A Lesefni page was opened for the first time (ui/lessons.js). */
   onRead() {
     if (!this.sess) return;
@@ -620,8 +779,8 @@ const app = {
     this.save();
     if (!won.length) return;
     this.refresh();
-    const { show, quiet } = badgeWindows(won, this.badgeStats);
-    queueBadges(show, () => {}, quiet);
+    const { show, quiet } = windowsFor(won, this.badgeStats, { inSession: !!this.run });
+    if (show.length) queueBadges(show, () => {}, quiet);
   },
 
   /** Begin a rescue drill on one word, from the offer or from the collection. */
@@ -916,6 +1075,12 @@ const app = {
        word just missed) is already in the cabinet above, but its window and
        its confetti wait for the next answer that is right. Two pop-ups on a
        child's first two answers, both wrong, read as a reward for missing. */
+    /* Item 61: inside a session NO window opens between questions. Everything
+       won is already in the cabinet and in `run.badges` (`awardBadge`); the
+       summary lists it and celebrates it once (`endRun`). That covers "Þrjár í
+       röð" and the worked example too, which are parts of a session. The
+       v6.9 rule above still governs a rescue drill, which has no summary. */
+    if (this.run) return;
     const c = celebrate(this.sess.heldBadges, won, extra.correct ?? null);
     this.sess.heldBadges = c.held;
     if (!c.show.length) return;
@@ -1131,6 +1296,11 @@ function wireSettings() {
     const v = parseInt($("goalin").value, 10);
     if (v > 0 && v < 500) { app.S.goal = v; app.save(true); renderStats(app); app.refresh(); }
   };
+  /* Item 57: the weekly goal, 2-7 days; the week streak is read from it at once. */
+  $("weekin").onchange = (e) => {
+    app.S.weekGoal = cleanWeekGoal(e.target.value);
+    app.save(true); renderStats(app); app.refresh();
+  };
   $("set-decay").onchange = (e) => { app.S.settings.decay = e.target.checked; app.save(true); };
   $("set-gloss").onchange = (e) => { app.S.settings.glossary = e.target.checked; app.save(true); };
   /* Item 53: the letter pad. Once switched either way it is the child's
@@ -1312,8 +1482,8 @@ function judgeSocial() {
   app.save();
   if (!won.length) return;
   app.refresh();
-  const { show, quiet } = badgeWindows(won, app.badgeStats);
-  queueBadges(show, () => {
+  const { show, quiet } = windowsFor(won, app.badgeStats, { inSession: !!app.run });
+  if (show.length) queueBadges(show, () => {
     document.querySelector(
       "#task input[type=text]:not([disabled]), #task textarea:not([disabled]), #check")?.focus();
   }, quiet);
@@ -1351,16 +1521,30 @@ async function init() {
      program still obeys it offline; the server never trusts the cached copy
      on the way back up (PUT /state/:id). */
   if (app.server) {
-    const ceiling = await app.server.myPolicy().catch(() => null);
+    /* …and with it the calibration table (item 17): one small request, and
+       anything but a table — an older server, a refusal, no answer — leaves
+       the program on the values it was built with. */
+    const [ceiling, cal] = await Promise.all([
+      app.server.myPolicy().catch(() => null),
+      app.server.calibration().catch(() => null),
+    ]);
     if (ceiling) app.S.allowed = ceiling.policy || null;
+    app.calInfo = cal && typeof cal === "object" && cal.on === true ? cal : null;
+    const table = app.calInfo ? cleanTable(app.calInfo.table) : null;
+    app.cal = tableIsEmpty(table) ? null : table;
   }
 
   /* The optional vocabulary filter, applied once, before anything indexes the
      corpus. `safeVocab` is the administrator's switch alone — a child cannot
      turn it off, which is the entire point of it. */
-  if (effectivePolicy(app.S).safeVocab && (DATA.blocked || []).length) {
-    app.lex = buildLexicon(DATA, { hide: new Set(DATA.blocked) });
-  }
+  const hide = effectivePolicy(app.S).safeVocab && (DATA.blocked || []).length
+    ? new Set(DATA.blocked) : null;
+  /* The calibrated scores of cells and of irregularity go in here and
+     nowhere else (core/lexicon.js `hardness`). The duel's lexicon
+     (`duelLex`) is built without them: both sides must build the same
+     questions from one seed. */
+  const hardness = lexHardness(app.cal);
+  if (hide || hardness) app.lex = buildLexicon(DATA, { hide, hardness });
 
   app.defs = createDefinitions([
     ...(app.server ? [remoteSource("")] : []),
@@ -1399,7 +1583,7 @@ async function init() {
   addEventListener("visibilitychange", () => {
     /* Time does not count while the tab is not visible, so a night with a
        forgotten tab does not become eight hours of "practice". */
-    if (document.visibilityState === "hidden") { clock.pause(); store.flush(); }
+    if (document.visibilityState === "hidden") { clock.pause(); store.flush(); app.flushAnswers(); }
     else {
       clock.resume();
       /* Duels: a challenge may have arrived while the tab was away. */

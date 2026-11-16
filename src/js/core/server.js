@@ -107,7 +107,10 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     /* --- duels (v6.7) --- */
     duels: () => call("GET", "/duels"),
     challenge: (opponent, topic, n) => call("POST", "/duels", { opponent, topic, n }),
-    duelResult: (id, c, n, sig) => call("POST", `/duels/${enc(id)}/result`, { c, n, sig }),
+    /* v6.13: the seeds come when the pupil presses play, and what goes back
+       is the answers — the server grades them (core/duel.js). */
+    duelStart: (id) => call("POST", `/duels/${enc(id)}/start`),
+    duelResult: (id, answers, sig) => call("POST", `/duels/${enc(id)}/result`, { answers, sig }),
     /* --- assignments and the class's patterns (v6.13, items 37 and 65) ---
        The pupil's side first; the rest is the teacher's (guardian or
        administrator), and the server holds it to their own group. */
@@ -119,6 +122,17 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     teacherAssignments: (group) => call("GET", `/teacher/assignments?group=${enc(group)}`),
     setAssignment: (form) => call("POST", "/teacher/assignments", form),
     removeAssignment: (id) => call("DELETE", `/teacher/assignments/${enc(id)}`),
+    /* --- calibration and the answer sample (v6.13, items 17 and 38) ---
+       `calibration()` is asked once per load: the table to apply, and
+       whether this account's answers are counted at all. */
+    calibration: () => call("GET", "/calibration"),
+    sendAnswers: (batch) => call("POST", "/calibration/answers", batch),
+    setStats: (on) => call("POST", "/account/stats", { on }),
+    teacherSamples: (group) => call("GET", `/teacher/samples?group=${enc(group)}`),
+    setTeacherSamples: (group, on) => call("POST", "/teacher/samples", { group, on }),
+    calibrationReport: () => call("GET", "/admin/calibration"),
+    samplesUrl: () => url("/admin/classifier/samples.json"),
+    clearSamples: () => call("DELETE", "/admin/classifier/samples"),
     /* error reports (v6.8) */
     sendReport: (report) => call("POST", "/reports", report),
     reports: () => call("GET", "/admin/reports"),

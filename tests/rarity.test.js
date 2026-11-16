@@ -14,7 +14,7 @@ import {
   estimateShare, baseRarity, rarityOf, wordRarity, tierFor, tierById, wordTier,
   isRareScore, shareText, aggregate, contribution, activeDays, measurable,
   CONSISTENCY, consistencyPairs, monthKey, nextRefresh, tierMove,
-  badgeWindows, tierRank, PLAIN_CEILING, EXTRA_AFTER_RARE,
+  badgeWindows, windowsFor, tierRank, PLAIN_CEILING, EXTRA_AFTER_RARE,
 } from "../src/js/core/rarity.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 
@@ -535,4 +535,34 @@ test("the ceiling uses the measurement when there is one", () => {
   const filler = [at("f1", "algengt"), at("f2", "algengt"), at("f3", "algengt")];
   const { show } = badgeWindows([common, ...filler, rare], stats);
   assert.equal(ids(show)[0], "r");
+});
+
+/* ---------- item 61: no window between questions ------------------------ */
+
+test("inside a session no badge window opens, however many were won", () => {
+  const won = BADGES.filter((b) => !b.retired).slice(0, 9);
+  const r = windowsFor(won, null, { inSession: true });
+  assert.deepEqual(r.show, []);
+  assert.deepEqual(r.quiet, []);
+  assert.deepEqual(r.held.map((b) => b.id), won.map((b) => b.id), "all of them wait, in order, for the summary");
+  assert.deepEqual(windowsFor([], null, { inSession: true }).held, []);
+  assert.deepEqual(windowsFor(null, null, { inSession: true }).held, []);
+});
+
+test("outside a session the ceiling applies as it always did", () => {
+  const won = BADGES.filter((b) => !b.retired).slice(0, 9);
+  const r = windowsFor(won, null);
+  const plain = badgeWindows(won, null);
+  assert.deepEqual(r.show, plain.show);
+  assert.deepEqual(r.quiet, plain.quiet);
+  assert.deepEqual(r.held, []);
+  assert.ok(r.show.length <= Math.max(PLAIN_CEILING, plain.show.length));
+});
+
+test("the end of a session celebrates what it held, once, within the ceiling", () => {
+  const won = BADGES.filter((b) => !b.retired).slice(0, 12);
+  const held = windowsFor(won, null, { inSession: true }).held;
+  const end = badgeWindows(held, null);
+  assert.equal(end.show.length + end.quiet.length, held.length, "nothing is lost on the way");
+  assert.ok(end.show.length <= Math.max(PLAIN_CEILING, held.length));
 });

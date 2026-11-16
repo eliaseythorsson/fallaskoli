@@ -42,6 +42,7 @@ import {
 } from "./auth.mjs";
 import { cleanState, suspicion, MAX_STATE_BYTES } from "./guard.mjs";
 import { privacyConfig, privacyPage, CONSENT_AGE, PRIVACY_VERSION } from "./privacy.mjs";
+import { createCalibration } from "./calibrate.mjs";
 import { seal, passphraseProblem } from "./backup.mjs";
 import { dropPrivileges } from "./privs.mjs";
 
@@ -60,8 +61,13 @@ import { ASSIGN, cleanTarget, patternsOf, dueProblem, isOpen, prune as pruneAssi
          openCount as openAssignments, cleanResult, recordResult, viewForPupil }
   from "../src/js/core/assignment.js";
 import { TASKS } from "../src/js/tasks/registry.js";
-import { DUEL, validTopic, validSize, duelSkills, duelLevel, dataPrint, sideOf, duelStatus, openCount,
-         prune as pruneDuels, viewFor } from "../src/js/core/duel.js";
+import { DUEL, validTopic, validSize, duelSkills, duelLevel, topicLevel, dataPrint, sideOf, duelStatus,
+         openCount, prune as pruneDuels, viewFor, duelTasks, gradeDuel, signature, ANSWER_LIMITS }
+  from "../src/js/core/duel.js";
+/* Grading a duel (v6.13): the same builders and the same judge as the browser. */
+import { judge } from "../src/js/core/answer.js";
+import { blankState, newSession } from "../src/js/core/state.js";
+import { nextTask, buildTask, makeView, applyEffects } from "../src/js/tasks/index.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 /** The question types of a category, from the registry — for the patterns an
@@ -557,10 +563,16 @@ export function createApp({
         consent: u.consent || null,
         share: shareOf(u),
         hiddenFromBoardByAdmin: hidden.includes(u.id),
+        /* v6.13 (item 17): their own switch for the anonymous counting;
+           null when they never touched it. */
+        countedInStatistics: typeof u.stats === "boolean" ? u.stats : null,
         heldForReview: u.review || null,
       },
       curriculumCeiling: policies[u.id] || null,
-      duels: (await store.duels()).filter((d) => d.a === u.id || d.b === u.id),
+      /* Without the seeds: they are not about the person, and while a duel
+         is open they are its questions and answers (core/duel.js). */
+      duels: (await store.duels()).filter((d) => d.a === u.id || d.b === u.id)
+        .map(({ seed, keys, ...d }) => d),
       errorReports: (await store.reports()).filter((r) => r.by === u.id)
         .map(({ reviewedBy, ...r }) => r),
       /* v6.13: the result of each assignment they have sent one for. */
@@ -933,7 +945,40 @@ export function createApp({
    * somebody who has chosen the same. The tidy-up (`pruneDuels`) runs inside
    * every read and write: a void duel is gone the next time anybody looks,
    * and no job has to run at midnight. The only limit is `DUEL.maxOpen`
-   * open duels per person, which is what keeps the file small. */
+   * open duels per person, which is what keeps the file small.
+   *
+   * v6.13: THE SERVER GRADES. A browser gets its seeds when the pupil presses
+   * play (`/start`), builds its questions, and posts its ANSWERS; the server
+   * builds the same questions from the same seeds and judges them with the
+   * same code. What the browser says the score was is not asked for. What
+   * this does and does not stop is written out in docs/API.md. */
+
+  /* The lexicon duels are built from: the filtered vocabulary, for everyone —
+     exactly what `lexForDuels` in src/js/app.js gives a browser. Built on the
+     first duel, not at start-up: most visits never play one. */
+  let duelLex = null;
+  const lexForDuels = () => (duelLex ||= (DATA.blocked || []).length
+    ? buildLexicon(DATA, { hide: new Set(DATA.blocked) }) : lex);
+  const DUEL_DEPS = { nextTask, buildTask, makeView, applyEffects, blankState, newSession, createPolicy };
+
+  /* One player's questions, with their signature. Building them is a few
+     hundred builder calls, so the last ones are remembered: built when the
+     pupil starts, used again when the answers arrive. Nothing depends on the
+     memory — after a restart they are simply built again. */
+  const duelBuilt = new Map();
+  const DUEL_BUILT_MAX = 200;
+  function questionsFor(d, side) {
+    const k = `${d.id}/${side}`;
+    let q = duelBuilt.get(k);
+    if (!q) {
+      const tasks = duelTasks(lexForDuels(), { ...d, side, key: d.keys[side] }, DUEL_DEPS);
+      q = { tasks, sig: signature(tasks) };
+      duelBuilt.set(k, q);
+      if (duelBuilt.size > DUEL_BUILT_MAX) duelBuilt.delete(duelBuilt.keys().next().value);
+    }
+    return q;
+  }
+  const newSeed = () => crypto.randomBytes(4).readUInt32BE(0);
 
   async function duelNames(viewer) {
     const users = await store.users();
@@ -998,8 +1043,13 @@ export function createApp({
       }
       made = {
         id: crypto.randomBytes(9).toString("base64url"), a: u.id, b: opp, topic, n, skills,
-        seed: crypto.randomBytes(4).readUInt32BE(0),
+        /* `seed` makes the plan both share; `keys` each player's own
+           questions. None of the three leaves the server before its player
+           presses play. */
+        seed: newSeed(), keys: { a: newSeed(), b: newSeed() },
         level: duelLevel(mine ? mine.state : null, target.state, topic),
+        /* Each player's own level, for the handicap (core/duel.js). */
+        lv: { a: topicLevel(mine ? mine.state : null, topic), b: topicLevel(target.state, topic) },
         data: DUEL_DATA,
         created: now, deadline: now + DUEL.hours * 3600000,
         res: { a: null, b: null },
@@ -1010,30 +1060,90 @@ export function createApp({
     return json(res, 200, { ok: true, duel: viewFor(made, u.id, await duelNames(u), now) });
   });
 
+  /* A pupil presses play: the seeds of THEIR questions, and no sooner. The
+     moment is written down (`started`), once; pressing play again — after a
+     reload, on another device — gives the same seeds and the same questions. */
+  on("POST", /^\/duels\/([A-Za-z0-9_-]{6,40})\/start$/, async (req, res, { params }) => {
+    const u = await needUser(req, res);
+    if (!u) return;
+    const id = params[0];
+    const now = Date.now();
+    let problem = null, duel = null, side = null;
+    await store.updateDuels((cur) => {
+      const list = pruneDuels(cur, now);
+      const d = list.find((x) => x.id === id);
+      side = d && sideOf(d, u.id);
+      if (!side) { problem = [404, "Einvígið er ekki til."]; return null; }
+      if (duelStatus(d, now) !== "open") { problem = [409, "Einvígið er búið."]; return null; }
+      if (d.res[side]) { problem = [409, "Þú hefur þegar skilað í þessu einvígi."]; return null; }
+      duel = d;
+      if (d.keys && d.started && d.started[side]) return null;      // nothing new to write
+      /* A duel made before v6.13 has no keys of its own yet. */
+      d.keys ||= { a: newSeed(), b: newSeed() };
+      (d.started ||= {})[side] ||= now;
+      return list;
+    });
+    if (problem) return json(res, problem[0], { error: problem[1] });
+    const q = questionsFor(duel, side);
+    return json(res, 200, {
+      ok: true, duel: viewFor(duel, u.id, await duelNames(u), now),
+      seed: duel.seed, key: duel.keys[side],
+      /* What the server will grade. A browser that built something else
+         (an old tab after an update) can say so before the first question. */
+      sig: q.sig,
+    });
+  });
+
+  /* The answers. `{ answers: [response | null, …], sig }` — one response per
+     question, in order, in the shapes core/answer.js lists; `sig` is the
+     signature of the questions the browser asked. The score is worked out
+     here and nowhere else. The answers are graded and dropped, never stored. */
   on("POST", /^\/duels\/([A-Za-z0-9_-]{6,40})\/result$/, async (req, res, { params }) => {
     const u = await needUser(req, res);
     if (!u) return;
     const id = params[0];
-    const body = await readBody(req);
-    const c = Number(body?.c), n = Number(body?.n);
+    /* Twenty answers of at most ANSWER_LIMITS.bytes each, and the wrapping. */
+    const body = await readBody(req, 20 * ANSWER_LIMITS.bytes + 4096);
+    const answers = body?.answers;
     const sig = typeof body?.sig === "string" ? body.sig.slice(0, 40) : null;
+    if (!Array.isArray(answers) || !sig) {
+      /* A browser still running the program from before v6.13 sends a score. */
+      return json(res, 400, { error: "Ógild niðurstaða. Endurhladdu síðuna (F5) og spilaðu einvígið aftur." });
+    }
     const now = Date.now();
+    const open = (list) => {
+      const d = list.find((x) => x.id === id);
+      const side = d && sideOf(d, u.id);
+      if (!side) return { problem: [404, "Einvígið er ekki til."] };
+      if (duelStatus(d, now) !== "open") return { problem: [409, "Einvígið er búið."] };
+      if (d.res[side]) return { problem: [409, "Þú hefur þegar skilað í þessu einvígi."] };
+      /* Nobody can have answered questions they were never given. */
+      if (!d.keys || !d.started || !d.started[side]) return { problem: [409, "Einvígið er ekki hafið."] };
+      if (answers.length > d.n) return { problem: [400, "Ógild niðurstaða."] };
+      return { d, side };
+    };
+    const first = open(pruneDuels(await store.duels(), now));
+    if (first.problem) return json(res, first.problem[0], { error: first.problem[1] });
+    const q = questionsFor(first.d, first.side);
+    if (sig !== q.sig) {
+      /* The browser asked other questions than these (other data, an old
+         tab). Grading its answers against ours would be noise, so nothing is
+         stored and the duel can be played again. */
+      return json(res, 409, { error: "Spurningarnar stemma ekki við þjóninn. Endurhladdu síðuna (F5) og spilaðu einvígið aftur." });
+    }
+    const { c, n } = gradeDuel(q.tasks, answers, judge);
     let problem = null, view = null;
     await store.updateDuels((cur) => {
       const list = pruneDuels(cur, now);
-      const d = list.find((x) => x.id === id);
-      const side = d && sideOf(d, u.id);
-      if (!side) { problem = [404, "Einvígið er ekki til."]; return null; }
-      if (duelStatus(d, now) !== "open") { problem = [409, "Einvígið er búið."]; return null; }
-      if (d.res[side]) { problem = [409, "Þú hefur þegar skilað í þessu einvígi."]; return null; }
-      if (!Number.isInteger(n) || n < 1 || n > d.n || !Number.isInteger(c) || c < 0 || c > n) {
-        problem = [400, "Ógild niðurstaða."]; return null;
-      }
-      d.res[side] = { c, n, sig, at: now };
-      view = d;
+      /* Asked again inside the write: the other tab may have got here first. */
+      const again = open(list);
+      if (again.problem) { problem = again.problem; return null; }
+      again.d.res[again.side] = { c, n, at: now };
+      view = again.d;
       return list;
     });
     if (problem) return json(res, problem[0], { error: problem[1] });
+    duelBuilt.delete(`${id}/${first.side}`);
     return json(res, 200, { ok: true, duel: viewFor(view, u.id, await duelNames(u), now) });
   });
 
@@ -1817,6 +1927,19 @@ export function createApp({
     return json(res, 200, status);
   });
 
+  /* --- calibration from real answers, and the answer sample (v6.13) ------
+   * Critique items 17 and 38. Everything is in server/calibrate.mjs — who is
+   * counted, the caps, the weekly run, the routes — so that this file only
+   * lends it the helpers that decide who is logged in and who teaches whom.
+   * Routes: GET /calibration, POST /calibration/answers, POST /account/stats,
+   * GET+POST /teacher/samples, GET /admin/calibration,
+   * GET /admin/classifier/samples.json, DELETE /admin/classifier/samples. */
+  const calibration = createCalibration({
+    store, env, lex, cellMarks: Object.values(DATA.lex.orders || {}).flat(),
+    audit, groupOf, consentOk,
+  });
+  calibration.routes({ on, json, readBody, needUser, needAdmin, needTeacher, sendFile });
+
   /* --- retention (v6.3) ---------------------------------------------------
    *
    * Nothing is kept for ever. Two rules, and the privacy notice states both
@@ -2009,7 +2132,7 @@ export function createApp({
   server.requestTimeout = 60000;
   server.headersTimeout = 20000;
 
-  return { server, store, handler, lex, google, privacy, sweep };
+  return { server, store, handler, lex, google, privacy, sweep, calibration };
 }
 
 /* ---------- start-up when this file is run directly ---------- */
@@ -2047,8 +2170,15 @@ if (isMain) {
   const tidy = () => app.sweep().then((r) => {
     if (r.erased.length) console.log(`  varðveisla: ${r.erased.length} aðgangi/aðgöngum eytt`);
   }).catch((e) => console.error("varðveisla:", e.message));
-  tidy();
-  setInterval(tidy, 12 * 3600000).unref();
+  /* The calibration table is worked out again when a week has passed
+     (server/calibrate.mjs `run` — it does nothing when it is not due). It
+     also runs when a browser asks for the table; this is for a server
+     nobody visits for a while. */
+  const calibrate = () => app.calibration.run().then((r) => {
+    if (r && r.changes.length) console.log(`  kvörðun: ${r.changes.length} gildi breyttust`);
+  }).catch((e) => console.error("kvörðun:", e.message));
+  tidy(); calibrate();
+  setInterval(() => { tidy(); calibrate(); }, 12 * 3600000).unref();
 
   /* Asked to stop (a deploy, a machine going to sleep): finish what is being
      answered, then go. Every write is already atomic, so this is courtesy. */
