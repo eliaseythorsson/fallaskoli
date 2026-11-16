@@ -18,7 +18,7 @@ import { runMult, dayMult } from "../core/progress.js";
 import { dayStreak, todayKey } from "../core/state.js";
 import { firstMeeting, markTypeSeen } from "../core/examples.js";
 import { skillName } from "../core/skills.js";
-import { conjugationNote } from "../tasks/explain.js";
+import { conjugationNoteFor } from "../tasks/explain.js";
 import { reportButtonHTML } from "./reports.js";
 import { l2On, glossToken, decorateTask } from "./secondlang.js";
 import {
@@ -606,7 +606,7 @@ function submitVerb(app) {
   if (t.retrying) return endRetry(app, t, j, draw);
   /* The rule for a verb on its own is its conjugation (*sterk sögn: …*). */
   if (offerRetry(app, t, j, {
-    response, why: conjugationNote(t.v.o, t.conj), label: "beyging",
+    response, why: conjugationNoteFor(t.v.o, t.conj, t.m), label: "beyging",
     note: nearNote(j.detail.v), inputs: [$("ans")], reveal: draw,
   })) return;
   conclude(app, t, j, draw);
@@ -615,7 +615,7 @@ function submitVerb(app) {
 function drawVerb(app, t, j) {
   const { v, xpFull } = j.detail;
   const ok = j.ok, xp = j.xp;
-  const conj = conjugationNote(t.v.o, t.conj);
+  const conj = conjugationNoteFor(t.v.o, t.conj, t.m);
   const head = ok && j.retry ? retryRightHTML(xp)
     : `<span class="xpop">+${xp} XP</span>
     <h3>${v.slip ? esc(v.slip.head) : ok ? cheer(CHEERS_OK) : cheer(CHEERS_NO)}</h3>`;
@@ -693,7 +693,7 @@ function submitVerbSlot(app) {
   noteTry(t, j, val);
   const draw = () => drawVerbSlot(app, t, j, val);
   if (t.retrying) return endRetry(app, t, j, draw);
-  const conj = conjugationNote(t.shown || t.v.o, t.conj);
+  const conj = conjugationNoteFor(t.shown || t.v.o, t.conj, t.m);
   if (offerRetry(app, t, j, {
     response, inputs: [$("ans")], lock: [$("hint")], reveal: draw,
     note: nearNote(j.detail.v) + whyBox(hideAnswer(conj, t), "beyging"),
@@ -705,7 +705,7 @@ function drawVerbSlot(app, t, j, val) {
   const { v, xpFull } = j.detail;
   const ok = j.ok, xp = j.xp;
   const full = sentenceHTML(t.s, t.i, `<b>${esc(t.answers[0])}</b>`);
-  const conj = conjugationNote(t.shown || t.v.o, t.conj);
+  const conj = conjugationNoteFor(t.shown || t.v.o, t.conj, t.m);
   if (ok && !j.retry) {
     $("verdict").innerHTML = `<div class="verdict ${v.klass}"><span class="xpop">+${xp} XP</span>
     <h3>${v.slip ? esc(v.slip.head) : cheer(CHEERS_OK)}</h3><p>${full}</p>

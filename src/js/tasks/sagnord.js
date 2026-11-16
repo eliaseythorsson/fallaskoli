@@ -43,6 +43,33 @@ const VERB_SPECS = [
   ["MM-FH-ÞT", "þátíð, miðmynd"],
 ];
 
+/* The miðmynd asked of a pupil in all six persons (v6.13 review, S1).
+
+   `mm` is set by the build where the corpus has the verb's miðmynd at all,
+   and that lets in what is never said of *ég* and *þú*: the impersonal
+   (*mér líst*, *mér skilst*, *mér finnst* — the table said "ég líst, þú
+   líst"), the reciprocal (*við hittumst*, *hjálpumst að*, *tölumst við*),
+   what only things do (*hurðin opnast*, *bókin selst*) and what BÍN lists
+   and nobody says (*ég gest*). This list was read verb by verb: each has a
+   miðmynd a person says of himself in the present and the past (*ég sest,
+   þú sest, við setjumst*; *ég kynnist*; *ég býst við*). Verbs where that
+   form mostly means dying (*farast*, *drepast*, *andast*) are left out too.
+   Only these get a miðmynd table, a miðmynd "Beygðu sögnina" in the first
+   or second person, or a miðmynd form of the first or second person to
+   analyse (tasks/lysingarord.js). */
+export const PERSONAL_MM = new Set(`komast gerast segjast sjást ætlast látast gefast heyrast reynast
+  þykjast standast snúast búast setjast spyrjast biðjast minnast sækjast fylgjast gangast berjast kynnast
+  breytast teljast bjóðast ráðast leggjast kallast notast stelast virðast flytjast dragast rífast slást
+  bregðast líkjast fallast klæðast tengjast vonast skjótast fæðast hræðast truflast alast leitast
+  bjargast giftast særast rekast þrífast lagast eltast skammast meiðast villast týnast hvílast tefjast
+  hreyfast eignast brjótast gleðjast móðgast forðast nefnast venjast kannast krefjast fyllast birtast
+  bætast efast styðjast keppast festast ruglast verjast fjarlægjast þreytast þjást troðast sigrast
+  hrífast skelfast dveljast leynast útskrifast neyðast greinast hæðast hyggjast ryðjast veikjast
+  læðast flækjast þroskast slasast tryllast kveljast matast laumast nærast undrast aðlagast fræðast
+  styrkjast grennast þyngjast trúlofast afklæðast hressast freistast þvælast léttast`.split(/\s+/));
+/** Whether verb `v` may be asked in the miðmynd in every person. */
+export const personalMM = (v) => !!v.mm && PERSONAL_MM.has((v.forms["MM-NH"] || [])[0]);
+
 const verbTask = (view, v, pref, label, sfx, who) => {
   const m = pref + "-" + sfx;
   return built({
@@ -64,7 +91,7 @@ function forcedVerb(lex, view, rng, pool) {
   const has = (v) => {
     const sub = (v.t3 ? THIRD_ONLY_SUBJECTS : SUBJECTS).find(([x]) => x === sfx);
     /* The middle voice only of a verb that has one in use, as below. */
-    return v.forms[fc] && sub && (!/^MM/.test(fc) || v.mm) ? sub : null;
+    return v.forms[fc] && sub && (!/^MM/.test(fc) || personalMM(v)) ? sub : null;
   };
   const only = forced(view, ["so"]);
   const bag = only ? [only] : pool.filter(has);
@@ -89,10 +116,11 @@ export function taskVerb(lex, view, rng) {
   ];
   if (d >= 2.5) specs.push(["GM-VH-NT", "nútíð, viðtengingarháttur"]);
   if (d >= 3) specs.push(["GM-VH-ÞT", "þátíð, viðtengingarháttur"]);
-  /* The middle voice only of a verb that has one anybody uses (`mm`, set by
-     the build from the corpus): BÍN lists *hlakkast* and *pissast* too. */
-  if (v.mm && d >= 3.5) specs.push(["MM-FH-NT", "nútíð, miðmynd"]);
-  if (v.mm && d >= 4) specs.push(["MM-FH-ÞT", "þátíð, miðmynd"]);
+  /* The middle voice only of a verb whose miðmynd is said of a person
+     (`personalMM`): BÍN lists *hlakkast* and *pissast* too, and *mér líst*
+     has no *ég líst*. */
+  if (personalMM(v) && d >= 3.5) specs.push(["MM-FH-NT", "nútíð, miðmynd"]);
+  if (personalMM(v) && d >= 4) specs.push(["MM-FH-ÞT", "þátíð, miðmynd"]);
 
   /* A weather verb or one with no nominative subject (`t3`) is asked in the
      third person singular with *það*: "það snjóar", never "ég snjóa". */
@@ -210,6 +238,34 @@ export function verbConjugation(v) {
 
 /* ================= Beygingartafla ======================================== */
 
+/** What the table's *af hverju* says, for the tense the table asks (v6.13
+    review, S1: a present-tense table said how the strong PAST is made).
+    Every example is the verb's own form from BÍN; null where the forms do
+    not show the rule. */
+export function tableNote(v, pref) {
+  const f = (m) => (v.forms[m] || [])[0];
+  const conj = verbConjugation(v);
+  /* a núþáleg verb's note is about its present (*ég á* like *ég tók*) */
+  if (pref === "GM-FH-ÞT") return conj === "núþáleg" ? null : conjugationNote(v.o, conj);
+  if (pref === "GM-FH-NT" && conj === "núþáleg") return conjugationNote(v.o, conj);
+  if (pref === "GM-VH-ÞT") {
+    const past = f("GM-FH-ÞT-1P-FT"), vh = f("GM-VH-ÞT-1P-ET");
+    return past && vh ? `Viðtengingarháttur þátíðar er myndaður af þátíð fleirtölu í framsöguhætti: `
+      + `við *${past}* – þótt ég *${vh}*.` : null;
+  }
+  if (pref === "GM-FH-NT") {
+    const we = f("GM-FH-NT-1P-FT"), you = f("GM-FH-NT-2P-FT");
+    return we && you && /um$/.test(we) && /ið$/.test(you)
+      ? `Í nútíð fleirtölu endar 1. persóna á *-um* (við *${we}*) og 2. persóna á *-ið* (þið *${you}*).` : null;
+  }
+  if (pref === "MM-FH-NT") {
+    const nh = f("MM-NH"), me = f("MM-FH-NT-1P-ET"), we = f("MM-FH-NT-1P-FT");
+    return nh && me && we && /st$/.test(me) && /umst$/.test(we)
+      ? `Miðmynd endar á *-st*: ég *${me}*, við *${we}*. Nafnháttur miðmyndar er *að ${nh}*.` : null;
+  }
+  return null;
+}
+
 export function tableVerb(lex, view, rng) {
   const { sess } = view;
   const d = diffOf(sess, "sagnord");
@@ -220,12 +276,12 @@ export function tableVerb(lex, view, rng) {
     (x) => wordWeight(lex, view, x, "sagnord"), rng);
   let prefs = ["GM-FH-NT", "GM-FH-ÞT"];
   if (d >= 3) prefs.push("GM-VH-ÞT");
-  if (v.mm && d >= 4) prefs.push("MM-FH-NT");
+  if (personalMM(v) && d >= 4) prefs.push("MM-FH-NT");
   const NAME = { "GM-FH-NT": "nútíð · framsöguháttur", "GM-FH-ÞT": "þátíð · framsöguháttur",
                  "GM-VH-ÞT": "þátíð · viðtengingarháttur", "MM-FH-NT": "nútíð · miðmynd" };
   /* A review asks for the tense its cell is in (of the four a table has). */
   const fc = forcedCell(view);
-  if (fc) prefs = Object.keys(NAME).filter((p) => fc.startsWith(p + "-") && (!/^MM/.test(p) || v.mm));
+  if (fc) prefs = Object.keys(NAME).filter((p) => fc.startsWith(p + "-") && (!/^MM/.test(p) || personalMM(v)));
   for (const pref of shuffle(prefs, rng)) {
     const cells = SUBJECTS
       .map(([sfx, p]) => ({ m: pref + "-" + sfx, label: subjectLabel(pref, p) }))
@@ -236,7 +292,7 @@ export function tableVerb(lex, view, rng) {
       type: "table", kind: "so", skill: "sagnord", w: v, cells,
       title: `${v.o} · ${NAME[pref]}`, base: 5, word: wordKey(v.o, v.c),
       lvl: bandFor(view, "sagnord"), paradigm: v.forms,
-      why: conjugationNote(v.o, verbConjugation(v)),
+      why: tableNote(v, pref),
     });
   }
   return null;
