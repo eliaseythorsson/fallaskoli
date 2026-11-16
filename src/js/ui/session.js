@@ -15,7 +15,7 @@ import { QUESTION_TYPES } from "../core/policy.js";
 import { TASKS } from "../tasks/index.js";
 import { lessonById } from "../core/lessons.js";
 import { weakWords } from "../core/wordhealth.js";
-import { activePatterns, standings, patternById, focusTypes } from "../core/diagnosis.js";
+import { activePatterns, patternById, focusTypes } from "../core/diagnosis.js";
 import { $, esc, fmt, openSheet } from "./dom.js";
 import { dueNow } from "./progress.js";
 import { dueLine } from "../core/review.js";
@@ -480,30 +480,4 @@ export function renderSummary(app) {
   });
   const first = el.querySelector(".nextrow button");
   if (first) first.focus();
-}
-
-/* ---------- Framvinda: every pattern, for the long view ------------------ */
-
-export function renderDiagnosisPanel(app) {
-  const el = $("diaglist");
-  if (!el) return;
-  const list = standings(app.S).filter((p) => p.n > 0 && p.w > 0);
-  if (!list.length) {
-    el.innerHTML = `<p class="faint">Engar villur greindar enn. Þegar eitthvað fer úrskeiðis
-      er það flokkað hér — til dæmis ef þolfall og þágufall ruglast.</p>`;
-    return;
-  }
-  el.innerHTML = `<table class="diagtable wide"><thead><tr><th>Villumynstur</th><th>Undanfarið</th>
-    <th>Alls</th><th></th></tr></thead><tbody>${list.map((p) => `<tr class="${p.active ? "activep" : ""}">
-    <td><b>${esc(p.nm)}</b>${p.active ? ` <span class="topicflag">⚠ algengt núna</span>` : ""}
-      <details><summary>Regla</summary><p>${fmt(p.rule)}</p>${p.lesson && lessonById(p.lesson)
-        ? `<button type="button" class="lessonlink" data-lesson="${esc(p.lesson)}">📖 ${esc(lessonById(p.lesson).nm)}</button>` : ""}</details></td>
-    <td><span class="ratebar"><i style="width:${Math.round(100 * p.rate)}%"></i></span>
-      ${p.misses} af ${p.seen} ${trendHTML(p.trend)}</td>
-    <td>${p.w} af ${p.n}</td>
-    <td>${p.active && usable(app, [p.id]) ? `<button type="button" class="ghost small" data-practise="${esc(p.id)}">Æfa</button>` : ""}</td>
-    </tr>`).join("")}</tbody></table>`;
-  el.querySelectorAll("[data-practise]").forEach((b) => {
-    b.onclick = () => app.startRun(MINE.id, 10, [b.dataset.practise]);
-  });
 }
