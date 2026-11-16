@@ -690,7 +690,35 @@ export function soMynd(lex, view, rng) {
 const BH_SKIP = new Set(["munu", "skulu", "mega", "kunna", "unna", "þurfa", "vilja", "verða", "hljóta",
   "þykja", "deyja", "drepa", "myrða", "stela", "ljúga", "berja", "lemja", "meiða", "skjóta", "svíkja",
   "hata", "ræna", "særa", "drekkja", "kæfa", "eitra", "pynta", "nauðga", "slátra", "míga", "skíta",
-  "pissa", "kúka", "æla", "hrækja"]);
+  "pissa", "kúka", "æla", "hrækja",
+  /* v6.13 review (S2): *kúgaðu* was asked at þyngd 5. The pool was read
+     verb by verb down to the commonest 60 %, which is now also the cap at
+     þyngd 5. Left out: harm, cruelty and contempt (kúga, kvelja, pína,
+     hræða, móðga, niðurlægja, áreita, ógna, hóta, skaða, kýla …); cheating
+     and crime (svindla, plata, gabba, blekkja, fremja, múta, byrla …);
+     crude or adult words (ríða, drulla, éta, daðra, tæla, dópa, reykja …);
+     what one cannot be told to do or that makes no sense as an order
+     (heita, tilheyra, duga, springa, virka, líða, bila, frjósa, brotna,
+     detta, týna, tapa, glata, missa, sakna, efa, þola, kvíða …); and forms
+     that read as another word (*villtu* "do you want", *hefðu* of *hafa*). */
+  "kúga", "kvelja", "pína", "hræða", "skelfa", "móðga", "niðurlægja", "auðmýkja", "lítillækka", "áreita",
+  "ógna", "hóta", "skaða", "kýla", "bíta", "stinga", "slá", "hrinda", "klípa", "kremja", "merja", "traðka",
+  "hýða", "flengja", "lumbra", "rota", "bana", "tortíma", "útrýma", "granda", "fyrirfara", "eyðileggja",
+  "rústa", "sprengja", "brenna", "brjóta", "fótbrjóta", "slasa", "lama", "buga", "þjarma", "þjá", "hrjá",
+  "þjaka", "þvinga", "neyða", "handtaka", "handjárna", "ofsækja", "ásækja", "refsa", "hefna", "hæða",
+  "stríða", "pirra", "angra", "ama", "ergja", "ögra", "æsa", "skamma", "álasa", "ásaka", "saka", "sakfella",
+  "dæma", "öfunda", "fyrirlíta", "vanvirða", "níða", "bölva", "blóta", "smita", "sýkja", "menga",
+  "svindla", "plata", "gabba", "blekkja", "fremja", "múta", "byrla", "njósna", "misnota", "svipta", "skulda",
+  "ríða", "drulla", "éta", "daðra", "tæla", "kyssa", "afklæða", "dópa", "reykja", "djamma", "freta",
+  "gubba", "slefa", "sjúga", "glápa", "kjafta", "syndga", "klikka", "trylla", "rugla", "hunsa",
+  "heita", "tilheyra", "duga", "springa", "virka", "líða", "bila", "frjósa", "skjálfa", "brotna", "rotna",
+  "kafna", "detta", "týna", "tapa", "glata", "missa", "sóa", "sakna", "efa", "þola", "kvíða", "hljóma",
+  "verðskulda", "skemma", "þreyta", "trufla", "gifta", "ala", "fæða", "hverfa", "flýja", "gráta", "öskra",
+  "æpa", "þegja", "troða", "krefja", "etja", "hengja", "sverja",
+  "hanga", "skína", "titra", "svitna", "syrgja", "brotlenda", "sökkva", "veikja", "erfa", "ríkja", "tippa",
+  "orka", "síga", "vanmeta", "þagga", "yfirheyra", "ónáða", "veðja", "dýrka", "hrífa", "þróa", "fyrirskipa",
+  "hæfa", "laða", "rjúfa", "efna", "verka",
+  "villa", "hefja"]);
 const BH_ET = "GM-BH-ET", BH_FT = "GM-BH-FT", BH_ST = "GM-BH-ST";
 
 const BH_POOL = new WeakMap();
@@ -749,7 +777,7 @@ function bodhatturWhy(v) {
  *   þyngd 1–2  common verbs; the singular only, with the lesson's own help:
  *              *kom + þú → ?*
  *   þyngd 3–4  the infinitive only; singular and plural
- *   þyngd 5–   the same, every verb, and the irregular ones (*gakktu,
+ *   þyngd 5–   the same verbs, and the irregular ones (*gakktu,
  *              stattu, vertu, sjáðu*) as often as the rest
  *
  * The stýfður boðháttur itself is never asked (tasks/shared.js `askable`:
@@ -775,10 +803,14 @@ export function soBodhattur(lex, view, rng) {
   } else {
     let pool = all;
     if (b < 3) pool = commonestVerbs(lex, pool, 0.25).filter((y) => bodhatturBase(y.v));
-    else if (b < 5) pool = commonestVerbs(lex, pool, 0.6);
-    else if (rng() < 0.5) {
-      const hard = pool.filter((y) => (y.v.irr || 0) >= 4);
-      if (hard.length) pool = hard;
+    else {
+      /* never beyond the commonest 60 % (v6.13 review, S2): below that the
+         list was not read, and the rarest verbs were the likeliest */
+      pool = commonestVerbs(lex, pool, 0.6);
+      if (b >= 5 && rng() < 0.5) {
+        const hard = pool.filter((y) => (y.v.irr || 0) >= 4);
+        if (hard.length) pool = hard;
+      }
     }
     const flat = b >= 5 ? (y) => 1 + y.v.r / 150 : () => 1;
     v = wpick(pool, (y) => wordWeight(lex, view, y.v, "sagnord") * flat(y), rng).v;

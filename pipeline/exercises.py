@@ -212,9 +212,9 @@ MONTHS = ["janúar", "febrúar", "mars", "apríl", "maí", "júní", "júlí", "
 DAYS_IN = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 # The case the date stands in, and why: content/toluord/dagsetningar.tsv.
-#   (level, frame, case, why)
+#   (level, frame, case, why, days): days "ágúst 18-31, janúar 3-6" or ""
 DATE_FRAMES = _table("toluord/dagsetningar.tsv", [
-    ("þyngd", "int"), ("rammi", "text"), ("fall", "text"), ("skýring", "text")])
+    ("þyngd", "int"), ("rammi", "text"), ("fall", "text"), ("skýring", "text"), ("dagar", "str")])
 
 # ---------------------------------------------------------------- Fallstjórn
 

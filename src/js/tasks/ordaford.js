@@ -225,7 +225,7 @@ function formationPairs(lex) {
   }
   for (const w of lex.byClass.kk || []) {
     const m = w.o.match(/^(.+)(ari|andi)$/);
-    if (!m || !w.d || !["job", "person"].includes(w.s)) continue;
+    if (!m || !w.d || !["job", "person", "child"].includes(w.s)) continue;
     const v = lex.lookup(m[1] + "a", "so");
     const f3 = v && (v.forms["GM-FH-NT-3P-ET"] || [])[0];
     if (v && f3 && (w.d.includes(f3) || w.d.includes(v.o))) agent.push({ from: v, to: w, f3, sfx: "-" + m[2] });

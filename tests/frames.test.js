@@ -70,6 +70,10 @@ const BARE_ON_PURPOSE = [
   /* … and "Ferðin tafðist vegna ___" the genitive with the article: "vegna
      nefsins", "vegna herbergisins", "vegna tunglsins", "vegna síðunnar" */
   [/^(body|room|sky|text)$/, /^EFETgr$/],
+  /* v6.13 review (S2): "Ég teiknaði mynd af ___" was the only dative frame
+     of a substance or a drink, and gave "Ég teiknaði mynd af bensíninu".
+     One draws what has a shape; these cells are analysed as a bare form. */
+  [/^(substance|drink)$/, /^ÞGF(ET|FT)$/],
 ];
 
 test("every concrete noun form the analysis can ask about has a sentence", () => {

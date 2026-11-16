@@ -13,6 +13,9 @@ CLASSES
   person     a human being, incl. roles and relatives
   job        an occupation one can have or become (kennari, læknir, smiður):
              "Ég ætla að verða ___". Every `person` frame takes these too.
+  child      a child or a pupil (barn, krakki, strákur, stelpa, nemandi): who
+             is in a class, does homework, goes out at break. Every `person`
+             frame takes these too (v6.13 review, S2).
   group      a collective of people (fjölskylda, bekkur, lið, þjóð)
   animal     land animals and birds: what runs, sleeps, waits and is fed
   critter    insects, worms and sea creatures: seen and talked about only
@@ -212,6 +215,15 @@ lögfræðingur lögreglumaður lögregluþjónn málari pípari prestur ritari
 rithöfundur ritstjóri sálfræðingur sjómaður skipstjóri skólastjóri
 slökkviliðsmaður smiður söngkona söngvari tannlæknir tæknimaður
 tónlistarmaður verkfræðingur vísindamaður þjálfari þjónn
+""")
+
+# Children and pupils (v6.13 review, S2). A subset of the people above,
+# listed there too; this class wins, as `job` does. A frame about school or
+# about being small asks for these alone: "Í gær hjálpaði ég þremur ___ með
+# heimalærdóminn" took any `person` and gave *rithöfundum*.
+CHILD = _s("""
+barn krakki strákur stelpa drengur piltur stúlka telpa unglingur táningur
+smábarn smákrakki smástelpa stráklingur stráksi nemandi nemi busi
 """)
 
 GROUP = _s("""
@@ -658,7 +670,7 @@ vörn vörumerki vöxtur yfirlit yfirvinna ábending ábyrgð áfall áfangi ág
 þyngd þyngdarafl þátttaka þóknun þögn þörf þýðing
 """)
 
-CLASSES = ("person", "job", "group", "animal", "critter", "plant", "body", "food", "drink",
+CLASSES = ("person", "job", "child", "group", "animal", "critter", "plant", "body", "food", "drink",
            "clothing", "vehicle", "furniture", "object", "struct", "substance",
            "nature", "sky", "weather", "place", "building", "room", "settlement",
            "money", "text", "book", "film", "music", "time", "event", "abstract")

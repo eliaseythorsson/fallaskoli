@@ -431,10 +431,22 @@ for d in range(1, 32):
 for mth in X.MONTHS:
     check_words(mth, "MONTHS")
 frames = []
-for lvl, t, case, why in X.DATE_FRAMES:
+for lvl, t, case, why, days in X.DATE_FRAMES:
     level(lvl, f"DATE_FRAMES {t}")
     check_words(t.replace("{M}", "maí").replace("___", ORD[3][case][0]), f"DATE_FRAMES {t}")
-    frames.append({"t": t, "case": case, "why": why, "lvl": lvl})
+    f = {"t": t, "case": case, "why": why, "lvl": lvl}
+    # the days of the year the sentence can be true on (v6.13 review, S2):
+    # [[month index, first day, last day], ...]
+    if days:
+        f["when"] = []
+        for part in [x.strip() for x in days.split(",")]:
+            m = re.fullmatch(r"(\S+) (\d+)-(\d+)", part)
+            if not m or m.group(1) not in X.MONTHS:
+                fail(f"DATE_FRAMES {t}: '{part}' is not 'mánuður N-M'"); continue
+            mi, a, z = X.MONTHS.index(m.group(1)), int(m.group(2)), int(m.group(3))
+            if not 1 <= a <= z <= X.DAYS_IN[mi]: fail(f"DATE_FRAMES {t}: no such days '{part}'"); continue
+            f["when"].append([mi, a, z])
+    frames.append(f)
 out["dates"] = {"ord": ORD, "months": X.MONTHS, "days": X.DAYS_IN, "frames": frames}
 
 def _std(e):
