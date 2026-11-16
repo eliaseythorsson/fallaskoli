@@ -145,6 +145,7 @@ sign Fly's data processing agreement.
 | Restart | `fly apps restart fallaskoli-jonsson` |
 | A new version | `./build.sh`, then `fly deploy --ha=false` |
 | Take it offline at once | `fly scale count 0` (and `fly scale count 1` to bring it back) |
+| More than ~150 pupils practising at the same time | `memory = "1gb"` under `[[vm]]` in `fly.toml`, then deploy (`docs/SERVER.md` §4.4) |
 
 **A new version does not touch the data.** The disk is separate from the
 program; `fly deploy` replaces the program only. (This is the step that needed
