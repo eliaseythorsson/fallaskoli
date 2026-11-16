@@ -1,0 +1,30 @@
+# Fallstjórn: nafnorðahópar sagnarammanna
+#
+# Hópar nafnorða sem rammarnir í sagnir-rammar.tsv eru spurðir með. Hópur er valinn
+# svo að hvert nafnorð passi við sögnina (*Ég kvaddi ömmu*, ekki *Ég vakti lögreglumanninn*).
+#
+# Dálkar:
+#   hópur    nafn hópsins (sagnir-rammar.tsv vísar í það)
+#   nafnorð  nafnorðin: uppflettimynd|tala og greinir, aðskilin með kommu
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+
+hópur	nafnorð
+fjölskylda	mamma|ET, pabbi|ET, amma|ET, afi|ET, vinur|ETgr, vinkona|ETgr, strákur|ETgr, stelpa|ETgr
+aðrir	strákur|ETgr, stelpa|ETgr, kennari|ETgr, nágranni|ETgr, þjálfari|ETgr, skólastjóri|ETgr, læknir|ETgr, bílstjóri|ETgr
+fólk	mamma|ET, pabbi|ET, amma|ET, afi|ET, vinur|ETgr, vinkona|ETgr, strákur|ETgr, stelpa|ETgr, kennari|ETgr, nágranni|ETgr, þjálfari|ETgr, skólastjóri|ETgr, læknir|ETgr, bílstjóri|ETgr
+dýr	hundur|ETgr, köttur|ETgr, hestur|ETgr, kanína|ETgr, kettlingur|ETgr, hvolpur|ETgr, kind|ETgr, fugl|ETgr
+gæludýr	hundur|ETgr, köttur|ETgr, kanína|ETgr, kettlingur|ETgr, hvolpur|ETgr, hestur|ETgr
+heimsótt	mamma|ET, pabbi|ET, amma|ET, afi|ET, vinur|ETgr, vinkona|ETgr, strákur|ETgr, stelpa|ETgr, nágranni|ETgr, læknir|ETgr
+hlutir	sími|ETgr, lykill|ETgr, taska|ETgr, bolti|ETgr, húfa|ETgr, vettlingur|ETgr, blýantur|ETgr, veski|ETgr, nesti|ETgr, úlpa|ETgr, trefill|ETgr, bók|ETgr
+# What a thief takes in the night: something worth stealing (not a pencil).
+stolið	sími|ETgr, lykill|ETgr, taska|ETgr, veski|ETgr, úlpa|ETgr, bók|ETgr
+kastað	bolti|ETgr, húfa|ETgr, lykill|ETgr, vettlingur|ETgr, blýantur|ETgr, trefill|ETgr
+lokað	hurð|ETgr, gluggi|ETgr, skápur|ETgr, taska|ETgr, kassi|ETgr, skúffa|ETgr
+rusl	blað|ETgr, flaska|ETgr, dós|ETgr, bréf|ETgr, poki|ETgr, kassi|ETgr
+ýtt	taska|ETgr, kassi|ETgr, stóll|ETgr, borð|ETgr, poki|ETgr
+beðið	strætisvagn|ETgr, lest|ETgr, flugvél|ETgr, mamma|ET, pabbi|ET, læknir|ETgr, kennari|ETgr
+sótt	strákur|ETgr, stelpa|ETgr, vinur|ETgr, vinkona|ETgr
