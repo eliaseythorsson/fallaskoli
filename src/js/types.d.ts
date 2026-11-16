@@ -211,6 +211,10 @@ export interface Task {
   [field: string]: any;
 }
 
+/** The lexicon and the sentence bank, as core/lexicon.js builds them. Typed
+    by inference from that (unchecked) file: what it returns is what this is. */
+export type Lexicon = ReturnType<typeof import("./core/lexicon.js").buildLexicon>;
+
 /** What a builder returns (tasks/effects.js). */
 export interface Built { task: Task; effects: BuildEffect[] }
 
@@ -248,8 +252,8 @@ export interface TaskType {
   renderer: string;
   tags: string[];
   bands: number[];
-  build: (lex: any, view: View, rng: Rng) => Built | null;
-  drill?: (lex: any, view: View, rng: Rng, entry: any) => Built | null;
+  build: (lex: Lexicon, view: View, rng: Rng) => Built | null;
+  drill?: (lex: Lexicon, view: View, rng: Rng, entry: any) => Built | null;
 }
 
 /* ---------- judging (core/answer.js) ---------------------------------------- */
