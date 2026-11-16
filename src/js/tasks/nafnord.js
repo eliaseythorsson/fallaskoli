@@ -310,9 +310,11 @@ export const TYPES = [
     tags: ["case:EF", "case:NF", "case:ÞF", "case:ÞGF", "noun", "num"],
     bands: [1, 2, 3, 4, 5, 6, 7],
     build: noChoice },
-  /* item 27 */
+  /* item 27. Its own steps are 3 (every noun, the traps) and 5 (write the
+     genitive); the word is chosen by `wordWeight`, which since item 16 reads
+     the level at every step to 5 (regular words first), so 2 and 4 move too. */
   { id: "no_beyging", skill: "nafnord", weight: 5, renderer: "kenni",
     tags: ["case:EF", "form", "nobeyg", "nobeyg:nf"],
-    bands: [1, 3, 5],
+    bands: [1, 2, 3, 4, 5],
     build: noDeclension },
 ];

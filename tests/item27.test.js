@@ -65,7 +65,7 @@ const sigNo = (t) => JSON.stringify([t.n.o, t.n.c, t.show, t.askGen, t.answer]);
  * fn_flokkar
  * ====================================================================== */
 
-const FN = new Map([1, 2, 3, 4, 5].map((b) => [b, buildMany(fnKind, b, 1500)]));
+const FN = new Map(typeById("fn_flokkar").bands.map((b) => [b, buildMany(fnKind, b, 1500)]));
 const KIND_NAMES = PRONOUN_KINDS.map((k) => k.nm);
 
 test("fn_flokkar: the answer is among the options, no option twice, the options in the lesson's order", () => {
@@ -127,8 +127,11 @@ test("fn_flokkar: no form whose kind the sentence cannot settle is ever asked", 
     /* *mín, þín, sín* as an eignarfornafn only right after a noun. */
     if (/^(mín|þín|sín)$/.test(w) && kind.k === "eignar") assert.equal(t.s.tok[t.i - 1].c, "nafnorð", t.s.t);
   }
-  /* "á hverjum degi" is *hver* = each: not taught, not asked. */
-  assert.ok(!all.some((t) => t.s.tok[t.i].l === "hver"), "hver outside a direct question");
+  /* "á hverjum degi" is *hver* = each: not taught, not asked. *Hvað kostar
+     bókin?* (BÍN files *hvað* under *hver*) opens a direct question and is
+     the spurnarfornafn the lesson teaches (item 24 put it in the bank). */
+  const direct = (t) => /\?$/.test(t.s.t) && (t.i === 0 || (t.i === 1 && t.s.tok[0].c === "forsetning"));
+  assert.ok(!all.some((t) => t.s.tok[t.i].l === "hver" && !direct(t)), "hver outside a direct question");
 });
 
 test("fn_flokkar: the plural personal pronoun is named as the pupil knows it", () => {
@@ -171,7 +174,7 @@ test("fn_flokkar: a review asks the same kind, the same word, never the sentence
  * no_beyging
  * ====================================================================== */
 
-const NO = new Map([1, 3, 5].map((b) => [b, buildMany(noDeclension, b, 1500)]));
+const NO = new Map(typeById("no_beyging").bands.map((b) => [b, buildMany(noDeclension, b, 1500)]));
 const VOWEL = /[aeiouyáéíóúýæö]$/i;
 
 test("no_beyging: the answer is among the options, no option twice, and it is the lesson's rule", () => {

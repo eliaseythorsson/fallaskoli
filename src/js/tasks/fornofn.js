@@ -409,9 +409,11 @@ export const TYPES = [
     tags: ["reflex"],
     bands: [1, 3, 4],
     build: fnReflex },
-  /* item 27 */
+  /* item 27. Six kinds from þyngd 3, the genitive trap from 5, and bank
+     sentences up to one level above the band — like fn_stad, so at 6 the
+     level-7 sentences (item 14) come in, and 7 adds nothing new. */
   { id: "fn_flokkar", skill: "fornofn", weight: 5, renderer: "choice",
     tags: ["fnkind", "fnkind:gen"],
-    bands: [1, 2, 3, 4, 5],
+    bands: [1, 2, 3, 4, 5, 6],
     build: fnKind },
 ];
