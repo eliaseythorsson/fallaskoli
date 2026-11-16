@@ -11,6 +11,8 @@ const left = (v, now = Date.now()) => {
   const h = (v.deadline - now) / 3600000;
   if (h <= 0) return "tíminn er liðinn";
   if (h < 1) return "minna en klukkustund eftir";
+  /* A team duel can run for a week (core/teamduel.js). */
+  if (h >= 48) { const d = Math.floor(h / 24); return `${d} ${d % 10 === 1 && d % 100 !== 11 ? "dagur" : "dagar"} eftir`; }
   const n = Math.floor(h);
   return `${n} ${n === 1 ? "klukkustund" : "klukkustundir"} eftir`;
 };
@@ -30,8 +32,29 @@ const score = (r) => (r ? `${r.c}/${r.n}` : "—");
 const answers = (h) => (h === 1 ? "1 rétt svar" : `${h} rétt svör`);
 const given = (v) => (v && v.handicap) || { mine: 0, theirs: 0 };
 
+/* ---- team duels (item 67, core/teamduel.js) --------------------------------
+ * The same strip, other words: the opponent is a team, the score a mean,
+ * and a handicap is given to every player of the team on the lower level.
+ * Means are written with a decimal comma. */
+const mean = (x) => String(x).replace(".", ",");
+const teamTitle = (v) => `Bekkjareinvígi · ${esc(v.myTeam)} gegn ${esc(v.opponent.name)}`;
+const playedText = (t) => (t ? `${t.played} af ${t.of} ${t.played % 10 === 1 && t.played % 100 !== 11 ? "hefur" : "hafa"} spilað` : "");
+function teamAhead(v) {
+  const h = given(v);
+  const rule = "Liðin fá jafnþungar spurningar en ekki þær sömu. Meðaltal rétta svara liðsins gildir, svo öll svör telja.";
+  if (h.mine) return `${rule} Liðið þitt fær ${answers(h.mine)} á mann í forgjöf af því að það er á lægra stigi í þessu efni.`;
+  if (h.theirs) return `${rule} ${esc(v.opponent.name)} er á lægra stigi í þessu efni og fær því ${answers(h.theirs)} á mann í forgjöf.`;
+  return rule;
+}
+function teamAfter(v) {
+  if (!v.us || v.us.mean === undefined) return "";
+  const fig = (name, t) => `${esc(name)} ${mean(t.mean)} rétt að meðaltali${t.plus ? ` + ${t.plus} í forgjöf` : ""} (${playedText(t)})`;
+  return `${fig(v.myTeam, v.us)}; ${fig(v.opponent.name, v.them)}.`;
+}
+
 /** Before and during the duel: who starts with what, in one sentence. */
 function handicapAhead(v) {
+  if (v && v.team) return teamAhead(v);
   const h = given(v);
   if (h.mine) return `Þú færð ${answers(h.mine)} í forgjöf af því að þú ert á lægra stigi í þessu efni.`;
   if (h.theirs) return `${esc(v.opponent.name)} er á lægra stigi en þú í þessu efni og fær því ${answers(h.theirs)} í forgjöf.`;
@@ -40,6 +63,7 @@ function handicapAhead(v) {
 
 /** After the duel: the sum, and why. Empty when nobody was given anything. */
 function handicapAfter(v) {
+  if (v && v.team) return teamAfter(v);
   const h = given(v);
   if (!v.mine || !v.theirs || (!h.mine && !h.theirs)) return "";
   if (h.mine) {
@@ -72,11 +96,12 @@ export function renderDuelBar(app) {
   if (run) {
     const v = run.view;
     el.innerHTML = `<div class="drillstrip duel active" role="status"><span class="drillico">⚔️</span>
-      <div class="drilltext"><b>Einvígi · <em>${esc(v.opponent.name)}</em> · ${esc(topicName(v.topic))}</b>
+      <div class="drilltext"><b>${v.team ? `${teamTitle(v)} · ${esc(v.name)}`
+          : `Einvígi · <em>${esc(v.opponent.name)}</em> · ${esc(topicName(v.topic))}`}</b>
         <span class="drillnums">Spurning ${Math.min(run.i + 1, run.tasks.length)} af ${run.tasks.length} · ${run.c} rétt</span>
         ${dots(run)}
-        <span class="drillneed">Þið fáið jafnþungar spurningar en ekki þær sömu. Fleiri rétt svör vinna.
-          ${handicapAhead(v)}</span></div>
+        <span class="drillneed">${v.team ? teamAhead(v) : `Þið fáið jafnþungar spurningar en ekki þær sömu. Fleiri rétt svör vinna.
+          ${handicapAhead(v)}`}</span></div>
       <button type="button" class="ghost" id="duelquit">Hætta</button></div>`;
     $("duelquit").onclick = () => app.quitDuel();
     return;
@@ -92,21 +117,24 @@ export function renderDuelBar(app) {
   for (const news of app.duelNews || []) {
     const v = news.view;
     const [cls, ico, words] = RESULT[news.outcome];
-    const how = news.outcome === "f" ? ""
+    const how = v.team ? ` · þú ${score(v.mine)}`
+      : news.outcome === "f" ? ""
       : !v.theirs ? ` — ${esc(v.opponent.name)} svaraði ekki innan ${DUEL.hours} klukkustunda`
         : ` · þú ${score(v.mine)}, ${esc(v.opponent.name)} ${score(v.theirs)}`;
     const fair = news.outcome === "f" ? "" : handicapAfter(v);
     parts.push(`<div class="drillstrip duel ${cls}" role="status"><span class="drillico">${ico}</span>
-      <div class="drilltext"><b>${words} · <em>${esc(v.opponent.name)}</em></b>
-        <span class="drillnums">${esc(topicName(v.topic))}, ${v.n} spurningar${how}${news.xp ? ` · +${news.xp} XP` : ""}</span>
+      <div class="drilltext"><b>${words} · <em>${esc(v.team ? `${v.myTeam} gegn ${v.opponent.name}` : v.opponent.name)}</em></b>
+        <span class="drillnums">${esc(v.team ? v.name : topicName(v.topic))}, ${v.n} spurningar${how}${news.xp ? ` · +${news.xp} XP` : ""}</span>
         ${fair ? `<span class="drillneed duelfair">${fair}</span>` : ""}</div>
       <button type="button" class="ghost" data-duelclose="${esc(v.id)}">Loka</button></div>`);
   }
   if (app.duelSent) {
     const s = app.duelSent;
     parts.push(`<div class="drillstrip duel" role="status"><span class="drillico">📨</span>
-      <div class="drilltext"><b>${s.unplayed ? "Einvígið hófst ekki" : `Þú fékkst ${s.c} af ${s.n}`} · mótherji: <em>${esc(s.view.opponent.name)}</em></b>
-        <span class="drillneed">${s.error ? esc(s.error)
+      <div class="drilltext"><b>${s.unplayed ? "Einvígið hófst ekki" : `Þú fékkst ${s.c} af ${s.n}`} · ${s.view.team
+          ? esc(`${s.view.myTeam} gegn ${s.view.opponent.name}`) : `mótherji: <em>${esc(s.view.opponent.name)}</em>`}</b>
+        <span class="drillneed">${s.error ? esc(s.error) : s.view.team
+          ? "Niðurstaðan kemur þegar allir í báðum liðum hafa spilað — eða tíminn rennur út."
           : `Niðurstaðan kemur þegar ${esc(s.view.opponent.name)} hefur svarað — eða tíminn rennur út.`}</span></div>
       <button type="button" class="ghost" id="duelsentclose">Loka</button></div>`);
   }
@@ -114,13 +142,14 @@ export function renderDuelBar(app) {
     v.status === "open" && !v.mine && !(app.duelSkipped && app.duelSkipped.has(v.id)));
   waiting.slice(0, 2).forEach((v) => {
     parts.push(`<div class="drillstrip duel offer" role="status"><span class="drillico">⚔️</span>
-      <div class="drilltext">${v.challenger
+      <div class="drilltext">${v.team ? `<b>${teamTitle(v)}</b>` : v.challenger
         ? `<b>Einvígið þitt bíður · <em>${esc(v.opponent.name)}</em></b>`
         : `<b><em>${esc(v.opponent.name)}</em> skorar á þig!</b>`}
-        <span class="drillnums">${v.n} spurningar · ${esc(topicName(v.topic))} · ${left(v)}</span>
-        <span class="drillneed">${v.theyPlayed ? `${esc(v.opponent.name)} er búin(n) að svara. ` : ""}Ef þú svarar ekki
-          innan ${DUEL.hours} klukkustunda frá áskoruninni tapar þú einvíginu. ${handicapAhead(v)}</span></div>
-      <button type="button" class="go" data-duelgo="${esc(v.id)}">${v.challenger ? "Spila núna" : "Taka áskoruninni"}</button>
+        <span class="drillnums">${v.n} spurningar · ${esc(v.team ? v.name : topicName(v.topic))} · ${left(v)}</span>
+        <span class="drillneed">${v.team ? `Kennarinn setti þetta einvígi. ${v.us ? `${v.us.played} af ${v.us.of} í liðinu þínu ${v.us.played % 10 === 1 && v.us.played % 100 !== 11 ? "hefur" : "hafa"} spilað. ` : ""}${teamAhead(v)}`
+          : `${v.theyPlayed ? `${esc(v.opponent.name)} er búin(n) að svara. ` : ""}Ef þú svarar ekki
+          innan ${DUEL.hours} klukkustunda frá áskoruninni tapar þú einvíginu. ${handicapAhead(v)}`}</span></div>
+      <button type="button" class="go" data-duelgo="${esc(v.id)}">${v.challenger || v.team ? "Spila núna" : "Taka áskoruninni"}</button>
       <button type="button" class="ghost" data-duelskip="${esc(v.id)}">Seinna</button></div>`);
   });
   if (waiting.length > 2) {

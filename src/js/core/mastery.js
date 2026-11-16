@@ -134,12 +134,14 @@ export function noteTypeAnswer(S, typeId, band, ok, now = Date.now()) {
 /**
  * `S.byType` as it may be trusted: known types only, every field bounded,
  * `c` never above `n`. Used by `migrate` (core/state.js) and the server's
- * guard (server/guard.mjs). Never throws.
+ * guard (server/guard.mjs). Never throws. `ids`: the keys that may be kept —
+ * the question types, or for the same record kept per curriculum node
+ * (`S.byNode`, core/skillmap.js) the nodes that have one.
  */
-export function cleanByType(raw) {
+export function cleanByType(raw, ids = TYPE_IDS) {
   const out = {};
   if (!isObj(raw)) return out;
-  for (const id of TYPE_IDS) {
+  for (const id of ids) {
     const v = raw[id];
     if (!isObj(v)) continue;
     const n = int(v.n), c = Math.min(int(v.c), n);
@@ -157,8 +159,8 @@ export function cleanByType(raw) {
  * history is a position, not a count, and the side answered last wins it
  * whole (`at`), as a saved level does (core/difficulty.js mergeLevels).
  */
-export function mergeByType(base, local, remote) {
-  const B = cleanByType(base), L = cleanByType(local), R = cleanByType(remote);
+export function mergeByType(base, local, remote, ids = TYPE_IDS) {
+  const B = cleanByType(base, ids), L = cleanByType(local, ids), R = cleanByType(remote, ids);
   const out = {};
   for (const k of new Set([...Object.keys(R), ...Object.keys(L)])) {
     const b = B[k] || { n: 0, c: 0 }, l = L[k], r = R[k];

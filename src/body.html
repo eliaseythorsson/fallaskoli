@@ -42,6 +42,7 @@
       <span id="boarddate"></span>
       <span class="tally" id="tally"></span>
     </div>
+    <div id="livebar"></div>
     <div id="duelbar"></div>
     <div id="drillbar"></div>
     <div id="runbar"></div>
@@ -79,23 +80,15 @@
   </div>
 
   <div class="pane" id="pane-stats" hidden>
-    <h2 class="sec first">Styrkleikar eftir efni</h2>
-    <p class="sub">Hvert efni hefur sitt eigið stig og sína eigin þyngd. Að ganga vel í nafnorðum
-      gerir sagnirnar ekki erfiðari.</p>
-    <div id="skillgrid"></div>
-
-    <h2 class="sec">Villumynstur</h2>
-    <p class="sub">Hver villa er flokkuð: ruglast þolfall og þágufall, gleymist hljóðvarp, fær sterk
-      sögn veika þátíð? <b>Undanfarið</b> eru síðustu 16 skiptin sem spurning prófaði mynstrið.
-      Það sem fer oft úrskeiðis núna kemur oftar fyrir í æfingunum þangað til það lagast.</p>
-    <div class="chartbox" id="diaglist"></div>
-
-    <h2 class="sec">Hvar liggja mistökin?</h2>
-    <p class="sub">Hlutfall réttra svara í hverjum reit beygingartöflunnar.</p>
-    <div class="chartbox" style="overflow-x:auto"><div id="heat"></div></div>
-
-    <h2 class="sec">Orð sem þarf að æfa</h2>
-    <div class="chartbox"><div id="wordlist"></div></div>
+    <!-- Item 83: the skill map (ui/skillmap.js). It carries what four panels
+         used to show apart: Styrkleikar eftir efni, Villumynstur, Hvar liggja
+         mistökin and Orð sem þarf að æfa. -->
+    <h2 class="sec first">Færnikort</h2>
+    <p class="sub">Hér sérðu hvar þú stendur í málfræðinni í 8.–10. bekk. Hver hringur er eitt
+      efnisatriði. Smelltu á hring til að sjá regluna og hvað hefur farið úrskeiðis, og til að æfa
+      einmitt það.</p>
+    <div id="skillmap"></div>
+    <div id="loosepatterns"></div>
 
     <h2 class="sec">Svör á dag</h2>
     <p class="sub">Súlur eru svör, línan er hlutfall réttra svara. Síðustu 30 dagar.</p>
@@ -147,9 +140,10 @@
   <div id="board"></div>
 
   <h2 class="sec">Einvígi</h2>
-  <p class="sub">Skoraðu á einhvern í hópnum: þið fáið bæði sömu 10, 20 eða 30 spurningarnar um sama
-    efnið, og svarið hvort í sínu lagi. Sá sem hefur fleiri rétt vinnur einvígismerki — en bæði fá XP.
-    Þyngdin er mitt á milli stigs ykkar beggja í efninu. Hvort ykkar sem svarar ekki innan sólarhrings
+  <p class="sub">Skoraðu á einhvern í hópnum: þið fáið bæði 10, 15 eða 20 spurningar um sama efnið,
+    jafnþungar en ekki þær sömu, og svarið hvort í sínu lagi. Sá sem hefur fleiri rétt vinnur
+    einvígismerki — en bæði fá XP. Þyngdin er mitt á milli stigs ykkar beggja í efninu, og ef meira en
+    eitt stig skilur ykkur að fær það ykkar sem er á lægra stigi nokkur rétt svör í forgjöf. Hvort ykkar sem svarar ekki innan sólarhrings
     frá áskoruninni tapar. Aðeins þeir sem eru á stigatöflunni geta skorað á og fengið áskoranir.</p>
   <div id="duelroom"></div>
 

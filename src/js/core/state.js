@@ -12,6 +12,7 @@ import { checkDayEnd, legacyStreakCredit } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
 import { blankReview, sanitiseReview } from "./review.js";
 import { cleanByType, masteryOf } from "./mastery.js";
+import { cleanByNode } from "./skillmap.js";
 import { cleanSeenTypes } from "./examples.js";
 import { blankMend, sanitiseMend, patternsMended, reviewsOnTime } from "./mending.js";
 
@@ -110,6 +111,11 @@ export function blankState() {
        { typeId: {n, c, h, at} }. What the mastery mark reads; see
        core/mastery.js. */
     byType: {},
+    /* The same record for the few curriculum nodes that are not simply
+       their question types — the past tense, the subjunctive, the middle
+       voice … share the verb types (item 83): { nodeId: {n, c, h, at} }.
+       See core/skillmap.js. */
+    byNode: {},
     /* The question types this pupil has met, { typeId: day } (item 41): a
        type not in it shows one worked example on its first card
        (core/examples.js). */
@@ -221,6 +227,7 @@ export function migrate(raw) {
     frames: cleanFrames(raw.frames),
     /* Items 44 and 41 (v6.13): rebuilt field by field, known types only. */
     byType: cleanByType(raw.byType),
+    byNode: cleanByNode(raw.byNode),
     seenTypes: cleanSeenTypes(raw.seenTypes),
     /* Items 56 and 58: rebuilt field by field (core/mending.js). */
     mend: sanitiseMend(raw.mend),

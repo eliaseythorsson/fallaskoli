@@ -906,7 +906,214 @@ async function closeWindows(page) {
   ok(/4 af 5 \(80%\)/.test(seen), "the teacher does not see the score");
   ok(/ekki byrjað/.test(seen), "the pupil who has not started is not shown as such");
   ok(/Þolfall og þágufall ruglast/.test(seen), "the class's patterns on the material are missing");
+
+  /* Item 83 (d): the teacher opens one pupil's skill map — the pupil's own
+     map, without "last trained", the words and the button. */
+  await T.page.waitForSelector(`#tc-pupil option[value="${onnur.id}"]`, { timeout: 10000 });
+  await T.page.select("#tc-pupil", onnur.id);
+  await T.page.waitForSelector("#tc-map .skillboard.teacher .smnode", { timeout: 10000 });
+  const tmap = await T.page.evaluate(() => ({
+    title: document.querySelector("#tc-map .smtitle")?.innerText || "",
+    nodes: document.querySelectorAll("#tc-map .smtrail .smnode").length,
+    flag: document.querySelector('#tc-map .smtrail .smnode[data-node="no-foll"] .smflag')?.innerText.trim() || "",
+    label: document.querySelector('#tc-map .smtrail .smnode[data-node="no-foll"]')?.getAttribute("aria-label") || "",
+    dates: document.querySelectorAll("#tc-map .smlast").length,
+    /* The nodes and the heads of the trails — not the legend, which says
+       what the number on a yellow disc counts ("upprifjanir í dag"). */
+    text: [...document.querySelectorAll("#tc-map .smnode, #tc-map .smhead, #tc-map .smnext")].map((e) => e.innerText).join(" | "),
+    legend: document.querySelector("#tc-map .smlegend")?.innerText || "",
+    overflow: document.documentElement.scrollWidth - innerWidth,
+  }));
+  ok(/Færnikort · onnur/.test(tmap.title) && tmap.nodes >= 40, `the teacher's map of the pupil did not draw: ${tmap.title}, ${tmap.nodes} nodes`);
+  ok(tmap.flag === "!" && /Bíður nemandans: 1 villumynstur algengt núna/.test(tmap.label), `the pupil's active pattern is not on its node: ${tmap.flag} / ${tmap.label}`);
+  ok(tmap.dates === 0 && !/í gær|í dag|fyrir \d+ (dögum|vikum)|ekki æft enn|XP/.test(tmap.text), "the teacher's map says when the pupil practised, or their XP");
+  ok(/nemandinn nær/.test(tmap.legend) && !/þú nærð|bíður þín/.test(tmap.legend), "the teacher's legend speaks to the pupil: " + tmap.legend.slice(0, 160));
+  ok(tmap.overflow <= 1, `the teacher's map scrolls sideways by ${tmap.overflow}px`);
+  if (process.env.BT_SHOT) await T.page.screenshot({ path: process.env.BT_SHOT + "-map.png", fullPage: true });
+  await T.page.evaluate(() => document.querySelector('#tc-map .smtrail .smnode[data-node="no-foll"]').click());
+  await T.page.waitForSelector('.smpanel[data-panel="no-foll"]', { timeout: 5000 });
+  const tnode = await T.page.evaluate(() => { const p = document.querySelector(".smpanel"); return {
+    text: p.innerText.replace(/\s+/g, " "), go: !!p.querySelector("[data-nodego]"), facts: p.querySelectorAll(".smfact").length }; });
+  ok(/Þolfall og þágufall ruglast/.test(tnode.text) && /Bíður nemandans/.test(tnode.text) && tnode.facts === 2 && !tnode.go,
+    `the node the teacher opened should show the pattern and no session button: ${tnode.text.slice(0, 200)}`);
+  ok(!/hestur|Síðast æft/.test(tnode.text) && /ekki hvenær nemandinn æfði sig/.test(tnode.text), "the teacher's node shows a word or a date, or does not say what is left out");
+  if (process.env.BT_SHOT) await T.page.screenshot({ path: process.env.BT_SHOT + "-node.png" });
+  await T.page.keyboard.press("Escape");
+  /* A pupil is refused the route, for a classmate and for themselves. */
+  const tref = await P.page.evaluate((ids) => Promise.all(ids.map((id) => fetch("/teacher/skillmap?pupil=" + id).then((r) => r.status))), [onnur.id, nemi.id]);
+  ok(tref.every((x) => x === 403), "a pupil got " + tref.join(",") + " from the skill map route");
   await T.ctx.close(); await P.ctx.close();
+}
+
+/* ---------- 11. A live class round (v6.13, item 64): a teacher and two pupils ----
+   Three browsers. The teacher opens a round of five questions on the
+   projector; two pupils join from the strip above their question, answer
+   through the ordinary input and button against the shared clock, one of
+   them reloads in the middle, and the round ends on the board. */
+{
+  await app.store.updateGroups((g) => ({ ...g, h9l: { name: "9. L" } }));
+  const inG = async (u, extra = {}) => {
+    await app.store.updateUsers((list) => { Object.assign(list.find((x) => x.id === u.id), { group: "h9l" }, extra); return list; });
+    return u;
+  };
+  await inG(await mkUser("kennari9", "guardian"));
+  await inG(await mkUser("lifa", "learner"));
+  /* lifb has not chosen to be on the leaderboard: never named on the wall. */
+  await inG(await mkUser("lifb", "learner"), { share: { board: false, minutes: false } });
+
+  const T = await fresh();
+  await login(T.page, "kennari9");
+  await openTab(T.page, "class");
+  await T.page.waitForSelector('#tc-live-what option[value="node:lo-samraemi"]', { timeout: 15000 });
+  await T.page.select("#tc-live-what", "node:lo-samraemi");
+  await T.page.select("#tc-live-n", "5");
+  await T.page.select("#tc-live-secs", "20");
+  await T.page.click("#tc-live-start");
+  const boardText = () => T.page.evaluate(() => document.querySelector(".liveboard")?.innerText || "");
+  await T.page.waitForFunction(() => /Vertu með/.test(document.querySelector(".liveboard")?.innerText || ""), { timeout: 15000 });
+
+  const pupil = async (name) => {
+    const P = await fresh();
+    await login(P.page, name);
+    await P.page.waitForSelector("#livejoin", { timeout: 20000 });
+    await P.page.click("#livejoin");
+    await P.page.waitForFunction(() => window.FALLASKOLI.liveRun && /Bíddu eftir að kennarinn byrji/.test(
+      document.getElementById("livebar")?.innerText || ""), { timeout: 10000 });
+    return P;
+  };
+  const P1 = await pupil("lifa");
+  const P2 = await pupil("lifb");
+  ok(/Leikmaður 2/.test(await P2.page.$eval("#livebar", (e) => e.innerText)),
+    "a pupil off the leaderboard is not told the alias the wall shows");
+  await T.page.waitForFunction(() => /2 nemendur eru með/.test(document.querySelector(".liveboard")?.innerText || ""), { timeout: 10000 });
+  await T.page.click(".liveboard [data-lb=next]");
+
+  const onQuestion = (P, q) => P.page.waitForFunction((q) => {
+    const A = window.FALLASKOLI;
+    return A.cur && A.cur.live && A.cur.liveQ === q && document.querySelector("#task #ans") &&
+      !document.getElementById("task").classList.contains("livewait");
+  }, { timeout: 15000 }, q);
+  const answer = async (P, right) => {
+    const text = await P.page.evaluate((right) => {
+      const t = window.FALLASKOLI.cur;
+      /* Wrong: the dictionary form, as a pupil who forgot to inflect would. */
+      const lemma = String(t.cue || "").split(" · ")[0];
+      return right ? t.answers[0] : (lemma && !t.answers.includes(lemma) ? lemma : "rangt");
+    }, right);
+    await P.page.click("#ans", { clickCount: 3 });
+    await P.page.type("#ans", text);
+    await P.page.click("#check");
+    /* Covered until the question closes — or already closed, if this was
+       the last answer the round was waiting for. */
+    await P.page.waitForFunction(() => /livewait|livedone/.test(document.getElementById("task").className), { timeout: 5000 });
+  };
+
+  for (let q = 0; q < 5; q++) {
+    await T.page.waitForFunction((q) => new RegExp(`Spurning ${q + 1} af 5`).test(document.querySelector(".liveboard")?.innerText || "")
+      && document.querySelector(".liveboard .livecard .card"), { timeout: 15000 }, q);
+    if (q === 0) {
+      const wall = await T.page.evaluate(() => {
+        const c = document.querySelector(".liveboard .livecard");
+        const go = c.querySelector("button.go");
+        return { inert: c.inert, ids: c.querySelectorAll("[id]").length, go: go ? getComputedStyle(go).display : "none",
+          dup: document.querySelectorAll("#task").length };
+      });
+      ok(wall.inert && wall.ids === 0 && wall.go === "none" && wall.dup <= 1,
+        "the question on the wall is not a read-only copy: " + JSON.stringify(wall));
+    }
+    await onQuestion(P1, q);
+    if (q === 2) {
+      /* lifb reloads in the middle of a question: back in the round, the
+         same question, by itself. */
+      await P2.page.reload({ waitUntil: "domcontentloaded" });
+    }
+    await onQuestion(P2, q);
+    const same = await Promise.all([P1, P2].map((P) => P.page.evaluate(() => JSON.stringify(window.FALLASKOLI.cur.s || window.FALLASKOLI.cur.w || ""))));
+    ok(same[0] === same[1], `question ${q + 1} differs between the two pupils`);
+    await answer(P1, true);
+    /* Answered: the verdict is drawn but hidden until the question closes. */
+    const hidden = await P1.page.evaluate(() => {
+      const v = document.querySelector("#task #verdict .verdict");
+      return { drawn: !!v, shown: v ? v.getClientRects().length > 0 : false,
+        bar: document.getElementById("livebar").innerText };
+    });
+    ok(hidden.drawn && !hidden.shown, `question ${q + 1}: the verdict shows before the question closes`);
+    ok(/Bíddu eftir hinum/.test(hidden.bar), "the strip does not say to wait for the others");
+    await answer(P2, false);
+    await T.page.waitForFunction((q) => {
+      const t = document.querySelector(".liveboard")?.innerText || "";
+      return new RegExp(`Spurning ${q + 1} af 5`).test(t) && /Rétt: 1/.test(t) && /Rangt: 1/.test(t);
+    }, { timeout: 15000 }, q);
+    for (const [P, word] of [[P1, "Rétt!"], [P2, "Ekki rétt"]]) {
+      await P.page.waitForFunction((word) => {
+        const v = document.querySelector("#task #verdict .verdict");
+        return v && v.getClientRects().length > 0 && document.getElementById("livebar").innerText.includes(word);
+      }, { timeout: 10000 }, word);
+    }
+    await T.page.click(".liveboard [data-lb=next]");
+  }
+
+  await T.page.waitForFunction(() => /Úrslit/.test(document.querySelector(".liveboard")?.innerText || ""), { timeout: 15000 });
+  const end = await boardText();
+  ok(/1\.\s*lifa/.test(end) && /Leikmaður 2/.test(end), "the podium is not lifa then Leikmaður 2: " + end.slice(0, 300));
+  ok(!/lifb/.test(end), "a pupil off the leaderboard was named on the wall");
+  ok(/50% spurninganna rétt/.test(end), "the class's share is not 50%: " + end.slice(0, 400));
+  ok(await T.page.$(".liveboard .lbrule") !== null, "the end does not show the commonest error (or say there was none)");
+  await P1.page.waitForFunction(() => /1\. sæti með 5 rétt af 5/.test(document.getElementById("livebar")?.innerText || ""), { timeout: 10000 });
+  await P2.page.waitForFunction(() => /2\. sæti með 0 rétt af 5/.test(document.getElementById("livebar")?.innerText || ""), { timeout: 10000 });
+  /* The answers were practice: they are in the pupil's own progress. */
+  const n = await P1.page.evaluate(() => Object.values(window.FALLASKOLI.S.skills).reduce((a, s) => a + (s.c || 0) + (s.w || 0), 0));
+  ok(n >= 5, "the round's answers are not in the pupil's own progress: " + n);
+  /* The pupil closes the round and is back at practice. */
+  await P1.page.click("#liveleave");
+  await P1.page.waitForFunction(() => !window.FALLASKOLI.liveRun && !document.getElementById("livebar").innerText.trim(), { timeout: 5000 });
+  /* The teacher closes the wall and has the form again. */
+  await T.page.click(".liveboard [data-lb=close]");
+  await T.page.waitForSelector("#tc-live-start", { timeout: 10000 });
+  ok(!(await T.page.$(".liveboard")), "the projector layer did not close");
+
+  /* Item 67: a team duel. Two more pupils, and the class is split in two
+     from the teacher's section; lifa plays from the duel strip, through
+     the real input, and the server grades what it built itself. */
+  await inG(await mkUser("lifc", "learner"));
+  await inG(await mkUser("lifd", "learner"));
+  await openTab(T.page, "practice");
+  await openTab(T.page, "class");
+  /* The section from before the two new pupils may still be on the page
+     while the tab redraws; "split" is offered only by the fresh one. */
+  await T.page.waitForSelector('#tc-team-vs option[value="split"]', { timeout: 15000 });
+  await T.page.waitForSelector('#tc-team-what option[value="node:lo-samraemi"]', { timeout: 15000 });
+  await T.page.select("#tc-team-what", "node:lo-samraemi");
+  await T.page.select("#tc-team-vs", "split");
+  await T.page.select("#tc-team-n", "10");
+  await T.page.click("#tc-team-set");
+  await T.page.waitForFunction(() => /Einvígið er hafið/.test(document.getElementById("tc-team")?.innerText || ""), { timeout: 10000 });
+  const td = (await app.store.teamDuels()).find((d) => d.groups.a === "h9l");
+  ok(td && td.teams.a.length === 2 && td.teams.b.length === 2, "the class was not split in two: " + JSON.stringify(td && td.teams));
+  await P1.page.evaluate(() => window.FALLASKOLI.loadDuels());
+  await P1.page.waitForFunction(() => /Bekkjareinvígi/.test(document.getElementById("duelbar")?.innerText || ""), { timeout: 10000 });
+  await P1.page.click("#duelbar [data-duelgo]");
+  await P1.page.waitForFunction(() => window.FALLASKOLI.duelRun && document.querySelector("#task #ans"), { timeout: 20000 });
+  ok(/Bekkjareinvígi/.test(await P1.page.$eval("#duelbar", (e) => e.innerText)), "the run's strip does not name the team duel");
+  for (let k = 0; k < 10; k++) {
+    await P1.page.waitForFunction(() => { const a = document.querySelector("#task #ans"); return a && !a.disabled; }, { timeout: 10000 });
+    await P1.page.evaluate(() => {
+      const A = window.FALLASKOLI;
+      document.getElementById("ans").value = A.cur.answers[0];
+      document.getElementById("check").click();
+      A.next();
+    });
+  }
+  await P1.page.waitForFunction(() => /Þú fékkst 10 af 10/.test(document.getElementById("duelbar")?.innerText || ""), { timeout: 15000 });
+  const graded = (await app.store.teamDuels()).find((d) => d.id === td.id).res;
+  const lifaId = (await app.store.users()).find((u) => u.username === "lifa").id;
+  ok(graded[lifaId] && graded[lifaId].c === 10 && graded[lifaId].n === 10,
+    "the server did not grade the team duel as played: " + JSON.stringify(graded));
+  await T.page.evaluate(() => document.getElementById("tc-team").dataset.stale = "1");
+  await openTab(T.page, "practice");
+  await openTab(T.page, "class");
+  await T.page.waitForFunction(() => /1 af 2 hefur spilað · 10 rétt að meðaltali/.test(document.getElementById("tc-team")?.innerText || ""), { timeout: 10000 });
+  for (const X of [T, P1, P2]) await X.ctx.close();
 }
 
 /* ---------- Calibration, end to end (items 17 and 38) -------------------

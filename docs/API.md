@@ -313,6 +313,8 @@ exist. One function, `needTeacher` in `server/server.mjs`, decides it.
 GET    /teacher/groups              -> { mine, groups: [ { id, name, pupils } ] }
 GET    /teacher/patterns            -> { group: { id, name }, pupils: [ pupil ], columns: [ patternId ] }
 GET    /teacher/patterns.csv        -> the same table as text/csv (attachment)
+GET    /teacher/skillmap?pupil=ID   -> { group, pupil: { id, name, practised }, map }
+                                    404 not an active learner of the group (one answer for every such case)
 GET    /teacher/assignments         -> { group, limits, assignments: [ teacherView ], pupils: [ pupil ] }
 POST   /teacher/assignments         { group?, target: { kind, id }, n, due, note? }
                                     -> { ok, assignment }   400 bad target/size/date/note · 409 12 open
@@ -337,6 +339,20 @@ rate over the recent window, then total misses (`core/classview.js`
 per pattern (empty where not met lately) and the two Ógreint counts, separated
 by `;`, UTF-8 with a byte-order mark, and a nickname a spreadsheet would run as
 a formula is prefixed with `'`.
+
+`map` is one pupil's skill map as their teacher gets it (`core/skillmap.js`
+`teacherMap`, critique item 83): `{ teacher: true, cats, totals, next, loose,
+details }`. `cats` are the categories, each with `groups: [ { year, nodes } ]`;
+a node is `{ id, nm, year, cat, lesson, on, locked, mastery, due, waiting,
+active, needsWork }` — `mastery` is the mark of item 44 (`level` 0–4, `label`,
+`n`, `right`, `band` …), `due`/`waiting` count the node's entries in the review
+queue, `active` lists its error patterns that are "algengt núna". `details`
+maps a node id to `{ patterns, cells, grid }`: the figures of the node's
+patterns, the cells missed as `{ cell, label, missed, due, right, wrong }`, and
+for the node of the four cases the noun table's sixteen cells. Deliberately
+not in it: when anything was last practised, the words missed, XP and stig,
+the raw histories. All `/teacher/…` routes take `?group=ID`; a guardian may
+name only their own.
 
 A **target** (`core/assignment.js`) is one of
 `{ kind: "skill", id: <category> }`, `{ kind: "pattern", id: <pattern> }` (not
@@ -412,6 +428,186 @@ The badge is judged in the browser with the other social badges
 this week's if the bar is full, otherwise last week's if that was met, so a
 pupil away when the class got there has it on Monday. Like every badge it is
 the browser's word.
+
+## A live class round (v6.13)
+
+Item 64. A teacher (`needTeacher`, as above) starts a round on the projector;
+the learners of the group join on their own devices and answer the same
+questions against one clock. Everything is in `server/live.mjs`; the rules —
+the questions, the score, what each screen is sent — in `src/js/core/live.js`.
+**Nothing of a round is written to disk.** It lives in the server's memory for
+a lesson and is forgotten 10 minutes after it ends; a restart ends it.
+
+```
+GET  /teacher/live?group=          -> { round: board | null, limits: { sizes, n, secs, defSecs } }
+POST /teacher/live { group?, target, n, secs, replace? }
+                                   -> { ok, round: board }   400 bad target/size/time, or nothing to ask
+                                                              409 { running } a round is on (send replace)
+                                                              503 the server holds 40 rounds
+POST /teacher/live/:id/next        -> { ok, round }   the first question, the next one, or the end after the last
+                                                      409 a question is open, or the round is over
+POST /teacher/live/:id/close       -> { ok, round }   close the open question now · 409 none is open
+POST /teacher/live/:id/end         -> { ok, round }   end the round
+GET  /teacher/live/:id/events      -> text/event-stream of `board`
+
+GET  /live                         -> { round: pupil | null }   the round of my group; null for a non-learner
+POST /live/:id/join                -> { ok, round: pupil }       404 not my group's · 409 over, or full (60)
+GET  /live/:id/events              -> text/event-stream of `pupil`   429 more than 3 streams of mine
+POST /live/:id/answer { q, response } -> { ok }   403 not joined · 409 not the open question, past the
+                                                   clock, or answered already · 413 too big
+```
+
+`target` is an assignment's (above): a category, an error pattern, a node of
+the curriculum map or a whole year. `n` is 5, 10 or 15 (10 is the default);
+`secs` 20, 30, 45, 60 or 90 seconds per question. The questions are built when
+the round is made, from a fresh seed: a duel's **plan** (`duelPlan`) on the
+material — the same builders, the filtered vocabulary, a blank pupil — at the
+mean level of the group's learners in it, inside the server's default ceiling.
+**Every pupil gets the same questions**: this is the one place where that is
+right (item 63) — everybody answers at the same moment, in the same room, and
+the board after each question is about one question the class can talk about.
+
+**The events.** Each screen opens one `EventSource`. Every message is
+`event: state` with the whole picture that screen may see, sent whenever
+anything changes — never a difference, so a screen that reconnects (a tablet
+waking up, a reload, a pupil who joins late, a proxy that dropped the line) is
+right again with its first message. `event: end` says the round is gone (it
+was replaced, or forgotten after its end). A comment line every 20 s keeps
+proxies from closing a quiet line; `retry: 2000`. The stream carries the
+security headers and `X-Accel-Buffering: no`; it is plain HTTP on this origin,
+which the CSP's `connect-src 'self'` allows.
+
+A `board` (the teacher's screen and the projector) is `{ id, name, target, n,
+secs, phase, q, left, joined, answered, task, topic, top, result?, end? }`:
+`phase` is `lobby | open | shown | done`, `q` the question (from 0), `left` the
+milliseconds on the clock while it is open, `answered` how many have answered
+it, `task` the question while it is open or shown. `top` is the first five of
+the standings (`{ rank, name, right, points }`). After a question:
+`result: { q, right, wrong, none, of, answer, why }`, `answer` the written form
+or the right option where there is one (`answerText`). At the end:
+`end: { asked, why, podium, perQ: [{ right, of }], share, commonest }`, `share`
+the percentage of answers right, `commonest` the class's commonest error
+pattern with its name and rule — `{ id, pupils, misses, nm, rule, lesson }` —
+or null; `why` is `lobby`, `idle` or `max` when the round was ended by the
+clock (below).
+
+A `pupil` is `{ id, name, n, secs, phase, q, left, joined, players, me?,
+answered?, task?, result?, top?, end? }`. A learner who has not joined gets
+only the first seven. `me` is `{ as, shown, right, points, rank }`, `as` the
+name the wall shows them by. `task` is there only while the question is open
+and only to a pupil who has joined and not answered it; after it closes,
+`result` is `{ q, mine: { ok, points } | null, right, wrong, none, of,
+answer }`.
+
+**Names on the wall.** The projector is a screen the whole class sees, so a
+pupil is shown by nickname only if they have chosen to be on the leaderboard
+(`share.board`, not hidden, not held — `visibleStates`' rule); otherwise as
+*Leikmaður 1*, *Leikmaður 2* … by the order of joining, a number that belongs to
+this round only. Each pupil's own screen says which they are. No user id is
+sent to the board. Only the first five are listed after a question and three
+at the end: nobody is shown at the bottom of a list on the wall.
+
+**The score.** A right answer is worth 100 points. Speed adds at most 6 —
+all of it at once, nothing at the end of the clock — so that the whole bonus of
+the longest round (15 × 6 = 90) is worth less than one right answer: a pupil
+who thinks and gets it right always beats one who is quick and wrong, and speed
+only orders pupils with the same number right (held by `tests/live.test.js`).
+A hinted answer is right but earns no bonus. The standings are points, then
+right answers, then the name; equal points share a place.
+
+**Grading.** The server judges each `response` (the shape `core/answer.js`
+lists, cleaned by `cleanResponse` as a duel's) against the question it built,
+with the same `judge` the browser uses. `{ ok }` says only that the answer
+arrived: whether it was right is shown on every screen at once when the
+question closes. The response is dropped once graded; the round keeps, per
+pupil and question, right or wrong and the points. A wrong answer's error
+patterns (`judge`'s `findings`, never *Ógreint* or a meta pattern) are added up
+per pattern — how many pupils, how many times — for the end.
+
+**The clock is the server's.** A question takes answers until its time is up
+plus 1.5 s for the network. It closes when the clock runs out, when the teacher
+closes it, or as soon as every pupil who is still connected has answered — a
+pupil who closed the tab is not waited for. A pupil who joins late plays the
+rest of the round and has nothing for the questions they missed.
+
+**Limits and expiry.** At most 40 rounds on the server, one per group (a new
+one replaces the old only when the teacher says so, `replace: true`), 60
+pupils in a round, 800 open streams in all and 3 per pupil per round. A round
+nobody starts is ended after 30 minutes, one the teacher has not touched for 20
+minutes is ended, none lasts more than two hours, and a finished round is
+forgotten 10 minutes after its end. Starting a round is written to the audit
+trail.
+
+**What this stops, and what it does not.** The score cannot be posted, only
+earned: the server grades. A question reaches a pupil only when it opens, so
+nobody holds the next one; the verdict is hidden on a pupil's screen until the
+question closes, so an answered pupil cannot show the answer to the next one.
+*Not stopped:* a pupil who reads the open question's answer out of the browser
+with the developer tools within its 20–90 seconds (the question comes with its
+answer, as a duel's does, so that the ordinary card can judge and draw it), and
+a whisper across the table.
+
+## Team duels (v6.13)
+
+Item 67. Half a class against the other half, or one class against another,
+built on the duel (above): one plan from the duel's seed, each pupil's own
+questions of the plan's weight from their own key (`duelTasks` with the team
+as the side, so the two teams draw from the two halves of the vocabulary), the
+server grading the answers with `gradeDuel`, and the duel's handicap between
+the teams' levels. Rules in `src/js/core/teamduel.js`, routes in
+`server/teamduel.mjs`.
+
+```
+GET    /teacher/teamduels?group=   -> { group, list: [ teacherView ], others: [ { id, name, pupils } ],
+                                        pupils, limits: { sizes, days, defDays, minSide } }
+POST   /teacher/teamduels { group?, target, n, days, vs: "split" | <group id> }
+                                   -> { ok, duel: teacherView }   400 bad target/size/days/group, or too
+                                                                    few pupils · 409 4 open in a group
+POST   /teacher/teamduels/:id/accept -> { ok, duel }   the other class's teacher only · 409 not waiting
+DELETE /teacher/teamduels/:id      -> 204              either class's teacher
+
+GET    /teamduels                  -> { duels: [ pupilView ] }
+POST   /teamduels/:id/start        -> { ok, duel: pupilView, seed, key, sig }
+POST   /teamduels/:id/result { answers, sig } -> { ok, duel: pupilView }   as a duel's, once per pupil
+```
+
+`n` is 10, 15 or 20; `days` 1, 2, 3 or 7 — the time the teams have from the
+start. **A split** (`vs: "split"`) needs at least four learners: they are
+ranked by their level in the material and dealt A, B, B, A, A, B … so the two
+teams are even, and it starts at once. **Class against class** (`vs` another
+group's id, one of `others`: groups with at least two learners) waits until
+that class's teacher accepts — nobody can put another teacher's pupils in a
+game — and lapses after 3 days; the administrator, who teaches both, starts it
+at once. The teams are the active learners of each group when it starts.
+`others` tells a guardian the names and sizes of the other groups, which is
+what choosing an opponent needs. At most 4 team duels open or waiting per
+group.
+
+**The score is each team's mean** number of right answers over the pupils who
+played, plus the handicap — the duel's (`handicap`, from the teams' mean
+levels), in right answers per player. The mean and not the sum, so a bigger
+team does not win for its size, and every pupil's answers move it. A pupil who
+does not play is not counted as nought; a team nobody played for loses; if
+nobody played at all the duel is void and erased. It is over when everybody has
+played or the time is up; finished ones are erased after 30 days.
+
+A `pupilView` is shaped as a duel's view, so the duel strip plays both: `{ id,
+team: true, side, myTeam, opponent: { name }, name, target, n, level, data,
+skills, types, allowed, created, deadline, status, mine, us, them, handicap,
+outcome }`. `us` and `them` are `{ played, of }` until the pupil has played or
+the duel is over, then also `{ mean, plus, score }`. No pupil sees another
+pupil's name or score — teammate or opponent. `outcome` is set only for a
+pupil who played, so only they settle it (XP and the duel totals, as a duel).
+A `teacherView` is `{ id, kind, name, target, n, days, created, deadline,
+status: pending|open|done, winner: a|b|t|null, handicap, canAccept, teams: {
+a, b } }`, each team `{ name, group, played, of, mean, plus, score, pupils }`,
+`pupils` (`[{ name, res: { c, n } | null }]`) only for the viewer's own group.
+
+Stored in `teamduels.json`: the teams (user ids), a key and a result (`c, n,
+at`) per pupil — never the answers. Setting, accepting and calling off are
+written to the audit trail. Erasing a user takes them out of every team, with
+their key and result; `/account/export` lists their team duels with their own
+result; the backup holds the file.
 
 ## Calibration from real answers, and the answer sample (v6.13)
 

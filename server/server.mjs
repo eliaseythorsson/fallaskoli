@@ -43,6 +43,9 @@ import {
 import { cleanState, suspicion, MAX_STATE_BYTES } from "./guard.mjs";
 import { privacyConfig, privacyPage, CONSENT_AGE, PRIVACY_VERSION } from "./privacy.mjs";
 import { createCalibration } from "./calibrate.mjs";
+import { createLive } from "./live.mjs";
+import { createTeamDuels } from "./teamduel.mjs";
+import { teamOf } from "../src/js/core/teamduel.js";
 import { createClassGoal } from "./classgoal.mjs";
 import { seal, passphraseProblem } from "./backup.mjs";
 import { dropPrivileges } from "./privs.mjs";
@@ -58,6 +61,8 @@ import { weekKey, prevWeekKey, weekXp, newThisWeek, firstFinders, weekResult }
 import { sanitisePolicy, createPolicy } from "../src/js/core/policy.js";
 import { chosenPolicy } from "../src/js/core/state.js";
 import { pupilStandings, classColumns, patternCSV, byName } from "../src/js/core/classview.js";
+import { teacherMap } from "../src/js/core/skillmap.js";
+import { effectivePolicy, migrate } from "../src/js/core/state.js";
 import { ASSIGN, cleanTarget, patternsOf, dueProblem, isOpen, prune as pruneAssignments,
          openCount as openAssignments, cleanResult, recordResult, viewForPupil }
   from "../src/js/core/assignment.js";
@@ -86,6 +91,8 @@ export function createApp({
   dataDir = env.FALLASKOLI_DATA || path.join(HERE, "data"),
   htmlFile = htmlPath(),
   secureCookies = env.FALLASKOLI_INSECURE !== "1",
+  /* For the tests: a clock and limits for the live rounds (server/live.mjs). */
+  liveOptions = {},
 } = {}) {
   const store = createStore(dataDir);
   const lex = buildLexicon(DATA);
@@ -576,6 +583,11 @@ export function createApp({
         .map(({ seed, keys, ...d }) => d),
       errorReports: (await store.reports()).filter((r) => r.by === u.id)
         .map(({ reviewedBy, ...r }) => r),
+      /* v6.13 (item 67): the team duels they are in — the team and their
+         own result; not the seeds, not anybody else's. */
+      teamDuels: (await store.teamDuels()).filter((d) => teamOf(d, u.id))
+        .map((d) => ({ id: d.id, kind: d.kind, team: d.names[teamOf(d, u.id)], target: d.target, n: d.n,
+          created: d.created, deadline: d.deadline || null, result: (d.res || {})[u.id] || null })),
       /* v6.13: the result of each assignment they have sent one for. */
       assignments: (await store.assignments()).filter((a) => a.res && a.res[u.id])
         .map((a) => ({ id: a.id, target: a.target, n: a.n, due: a.due, created: a.created,
@@ -1258,6 +1270,34 @@ export function createApp({
     res.end(buf);
   });
 
+  /* Item 83 (d): the skill map of ONE pupil, for their teacher — the same
+     map the pupil has under Framvinda, drawn by the same code from what
+     `teacherMap` (core/skillmap.js) leaves in: per curriculum node the
+     mastery mark and the counts it rests on, reviews due and waiting, the
+     active error patterns, and the cells missed, as grammar. Not when
+     anything was practised, not the words missed, no XP — see `teacherMap`.
+
+     Authorised exactly as the class table: `needTeacher` holds a guardian to
+     their own group, and the pupil must be an active learner OF THAT GROUP.
+     A pupil of another group, a guardian, somebody pending or blocked and an
+     id that does not exist all get the same 404, so the answer cannot be
+     used to learn who exists. Not audited, as the table is not. */
+  on("GET", "/teacher/skillmap", async (req, res, { url }) => {
+    const t = await needTeacher(req, res, url.searchParams.get("group"));
+    if (!t) return;
+    const id = String(url.searchParams.get("pupil") || "");
+    const u = (await store.users()).find((x) => x.id === id);
+    if (!u || u.role !== "learner" || u.status !== "active" || groupOf(u) !== t.group)
+      return json(res, 404, { error: "Nemandinn er ekki í þessum hópi." });
+    const rec = await store.stateRec(u.id);
+    /* `migrate` gives every field its shape; a pupil who has not practised
+       gets the map of a blank state — every node "Of fá svör". */
+    const S = migrate(rec ? rec.state : null);
+    return json(res, 200, { group: { id: t.group, name: t.name },
+      pupil: { id: u.id, name: u.name || u.username, practised: !!rec },
+      map: teacherMap(S, Date.now(), effectivePolicy(S)) });
+  });
+
   /* Item 65: the assignments of a group, with who has done them, their
      scores, and the class's patterns on each one's material. */
   on("GET", "/teacher/assignments", async (req, res, { url }) => {
@@ -1381,6 +1421,32 @@ export function createApp({
    * Routes: GET /classgoal, GET+POST+DELETE /teacher/classgoal. */
   createClassGoal({ store, groupOf, groupsNow, audit })
     .routes({ on, json, readBody, needUser, needTeacher });
+
+  /* --- a live class round (v6.13, critique item 64) -------------------------
+   * Everything is in server/live.mjs — the rounds, the clock, the event
+   * streams, the limits — so that this file only lends it the helpers that
+   * decide who is logged in, who teaches whom, and who may be named in front
+   * of the class: the leaderboard's own rule (`visibleStates`). Routes:
+   * GET+POST /teacher/live, POST /teacher/live/:id/{next,close,end},
+   * GET /teacher/live/:id/events; GET /live, POST /live/:id/{join,answer},
+   * GET /live/:id/events. */
+  const live = createLive({
+    store, lexFor: lexForDuels, deps: DUEL_DEPS, judge, groupOf, audit,
+    shownOf: async (u) => shareOf(u).board && !u.review && !(await store.hidden()).includes(u.id),
+    ceiling: () => ceilingFor("*"), ...liveOptions,
+  });
+  live.routes({ on, json, readBody, needUser, needTeacher, securityHeaders });
+
+  /* --- team duels (v6.13, critique item 67) — server/teamduel.mjs ---------
+   * A class split in two, or one class against another, on the duel's own
+   * questions and grading. Routes: GET+POST /teacher/teamduels,
+   * POST /teacher/teamduels/:id/accept, DELETE /teacher/teamduels/:id;
+   * GET /teamduels, POST /teamduels/:id/{start,result}. */
+  const teamDuels = createTeamDuels({
+    store, lexFor: lexForDuels, deps: DUEL_DEPS, judge, groupOf, audit, can,
+    ceiling: () => ceilingFor("*"), dataPrint: DUEL_DATA, groupsNow,
+  });
+  teamDuels.routes({ on, json, readBody, needUser, needTeacher, securityHeaders });
 
   /* --- the curriculum ceiling ------------------------------------------
    *
@@ -2141,7 +2207,12 @@ export function createApp({
   server.requestTimeout = 60000;
   server.headersTimeout = 20000;
 
-  return { server, store, handler, lex, google, privacy, sweep, calibration };
+  /* A live round's event streams never end by themselves, and `close` waits
+     for every connection: they are ended first (server/live.mjs). */
+  const closeServer = server.close.bind(server);
+  server.close = (cb) => { live.stop(); return closeServer(cb); };
+
+  return { server, store, handler, lex, google, privacy, sweep, calibration, live };
 }
 
 /* ---------- start-up when this file is run directly ---------- */

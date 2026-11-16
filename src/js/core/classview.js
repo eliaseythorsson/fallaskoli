@@ -12,7 +12,7 @@
    (`misses`), their share (`rate`), the direction (`trend`), whether the
    pattern is "algengt núna" (`active`) and the two totals (`n`, `w`). These
    are exactly the figures the pupil sees under Merki og framvinda →
-   Framvinda (ui/session.js renderDiagnosisPanel), worked out by the same
+   Framvinda (the skill map, ui/skillmap.js), worked out by the same
    function, so the teacher never sees a number the pupil was not shown.
 
    NOT sent: the examples a pattern keeps (`ex`: a word and two BÍN marks),
