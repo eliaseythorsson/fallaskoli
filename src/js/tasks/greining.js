@@ -108,10 +108,18 @@ export function grSort(lex, view, rng) {
   if (usable.length < 3) return null;
   const chosen = shuffle(usable, rng).slice(0, 3);
   const items = [];
+  /* The lists run from the commonest word; each step of difficulty lets in
+     ten more. The question is labelled by its rarest word: within the first
+     25 → 1, then a level for every ten (v6.13: it said þyngd 1 at every
+     band, critique item 13). */
+  let deepest = 0;
   chosen.forEach((c) => {
     const words = shuffle((src[c] || []).slice(0, 15 + 10 * bandFor(view, "greining"))
       .filter((o) => CLS[c].some((x) => lex.lookup(o, x))), rng);
-    words.slice(0, 2).forEach((w) => items.push({ w, cls: c }));
+    words.slice(0, 2).forEach((w) => {
+      items.push({ w, cls: c });
+      deepest = Math.max(deepest, src[c].indexOf(w));
+    });
   });
   if (items.length < 6) return null;
   const extra = shuffle(Object.keys(CLS).filter((c) => !chosen.includes(c)), rng)[0];
@@ -119,7 +127,8 @@ export function grSort(lex, view, rng) {
     type: "sort", skill: "greining", s: null, items: shuffle(items, rng),
     buckets: Object.keys(CLS).filter((c) => chosen.includes(c) || c === extra),
     title: "Flokkaðu orðin", question: "Í hvaða orðflokki er hvert orð? Orðin standa í orðabókarmynd.",
-    base: 12, lvl: levelFor(P, 1), cell: "sort:greining", word: null, tags: ["ofl"],
+    base: 12, lvl: levelFor(P, Math.min(5, 1 + Math.max(0, Math.ceil((deepest + 1 - 25) / 10)))),
+    cell: "sort:greining", word: null, tags: ["ofl"],
   });
 }
 

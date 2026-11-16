@@ -399,6 +399,65 @@ S = [
 (1, "Ég spurði um fjölda bílanna.",      "bíll",    "any"),
 (1, "Á myndinni sást fjöldi bíla.",        "bíll",    "sight|item|nature|sky|struct|furniture"),
 
+# ---- more frames that take nearly any noun (v6.13, critique item 24) ---------
+# In the reverse analysis ten frames made 60% of the questions, and *Þetta
+# gengur ekki án ___* and *Ferðin tafðist vegna ___* a quarter: for most
+# nouns the indefinite nominative, dative and genitive, and some plurals with
+# the article, had one to three frames that took them. These 40 are aimed at
+# those cells. Each `need` names what may stand in the slot without anyone
+# blinking; where a group was too wide (a mountain in *Ég safna ___*, a hand
+# in *___ kom mér á óvart*, *án truflunar* where "without" turns the meaning
+# round) the classes are listed one by one.
+# What is there, and where (nominative).
+(1, "Þarna er hestur.",                        "hestur",   "sight|item|nature|sky|struct|furniture"),
+(1, "Á myndinni eru hestar.",                  "hestur",   "sight|item|nature|sky|struct|furniture"),
+(1, "Hvar er síminn?",                         "sími",     "item|living|food|drink"),
+(1, "Hvar eru lyklarnir?",                     "lykill",   "item|living|food|drink"),
+(1, "Bækurnar voru út um allt.",               "bók",      "item|living|food|critter|plant"),
+(1, "Hvað kostar bókin?",                      "bók",      "item|food|drink"),
+(1, "Hvað kosta bækurnar?",                    "bók",      "item|food|drink"),
+(2, "Í búðinni voru bækur á tilboði.",         "bók",      "object|clothing|book|furniture|food|drink"),
+# What it did to me (nominative, with the article).
+(1, "Bókin kom mér á óvart.",                  "bók",      "being|thing|spot|weather|sky|money|text|film|music|event|abstract"),
+(1, "Hestarnir komu mér á óvart.",             "hestur",   "being|thing|spot|weather|sky|money|text|film|music|event|abstract"),
+(1, "Fjölskyldan skiptir mig miklu máli.",     "fjölskylda", "being|thing|spot|weather|sky|money|text|film|music|event|abstract"),
+# Wanting and getting (accusative, no article).
+(1, "Mig vantar blýant.",                      "blýantur", "item|food|drink|substance"),
+(1, "Ég fékk hund í jólagjöf.",                "hundur",   "small|animal"),
+# Talking, knowing, learning (um + accusative).
+(2, "Við lærðum um eldfjöll í skólanum.",      "eldfjall", "concrete|abstract|event|weather|sky|music|film|text"),
+(1, "Bókin fjallar um drauga.",                "draugur",  "concrete|abstract|event|weather|sky|music|film|text"),
+(1, "Ég veit ekkert um hesta.",                "hestur",   "concrete|abstract|event|weather|sky|music|film|text"),
+(1, "Ég veit ekkert um hestana.",              "hestur",   "any"),
+(1, "Mamma spurði mig um hestana.",            "hestur",   "any"),
+(1, "Við ræddum hugmyndirnar í tímanum.",      "hugmynd",  "any"),
+(1, "Við fórum að skoða hestana.",             "hestur",   "animal|critter|vehicle|building|plant|item|nature|struct"),
+# Pictures, stories, telling, forgetting (af / frá + dative, gleyma).
+(1, "Ég teiknaði mynd af hesti.",              "hestur",   "concrete|sky"),
+(1, "Ég teiknaði mynd af hestum.",             "hestur",   "concrete|sky"),
+(1, "Ég teiknaði mynd af hestinum.",           "hestur",   "concrete|sky"),
+(2, "Ég hef heyrt margar sögur af draugum.",   "draugur",  "living|critter|vehicle|building|settlement"),
+(1, "Ég hef gaman af hestum.",                 "hestur",   "animal|vehicle|book|text|film|music|event|plant"),
+(1, "Ég safna steinum.",                       "steinn",   "object|book"),
+(1, "Ég sagði mömmu frá hestunum.",            "hestur",   "any"),
+(1, "Kennarinn sagði okkur frá ferðinni.",     "ferð",     "any"),
+(1, "Ég gleymdi alveg bókinni.",               "bók",      "item|food|drink|living|event|text|film|music|money|abstract"),
+(1, "Ég gleymdi alveg bókunum.",               "bók",      "item|food|drink|living|event|text|film|music|money|abstract"),
+# Without and because of (án / vegna / á milli + genitive). Not an idea or
+# the sky after *vegna* ("vegna hamingjunnar", "vegna himinsins"): item 30
+# took abstract nouns out of the genitive-with-article frame on purpose. Not a
+# place or a town after *án* ("án lands", "án hverfa"), as item 30 has it.
+(1, "Ég kom heim án lykils.",                  "lykill",   "item|animal|food|drink"),
+(2, "Við komumst ekki af án vatns.",           "vatn",     "being|thing|building|room|substance|money"),
+(2, "Við komumst ekki af án bíla.",            "bíll",     "being|thing|building|room|money"),
+(2, "Ég gæti ekki verið án tónlistar.",        "tónlist",  "being|thing|music|money|text|film"),
+(2, "Ég gæti ekki verið án vina.",             "vinur",    "being|thing|music|text|film"),
+(1, "Leiknum var frestað vegna veðurs.",       "veður",    "weather|event"),
+(1, "Þetta gerðist allt vegna bílsins.",       "bíll",     "being|thing|spot|weather|money|text|film|music|event"),
+(1, "Þetta gerðist allt vegna bílanna.",       "bíll",     "being|thing|spot|weather|money|text|film|music|event"),
+(2, "Kötturinn faldi sig á milli bílanna.",    "bíll",     "vehicle|struct|building|furniture|object|plant"),
+(2, "Ég man ekki lengur lit bílsins.",         "bíll",     "item|food|plant|animal|struct|building|nature"),
+
 # =============================================================================
 # LEVEL 2 — 5-7 words
 # =============================================================================

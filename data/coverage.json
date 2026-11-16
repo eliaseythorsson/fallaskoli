@@ -1,7 +1,7 @@
 {
  "levels": {
-  "1": 212,
-  "2": 198,
+  "1": 243,
+  "2": 207,
   "3": 192,
   "4": 133,
   "5": 89,
@@ -35,7 +35,7 @@
     "6": 15,
     "7": 12
    },
-   "tokens": 1985,
+   "tokens": 2044,
    "missing": []
   },
   "lýsingarorð": {
@@ -43,12 +43,12 @@
    "seen": 68,
    "reachable": 68,
    "cells": 840,
-   "filled": 177,
+   "filled": 179,
    "reachableCells": 476,
    "twiceAnywhere": 44,
    "oncePerLevel": {
-    "1": 21,
-    "2": 26,
+    "1": 22,
+    "2": 27,
     "3": 37,
     "4": 21,
     "5": 28,
@@ -64,7 +64,7 @@
     "6": 14,
     "7": 7
    },
-   "tokens": 341,
+   "tokens": 343,
    "missing": [
     "FSB-KVK-EFFT",
     "FSB-HK-EFFT",
@@ -113,12 +113,12 @@
    "seen": 33,
    "reachable": 33,
    "cells": 371,
-   "filled": 149,
+   "filled": 150,
    "reachableCells": 231,
    "twiceAnywhere": 29,
    "oncePerLevel": {
     "1": 14,
-    "2": 20,
+    "2": 21,
     "3": 24,
     "4": 23,
     "5": 23,
@@ -127,14 +127,14 @@
    },
    "twicePerLevel": {
     "1": 13,
-    "2": 13,
+    "2": 15,
     "3": 18,
     "4": 18,
     "5": 16,
     "6": 20,
     "7": 16
    },
-   "tokens": 2112,
+   "tokens": 2152,
    "missing": [
     "GM-FH-ÞT-2P-FT",
     "GM-VH-NT-1P-FT",
@@ -163,11 +163,11 @@
    "seen": 30,
    "reachable": 30,
    "cells": 224,
-   "filled": 135,
+   "filled": 137,
    "reachableCells": 210,
    "twiceAnywhere": 29,
    "oncePerLevel": {
-    "1": 11,
+    "1": 13,
     "2": 16,
     "3": 20,
     "4": 23,
@@ -176,7 +176,7 @@
     "7": 22
    },
    "twicePerLevel": {
-    "1": 6,
+    "1": 8,
     "2": 12,
     "3": 18,
     "4": 18,
@@ -184,7 +184,7 @@
     "6": 20,
     "7": 16
    },
-   "tokens": 1142,
+   "tokens": 1176,
    "missing": [
     "HK-ÞFFT",
     "EFET"
@@ -235,5 +235,5 @@
    ]
   }
  },
- "tokens": 5648
+ "tokens": 5783
 }

@@ -95,6 +95,10 @@ export function blankState() {
     /* Each skill's level of difficulty, kept between visits (v6.13, critique
        item 11): { skill: {d, r, h, at, src} } — see core/difficulty.js. */
     difficulty: {},
+    /* Which bank sentences have carried a question for this pupil, and how
+       often: { frame key: count } (tasks/frames.js `frameKey`). The reverse
+       analysis prefers the ones seen least (v6.13, critique item 24). */
+    frames: {},
   };
 }
 
@@ -117,6 +121,19 @@ function cleanWordKeys(words) {
     const cls = String(k).split("|")[1];
     if (cls && !WORD_CLASSES.has(cls)) continue;
     out[k] = v;
+  }
+  return out;
+}
+
+/** The frame tally (`frames` above): short keys and whole counts, nothing else. */
+export const FRAME_KEY = /^f[0-9a-z]{1,7}$/;
+export const FRAMES_MAX = 4000;
+export function cleanFrames(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+  for (const [k, v] of Object.entries(raw).slice(0, FRAMES_MAX)) {
+    const c = Number.isFinite(v) ? Math.floor(v) : 0;
+    if (FRAME_KEY.test(k) && c >= 1) out[k] = Math.min(c, 100000);
   }
   return out;
 }
@@ -172,6 +189,7 @@ export function migrate(raw) {
        not read again. */
     difficulty: raw.difficulty && typeof raw.difficulty === "object"
       ? cleanLevels(raw.difficulty) : levelsFromXp(raw.skills),
+    frames: cleanFrames(raw.frames),
   });
   S.run = 0;
 

@@ -2138,6 +2138,10 @@ await page.setViewport({ width: 1100, height: 900 });
     A.reloadPolicy(); A.save();
     A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
     Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = 4; });
+    /* Pinning the level must also drop the warm-up the visit owes: the
+       first right answer would give it back (core/difficulty.js nextLevel)
+       and the case's second question come from a higher þyngd. */
+    A.sess.warm = {};
     A.startRun("malbeiting", 40, null, { review: false });
   });
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
@@ -2433,12 +2437,18 @@ await page.setViewport({ width: 1100, height: 900 });
       go: !!document.getElementById("streakgo"),
       text: (document.querySelector("#verdict .streakoffer") || {}).textContent || "",
       focus: document.activeElement && document.activeElement.id,
+      retrying: !!(window.FALLASKOLI.cur && window.FALLASKOLI.cur.retrying),
       p: window.FALLASKOLI.streakOffer && window.FALLASKOLI.streakOffer.p,
     }));
     ok(/Villugreining/.test(offer.diag) && offer.go && offer.p,
       `no „Þrjár í röð“ under a diagnosed miss (${miss.other} for ${miss.cell}): ` + JSON.stringify(offer));
     ok(/teljast ekki með í lotunni/.test(offer.text), "the offer does not say the three are outside the session's count");
-    ok(offer.focus === "check", "the offer took the focus from Áfram — Enter must still simply go on");
+    /* The offer never takes the focus. Where it goes is the verdict's own
+       business: Áfram, or — on a first miss that item 42 lets the pupil try
+       again — the answer box, where Enter sends the second try. */
+    const wantFocus = offer.retrying ? "ans" : "check";
+    ok(offer.focus === wantFocus,
+      `the offer took the focus (on #${offer.focus}, wanted #${wantFocus}) — Enter must still do what the verdict says`);
     if (offer.go) {
       await tap("#streakgo");
       const intro = await page.evaluate(() => ({
@@ -2504,6 +2514,10 @@ await page.setViewport({ width: 1100, height: 900 });
       A.reloadPolicy();
       A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
       Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+      /* Pinning the level must also drop the warm-up the visit owes: the
+         first right answer would give it back (core/difficulty.js nextLevel)
+         and the case's second question come from a higher þyngd. */
+      A.sess.warm = {};
       A.startRun(c.topic, 10, [c.focus], { review: false });
     }, c);
     await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
@@ -2566,6 +2580,10 @@ await page.setViewport({ width: 1100, height: 900 });
         A.reloadPolicy();
         A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
         Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+        /* Pinning the level must also drop the warm-up the visit owes: the
+           first right answer would give it back (core/difficulty.js nextLevel)
+           and the case's second question come from a higher þyngd. */
+        A.sess.warm = {};
         A.startRun("sagnord", 10, [c.focus], { review: false });
       }, c);
       await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
@@ -2667,6 +2685,10 @@ await startPractice(page, 15000);
         A.reloadPolicy();
         A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
         Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+        /* Pinning the level must also drop the warm-up the visit owes: the
+           first right answer would give it back (core/difficulty.js nextLevel)
+           and the case's second question come from a higher þyngd. */
+        A.sess.warm = {};
         A.startRun(c.topic, 10, [c.focus], { review: false });
       }, c);
       await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });

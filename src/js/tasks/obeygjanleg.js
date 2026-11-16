@@ -4,13 +4,16 @@
      ob_smella  click every adverb, preposition or conjunction in a sentence
      ob_fsao    preposition or adverb: the same word in two roles
      ob_st      choose the conjunction (hand-written, data/exercises.js)
+
+   The hand-written items carry a level each and are chosen near the pupil's
+   band, as the sentences of the bank are (critique item 13).
      ob_flokka  sort the indeclinable words of one sentence */
 
 import { EX } from "../../../data/exercises.js";
 import { wordKey } from "../core/state.js";
 import { built, FX } from "./effects.js";
 import { tapTask } from "./tap.js";
-import { pairOf, pick, shuffle, levelFor, sentPool, tokenKey, tokensOf, cap1, textSentence, fresh, lexWord,
+import { pairOf, pick, shuffle, bandFor, levelFor, sentPool, nearBand, itemsForBand, tokenKey, tokensOf, cap1, textSentence, lexWord,
          clean } from "./shared.js";
 
 /* ================= Which class =========================================== */
@@ -75,7 +78,7 @@ const advPrepPairs = () => {
   for (const x of EX.advPrep) { if (!by.has(x.w)) by.set(x.w, []); by.get(x.w).push(x); }
   for (const xs of by.values())
     for (const f of xs.filter((x) => x.c === "fs"))
-      for (const a of xs.filter((x) => x.c === "ao")) out.push({ fs: f, ao: a });
+      for (const a of xs.filter((x) => x.c === "ao")) out.push({ fs: f, ao: a, lvl: Math.max(f.lvl, a.lvl) });
   return (ADVPREP_PAIRS = out);
 };
 
@@ -98,13 +101,13 @@ export function obAdvPrep(lex, view, rng) {
     base: 9, tags: ["ofl", "ofl:ao_fs"], miss: A.miss, ...extra,
   });
   if (rng() < 0.5) {
-    const pr = pick(fresh(view, (y) => y.fs.t + y.ao.t, advPrepPairs()), rng);
+    const pr = pick(itemsForBand(view, "obeygjanleg", advPrepPairs(), (y) => y.fs.t + y.ao.t), rng);
     const mk = (x) => {
       const { s } = textSentence(x.t);
       return half(s, s.tok.findIndex((t) => t.w.toLowerCase() === x.w), x.c === "fs" ? "forsetning" : "atviksorð");
     };
     const [A, B] = shuffle([pr.fs, pr.ao], rng).map(mk);
-    return built(pairOf(head(A, { lvl: levelFor(P, 2), cell: "ofl:" + A.answer, word: null }), B),
+    return built(pairOf(head(A, { lvl: levelFor(P, pr.lvl), cell: "ofl:" + A.answer, word: null }), B),
       [FX.exSeen(pr.fs.t + pr.ao.t)]);
   }
   const both = bothClasses(lex);
@@ -120,7 +123,10 @@ export function obAdvPrep(lex, view, rng) {
   const words = [...byWord.keys()].filter((l) => byWord.get(l).fs.length && byWord.get(l).ao.length);
   if (!words.length) return null;
   const l = pick(words, rng);
-  const [A, B] = shuffle([pick(byWord.get(l).fs, rng), pick(byWord.get(l).ao, rng)], rng)
+  /* Each half by the sentence's level, like the hand-written half by its
+     items' (critique item 13); item 43 asks them as a pair. */
+  const near = (xs) => pick(nearBand(xs, (x) => x.s.lvl, bandFor(view, "obeygjanleg"), 1), rng);
+  const [A, B] = shuffle([near(byWord.get(l).fs), near(byWord.get(l).ao)], rng)
     .map((h) => ({ ...half(h.s, h.i, h.t.c), t: h.t }));
   return built(pairOf(head(A, {
     lvl: Math.max(A.s.lvl, B.s.lvl), cell: "ofl:" + A.answer,
@@ -131,7 +137,7 @@ export function obAdvPrep(lex, view, rng) {
 /** Choose the conjunction: every wrong option makes the sentence wrong. */
 export function obConj(lex, view, rng) {
   const P = view.policy;
-  const x = pick(fresh(view, (y) => y.t, EX.conjunction), rng);
+  const x = pick(itemsForBand(view, "obeygjanleg", EX.conjunction, (y) => y.t), rng);
   const { s, i } = textSentence(x.t);
   const cap = i === 0;
   const fix = (f) => (cap ? cap1(f) : f);
@@ -139,26 +145,41 @@ export function obConj(lex, view, rng) {
     type: "choice", skill: "obeygjanleg", s, i,
     title: "Veldu samtenginguna", question: "Hvaða samtenging passar í eyðuna?",
     options: shuffle([x.a, ...x.w], rng).map(fix), answer: fix(x.a), why: x.why,
-    base: 8, lvl: levelFor(P, 2), cell: "ofl:samtenging", word: lexWord(lex, x.a, "st"),
+    base: 8, lvl: levelFor(P, x.lvl), cell: "ofl:samtenging", word: lexWord(lex, x.a, "st"),
     tags: ["conj"], miss: ["samtengingar"],
   }, [FX.exSeen(x.t)]);
 }
 
 /* Sort words into classes: the words of one sentence, which settles what
    each one is. */
+/* The words of a sentence that may be sorted: at least three indeclinable
+   words of at least two classes. The same word twice (*að … að*) would leave
+   the child guessing which row is which: only its first occurrence is
+   asked. Null when the sentence has too few. */
+function sortable(s) {
+  const idx = s.tok.map((t, j) => (INDECL_CLASSES.includes(t.c) ? j : -1)).filter((j) => j >= 0);
+  const kinds = new Set(idx.map((j) => s.tok[j].c));
+  if (idx.length < 3 || kinds.size < 2) return null;
+  const once = idx.filter((j, k) => idx.findIndex((x) => s.tok[x].w.toLowerCase() === s.tok[j].w.toLowerCase()) === k);
+  return once.length < 3 ? null : once;
+}
+let SORTABLE = null;
+const sortableSentences = (lex) => {
+  if (!SORTABLE || SORTABLE.lex !== lex) SORTABLE = { lex, list: lex.sentences.filter((s) => clean(s) && sortable(s)) };
+  return SORTABLE.list;
+};
+
 export function obSort(lex, view, rng) {
   const P = view.policy;
-  const pool = lex.sentences.filter((s) => P.level(s.lvl) && clean(s));
+  /* The sentences near the band (critique item 13: until v6.13 any sentence
+     of the bank, level 1 or 5, at every band). */
+  const pool = nearBand(sortableSentences(lex).filter((s) => P.level(s.lvl)), (s) => s.lvl,
+    bandFor(view, "obeygjanleg"), 12);
   for (let k = 0; k < 60; k++) {
     const s = pick(pool, rng);
     if (!s) return null;
-    const idx = s.tok.map((t, j) => (INDECL_CLASSES.includes(t.c) ? j : -1)).filter((j) => j >= 0);
-    const kinds = new Set(idx.map((j) => s.tok[j].c));
-    if (idx.length < 3 || kinds.size < 2) continue;
-    /* The same word twice (*að … að*) would leave the child guessing which
-       row is which: only its first occurrence is asked. */
-    const once = idx.filter((j, k) => idx.findIndex((x) => s.tok[x].w.toLowerCase() === s.tok[j].w.toLowerCase()) === k);
-    if (once.length < 3) continue;
+    const once = sortable(s);
+    if (!once) continue;
     const items = once.slice(0, 5).map((j) => ({ w: s.tok[j].w, j, cls: s.tok[j].c }));
     return built({
       type: "sort", skill: "obeygjanleg", s, items, buckets: INDECL_CLASSES,
@@ -182,14 +203,14 @@ export const TYPES = [
     build: obTap },
   { id: "ob_fsao", skill: "obeygjanleg", weight: 4, renderer: "choice",
     tags: ["ofl", "ofl:ao_fs"],
-    bands: [1],
+    bands: [1, 2, 3, 4, 5, 6, 7],
     build: obAdvPrep },
   { id: "ob_st", skill: "obeygjanleg", weight: 4, renderer: "choice",
     tags: ["conj"],
-    bands: [1],
+    bands: [1, 3, 4, 5],
     build: obConj },
   { id: "ob_flokka", skill: "obeygjanleg", weight: 3, renderer: "sort",
     tags: ["ofl", "ofl:ao_fs"],
-    bands: [1],
+    bands: [1, 4, 5, 6, 7],
     build: obSort },
 ];

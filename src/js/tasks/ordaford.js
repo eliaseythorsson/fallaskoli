@@ -18,7 +18,7 @@ import { wordKey } from "../core/state.js";
 import { chooseWord, historyIfAsked } from "../core/spacing.js";
 import { isGrammarGloss } from "../core/definitions.js";
 import { built, FX } from "./effects.js";
-import { pick, shuffle, bandFor, levelFor, cap1, textSentence, pickVocab } from "./shared.js";
+import { pick, shuffle, bandFor, levelFor, cap1, textSentence, pickVocab, RANK_CAP, CLASS_RANK_CAP, classRankLevel } from "./shared.js";
 
 /* ================= Word meaning ========================================== */
 
@@ -151,8 +151,12 @@ export function ordContext(lex, view, rng) {
   const P = view.policy;
   const items = EX.wordInContext.filter((x) => x.a && P.mark(x.m));
   if (!items.length) return null;
-  const v = pickVocab(view, rng, "samhengi", items, (y) => y.t,
-    (y) => { const e = lex.lookup(y.a.o, y.a.c); return e && e.r ? e.r : 5000; });
+  /* The item's level (exercises.py: length, and how rare the words are)
+     stands in for a rank: an item of level L sits in band L's window of
+     `pickVocab`, so the band chooses among the items at it and one below,
+     and widens from there (critique item 13). Until v6.13 the rank was the
+     answer word's alone, and nearly every answer is a common word. */
+  const v = pickVocab(view, rng, "samhengi", items, (y) => y.t, (y) => RANK_CAP[y.lvl], 5);
   if (!v) return null;
   const x = v.x;
   const { s, i } = textSentence(x.t);
@@ -164,7 +168,7 @@ export function ordContext(lex, view, rng) {
     title: "Orð í samhengi", question: "Hvaða orð passar í setninguna?",
     options: shuffle([x.a, ...x.w].map((o) => fix(o.f)), rng), answer: fix(x.a.f),
     why: right && right.d ? `*${x.a.o}*: ${right.d}` : `Aðeins *${x.a.f}* gefur setningunni merkingu.`,
-    base: 8, lvl: levelFor(P, 1), cell: "orð:samhengi", word: right ? wordKey(right.o, right.c) : null,
+    base: 8, lvl: levelFor(P, x.lvl), cell: "orð:samhengi", word: right ? wordKey(right.o, right.c) : null,
     tags: ["vocab"], miss: ["merking"], bonus: right,
   }, [v.fx]);
 }
@@ -207,7 +211,13 @@ export function ordFormation(lex, view, rng) {
   const kinds = ["neg", "agent", "ing"].filter((k) => F[k].length);
   if (!kinds.length) return null;
   const kind = pick(kinds, rng);
-  const v = pickVocab(view, rng, "myndun", F[kind], (y) => y.to.o, (y) => pairRank(y.from, y.to));
+  /* The window of rarity is on the class's own scale (shared.js
+     `classRankLevel`), stood in for a rank of the frequency list the way
+     or_samhengi does it. A lexicon rank never passes about 1,400, so on
+     `pickVocab`'s own scale every pair was "common" from þyngd 2 on and the
+     window at þyngd 4 was empty (critique item 13). */
+  const v = pickVocab(view, rng, "myndun", F[kind], (y) => y.to.o,
+    (y) => RANK_CAP[classRankLevel(pairRank(y.from, y.to))], 5);
   if (!v) return null;
   const x = v.x;
   let answers = [x.to.o];
@@ -229,7 +239,8 @@ export function ordFormation(lex, view, rng) {
     title: "Orðmyndun", hint: null, tip: text[1],
     why: `${text[2]}${x.to.d ? ` *${x.to.o}*: ${x.to.d}` : ""}`
       + (others.length ? ` Líka rétt: ${others.map((o) => `*${o}*`).join(", ")}.` : ""),
-    base: 9, lvl: levelFor(P, kind === "neg" ? 1 : 2), cell: "orð:myndun-" + kind,
+    /* labelled by how rare the rarer word of the pair is in its class */
+    base: 9, lvl: levelFor(P, classRankLevel(pairRank(x.from, x.to))), cell: "orð:myndun-" + kind,
     word: wordKey(x.to.o, x.to.c), tags: ["wordform"], missOther: ["ordmyndun"],
     bonus: x.to,
   }, [v.fx]);
@@ -254,27 +265,42 @@ const ODD_FAR = {
   weather: ["animal", "food", "vehicle", "clothing", "furniture", "body", "job"],
   building: ["animal", "drink", "food", "clothing", "body", "plant", "weather", "job"],
 };
+/* The words come from the band's window of rarity: at least one of the four
+   from inside it when the kind has one, the rest from anything commoner.
+   Until v6.13 all four came from one cap of 600 + 500 × band, and a noun's
+   rank (its place among the nouns) never goes above about 1,400 — so from
+   þyngd 2 on every question drew from all of them alike (critique item 13).
+   The windows are on the nouns' own scale (shared.js `CLASS_RANK_CAP`):
+   each holds 50–150 nouns of the eleven kinds. The question is labelled by
+   its rarest word. */
 export function ordOdd(lex, view, rng) {
   const P = view.policy;
-  const b = bandFor(view, "ordaford");
-  const maxR = 600 + 500 * b;
+  const b = Math.min(bandFor(view, "ordaford"), 5);
+  const cap = CLASS_RANK_CAP[b], floor = CLASS_RANK_CAP[b - 1];
   const by = {};
-  lex.nouns.forEach((w) => { if (w.r <= maxR && !w.nx && KIND_NAME[w.s]) (by[w.s] ||= []).push(w); });
+  lex.nouns.forEach((w) => { if (w.r <= cap && !w.nx && KIND_NAME[w.s]) (by[w.s] ||= []).push(w); });
   const kinds = Object.keys(KIND_NAME).filter((k) => (by[k] || []).length >= 3);
+  const rare = (list) => list.filter((w) => w.r > floor);
   for (let k = 0; k < 10; k++) {
     const A = pick(kinds, rng);
     if (!A) return null;
     const Bs = ODD_FAR[A].filter((x) => (by[x] || []).length);
     if (!Bs.length) continue;
-    const three = shuffle(by[A], rng).slice(0, 3);
-    const odd = pick(by[pick(Bs, rng)], rng);
+    /* One of the three from the window if the kind has one there; else the
+       odd one out from it, if its kind has. */
+    const inA = rare(by[A]);
+    const first = inA.length ? pick(inA, rng) : null;
+    const three = [first, ...shuffle(by[A].filter((w) => w !== first), rng)].filter(Boolean).slice(0, 3);
+    const B = by[pick(Bs, rng)];
+    const odd = pick(!first && rare(B).length ? rare(B) : B, rng);
     return built({
       type: "choice", skill: "ordaford", s: null,
       title: "Hvert á ekki heima í hópnum?", question: "Þrjú orðanna eiga eitthvað sameiginlegt. Hvert á **ekki** heima í hópnum?",
       options: shuffle([...three, odd].map((w) => w.o), rng), answer: odd.o,
       why: `*${three.map((w) => w.o).join(", ")}* eru öll ${KIND_NAME[A]} — *${odd.o}* ekki.`,
       defs: [odd].filter((e) => e.d),
-      base: 7, lvl: levelFor(P, 1), cell: "orð:útundan", word: wordKey(odd.o, odd.c),
+      base: 7, lvl: levelFor(P, classRankLevel(Math.max(odd.r, ...three.map((w) => w.r)))),
+      cell: "orð:útundan", word: wordKey(odd.o, odd.c),
       tags: ["vocab"], miss: ["merking"], bonus: odd,
     });
   }
@@ -296,14 +322,14 @@ export const TYPES = [
     build: ordSynAnt },
   { id: "or_samhengi", skill: "ordaford", weight: 4, renderer: "choice",
     tags: ["vocab"],
-    bands: [1, 2, 3, 4, 5, 7],
+    bands: [1, 2, 3, 4, 5],
     build: ordContext },
   { id: "or_myndun", skill: "ordaford", weight: 3, renderer: "gap",
     tags: ["wordform"],
-    bands: [1, 2, 3, 4],
+    bands: [1, 2, 3, 4, 5],
     build: ordFormation },
   { id: "or_utundan", skill: "ordaford", weight: 3, renderer: "choice",
     tags: ["vocab"],
-    bands: [1, 2],
+    bands: [1, 2, 3, 4, 5],
     build: ordOdd },
 ];

@@ -16,7 +16,7 @@ import { wantsHelper, phrase, paradigmWithHelper } from "../core/helpers.js";
 import { settled } from "./frames.js";
 import { built, FX } from "./effects.js";
 import { pairOf, pick, wpick, shuffle, bandFor, levelFor, forced, drilling, forcedCell, wordWeight, sameInEveryCell,
-         cap1, caseWord, caseOf, textSentence, fresh, lexWord, isTimeNoun, headsTimePhrase } from "./shared.js";
+         cap1, caseWord, caseOf, textSentence, fresh, itemsForBand, lexWord, isTimeNoun, headsTimePhrase } from "./shared.js";
 
 /* ================= Beygingartafla ======================================== */
 
@@ -29,10 +29,20 @@ const SINGULAR_TABLE_ONLY = new Set(["sérhver"]);
    than any other table, *mestallur* four times in one test (v6.10). */
 const PRONOUN_TABLE_SKIP = new Set(["vor", "mestallur"]);
 
+/* What the table asks about at each difficulty (critique item 13; until
+   v6.13 every pronoun at every band): at þyngd 1 the personal pronouns, the
+   article and the eight commonest other pronouns (hver, allur, þessi, sá,
+   enginn, þinn, einhver, minn), singular only; the plural from þyngd 2; the
+   next eight (neinn … annar) from 3; all of them from 4. `r` is the
+   pronoun's rank among the pronouns (1 = commonest). */
+const PRONOUN_RANK_BY_BAND = [0, 8, 8, 16, Infinity];
+const pronounRankCap = (b) => PRONOUN_RANK_BY_BAND[Math.min(b, 4)];
+
 export function tablePronoun(lex, view, rng) {
-  const { sess } = view;
-  const pool = [...(lex.byClass.fn || []), ...(lex.byClass.pfn || []), ...(lex.byClass.gr || [])]
+  const b = bandFor(view, "fornofn");
+  const all = [...(lex.byClass.fn || []), ...(lex.byClass.pfn || []), ...(lex.byClass.gr || [])]
     .filter((x) => !PRONOUN_TABLE_SKIP.has(x.o));
+  const pool = all.filter((x) => x.c !== "fn" || x.r <= pronounRankCap(b));
   if (!pool.length) return null;
   if (drilling(view) && !forced(view, ["fn", "pfn", "gr"])) return null;
   const w = forced(view, ["fn", "pfn", "gr"]) || wpick(pool, (x) => wordWeight(lex, view, x, "fornofn"), rng);
@@ -42,7 +52,7 @@ export function tablePronoun(lex, view, rng) {
   if (fc && (!f || (f[2] === "FT" && SINGULAR_TABLE_ONLY.has(w.o)))) return null;
   const kyn = f && f[1] ? f[1] : pick(["KK", "KVK", "HK"], rng);
   /* *sérhver* has a plural in BÍN and none in use. */
-  const num = f ? f[2] : SINGULAR_TABLE_ONLY.has(w.o) ? "ET" : pick(["ET", "FT"], rng);
+  const num = f ? f[2] : SINGULAR_TABLE_ONLY.has(w.o) || b < 2 ? "ET" : pick(["ET", "FT"], rng);
   for (const withKyn of [true, false]) {
     const cells = CASES
       .map((cs) => {
@@ -75,11 +85,9 @@ export function fnGap(lex, view, rng) {
   const P = view.policy;
   const items = EX.pronounGap.filter((x) => P.mark(x.m));
   if (!items.length) return null;
-  const b = bandFor(view, "fornofn");
-  /* Singular first; the plural and the genitive from þyngd 2. */
-  const easy = (x) => /ET$/.test(x.m) && !/^EF/.test(x.m);
-  const pool = fresh(view, (x) => x.t, b < 2 ? items.filter(easy) : items);
-  const x = pick(pool.length ? pool : items, rng);
+  /* Near the pupil's band by the item's level (exercises.py): the singular
+     after a verb first, the plural and the genitive later. */
+  const x = pick(itemsForBand(view, "fornofn", items, (y) => y.t), rng);
   const { s, i } = textSentence(x.t);
   return built({
     type: "gap", skill: "fornofn", s, i, cue: x.cue, answers: x.a, m: x.m,
@@ -87,7 +95,7 @@ export function fnGap(lex, view, rng) {
     title: "Settu fornafnið í rétt fall", lemmaLabel: "persónufornafn",
     hint: "Hvað stýrir fallinu — sögnin eða forsetningin?",
     why: x.why.replace(/^([^:]+):/, "*$1*:"),
-    base: 10, lvl: levelFor(P, easy(x) ? 1 : 2), cell: "fn:" + x.m,
+    base: 10, lvl: levelFor(P, x.lvl), cell: "fn:" + x.m,
     word: lexWord(lex, x.l, x.c), tags: [], cap: i === 0,
   }, [FX.exSeen(x.t)]);
 }
@@ -164,14 +172,16 @@ const reflexPairs = () => {
     if (!by.has(x.t)) by.set(x.t, {});
     by.get(x.t)[x.reflexive ? "same" : "other"] = x;
   }
-  return (REFLEX_PAIRS = [...by.values()].filter((p) => p.same && p.other));
+  /* A pair is as hard as its harder reading (item 13: chosen by band). */
+  return (REFLEX_PAIRS = [...by.values()].filter((p) => p.same && p.other)
+    .map((p) => ({ ...p, lvl: Math.max(p.same.lvl, p.other.lvl) })));
 };
 
 /** sér / honum, sína / hans — the line under the sentence decides. Both
     readings of the sentence are asked on one card; right only when both are. */
 export function fnReflex(lex, view, rng) {
   const P = view.policy;
-  const pr = pick(fresh(view, (y) => y.same.t + y.same.gloss + y.other.gloss, reflexPairs()), rng);
+  const pr = pick(itemsForBand(view, "fornofn", reflexPairs(), (y) => y.same.t + y.same.gloss + y.other.gloss), rng);
   const half = (x) => {
     const { s, i } = textSentence(x.t);
     return {
@@ -188,7 +198,7 @@ export function fnReflex(lex, view, rng) {
     type: "choice", skill: "fornofn", s: A.s, i: A.i, gloss: A.gloss,
     title: "Afturbeygt eða ekki?", question: A.question,
     options: A.options, answer: A.answer, why: A.why,
-    base: 11, lvl: levelFor(P, 3), cell: "fn:afturbeyging", word: null,
+    base: 11, lvl: levelFor(P, pr.lvl), cell: "fn:afturbeyging", word: null,
     tags: ["reflex"], miss: A.miss,
   }, B), [FX.exSeen(pr.same.t + pr.same.gloss + pr.other.gloss)]);
 }
@@ -385,11 +395,11 @@ export function fnKind(lex, view, rng) {
 export const TYPES = [
   { id: "tbl_fn", skill: "fornofn", weight: 4, renderer: "table",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun", "num"],
-    bands: [1],
+    bands: [1, 2, 3, 4],
     build: tablePronoun },
   { id: "fn_eyda", skill: "fornofn", weight: 7, renderer: "gap",
     tags: ["case:EF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2],
+    bands: [1, 2, 3, 4],
     build: fnGap },
   { id: "fn_stad", skill: "fornofn", weight: 6, renderer: "gap",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
@@ -397,11 +407,13 @@ export const TYPES = [
     build: fnReplace },
   { id: "fn_aftur", skill: "fornofn", weight: 5, renderer: "choice",
     tags: ["reflex"],
-    bands: [1],
+    bands: [1, 3, 4],
     build: fnReflex },
-  /* item 27 */
+  /* item 27. Six kinds from þyngd 3, the genitive trap from 5, and bank
+     sentences up to one level above the band — like fn_stad, so at 6 the
+     level-7 sentences (item 14) come in, and 7 adds nothing new. */
   { id: "fn_flokkar", skill: "fornofn", weight: 5, renderer: "choice",
     tags: ["fnkind", "fnkind:gen"],
-    bands: [1, 2, 3, 4, 5],
+    bands: [1, 2, 3, 4, 5, 6],
     build: fnKind },
 ];

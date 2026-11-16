@@ -28,6 +28,7 @@ import { LESSONS } from "../src/js/content/lessons.js";
 import { typeById, makeView, reviewTask } from "../src/js/tasks/index.js";
 import { fnKind, PRONOUN_KINDS } from "../src/js/tasks/fornofn.js";
 import { noDeclension, nounDeclension } from "../src/js/tasks/nafnord.js";
+import { topByRank } from "../src/js/tasks/shared.js";
 
 const lex = buildLexicon(DATA);
 const D0 = "2026-11-16";
@@ -65,7 +66,7 @@ const sigNo = (t) => JSON.stringify([t.n.o, t.n.c, t.show, t.askGen, t.answer]);
  * fn_flokkar
  * ====================================================================== */
 
-const FN = new Map([1, 2, 3, 4, 5].map((b) => [b, buildMany(fnKind, b, 1500)]));
+const FN = new Map(typeById("fn_flokkar").bands.map((b) => [b, buildMany(fnKind, b, 1500)]));
 const KIND_NAMES = PRONOUN_KINDS.map((k) => k.nm);
 
 test("fn_flokkar: the answer is among the options, no option twice, the options in the lesson's order", () => {
@@ -127,8 +128,11 @@ test("fn_flokkar: no form whose kind the sentence cannot settle is ever asked", 
     /* *mín, þín, sín* as an eignarfornafn only right after a noun. */
     if (/^(mín|þín|sín)$/.test(w) && kind.k === "eignar") assert.equal(t.s.tok[t.i - 1].c, "nafnorð", t.s.t);
   }
-  /* "á hverjum degi" is *hver* = each: not taught, not asked. */
-  assert.ok(!all.some((t) => t.s.tok[t.i].l === "hver"), "hver outside a direct question");
+  /* "á hverjum degi" is *hver* = each: not taught, not asked. *Hvað kostar
+     bókin?* (BÍN files *hvað* under *hver*) opens a direct question and is
+     the spurnarfornafn the lesson teaches (item 24 put it in the bank). */
+  const direct = (t) => /\?$/.test(t.s.t) && (t.i === 0 || (t.i === 1 && t.s.tok[0].c === "forsetning"));
+  assert.ok(!all.some((t) => t.s.tok[t.i].l === "hver" && !direct(t)), "hver outside a direct question");
 });
 
 test("fn_flokkar: the plural personal pronoun is named as the pupil knows it", () => {
@@ -171,7 +175,7 @@ test("fn_flokkar: a review asks the same kind, the same word, never the sentence
  * no_beyging
  * ====================================================================== */
 
-const NO = new Map([1, 3, 5].map((b) => [b, buildMany(noDeclension, b, 1500)]));
+const NO = new Map(typeById("no_beyging").bands.map((b) => [b, buildMany(noDeclension, b, 1500)]));
 const VOWEL = /[aeiouyáéíóúýæö]$/i;
 
 test("no_beyging: the answer is among the options, no option twice, and it is the lesson's rule", () => {
@@ -335,4 +339,22 @@ test("both types are in the curriculum switch, the map, the year-8 preset and th
 test("each question opens the Lesefni page that teaches it", () => {
   assert.equal(lessonFor(NO.get(1)[0]), "nafnord-beyging");
   assert.equal(lessonFor(FN.get(1)[0]), "fornofn");
+});
+
+test("no_beyging: þyngd 1–2 ask only the commonest fifth of each gender's nouns", () => {
+  /* v6.13: the cap read `.r` off the pool's `{ n, kind, trap }` wrapper,
+     found none, and let every noun through — þyngd 1 asked words up to rank
+     1,384, as þyngd 3 does. A noun's rank counts within its gender. */
+  const fifth = {};
+  for (const g of ["kk", "kvk", "hk"])
+    fifth[g] = Math.max(20, Math.ceil(0.2 * lex.nouns.filter((n) => n.c === g && !n.nx).length));
+  for (const band of [1, 2]) {
+    for (const t of NO.get(band))
+      assert.ok(t.n.r <= fifth[t.n.c], `þyngd ${band}: *${t.n.o}* (${t.n.c}, rank ${t.n.r}) is not common`);
+  }
+  assert.ok(NO.get(3).some((t) => t.n.r > fifth[t.n.c]), "þyngd 3 should reach past the commonest fifth");
+  /* and the helper no longer hides a pool it cannot read */
+  const wrapped = lex.nouns.slice(0, 50).map((n) => ({ n }));
+  assert.throws(() => topByRank(wrapped, 0.2), /without a frequency rank/);
+  assert.ok(topByRank(wrapped, 0.2, (y) => y.n.r).length < wrapped.length || wrapped.length <= 20);
 });

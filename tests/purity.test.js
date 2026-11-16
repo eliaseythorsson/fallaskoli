@@ -355,3 +355,15 @@ test("a builder without a random source fails at once instead of finding its own
   assert.throws(() => typeById("fill").build(lex, view(p)), TypeError);
   assert.throws(() => nextTask(lex, view(p)), TypeError);
 });
+
+test("the word asked again after a wrong answer is never swapped for a fixed sentence's own noun", () => {
+  /* v6.13: a sentence that takes no other noun ("Þið komið of seint í
+     tímann aftur.") was asked with its own noun, and the waiting word was
+     let go unasked. */
+  const fn = lex.lookup("hestur", "kk");
+  for (let k = 1; k <= 300; k++) {
+    const p = pupil(2, k);
+    const b = typeById("fill").build(lex, view(p, { forcedNoun: fn }), seeded(k));
+    if (b) assert.equal(b.task.n.o, "hestur", `seed ${k}: "${b.task.s.t}" asks ${b.task.n.o}`);
+  }
+});

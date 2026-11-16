@@ -781,10 +781,16 @@ async function openTab(page, view) {
   ok(/kennari er kennari eða forsjáraðili hópsins þíns/.test(await P.page.$eval("#account", (e) => e.innerText)),
     "the pupil's account page does not say who sees their patterns");
 
-  /* The teacher: who finished, the score, and the patterns on nouns. */
+  /* The teacher: who finished, the score, and the patterns on nouns.
+     The card from before the pupil answered is still on the page until the
+     tab's asynchronous redraw replaces it: mark it, and wait for a fresh
+     one, or the check reads the old figures (a race that went either way
+     by a few milliseconds). */
+  await T.page.evaluate(() => document.querySelectorAll("#tc-list .assigncard")
+    .forEach((e) => { e.dataset.stale = "1"; }));
   await openTab(T.page, "practice");
   await openTab(T.page, "class");
-  await T.page.waitForSelector("#tc-list .assigncard", { timeout: 10000 });
+  await T.page.waitForSelector("#tc-list .assigncard:not([data-stale])", { timeout: 10000 });
   await T.page.evaluate(() => { document.querySelector("#tc-list .assigncard details").open = true; });
   const seen = await T.page.$eval("#tc-list .assigncard", (e) => e.innerText);
   ok(/1 af 2/.test(seen) && /hafa lokið/.test(seen), "the teacher does not see who finished: " + seen);

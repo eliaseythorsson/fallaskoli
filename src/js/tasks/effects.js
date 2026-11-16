@@ -20,12 +20,17 @@
      { op: "since", table, meaning } the gaps between tables and between
                                      meaning questions (tasks/next.js)
      { op: "clearForcedNoun" }       the noun waiting to be asked again has
-                                     had its turn                            */
+                                     had its turn
+     { op: "frame", key }            this bank sentence carried a question:
+                                     not again this session, and one more in
+                                     the pupil's tally (S.frames)            */
 
 import { markAsked } from "../core/spacing.js";
 
 /** How many hand-written items a session remembers having asked. */
 export const EX_SEEN_MAX = 40;
+/** How many sentences a session remembers having used as frames. */
+export const FRAMES_SEEN_MAX = 200;
 
 export const FX = {
   asked: (key, day) => ({ op: "asked", key, day }),
@@ -33,6 +38,7 @@ export const FX = {
   seen: (words) => ({ op: "seen", words }),
   since: (table, meaning) => ({ op: "since", table: !!table, meaning: !!meaning }),
   clearForcedNoun: () => ({ op: "clearForcedNoun" }),
+  frame: (key) => ({ op: "frame", key }),
 };
 
 /** What every builder returns: the task, and what showing it does. */
@@ -65,6 +71,16 @@ export function applyEffects(host, effects) {
       case "clearForcedNoun":
         host.forcedNoun = null;
         break;
+      case "frame": {
+        /* critique item 24: a sentence carries one question a session, and
+           the ones this pupil has met least are preferred next time */
+        const used = (host.sess.frames ||= []);
+        used.push(e.key);
+        if (used.length > FRAMES_SEEN_MAX) used.splice(0, used.length - FRAMES_SEEN_MAX);
+        const tally = (host.S.frames ||= {});
+        tally[e.key] = (tally[e.key] || 0) + 1;
+        break;
+      }
       default:
         /* A builder that invents an effect nobody applies has a bug; say so
            rather than lose it quietly. */

@@ -1,10 +1,10 @@
 {
- "sentences": 1041,
- "uncertain_tokens": 1474,
+ "sentences": 1081,
+ "uncertain_tokens": 1500,
  "guard": {
   "hard": 0,
   "soft": {
-   "ekki-í-BÍN": 19
+   "ekki-í-BÍN": 20
   },
   "rejected": 0
  },

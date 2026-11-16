@@ -6,7 +6,9 @@
      to_dags  the ordinal in a date ("Í dag er ___ (3.) maí")
      to_flt   einir, tvennir, þrennir, fernir with a plural-only noun
 
-   All but the table are hand-written items (data/exercises.js).
+   All but the table are hand-written items (data/exercises.js), each with
+   its level; outside a review they are chosen near the pupil's band
+   (shared.js `itemsForBand`, critique item 13).
 
    v6.13 (critique item 20): to_samr and to_flt are GRAMMAR, and are no
    longer spaced like vocabulary. Until now they went through `pickVocab`
@@ -22,7 +24,8 @@
      - a missed item comes back through the review queue (core/review.js):
        the next day, then after 3, 7 and 21 days;
      - within a visit an item is not asked twice while others are left
-       (`fresh` + `FX.exSeen`, tasks/shared.js — the gate to_val always had);
+       (`itemsForBand` + `FX.exSeen`, tasks/shared.js — the gate to_val always
+       had), and near the pupil's band by the item's level;
      - nothing is written to the vocabulary record, and no rank is read: the
        items are numerals one to four, and all of them are for everybody.   */
 
@@ -32,7 +35,7 @@ import { wordKey } from "../core/state.js";
 import { built, FX } from "./effects.js";
 import { pick, wpick, shuffle, randInt, bandFor, levelFor, forced, drilling, forcedCell,
          forcedItem, wordWeight, cellWeight, sameInEveryCell, cap1, caseWord, textSentence,
-         fresh, lexWord } from "./shared.js";
+         itemsForBand, nearBand, lexWord } from "./shared.js";
 
 /* What a review may ask of the hand-written numeral items (tasks/review.js):
    the cell ("to:KVK-ÞFFT") and the numeral (*tveir*). Both or nothing. */
@@ -43,8 +46,18 @@ const numeralAsked = (view) => {
 
 /* ================= Beygingartafla ======================================== */
 
+/* What the table asks about at each difficulty (critique item 13; until
+   v6.13 every numeral at every band): the cardinals that inflect (einn …
+   fjórir) at þyngd 1; the five commonest ordinals (annar, þriðji, fjórði,
+   sjötti, fimmti) join them from 2; every ordinal from 3. `r` is the rank
+   within the class. */
+const ORDINAL_RANK_BY_BAND = [0, 0, 5, Infinity];
+const ordinalRankCap = (b) => ORDINAL_RANK_BY_BAND[Math.min(b, 3)];
+
 export function tableNumeral(lex, view, rng) {
-  const pool = [...(lex.byClass.to || []), ...(lex.byClass.rt || [])];
+  const b = bandFor(view, "toluord");
+  const pool = [...(lex.byClass.to || []),
+    ...(lex.byClass.rt || []).filter((x) => x.r <= ordinalRankCap(b))];
   if (!pool.length) return null;
   if (drilling(view) && !forced(view, ["to", "rt"])) return null;
   /* A review (tasks/review.js) asks for the table its cell is in — of the
@@ -93,17 +106,18 @@ function numeralCells(view, w, kyn, fc = null) {
 /** "Ég á ___ (2) systur." → tvær */
 export function toAgree(lex, view, rng) {
   const P = view.policy;
-  const b = bandFor(view, "toluord");
   if (drilling(view) && !forced(view, ["to"])) return null;
   const reviewing = !!(forcedCell(view) || forced(view, ["to"]));
-  /* The genitive from þyngd 2 — but a review asks for what was missed. */
-  const items = EX.numeralAgree.filter((x) => P.mark(x.m) &&
-    (reviewing ? numeralAsked(view)(x) : b >= 2 || x.case !== "EF"));
+  /* A review asks for what was missed, whatever its level; otherwise the
+     items near the band (the genitive frames are level 3, so a beginner
+     meets them only once the easier ones are used up). */
+  const items = EX.numeralAgree.filter((x) => P.mark(x.m) && (!reviewing || numeralAsked(view)(x)));
   if (!items.length) return null;
-  /* Not the same sentence twice in a visit while others are left; among
-     those, the cells this pupil gets wrong come up more often (`cellWeight`:
-     up to five times as often as one always right). */
-  const x = wpick(fresh(view, agreeKey, items), (y) => cellWeight(view.S, "to:" + y.m), rng);
+  /* Not the same sentence twice in a visit while others are left, near the
+     band; among those, the cells this pupil gets wrong come up more often
+     (`cellWeight`: up to five times as often as one always right). */
+  const near = reviewing ? items : itemsForBand(view, "toluord", items, agreeKey, 8);
+  const x = wpick(near, (y) => cellWeight(view.S, "to:" + y.m), rng);
   const { s, i } = textSentence(x.t);
   const cap = i === 0;
   const noun = s.tok[i + 1].w;
@@ -113,7 +127,7 @@ export function toAgree(lex, view, rng) {
     title: "Skrifaðu töluna með bókstöfum", lemmaLabel: "frumtala",
     hint: "Töluorðið lagar sig að nafnorðinu á eftir því.",
     why: `*${noun}* er ${GENDERS[x.g]}, ${caseWord(x.case)}, ${x.n === 1 ? "eintala" : "fleirtala"} — og töluorðið líka: **${x.a[0]}**.`,
-    base: 10, lvl: levelFor(P, x.case === "EF" ? 3 : x.case === "ÞGF" ? 2 : 1),
+    base: 10, lvl: levelFor(P, x.lvl),
     cell: "to:" + x.m, word: lexWord(lex, x.l, x.c), tags: [], cap, numeral: x,
   }, [FX.exSeen(agreeKey(x))]);
 }
@@ -130,7 +144,8 @@ export function toChoice(lex, view, rng) {
   if (drilling(view) && !forced(view, ["to"])) return null;
   const items = EX.numeralAgree.filter((x) => P.mark(x.m) && x.n > 1 && numeralAsked(view)(x));
   if (!items.length) return null;
-  const x = pick(fresh(view, (y) => "c" + y.t, items), rng);
+  const reviewing = !!(forcedCell(view) || forced(view, ["to"]));
+  const x = pick(reviewing ? items : itemsForBand(view, "toluord", items, (y) => "c" + y.t, 8), rng);
   const para = EX.para[`${x.l}|${x.c}`] || {};
   const right = new Set(x.a);
   /* Wrong options a pupil actually writes: another gender in the same case,
@@ -151,7 +166,7 @@ export function toChoice(lex, view, rng) {
     title: "Veldu rétta mynd töluorðsins", question: `Hvaða mynd af *${x.l}* passar í eyðuna?`,
     options: shuffle([x.a[0], ...opts], rng).map(fix), answer: fix(x.a[0]),
     why: `Nafnorðið er ${GENDERS[x.g]}, ${caseWord(x.case)}, fleirtala — töluorðið líka: **${x.a[0]}**.`,
-    base: 8, lvl: levelFor(P, 2), cell: "to:" + x.m, word: lexWord(lex, x.l, x.c),
+    base: 8, lvl: levelFor(P, x.lvl), cell: "to:" + x.m, word: lexWord(lex, x.l, x.c),
     m: x.m, paradigm: para, tags: [],
   }, [FX.exSeen("c" + x.t)]);
 }
@@ -166,7 +181,7 @@ export function toDate(lex, view, rng) {
   const frames = D.frames.filter((f) => P.mark(`KK-${f.case}ET`) &&
     (!forcedCell(view) || forcedCell(view) === "to:dags-" + f.case));
   if (!frames.length) return null;
-  const f = pick(frames, rng);
+  const f = pick(forcedCell(view) ? frames : nearBand(frames, (y) => y.lvl, b, 2), rng);
   const mi = randInt(12, rng);
   /* Up to 20 at first; the compounds (21., 22. …) from þyngd 2. */
   const top = b >= 2 ? D.days[mi] : Math.min(20, D.days[mi]);
@@ -183,7 +198,8 @@ export function toDate(lex, view, rng) {
     title: "Skrifaðu dagsetninguna", lemmaLabel: "raðtala",
     hint: "Raðtalan í dagsetningu er í karlkyni (dagurinn). Fallið fer eftir setningunni.",
     why: `${f.why} ${d === 2 || d === 22 ? "*Annar* beygist sterkt: annar, annan, öðrum, annars." : "Raðtölur beygjast eins og veik lýsingarorð: *þriðji, þriðja*."}`,
-    base: 10, lvl: levelFor(P, d > 20 ? 3 : f.case === "NF" ? 1 : 2),
+    /* the frame's level, and one more for a compound ordinal */
+    base: 10, lvl: levelFor(P, Math.min(5, f.lvl + (d > 20 ? 1 : 0))),
     cell: "to:dags-" + f.case, word: null, tags: [], cap,
   });
 }
@@ -200,7 +216,7 @@ export function toPlural(lex, view, rng) {
     (!want || pluralKey(x) === want));
   if (!items.length) return null;
   if (!want && forcedCell(view) && forcedCell(view) !== "to:fleirtoluord") return null;
-  const x = pick(want ? items : fresh(view, pluralKey, items), rng);
+  const x = pick(want ? items : itemsForBand(view, "toluord", items, pluralKey), rng);
   const { s, i } = textSentence(x.t);
   const cap = i === 0;
   const noun = s.tok[i + 1].w;
@@ -211,7 +227,7 @@ export function toPlural(lex, view, rng) {
     title: "Töluorð með fleirtöluorði", lemmaLabel: "töluorð",
     hint: `*${x.noun}* er aðeins til í fleirtölu.`,
     why: `Orð sem eru aðeins til í fleirtölu (*buxur, skæri, gleraugu, tónleikar*) taka **einir, tvennir, þrennir, fernir**: *${x.a[0]} ${noun}*${x.plain.length ? ` — ekki *${x.plain[0]} ${noun}*` : ""}.`,
-    base: 12, lvl: levelFor(P, 3), cell: "to:fleirtoluord", word: null,
+    base: 12, lvl: levelFor(P, x.lvl), cell: "to:fleirtoluord", word: null,
     /* What the review queue knows this item by (core/review.js `i`). */
     item: pluralKey(x),
     tags: ["plnum"], cap,
@@ -221,22 +237,22 @@ export function toPlural(lex, view, rng) {
 export const TYPES = [
   { id: "tbl_to", skill: "toluord", weight: 3, renderer: "table",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1],
+    bands: [1, 2, 3],
     build: tableNumeral },
   { id: "to_samr", skill: "toluord", weight: 5, renderer: "gap",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2],
+    bands: [1, 2, 3],
     build: toAgree },
   { id: "to_val", skill: "toluord", weight: 3, renderer: "choice",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "num"],
-    bands: [1],
+    bands: [1, 2, 3],
     build: toChoice },
   { id: "to_dags", skill: "toluord", weight: 4, renderer: "gap",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2],
+    bands: [1, 2, 3],
     build: toDate },
   { id: "to_flt", skill: "toluord", weight: 3, renderer: "gap",
     tags: ["agree:kyn", "case:NF", "case:ÞF", "case:ÞGF", "num", "plnum"],
-    bands: [1],
+    bands: [1, 3, 4],
     build: toPlural },
 ];

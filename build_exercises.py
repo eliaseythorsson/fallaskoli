@@ -7,6 +7,8 @@ What this build guarantees, item by item:
   * every other word in every sentence is a word BÍN knows;
   * the claims the items make about word classes (an adverb, a preposition,
     a conjunction) are classes BÍN gives that word;
+  * every item carries a level, þyngd 1-5 (exercises.py LEVELS), passed
+    on as `lvl` for the builders to choose by;
   * an item that fails any of this stops the build, and says why.
 Nothing in data/exercises.js is typed by hand except the sentences around
 the blanks and the short explanations.
@@ -90,6 +92,12 @@ def nf_cue(lemma, ofl, mark):
     num = 'FT' if mark.endswith('FT') else 'ET'
     return form(lemma, ofl, 'NF' + num, "cue")[0]
 
+def level(lvl, where):
+    """Every hand-written item carries its level, þyngd 1-5 (exercises.py,
+    LEVELS): the builders choose by it, so a missing or odd one is an error."""
+    if not (isinstance(lvl, int) and 1 <= lvl <= 5):
+        fail(f"{where}: level must be a whole number 1-5, not {lvl!r}")
+
 PARA = {}
 def keep(lemma, ofl):
     lemma = lemma.split(":")[0]
@@ -99,30 +107,33 @@ out = {"v": 1}
 
 # ---------------------------------------------------------------- Fornöfn
 items = []
-for t, (l, c, m), why in X.PRONOUN_GAP:
+for lvl, t, (l, c, m), why in X.PRONOUN_GAP:
     where = f"PRONOUN_GAP {t}"
+    level(lvl, where)
     t2 = resolve(t, where)
     a = form(l, c, m, where)
     check_words(t2.replace("___", a[0]), where)
     keep(l, c)
-    items.append({"t": t2, "l": l, "c": c, "m": m, "a": a, "cue": nf_cue(l, c, m), "why": why})
+    items.append({"t": t2, "l": l, "c": c, "m": m, "a": a, "cue": nf_cue(l, c, m), "why": why, "lvl": lvl})
 out["pronounGap"] = items
 
 items = []
-for t, gloss, (l1, c1, m1), (l2, c2, m2) in X.REFLEXIVE:
+for lvl, t, gloss, (l1, c1, m1), (l2, c2, m2) in X.REFLEXIVE:
     where = f"REFLEXIVE {t} / {gloss}"
+    level(lvl, where)
     a = form(l1, c1, m1, where); w = form(l2, c2, m2, where)
     if set(a) & set(w): fail(f"{where}: the two options share a form")
     check_words(t.replace("___", a[0]) + " " + gloss, where)
     items.append({"t": t, "gloss": gloss, "a": a[0], "w": w[0],
-                  "reflexive": c1 in ("afn",) or l1 == "sinn"})
+                  "reflexive": c1 in ("afn",) or l1 == "sinn", "lvl": lvl})
 out["reflexive"] = items
 
 # ---------------------------------------------------------------- Töluorð
 CARD = {1: ("einn", "to"), 2: ("tveir", "to"), 3: ("þrír", "to"), 4: ("fjórir", "to")}
 KYN = {"kk": "KK", "kvk": "KVK", "hk": "HK"}
 items = []
-for t, case, ns, nouns in X.NUMERAL_AGREE:
+for lvl, t, case, ns, nouns in X.NUMERAL_AGREE:
+    level(lvl, f"NUMERAL_AGREE {t}")
     for noun in nouns:
         g = noun_gender(noun, f"NUMERAL_AGREE {t}")
         if not g: continue
@@ -136,7 +147,7 @@ for t, case, ns, nouns in X.NUMERAL_AGREE:
             t2 = t.replace("{N}", nf)
             check_words(t2.replace("___", a[0]), where)
             items.append({"t": t2, "n": n, "noun": noun.split(":")[0], "g": g, "case": case,
-                          "l": l, "c": c, "m": f"{KYN[g]}-{case}{num}", "a": a})
+                          "l": l, "c": c, "m": f"{KYN[g]}-{case}{num}", "a": a, "lvl": lvl})
 out["numeralAgree"] = items
 
 items = []
@@ -145,7 +156,8 @@ for noun in X.PLURAL_ONLY_NOUNS:
     p = paradigm(noun, g) if g else {}
     if any(k.startswith(("NFET", "ÞFET", "ÞGFET", "EFET")) for k in p):
         fail(f"PLURAL_ONLY_NOUNS: '{noun}' has singular forms in BÍN")
-for t, case, ns, nouns in X.NUMERAL_PLURAL_ONLY:
+for lvl, t, case, ns, nouns in X.NUMERAL_PLURAL_ONLY:
+    level(lvl, f"NUMERAL_PLURAL_ONLY {t}")
     for noun in nouns:
         g = noun_gender(noun, t)
         if not g: continue
@@ -164,7 +176,7 @@ for t, case, ns, nouns in X.NUMERAL_PLURAL_ONLY:
             t2 = t.replace("{N}", nf)
             check_words(t2.replace("___", a[0]), where)
             items.append({"t": t2, "n": n, "noun": noun.split(":")[0], "g": g, "case": case,
-                          "a": a, "plain": plain})
+                          "a": a, "plain": plain, "lvl": lvl})
 out["pluralOnly"] = items
 
 ORD = {}
@@ -183,15 +195,17 @@ for d in range(1, 32):
 for mth in X.MONTHS:
     check_words(mth, "MONTHS")
 frames = []
-for t, case, why in X.DATE_FRAMES:
+for lvl, t, case, why in X.DATE_FRAMES:
+    level(lvl, f"DATE_FRAMES {t}")
     check_words(t.replace("{M}", "maí").replace("___", ORD[3][case][0]), f"DATE_FRAMES {t}")
-    frames.append({"t": t, "case": case, "why": why})
+    frames.append({"t": t, "case": case, "why": why, "lvl": lvl})
 out["dates"] = {"ord": ORD, "months": X.MONTHS, "days": X.DAYS_IN, "frames": frames}
 
 # ---------------------------------------------------------------- Fallstjórn
 items = []
-for t, noun, col, motion in X.MOTION_REST:
+for lvl, t, noun, col, motion in X.MOTION_REST:
     where = f"MOTION_REST {t}"
+    level(lvl, where)
     g = noun_gender(noun, where)
     if not g: continue
     thf = form(noun, g, "ÞF" + col, where); thgf = form(noun, g, "ÞGF" + col, where)
@@ -201,7 +215,7 @@ for t, noun, col, motion in X.MOTION_REST:
     if not prep: fail(f"{where}: no í/á/undir/yfir before the blank")
     keep(noun, g)
     items.append({"t": t, "noun": noun, "g": g, "col": col, "motion": motion,
-                  "thf": thf, "thgf": thgf, "prep": prep.group(1) if prep else ""})
+                  "thf": thf, "thgf": thgf, "prep": prep.group(1) if prep else "", "lvl": lvl})
 out["motionRest"] = items
 
 CASEW = {"NF": "nefnifall", "ÞF": "þolfall", "ÞGF": "þágufall", "EF": "eignarfall"}
@@ -212,7 +226,8 @@ def verb_in(text, verb):
         _, ms = b.lookup(w)
         if any(e.ofl == "so" and e.ord == verb for e in ms): return True
     return False
-for t, verb, case, col, nouns in X.VERB_CASE:
+for lvl, t, verb, case, col, nouns in X.VERB_CASE:
+    level(lvl, f"VERB_CASE {t}")
     if "so" not in classes_of(verb) and not paradigm(verb, "so"):
         fail(f"VERB_CASE: '{verb}' is not a verb in BÍN")
     # The app says "Sögnin X stýrir …falli": the verb must be in the sentence,
@@ -233,31 +248,33 @@ for t, verb, case, col, nouns in X.VERB_CASE:
         check_words(t.replace("___", a[0]), where)
         keep(noun, g)
         items.append({"t": t, "verb": verb, "case": case, "noun": noun.split(":")[0], "g": g,
-                      "m": case + col, "a": a, "cue": cue})
+                      "m": case + col, "a": a, "cue": cue, "lvl": lvl})
 out["verbCase"] = items
 
 items = []
-for t, (l, c, m), verb, why in X.IMPERSONAL:
+for lvl, t, (l, c, m), verb, why in X.IMPERSONAL:
     where = f"IMPERSONAL {t}"
+    level(lvl, where)
     a = form(l, c, m, where)
     check_words(t.replace("___", a[0]), where)
     if "so" not in classes_of(verb): fail(f"{where}: '{verb}' is not a verb")
     keep(l, c)
     items.append({"t": t, "l": l, "c": c, "m": m, "a": a, "cue": nf_cue(l, c, m),
-                  "verb": verb, "why": why})
+                  "verb": verb, "why": why, "lvl": lvl})
 out["impersonal"] = items
 
 # ---------------------------------------------------------------- Óbeygjanleg
 items = []
-for t, w, cls in X.ADV_OR_PREP:
+for lvl, t, w, cls in X.ADV_OR_PREP:
     where = f"ADV_OR_PREP {t}"
+    level(lvl, where)
     check_words(t, where)
     words = WORD.findall(t)
     if w not in [x.lower() for x in words]: fail(f"{where}: '{w}' is not in the sentence")
     if cls not in classes_of(w): fail(f"{where}: BÍN does not list '{w}' as {cls}")
     other = "ao" if cls == "fs" else "fs"
     if other not in classes_of(w): fail(f"{where}: BÍN does not list '{w}' as {other} — no contrast")
-    items.append({"t": t, "w": w, "c": cls})
+    items.append({"t": t, "w": w, "c": cls, "lvl": lvl})
 out["advPrep"] = items
 
 items = []
@@ -270,8 +287,9 @@ def is_conjunction(o):
     words = o.split()
     return (o in X.CONJ_PHRASES and all(classes_of(w) for w in words)
             and "st" in classes_of(words[-1]))
-for t, right, wrong, why in X.CONJUNCTION:
+for lvl, t, right, wrong, why in X.CONJUNCTION:
     where = f"CONJUNCTION {t}"
+    level(lvl, where)
     check_words(t.replace("___", right), where)
     if t.count("___") != 1: fail(f"{where}: exactly one blank")
     opts = [right] + wrong
@@ -279,7 +297,7 @@ for t, right, wrong, why in X.CONJUNCTION:
     if len(wrong) != 3: fail(f"{where}: three wrong options")
     for o in opts:
         if not is_conjunction(o): fail(f"{where}: BÍN does not list '{o}' as a conjunction")
-    items.append({"t": t, "a": right, "w": wrong, "why": why})
+    items.append({"t": t, "a": right, "w": wrong, "why": why, "lvl": lvl})
 out["conjunction"] = items
 
 # ---------------------------------------------------------------- Orðaforði
@@ -322,8 +340,9 @@ out["synonyms"] = syn
 out["antonyms"] = ant
 
 items = []
-for t, mark, right, wrong in X.WORD_IN_CONTEXT:
+for lvl, t, mark, right, wrong in X.WORD_IN_CONTEXT:
     where = f"WORD_IN_CONTEXT {t}"
+    level(lvl, where)
     opts = []
     for lemma in [right] + wrong:
         g = noun_gender(lemma, where)
@@ -331,7 +350,7 @@ for t, mark, right, wrong in X.WORD_IN_CONTEXT:
         opts.append({"o": lemma.split(":")[0], "c": g, "f": form(lemma, g, mark, where)[0]})
     if len({o["f"] for o in opts}) != len(opts): fail(f"{where}: two options with the same form")
     if opts: check_words(t.replace("___", opts[0]["f"]), where)
-    items.append({"t": t, "m": mark, "a": opts[0] if opts else None, "w": opts[1:]})
+    items.append({"t": t, "m": mark, "a": opts[0] if opts else None, "w": opts[1:], "lvl": lvl})
 out["wordInContext"] = items
 
 # ---------------------------------------------------------------- Villuveiðar

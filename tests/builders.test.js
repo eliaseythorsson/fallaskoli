@@ -11,6 +11,7 @@ import { seeded } from "../src/js/core/duel.js";
 import { makeView } from "../src/js/tasks/view.js";
 import { taskWorkshop } from "../src/js/tasks/malbeiting.js";
 import { taskFill } from "../src/js/tasks/nafnord.js";
+import { caseCellEase } from "../src/js/tasks/shared.js";
 
 const lex = buildLexicon(DATA);
 const viewAt = (band) => {
@@ -57,4 +58,32 @@ test("the noun cloze asks the hard cases: little nominative, dative and genitive
     const tot = Object.values(c).reduce((x, y) => x + y, 0);
     assert.ok((c.NF || 0) / tot < 0.25, `þyngd ${band}: nominative ${JSON.stringify(c)}`);
   }
+});
+
+test("items 15 and 16 together: at a low þyngd the genitive is asked often, and mostly in the singular", () => {
+  /* Item 15 decides how often each case is asked; item 16's second axis
+     which cell of the case. Scoring the cell on its own put every genitive
+     at the floor at þyngd 1 (17% of clozes, fewer than the nominative). */
+  for (const band of [1, 2]) {
+    const v = viewAt(band), c = {}, gen = {};
+    let n = 0;
+    for (let i = 0; i < 700; i++) {
+      const b = taskFill(lex, v, seeded(30000 + i));
+      if (!b) continue;
+      n++;
+      c[b.task.a.fall] = (c[b.task.a.fall] || 0) + 1;
+      if (b.task.a.fall === "EF") gen[b.task.m] = (gen[b.task.m] || 0) + 1;
+    }
+    const at = JSON.stringify(c);
+    assert.ok((c.EF || 0) / n > 0.2, `þyngd ${band}: genitive too rare: ${at}`);
+    assert.ok((c.EF || 0) > (c.NF || 0) && (c["ÞG"] || 0) > (c.NF || 0), `þyngd ${band}: ${at}`);
+    assert.ok((gen.EFET || 0) > (gen.EFFTgr || 0), `þyngd ${band}: ${JSON.stringify(gen)}`);
+  }
+  /* the factor itself: the bare singular of any case is full weight; the
+     plural with the article is weighed down at þyngd 1 and not at 5 */
+  const v1 = viewAt(1), v5 = viewAt(5);
+  for (const m of ["NFET", "ÞFET", "ÞGFET", "EFET"]) assert.equal(caseCellEase(lex, v1, "nafnord", m), 1, m);
+  assert.ok(caseCellEase(lex, v1, "nafnord", "EFFTgr") < caseCellEase(lex, v1, "nafnord", "EFFT"));
+  assert.ok(caseCellEase(lex, v1, "nafnord", "EFFT") < 1);
+  assert.equal(caseCellEase(lex, v5, "nafnord", "EFFTgr"), 1);
 });

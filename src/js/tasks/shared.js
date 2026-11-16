@@ -68,6 +68,49 @@ export const sentPool = (lex, view, skill, maxLvl) => {
   return p.length ? p : allowed.filter((s) => s.lvl <= b);
 };
 
+/* ---------- choosing by difficulty (v6.13, critique item 13) --------------
+ *
+ * About twenty question types built the same questions at þyngd 1 and 5:
+ * the hand-written ones (every item of exercises.py now carries a level,
+ * judged by the rule written there) and a few that drew from the whole
+ * sentence bank. These two choose what is near the band instead.
+ *
+ * `nearBand` keeps the items at the band and one level below it — the same
+ * window as `sentPool` — and widens one level each way until at least `min`
+ * are left, so a small list never shrinks to one item repeated, and a band
+ * the list has nothing at borrows from its neighbours rather than from
+ * anywhere. The band is first brought down to the highest level the list
+ * has: a list that stops at 3 is the same list at þyngd 4, 5, 6 and 7. */
+
+/** The items near `band` by `lvlOf`, at least `min` of them if there are. */
+export function nearBand(items, lvlOf, band, min = 4) {
+  if (items.length <= min) return items;
+  const top = Math.max(...items.map(lvlOf));
+  const b = Math.min(band, top);
+  for (let r = 0; r <= 6; r++) {
+    const got = items.filter((x) => { const l = lvlOf(x); return l >= b - 1 - r && l <= b + r; });
+    if (got.length >= min) return got;
+  }
+  return items;
+}
+
+/**
+ * Hand-written items (data/exercises.js, each with its `lvl`) for this
+ * pupil now: of a level the policy allows (if any is), not asked yet in this
+ * visit (if any is left — `fresh` below), near the band of `skill`. A
+ * builder picks one of what this returns, and labels the question with the
+ * item's own level (`levelFor`).
+ */
+export function itemsForBand(view, skill, items, key, min = 4) {
+  if (!items.length) return items;
+  const P = view.policy;
+  const allowed = items.filter((x) => P.level(x.lvl));
+  const pool = allowed.length ? allowed : items;
+  const seen = new Set(view.sess.exSeen || []);
+  const unseen = key ? pool.filter((x) => !seen.has(key(x))) : pool;
+  return nearBand(unseen.length ? unseen : pool, (x) => x.lvl, bandFor(view, skill), min);
+}
+
 /* ---------- the rescue drill ---------------------------------------------
  *
  * The rescue drill (v6.6) asks about ONE word again and again. Every builder
@@ -100,11 +143,19 @@ export const cellWanted = (view, m) => !forcedCell(view) || forcedCell(view) ===
  * for 310 adjectives covered a fifth as much once there were 957. The shares
  * reproduce the old selection for a beginner and follow the corpus. */
 
-/** The top `share` of the pool by frequency. An empty pool -> the whole pool. */
-export function topByRank(pool, share) {
+/** The top `share` of the pool by frequency. An empty pool -> the whole pool.
+    `rankOf` reads the rank of an item that is not itself a lexicon entry
+    (no_beyging's pool is `{ n, kind, trap }`). Until v6.13 such a pool had
+    no `.r`, nothing passed the filter, and the whole pool came back: the
+    cap did nothing and nobody noticed. An item without a rank now throws. */
+export function topByRank(pool, share, rankOf = (x) => x.r) {
   if (!pool.length) return pool;
   const cut = Math.max(20, Math.ceil(pool.length * Math.min(1, share)));
-  const out = pool.filter((x) => x.r <= cut);
+  const out = pool.filter((x) => {
+    const r = rankOf(x);
+    if (typeof r !== "number") throw new TypeError("topByRank: an item without a frequency rank");
+    return r <= cut;
+  });
   return out.length ? out : pool;
 }
 
@@ -163,6 +214,26 @@ export const wordEase = (view, x, skill) => hardnessWeight(axisLevel(view, skill
 export const cellEase = (lex, view, skill, m) =>
   (forcedCell(view) || !lex.cellHardness ? 1
     : hardnessWeight(axisLevel(view, skill), lex.cellHardness(m)));
+
+/** The same factor WITHIN the case of `m`: the cell is scored against the
+    bare singular of its own case (*hests* for *hestanna*), so only what the
+    number and the article add counts — not the case itself.
+
+    For a builder that has already decided how often each case is asked
+    (the noun cloze, critique item 15: the dative and the genitive often, the
+    nominative little). The cell table scores the genitive singular 3 and
+    the dative 2, so `cellEase` alone put every genitive at its floor at
+    þyngd 1 and the genitive fell back to the rarest case — undoing item 15.
+    With this, a beginner is asked the genitive as often as item 15 wants,
+    and mostly *hests*, *bókar*; *hestanna* stays rare until the level reaches
+    it (item 16). A mark without a case, or without scores, counts 1. */
+export function caseCellEase(lex, view, skill, m) {
+  if (forcedCell(view) || !lex.cellHardness) return 1;
+  const base = m.replace(/^(.*?(?:NF|ÞF|ÞGF|EF))(?:ET|FT)(?:gr)?$/, "$1ET");
+  const h = lex.cellHardness(m), h0 = lex.cellHardness(base);
+  if (h == null || h0 == null) return 1;
+  return hardnessWeight(axisLevel(view, skill), 1 + Math.max(0, h - h0));
+}
 
 /** Word choice: common words first, rarer as the skill level grows, regular
     words first and irregular ones as the level of the session grows, and
@@ -262,9 +333,20 @@ export function fresh(view, key, list) {
  * candidate that was built and thrown away locked its item for a week
  * (critique item 4). */
 export const RANK_CAP = [0, 700, 1500, 2600, 4000, 6000, 9000, Infinity];
-export function pickVocab(view, rng, kind, items, keyOf, rankOf) {
+/* A lexicon entry's `r` is its rank within its own class (the nouns run to
+   about 1,400, the adjectives and verbs to about 1,000), not the place in
+   the frequency list that RANK_CAP is measured on. Labelling a question by
+   how rare its words are needs this scale: each step holds roughly a fifth
+   of a class's common words, the last step the tail. */
+export const CLASS_RANK_CAP = [0, 150, 350, 600, 950, Infinity];
+/** The level, 1-5, of a word of this class rank. */
+export const classRankLevel = (r) => { let L = 1; while (L < 5 && r > CLASS_RANK_CAP[L]) L++; return L; };
+export function pickVocab(view, rng, kind, items, keyOf, rankOf, maxBand = 7) {
   if (!items.length) return null;
-  const b = bandFor(view, "ordaford");
+  /* `maxBand`: a list whose items stop at level 5 (or_samhengi, or_myndun)
+     stays at band 5's window above it, instead of reaching the empty top
+     window and widening back to everything. */
+  const b = Math.min(bandFor(view, "ordaford"), maxBand);
   const cap = RANK_CAP[b] ?? Infinity, floor = b > 2 ? RANK_CAP[b - 2] : 0;
   const wrap = items.map((x) => ({ x, key: `${kind}:${keyOf(x)}`, r: rankOf(x) }));
   const tiers = [wrap.filter((p) => p.r > floor && p.r <= cap), wrap.filter((p) => p.r <= cap)];

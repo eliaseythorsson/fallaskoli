@@ -19,93 +19,128 @@ Icelandic, and nothing in it is taken on trust either.
 The classes are BÍN's: kk kvk hk lo so pfn afn fn to rt ao fs st uh.
 Personal pronouns are plural forms of the singular lemma in BÍN:
 við = ég FT, þið = þú FT, þeir/þær/þau = hann/hún/það FT.
+
+LEVELS (v6.13, critique item 13)
+--------------------------------
+Every item in the lists below opens with its level, þyngd 1-5, and the
+builders ask the items near the pupil's difficulty first (tasks/shared.js
+`nearBand`: the band and the level below it, widening a step at a time when
+too few are left). Until v6.13 these question types built the same questions
+at every difficulty. One rule for every list, so a 3 here is a 3 there:
+
+  length        the words of the sentence, the blank counted as one, by the
+                table sentences.py uses for the bank:
+                    up to 5 words -> 1     6-7 -> 2     8-9 -> 3
+                    10-11 -> 4             12 and more -> 5
+  the list      plus the base of the list's own grammar point, written above
+                each list ("level = length + 1"): an impersonal subject is
+                harder than a pronoun after a preposition however short the
+                sentence
+  +1 rare word  a word the pupil must know to answer that is not an everyday
+                word for a 13-year-old (þarfnast, kyrrð, tvinni, sjónauki,
+                sárna, til þerris)
+  +1 harder     what is harder than the plain case of the list, as each list
+     construction says: the genitive, a plural personal pronoun (okkur,
+                ykkur, þeim), a trap (hlakka and kvíða take the nominative),
+                something in the sentence that pulls the other way
+  capped at 5.
+
+HUNT has its own `band` (the þyngd from which an item is asked) and is not
+part of this. SYNONYMS and ANTONYMS are words, not items: their difficulty is
+how rare the words are, and the build reads that from the frequency list
+(`r`, tasks/shared.js `pickVocab`) rather than from a hand-written number.
 """
 
 # ---------------------------------------------------------------- Fornöfn
 
 # A personal pronoun in the case the verb or preposition asks for.
 # The cue shown in brackets is the nominative of the same number.
+# Level = length; +1 for a plural pronoun (okkur, ykkur, þeim), +1 for the
+# genitive (mín, hans, okkar).
 PRONOUN_GAP = [
-    ("Ég gaf ___ bókina.", ("hún", "pfn", "ÞGFET"), "gefa e-m e-ð: sá sem fær stendur í þágufalli."),
-    ("Kennarinn hrósaði ___ fyrir verkefnið.", ("ég", "pfn", "ÞGFET"), "hrósa stýrir þágufalli."),
-    ("Viltu hjálpa ___ með heimavinnuna?", ("ég", "pfn", "ÞGFET"), "hjálpa stýrir þágufalli."),
-    ("Amma bakaði köku handa ___.", ("ég", "pfn", "ÞGFFT"), "handa stýrir þágufalli."),
-    ("Ég hlakka til að hitta ___ á morgun.", ("þú", "pfn", "ÞFET"), "hitta stýrir þolfalli."),
-    ("Strákarnir biðu eftir ___ í hálftíma.", ("hún", "pfn", "ÞGFET"), "bíða eftir e-m: eftir stýrir hér þágufalli."),
-    ("Hefur þú séð ___ í dag?", ("hann", "pfn", "ÞFFT"), "sjá stýrir þolfalli."),
-    ("Ég sakna ___ mikið.", ("þú", "pfn", "EFET"), "sakna stýrir eignarfalli."),
-    ("Við töluðum um ___ í gær.", ("hún", "pfn", "ÞFET"), "um stýrir þolfalli."),
-    ("Mamma keypti nýja skó handa ___.", ("þú", "pfn", "ÞGFFT"), "handa stýrir þágufalli."),
-    ("Hundurinn hljóp á eftir ___.", ("ég", "pfn", "ÞGFFT"), "á eftir stýrir þágufalli."),
-    ("Ég sendi ___ bréf.", ("hann", "pfn", "ÞGFFT"), "senda e-m e-ð: sá sem fær stendur í þágufalli."),
-    ("Hún saknaði ___ allan daginn.", ("það", "pfn", "EFFT"), "sakna stýrir eignarfalli."),
-    ("Ég fékk bréf frá ___.", ("hann", "pfn", "ÞGFET"), "frá stýrir þágufalli."),
-    ("Komdu með ___ í bíó!", ("ég", "pfn", "ÞGFET"), "með e-m (ásamt e-m) stýrir þágufalli."),
-    ("Pabbi spurði ___ um prófið.", ("ég", "pfn", "ÞFFT"), "spyrja stýrir þolfalli."),
-    ("Kötturinn svaf hjá ___ í nótt.", ("þú", "pfn", "ÞGFET"), "hjá stýrir þágufalli."),
-    ("Ég þekki ___ vel.", ("hún", "pfn", "ÞFET"), "þekkja stýrir þolfalli."),
-    ("Ég fór til ___ í gær.", ("hann", "pfn", "EFET"), "til stýrir eignarfalli."),
-    ("Ég treysti ___ alveg.", ("þú", "pfn", "ÞGFET"), "treysta stýrir þágufalli."),
-    ("Við heimsóttum ___ um jólin.", ("hann", "pfn", "ÞFFT"), "heimsækja stýrir þolfalli."),
-    ("Þjálfarinn óskaði ___ til hamingju.", ("þú", "pfn", "ÞGFFT"), "óska e-m til hamingju: þágufall."),
-    ("Hún hringdi í ___ í morgun.", ("ég", "pfn", "ÞFET"), "hringja í e-n: í stýrir hér þolfalli."),
-    ("Ég lánaði ___ hjólið mitt.", ("hún", "pfn", "ÞGFET"), "lána e-m e-ð: þágufall."),
-    ("Strákurinn leitaði ___ um allan bæ.", ("hún", "pfn", "EFET"), "leita stýrir eignarfalli."),
-    ("Við gleymdum ___ á stöðinni.", ("þú", "pfn", "ÞGFET"), "gleyma stýrir þágufalli."),
-    ("Ég heyrði í ___ í útvarpinu.", ("hann", "pfn", "ÞGFFT"), "heyra í e-m: í stýrir hér þágufalli."),
-    ("Þau fóru í bíó án ___.", ("ég", "pfn", "EFFT"), "án stýrir eignarfalli."),
-    ("Hver sagði ___ þetta?", ("þú", "pfn", "ÞGFET"), "segja e-m e-ð: þágufall."),
-    ("Ég sá ___ í búðinni.", ("hún", "pfn", "ÞFFT"), "sjá stýrir þolfalli."),
-    ("Afi gaf ___ nammi.", ("það", "pfn", "ÞGFFT"), "gefa e-m e-ð: þágufall."),
-    ("Mér þykir vænt um ___.", ("þú", "pfn", "ÞFFT"), "um stýrir þolfalli."),
+    (1, "Ég gaf ___ bókina.", ("hún", "pfn", "ÞGFET"), "gefa e-m e-ð: sá sem fær stendur í þágufalli."),
+    (1, "Kennarinn hrósaði ___ fyrir verkefnið.", ("ég", "pfn", "ÞGFET"), "hrósa stýrir þágufalli."),
+    (1, "Viltu hjálpa ___ með heimavinnuna?", ("ég", "pfn", "ÞGFET"), "hjálpa stýrir þágufalli."),
+    (2, "Amma bakaði köku handa ___.", ("ég", "pfn", "ÞGFFT"), "handa stýrir þágufalli."),
+    (3, "Ég hlakka til að hitta ___ á morgun.", ("þú", "pfn", "ÞFET"), "hitta stýrir þolfalli."),
+    (2, "Strákarnir biðu eftir ___ í hálftíma.", ("hún", "pfn", "ÞGFET"), "bíða eftir e-m: eftir stýrir hér þágufalli."),
+    (3, "Hefur þú séð ___ í dag?", ("hann", "pfn", "ÞFFT"), "sjá stýrir þolfalli."),
+    (2, "Ég sakna ___ mikið.", ("þú", "pfn", "EFET"), "sakna stýrir eignarfalli."),
+    (2, "Við töluðum um ___ í gær.", ("hún", "pfn", "ÞFET"), "um stýrir þolfalli."),
+    (3, "Mamma keypti nýja skó handa ___.", ("þú", "pfn", "ÞGFFT"), "handa stýrir þágufalli."),
+    (2, "Hundurinn hljóp á eftir ___.", ("ég", "pfn", "ÞGFFT"), "á eftir stýrir þágufalli."),
+    (2, "Ég sendi ___ bréf.", ("hann", "pfn", "ÞGFFT"), "senda e-m e-ð: sá sem fær stendur í þágufalli."),
+    (3, "Hún saknaði ___ allan daginn.", ("það", "pfn", "EFFT"), "sakna stýrir eignarfalli."),
+    (1, "Ég fékk bréf frá ___.", ("hann", "pfn", "ÞGFET"), "frá stýrir þágufalli."),
+    (1, "Komdu með ___ í bíó!", ("ég", "pfn", "ÞGFET"), "með e-m (ásamt e-m) stýrir þágufalli."),
+    (2, "Pabbi spurði ___ um prófið.", ("ég", "pfn", "ÞFFT"), "spyrja stýrir þolfalli."),
+    (2, "Kötturinn svaf hjá ___ í nótt.", ("þú", "pfn", "ÞGFET"), "hjá stýrir þágufalli."),
+    (1, "Ég þekki ___ vel.", ("hún", "pfn", "ÞFET"), "þekkja stýrir þolfalli."),
+    (3, "Ég fór til ___ í gær.", ("hann", "pfn", "EFET"), "til stýrir eignarfalli."),
+    (1, "Ég treysti ___ alveg.", ("þú", "pfn", "ÞGFET"), "treysta stýrir þágufalli."),
+    (2, "Við heimsóttum ___ um jólin.", ("hann", "pfn", "ÞFFT"), "heimsækja stýrir þolfalli."),
+    (2, "Þjálfarinn óskaði ___ til hamingju.", ("þú", "pfn", "ÞGFFT"), "óska e-m til hamingju: þágufall."),
+    (2, "Hún hringdi í ___ í morgun.", ("ég", "pfn", "ÞFET"), "hringja í e-n: í stýrir hér þolfalli."),
+    (1, "Ég lánaði ___ hjólið mitt.", ("hún", "pfn", "ÞGFET"), "lána e-m e-ð: þágufall."),
+    (3, "Strákurinn leitaði ___ um allan bæ.", ("hún", "pfn", "EFET"), "leita stýrir eignarfalli."),
+    (1, "Við gleymdum ___ á stöðinni.", ("þú", "pfn", "ÞGFET"), "gleyma stýrir þágufalli."),
+    (3, "Ég heyrði í ___ í útvarpinu.", ("hann", "pfn", "ÞGFFT"), "heyra í e-m: í stýrir hér þágufalli."),
+    (4, "Þau fóru í bíó án ___.", ("ég", "pfn", "EFFT"), "án stýrir eignarfalli."),
+    (1, "Hver sagði ___ þetta?", ("þú", "pfn", "ÞGFET"), "segja e-m e-ð: þágufall."),
+    (2, "Ég sá ___ í búðinni.", ("hún", "pfn", "ÞFFT"), "sjá stýrir þolfalli."),
+    (2, "Afi gaf ___ nammi.", ("það", "pfn", "ÞGFFT"), "gefa e-m e-ð: þágufall."),
+    (2, "Mér þykir vænt um ___.", ("þú", "pfn", "ÞFFT"), "um stýrir þolfalli."),
 ]
 
 # Reflexive or not. The same sentence twice, with a line that says who is
 # meant; the line decides. Options are the two forms, both from BÍN.
+# Level = length + 1; +1 for sinn against hans/hennar (the possessive), +1
+# for a plural subject, +1 for the dative (sér, sinni), +1 where the
+# reflexive sits inside a noun phrase (sögu af sér).
 REFLEXIVE = [
-    ("Jón þvoði ___ um hendurnar.", "Jón þvoði sjálfum sér.",
+    (3, "Jón þvoði ___ um hendurnar.", "Jón þvoði sjálfum sér.",
      ("sig", "afn", "ÞGF"), ("hann", "pfn", "ÞGFET")),
-    ("Jón þvoði ___ um hendurnar.", "Jón þvoði litla bróður sínum.",
+    (3, "Jón þvoði ___ um hendurnar.", "Jón þvoði litla bróður sínum.",
      ("hann", "pfn", "ÞGFET"), ("sig", "afn", "ÞGF")),
-    ("Anna tók töskuna ___.", "Anna á töskuna sjálf.",
+    (3, "Anna tók töskuna ___.", "Anna á töskuna sjálf.",
      ("sinn", "fn", "KVK-ÞFET"), ("hún", "pfn", "EFET")),
-    ("Anna tók töskuna ___.", "Vinkona Önnu á töskuna.",
+    (3, "Anna tók töskuna ___.", "Vinkona Önnu á töskuna.",
      ("hún", "pfn", "EFET"), ("sinn", "fn", "KVK-ÞFET")),
-    ("Strákarnir sóttu hjólin ___.", "Strákarnir eiga hjólin sjálfir.",
+    (4, "Strákarnir sóttu hjólin ___.", "Strákarnir eiga hjólin sjálfir.",
      ("sinn", "fn", "HK-ÞFFT"), ("hann", "pfn", "EFFT")),
-    ("Strákarnir sóttu hjólin ___.", "Aðrir strákar eiga hjólin.",
+    (4, "Strákarnir sóttu hjólin ___.", "Aðrir strákar eiga hjólin.",
      ("hann", "pfn", "EFFT"), ("sinn", "fn", "HK-ÞFFT")),
-    ("María keypti ___ nýja peysu.", "Peysan er handa Maríu sjálfri.",
+    (3, "María keypti ___ nýja peysu.", "Peysan er handa Maríu sjálfri.",
      ("sig", "afn", "ÞGF"), ("hún", "pfn", "ÞGFET")),
-    ("María keypti ___ nýja peysu.", "Peysan er handa systur Maríu.",
+    (3, "María keypti ___ nýja peysu.", "Peysan er handa systur Maríu.",
      ("hún", "pfn", "ÞGFET"), ("sig", "afn", "ÞGF")),
-    ("Pétur sá ___ í speglinum.", "Pétur sá sjálfan sig.",
+    (2, "Pétur sá ___ í speglinum.", "Pétur sá sjálfan sig.",
      ("sig", "afn", "ÞF"), ("hann", "pfn", "ÞFET")),
-    ("Pétur sá ___ í speglinum.", "Pétur sá vin sinn í speglinum.",
+    (2, "Pétur sá ___ í speglinum.", "Pétur sá vin sinn í speglinum.",
      ("hann", "pfn", "ÞFET"), ("sig", "afn", "ÞF")),
-    ("Hún hringdi í mömmu ___.", "Hún hringdi í sína eigin mömmu.",
+    (3, "Hún hringdi í mömmu ___.", "Hún hringdi í sína eigin mömmu.",
      ("sinn", "fn", "KVK-ÞFET"), ("hún", "pfn", "EFET")),
-    ("Hún hringdi í mömmu ___.", "Hún hringdi í mömmu vinkonu sinnar.",
+    (3, "Hún hringdi í mömmu ___.", "Hún hringdi í mömmu vinkonu sinnar.",
      ("hún", "pfn", "EFET"), ("sinn", "fn", "KVK-ÞFET")),
-    ("Kennarinn talaði við nemendurna ___.", "Þetta eru nemendur kennarans sjálfs.",
+    (3, "Kennarinn talaði við nemendurna ___.", "Þetta eru nemendur kennarans sjálfs.",
      ("sinn", "fn", "KK-ÞFFT"), ("hann", "pfn", "EFET")),
-    ("Kennarinn talaði við nemendurna ___.", "Þetta eru nemendur annars kennara.",
+    (3, "Kennarinn talaði við nemendurna ___.", "Þetta eru nemendur annars kennara.",
      ("hann", "pfn", "EFET"), ("sinn", "fn", "KK-ÞFFT")),
-    ("Stelpurnar klæddu ___ í úlpurnar.", "Stelpurnar klæddu sjálfar sig.",
+    (3, "Stelpurnar klæddu ___ í úlpurnar.", "Stelpurnar klæddu sjálfar sig.",
      ("sig", "afn", "ÞF"), ("hún", "pfn", "ÞFFT")),
-    ("Stelpurnar klæddu ___ í úlpurnar.", "Stelpurnar klæddu litlu systur sínar.",
+    (3, "Stelpurnar klæddu ___ í úlpurnar.", "Stelpurnar klæddu litlu systur sínar.",
      ("hún", "pfn", "ÞFFT"), ("sig", "afn", "ÞF")),
-    ("Lóa gleymdi húfunni ___.", "Lóa á húfuna sjálf.",
+    (4, "Lóa gleymdi húfunni ___.", "Lóa á húfuna sjálf.",
      ("sinn", "fn", "KVK-ÞGFET"), ("hún", "pfn", "EFET")),
-    ("Lóa gleymdi húfunni ___.", "Systir Lóu á húfuna.",
+    (4, "Lóa gleymdi húfunni ___.", "Systir Lóu á húfuna.",
      ("hún", "pfn", "EFET"), ("sinn", "fn", "KVK-ÞGFET")),
-    ("Afi sagði sögu af ___.", "Sagan var um afa sjálfan.",
+    (4, "Afi sagði sögu af ___.", "Sagan var um afa sjálfan.",
      ("sig", "afn", "ÞGF"), ("hann", "pfn", "ÞGFET")),
-    ("Afi sagði sögu af ___.", "Sagan var um langafa.",
+    (4, "Afi sagði sögu af ___.", "Sagan var um langafa.",
      ("hann", "pfn", "ÞGFET"), ("sig", "afn", "ÞGF")),
-    ("Siggi meiddi ___ á fætinum.", "Siggi meiddist sjálfur.",
+    (2, "Siggi meiddi ___ á fætinum.", "Siggi meiddist sjálfur.",
      ("sig", "afn", "ÞF"), ("hann", "pfn", "ÞFET")),
-    ("Siggi meiddi ___ á fætinum.", "Siggi meiddi annan strák í fótbolta.",
+    (2, "Siggi meiddi ___ á fætinum.", "Siggi meiddi annan strák í fótbolta.",
      ("hann", "pfn", "ÞFET"), ("sig", "afn", "ÞF")),
 ]
 
@@ -114,30 +149,34 @@ REFLEXIVE = [
 # A cardinal 1-4 agreeing with its noun. {N} is the noun, put in the case
 # and number the slot needs by BÍN; the numeral takes the noun's gender.
 # n: which numbers may be asked (1 takes the singular).
+# Level = length (the frame, the noun not counted); +1 for the dative
+# (tveimur, þremur, fjórum), +1 for the genitive (tveggja, þriggja, fjögurra).
 NUMERAL_AGREE = [
-    ("Ég á ___ {N}.", "ÞF", [1, 2, 3, 4], ["systir", "bróðir", "köttur", "hundur", "frænka", "frændi"]),
-    ("___ {N} komu í heimsókn.", "NF", [2, 3, 4], ["stelpa", "strákur", "barn", "kennari", "vinkona"]),
-    ("Við töluðum við ___ {N}.", "ÞGF", [1, 2, 3, 4], ["stelpa", "strákur", "kennari", "barn", "vinkona"]),
-    ("Hún keypti ___ {N} í búðinni.", "ÞF", [1, 2, 3, 4], ["bók", "penni", "epli", "peysa", "blýantur", "banani"]),
-    ("Ég beið í ___ {N}.", "ÞF", [1, 2, 3, 4], ["dagur", "vika", "mínúta", "klukkutími"]),
-    ("Á bænum eru ___ {N}.", "NF", [2, 3, 4], ["kýr", "hestur", "kind", "hæna", "svín"]),
-    ("Þetta er hús ___ {N}.", "EF", [2, 3, 4], ["bróðir", "systir", "vinur"]),
-    ("Hann kom heim með ___ {N}.", "ÞGF", [1, 2, 3, 4], ["fiskur", "poki", "taska", "bréf"]),
-    ("Í bekknum eru ___ {N} með gleraugu.", "NF", [2, 3, 4], ["stelpa", "strákur", "nemandi"]),
-    ("Ég fékk ___ {N} í afmælisgjöf.", "ÞF", [1, 2, 3, 4], ["bók", "leikur", "spil", "peysa"]),
+    (1, "Ég á ___ {N}.", "ÞF", [1, 2, 3, 4], ["systir", "bróðir", "köttur", "hundur", "frænka", "frændi"]),
+    (1, "___ {N} komu í heimsókn.", "NF", [2, 3, 4], ["stelpa", "strákur", "barn", "kennari", "vinkona"]),
+    (2, "Við töluðum við ___ {N}.", "ÞGF", [1, 2, 3, 4], ["stelpa", "strákur", "kennari", "barn", "vinkona"]),
+    (2, "Hún keypti ___ {N} í búðinni.", "ÞF", [1, 2, 3, 4], ["bók", "penni", "epli", "peysa", "blýantur", "banani"]),
+    (1, "Ég beið í ___ {N}.", "ÞF", [1, 2, 3, 4], ["dagur", "vika", "mínúta", "klukkutími"]),
+    (1, "Á bænum eru ___ {N}.", "NF", [2, 3, 4], ["kýr", "hestur", "kind", "hæna", "svín"]),
+    (3, "Þetta er hús ___ {N}.", "EF", [2, 3, 4], ["bróðir", "systir", "vinur"]),
+    (3, "Hann kom heim með ___ {N}.", "ÞGF", [1, 2, 3, 4], ["fiskur", "poki", "taska", "bréf"]),
+    (2, "Í bekknum eru ___ {N} með gleraugu.", "NF", [2, 3, 4], ["stelpa", "strákur", "nemandi"]),
+    (2, "Ég fékk ___ {N} í afmælisgjöf.", "ÞF", [1, 2, 3, 4], ["bók", "leikur", "spil", "peysa"]),
 ]
 
 # Plural-only nouns: einir, tvennir, þrennir, fernir.
 PLURAL_ONLY_NOUNS = ["buxur", "skæri", "gleraugu", "tónleikar", "dyr", "jól", "hjón"]
 PLURAL_NUMERALS = {1: ("einn", "fn"), 2: ("tvennur", "lo"), 3: ("þrennur", "lo"), 4: ("fern", "lo")}
+# Level = length + 1; +1 for the dative, +1 for a noun whose plural-only
+# meaning is itself a puzzle (hjón, jól) or a perfect tense around it.
 NUMERAL_PLURAL_ONLY = [
-    ("Ég keypti ___ {N} í gær.", "ÞF", [1, 2, 3], ["buxur", "skæri", "gleraugu"]),
-    ("Hann á ___ {N}.", "ÞF", [1, 2, 3, 4], ["buxur", "gleraugu", "skæri"]),
-    ("Í ganginum eru ___ {N}.", "NF", [2, 3, 4], ["dyr"]),
-    ("Við fórum á ___ {N} í sumar.", "ÞF", [1, 2, 3, 4], ["tónleikar"]),
-    ("Hún hefur haldið ___ {N} hjá ömmu.", "ÞF", [2, 3, 4], ["jól"]),
-    ("Í brúðkaupinu dönsuðu ___ {N} saman.", "NF", [2, 3, 4], ["hjón"]),
-    ("Það er gat á ___ {N}.", "ÞGF", [1, 2, 3], ["buxur"]),
+    (3, "Ég keypti ___ {N} í gær.", "ÞF", [1, 2, 3], ["buxur", "skæri", "gleraugu"]),
+    (2, "Hann á ___ {N}.", "ÞF", [1, 2, 3, 4], ["buxur", "gleraugu", "skæri"]),
+    (2, "Í ganginum eru ___ {N}.", "NF", [2, 3, 4], ["dyr"]),
+    (3, "Við fórum á ___ {N} í sumar.", "ÞF", [1, 2, 3, 4], ["tónleikar"]),
+    (4, "Hún hefur haldið ___ {N} hjá ömmu.", "ÞF", [2, 3, 4], ["jól"]),
+    (4, "Í brúðkaupinu dönsuðu ___ {N} saman.", "NF", [2, 3, 4], ["hjón"]),
+    (4, "Það er gat á ___ {N}.", "ÞGF", [1, 2, 3], ["buxur"]),
 ]
 
 # Dates. Ordinals are written lemma by lemma (21. = tuttugasti og fyrsti).
@@ -153,19 +192,22 @@ MONTHS = ["janúar", "febrúar", "mars", "apríl", "maí", "júní", "júlí", "
           "september", "október", "nóvember", "desember"]
 DAYS_IN = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 # The case the date stands in, and why.
+# Level = length; +1 for a case other than the nominative, +1 for the
+# genitive or a frame where nothing but the date says "when". The builder
+# adds one more for a compound ordinal (21. = tuttugasti og fyrsti).
 DATE_FRAMES = [
-    ("Í dag er ___ {M}.", "NF", "Dagsetningin er frumlag eða sagnfylling: nefnifall (*dagurinn*)."),
-    ("Ég á afmæli ___ {M}.", "ÞF", "Dagsetning sem svarar *hvenær?* stendur í þolfalli (*þann þriðja maí*)."),
-    ("Skólinn byrjar ___ {M}.", "ÞF", "Dagsetning sem svarar *hvenær?* stendur í þolfalli."),
-    ("Frá ___ {M} er sumarfrí.", "ÞGF", "*Frá* stýrir þágufalli."),
-    ("Fríið stendur til ___ {M}.", "EF", "*Til* stýrir eignarfalli."),
-    ("Við förum til útlanda ___ {M}.", "ÞF", "Dagsetning sem svarar *hvenær?* stendur í þolfalli."),
+    (1, "Í dag er ___ {M}.", "NF", "Dagsetningin er frumlag eða sagnfylling: nefnifall (*dagurinn*)."),
+    (2, "Ég á afmæli ___ {M}.", "ÞF", "Dagsetning sem svarar *hvenær?* stendur í þolfalli (*þann þriðja maí*)."),
+    (2, "Skólinn byrjar ___ {M}.", "ÞF", "Dagsetning sem svarar *hvenær?* stendur í þolfalli."),
+    (2, "Frá ___ {M} er sumarfrí.", "ÞGF", "*Frá* stýrir þágufalli."),
+    (3, "Fríið stendur til ___ {M}.", "EF", "*Til* stýrir eignarfalli."),
+    (3, "Við förum til útlanda ___ {M}.", "ÞF", "Dagsetning sem svarar *hvenær?* stendur í þolfalli."),
 ]
 
 # ---------------------------------------------------------------- Fallstjórn
 
 # Motion (þolfall) or rest (þágufall) after í / á / undir / yfir.
-# (sentence, noun, column, motion?)
+# (level, sentence, noun, column, motion?)
 #
 # Each item must have ONE right answer. A verb of moving (fljúga, skríða,
 # rúlla, ganga, stökkva) can also mean moving about IN a place, and then the
@@ -175,39 +217,42 @@ DATE_FRAMES = [
 # út, upp), a verb of placing (leggja, setja, hengja, stinga, hella), or a
 # goal in the rest of the sentence (til mín, og settist þar). Six motion
 # items were rewritten for this in v6.13 (critique item 6).
+# Level = length; +1 for undir/yfir (less drilled than í/á), +1 where
+# something else in the sentence pulls the other way: a dative object before
+# the preposition (stakk símanum í ___), or an activity at rest (lék sér á ___).
 MOTION_REST = [
-    ("Ég lagði bókina á ___.", "borð", "ETgr", True),
-    ("Bókin liggur á ___.", "borð", "ETgr", False),
-    ("Kötturinn stökk upp í ___ til mín.", "rúm", "ETgr", True),
-    ("Kötturinn sefur í ___.", "rúm", "ETgr", False),
-    ("Við fórum í ___ eftir skóla.", "búð", "ETgr", True),
-    ("Við hittumst í ___ eftir skóla.", "búð", "ETgr", False),
-    ("Hún setti mjólkina inn í ___.", "ísskápur", "ETgr", True),
-    ("Mjólkin er í ___.", "ísskápur", "ETgr", False),
-    ("Strákurinn hljóp út á ___.", "gata", "ETgr", True),
-    ("Strákurinn lék sér á ___.", "gata", "ETgr", False),
-    ("Fuglinn flaug upp á ___ og settist þar.", "þak", "ETgr", True),
-    ("Fuglinn situr á ___.", "þak", "ETgr", False),
-    ("Ég hengdi myndina á ___.", "veggur", "ETgr", True),
-    ("Myndin hangir á ___.", "veggur", "ETgr", False),
-    ("Við keyrðum inn í ___.", "bær", "ETgr", True),
-    ("Við búum í ___.", "bær", "ETgr", False),
-    ("Hann stakk símanum í ___.", "vasi", "ETgr", True),
-    ("Síminn er í ___.", "vasi", "ETgr", False),
-    ("Boltinn rúllaði inn undir ___.", "sófi", "ETgr", True),
-    ("Boltinn liggur undir ___.", "sófi", "ETgr", False),
-    ("Hesturinn stökk yfir ___.", "girðing", "ETgr", True),
-    ("Skýið hangir yfir ___.", "fjall", "ETgr", False),
-    ("Krakkarnir hlupu út á ___.", "völlur", "ETgr", True),
-    ("Krakkarnir spila fótbolta á ___.", "völlur", "ETgr", False),
-    ("Hún hellti vatni í ___.", "glas", "ETgr", True),
-    ("Vatnið er í ___.", "glas", "ETgr", False),
-    ("Hundurinn skreið inn undir ___.", "borð", "ETgr", True),
-    ("Hundurinn sefur undir ___.", "borð", "ETgr", False),
-    ("Ég setti diskana í ___.", "skápur", "ETgr", True),
-    ("Diskarnir eru í ___.", "skápur", "ETgr", False),
-    ("Við gengum alla leið upp á ___.", "hæð", "ETgr", True),
-    ("Við stóðum á ___.", "hæð", "ETgr", False),
+    (1, "Ég lagði bókina á ___.", "borð", "ETgr", True),
+    (1, "Bókin liggur á ___.", "borð", "ETgr", False),
+    (2, "Kötturinn stökk upp í ___ til mín.", "rúm", "ETgr", True),
+    (1, "Kötturinn sefur í ___.", "rúm", "ETgr", False),
+    (2, "Við fórum í ___ eftir skóla.", "búð", "ETgr", True),
+    (2, "Við hittumst í ___ eftir skóla.", "búð", "ETgr", False),
+    (2, "Hún setti mjólkina inn í ___.", "ísskápur", "ETgr", True),
+    (1, "Mjólkin er í ___.", "ísskápur", "ETgr", False),
+    (1, "Strákurinn hljóp út á ___.", "gata", "ETgr", True),
+    (2, "Strákurinn lék sér á ___.", "gata", "ETgr", False),
+    (3, "Fuglinn flaug upp á ___ og settist þar.", "þak", "ETgr", True),
+    (1, "Fuglinn situr á ___.", "þak", "ETgr", False),
+    (1, "Ég hengdi myndina á ___.", "veggur", "ETgr", True),
+    (1, "Myndin hangir á ___.", "veggur", "ETgr", False),
+    (1, "Við keyrðum inn í ___.", "bær", "ETgr", True),
+    (1, "Við búum í ___.", "bær", "ETgr", False),
+    (2, "Hann stakk símanum í ___.", "vasi", "ETgr", True),
+    (1, "Síminn er í ___.", "vasi", "ETgr", False),
+    (2, "Boltinn rúllaði inn undir ___.", "sófi", "ETgr", True),
+    (2, "Boltinn liggur undir ___.", "sófi", "ETgr", False),
+    (2, "Hesturinn stökk yfir ___.", "girðing", "ETgr", True),
+    (2, "Skýið hangir yfir ___.", "fjall", "ETgr", False),
+    (1, "Krakkarnir hlupu út á ___.", "völlur", "ETgr", True),
+    (2, "Krakkarnir spila fótbolta á ___.", "völlur", "ETgr", False),
+    (2, "Hún hellti vatni í ___.", "glas", "ETgr", True),
+    (1, "Vatnið er í ___.", "glas", "ETgr", False),
+    (2, "Hundurinn skreið inn undir ___.", "borð", "ETgr", True),
+    (2, "Hundurinn sefur undir ___.", "borð", "ETgr", False),
+    (1, "Ég setti diskana í ___.", "skápur", "ETgr", True),
+    (1, "Diskarnir eru í ___.", "skápur", "ETgr", False),
+    (2, "Við gengum alla leið upp á ___.", "hæð", "ETgr", True),
+    (1, "Við stóðum á ___.", "hæð", "ETgr", False),
 ]
 
 # A verb that governs a case. {V} is not used: the verb is written out. The
@@ -222,85 +267,94 @@ MOTION_REST = [
 # preposition cloze already asks it from the sentence bank (Ég hlakka til
 # sumarsins / afmælisins / ferðanna), where the lead says "Forsetningin til
 # ræður fallinu".
+# Level = length + 1; +1 for the genitive, +1 for a verb that is not
+# everyday (þarfnast, gæta, njóta) or that takes another case than the verb
+# it resembles (aðstoða þolfall, hjálpa þágufall; óttast þolfall).
 VERB_CASE = [
-    ("Ég hjálpaði ___ að bera pokana.", "hjálpa", "ÞGF", "ETgr", ["kennari", "nágranni", "stelpa", "strákur"]),
-    ("Ég sakna ___ mjög mikið.", "sakna", "EF", "ETgr", ["hundur", "köttur", "vinur", "kennari"]),
-    ("Við þökkuðum ___ fyrir matinn.", "þakka", "ÞGF", "ETgr", ["kokkur", "kona", "maður"]),
-    ("Á leiðinni heim mætti ég ___.", "mæta", "ÞGF", "ET", ["maður", "kona", "hundur", "lögreglumaður"]),
-    ("Við biðum ___ í hálftíma.", "bíða", "EF", "ETgr", ["strætisvagn", "lest", "læknir"]),
-    ("Hún leitaði ___ um allt hús.", "leita", "EF", "ETgr", ["lykill", "sími", "köttur", "taska"]),
-    ("Ég gleymdi ___ heima.", "gleyma", "ÞGF", "ETgr", ["sími", "nesti", "taska", "lykill"]),
-    ("Strákurinn týndi ___ í gær.", "týna", "ÞGF", "ETgr", ["lykill", "húfa", "vettlingur", "bolti"]),
-    ("Ég treysti ___ fullkomlega.", "treysta", "ÞGF", "ETgr", ["læknir", "þjálfari", "kennari"]),
-    ("Við nutum ___ í sveitinni.", "njóta", "EF", "ETgr", ["útsýni", "sól:kvk", "kyrrð"]),
-    ("Hún kastaði ___ yfir girðinguna.", "kasta", "ÞGF", "ETgr", ["bolti", "steinn", "spýta"]),
-    ("Ég henti ___ í ruslið.", "henda", "ÞGF", "ETgr", ["blað", "flaska", "dós"]),
-    ("Þjófurinn stal ___.", "stela", "ÞGF", "ETgr", ["hjól", "veski", "bíll"]),
-    ("Ég heilsaði ___ á ganginum.", "heilsa", "ÞGF", "ETgr", ["kennari", "skólastjóri", "húsvörður"]),
-    ("Hundurinn fylgdi ___ heim.", "fylgja", "ÞGF", "ETgr", ["strákur", "stelpa", "maður"]),
-    ("Ég aðstoðaði ___ í eldhúsinu.", "aðstoða", "ÞF", "ETgr", ["kokkur", "bakari", "smiður"]),
-    ("Ég spurði ___ til vegar.", "spyrja", "ÞF", "ETgr", ["lögreglumaður", "kona", "maður"]),
-    ("Litla stelpan óttaðist ___.", "óttast", "ÞF", "ETgr", ["hundur", "myrkur", "þruma"]),
-    ("Garðurinn þarfnast ___.", "þarfnast", "EF", "ET", ["vatn", "umhirða", "áburður"]),
-    ("Hún bjargaði ___ úr ánni.", "bjarga", "ÞGF", "ETgr", ["hundur", "kettlingur", "strákur"]),
-    ("Við fögnuðum ___ með köku.", "fagna", "ÞGF", "ETgr", ["sigur", "afmæli", "vor"]),
-    ("Ég lofaði ___ að koma.", "lofa", "ÞGF", "ETgr", ["þjálfari", "kennari", "nágranni"]),
-    ("Hann gætti ___ allan daginn.", "gæta", "EF", "ETgr", ["barn", "hundur", "búð"]),
+    (3, "Ég hjálpaði ___ að bera pokana.", "hjálpa", "ÞGF", "ETgr", ["kennari", "nágranni", "stelpa", "strákur"]),
+    (3, "Ég sakna ___ mjög mikið.", "sakna", "EF", "ETgr", ["hundur", "köttur", "vinur", "kennari"]),
+    (2, "Við þökkuðum ___ fyrir matinn.", "þakka", "ÞGF", "ETgr", ["kokkur", "kona", "maður"]),
+    (3, "Á leiðinni heim mætti ég ___.", "mæta", "ÞGF", "ET", ["maður", "kona", "hundur", "lögreglumaður"]),
+    (4, "Við biðum ___ í hálftíma.", "bíða", "EF", "ETgr", ["strætisvagn", "lest", "læknir"]),
+    (4, "Hún leitaði ___ um allt hús.", "leita", "EF", "ETgr", ["lykill", "sími", "köttur", "taska"]),
+    (2, "Ég gleymdi ___ heima.", "gleyma", "ÞGF", "ETgr", ["sími", "nesti", "taska", "lykill"]),
+    (2, "Strákurinn týndi ___ í gær.", "týna", "ÞGF", "ETgr", ["lykill", "húfa", "vettlingur", "bolti"]),
+    (2, "Ég treysti ___ fullkomlega.", "treysta", "ÞGF", "ETgr", ["læknir", "þjálfari", "kennari"]),
+    (4, "Við nutum ___ í sveitinni.", "njóta", "EF", "ETgr", ["útsýni", "sól:kvk", "kyrrð"]),
+    (2, "Hún kastaði ___ yfir girðinguna.", "kasta", "ÞGF", "ETgr", ["bolti", "steinn", "spýta"]),
+    (2, "Ég henti ___ í ruslið.", "henda", "ÞGF", "ETgr", ["blað", "flaska", "dós"]),
+    (2, "Þjófurinn stal ___.", "stela", "ÞGF", "ETgr", ["hjól", "veski", "bíll"]),
+    (2, "Ég heilsaði ___ á ganginum.", "heilsa", "ÞGF", "ETgr", ["kennari", "skólastjóri", "húsvörður"]),
+    (2, "Hundurinn fylgdi ___ heim.", "fylgja", "ÞGF", "ETgr", ["strákur", "stelpa", "maður"]),
+    (3, "Ég aðstoðaði ___ í eldhúsinu.", "aðstoða", "ÞF", "ETgr", ["kokkur", "bakari", "smiður"]),
+    (3, "Ég spurði ___ til vegar.", "spyrja", "ÞF", "ETgr", ["lögreglumaður", "kona", "maður"]),
+    (3, "Litla stelpan óttaðist ___.", "óttast", "ÞF", "ETgr", ["hundur", "myrkur", "þruma"]),
+    (4, "Garðurinn þarfnast ___.", "þarfnast", "EF", "ET", ["vatn", "umhirða", "áburður"]),
+    (2, "Hún bjargaði ___ úr ánni.", "bjarga", "ÞGF", "ETgr", ["hundur", "kettlingur", "strákur"]),
+    (2, "Við fögnuðum ___ með köku.", "fagna", "ÞGF", "ETgr", ["sigur", "afmæli", "vor"]),
+    (2, "Ég lofaði ___ að koma.", "lofa", "ÞGF", "ETgr", ["þjálfari", "kennari", "nágranni"]),
+    (4, "Hann gætti ___ allan daginn.", "gæta", "EF", "ETgr", ["barn", "hundur", "búð"]),
 ]
 
 # Impersonal verbs: the "subject" is in an oblique case — and two traps that
 # take the nominative (hlakka, kvíða). The blank opens the sentence.
+# Level = length + 1; +1 for a plural pronoun, +1 for a trap that takes the
+# nominative (hlakka, kvíða), +1 for a verb that is not everyday (sárna,
+# syfja, klæja, batna).
 IMPERSONAL = [
-    ("___ langar í ís.", ("ég", "pfn", "ÞFET"), "langa", "þolfall: *mig langar*."),
-    ("___ finnst gaman í skólanum.", ("ég", "pfn", "ÞGFET"), "finnast", "þágufall: *mér finnst*."),
-    ("___ vantar nýja skó.", ("hún", "pfn", "ÞFET"), "vanta", "þolfall: *hana vantar*."),
-    ("___ líður vel í dag.", ("hann", "pfn", "ÞGFET"), "líða", "þágufall: *honum líður vel*."),
-    ("___ hlakka til jólanna.", ("ég", "pfn", "NFET"), "hlakka", "nefnifall: *ég hlakka til* — ekki *mér hlakkar*."),
-    ("___ kvíðir fyrir prófinu.", ("hún", "pfn", "NFET"), "kvíða", "nefnifall: *hún kvíðir fyrir* — ekki *henni kvíðir*."),
-    ("___ dreymdi skrýtinn draum.", ("ég", "pfn", "ÞFET"), "dreyma", "þolfall: *mig dreymdi*."),
-    ("___ leiðist í rigningunni.", ("ég", "pfn", "ÞGFFT"), "leiðast", "þágufall: *okkur leiðist*."),
-    ("___ þykir vænt um hundinn.", ("það", "pfn", "ÞGFFT"), "þykja", "þágufall: *þeim þykir vænt um*."),
-    ("___ er kalt.", ("ég", "pfn", "ÞGFET"), "vera", "þágufall: *mér er kalt*."),
-    ("___ batnaði kvefið fljótt.", ("hann", "pfn", "ÞGFET"), "batna", "þágufall: *honum batnaði*."),
-    ("___ syfjar á kvöldin.", ("hún", "pfn", "ÞFET"), "syfja", "þolfall: *hana syfjar*."),
-    ("___ klæjar í nefið.", ("ég", "pfn", "ÞFET"), "klæja", "þolfall: *mig klæjar*."),
-    ("___ langaði að fara heim.", ("ég", "pfn", "ÞFFT"), "langa", "þolfall: *okkur langaði*."),
-    ("___ vantaði blýant.", ("þú", "pfn", "ÞFET"), "vanta", "þolfall: *þig vantaði*."),
-    ("___ líkar vel við nýja kennarann.", ("hún", "pfn", "ÞGFET"), "líka", "þágufall: *henni líkar*."),
-    ("___ gengur vel í stærðfræði.", ("þú", "pfn", "ÞGFFT"), "ganga", "þágufall: *ykkur gengur vel*."),
-    ("___ hlakkar til sumarsins.", ("hún", "pfn", "NFET"), "hlakka", "nefnifall: *hún hlakkar til* — ekki *henni hlakkar*."),
-    ("___ verður kalt úti.", ("þú", "pfn", "ÞGFET"), "verða", "þágufall: *þér verður kalt*."),
-    ("___ sárnaði þetta.", ("hann", "pfn", "ÞGFET"), "sárna", "þágufall: *honum sárnaði*."),
+    (2, "___ langar í ís.", ("ég", "pfn", "ÞFET"), "langa", "þolfall: *mig langar*."),
+    (2, "___ finnst gaman í skólanum.", ("ég", "pfn", "ÞGFET"), "finnast", "þágufall: *mér finnst*."),
+    (2, "___ vantar nýja skó.", ("hún", "pfn", "ÞFET"), "vanta", "þolfall: *hana vantar*."),
+    (2, "___ líður vel í dag.", ("hann", "pfn", "ÞGFET"), "líða", "þágufall: *honum líður vel*."),
+    (3, "___ hlakka til jólanna.", ("ég", "pfn", "NFET"), "hlakka", "nefnifall: *ég hlakka til* — ekki *mér hlakkar*."),
+    (4, "___ kvíðir fyrir prófinu.", ("hún", "pfn", "NFET"), "kvíða", "nefnifall: *hún kvíðir fyrir* — ekki *henni kvíðir*."),
+    (2, "___ dreymdi skrýtinn draum.", ("ég", "pfn", "ÞFET"), "dreyma", "þolfall: *mig dreymdi*."),
+    (3, "___ leiðist í rigningunni.", ("ég", "pfn", "ÞGFFT"), "leiðast", "þágufall: *okkur leiðist*."),
+    (3, "___ þykir vænt um hundinn.", ("það", "pfn", "ÞGFFT"), "þykja", "þágufall: *þeim þykir vænt um*."),
+    (2, "___ er kalt.", ("ég", "pfn", "ÞGFET"), "vera", "þágufall: *mér er kalt*."),
+    (3, "___ batnaði kvefið fljótt.", ("hann", "pfn", "ÞGFET"), "batna", "þágufall: *honum batnaði*."),
+    (3, "___ syfjar á kvöldin.", ("hún", "pfn", "ÞFET"), "syfja", "þolfall: *hana syfjar*."),
+    (3, "___ klæjar í nefið.", ("ég", "pfn", "ÞFET"), "klæja", "þolfall: *mig klæjar*."),
+    (3, "___ langaði að fara heim.", ("ég", "pfn", "ÞFFT"), "langa", "þolfall: *okkur langaði*."),
+    (2, "___ vantaði blýant.", ("þú", "pfn", "ÞFET"), "vanta", "þolfall: *þig vantaði*."),
+    (3, "___ líkar vel við nýja kennarann.", ("hún", "pfn", "ÞGFET"), "líka", "þágufall: *henni líkar*."),
+    (3, "___ gengur vel í stærðfræði.", ("þú", "pfn", "ÞGFFT"), "ganga", "þágufall: *ykkur gengur vel*."),
+    (3, "___ hlakkar til sumarsins.", ("hún", "pfn", "NFET"), "hlakka", "nefnifall: *hún hlakkar til* — ekki *henni hlakkar*."),
+    (2, "___ verður kalt úti.", ("þú", "pfn", "ÞGFET"), "verða", "þágufall: *þér verður kalt*."),
+    (3, "___ sárnaði þetta.", ("hann", "pfn", "ÞGFET"), "sárna", "þágufall: *honum sárnaði*."),
 ]
 
 # ---------------------------------------------------------------- Óbeygjanleg
 
 # Preposition or adverb: the same word with and without a governed word.
-# (sentence, the word, its position among the words, "fs" | "ao")
+# (level, sentence, the word, "fs" | "ao")
+# Level = length + 1; +1 where the word is part of a fixed phrase (fram hjá,
+# fyrir utan, ganga yfir, fara undir) or stands right before a preposition
+# (upp á) — the hardest contrast.
 ADV_OR_PREP = [
-    ("Hún hljóp upp stigann.", "upp", "fs"),
-    ("Hún leit upp.", "upp", "ao"),
-    ("Við gengum yfir brúna.", "yfir", "fs"),
-    ("Óveðrið gekk yfir.", "yfir", "ao"),
-    ("Hún fór niður brekkuna.", "niður", "fs"),
-    ("Hún datt niður.", "niður", "ao"),
-    ("Ég fór með mömmu.", "með", "fs"),
-    ("Má ég koma með?", "með", "ao"),
-    ("Hún kom eftir matinn.", "eftir", "fs"),
-    ("Kakan er búin og ekkert er eftir.", "eftir", "ao"),
-    ("Kötturinn skreið undir rúmið.", "undir", "fs"),
-    ("Báturinn sökk og fór undir.", "undir", "ao"),
-    ("Barnið hljóp út.", "út", "ao"),
-    ("Kötturinn stökk upp á borðið.", "upp", "ao"),
-    ("Kötturinn stökk upp á borðið.", "á", "fs"),
-    ("Hann gekk fram hjá húsinu.", "hjá", "fs"),
-    ("Komdu inn!", "inn", "ao"),
-    ("Ég beið fyrir utan.", "utan", "ao"),
-    ("Hann bjó utan bæjarins.", "utan", "fs"),
-    ("Sólin skein á okkur.", "á", "fs"),
+    (2, "Hún hljóp upp stigann.", "upp", "fs"),
+    (2, "Hún leit upp.", "upp", "ao"),
+    (2, "Við gengum yfir brúna.", "yfir", "fs"),
+    (3, "Óveðrið gekk yfir.", "yfir", "ao"),
+    (2, "Hún fór niður brekkuna.", "niður", "fs"),
+    (2, "Hún datt niður.", "niður", "ao"),
+    (2, "Ég fór með mömmu.", "með", "fs"),
+    (2, "Má ég koma með?", "með", "ao"),
+    (2, "Hún kom eftir matinn.", "eftir", "fs"),
+    (3, "Kakan er búin og ekkert er eftir.", "eftir", "ao"),
+    (2, "Kötturinn skreið undir rúmið.", "undir", "fs"),
+    (3, "Báturinn sökk og fór undir.", "undir", "ao"),
+    (2, "Barnið hljóp út.", "út", "ao"),
+    (3, "Kötturinn stökk upp á borðið.", "upp", "ao"),
+    (3, "Kötturinn stökk upp á borðið.", "á", "fs"),
+    (3, "Hann gekk fram hjá húsinu.", "hjá", "fs"),
+    (2, "Komdu inn!", "inn", "ao"),
+    (3, "Ég beið fyrir utan.", "utan", "ao"),
+    (3, "Hann bjó utan bæjarins.", "utan", "fs"),
+    (2, "Sólin skein á okkur.", "á", "fs"),
 ]
 
-# Choose the conjunction. (sentence, right, [wrong, wrong, wrong], why)
+# Choose the conjunction. (level, sentence, right, [wrong, wrong, wrong], why)
 #
 # The options are contrast sets: every wrong option is a conjunction a pupil
 # could really reach for in that place, and is wrong for a reason the
@@ -312,48 +366,51 @@ ADV_OR_PREP = [
 # (tests/more.test.js). Each item has exactly one right answer: a word that
 # would also do (*þegar* for *ef* in "Þú mátt fá köku ___ þú klárar") is
 # never offered.
+# Level = length; +1 where the choice is between conjunctions that all fit
+# the grammar and only the meaning decides (hvort sem, þótt, nema, enda), or
+# the clause after it is in the subjunctive.
 CONJUNCTION = [
     # hvort / hvort sem / ef: the indirect question
-    ("Ég veit ekki ___ hún kemur á morgun.", "hvort", ["ef", "hvort sem", "þegar"],
+    (3, "Ég veit ekki ___ hún kemur á morgun.", "hvort", ["ef", "hvort sem", "þegar"],
      "Óbein spurning hefst á *hvort*: *Ég veit ekki hvort …* — *ef* táknar skilyrði og *þegar* tíma."),
-    ("Hún spurði ___ ég vildi koma með.", "hvort", ["ef", "að", "hvort sem"],
+    (2, "Hún spurði ___ ég vildi koma með.", "hvort", ["ef", "að", "hvort sem"],
      "Óbein já- eða nei-spurning hefst á *hvort*: *Hún spurði hvort …*, ekki *ef*."),
-    ("Við förum í gönguferð ___ það rignir eða ekki.", "hvort sem", ["hvort", "ef", "þótt"],
+    (4, "Við förum í gönguferð ___ það rignir eða ekki.", "hvort sem", ["hvort", "ef", "þótt"],
      "*Hvort sem … eða ekki*: það skiptir ekki máli hvort það rignir, við förum samt."),
     # ef / þegar / þótt / nema: condition, time, concession, exception
-    ("___ ég væri fugl myndi ég fljúga til Spánar.", "ef", ["þegar", "nema", "hvort"],
+    (4, "___ ég væri fugl myndi ég fljúga til Spánar.", "ef", ["þegar", "nema", "hvort"],
      "*Ef* táknar skilyrði, hér skilyrði sem er ekki satt: *ef ég væri fugl*."),
-    ("Ég var sex ára ___ ég lærði að synda.", "þegar", ["ef", "nema", "þótt"],
+    (3, "Ég var sex ára ___ ég lærði að synda.", "þegar", ["ef", "nema", "þótt"],
      "*Þegar* segir hvenær eitthvað gerðist."),
-    ("Hann fór út í stuttbuxum í morgun ___ það væri frost.", "þótt", ["ef", "þegar", "nema"],
+    (5, "Hann fór út í stuttbuxum í morgun ___ það væri frost.", "þótt", ["ef", "þegar", "nema"],
      "*Þótt* táknar andstæðu: það var frost en hann fór samt út í stuttbuxum."),
-    ("Við spilum úti á morgun ___ það rigni, því þá spilum við inni.", "nema", ["ef", "þótt", "þegar"],
+    (5, "Við spilum úti á morgun ___ það rigni, því þá spilum við inni.", "nema", ["ef", "þótt", "þegar"],
      "*Nema* merkir *ef ekki*: við spilum úti ef það rignir ekki."),
     # af því að / enda / svo að / til þess að: cause, result, purpose
-    ("Ég fór snemma að sofa ___ ég var mjög þreyttur.", "af því að", ["svo að", "þótt", "til þess að"],
+    (4, "Ég fór snemma að sofa ___ ég var mjög þreyttur.", "af því að", ["svo að", "þótt", "til þess að"],
      "*Af því að* segir hvers vegna: ég fór að sofa vegna þess að ég var þreyttur."),
-    ("Hún var svöng, ___ hafði hún ekkert borðað síðan í morgun.", "enda", ["af því að", "svo að", "til þess að"],
+    (5, "Hún var svöng, ___ hafði hún ekkert borðað síðan í morgun.", "enda", ["af því að", "svo að", "til þess að"],
      "*Enda* bætir við skýringu, og á eftir því kemur sögnin á undan frumlaginu: *enda hafði hún*. "
      "Á eftir *af því að* kæmi frumlagið fyrst: *af því að hún hafði*."),
-    ("Það var mikil hálka ___ margir duttu á leiðinni í skólann.", "svo að", ["af því að", "til þess að", "þótt"],
+    (4, "Það var mikil hálka ___ margir duttu á leiðinni í skólann.", "svo að", ["af því að", "til þess að", "þótt"],
      "*Svo að* segir hvað leiddi af: hálkan varð til þess að margir duttu."),
-    ("Ég vaknaði snemma ___ ná strætó.", "til þess að", ["svo að", "af því að", "enda"],
+    (3, "Ég vaknaði snemma ___ ná strætó.", "til þess að", ["svo að", "af því að", "enda"],
      "*Til þess að* segir til hvers, og á eftir því kemur nafnháttur: *til þess að ná strætó*."),
     # hvorki … né, annaðhvort … eða, bæði … og
-    ("Hvorki ég ___ bróðir minn fórum á ballið.", "né", ["eða", "og", "en"], "*Hvorki … né*."),
-    ("Annaðhvort förum við í bíó ___ í sund.", "eða", ["né", "og", "en"], "*Annaðhvort … eða*."),
-    ("Bæði Siggi ___ Gunna komu í veisluna.", "og", ["né", "eða", "en"], "*Bæði … og*."),
+    (3, "Hvorki ég ___ bróðir minn fórum á ballið.", "né", ["eða", "og", "en"], "*Hvorki … né*."),
+    (3, "Annaðhvort förum við í bíó ___ í sund.", "eða", ["né", "og", "en"], "*Annaðhvort … eða*."),
+    (2, "Bæði Siggi ___ Gunna komu í veisluna.", "og", ["né", "eða", "en"], "*Bæði … og*."),
     # sem / að / en
-    ("Bókin ___ ég las var spennandi.", "sem", ["að", "hvort", "þegar"],
+    (2, "Bókin ___ ég las var spennandi.", "sem", ["að", "hvort", "þegar"],
      "*Sem* tengir tilvísunarsetningu við nafnorð: *bókin sem ég las*."),
-    ("Hún sagði ___ hún væri svöng.", "að", ["sem", "hvort", "nema"],
+    (2, "Hún sagði ___ hún væri svöng.", "að", ["sem", "hvort", "nema"],
      "*Að* tengir það sem sagt er við sögnina: *Hún sagði að …*."),
-    ("Hún er eldri ___ ég.", "en", ["sem", "og", "eða"], "Á eftir miðstigi kemur *en*: *eldri en ég*."),
-    ("Ég ætlaði að fara út ___ það var of kalt.", "en", ["af því að", "svo að", "hvort"],
+    (1, "Hún er eldri ___ ég.", "en", ["sem", "og", "eða"], "Á eftir miðstigi kemur *en*: *eldri en ég*."),
+    (4, "Ég ætlaði að fara út ___ það var of kalt.", "en", ["af því að", "svo að", "hvort"],
      "*En* tengir saman andstæður: ég ætlaði út, en það var of kalt."),
-    ("Ég burstaði tennurnar ___ ég fór að sofa.", "áður en", ["eftir að", "nema", "hvort"],
+    (3, "Ég burstaði tennurnar ___ ég fór að sofa.", "áður en", ["eftir að", "nema", "hvort"],
      "*Áður en* segir hvað gerðist fyrst: fyrst burstaði ég tennurnar, svo fór ég að sofa."),
-    ("Hún var svo þreytt ___ hún sofnaði strax.", "að", ["sem", "nema", "þótt"],
+    (3, "Hún var svo þreytt ___ hún sofnaði strax.", "að", ["sem", "nema", "þótt"],
      "*Svo … að*: *svo þreytt að hún sofnaði strax*."),
 ]
 # Conjunctions of more than one word. BÍN lists words, not phrases, so the
@@ -470,68 +527,70 @@ ANTONYMS = {
 # Word in context: exactly one option makes sense. Every option is a noun in
 # the same mark (BÍN), so grammar never gives the answer away; where a word
 # beside the blank agrees with it, all four have the same gender.
-# (sentence, mark, right, [wrong, wrong, wrong])
+# (level, sentence, mark, right, [wrong, wrong, wrong])
+# Level = length; +1 for an answer or a clue that is not an everyday word
+# (tvinni, sjónauki, hitamælir, snagi, til þerris).
 WORD_IN_CONTEXT = [
-    ("Ég drakk glas af ___ með matnum.", "ÞGFET", "mjólk", ["stóll", "skór", "bíll"]),
-    ("Hún burstaði ___ fyrir svefninn.", "ÞFFTgr", "tönn", ["gluggi", "stjarna", "eldavél"]),
-    ("Við fórum með ___ til dýralæknisins.", "ÞFETgr", "hundur", ["sófi", "snjór", "blýantur"]),
-    ("Ég klippti blaðið með ___.", "ÞGFFT", "skæri", ["sokkur", "ský", "egg:hk"]),
-    ("Fiskurinn synti í ___.", "ÞGFETgr", "sjór", ["eyðimörk", "bókahilla", "sófi"]),
-    ("Ég þurrkaði mér með ___ eftir sundið.", "ÞGFET", "handklæði", ["gaffall", "lykill", "steinn"]),
-    ("Ég skrifaði bréfið með ___.", "ÞGFET", "penni", ["hamar", "skór", "diskur"]),
-    ("Bóndinn mjólkaði ___ á hverjum morgni.", "ÞFFTgr", "kýr", ["stóll", "bíll", "blóm"]),
-    ("Á veturna fellur ___ af himni.", "NFET", "snjór", ["gras", "stóll", "brauð"]),
-    ("Ég saumaði gatið með nál og ___.", "ÞGFET", "tvinni", ["hamar", "skeið:kvk", "sápa"]),
-    ("Læknirinn hlustaði á ___ í sjúklingnum.", "ÞFETgr", "hjarta", ["gluggi", "eldhús", "gaffall"]),
-    ("Hún vökvaði ___ í garðinum.", "ÞFFTgr", "blóm", ["bók", "bíll", "skór"]),
-    ("Kokkurinn skar laukinn með ___.", "ÞGFET", "hnífur", ["blýantur", "bók", "sokkur"]),
-    ("Fuglinn byggði sér ___ í trénu.", "ÞFET", "hreiður", ["bíll", "sundlaug", "kirkja"]),
-    ("Ég fékk ___ í hálsinn og fór til læknis.", "ÞFET", "verkur", ["gluggi", "bók", "ský"]),
-    ("Bíllinn var tómur svo við keyptum ___ á bensínstöðinni.", "ÞFET", "bensín", ["gras", "ský", "hunang"]),
-    ("Ég þvoði mér um hendurnar með ___.", "ÞGFET", "sápa", ["mjólk", "blek", "hunang"]),
-    ("Á haustin falla ___ af trjánum.", "NFFTgr", "lauf", ["bók", "skór", "diskur"]),
-    ("Hundurinn gelti að ___ sem kom með bréfin.", "ÞGFETgr", "póstur", ["stóll", "ský", "brauð"]),
-    ("Mig klæjaði eftir að ___ stakk mig.", "NFETgr", "fluga", ["skeið:kvk", "sól:kvk", "bók"]),
-    ("Ég setti frímerki á ___ og sendi það.", "ÞFETgr", "bréf", ["epli", "rúm", "fjall"]),
-    ("Við kveiktum á ___ þegar dimmt var orðið.", "ÞGFFTgr", "kerti", ["epli", "skæri", "egg:hk"]),
-    ("Hún hengdi ___ upp á snúru til þerris.", "ÞFETgr", "þvottur", ["sófi", "bíll", "snjór"]),
-    ("Ég bauð vinum mínum í ___ á laugardaginn.", "ÞFET", "afmæli", ["ský", "egg:hk", "gras"]),
-    ("Ég setti mjólkina inn í ___ svo hún skemmdist ekki.", "ÞFETgr", "ísskápur", ["sófi", "gluggi", "hattur"]),
-    ("Hann las ___ áður en hann fór að sofa.", "ÞFET", "bók", ["mjólk", "eldavél", "skeið:kvk"]),
-    ("Hún opnaði ___ með lyklinum.", "ÞFETgr", "hurð", ["ský", "mjólk", "sól:kvk"]),
-    ("Við fórum með ___ yfir hafið til Danmerkur.", "ÞGFETgr", "ferja", ["skeið:kvk", "sápa", "kaka"]),
-    ("Ég setti á mig ___ því það var kalt úti.", "ÞFET", "húfa", ["kaka", "gata", "eldavél"]),
-    ("Ég borðaði ___ í morgunmat.", "ÞFET", "hafragrautur", ["stóll", "sófi", "hamar"]),
-    ("Ég þvoði fötin í ___.", "ÞGFETgr", "þvottavél", ["eldavél", "bókahilla", "klukka"]),
-    ("Hann negldi naglann með ___.", "ÞGFET", "hamar", ["penni", "sokkur", "diskur"]),
-    ("Kýrin gefur okkur ___.", "ÞFET", "mjólk", ["bensín", "sápa", "blek"]),
-    ("Ég burstaði tennurnar með nýjum ___.", "ÞGFET", "tannbursti", ["hamar", "penni", "stóll"]),
-    ("Ég borga fyrir matinn með ___.", "ÞGFFT", "peningur", ["sokkur", "steinn", "bátur"]),
-    ("Í ___ eru margar bækur sem má fá lánaðar.", "ÞGFETgr", "bókasafn", ["sundlaug", "bakarí", "fjós:hk"]),
-    ("Ég keypti brauð í ___.", "ÞGFETgr", "bakarí", ["bókasafn", "fjós:hk", "kirkja"]),
-    ("Ég synti tíu ferðir í ___.", "ÞGFETgr", "sundlaug", ["bókasafn", "ísskápur", "bakarí"]),
-    ("Flugvélin lenti á ___.", "ÞGFETgr", "flugvöllur", ["ísskápur", "sokkur", "diskur"]),
-    ("Hún skar brauðið með ___.", "ÞGFETgr", "hnífur", ["sokkur", "penni", "koddi"]),
-    ("Ég lagði höfuðið á ___ og sofnaði.", "ÞFETgr", "koddi", ["hnífur", "gaffall", "ofn"]),
-    ("Ég drakk ___ úr bolla.", "ÞFET", "kaffi", ["sandur", "stóll", "grjót"]),
-    ("Ég vaknaði þegar ___ hringdi.", "NFETgr", "vekjaraklukka", ["sófi", "koddi", "teppi"]),
-    ("Við grilluðum ___ í kvöldmat.", "ÞFFT", "pylsa", ["sokkur", "blýantur", "steinn"]),
-    ("Það rigndi svo ég tók með mér ___.", "ÞFET", "regnhlíf", ["eldavél", "koddi", "diskur"]),
-    ("Kötturinn veiddi ___ í garðinum.", "ÞFET", "mús", ["sófi", "bók", "klukka"]),
-    ("Ég hringdi í mömmu úr ___ mínum.", "ÞGFET", "sími", ["sokkur", "koddi", "gaffall"]),
-    ("Bóndinn rak ___ inn í fjárhúsið.", "ÞFFTgr", "kind", ["bók", "skeið:kvk", "klukka"]),
-    ("Skipið sigldi út á ___.", "ÞFETgr", "haf", ["eldhús", "rúm", "bókasafn"]),
-    ("Ég mældi hitann með ___.", "ÞGFET", "hitamælir", ["sokkur", "koddi", "diskur"]),
-    ("Við horfðum á tunglið í ___.", "ÞGFET", "sjónauki", ["sokkur", "koddi", "hamar"]),
-    ("Mamma bakaði ___ í ofninum.", "ÞFFT", "smákaka", ["sokkur", "steinn", "penni"]),
-    ("Ég sópaði gólfið með ___.", "ÞGFET", "kústur", ["ostur", "sími", "diskur"]),
-    ("Hún skrifaði á töfluna með ___.", "ÞGFET", "krít", ["mjólk", "sápa", "kaka"]),
-    ("Ég setti bréfið í ___.", "ÞFETgr", "umslag", ["ský", "tungl", "fjall"]),
-    ("Hesturinn borðaði ___ í hesthúsinu.", "ÞFET", "hey", ["blek", "gler", "járn"]),
-    ("Við gistum á ___ í fríinu.", "ÞGFET", "hótel", ["ský", "egg:hk", "blóm"]),
-    ("Ég setti plásturinn á ___.", "ÞFETgr", "sár:hk", ["ský", "tungl", "haf"]),
-    ("Hann tók mynd af fjallinu með ___ sinni.", "ÞGFET", "myndavél", ["eldavél", "þvottavél", "skeið:kvk"]),
-    ("Ég hengdi úlpuna á ___.", "ÞFETgr", "snagi", ["himinn", "snjór", "sandur"]),
+    (2, "Ég drakk glas af ___ með matnum.", "ÞGFET", "mjólk", ["stóll", "skór", "bíll"]),
+    (1, "Hún burstaði ___ fyrir svefninn.", "ÞFFTgr", "tönn", ["gluggi", "stjarna", "eldavél"]),
+    (2, "Við fórum með ___ til dýralæknisins.", "ÞFETgr", "hundur", ["sófi", "snjór", "blýantur"]),
+    (1, "Ég klippti blaðið með ___.", "ÞGFFT", "skæri", ["sokkur", "ský", "egg:hk"]),
+    (1, "Fiskurinn synti í ___.", "ÞGFETgr", "sjór", ["eyðimörk", "bókahilla", "sófi"]),
+    (2, "Ég þurrkaði mér með ___ eftir sundið.", "ÞGFET", "handklæði", ["gaffall", "lykill", "steinn"]),
+    (1, "Ég skrifaði bréfið með ___.", "ÞGFET", "penni", ["hamar", "skór", "diskur"]),
+    (2, "Bóndinn mjólkaði ___ á hverjum morgni.", "ÞFFTgr", "kýr", ["stóll", "bíll", "blóm"]),
+    (2, "Á veturna fellur ___ af himni.", "NFET", "snjór", ["gras", "stóll", "brauð"]),
+    (3, "Ég saumaði gatið með nál og ___.", "ÞGFET", "tvinni", ["hamar", "skeið:kvk", "sápa"]),
+    (2, "Læknirinn hlustaði á ___ í sjúklingnum.", "ÞFETgr", "hjarta", ["gluggi", "eldhús", "gaffall"]),
+    (1, "Hún vökvaði ___ í garðinum.", "ÞFFTgr", "blóm", ["bók", "bíll", "skór"]),
+    (1, "Kokkurinn skar laukinn með ___.", "ÞGFET", "hnífur", ["blýantur", "bók", "sokkur"]),
+    (2, "Fuglinn byggði sér ___ í trénu.", "ÞFET", "hreiður", ["bíll", "sundlaug", "kirkja"]),
+    (3, "Ég fékk ___ í hálsinn og fór til læknis.", "ÞFET", "verkur", ["gluggi", "bók", "ský"]),
+    (3, "Bíllinn var tómur svo við keyptum ___ á bensínstöðinni.", "ÞFET", "bensín", ["gras", "ský", "hunang"]),
+    (2, "Ég þvoði mér um hendurnar með ___.", "ÞGFET", "sápa", ["mjólk", "blek", "hunang"]),
+    (2, "Á haustin falla ___ af trjánum.", "NFFTgr", "lauf", ["bók", "skór", "diskur"]),
+    (3, "Hundurinn gelti að ___ sem kom með bréfin.", "ÞGFETgr", "póstur", ["stóll", "ský", "brauð"]),
+    (2, "Mig klæjaði eftir að ___ stakk mig.", "NFETgr", "fluga", ["skeið:kvk", "sól:kvk", "bók"]),
+    (3, "Ég setti frímerki á ___ og sendi það.", "ÞFETgr", "bréf", ["epli", "rúm", "fjall"]),
+    (3, "Við kveiktum á ___ þegar dimmt var orðið.", "ÞGFFTgr", "kerti", ["epli", "skæri", "egg:hk"]),
+    (4, "Hún hengdi ___ upp á snúru til þerris.", "ÞFETgr", "þvottur", ["sófi", "bíll", "snjór"]),
+    (3, "Ég bauð vinum mínum í ___ á laugardaginn.", "ÞFET", "afmæli", ["ský", "egg:hk", "gras"]),
+    (4, "Ég setti mjólkina inn í ___ svo hún skemmdist ekki.", "ÞFETgr", "ísskápur", ["sófi", "gluggi", "hattur"]),
+    (3, "Hann las ___ áður en hann fór að sofa.", "ÞFET", "bók", ["mjólk", "eldavél", "skeið:kvk"]),
+    (1, "Hún opnaði ___ með lyklinum.", "ÞFETgr", "hurð", ["ský", "mjólk", "sól:kvk"]),
+    (3, "Við fórum með ___ yfir hafið til Danmerkur.", "ÞGFETgr", "ferja", ["skeið:kvk", "sápa", "kaka"]),
+    (4, "Ég setti á mig ___ því það var kalt úti.", "ÞFET", "húfa", ["kaka", "gata", "eldavél"]),
+    (1, "Ég borðaði ___ í morgunmat.", "ÞFET", "hafragrautur", ["stóll", "sófi", "hamar"]),
+    (1, "Ég þvoði fötin í ___.", "ÞGFETgr", "þvottavél", ["eldavél", "bókahilla", "klukka"]),
+    (1, "Hann negldi naglann með ___.", "ÞGFET", "hamar", ["penni", "sokkur", "diskur"]),
+    (1, "Kýrin gefur okkur ___.", "ÞFET", "mjólk", ["bensín", "sápa", "blek"]),
+    (2, "Ég burstaði tennurnar með nýjum ___.", "ÞGFET", "tannbursti", ["hamar", "penni", "stóll"]),
+    (2, "Ég borga fyrir matinn með ___.", "ÞGFFT", "peningur", ["sokkur", "steinn", "bátur"]),
+    (3, "Í ___ eru margar bækur sem má fá lánaðar.", "ÞGFETgr", "bókasafn", ["sundlaug", "bakarí", "fjós:hk"]),
+    (1, "Ég keypti brauð í ___.", "ÞGFETgr", "bakarí", ["bókasafn", "fjós:hk", "kirkja"]),
+    (2, "Ég synti tíu ferðir í ___.", "ÞGFETgr", "sundlaug", ["bókasafn", "ísskápur", "bakarí"]),
+    (1, "Flugvélin lenti á ___.", "ÞGFETgr", "flugvöllur", ["ísskápur", "sokkur", "diskur"]),
+    (1, "Hún skar brauðið með ___.", "ÞGFETgr", "hnífur", ["sokkur", "penni", "koddi"]),
+    (2, "Ég lagði höfuðið á ___ og sofnaði.", "ÞFETgr", "koddi", ["hnífur", "gaffall", "ofn"]),
+    (1, "Ég drakk ___ úr bolla.", "ÞFET", "kaffi", ["sandur", "stóll", "grjót"]),
+    (1, "Ég vaknaði þegar ___ hringdi.", "NFETgr", "vekjaraklukka", ["sófi", "koddi", "teppi"]),
+    (1, "Við grilluðum ___ í kvöldmat.", "ÞFFT", "pylsa", ["sokkur", "blýantur", "steinn"]),
+    (3, "Það rigndi svo ég tók með mér ___.", "ÞFET", "regnhlíf", ["eldavél", "koddi", "diskur"]),
+    (1, "Kötturinn veiddi ___ í garðinum.", "ÞFET", "mús", ["sófi", "bók", "klukka"]),
+    (2, "Ég hringdi í mömmu úr ___ mínum.", "ÞGFET", "sími", ["sokkur", "koddi", "gaffall"]),
+    (2, "Bóndinn rak ___ inn í fjárhúsið.", "ÞFFTgr", "kind", ["bók", "skeið:kvk", "klukka"]),
+    (1, "Skipið sigldi út á ___.", "ÞFETgr", "haf", ["eldhús", "rúm", "bókasafn"]),
+    (2, "Ég mældi hitann með ___.", "ÞGFET", "hitamælir", ["sokkur", "koddi", "diskur"]),
+    (3, "Við horfðum á tunglið í ___.", "ÞGFET", "sjónauki", ["sokkur", "koddi", "hamar"]),
+    (1, "Mamma bakaði ___ í ofninum.", "ÞFFT", "smákaka", ["sokkur", "steinn", "penni"]),
+    (1, "Ég sópaði gólfið með ___.", "ÞGFET", "kústur", ["ostur", "sími", "diskur"]),
+    (2, "Hún skrifaði á töfluna með ___.", "ÞGFET", "krít", ["mjólk", "sápa", "kaka"]),
+    (1, "Ég setti bréfið í ___.", "ÞFETgr", "umslag", ["ský", "tungl", "fjall"]),
+    (1, "Hesturinn borðaði ___ í hesthúsinu.", "ÞFET", "hey", ["blek", "gler", "járn"]),
+    (2, "Við gistum á ___ í fríinu.", "ÞGFET", "hótel", ["ský", "egg:hk", "blóm"]),
+    (1, "Ég setti plásturinn á ___.", "ÞFETgr", "sár:hk", ["ský", "tungl", "haf"]),
+    (3, "Hann tók mynd af fjallinu með ___ sinni.", "ÞGFET", "myndavél", ["eldavél", "þvottavél", "skeið:kvk"]),
+    (2, "Ég hengdi úlpuna á ___.", "ÞFETgr", "snagi", ["himinn", "snjór", "sandur"]),
 ]
 
 # Words never offered for sorting without a sentence: the vocabulary filter
