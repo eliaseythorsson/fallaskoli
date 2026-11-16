@@ -421,7 +421,7 @@ by *þarf að athuga*: the items a note in `content/REVIEW-NOTES.md` is about,
 with the note beside them. A reader marks items *Í lagi* or *Athuga*, writes a
 comment, and *Sækja athugasemdir* downloads the marks as a text file; nothing
 leaves the browser. To flag something new for a native reader, add a note to
-`REVIEW-NOTES.md` with `Leita:` phrases from the items (the tests fail if a
+`content/REVIEW-NOTES.md` with `Leita:` phrases from the items (the tests fail if a
 phrase stops finding one).
 
 **What is still in code.** The Lesefni pages and the worked examples
