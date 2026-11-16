@@ -51,6 +51,113 @@ how rare the words are, and the build reads that from the frequency list
 (`r`, tasks/shared.js `pickVocab`) rather than from a hand-written number.
 """
 
+# ---------------------------------------------------------------- Lýsingarorð
+
+# v6.13 (critique item 23): frames for lo_beyging, lo_stig and lo_samr. The
+# bank has two or three sentences with a comparative or a superlative at
+# each level, and lo_stig built 12-16 different questions at any band.
+#
+# A frame names the NOUN the adjective is said of — always one of the helper
+# nouns of adj_classes.py — and tasks/lysingarord.js puts in any adjective
+# whose helper noun in that gender this is. adj_classes.py vouches that the
+# adjective can be said of that noun in every degree and both numbers; an
+# adjective it lists as not compared (NO_COMPARE: *dauður*, *íslenskur*) has
+# no comparison forms in the lexicon, so it is never put into a comparative
+# or superlative frame. The frames are written so that WHAT the adjective
+# says does not matter: "Ég á ___ bíl en þú." reads as well with *nýrri* as
+# with *rauðari*, *ódýrari* or *ljótari*. So no frame says the thing is
+# wanted or bought ("Ég vil skítugri peysu", "keypti rotnasta eplið").
+#
+#   (level, frame, the noun's BÍN mark, the adjective's degree, noun groups)
+#
+# {N} is the noun in that mark, from BÍN. A frame with the blank after {N}
+# is predicative (lo_samr); FSB/FVB are frumstig strong/weak (lo_beyging,
+# lo_samr), MST and EVB miðstig and efsta stig (lo_stig). The build leaves
+# out a noun whose form here is also a form of the other number or the other
+# definiteness ("hús", "epli", "teppi" are singular and plural alike): the
+# adjective would have two right answers.
+# Level = length (the blank and the noun one word each), by the table
+# above; +1 for the dative or the genitive; +1 for the plural.
+ADJ_NOUN_GROUPS = {
+    "people": ["maður", "kona", "barn"],
+    "animals": ["hundur", "kisa", "dýr"],
+    "things": ["bíll", "bók", "hús"],
+    "vehicles": ["bíll", "lest", "skip"],
+    "soft": ["koddi", "peysa", "teppi"],
+    "drinks": ["drykkur", "súpa"],
+    "fruit": ["ávöxtur", "appelsína", "epli"],
+    "ideas": ["kostur", "leið", "svar"],
+    # *kosturinn* on its own, with the article, reads oddly ("Kosturinn er
+    # líklegri en ég hélt", "Við töluðum um góða kostinn"): the frames with
+    # the article take these
+    "answers": ["leið", "svar"],
+    "times": ["dagur", "ferð", "kvöld"],
+    "places": ["staður", "borg", "land"],
+    "rooms": ["gangur", "stofa", "herbergi"],
+    # where one lives: *í húsi*, *í borg*, *í landi*, *í herbergi* (not *á stað*)
+    "homes": ["hús", "borg", "land", "herbergi"],
+    "house": ["hús"],
+    # the room one picks: *stærsta herbergið*, not "bjartasta ganginn"
+    "bedroom": ["herbergi"],
+    # what a town has the biggest of
+    "town": ["hús", "bíll", "hundur", "kisa"],
+    # what is bought in a shop — not the soft things, whose adjectives say
+    # how they are now ("blautasta teppið í búðinni", "rökustu peysuna")
+    "shop": ["bók", "ávöxtur", "appelsína", "epli", "drykkur"],
+}
+_ANY = "people animals things vehicles soft drinks fruit ideas places rooms"
+# the same with the article
+_ANY_DEF = "people animals things vehicles soft drinks fruit answers places rooms"
+_SEEN = "people animals things vehicles soft places rooms"
+# what one looks for in the house: not a place or a country
+_HERE = "people animals things vehicles soft rooms fruit drinks"
+ADJ_FRAMES = [
+    # frumstig, strong: no article
+    (1, "Þetta er ___ {N}.", "NFET", "FSB", _ANY),
+    (1, "Þetta var ___ {N}.", "NFET", "FSB", "times"),
+    (1, "Ég sá ___ {N} í gær.", "ÞFET", "FSB", "people animals things vehicles"),
+    (1, "Ég fann ___ {N}.", "ÞFET", "FSB", "things soft fruit"),
+    (1, "Þarna er ___ {N}.", "NFET", "FSB", "people animals things vehicles soft fruit drinks"),
+    (2, "Við bjuggum í ___ {N}.", "ÞGFET", "FSB", "homes"),
+    (2, "Hér eru ___ {N}.", "NFFT", "FSB", "people animals things vehicles soft fruit"),
+    (3, "Við fórum til ___ {N} í sumar.", "EFET", "FSB", "places"),
+    (3, "Við hjálpuðum ___ {N}.", "ÞGFFT", "FSB", "people"),
+    # frumstig, weak: with the article
+    (1, "Ég sá ___ {N} í gær.", "ÞFETgr", "FVB", "people animals things vehicles"),
+    (1, "Hvar er ___ {N}?", "NFETgr", "FVB", _HERE),
+    (1, "Við töluðum um ___ {N}.", "ÞFETgr", "FVB", _ANY_DEF + " times"),
+    (2, "Hvar eru ___ {N}?", "NFFTgr", "FVB", _HERE),
+    (3, "Ég man vel eftir ___ {N}.", "ÞGFETgr", "FVB", _ANY_DEF + " times"),
+    # frumstig, predicative: strong, agreeing with the subject (lo_samr)
+    (1, "{N} er ___.", "NFETgr", "FSB", _ANY_DEF),
+    (1, "{N} var ___.", "NFETgr", "FSB", "times"),
+    (1, "Mér finnst {N} ___.", "NFETgr", "FSB", "answers times"),
+    (2, "{N} eru ___.", "NFFTgr", "FSB", _ANY_DEF),
+    (2, "{N} voru ___.", "NFFTgr", "FSB", "times"),
+    # miðstig
+    (2, "Hún fékk ___ {N} en ég.", "ÞFET", "MST", "things soft fruit drinks bedroom"),
+    (1, "Þetta er ___ {N}.", "NFET", "MST", "ideas"),
+    (2, "{N} er ___ en ég hélt.", "NFETgr", "MST", _ANY_DEF),
+    (2, "{N} var ___ en ég hélt.", "NFETgr", "MST", "times"),
+    (2, "Ég á ___ {N} en þú.", "ÞFET", "MST", "animals things soft"),
+    (2, "Hún fann ___ {N} en ég.", "ÞFET", "MST", "ideas"),
+    (2, "Þetta er ___ {N} en ég hélt.", "NFET", "MST", _ANY),
+    (3, "Hann býr í ___ {N} en ég.", "ÞGFET", "MST", "homes"),
+    (3, "{N} eru ___ en ég hélt.", "NFFTgr", "MST", _ANY_DEF),
+    # efsta stig, weak: with the article
+    (1, "Þetta er ___ {N}.", "NFETgr", "EVB", "ideas"),
+    # not people or rooms: "Hvar er sælasti maðurinn?"
+    (1, "Hvar er ___ {N}?", "NFETgr", "EVB", "animals things vehicles soft fruit drinks"),
+    (1, "Ég tók ___ {N}.", "ÞFETgr", "EVB", "things soft drinks fruit bedroom"),
+    (2, "Þetta er ___ {N} sem ég þekki.", "NFETgr", "EVB", "people"),
+    (2, "Þetta var ___ {N} í sumar.", "NFETgr", "EVB", "times"),
+    (2, "Ég sá ___ {N} í búðinni.", "ÞFETgr", "EVB", "shop"),
+    (3, "Þetta er ___ {N} sem ég hef séð.", "NFETgr", "EVB", "animals things vehicles soft places rooms"),
+    (3, "Þetta eru ___ {N} í bænum.", "NFFTgr", "EVB", "town"),
+    (3, "Við gistum í ___ {N} í bænum.", "ÞGFETgr", "EVB", "house"),
+    (3, "Við fórum til ___ {N} í heimi.", "EFETgr", "EVB", "places"),
+]
+
 # ---------------------------------------------------------------- Fornöfn
 
 # A personal pronoun in the case the verb or preposition asks for.
@@ -144,6 +251,125 @@ REFLEXIVE = [
      ("hann", "pfn", "ÞFET"), ("sig", "afn", "ÞF")),
 ]
 
+# ---- generated from frames (v6.13, critique item 23) ----------------------
+#
+# PRONOUN_GAP and REFLEXIVE above are 32 and 11 sentences; a pupil met each
+# again within a few sessions. The frames below are filled in by
+# build_exercises.py, every word out of BÍN, and nothing in them is an
+# inflected form written here.
+
+# fn_eyda. A personal pronoun after a verb or a preposition that
+# government.py lists with ONE case. The case is not written here: the build
+# reads it from that table and stops on a verb or preposition it gives two.
+# Each frame is said by every subject below, the verb in BÍN's form for that
+# subject, and the pupil writes any personal pronoun but the subject's own
+# person (tasks/fornofn.js: not *ég* after *ég* or *við*, not *hann* after
+# *hann*).
+#   who  "p": only a person reads naturally in the blank — so not *það* in
+#        the singular ("Ég hrósaði því"); "pt": a person or a thing ("Ég
+#        fann það").
+# Level = length (the subject and the blank one word each), +1 for a plural
+# pronoun, +1 for the genitive — PRONOUN_GAP's rule, applied by the builder.
+PRONOUN_SUBJECTS = [
+    ("ég", "pfn", "NFET"), ("ég", "pfn", "NFFT"), ("hann", "pfn", "NFET"), ("hún", "pfn", "NFET"),
+    ("það", "pfn", "NFFT"),
+    ("mamma", "kvk", "NFET"), ("pabbi", "kk", "NFET"), ("amma", "kvk", "NFET"), ("afi", "kk", "NFET"),
+    ("kennari", "kk", "NFETgr"), ("stelpa", "kvk", "NFETgr"), ("strákur", "kk", "NFETgr"),
+]
+# (verb, tense, what follows the blank — one frame each, who)
+PRONOUN_VERBS = [
+    ("sjá", "ÞT", ["", "í gær", "í búðinni"], "pt"),
+    ("hitta", "ÞT", ["í gær", "í bænum"], "p"),
+    ("þekkja", "NT", ["", "vel"], "p"),
+    ("heimsækja", "ÞT", ["í gær", "um helgina"], "p"),
+    ("finna", "ÞT", ["", "loksins"], "pt"),
+    ("passa", "ÞT", ["um helgina"], "p"),
+    ("skilja", "NT", ["", "vel"], "pt"),
+    ("hjálpa", "ÞT", ["", "með heimavinnuna"], "p"),
+    ("gleyma", "ÞT", ["", "heima"], "pt"),
+    ("svara", "ÞT", ["", "strax"], "pt"),
+    ("trúa", "NT", ["", "alveg"], "pt"),
+    ("þakka", "ÞT", ["fyrir hjálpina"], "p"),
+    ("fylgja", "ÞT", ["heim"], "p"),
+    ("mæta", "ÞT", ["í gær", "á leiðinni heim"], "p"),
+    ("treysta", "NT", ["", "alveg"], "p"),
+    ("hrósa", "ÞT", ["fyrir verkefnið"], "p"),
+    ("bjarga", "ÞT", [""], "pt"),
+    ("sakna", "NT", ["", "mikið"], "pt"),
+    ("bíða", "ÞT", ["lengi"], "p"),
+    ("leita", "ÞT", ["lengi", "um allan bæ"], "pt"),
+    ("gæta", "ÞT", ["vel"], "p"),
+]
+# (preposition, verb, tense, words between the verb and the preposition,
+#  what follows the blank, who)
+PRONOUN_PREPS = [
+    ("um", "tala", "ÞT", "", ["", "í gær"], "pt"),
+    ("um", "hugsa", "ÞT", "", ["", "í allan dag"], "pt"),
+    ("frá", "fá", "ÞT", "bréf", [""], "p"),
+    ("frá", "heyra", "ÞT", "", ["í gær"], "p"),
+    ("hjá", "gista", "ÞT", "", ["í nótt"], "p"),
+    ("hjá", "sitja", "ÞT", "", ["", "í tímanum"], "p"),
+    ("handa", "kaupa", "ÞT", "gjöf", [""], "p"),
+    ("handa", "baka", "ÞT", "köku", [""], "p"),
+    ("án", "fara", "ÞT", "", ["", "í gær"], "p"),
+    ("til", "fara", "ÞT", "", ["í gær"], "p"),
+    ("af", "taka", "ÞT", "mynd", [""], "pt"),
+    ("nálægt", "sitja", "ÞT", "", [""], "pt"),
+    ("gegn", "keppa", "ÞT", "", [""], "p"),
+]
+
+# fn_aftur. Each frame is two questions on one card (item 43): the sentence
+# once with a line saying the subject is meant, once with a line saying
+# somebody else is. Both lines are made from the sentence itself — the blank
+# filled with *sjálfan sig* / *sjálfri sér* … or with *annan strák* / *aðra
+# stelpu* … in the case the verb gives — so neither says more than the
+# sentence does. A possessive frame says who owns the thing instead:
+# "Anna á töskuna sjálf." / "Önnur stelpa á töskuna."
+# Level = REFLEXIVE's rule: length + 1; +1 for the possessive, +1 for a
+# plural subject, +1 for the dative.
+#   (lemma, class, mark of the subject's form)
+REFLEX_SUBJECTS = [
+    ("Pétur", "kk", "NFET"), ("Jón", "kk", "NFET"), ("Davíð", "kk", "NFET"), ("Bjarni", "kk", "NFET"),
+    ("Ari", "kk", "NFET"), ("strákur", "kk", "NFETgr"), ("hann", "pfn", "NFET"),
+    ("Anna", "kvk", "NFET"), ("María", "kvk", "NFET"), ("Lóa", "kvk", "NFET"), ("Sara", "kvk", "NFET"),
+    ("Edda", "kvk", "NFET"), ("stelpa", "kvk", "NFETgr"), ("hún", "pfn", "NFET"),
+    ("strákur", "kk", "NFFTgr"), ("stelpa", "kvk", "NFFTgr"),
+]
+# Somebody else of the subject's gender and number: *annar strákur* …
+REFLEX_OTHER = {"kk": ("strákur", "annar"), "kvk": ("stelpa", "annar")}
+# (verb, case of the object, what follows the blank, plural subjects too?)
+REFLEX_OBJECT = [
+    ("sjá", "ÞF", "í speglinum", True),
+    ("sjá", "ÞF", "á myndinni", True),
+    ("sjá", "ÞF", "í sjónvarpinu", True),
+    ("þekkja", "ÞF", "á myndinni", True),
+    ("finna", "ÞF", "á myndinni", False),
+    ("klæða", "ÞF", "í úlpuna", False),
+    ("fela", "ÞF", "í skápnum", True),
+    ("læsa", "ÞF", "inni", True),
+    ("kynna", "ÞF", "fyrir bekknum", True),
+    ("teikna", "ÞF", "á blaðið", False),
+    ("mynda", "ÞF", "með símanum", True),
+    ("meiða", "ÞF", "á fætinum", False),
+    ("kaupa", "ÞGF", "nýja peysu", False),
+    ("þvo", "ÞGF", "um hendurnar", True),
+    ("klóra", "ÞGF", "á bakinu", False),
+    ("velja", "ÞGF", "nýja húfu", False),
+]
+# (verb, case of the thing owned, the things) — the possessive frame,
+# "{subject} {verb} {the thing} ___." Each pair of verb and thing is said by
+# three of the subjects, in turn, so the list stays a list of frames and
+# not of names.
+REFLEX_POSSESSIVE = [
+    ("taka", "ÞF", ["taska", "bók", "húfa", "peysa", "sími", "bolti", "úlpa", "hjól"]),
+    ("sækja", "ÞF", ["taska", "hjól", "úlpa", "bolti"]),
+    ("finna", "ÞF", ["taska", "bók", "húfa", "sími", "lykill"]),
+    ("þvo", "ÞF", ["peysa", "húfa", "úlpa", "hjól"]),
+    ("laga", "ÞF", ["hjól", "sími"]),
+    ("týna", "ÞGF", ["taska", "bók", "húfa", "sími", "lykill", "bolti"]),
+    ("gleyma", "ÞGF", ["taska", "bók", "húfa", "peysa", "úlpa"]),
+]
+
 # ---------------------------------------------------------------- Töluorð
 
 # A cardinal 1-4 agreeing with its noun. {N} is the noun, put in the case
@@ -154,14 +380,73 @@ REFLEXIVE = [
 NUMERAL_AGREE = [
     (1, "Ég á ___ {N}.", "ÞF", [1, 2, 3, 4], ["systir", "bróðir", "köttur", "hundur", "frænka", "frændi"]),
     (1, "___ {N} komu í heimsókn.", "NF", [2, 3, 4], ["stelpa", "strákur", "barn", "kennari", "vinkona"]),
-    (2, "Við töluðum við ___ {N}.", "ÞGF", [1, 2, 3, 4], ["stelpa", "strákur", "kennari", "barn", "vinkona"]),
+    # v6.13 (item 23): *tala við* takes the accusative — "Við töluðum við
+    # tvær stelpur". Until now this frame asked for the dative (*tveimur
+    # stelpum*) and marked the right answer wrong.
+    (1, "Við töluðum við ___ {N}.", "ÞF", [1, 2, 3, 4], ["stelpa", "strákur", "kennari", "barn", "vinkona"]),
     (2, "Hún keypti ___ {N} í búðinni.", "ÞF", [1, 2, 3, 4], ["bók", "penni", "epli", "peysa", "blýantur", "banani"]),
     (1, "Ég beið í ___ {N}.", "ÞF", [1, 2, 3, 4], ["dagur", "vika", "mínúta", "klukkutími"]),
     (1, "Á bænum eru ___ {N}.", "NF", [2, 3, 4], ["kýr", "hestur", "kind", "hæna", "svín"]),
     (3, "Þetta er hús ___ {N}.", "EF", [2, 3, 4], ["bróðir", "systir", "vinur"]),
-    (3, "Hann kom heim með ___ {N}.", "ÞGF", [1, 2, 3, 4], ["fiskur", "poki", "taska", "bréf"]),
+    # v6.13 (item 23): this was "Hann kom heim með ___ {N}." with things
+    # carried, in the dative — but what is carried home is the accusative
+    # ("kom heim með tvo fiska"). With people it has two right answers:
+    # *með tveimur vinum* (in their company) and *með tvo vini* (brought them
+    # home). *mæta* takes the dative and nothing else.
+    (3, "Hún mætti ___ {N} á leiðinni heim.", "ÞGF", [1, 2, 3, 4], ["vinur", "vinkona", "strákur", "stelpa", "kennari"]),
     (2, "Í bekknum eru ___ {N} með gleraugu.", "NF", [2, 3, 4], ["stelpa", "strákur", "nemandi"]),
     (2, "Ég fékk ___ {N} í afmælisgjöf.", "ÞF", [1, 2, 3, 4], ["bók", "leikur", "spil", "peysa"]),
+]
+
+# v6.13 (critique item 23): frames × nouns, for to_samr and to_val. The list
+# above held 164 items; a pupil met each one again within a few sessions.
+# These frames take nouns by MEANING (noun_classes.py) instead of a short
+# hand list: build_exercises.py takes the commonest nouns of the classes
+# named (the `NUMERAL_TAKE` most frequent, by the lexicon's rank) that may
+# stand in a generated sentence at all (noun_classes.reviewed, not excluded),
+# have a singular (a plural-only noun takes *tvennir*: to_flt, below) and,
+# for 2-4, a plural people say (no_plural). A list of lemmas instead of
+# classes is taken as it is; a sixth element lists nouns the frame does not
+# take. Every frame was read with each noun it takes.
+# Same levels as above; ÞF/NF frames are level 1 when short.
+NUMERAL_TAKE = 25
+# Nouns of those classes that are not counted one, two, three: a pair (*tveir
+# skór* and *tvennir skór* are both right), a mass (*dót*, *peningur* =
+# money), the few a class takes that a child does not count like this, and
+# the family roles one has one of: "Ég hitti þrjá afa", "tvær dætur". (A
+# leading _: build_freq.py ranks up the words of exercises.py, and words
+# left OUT are not words the school material uses.)
+_NUMERAL_SKIP = {"skór", "dót", "peningur", "hnífur", "band", "steinn", "óvinur", "náungi",
+                "mamma", "pabbi", "faðir", "móðir", "amma", "afi", "dóttir", "sonur"}
+# the people one lives with or misses, and the children who own bicycles
+_CLOSE = ["vinur", "vinkona", "frænka", "frændi", "bróðir", "systir", "félagi", "nágranni",
+          "strákur", "stelpa"]
+_CHILDREN = ["strákur", "stelpa", "krakki", "barn", "drengur", "vinur", "vinkona", "bróðir",
+             "systir", "nemandi"]
+NUMERAL_FRAMES = [
+    (1, "Ég á ___ {N}.", "ÞF", [1, 2, 3, 4], ["köttur", "hundur", "hestur", "fiskur",
+     "páfagaukur", "systir", "bróðir", "frænka", "frændi", "vinur", "vinkona"]),
+    (1, "Ég á ___ {N}.", "ÞF", [1, 2, 3, 4], "object book clothing"),
+    (1, "Hér eru ___ {N}.", "NF", [2, 3, 4], "object book clothing"),
+    (1, "___ {N} komu í heimsókn.", "NF", [2, 3, 4], "person job"),
+    (1, "Ég hitti ___ {N} í gær.", "ÞF", [1, 2, 3, 4], "person job"),
+    (1, "Á bænum eru ___ {N}.", "NF", [2, 3, 4], ["kýr", "hestur", "kind", "hæna", "svín", "hundur",
+     "köttur", "geit", "hani", "kálfur", "lamb", "gæs", "önd"]),
+    (1, "Ég beið í ___ {N}.", "ÞF", [1, 2, 3, 4], ["dagur", "vika", "mínúta", "klukkutími",
+     "mánuður", "sekúnda"]),
+    (2, "Hún keypti ___ {N} í búðinni.", "ÞF", [1, 2, 3, 4], "object book clothing", ["bréf"]),
+    (2, "Í garðinum eru ___ {N}.", "NF", [2, 3, 4], ["tré", "blóm", "runni", "fugl", "köttur", "bekkur"]),
+    (2, "Ég las ___ {N} í sumar.", "ÞF", [1, 2, 3, 4], ["bók", "saga", "blað", "teiknimyndasaga", "ljóð"]),
+    (2, "Við hjálpuðum ___ {N}.", "ÞGF", [1, 2, 3, 4], "person job"),
+    (2, "Ég gaf ___ {N} mat.", "ÞGF", [1, 2, 3, 4], ["köttur", "hundur", "hestur", "kind", "hæna",
+     "fugl", "fiskur", "kýr", "geit", "önd", "gæs"]),
+    (3, "Hún bjó hjá ___ {N} í sumar.", "ÞGF", [1, 2, 3, 4], _CLOSE),
+    (3, "Þetta eru hjól ___ {N}.", "EF", [2, 3, 4], _CHILDREN),
+    (3, "Hún saknaði ___ {N}.", "EF", [1, 2, 3, 4], _CLOSE),
+    (4, "Kennarinn talaði lengi við foreldra ___ {N}.", "EF", [2, 3, 4], ["stelpa", "strákur",
+     "barn", "nemandi"]),
+    (4, "Hún passaði hunda ___ {N} um helgina.", "EF", [1, 2, 3, 4], _CLOSE),
+    (4, "Kennarinn hrósaði verkefnum ___ {N} í dag.", "EF", [1, 2, 3, 4], _CHILDREN),
 ]
 
 # Plural-only nouns: einir, tvennir, þrennir, fernir.
@@ -177,6 +462,40 @@ NUMERAL_PLURAL_ONLY = [
     (4, "Hún hefur haldið ___ {N} hjá ömmu.", "ÞF", [2, 3, 4], ["jól"]),
     (4, "Í brúðkaupinu dönsuðu ___ {N} saman.", "NF", [2, 3, 4], ["hjón"]),
     (4, "Það er gat á ___ {N}.", "ÞGF", [1, 2, 3], ["buxur"]),
+]
+
+# v6.13 (critique item 23): more plural-only nouns, in frames written for
+# what they mean. NUMERAL_PLURAL_ONLY held seven nouns in eleven sentences.
+# Every noun here is checked against BÍN to have no singular at all (the
+# build stops otherwise), so *tvennar* is the only right answer; and *skór*,
+# *sokkar*, *vettlingar* are left out on purpose: they have a singular, and
+# with them *tveir* (two shoes) and *tvennir* (two pairs) are both right.
+# Same levels as above (length + 1; +1 dative; +1 for the people and the
+# feasts, whose plural-only meaning is itself a puzzle).
+PLURAL_ONLY_GROUPS = {
+    "trousers": ["buxur", "stuttbuxur", "gallabuxur", "náttbuxur", "íþróttabuxur", "sokkabuxur",
+                 "regnbuxur", "nærbuxur"],
+    "glasses": ["gleraugu", "sólgleraugu", "sundgleraugu", "skíðagleraugu"],
+    "tool": ["skæri", "naglaskæri"],
+    "door": ["dyr", "útidyr", "bakdyr", "svaladyr"],
+    "people": ["hjón", "feðgar", "mæðgur", "feðgin", "mæðgin"],
+    "feast": ["jól", "páskar", "áramót"],
+    "prize": ["verðlaun"],
+}
+PLURAL_ONLY_FRAMES = [
+    (2, "Ég á ___ {N}.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
+    (2, "Hún keypti ___ {N}.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
+    (2, "Hér eru ___ {N}.", "NF", [1, 2, 3, 4], "trousers glasses tool"),
+    (2, "Mig vantar ___ {N}.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
+    (3, "Ég fann ___ {N} í skúffunni.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
+    (3, "Hann kom heim með ___ {N}.", "ÞF", [1, 2, 3, 4], "trousers glasses tool"),
+    (4, "Það er gat á ___ {N}.", "ÞGF", [1, 2, 3], "trousers"),
+    (3, "Á húsinu eru ___ {N}.", "NF", [1, 2, 3, 4], "door"),
+    (4, "Á bænum búa ___ {N}.", "NF", [1, 2, 3, 4], "people"),
+    (4, "Í veislunni voru ___ {N}.", "NF", [1, 2, 3, 4], "people"),
+    (4, "Liðið fékk ___ {N} á mótinu.", "ÞF", [1, 2, 3, 4], "prize"),
+    (4, "Hún hefur unnið ___ {N}.", "ÞF", [1, 2, 3, 4], "prize"),
+    (4, "Við höfum haldið ___ {N} saman.", "ÞF", [1, 2, 3, 4], "feast"),
 ]
 
 # Dates. Ordinals are written lemma by lemma (21. = tuttugasti og fyrsti).

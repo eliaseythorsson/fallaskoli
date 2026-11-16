@@ -21,16 +21,16 @@
   "build_sentences.py": "fdf501950928efd5ec34a64e1bdf58906f3a446aac09913d288a3f2f8128e026",
   "build_bundle.py": "8ec95b4875a3bc91c93e388deb74f57bf5068fcd9f6f5ddfee4485afd38f6ccd",
   "irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
-  "exercises.py": "506236edaf7fd06bc9b119c83e609ec8cae64c2e100131d2f556848a43ed169c",
-  "build_exercises.py": "eeeea9836d26108df933a03e814e713d4d9e996cd587d4832b78fc492b3c62d2",
-  "adj_classes.py": "c99fa73e57f52d16a55c4cc573e8413a65f7434de5bb36f4ea2d2bd5ae205e7a"
+  "exercises.py": "44d7dc82f77af52c7088514d9cfe0fc2e838203b2fbd674c57d68e61f39909cc",
+  "build_exercises.py": "d8c151dda0eac5f479fb697d30a052f748cb098f7f65cee2195dcb1218c1b9fa",
+  "adj_classes.py": "47f95781c561e8030e199f647c8afc07665703fb4f726c881a43bf115411c702"
  },
  "artifacts": {
-  "freq_lemmas.json": "fc80d7370edfa15755a5b38ceef229f48194d05a26c0051a105ce7a2f6c1e90f",
-  "lexicon.json": "f5ac741e88705b700e677d828401ea25ca92af5b64086dfdbe9c2896be979f0e",
+  "freq_lemmas.json": "06c182ae67405c10ddc47ba18bc78867f29edf0ce68d3f11f2ac59c6211f2971",
+  "lexicon.json": "e8c9f94d1bd624cdc28591fc1546bf1207a7c907ff91e45e86160184de2c15cb",
   "sentences.json": "f45bf71012234796c87963abd1fea6808c5e0231647945ca3eb377143c8b7b42",
-  "data/data_bundle.js": "0fda714e985adaa5761a2aa2281e5a8a33c1237579a6b6cbfeab869e70f31f0b",
-  "data/exercises.js": "21ff330ff1f1ed994859fc120d01d6a4e7857f8adb0f9f6b295cad86de3d727f"
+  "data/data_bundle.js": "9e29c29dcbead8dadf59626a287c7e53734c9178f3ddd5c77a426a453169dd10",
+  "data/exercises.js": "8928eecca77f642600ea32178c91be428bd01aab45ddb021bc1462f42843d40b"
  },
  "counts": {
   "words": 6564,

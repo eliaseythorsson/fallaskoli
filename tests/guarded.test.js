@@ -169,7 +169,8 @@ test("scorecard sends nothing the child wrote", () => {
      right/wrong counts per word. No word itself leaves the state. */
   /* `duels` and `duelsPlayed` arrived in v6.7: duels won and played, two
      counts. Nothing about whom, when or on what. */
-  const allowed = new Set(["profile", "name", "level", "xp", "badges", "words",
+  /* `framfarir` arrived in v6.13 (item 58): one number for the week. */
+  const allowed = new Set(["profile", "name", "level", "xp", "badges", "words", "framfarir",
                            "minutes", "crest", "crown", "badgeIds",
                            "week", "title", "showcase", "tiers", "duels", "duelsPlayed",
                            "vocab", "health", "rescued"]);

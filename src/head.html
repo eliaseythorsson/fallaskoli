@@ -481,23 +481,164 @@ b.legendary,#crest.legendary,.legendary{color:#D9A21B}
 .liccard a{font-size:11px;color:var(--lupine);word-break:break-all;text-decoration:none;display:inline-block;margin-top:5px}
 .helpnote{font-size:12px;color:var(--slate);margin:8px 0 0;font-style:italic}
 
-/* ---------- stig eftir efni ---------- */
-.skillgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:10px}
-.skillcard{background:var(--paper-2);border:1px solid var(--line);padding:13px 14px}
-.skillcard.off{opacity:.5;border-style:dashed}
-.skhead{display:flex;align-items:baseline;gap:7px}
+/* ---------- færnikortið (item 83, ui/skillmap.js) --------------------------
+   The pupil's main view of where they stand, drawn on a board of its own:
+   `.blackboard` turns every colour name into chalk, so the rings, the marks
+   and the bars below need no second palette. Each category is a trail (a
+   chalk line down the left) and each curriculum node a ring on it.
+
+   Laid out in CSS columns, so the same markup is three trails abreast on a
+   desk and one under the other on a phone, with nothing to scroll sideways.
+
+   The ring is the fill level (a quarter per mastery mark), dashed when there
+   are too few answers to say. Colour repeats what the shape says and is never
+   the only sign: red chalk a quarter, yellow a half, green from there. */
+.skillboard.blackboard{border-bottom:10px solid var(--wood);border-radius:6px;margin:6px 0 26px;padding:14px 22px 20px}
+.smboardhead{align-items:baseline}
+.smtitle{font-family:var(--display);font-size:20px;font-weight:600;color:var(--chalk);letter-spacing:-.01em}
+.smtotals{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--chalk-dim)}
+.smtotals b{font-family:var(--mono);font-weight:600;color:var(--chalk);margin-left:3px}
+.smtotals .warn b{color:var(--chalk-yellow)}
+.smlegendbox{margin:10px 0 0}
+.smlegendbox summary{cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--chalk-dim);
+  min-height:30px;list-style:none;border-bottom:1px dashed var(--line)}
+.smlegendbox summary::-webkit-details-marker{display:none}
+.smlegendbox summary::after{content:"▾";font-size:11px}
+.smlegendbox[open] summary::after{content:"▴"}
+.smlegendbox summary:focus-visible{outline:2px solid var(--chalk-yellow);outline-offset:2px}
+.smlegendbox summary .smlegrings{display:inline-flex;gap:3px}
+.smlegend{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:6px 24px;font-size:12.5px;line-height:1.45;color:var(--chalk-dim)}
+.smlegend li{display:flex;align-items:flex-start;gap:9px}
+.smlegend li>span:first-child{flex:none;min-width:22px;display:inline-flex;justify-content:center;padding-top:1px}
+.smlegend b{color:var(--chalk);font-weight:600}
+.smlegend .smlegmarks{grid-column:1/-1}
+.smlegrings{gap:3px}
+.smlegword{font-size:11.5px;color:var(--chalk);border-bottom:1px dashed var(--line);white-space:nowrap}
+.smnext{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 0;padding:10px 12px;
+  border:1px dashed rgba(242,217,107,.55);border-radius:var(--radius);background:var(--sulphur-soft)}
+.smnextlbl{font-family:var(--display);font-size:14px;font-weight:600;color:var(--chalk-yellow);margin-right:2px}
+.smnextbtn{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13px;color:var(--chalk);cursor:pointer;
+  background:rgba(23,42,34,.55);border:1px solid var(--line);border-radius:99px;padding:5px 8px 5px 7px;min-height:34px;text-align:left}
+.smnextbtn:hover{border-color:var(--chalk-yellow)}
+.smlanes{columns:3 236px;column-gap:28px;margin-top:20px}
+.smlane{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;margin:0 0 24px;display:inline-block;width:100%}
+.smhead{padding-bottom:7px;border-bottom:1px dashed var(--line)}
+.smhead h3{display:flex;align-items:baseline;gap:7px;margin:0;font-family:var(--display);font-size:16.5px;font-weight:600;
+  color:var(--chalk);line-height:1.25}
+.smname{margin-right:auto}
+.smstig{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--chalk-yellow);white-space:nowrap}
+.smoff{font-family:var(--mono);font-size:10.5px;font-weight:500;color:var(--chalk-dim);border:1px dashed var(--line);padding:0 5px;white-space:nowrap}
 .skico{font-size:16px}
-.sknm{font-family:var(--display);font-weight:600;font-size:14px;margin-right:auto}
-.skcur{font-family:var(--mono);font-size:11px;color:var(--slate);border:1px solid var(--line);padding:0 4px}
-.sklvl{font-size:12px;margin-top:5px;color:var(--ink)}
-.sklvl i{font-style:normal;font-size:11px;
-  padding:1px 6px;margin-left:5px}
-.tagstrong{background:var(--moss-soft);color:var(--moss)}
-.tagweak{background:var(--rust-soft);color:var(--rust)}
 .skbar{height:3px;background:var(--line);margin:7px 0 5px}
 .skbar i{display:block;height:3px;background:var(--lupine)}
-.skmeta{font-size:11px;color:var(--slate)}
-.skmeta.faint{opacity:.7;font-size:11.5px}
+.smmeta{margin:0;font-size:11.5px;line-height:1.45;color:var(--chalk-dim)}
+.smmark{margin:4px 0 0;font-size:11.5px;line-height:1.5;color:var(--chalk-dim);display:flex;flex-wrap:wrap;align-items:center;gap:3px 6px}
+.smmark .mastery{margin-left:0}
+.tagstrong{font-style:normal;font-size:11px;padding:1px 6px;background:var(--moss-soft);color:var(--moss)}
+.smlane.off .smhead h3,.smlane.off .smmeta,.smlane.off .smmark{color:var(--chalk-dim)}
+
+/* the trail: a chalk line through the middle of the rings */
+.smtrail{list-style:none;margin:6px 0 0;padding:0;position:relative}
+.smtrail::before{content:"";position:absolute;left:21px;top:14px;bottom:24px;border-left:2px dotted rgba(243,241,231,.34)}
+.smtrail li{position:relative}
+.smyear{padding:7px 0 1px 46px;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--chalk-dim)}
+.smyear span{background:var(--board);padding:0 6px 0 0}
+.smyear::before{content:"";position:absolute;left:17px;top:14px;width:10px;border-top:2px solid rgba(243,241,231,.5)}
+.smnode{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;margin:0;padding:5px 8px 5px 5px;text-align:left;
+  font:inherit;color:var(--chalk);background:none;border:1px solid transparent;border-radius:var(--radius);cursor:pointer}
+.smnode:hover{background:rgba(243,241,231,.07);border-color:var(--line)}
+.smnode:focus-visible,.smnextbtn:focus-visible{outline:2px solid var(--chalk-yellow);outline-offset:1px}
+.smglyph{flex:none;width:34px;height:34px;border-radius:50%;background:var(--board);display:flex;align-items:center;justify-content:center}
+.smtext{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
+.smtext b{font-weight:600;font-size:13.5px;line-height:1.3;overflow-wrap:anywhere}
+.smtext small{font-size:11.5px;line-height:1.35;color:var(--chalk-dim)}
+.smnode.m1 .smtext small{color:var(--rust)} .smnode.m2 .smtext small{color:var(--chalk-yellow)}
+.smnode.m3 .smtext small,.smnode.m4 .smtext small{color:var(--moss)}
+.smnode .smlast{color:var(--chalk-dim)}
+.smnode.locked{cursor:pointer}
+.smnode.locked .smtext b{font-weight:500;color:var(--chalk-dim)}
+/* Switched off in the pupil's material: still readable (5:1 on the board,
+   tests/skillmap.test.js), plainly quieter. */
+.smnode.off .smtext b{font-weight:500;color:var(--chalk-dim)}
+.smnode.off .smtext small{color:var(--chalk-dim)}
+.smnode.off .smring{opacity:.75}
+
+svg.smring{flex:none;width:32px;height:32px;display:block;overflow:visible}
+.smring .rim{stroke:var(--chalk);stroke-width:2.2;stroke-linecap:round}
+.smring .fill{fill:var(--chalk);stroke:none}
+.smring.r0 .rim{stroke:var(--chalk-dim);stroke-dasharray:3.4 3.5}
+.smring.r1 .rim,.smring.r1 .fill{stroke:var(--rust)} .smring.r1 .fill{fill:var(--rust)}
+.smring.r2 .rim,.smring.r2 .fill{stroke:var(--chalk-yellow)} .smring.r2 .fill{fill:var(--chalk-yellow)}
+.smring.r3 .rim,.smring.r4 .rim{stroke:var(--moss)} .smring.r3 .fill,.smring.r4 .fill{fill:var(--moss)}
+.smring .tick{stroke:var(--board-deep);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.smring.locked path{stroke:var(--chalk-dim);stroke-width:2;stroke-linecap:round}
+.smring.locked rect{fill:none;stroke:var(--chalk-dim);stroke-width:2}
+.smflag{flex:none;display:inline-flex}
+.smflag i{font-style:normal;font-family:var(--mono);font-size:11.5px;font-weight:600;line-height:1;min-width:22px;height:22px;padding:0 5px;
+  display:inline-flex;align-items:center;justify-content:center;border-radius:99px;background:var(--chalk-yellow);color:var(--board-deep);
+  box-shadow:0 0 0 3px rgba(242,217,107,.22)}
+
+/* The teacher's copy stands in Skólastofan, among white sheets. */
+.skillboard.teacher{margin-top:10px}
+
+/* ---- a node, opened: a white sheet (ui/dom.js openSheet) ---- */
+.smpanel{font-size:14px}
+.smpanel .smeyebrow{margin:0 0 10px;font-size:13px}
+.smfacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:0 0 4px}
+.smfact{border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);padding:10px 12px}
+.smfact>span{display:block;font-size:11.5px;color:var(--slate)}
+.smfact>b{display:flex;align-items:center;gap:7px;font-family:var(--display);font-size:17px;font-weight:600;line-height:1.3;margin:2px 0}
+.smfact>small{display:block;font-size:12px;line-height:1.45;color:var(--slate)}
+.smfact.warn{border-color:var(--sulphur);background:var(--sulphur-soft)}
+.smfact.warn>b{color:#7A5800}
+.smfact.m1>b{color:var(--rust)} .smfact.m3>b,.smfact.m4>b{color:var(--moss)} .smfact.m2>b{color:#7A5800}
+/* On paper the ring takes the pen colours. */
+.smpanel svg.smring{width:22px;height:22px}
+.smpanel .smring .rim{stroke:var(--ink)} .smpanel .smring .fill{fill:var(--ink)}
+.smpanel .smring.r0 .rim{stroke:var(--slate)}
+.smpanel .smring.r1 .rim{stroke:var(--rust)} .smpanel .smring.r1 .fill{fill:var(--rust)}
+.smpanel .smring.r2 .rim{stroke:var(--sulphur)} .smpanel .smring.r2 .fill{fill:var(--sulphur)}
+.smpanel .smring.r3 .rim,.smpanel .smring.r4 .rim{stroke:var(--moss)} .smpanel .smring.r3 .fill,.smpanel .smring.r4 .fill{fill:var(--moss)}
+.smpanel .smring .tick{stroke:#fff}
+.smpanel .smring.locked path,.smpanel .smring.locked rect{stroke:var(--slate)}
+h4.smh{font-family:var(--display);font-size:15px;font-weight:600;margin:18px 0 6px}
+.modal .sheetbody .smhint,.smhint{font-size:12.5px;color:var(--slate);margin:0 0 8px}
+.smrule{border-left:3px solid var(--lupine);background:var(--lupine-soft);padding:9px 12px}
+.modal .sheetbody .smrule p{margin:0;font-size:14.5px;line-height:1.55}
+.smpatterns,.smcells{list-style:none;margin:0;padding:0}
+.smpatterns li{padding:8px 0;border-top:1px solid var(--line)}
+.smpatterns li:first-child{border-top:0;padding-top:2px}
+.smpatterns li.activep .smpname b{color:var(--rust)}
+.smprate{font-size:13px;margin-top:2px}
+.smpall{color:var(--slate);font-size:12px}
+.smpatterns details summary{cursor:pointer;font-size:12.5px;color:var(--slate);margin-top:3px}
+.modal .sheetbody .smpatterns details p{margin:4px 0 0;font-size:13.5px}
+.smcells li{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;padding:6px 0;border-top:1px solid var(--line)}
+.smcells li:first-child{border-top:0}
+.smcells li b{font-weight:600}
+.smcells li span{font-size:12.5px;color:var(--slate)}
+.smdue{font-style:normal;font-size:11.5px;font-weight:600;color:#7A5800;background:var(--sulphur-soft);padding:1px 7px;border-radius:99px}
+.smgrid{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px}
+.smwords{margin-top:4px}
+.smwords .chip i{font-style:normal}
+.smactions{margin-top:14px}
+table.heat td.h0{background:#fff;color:var(--line)}
+table.heat td.h4{background:var(--moss-soft);color:var(--moss)}
+table.heat td.h3{background:#EAF2ED;color:var(--moss)}
+table.heat td.h2{background:#FBEFE9;color:var(--rust)}
+table.heat td.h1{background:var(--rust-soft);color:var(--rust)}
+table.heat td span{color:var(--slate);font-size:9.5px}
+@media (max-width:600px){
+  .skillboard.blackboard{padding:12px 12px 16px;border-bottom-width:7px}
+  .smlanes{columns:1;margin-top:16px}
+  .smlegend{grid-template-columns:1fr}
+  .smnode{min-height:52px}
+  .smtext b{font-size:14.5px} .smtext small{font-size:12.5px}
+  .smtotals{font-size:12px;gap:3px 12px}
+  .smfacts{grid-template-columns:1fr}
+  table.heat td{width:auto;min-width:52px}
+}
 /* item 41: a worked example on the first card of a new type of question */
 .workedex{background:var(--lupine-soft);border-left:3px solid var(--lupine);padding:8px 12px;margin:8px 0 12px;font-size:13.5px}
 .workedex summary{cursor:pointer;font-weight:600;color:var(--lupine)}
@@ -1327,8 +1468,18 @@ button.ghost.small{padding:5px 10px;font-size:13px}
 .assignsent{font-size:14.5px;margin:0 0 10px}
 @media (max-width:600px){ .assignrow .assigngo{width:100%} }
 
+/* ---- v6.13 (atriði 59): markmið vikunnar, ein stika fyrir allan hópinn ---- */
+#classgoal:not(:empty) ~ h2.sec.first,#teacher:not(:empty) + #classgoal h2.sec.first{margin-top:34px}
+.goalcard{background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;max-width:640px}
+.goalcard.met{border-color:var(--lupine)}
+.goalwhat{margin:0 0 8px;font-size:16px}
+.goalbar{height:12px;background:var(--paper-2);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.goalbar i{display:block;height:100%;background:var(--lupine);transition:width .4s}
+.goalline{margin:8px 0 0;font-size:14px}
+@media (prefers-reduced-motion:reduce){ .goalbar i{transition:none} }
+
 /* ---- v6.13 (atriði 37 og 65): kennarahlutinn í Skólastofunni ---- */
-#teacher:not(:empty) + h2.sec.first{margin-top:34px}
+#teacher:not(:empty) ~ h2.sec.first{margin-top:34px}
 .assignform{background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;max-width:640px}
 .assignform select,.assignform input[type=date],#tc-group{font:inherit;font-size:16px;padding:9px 10px;min-height:40px;
   max-width:100%;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);color:var(--ink)}

@@ -492,6 +492,62 @@ What a preset does not do, so nobody is surprised:
 - **The switches stay.** A preset is a starting point. Change one switch and
   the editor says that no year is chosen.
 
+## The skill map (item 83)
+
+Under *Merki og framvinda → Framvinda* the pupil sees this map: one ring per
+node in the table above, on a trail per category, in the order of the years.
+A node without question types is drawn as a padlock. The arithmetic is
+`src/js/core/skillmap.js` (pure; the server runs the same code for a teacher),
+the drawing `src/js/ui/skillmap.js`.
+
+A ring says three things, and `standingOfNode(node, S, now)` is where they
+come from:
+
+| On the ring | What it is | Read from |
+|---|---|---|
+| How full it is (a quarter per step; *Of fá svör* is a dashed, empty ring) | The mastery mark of item 44, of **exactly the node's question types**: accuracy on recent answers at the pupil's level, and reviews kept | `S.byType` (`core/mastery.js masteryOfTypes`) |
+| "í gær", "fyrir 3 vikum" | When a question of the node was last answered | the latest `at` of the node's types |
+| A yellow disc: a number, or "!" | Reviews of the node due today (the number), or one of its error patterns "algengt núna" (!) | `S.review` (item 18), `S.diag` |
+
+Three things about the data are worth knowing before changing a node.
+
+**Nodes that share their question types.** Persóna og tala, Nútíð og þátíð,
+Viðtengingarháttur and Miðmynd are all asked by `verb`, `verbslot` and
+`tbl_so`; what tells them apart is the feature asked (`attrs`). So a node with
+`attrs` keeps one small record of its own, `S.byNode[id] = { n, c, h, at }`
+(the shape of a type's record), written on the one path every answer takes
+when the cell asked carries the node's features. It is the only thing the map
+added to the saved state. These nodes say *Of fá svör* until the pupil has
+answered such a question after v6.13; a node **without** `attrs` among shared
+types (Persóna og tala) reads the types whole. Give a new node `attrs` when a
+type of its own does not exist and a feature singles it out; the record then
+appears by itself.
+
+**Error patterns sit on one node each** (`NODE_PATTERNS` in
+`core/skillmap.js`), and a test insists that every pattern is on exactly one
+node or in `LOOSE_PATTERNS`, and that a pattern shares a question type with
+its node — so that the node's own button practises what its yellow disc is
+about. A new pattern must be filed there or the tests fail. The loose ones
+(accents, spelling slips, a wrong ending, a vowel change) belong to every
+written form and are listed under the map, with *Ógreint*.
+
+**The node's button** starts ten questions of exactly the node's `types`
+(narrowed to its `attrs`), opening with the node's own reviews that are due.
+The pupil's own switches give way to it, as for "Æfa þetta" on a Lesefni page;
+the administrator's ceiling does not, and a node it leaves nothing of says so
+in place of the button.
+
+The map replaced four panels of Framvinda. *Styrkleikar eftir efni* is the
+head of each trail (stig, rank, XP, accuracy, the category's mastery mark);
+*Villumynstur* is inside the nodes and, for the loose patterns, under the map;
+*Hvar liggja mistökin* is the table inside *Föllin fjögur*; *Orð sem þarf að
+æfa* are the words waiting for review inside each node (Orðasafn keeps its
+*Orð í hættu*).
+
+A teacher opens the same map for one pupil of their group from Skólastofan
+(`GET /teacher/skillmap`). That copy leaves out when anything was practised
+and which words were missed; `docs/PRIVACY.md` §1a says why.
+
 ## Decisions for the owner
 
 1. **Setningafræði and Setningagerðir are now year 10** (they were `9.b`).
@@ -511,8 +567,8 @@ What a preset does not do, so nobody is surprised:
 ## For a teacher to check
 
 - The Icelandic wording of the seven criteria against the official page.
-- The node names in `src/js/core/curriculum.js` (the *Efni* column). They will
-  be shown to pupils on the skill map of item 83.
+- The node names in `src/js/core/curriculum.js` (the *Efni* column). They are
+  what pupils read on the skill map (item 83).
 - **Setningarliðir or setningarhlutar?** The Lesefni page on frumlag, umsögn,
   andlag and sagnfylling is titled *Setningarliðir*. Málvísir uses
   *setningarliðir* for nafnliður, sagnliður, forsetningarliður, atviksliður
@@ -534,7 +590,7 @@ What a preset does not do, so nobody is surprised:
 
 - A node is one entry in `NODES` in `src/js/core/curriculum.js`. After any
   change run `node tools/curriculum-doc.mjs` and commit the document with it.
-- Node ids are permanent: saved progress will be keyed by them (item 83). Add
+- Node ids are permanent: saved progress is keyed by them (`S.byNode`, item 83). Add
   and retire; never rename. A test pins the list.
 - When a question type is added for a backlog node, put its id in the node's
   `types`, set `cover`, and remove `item`. The tests then insist that the type

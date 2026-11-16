@@ -215,3 +215,23 @@ test("answerText: the written form, the right option, or nothing", () => {
   assert.equal(answerText({ type: "table", cells: [] }), null);
   assert.equal(answerText(null), null);
 });
+
+/* The merge of items 59, 83, 64 and 67: one notice describes the class goal,
+   the teacher's view of a skill map, the live round and team duels, under a
+   version later than all of them, and docs/PRIVACY.md numbers them apart. */
+test("one privacy notice, one version, for the class goal, the skill map, the live round and team duels", async () => {
+  const { PRIVACY_VERSION, CALIBRATION_NOTICE, privacyPage } = await import("../server/privacy.mjs");
+  const { readFileSync } = await import("node:fs");
+  assert.ok(PRIVACY_VERSION >= "2026-11-20", "the live round and team duels came after 2026-11-19");
+  assert.ok(CALIBRATION_NOTICE <= PRIVACY_VERSION);
+  const html = privacyPage({ controller: "X", contact: "x@y.is" });
+  assert.ok(html.includes(`Síðast breytt ${PRIVACY_VERSION}`));
+  for (const words of ["sameiginlegt markmið", "færnikortið þitt", "Leikmaður", "bekkjareinvígi"])
+    assert.ok(html.includes(words), words);
+  const doc = readFileSync(new URL("../docs/PRIVACY.md", import.meta.url), "utf8");
+  const heads = doc.match(/^## 1[a-z]\./gm);
+  assert.deepEqual(heads, [...new Set(heads)], "each section of §1 has its own number");
+  assert.match(doc, /^## 1c\. The class goal/m);
+  assert.match(doc, /^## 1d\. A live round in class, and team duels/m);
+  assert.ok(doc.includes(`\`${PRIVACY_VERSION}\``));
+});

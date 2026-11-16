@@ -109,7 +109,12 @@ definitions.py        a handful of hand-written definitions; the rest are ÍNO
 exercises.py          hand-written items for the v6.11 question types (pronouns,
                       numerals, dates, government, synonyms …): sentences and
                       lemma + class + BÍN mark only; build_exercises.py
-                      resolves every form in BÍN and checks every word
+                      resolves every form in BÍN and checks every word.
+                      Also frames that build_exercises.py fills in from BÍN
+                      (v6.13): pronouns after the verbs and prepositions of
+                      government.py, reflexive pairs, numerals × nouns by
+                      meaning, adjective frames around the helper nouns of
+                      adj_classes.py
 vocab_filter.py       lemma errors and words for acts of violence (always
                       removed), the coarse-word block list (on by default,
                       the administrator can switch it off), and the words
@@ -147,6 +152,18 @@ src/js/core/mastery.js  the mastery mark (item 44): per question type the
                       "Fullt vald", from recent accuracy at the pupil's
                       level and reviews passed on time; thresholds at the
                       top of the file
+src/js/core/mending.js  getting better, counted (items 56, 58): an error
+                      pattern is *mended* when it was active and has since
+                      been right ten times in a row, the last on a later day;
+                      reviews passed per day; this week's "Framfarir" (the
+                      leaderboard figure, capped per day so volume cannot
+                      raise it) — `S.mend`, its sanitiser and its merge
+src/js/core/classgoal.js  the class goal (item 59): a weekly target the
+                      group's teacher sets ("2.000 rétt svör saman", "Allir
+                      ljúka þremur lotum"), the group's total (never who put
+                      in what; nothing below three pupils) and the week whose
+                      badge a pupil is owed; routes in server/classgoal.mjs,
+                      the bar in ui/classgoal.js
 src/js/core/examples.js  the worked example on the first card of a type a
                       pupil has not met (item 41; the texts are in
                       content/examples.js, every form checked against BÍN

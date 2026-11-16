@@ -46,12 +46,13 @@ import { createCalibration } from "./calibrate.mjs";
 import { createLive } from "./live.mjs";
 import { createTeamDuels } from "./teamduel.mjs";
 import { teamOf } from "../src/js/core/teamduel.js";
+import { createClassGoal } from "./classgoal.mjs";
 import { seal, passphraseProblem } from "./backup.mjs";
 import { dropPrivileges } from "./privs.mjs";
 
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
-import { scorecard, rank, METRICS } from "../src/js/core/leaderboard.js";
+import { scorecard, rank, METRICS, DEFAULT_METRIC } from "../src/js/core/leaderboard.js";
 import { aggregate, contribution, MIN_USERS, MIN_DAYS, measurable, monthKey, nextRefresh }
   from "../src/js/core/rarity.js";
 import { ROLES, can } from "../src/js/core/profile.js";
@@ -60,6 +61,8 @@ import { weekKey, prevWeekKey, weekXp, newThisWeek, firstFinders, weekResult }
 import { sanitisePolicy, createPolicy } from "../src/js/core/policy.js";
 import { chosenPolicy } from "../src/js/core/state.js";
 import { pupilStandings, classColumns, patternCSV, byName } from "../src/js/core/classview.js";
+import { teacherMap } from "../src/js/core/skillmap.js";
+import { effectivePolicy, migrate } from "../src/js/core/state.js";
 import { ASSIGN, cleanTarget, patternsOf, dueProblem, isOpen, prune as pruneAssignments,
          openCount as openAssignments, cleanResult, recordResult, viewForPupil }
   from "../src/js/core/assignment.js";
@@ -837,7 +840,8 @@ export function createApp({
   on("GET", "/leaderboard", async (req, res, { url }) => {
     const u = await needUser(req, res);
     if (!u) return;
-    const metric = url.searchParams.get("metric") || "week";
+    /* Item 58: a board opens on "Framfarir", not on volume. */
+    const metric = url.searchParams.get("metric") || DEFAULT_METRIC;
     let list = await cards(u);
     if (metric === "minutes") list = list.filter((c) => c.minutes != null);
     list = rank(list, metric);
@@ -1266,6 +1270,34 @@ export function createApp({
     res.end(buf);
   });
 
+  /* Item 83 (d): the skill map of ONE pupil, for their teacher — the same
+     map the pupil has under Framvinda, drawn by the same code from what
+     `teacherMap` (core/skillmap.js) leaves in: per curriculum node the
+     mastery mark and the counts it rests on, reviews due and waiting, the
+     active error patterns, and the cells missed, as grammar. Not when
+     anything was practised, not the words missed, no XP — see `teacherMap`.
+
+     Authorised exactly as the class table: `needTeacher` holds a guardian to
+     their own group, and the pupil must be an active learner OF THAT GROUP.
+     A pupil of another group, a guardian, somebody pending or blocked and an
+     id that does not exist all get the same 404, so the answer cannot be
+     used to learn who exists. Not audited, as the table is not. */
+  on("GET", "/teacher/skillmap", async (req, res, { url }) => {
+    const t = await needTeacher(req, res, url.searchParams.get("group"));
+    if (!t) return;
+    const id = String(url.searchParams.get("pupil") || "");
+    const u = (await store.users()).find((x) => x.id === id);
+    if (!u || u.role !== "learner" || u.status !== "active" || groupOf(u) !== t.group)
+      return json(res, 404, { error: "Nemandinn er ekki í þessum hópi." });
+    const rec = await store.stateRec(u.id);
+    /* `migrate` gives every field its shape; a pupil who has not practised
+       gets the map of a blank state — every node "Of fá svör". */
+    const S = migrate(rec ? rec.state : null);
+    return json(res, 200, { group: { id: t.group, name: t.name },
+      pupil: { id: u.id, name: u.name || u.username, practised: !!rec },
+      map: teacherMap(S, Date.now(), effectivePolicy(S)) });
+  });
+
   /* Item 65: the assignments of a group, with who has done them, their
      scores, and the class's patterns on each one's material. */
   on("GET", "/teacher/assignments", async (req, res, { url }) => {
@@ -1382,6 +1414,13 @@ export function createApp({
     if (problem) return json(res, problem[0], { error: problem[1] });
     return json(res, 200, { ok: true, assignment: view });
   });
+
+  /* --- the class goal (v6.13, critique item 59) --------------------------
+   * A weekly target the group reaches together, set by its teacher; one bar
+   * of totals, one badge for everyone. Everything is in server/classgoal.mjs.
+   * Routes: GET /classgoal, GET+POST+DELETE /teacher/classgoal. */
+  createClassGoal({ store, groupOf, groupsNow, audit })
+    .routes({ on, json, readBody, needUser, needTeacher });
 
   /* --- a live class round (v6.13, critique item 64) -------------------------
    * Everything is in server/live.mjs — the rounds, the clock, the event

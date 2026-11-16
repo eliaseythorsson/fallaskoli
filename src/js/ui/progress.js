@@ -1,21 +1,17 @@
-/* Progress: the header, the per-skill scoreboard, the charts and the heat map. */
+/* Progress: the header, the tiles and the charts. The per-skill scoreboard,
+   the error patterns, the heat map and the words to practise are the skill
+   map since v6.13 (item 83, ui/skillmap.js). */
 
-import { CASES, COLS, mark } from "../core/marks.js";
-import {
-  overallLevel, overallRank, skillSummary, dayMult,
-} from "../core/progress.js";
+import { overallLevel, overallRank, dayMult } from "../core/progress.js";
 import { dayStreak, weekStreak, weekProgress, dkey, todayKey, effectivePolicy } from "../core/state.js";
 import { weeksInARow } from "../core/calendar.js";
 import { fmtDuration } from "../core/timing.js";
 import { bandOf } from "../core/difficulty.js";
 import { $, esc } from "./dom.js";
 import { crestOf } from "../core/profile.js";
-import { abbr } from "../core/glossary.js";
 import { holidayName } from "../core/calendar.js";
-import { statusOf } from "../core/wordhealth.js";
 import { dueEntries, dueLine } from "../core/review.js";
 import { typeById, enabled } from "../tasks/index.js";
-import { masteryOf, masteryLine } from "../core/mastery.js";
 
 /** The entries waiting for review that this pupil may be asked now: the same
     test a session's opening applies (tasks/review.js planOpening), so the
@@ -123,46 +119,6 @@ export function renderHeader(app) {
       `<i class="${skill && i <= bandOf(app.sess, skill) ? "on" : ""}"></i>`).join("");
 }
 
-/* ---------- stig eftir flokkum ---------------------------------------- */
-
-/* The mastery mark (item 44, core/mastery.js) beside the stig: four pips
-   and a word, with what it rests on in the title and the line below. The
-   stig is XP and rises with any practice; the mark is how secure the skill
-   is at the pupil's level. Mark 0 says plainly that there is too little. */
-function masteryHTML(m) {
-  const line = masteryLine(m);
-  const pips = [1, 2, 3, 4].map((k) => `<i class="${k <= m.level ? "on" : ""}"></i>`).join("");
-  return `<span class="mastery m${m.level}" title="${esc(line)}" aria-label="${esc(`Vald: ${m.label}. ${line}`)}">
-    <span class="mpips" aria-hidden="true">${pips}</span><b>${esc(m.label)}</b></span>`;
-}
-
-export function skillGridHTML(S, now = Date.now()) {
-  const rows = skillSummary(S);
-  const best = Math.max(...rows.map((r) => r.level));
-  return `<div class="skillgrid">` + rows.map((r) => {
-    const pct = Math.round(100 * r.into / r.need);
-    const strong = r.level === best && r.answers >= 10;
-    /* The old "þarf æfingu" tag read the skill's accuracy over all time; the
-       mastery mark reads the recent answers at the pupil's level and says
-       the same thing when it is true now (mark 1). */
-    const m = masteryOf(S, r.id, now);
-    return `<div class="skillcard${r.enabled ? "" : " off"}" data-skill="${esc(r.id)}" data-mastery="${m.level}">
-      <div class="skhead"><span class="skico">${r.meta.ico}</span>
-        <span class="sknm">${esc(r.meta.nm)}</span>
-        <span class="skcur">${esc(r.meta.cur)}</span></div>
-      <div class="sklvl">Stig ${r.level} · ${esc(r.rank)}
-        ${strong ? '<i class="tagstrong">sterkasta</i>' : ""}
-        ${masteryHTML(m)}</div>
-      <div class="skmeta mline">${esc(masteryLine(m))}</div>
-      <div class="skbar"><i style="width:${pct}%"></i></div>
-      <div class="skmeta">${r.xp.toLocaleString("is-IS")} XP ·
-        ${r.answers ? Math.round(100 * r.acc) + "% rétt af " + r.answers : "ekkert svarað enn"}
-        ${r.enabled ? "" : " · slökkt"}</div>
-      <div class="skmeta faint">${(r.need - r.into).toLocaleString("is-IS")} XP í stig ${r.level + 1}</div>
-    </div>`;
-  }).join("") + `</div>`;
-}
-
 /* ---------- charts ------------------------------------------------------ */
 
 function lastDays(S, k) {
@@ -266,40 +222,6 @@ function xpChart(rows) {
     <text x="${PL - 6}" y="${PT + 8}" font-size="9" fill="var(--slate)" text-anchor="end" font-family="IBM Plex Mono">${max}</text></svg>`;
 }
 
-function heatHTML(S) {
-  let h = '<table class="heat"><tr><th></th>' +
-    COLS.map((c) => `<th>${abbr(c.label)}</th>`).join("") + "</tr>";
-  CASES.forEach((cs) => {
-    h += `<tr><th class="row">${abbr(cs.name, cs.term)}</th>`;
-    COLS.forEach((c) => {
-      const m = mark(cs.k, c.k), s = S.cells[m], n = s ? s.c + s.w : 0;
-      if (!n) { h += `<td style="background:#fff;color:var(--line)">–</td>`; return; }
-      const p = s.c / n;
-      const bg = p >= 0.9 ? "var(--moss-soft)" : p >= 0.7 ? "#EAF2ED" : p >= 0.5 ? "#FBEFE9" : "var(--rust-soft)";
-      h += `<td style="background:${bg};color:${p >= 0.7 ? "var(--moss)" : "var(--rust)"}"><b>${Math.round(p * 100)}%</b><br><span style="color:var(--slate);font-size:9px">${n}</span></td>`;
-    });
-    h += "</tr>";
-  });
-  return h + "</table>";
-}
-
-function wordListHTML(S) {
-  const rows = Object.entries(S.words)
-    .map(([k, v]) => {
-      const [lemma, cls] = k.split("|");
-      return { lemma, cls, ...v, n: v.c + v.w, p: v.c / (v.c + v.w) };
-    })
-    .filter((r) => r.n >= 2)
-    .sort((a, b) => a.p - b.p)
-    .slice(0, 18);
-  if (!rows.length) return `<p class="note" style="margin:4px">Ekkert komið enn.</p>`;
-  /* v6.6: a word in trouble is a button that starts its rescue drill. */
-  return `<div class="chips">` + rows.map((r) => statusOf(r) === "weak"
-    ? `<button type="button" class="chip drillme" data-drill="${esc(r.lemma + "|" + r.cls)}" title="Orð í hættu — smelltu til að taka björgunaræfingu">⚠ ${esc(r.lemma)}${r.cls ? `<em class="cls">${esc(r.cls)}</em>` : ""}<i>${Math.round(r.p * 100)}% · ${r.n}</i></button>`
-    : `<span class="chip" style="border-color:${r.p < 0.6 ? "var(--rust)" : "var(--line)"}">${esc(r.lemma)}${r.cls ? `<em class="cls">${esc(r.cls)}</em>` : ""}<i>${Math.round(r.p * 100)}% · ${r.n}</i></span>`
-  ).join("") + `</div>`;
-}
-
 export function renderStats(app) {
   const S = app.S;
   const d = S.days[todayKey()] || { a: 0, c: 0, xp: 0 };
@@ -311,7 +233,6 @@ export function renderStats(app) {
     <div class="tile"><span>Alls</span><b>${acc}%</b><small>${S.totalCorrect} rétt af ${S.totalAnswers} · ${active} virkir dagar</small></div>
     <div class="tile"><span>Vikur í röð</span><b>${weekStreak(S)}</b><small>${weekLine(weekProgress(S))} · margfaldari ×${dayMult(dayStreak(S)).toFixed(2)}</small></div>
     <div class="tile"><span>Heildarstig</span><b>${L.level}</b><small>${overallRank(L.level)} · ${(L.need - L.into).toLocaleString("is-IS")} XP í næsta</small></div>`;
-  $("skillgrid").innerHTML = skillGridHTML(S);
   const rows = lastDays(S, 30);
   $("chart1").innerHTML = activityChart(S, rows);
   $("chart2").innerHTML = xpChart(rows);
@@ -335,10 +256,4 @@ export function renderStats(app) {
     `Alls ${fmtDuration(totMs)} við skjáinn. Tíminn telur aðeins á milli svara, ` +
     `stöðvast þegar flipinn fer úr sýn og telur mest tvær mínútur á hvert svar — ` +
     `svo opinn flipi yfir nótt verði ekki að æfingu.`;
-  $("heat").innerHTML = heatHTML(S);
-  $("wordlist").innerHTML = wordListHTML(S);
-  $("wordlist").onclick = (e) => {
-    const b = e.target.closest("button[data-drill]");
-    if (b && app.startDrill) app.startDrill(b.dataset.drill);
-  };
 }

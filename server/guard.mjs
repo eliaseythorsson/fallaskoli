@@ -27,7 +27,9 @@ import { SKILL_IDS } from "../src/js/core/skills.js";
 import { sanitiseReview, REVIEW_MAX, STATS_MAX } from "../src/js/core/review.js";
 import { cleanLevels } from "../src/js/core/difficulty.js";
 import { cleanByType } from "../src/js/core/mastery.js";
+import { cleanByNode } from "../src/js/core/skillmap.js";
 import { cleanSeenTypes } from "../src/js/core/examples.js";
+import { sanitiseMend } from "../src/js/core/mending.js";
 import { TYPE_IDS } from "../src/js/core/policy.js";
 
 export const MAX_STATE_BYTES = 2 * 1024 * 1024;
@@ -212,8 +214,21 @@ export function cleanState(raw, { today = new Date() } = {}) {
      letters and a time. Types met (item 41): known types only, one day each,
      not after tomorrow. Both bounded by the number of question types. */
   S.byType = cleanByType(S.byType);
+  /* The same record for the curriculum nodes that keep one (item 83,
+     core/skillmap.js): known nodes only — seven of them. */
+  S.byNode = cleanByNode(S.byNode);
   S.seenTypes = Object.fromEntries(Object.entries(cleanSeenTypes(S.seenTypes))
     .filter(([, d]) => d <= limit));
+
+  /* Getting better (items 56 and 58, core/mending.js): pattern ids, days
+     and counts, rebuilt by the same function the browser loads with — and
+     here no day after tomorrow, because "Framfarir" is read off these days
+     and a day in the future would sit in next week's board. */
+  const mend = sanitiseMend(raw.mend);
+  for (const k of Object.keys(mend.open)) if (mend.open[k] > limit) delete mend.open[k];
+  mend.log = mend.log.filter((x) => x.d <= limit);
+  for (const k of Object.keys(mend.rv)) if (k > limit) delete mend.rv[k];
+  S.mend = mend;
 
   S.counters = Object.fromEntries(pairs(S.counters, 20, 40).map(([k, v]) => [k, n(v)]));
   S.periods = smallJSON(S.periods, 60000) || {};

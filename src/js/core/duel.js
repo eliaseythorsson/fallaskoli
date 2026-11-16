@@ -396,7 +396,8 @@ export const shapeKey = (t) => { const s = shapeOf(t); return `${s.type}~${s.lvl
  *     cell is the same question;
  *   - so few words share a cell that it comes to the same thing: *four* in
  *     the masculine accusative is *fjóra* whatever the sentence (to_samr,
- *     to_val, fn_stad, lo_beyging).
+ *     to_val, fn_stad). (lo_beyging was one until v6.13: its frames now put
+ *     a different adjective into every cell, item 23.)
  *
  * For them a line of the plan fixes the type, the level and the KIND of cell
  * (`cellFamily`), and each player's own cell is drawn by their own generator
@@ -411,7 +412,7 @@ export const CELL_IS_ANSWER = new Set([
   "parse", "revform", "govern", "indecl", "syntax", "ob_fsao", "setn_hlut",
   "fn_flokkar", "no_beyging", "so_mynd", "gerd_tegund", "setn_lidir",
   "fs_sogn", "fs_operson",
-  "to_samr", "to_val", "fn_stad", "lo_beyging",
+  "to_samr", "to_val", "fn_stad",
 ]);
 
 /** Do two questions weigh the same? The type and the level, and the cell —

@@ -46,8 +46,10 @@ const KNOWN_BAD = [
   "vegna ævinnar", "kastölunum úti á landi", "ferskustu börnin", "velkomnastir",
   /* the hand-over's own examples */
   "rangari börn", "breskustu", "dauðari", "breskari",
-  /* a time or an idea as the cause of a delay, or as what one cannot do without */
-  /Ferðin tafðist vegna (ævi|sumar|vetr|morg|kvöld|vik|mánað|hamingj|framtíð|málsins|málanna|mark)/,
+  /* a time or an idea as the cause of a delay, or as what one cannot do without
+     (*sumar* the season, not the *sumarbústaður*, a building — and a building
+     may cause a delay: noun_classes.py `_CAUSE`) */
+  /Ferðin tafðist vegna (ævi|sumar(?!bústað)|vetr|morg|kvöld|vik|mánað|hamingj|framtíð|málsins|málanna|mark)/,
   /Þetta gengur ekki án (sumra|morguns|kvölda|bils|uppnáms|boðs|hverfa|lands|grass|svæðis)(?!\p{L})/u,
   /Ferðin tafðist vegna (nefsins|háranna|fingursins|glassins|herbergisins|síðunnar)/,
   "vegna skugga", "Ferðin féll niður vegna gönguferðarinnar", "Ferðin féll niður vegna ferðalagsins",

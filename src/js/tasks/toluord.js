@@ -32,6 +32,8 @@
 import { EX } from "../../../data/exercises.js";
 import { CASES, GENDERS } from "../core/marks.js";
 import { wordKey } from "../core/state.js";
+import { MORE_HELPER_NOUNS } from "../core/helpers.js";
+import { showable } from "./frames.js";
 import { built, FX } from "./effects.js";
 import { pick, wpick, shuffle, randInt, bandFor, levelFor, forced, drilling, forcedCell,
          forcedItem, wordWeight, cellWeight, sameInEveryCell, cap1, caseWord, textSentence,
@@ -72,12 +74,44 @@ export function tableNumeral(lex, view, rng) {
   const kyn = f ? f[1] : pick(["KK", "KVK", "HK"], rng);
   const made = numeralCells(view, w, kyn, fc);
   if (!made) return null;
-  const { cells, num } = made;
+  const { num } = made;
+  /* A noun beside every cell, as in the adjective table (item 23): *tveir
+     hestar, tvo hesta, tveimur hestum, tveggja hesta*. Until v6.13 the table
+     was the bare numeral, and at þyngd 1 there were twelve tables in all.
+     An ordinal stands with the article: *þriðji dagurinn*. A review asks for
+     the cell, not the noun, so it gets one too. */
+  const noun = pick(tableNouns(lex, kyn.toLowerCase(), num), rng);
+  const gr = w.c === "rt" ? "gr" : "";
+  const cells = made.cells.map((c) => {
+    const f = noun && noun.forms[c.m.replace(/^(KK|KVK|HK)-/, "") + gr];
+    return f ? { ...c, helper: f[0] } : c;
+  });
   return built({
     type: "table", kind: "to", skill: "toluord", w, cells,
     title: `${w.o} · ${GENDERS[kyn.toLowerCase()]} ${num === "ET" ? "eintala" : "fleirtala"}`,
     base: 5, word: wordKey(w.o, w.c), lvl: bandFor(view, "toluord"), paradigm: w.forms,
   });
+}
+
+/* The nouns a numeral table may show: the everyday helper nouns of the
+   pronoun table, and the commonest countable things and animals of the
+   lexicon (noun_classes.py) that have the forms — never a mass noun or one
+   nobody says in the plural. Once per lexicon, gender and number. */
+const COUNTED = new Set(["animal", "object", "vehicle", "building", "furniture", "book"]);
+const TABLE_NOUNS = new WeakMap();
+function tableNouns(lex, g, num) {
+  let m = TABLE_NOUNS.get(lex);
+  if (!m) TABLE_NOUNS.set(lex, (m = new Map()));
+  const key = g + num;
+  if (!m.has(key)) {
+    const named = MORE_HELPER_NOUNS[g].map((o) => lex.lookup(o, g)).filter(Boolean);
+    const common = lex.nouns.filter((w) => w.c === g && COUNTED.has(w.s) && !w.nx && !w.np)
+      .sort((a, b) => a.r - b.r).slice(0, 20);
+    const all = [...new Map([...named, ...common].map((w) => [w.o, w])).values()]
+      .filter((w) => showable(w, num) && ["NF", "ÞF", "ÞGF", "EF"].every((c) => w.forms[c + num] && w.forms[c + num + "gr"]));
+    m.set(key, all);
+  }
+  return m.get(key);
 }
 
 /** The four cells of a numeral's table in one gender, or null. With `fc`,
@@ -103,6 +137,61 @@ function numeralCells(view, w, kyn, fc = null) {
 
 /* ================= In a sentence (v6.11) ================================= */
 
+/* v6.13 (critique item 23): the hand-written items and the frames of
+   exercises.py NUMERAL_FRAMES and PLURAL_ONLY_FRAMES, with nouns chosen by
+   meaning (noun_classes.py) and every form out of BÍN (build_exercises.py).
+   The frames are expanded here, once per data file, into items of the same
+   shape as the hand-written ones, so everything below treats both alike. */
+const CARD = { 1: ["einn", "to"], 2: ["tveir", "to"], 3: ["þrír", "to"], 4: ["fjórir", "to"] };
+const KY = { kk: "KK", kvk: "KVK", hk: "HK" };
+
+let NUMERAL_ITEMS = null;
+export function numeralItems() {
+  if (NUMERAL_ITEMS) return NUMERAL_ITEMS;
+  const out = [...EX.numeralAgree];
+  const have = new Set(out.map(agreeKey));
+  for (const f of EX.numeralFrames || []) {
+    for (const [noun, g, sg, pl] of f.nouns) {
+      for (const n of f.ns) {
+        const num = n === 1 ? "ET" : "FT";
+        const nf = n === 1 ? sg : pl;
+        if (!nf) continue;                       // no plural anyone says
+        const [l, c] = CARD[n];
+        const m = `${KY[g]}-${f.case}${num}`;
+        const a = (EX.para[`${l}|${c}`] || {})[m];
+        if (!a) continue;
+        const x = { t: f.t.replace("{N}", nf), n, noun, g, case: f.case, l, c, m, a, lvl: f.lvl };
+        if (have.has(agreeKey(x))) continue;
+        have.add(agreeKey(x));
+        out.push(x);
+      }
+    }
+  }
+  return (NUMERAL_ITEMS = out);
+}
+
+let PLURAL_ITEMS = null;
+export function pluralItems() {
+  if (PLURAL_ITEMS) return PLURAL_ITEMS;
+  const out = [...EX.pluralOnly];
+  const have = new Set(out.map(pluralKey));
+  const N = EX.pluralNumerals || {};
+  for (const f of EX.pluralFrames || []) {
+    for (const [noun, g, nf] of f.nouns) {
+      for (const n of f.ns) {
+        const cell = `${n}|${KY[g]}-${f.case}`;
+        if (!N[cell]) continue;
+        const x = { t: f.t.replace("{N}", nf), n, noun, g, case: f.case, a: N[cell],
+          plain: n > 1 ? N[cell + "|plain"] || [] : [], lvl: f.lvl };
+        if (have.has(pluralKey(x))) continue;
+        have.add(pluralKey(x));
+        out.push(x);
+      }
+    }
+  }
+  return (PLURAL_ITEMS = out);
+}
+
 /** "Ég á ___ (2) systur." → tvær */
 export function toAgree(lex, view, rng) {
   const P = view.policy;
@@ -111,7 +200,7 @@ export function toAgree(lex, view, rng) {
   /* A review asks for what was missed, whatever its level; otherwise the
      items near the band (the genitive frames are level 3, so a beginner
      meets them only once the easier ones are used up). */
-  const items = EX.numeralAgree.filter((x) => P.mark(x.m) && (!reviewing || numeralAsked(view)(x)));
+  const items = numeralItems().filter((x) => P.mark(x.m) && (!reviewing || numeralAsked(view)(x)));
   if (!items.length) return null;
   /* Not the same sentence twice in a visit while others are left, near the
      band; among those, the cells this pupil gets wrong come up more often
@@ -142,7 +231,7 @@ const pluralKey = (x) => `p${x.n}:${x.t}`;
 export function toChoice(lex, view, rng) {
   const P = view.policy;
   if (drilling(view) && !forced(view, ["to"])) return null;
-  const items = EX.numeralAgree.filter((x) => P.mark(x.m) && x.n > 1 && numeralAsked(view)(x));
+  const items = numeralItems().filter((x) => P.mark(x.m) && x.n > 1 && numeralAsked(view)(x));
   if (!items.length) return null;
   const reviewing = !!(forcedCell(view) || forced(view, ["to"]));
   const x = pick(reviewing ? items : itemsForBand(view, "toluord", items, (y) => "c" + y.t, 8), rng);
@@ -207,12 +296,11 @@ export function toDate(lex, view, rng) {
 /** "Ég keypti ___ (2) buxur." → tvennar */
 export function toPlural(lex, view, rng) {
   const P = view.policy;
-  const KY = { kk: "KK", kvk: "KVK", hk: "HK" };
   if (drilling(view)) return null;
   /* A review (tasks/review.js) asks for the very item that was missed:
      *tvennar buxur* is known noun by noun. */
   const want = forcedItem(view);
-  const items = EX.pluralOnly.filter((x) => P.mark(`${KY[x.g]}-${x.case}FT`) &&
+  const items = pluralItems().filter((x) => P.mark(`${KY[x.g]}-${x.case}FT`) &&
     (!want || pluralKey(x) === want));
   if (!items.length) return null;
   if (!want && forcedCell(view) && forcedCell(view) !== "to:fleirtoluord") return null;
@@ -241,11 +329,11 @@ export const TYPES = [
     build: tableNumeral },
   { id: "to_samr", skill: "toluord", weight: 5, renderer: "gap",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3],
+    bands: [1, 2, 3, 4],
     build: toAgree },
   { id: "to_val", skill: "toluord", weight: 3, renderer: "choice",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "num"],
-    bands: [1, 2, 3],
+    bands: [1, 2, 3, 4],
     build: toChoice },
   { id: "to_dags", skill: "toluord", weight: 4, renderer: "gap",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
