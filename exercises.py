@@ -304,239 +304,61 @@ IMPERSONAL_SUBJECTS = [r["frumlag"] + (r["bónus"],) for r in _C.rows(
 
 # ---------------------------------------------------------------- Óbeygjanleg
 
-# Preposition or adverb: the same word with and without a governed word.
-# (level, sentence, the word, "fs" | "ao")
-# Level = length + 1; +1 where the word is part of a fixed phrase (fram hjá,
-# fyrir utan, ganga yfir, fara undir) or stands right before a preposition
-# (upp á) — the hardest contrast.
-ADV_OR_PREP = [
-    (2, "Hún hljóp upp stigann.", "upp", "fs"),
-    (2, "Hún leit upp.", "upp", "ao"),
-    (2, "Við gengum yfir brúna.", "yfir", "fs"),
-    (3, "Óveðrið gekk yfir.", "yfir", "ao"),
-    (2, "Hún fór niður brekkuna.", "niður", "fs"),
-    (2, "Hún datt niður.", "niður", "ao"),
-    (2, "Ég fór með mömmu.", "með", "fs"),
-    (2, "Má ég koma með?", "með", "ao"),
-    (2, "Hún kom eftir matinn.", "eftir", "fs"),
-    (3, "Kakan er búin og ekkert er eftir.", "eftir", "ao"),
-    (2, "Kötturinn skreið undir rúmið.", "undir", "fs"),
-    (2, "Barnið hljóp út.", "út", "ao"),
-    (3, "Kötturinn stökk upp á borðið.", "upp", "ao"),
-    (3, "Kötturinn stökk upp á borðið.", "á", "fs"),
-    (3, "Hann gekk fram hjá húsinu.", "hjá", "fs"),
-    (2, "Komdu inn!", "inn", "ao"),
-    (3, "Ég beið fyrir utan.", "utan", "ao"),
-    (3, "Hann bjó utan bæjarins.", "utan", "fs"),
-    (2, "Sólin skein á okkur.", "á", "fs"),
-]
+# Preposition or adverb: hand-written (content/obeygjanleg/fs-ao.tsv) and
+# generated pairs (fs-ao-rammar.tsv, critique item 23).
+#   ADV_OR_PREP      (level, sentence, the word, "fs" | "ao")
+#   ADV_PREP_FRAMES  (word, [(preposition frame, case, [(noun, column)])], [adverb sentences])
+ADV_OR_PREP = _table("obeygjanleg/fs-ao.tsv", [
+    ("þyngd", "int"), ("setning", "text"), ("orð", "text"), ("flokkur", "text")])
 
-# Preposition or adverb, generated (critique item 23). The builder pairs
-# every preposition sentence of a word with every adverb sentence of it
-# (item 43), so a word with a few frames × a few nouns and a few adverb
-# sentences makes dozens of pairs. Each noun in the case the word governs,
-# out of BÍN.
-#   preposition  the word right before the noun phrase it governs
-#   adverb       the word alone: at the end, or before another phrase
-#                (*kom við í búðinni*), never before a noun it could govern
-# No word that only lives in a phrase here (*á eftir*, *í gegnum*, *upp á*):
-# ADV_OR_PREP above has those, with their own level.
-#   (word, [(preposition frame, case, [(noun, column)])], [adverb sentences])
-# Level = length + 1, as ADV_OR_PREP.
-ADV_PREP_FRAMES = [
-    ("upp",
-     [("Hún hljóp upp ___.", "ÞF", [("brekka", "ETgr"), ("stigi", "ETgr"), ("hæð", "ETgr"), ("trappa", "FTgr")]),
-      ("Við gengum upp ___.", "ÞF", [("brekka", "ETgr"), ("fjall", "ETgr"), ("hæð", "ETgr"), ("stigi", "ETgr"),
-                                     ("gata", "ETgr"), ("trappa", "FTgr")]),
-      ("Kötturinn klifraði upp ___.", "ÞF", [("tré", "ETgr"), ("veggur", "ETgr"), ("gardína", "ETgr")])],
-     ["Hún leit upp.", "Sólin kom upp.", "Hann stóð upp.", "Komdu upp!"]),
-    ("niður",
-     [("Hún hljóp niður ___.", "ÞF", [("brekka", "ETgr"), ("stigi", "ETgr"), ("trappa", "FTgr"), ("gata", "ETgr")]),
-      ("Boltinn rúllaði niður ___.", "ÞF", [("brekka", "ETgr"), ("stigi", "ETgr"), ("hæð", "ETgr"), ("gata", "ETgr"),
-                                          ("trappa", "FTgr")])],
-     ["Hún datt niður.", "Sestu niður.", "Hann lagðist niður.", "Ég beygði mig niður."]),
-    ("yfir",
-     [("Við gengum yfir ___.", "ÞF", [("brú", "ETgr"), ("gata", "ETgr"), ("tún", "ETgr"), ("á:kvk", "ETgr"),
-                                      ("völlur", "ETgr"), ("bílastæði", "ETgr")]),
-      ("Hesturinn stökk yfir ___.", "ÞF", [("girðing", "ETgr"), ("lækur", "ETgr"), ("steinn", "ETgr")])],
-     ["Óveðrið gekk yfir."]),
-    ("undir",
-     [("Kötturinn skreið undir ___.", "ÞF", [("rúm", "ETgr"), ("borð", "ETgr"), ("sófi", "ETgr")]),
-      ("Boltinn lá undir ___.", "ÞGF", [("rúm", "ETgr"), ("borð", "ETgr"), ("bekkur", "ETgr")])],
-     ["Liðið okkar var undir í hálfleik."]),
-    ("með",
-     [("Ég fór í bíó með ___.", "ÞGF", [("vinur", "ETgr"), ("vinkona", "ETgr"), ("amma", "ET"), ("afi", "ET"),
-                                        ("mamma", "ET"), ("pabbi", "ET")]),
-      ("Hún kom með ___ í skólann.", "ÞF", [("nesti", "ETgr"), ("bolti", "ETgr"), ("hundur", "ETgr")])],
-     ["Má ég koma með?", "Ég tók nestið með."]),
-    ("eftir",
-     [("Við fórum út eftir ___.", "ÞF", [("matur", "ETgr"), ("leikur", "ETgr"), ("tími", "ETgr")])],
-     ["Ekkert er eftir.", "Hann varð eftir heima.", "Kakan er búin og ekkert er eftir."]),
-    ("framhjá",
-     [("Hann gekk framhjá ___.", "ÞGF", [("hús", "ETgr"), ("búð", "ETgr"), ("skóli", "ETgr"), ("kirkja", "ETgr"),
-                                         ("bakarí", "ETgr"), ("sundlaug", "ETgr"), ("bókasafn", "ETgr")])],
-     ["Bíllinn keyrði framhjá.", "Strákurinn hljóp framhjá."]),
-    ("frá",
-     [("Ég fékk bréf frá ___.", "ÞGF", [("amma", "ET"), ("afi", "ET"), ("vinur", "ETgr"), ("kennari", "ETgr"),
-                                        ("mamma", "ET"), ("pabbi", "ET"), ("vinkona", "ETgr")])],
-     ["Farðu frá!"]),
-    ("við",
-     [("Hún talaði lengi við ___.", "ÞF", [("kennari", "ETgr"), ("amma", "ET"), ("nágranni", "ETgr"), ("vinkona", "ETgr"),
-                                           ("mamma", "ET"), ("pabbi", "ET"), ("þjálfari", "ETgr")])],
-     ["Ég kom við í búðinni.", "Pabbi kom við hjá ömmu."]),
-]
 
-# Choose the conjunction. (level, sentence, right, [wrong, wrong, wrong], why)
-#
-# The options are contrast sets: every wrong option is a conjunction a pupil
-# could really reach for in that place, and is wrong for a reason the
-# explanation can name — the meaning (ef / þegar / þótt / nema), the order
-# of words after it (enda takes the verb first: *enda hafði hún*), what
-# follows it (til þess að takes the infinitive), or the pair it belongs to
-# (hvorki … né, annaðhvort … eða, bæði … og). No distractor may be learned
-# as "always wrong": none stands in more than a third of the items
-# (tests/more.test.js). Each item has exactly one right answer: a word that
-# would also do (*þegar* for *ef* in "Þú mátt fá köku ___ þú klárar") is
-# never offered.
-# Level = length; +1 where the choice is between conjunctions that all fit
-# the grammar and only the meaning decides (hvort sem, þótt, nema, enda), or
-# the clause after it is in the subjunctive.
-CONJUNCTION = [
-    # hvort / hvort sem / ef: the indirect question
-    (3, "Ég veit ekki ___ hún kemur á morgun.", "hvort", ["ef", "hvort sem", "þegar"],
-     "Óbein spurning hefst á *hvort*: *Ég veit ekki hvort …* — *ef* táknar skilyrði og *þegar* tíma."),
-    (2, "Hún spurði ___ ég vildi koma með.", "hvort", ["ef", "að", "hvort sem"],
-     "Óbein já- eða nei-spurning hefst á *hvort*: *Hún spurði hvort …*, ekki *ef*."),
-    (4, "Við förum í gönguferð ___ það rignir eða ekki.", "hvort sem", ["hvort", "ef", "þótt"],
-     "*Hvort sem … eða ekki*: það skiptir ekki máli hvort það rignir, við förum samt."),
-    # ef / þegar / þótt / nema: condition, time, concession, exception
-    (4, "___ ég væri fugl myndi ég fljúga til Spánar.", "ef", ["þegar", "nema", "hvort"],
-     "*Ef* táknar skilyrði, hér skilyrði sem er ekki satt: *ef ég væri fugl*."),
-    (3, "Ég var sex ára ___ ég lærði að synda.", "þegar", ["ef", "nema", "þótt"],
-     "*Þegar* segir hvenær eitthvað gerðist."),
-    (5, "Hann fór út í stuttbuxum í morgun ___ það væri frost.", "þótt", ["ef", "þegar", "nema"],
-     "*Þótt* táknar andstæðu: það var frost en hann fór samt út í stuttbuxum."),
-    (5, "Við spilum úti á morgun ___ það rigni, því þá spilum við inni.", "nema", ["ef", "þótt", "þegar"],
-     "*Nema* merkir *ef ekki*: við spilum úti ef það rignir ekki."),
-    # af því að / enda / svo að / til þess að: cause, result, purpose
-    (4, "Ég fór snemma að sofa ___ ég var mjög þreyttur.", "af því að", ["svo að", "þótt", "til þess að"],
-     "*Af því að* segir hvers vegna: ég fór að sofa vegna þess að ég var þreyttur."),
-    (5, "Hún var svöng, ___ hafði hún ekkert borðað síðan í morgun.", "enda", ["af því að", "svo að", "til þess að"],
-     "*Enda* bætir við skýringu, og á eftir því kemur sögnin á undan frumlaginu: *enda hafði hún*. "
-     "Á eftir *af því að* kæmi frumlagið fyrst: *af því að hún hafði*."),
-    (4, "Það var mikil hálka ___ margir duttu á leiðinni í skólann.", "svo að", ["af því að", "til þess að", "þótt"],
-     "*Svo að* segir hvað leiddi af: hálkan varð til þess að margir duttu."),
-    (3, "Ég vaknaði snemma ___ ná strætó.", "til þess að", ["svo að", "af því að", "enda"],
-     "*Til þess að* segir til hvers, og á eftir því kemur nafnháttur: *til þess að ná strætó*."),
-    # hvorki … né, annaðhvort … eða, bæði … og
-    (3, "Hvorki ég ___ bróðir minn fórum á ballið.", "né", ["eða", "og", "en"], "*Hvorki … né*."),
-    (3, "Annaðhvort förum við í bíó ___ í sund.", "eða", ["né", "og", "en"], "*Annaðhvort … eða*."),
-    (2, "Bæði Siggi ___ Gunna komu í veisluna.", "og", ["né", "eða", "en"], "*Bæði … og*."),
-    # sem / að / en
-    (2, "Bókin ___ ég las var spennandi.", "sem", ["að", "hvort", "þegar"],
-     "*Sem* tengir tilvísunarsetningu við nafnorð: *bókin sem ég las*."),
-    (2, "Hún sagði ___ hún væri svöng.", "að", ["sem", "hvort", "nema"],
-     "*Að* tengir það sem sagt er við sögnina: *Hún sagði að …*."),
-    (1, "Hún er eldri ___ ég.", "en", ["sem", "og", "eða"], "Á eftir miðstigi kemur *en*: *eldri en ég*."),
-    (4, "Ég ætlaði að fara út ___ það var of kalt.", "en", ["af því að", "svo að", "hvort"],
-     "*En* tengir saman andstæður: ég ætlaði út, en það var of kalt."),
-    (3, "Ég burstaði tennurnar ___ ég fór að sofa.", "áður en", ["eftir að", "nema", "hvort"],
-     "*Áður en* segir hvað gerðist fyrst: fyrst burstaði ég tennurnar, svo fór ég að sofa."),
-    (3, "Hún var svo þreytt ___ hún sofnaði strax.", "að", ["sem", "nema", "þótt"],
-     "*Svo … að*: *svo þreytt að hún sofnaði strax*."),
-]
-# Choose the conjunction, generated (critique item 23). Contrast sets in
-# which the GRAMMAR or plain fact leaves exactly one option, so they can be
-# multiplied without a person weighing each sentence's shades:
-#   en       after a comparative (from BÍN, in the subject's gender): only
-#            *en* can follow *eldri*. Only true comparisons.
-#   og/né/eða  *bæði … og*, *hvorki … né*, *annaðhvort … eða*: the first
-#            word fixes the second. *Annaðhvort* takes a singular verb, so
-#            only one person on each side.
-#   hvort    an indirect yes/no question after *veit ekki*, *man ekki*
-#   sem      a relative clause on a noun
-#   að       what was said or thought
-#   af því að / svo að   cause and result, both ways round, only where the
-#            reverse is absurd (*Það rigndi af því að við vorum inni*)
-#   áður en / eftir að   two events that can only come in one order
-# The meaning-only choices (ef / þegar / þótt / nema, enda) stay hand-written
-# in CONJUNCTION above. The wrong options of each set are rotated so that no
-# conjunction is a wrong option in more than a third of all items (item 25).
-# Level = length, as CONJUNCTION; +1 for the sets where the meaning decides
-# (cause and result, before and after).
-CONJ_COMPARE = [
-    # (adjective, [(subject, column | None for a pronoun), (the other, column | None)])
-    ("gamall", [(("afi", "ET"), ("pabbi", "ET")), (("amma", "ET"), ("mamma", "ET")),
-                (("pabbi", "ET"), ("ég", None)), (("mamma", "ET"), ("ég", None))]),
-    ("ungur", [(("pabbi", "ET"), ("afi", "ET")), (("mamma", "ET"), ("amma", "ET")),
-               (("ég", None), ("pabbi", "ET")), (("ég", None), ("mamma", "ET"))]),
-    ("stór", [(("fíll", "ETgr"), ("mús", "ETgr")), (("hestur", "ETgr"), ("hundur", "ETgr")),
-              (("hvalur", "ETgr"), ("fiskur", "ETgr")), (("kýr", "ETgr"), ("köttur", "ETgr")),
-              (("björn", "ETgr"), ("refur", "ETgr")), (("hús", "ETgr"), ("kofi", "ETgr"))]),
-    ("lítill", [(("mús", "ETgr"), ("fíll", "ETgr")), (("hundur", "ETgr"), ("hestur", "ETgr")),
-                (("köttur", "ETgr"), ("kýr", "ETgr")), (("refur", "ETgr"), ("björn", "ETgr")),
-                (("fiskur", "ETgr"), ("hvalur", "ETgr"))]),
-    ("hár", [(("fjall", "ETgr"), ("hús", "ETgr")), (("tré", "ETgr"), ("blóm", "ETgr")),
-             (("gíraffi", "ETgr"), ("hestur", "ETgr"))]),
-    ("þungur", [(("steinn", "ETgr"), ("fjöður", "ETgr")), (("bíll", "ETgr"), ("hjól", "ETgr")),
-                (("fíll", "ETgr"), ("hestur", "ETgr"))]),
-    ("léttur", [(("fjöður", "ETgr"), ("steinn", "ETgr")), (("hjól", "ETgr"), ("bíll", "ETgr"))]),
-    ("fljótur", [(("bíll", "ETgr"), ("hjól", "ETgr")), (("flugvél", "ETgr"), ("bíll", "ETgr"))]),
-    ("hlýr", [(("sumar", "ETgr"), ("vetur", "ETgr")), (("júlí", "ET"), ("janúar", "ET"))]),
-    ("kaldur", [(("vetur", "ETgr"), ("sumar", "ETgr")), (("janúar", "ET"), ("júlí", "ET"))]),
-    ("langur", [(("vika", "ETgr"), ("dagur", "ETgr")), (("mánuður", "ETgr"), ("vika", "ETgr")),
-                (("ár:hk", "ETgr"), ("mánuður", "ETgr"))]),
-    ("stuttur", [(("dagur", "ETgr"), ("vika", "ETgr")), (("vika", "ETgr"), ("mánuður", "ETgr")),
-                 (("mánuður", "ETgr"), ("ár:hk", "ETgr"))]),
-]
-# *bæði … og*, *hvorki … né* with a plural verb; *annaðhvort … eða* singular.
-CONJ_PAIRS = [("amma", "afi"), ("mamma", "pabbi"), ("bróðir minn", "systir mín"),
-              ("kennarinn", "skólastjórinn"), ("vinur minn", "vinkona mín"),
-              ("frændi minn", "frænka mín")]
-CONJ_BOTH = ["Bæði {A} ___ {B} komu í veisluna.", "Bæði {A} ___ {B} fóru í sund.",
-             "Bæði {A} ___ {B} voru heima í gær.",
-             "Bæði {A} ___ {B} ætla að koma í afmælið mitt á laugardaginn."]
-CONJ_NEITHER = ["Hvorki {A} ___ {B} komu í veisluna.", "Hvorki {A} ___ {B} vissu svarið.",
-                "Hvorki {A} ___ {B} voru heima í gær.",
-                "Hvorki {A} ___ {B} höfðu heyrt um nýja kennarann.",
-                "Hvorki {A} ___ {B} vissu hvað hafði gerst í skólanum í gær."]
-CONJ_EITHER = ["Annaðhvort {A} ___ {B} sækir mig í dag.", "Annaðhvort {A} ___ {B} eldar matinn í kvöld.",
-               "Annaðhvort {A} ___ {B} hringir í mig á morgun.",
-               "Annaðhvort {A} ___ {B} ætlar að sækja mig á æfinguna í kvöld."]
-CONJ_WHETHER = (["Ég veit ekki ___ {C}.", "Ég man ekki ___ {C}.", "Við vitum ekki ___ {C}."],
-                ["hún kemur á morgun", "búðin er opin í dag", "skólinn byrjar á mánudaginn",
-                 "amma er heima", "strætó er farinn", "við eigum að mæta klukkan átta",
-                 "sundlaugin er opin á sunnudögum",
-                 "búðin á horninu er opin lengur á föstudögum",
-                 "við eigum að skila verkefninu á morgun",
-                 "nýi kennarinn byrjar að kenna okkur í næstu viku"])
-CONJ_RELATIVE = ["Bókin ___ ég las var spennandi.", "Myndin ___ við sáum var löng.",
-                 "Kakan ___ mamma bakaði var góð.", "Hundurinn ___ ég fann var svangur.",
-                 "Lagið ___ hún söng var fallegt.", "Peysan ___ amma prjónaði er hlý.",
-                 "Rútan ___ við tókum var full.", "Leikurinn ___ við spiluðum var skemmtilegur."]
-CONJ_SAID = ["Hún sagði ___ hún væri svöng.", "Pabbi sagði ___ maturinn væri tilbúinn.",
-             "Kennarinn sagði ___ prófið yrði á morgun.", "Amma sagði ___ hún kæmi í heimsókn.",
-             "Hann hélt ___ búðin væri lokuð.", "Ég vona ___ veðrið verði gott á morgun."]
-# (cause, result): "{result} af því að {cause}", "{cause} svo að {result}"
-CONJ_CAUSE = [("það rigndi", "við vorum inni"), ("ég var svangur", "ég fékk mér samloku"),
-              ("bíllinn bilaði", "við komum of seint"), ("það var hálka", "ég datt"),
-              ("ég gleymdi lyklinum", "ég komst ekki inn"), ("hún var veik", "hún fór ekki í skólann"),
-              ("það var kalt", "ég fór í úlpu"), ("ég var þyrstur", "ég fékk mér vatn"), ("sólin skein", "við fórum á ströndina"),
-              ("það rigndi mikið allan daginn", "við vorum inni og spiluðum á spil"),
-              ("bíllinn bilaði á leiðinni upp í sveit", "við komum of seint í afmælið hjá ömmu"),
-              ("það var mikil hálka á götunum", "margir duttu á leiðinni í skólann í morgun"),
-              ("ég hafði æft mig á hverjum degi í allan vetur", "ég vann keppnina í vor")]
-# (first, then, then', first'): "{first} áður en {then}", "{then'} eftir að
-# {first'}" — written twice, so that a pronoun never comes before its noun
-# (*Ég sendi bréfið eftir að ég skrifaði það*).
-CONJ_ORDER = [("ég vaknaði", "ég fór á fætur", "ég fór á fætur", "ég vaknaði"),
-              ("ég skrifaði bréfið", "ég sendi það", "ég sendi bréfið", "ég skrifaði það"),
-              ("mamma bakaði kökuna", "við borðuðum hana", "við borðuðum kökuna", "mamma bakaði hana"),
-              ("ég lærði að synda", "ég synti yfir ána", "ég synti yfir ána", "ég lærði að synda"),
-              ("við keyptum okkur miða í miðasölunni", "við fórum inn í bíósalinn",
-               "við fórum inn í bíósalinn", "við keyptum okkur miða í miðasölunni"),
-              ("mamma setti kökuna inn í heitan ofninn", "við borðuðum hana með rjóma",
-               "við borðuðum kökuna með rjóma", "mamma setti hana inn í heitan ofninn")]
+def _adv_prep_frames():
+    out = []
+    for w, rs in _C.groups("obeygjanleg/fs-ao-rammar.tsv", "orð", [
+            ("orð", "text"), ("gerð", "text"), ("setning", "text"), ("fall", "str"),
+            ("nafnorð", "words:2")]).items():
+        preps, advs = [], []
+        for r in rs:
+            if r["gerð"] == "forsetning" and r["fall"] and r["nafnorð"]:
+                preps.append((r["setning"], r["fall"], r["nafnorð"]))
+            elif r["gerð"] == "atviksorð" and not r["fall"] and not r["nafnorð"]:
+                advs.append(r["setning"])
+            else:
+                _bad(r, "forsetning: fall og nafnorð; atviksorð: hvorugt / a preposition takes a case "
+                        "and nouns, an adverb neither")
+        out.append((w, preps, advs))
+    return out
+
+
+ADV_PREP_FRAMES = _adv_prep_frames()
+
+# Choose the conjunction: hand-written contrast sets (content/obeygjanleg/
+# samtengingar.tsv; the meaning-only choices stay there) and the generated
+# ones, where the grammar or plain fact leaves exactly one option
+# (samtengingar-*.tsv, critique item 23). The files say the rules.
+#   CONJUNCTION   (level, sentence, right, [wrong, wrong, wrong], why)
+#   CONJ_COMPARE  (adjective, [((subject, column | None), (the other, column | None))])
+#   CONJ_WHETHER  ([frames], [clauses])
+CONJUNCTION = _table("obeygjanleg/samtengingar.tsv", [
+    ("þyngd", "int"), ("setning", "text"), ("svar", "text"), ("rangt", "list"), ("skýring", "text")])
+CONJ_COMPARE = [(adj, [(r["fyrra"], r["seinna"]) for r in rs]) for adj, rs in _C.groups(
+    "obeygjanleg/samtengingar-samanburdur.tsv", "lýsingarorð",
+    [("lýsingarorð", "text"), ("fyrra", "wordopt"), ("seinna", "wordopt")]).items()]
+CONJ_PAIRS = _table("obeygjanleg/samtengingar-por.tsv", [("fyrra", "text"), ("seinna", "text")])
+_CF = _C.groups("obeygjanleg/samtengingar-rammar.tsv", "listi", [("listi", "text"), ("texti", "text")])
+_CF_KNOWN = ("bæði", "hvorki", "annaðhvort", "hvort-rammi", "hvort-setning", "sem", "að")
+for _k, _rs in _CF.items():
+    if _k not in _CF_KNOWN:
+        _bad(_rs[0], "„listi“ á að vera eitt af / must be one of: " + ", ".join(_CF_KNOWN))
+_cf = lambda k: [r["texti"] for r in _CF.get(k, [])]
+CONJ_BOTH, CONJ_NEITHER, CONJ_EITHER = _cf("bæði"), _cf("hvorki"), _cf("annaðhvort")
+CONJ_WHETHER = (_cf("hvort-rammi"), _cf("hvort-setning"))
+CONJ_RELATIVE, CONJ_SAID = _cf("sem"), _cf("að")
+#   CONJ_CAUSE  (cause, result): "{result} af því að {cause}", "{cause} svo að {result}"
+#   CONJ_ORDER  (first, then, then', first'): "{first} áður en {then}", "{then'} eftir að {first'}"
+CONJ_CAUSE = _table("obeygjanleg/samtengingar-orsok.tsv", [("orsök", "text"), ("afleiðing", "text")])
+CONJ_ORDER = _table("obeygjanleg/samtengingar-rod.tsv", [
+    ("fyrst", "text"), ("svo", "text"), ("svo 2", "text"), ("fyrst 2", "text")])
 
 # Conjunctions of more than one word. BÍN lists words, not phrases, so the
 # build checks that every word of each is in BÍN and that its last word is

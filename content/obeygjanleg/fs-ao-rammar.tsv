@@ -1,0 +1,67 @@
+# Óbeygjanleg orð: forsetning eða atviksorð, rammar
+#
+# Hver forsetningarsetning orðsins er pöruð við hverja atviksorðssetningu þess.
+#
+# Dálkar:
+#   orð      orðið; línur með sama orði eiga saman
+#   gerð     forsetning eða atviksorð
+#   setning  setningin (forsetning: ___ er nafnorðið sem orðið stýrir)
+#   fall     fallið sem forsetningin stýrir; autt fyrir atviksorð
+#   nafnorð  nafnorðin: uppflettimynd|tala og greinir, aðskilin með kommu; autt fyrir atviksorð
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Preposition or adverb, generated (critique item 23). The builder pairs
+# every preposition sentence of a word with every adverb sentence of it
+# (item 43), so a word with a few frames × a few nouns and a few adverb
+# sentences makes dozens of pairs. Each noun in the case the word governs,
+# out of BÍN.
+#   preposition  the word right before the noun phrase it governs
+#   adverb       the word alone: at the end, or before another phrase
+#                (*kom við í búðinni*), never before a noun it could govern
+# No word that only lives in a phrase here (*á eftir*, *í gegnum*, *upp á*):
+# ADV_OR_PREP above has those, with their own level.
+#   (word, [(preposition frame, case, [(noun, column)])], [adverb sentences])
+# Level = length + 1, as ADV_OR_PREP.
+#
+
+orð	gerð	setning	fall	nafnorð
+upp	forsetning	Hún hljóp upp ___.	ÞF	brekka|ETgr, stigi|ETgr, hæð|ETgr, trappa|FTgr
+upp	forsetning	Við gengum upp ___.	ÞF	brekka|ETgr, fjall|ETgr, hæð|ETgr, stigi|ETgr, gata|ETgr, trappa|FTgr
+upp	forsetning	Kötturinn klifraði upp ___.	ÞF	tré|ETgr, veggur|ETgr, gardína|ETgr
+upp	atviksorð	Hún leit upp.
+upp	atviksorð	Sólin kom upp.
+upp	atviksorð	Hann stóð upp.
+upp	atviksorð	Komdu upp!
+niður	forsetning	Hún hljóp niður ___.	ÞF	brekka|ETgr, stigi|ETgr, trappa|FTgr, gata|ETgr
+niður	forsetning	Boltinn rúllaði niður ___.	ÞF	brekka|ETgr, stigi|ETgr, hæð|ETgr, gata|ETgr, trappa|FTgr
+niður	atviksorð	Hún datt niður.
+niður	atviksorð	Sestu niður.
+niður	atviksorð	Hann lagðist niður.
+niður	atviksorð	Ég beygði mig niður.
+yfir	forsetning	Við gengum yfir ___.	ÞF	brú|ETgr, gata|ETgr, tún|ETgr, á:kvk|ETgr, völlur|ETgr, bílastæði|ETgr
+yfir	forsetning	Hesturinn stökk yfir ___.	ÞF	girðing|ETgr, lækur|ETgr, steinn|ETgr
+yfir	atviksorð	Óveðrið gekk yfir.
+undir	forsetning	Kötturinn skreið undir ___.	ÞF	rúm|ETgr, borð|ETgr, sófi|ETgr
+undir	forsetning	Boltinn lá undir ___.	ÞGF	rúm|ETgr, borð|ETgr, bekkur|ETgr
+undir	atviksorð	Liðið okkar var undir í hálfleik.
+með	forsetning	Ég fór í bíó með ___.	ÞGF	vinur|ETgr, vinkona|ETgr, amma|ET, afi|ET, mamma|ET, pabbi|ET
+með	forsetning	Hún kom með ___ í skólann.	ÞF	nesti|ETgr, bolti|ETgr, hundur|ETgr
+með	atviksorð	Má ég koma með?
+með	atviksorð	Ég tók nestið með.
+eftir	forsetning	Við fórum út eftir ___.	ÞF	matur|ETgr, leikur|ETgr, tími|ETgr
+eftir	atviksorð	Ekkert er eftir.
+eftir	atviksorð	Hann varð eftir heima.
+eftir	atviksorð	Kakan er búin og ekkert er eftir.
+framhjá	forsetning	Hann gekk framhjá ___.	ÞGF	hús|ETgr, búð|ETgr, skóli|ETgr, kirkja|ETgr, bakarí|ETgr, sundlaug|ETgr, bókasafn|ETgr
+framhjá	atviksorð	Bíllinn keyrði framhjá.
+framhjá	atviksorð	Strákurinn hljóp framhjá.
+frá	forsetning	Ég fékk bréf frá ___.	ÞGF	amma|ET, afi|ET, vinur|ETgr, kennari|ETgr, mamma|ET, pabbi|ET, vinkona|ETgr
+frá	atviksorð	Farðu frá!
+við	forsetning	Hún talaði lengi við ___.	ÞF	kennari|ETgr, amma|ET, nágranni|ETgr, vinkona|ETgr, mamma|ET, pabbi|ET, þjálfari|ETgr
+við	atviksorð	Ég kom við í búðinni.
+við	atviksorð	Pabbi kom við hjá ömmu.

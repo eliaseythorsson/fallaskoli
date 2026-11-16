@@ -1,0 +1,32 @@
+# Óbeygjanleg orð: af því að og svo að
+#
+# „{afleiðing} af því að {orsök}“ og „{orsök} svo að {afleiðing}“. Aðeins pör þar sem
+# hið öfuga er fráleitt.
+#
+# Dálkar:
+#   orsök      orsökin
+#   afleiðing  afleiðingin
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# (cause, result): "{result} af því að {cause}", "{cause} svo að {result}"
+#
+
+orsök	afleiðing
+það rigndi	við vorum inni
+ég var svangur	ég fékk mér samloku
+bíllinn bilaði	við komum of seint
+það var hálka	ég datt
+ég gleymdi lyklinum	ég komst ekki inn
+hún var veik	hún fór ekki í skólann
+það var kalt	ég fór í úlpu
+ég var þyrstur	ég fékk mér vatn
+sólin skein	við fórum á ströndina
+það rigndi mikið allan daginn	við vorum inni og spiluðum á spil
+bíllinn bilaði á leiðinni upp í sveit	við komum of seint í afmælið hjá ömmu
+það var mikil hálka á götunum	margir duttu á leiðinni í skólann í morgun
+ég hafði æft mig á hverjum degi í allan vetur	ég vann keppnina í vor

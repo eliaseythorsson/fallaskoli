@@ -1,0 +1,24 @@
+# Óbeygjanleg orð: pör í bæði … og, hvorki … né, annaðhvort … eða
+#
+# Pörin sem sett eru í {A} og {B} í samtengingar-rammar.tsv.
+#
+# Dálkar:
+#   fyrra   fyrra nafnið
+#   seinna  seinna nafnið
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# *bæði … og*, *hvorki … né* with a plural verb; *annaðhvort … eða* singular.
+#
+
+fyrra	seinna
+amma	afi
+mamma	pabbi
+bróðir minn	systir mín
+kennarinn	skólastjórinn
+vinur minn	vinkona mín
+frændi minn	frænka mín
