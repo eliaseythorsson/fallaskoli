@@ -43,7 +43,9 @@ export function blankState() {
     totalAnswers: 0, totalCorrect: 0,
     /* Consecutive sessions touching three or more skills (multi-skill badges). */
     multiSessionRun: 0, lastSessionSkills: null,
-    counters: { perfectTables: 0, perfectParses: 0, meanings: 0 },
+    /* `retries`, `retryFixed`: second tries made, and right (item 42,
+       core/answer.js `judgeRetry`). */
+    counters: { perfectTables: 0, perfectParses: 0, meanings: 0, retries: 0, retryFixed: 0 },
     enabled: defaultEnabled(),
     /* `policy` is what the child switched on, `allowed` the ceiling the
        administrator set; kept apart so tightening and loosening the ceiling
@@ -177,6 +179,8 @@ export function migrate(raw) {
     perfectTables: raw.counters?.perfectTables ?? raw.perfectTables ?? 0,
     perfectParses: raw.counters?.perfectParses ?? raw.perfectParses ?? 0,
     meanings: raw.counters?.meanings ?? raw.meanings ?? 0,
+    retries: raw.counters?.retries ?? 0,
+    retryFixed: raw.counters?.retryFixed ?? 0,
   };
 
   SKILL_IDS.forEach((id) => {

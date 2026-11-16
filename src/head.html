@@ -200,6 +200,21 @@ button.qsum:hover{border-color:var(--lupine)}
 /* The label is the box's first <b>; bold inside the text stays inline (v6.10). */
 .why > b:first-child{font-family:var(--body);font-size:11.5px;color:var(--slate);display:block;margin-bottom:2px}
 .mapline{display:none}
+/* Item 42: the second try, then the pupil's form and the right one side by
+   side — in two boxes, and on the noun's filled-in beygingarkort. */
+.verdict.retry h3::before{content:"↻"}
+.compare{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.compare .cmp{flex:1 1 140px;padding:8px 10px;background:var(--sheet);border:1px solid var(--line);border-left-width:4px}
+.compare .cmp.yours{border-left-color:var(--rust)}
+.compare .cmp.right{border-left-color:var(--moss)}
+.compare .cmplab{display:block;font-size:11.5px;color:var(--slate)}
+.compare .forms{display:block;font-size:17px}
+.compare small{display:block;font-size:12px;color:var(--slate);margin-bottom:4px}
+.mapwrap{overflow-x:auto}
+.map.filled td{width:auto;height:auto;padding:2px 5px;white-space:nowrap;animation:none;color:var(--ink)}
+.map.filled td.on,.map .key.on{background:var(--moss-soft);border:2px solid var(--moss);font-weight:700;animation:none}
+.map.filled td.yours,.map .key.yours{background:var(--rust-soft);border:2px solid var(--rust);font-weight:700}
+.map .key{display:inline-block;padding:0 5px;margin-right:6px}
 
 /* ---------- tables ---------- */
 table.decl{border-collapse:collapse;width:100%;margin-top:8px;font-family:var(--mono);font-size:14px}
@@ -878,6 +893,8 @@ details.about[open]>summary{color:var(--ink);font-weight:600;margin-bottom:10px}
   .prompt-row{gap:14px;margin-top:14px;padding-top:14px}
   .map{display:none}                 /* beygingarkortið er of breitt */
   .mapline{display:block;flex:1 1 100%;margin:0;font-size:14px;color:var(--slate)}  /* …svo það sem það segir stendur í texta */
+  .map.filled{display:table;font-size:11px}  /* item 42: the filled-in one, under the answer, scrolls in its own box */
+  .map.filled td{padding:2px 3px}
   .mapline b{color:var(--ink,inherit)}
 
   /* svarsvæði: fullbreiður innsláttur, hnappar undir og þumalvænir */

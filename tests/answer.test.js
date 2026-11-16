@@ -840,7 +840,10 @@ test("ui/render.js and ui/render-more.js grade nothing and record nothing themse
       assert.ok(!src.includes(call), `${file} still calls ${call}`);
     /* Every submit handler ends in the one shared path. */
     const handlers = src.match(/^function submit\w+\(app\)/gm) || [];
-    const concluded = src.match(/^ {2}conclude\(app, t, \w+, \(\) => \{/gm) || [];
+    /* Item 42: `conclude(app, t, j, draw)` when the drawing is a function of
+       its own (the second try draws the same answer). */
+    const concluded = src.replace(/function offerRetry[\s\S]*?\n}\n/, "")
+      .match(/^ {2}conclude\(app, t, \w+, (\(\) => \{|draw\);)/gm) || [];
     assert.ok(handlers.length >= 4, file);
     assert.equal(concluded.length, handlers.length, `${file}: a submit handler does not end in conclude()`);
     assert.ok(!/app\.finish\(/.test(src.replace(/function conclude[\s\S]*?\n}\n/, "")),

@@ -8,7 +8,8 @@
    recorded here. */
 
 import { RENDER, sentenceHTML, whyBox, conclude, enterToSubmit, skillTag, slipNote,
-         nearNote, multLine, PUNCT } from "./render.js";
+         nearNote, multLine, PUNCT, offerRetry, endRetry, say, SAME_AGAIN, judgeTry, noteTry,
+         compareHTML, retryRightHTML, RETRY_STILL_MISS } from "./render.js";
 import { judge, judgeBonus, settle, bonusVerdict, BONUS_XP } from "../core/answer.js";
 import { $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO, freshEnter } from "./dom.js";
 
@@ -74,35 +75,51 @@ RENDER.gap = function (app) {
 function submitGap(app) {
   const t = app.cur;
   const val = $("ans").value;
-  const j = judge(t, { text: val, hinted: !!t.hinted }, app);
+  const response = { text: val, hinted: !!t.hinted };
+  const j = judgeTry(app, t, response);
   if (j.verdict === "empty") return;
+  if (j.verdict === "same") return say(t, SAME_AGAIN);
   if (j.verdict === "hedged") {
-    $("verdict").innerHTML = `<div class="verdict neutral"><h3>Veldu eina mynd</h3>
-      <p>Þú skrifaðir fleiri en eina mynd (${j.detail.g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.</p></div>`;
+    say(t, `<b>Veldu eina mynd.</b> Þú skrifaðir fleiri en eina mynd (${j.detail.g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.`);
     return;
   }
-  /* `plain` — tvær buxur for tvennar buxur: the one mistake this question
-     is about. */
+  noteTry(t, j, val);
+  const draw = () => drawGap(app, t, j, val);
+  if (t.retrying) return endRetry(app, t, j, draw);
+  /* Item 42. The tip behind the hint button (word formation: the affix) is
+     opened with the rule: the pupil is trying again with help in view. */
+  if (offerRetry(app, t, j, {
+    response, note: nearNote(j.detail.v), inputs: [$("ans")], lock: [$("hint")], reveal: draw,
+    onMiss: () => { if ($("tip")) $("tip").hidden = false; },
+  })) return;
+  conclude(app, t, j, draw);
+}
+
+/* `plain` — tvær buxur for tvennar buxur: the one mistake this question
+   is about. */
+function drawGap(app, t, j, val) {
   const { v, xpFull, plain } = j.detail;
   const ok = j.ok, xp = j.xp;
-  conclude(app, t, j, () => {
-    if (t.tip) $("hint").disabled = true;
-    const right = t.answers.slice(0, 2).map(esc).join(" / ");
-    const solved = solvedSentence(t, t.answers[0]);
-    $("verdict").innerHTML = ok
-      ? `<div class="verdict ${v.klass}"><span class="xpop">+${xp} XP</span>
-      <h3>${v.slip ? esc(v.slip.head) : cheer(CHEERS_OK)}</h3>${solved}
-      ${v.slip ? `<p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>. Rétt er <span class="forms">${right}</span>.</p>` : ""}
-      ${slipNote(v.slip, xp, xpFull)}${whyBox(t.why)}
-      <p class="streakline">${app.S.run} í röð${multLine(app, xp)}. Enter fyrir næstu.</p></div>`
-      : `<div class="verdict no"><h3>${cheer(CHEERS_NO)}</h3>
-      <p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>. Rétt er <span class="forms">${right}</span>.</p>
-      ${plain ? `<div class="why"><b>athugið</b>${fmt(`*${t.answers[0]}* — ekki *${val.trim()}*: orðið á eftir er aðeins til í fleirtölu.`)}</div>` : ""}
-      ${nearNote(v)}${solved}${whyBox(t.why)}
-      <p class="streakline">Enter fyrir næstu.</p></div>`;
-    $("ans").disabled = true;
-    bonusBox(app, t);
-  });
+  if (t.tip) $("hint").disabled = true;
+  const right = t.answers.slice(0, 2).map(esc).join(" / ");
+  const solved = solvedSentence(t, t.answers[0]);
+  /* `plain` of any wrong try: the note is about the mistake, whichever try. */
+  const plainTyped = plain ? val.trim()
+    : ((t.tries || []).find((x) => (t.plain || []).some((f) => f.toLowerCase() === x.typed.trim().toLowerCase())) || {}).typed;
+  $("verdict").innerHTML = ok && !j.retry
+    ? `<div class="verdict ${v.klass}"><span class="xpop">+${xp} XP</span>
+    <h3>${v.slip ? esc(v.slip.head) : cheer(CHEERS_OK)}</h3>${solved}
+    ${v.slip ? `<p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>. Rétt er <span class="forms">${right}</span>.</p>` : ""}
+    ${slipNote(v.slip, xp, xpFull)}${whyBox(t.why)}
+    <p class="streakline">${app.S.run} í röð${multLine(app, xp)}. Enter fyrir næstu.</p></div>`
+    : `<div class="verdict ${ok ? v.klass : "no"}">${ok ? retryRightHTML(xp) : `<h3>${cheer(CHEERS_NO)}</h3>`}
+    ${compareHTML(t, t.tries || [])}
+    ${plainTyped ? `<div class="why"><b>athugið</b>${fmt(`*${t.answers[0]}* — ekki *${plainTyped.trim()}*: orðið á eftir er aðeins til í fleirtölu.`)}</div>` : ""}
+    ${ok ? slipNote(v.slip, xp, xp) : nearNote(v)}${solved}${whyBox(t.why)}
+    ${ok ? RETRY_STILL_MISS : ""}
+    <p class="streakline">Enter fyrir næstu.</p></div>`;
+  $("ans").disabled = true;
+  bonusBox(app, t);
 }
 
 /* ================= choice =============================================== */
@@ -327,18 +344,34 @@ function submitSlots(app) {
   const t = app.cur;
   if (t.done) return;
   const ins = [...document.querySelectorAll("table.slotbox input")];
-  const j = judge(t, { picked: t.picked, texts: ins.map((el) => el.value) }, app);
+  const response = { picked: t.picked, texts: ins.map((el) => el.value) };
+  const j = judgeTry(app, t, response);
+  if (j.verdict === "same") return say(t, SAME_AGAIN);
   if (j.pending) {
     const at = j.detail && j.detail.at;
     if (at != null && ins[at]) ins[at].focus();
-    $("verdict").innerHTML = j.verdict === "hedged"
-      ? `<div class="verdict neutral"><h3>Veldu eina mynd</h3>
-      <p>Þú skrifaðir fleiri en eina mynd (${j.detail.g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.</p></div>`
-      : `<div class="verdict neutral"><p>${j.verdict === "empty"
-        ? "Skrifaðu í alla reitina."
-        : `Veldu ${t.options.map(esc).join(" eða ")}.`}</p></div>`;
+    say(t, j.verdict === "hedged"
+      ? `<b>Veldu eina mynd.</b> Þú skrifaðir fleiri en eina mynd (${j.detail.g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.`
+      : j.verdict === "empty" ? "Skrifaðu í alla reitina."
+      : `Veldu ${t.options.map(esc).join(" eða ")}.`);
     return;
   }
+  if (j.ok === false)
+    (t.tries ||= []).push(j.detail.items.filter((x) => !x.ok).map((x) => x.typed).join(" · "));
+  const draw = () => drawSlots(app, t, j, ins);
+  if (t.retrying) return endRetry(app, t, j, draw);
+  /* Item 42 (the boðháttur only: `retryAllowed`). The wrong box takes the
+     focus; which box was wrong is not marked, as no answer is. */
+  const items = j.detail.items;
+  const near = items.map((it) => it.v).find((v) => v && v.near) || null;
+  if (offerRetry(app, t, j, {
+    response, note: nearNote(near), reveal: draw,
+    inputs: [...ins.filter((_, k) => !items[k].ok), ...ins.filter((_, k) => items[k].ok)],
+  })) return;
+  conclude(app, t, j, draw);
+}
+
+function drawSlots(app, t, j, ins) {
   t.done = true;
   const ok = j.ok, xp = j.xp;
   const { items, kindOk, formsOk, xpFull, slip } = j.detail;
@@ -361,13 +394,18 @@ function submitSlots(app) {
     : !kindOk ? `Rétt skrifað, en sögnin er ${esc(t.answer)}`
     : "Rétt valið, en athugaðu myndirnar";
   const near = items.map((it) => it.v).find((v) => v && v.near) || null;
-  conclude(app, t, j, () => {
-    $("verdict").innerHTML = `<div class="verdict ${ok ? (slip ? slip.klass : "ok") : "no"}"><span class="xpop">+${xp} XP</span>
-    <h3>${head}</h3>
-    <p>${solution}${t.options ? ` · sögnin er <b>${esc(t.answer)}</b>` : ""}.</p>
-    ${ok ? slipNote(slip && slip.slip, xp, xpFull) : nearNote(near)}${whyBox(t.why)}
-    <p class="streakline">Enter fyrir næstu.</p></div>`;
-  });
+  /* After a second try, what the pupil wrote first, beside the boxes that
+     now show the second try and the right forms. */
+  const first = t.retried && (t.tries || []).length && (ok || t.tries.length > 1)
+    ? `<p>Fyrst skrifaðir þú <span class="forms">${esc(t.tries[0])}</span>.</p>` : "";
+  $("verdict").innerHTML = `<div class="verdict ${ok ? (slip ? slip.klass : "ok") : "no"}">${
+    ok && j.retry ? retryRightHTML(xp) : `<span class="xpop">+${xp} XP</span>
+  <h3>${head}</h3>`}
+  <p>${solution}${t.options ? ` · sögnin er <b>${esc(t.answer)}</b>` : ""}.</p>
+  ${first}
+  ${ok ? slipNote(slip && slip.slip, xp, j.retry ? xp : xpFull) : nearNote(near)}${whyBox(t.why)}
+  ${ok && j.retry ? RETRY_STILL_MISS : ""}
+  <p class="streakline">Enter fyrir næstu.</p></div>`;
 }
 
 /* ================= tap ================================================== */
