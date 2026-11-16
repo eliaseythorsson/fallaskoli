@@ -59,6 +59,18 @@ const browser = await puppeteer.launch({
   protocolTimeout: Number(process.env.BT_PROTOCOL_MS || 180000),
   args: ["--no-sandbox", "--disable-dev-shm-usage", "--allow-file-access-from-files"],
 });
+/* Item 84: a pupil with nothing answered is met by the guided first run, and
+   nearly every section below starts from such a pupil to check something
+   else. Every page of this file says so before the program loads; the first
+   run has a test of its own (tools/tour-test.mjs), which does not. */
+{
+  const newPage = browser.newPage.bind(browser);
+  browser.newPage = async (...a) => {
+    const p = await newPage(...a);
+    await p.evaluateOnNewDocument(() => { window.FALLASKOLI_NO_TOUR = true; });
+    return p;
+  };
+}
 const page = await browser.newPage();
 await page.setViewport({ width: 1100, height: 900 });
 

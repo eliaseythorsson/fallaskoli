@@ -1193,7 +1193,9 @@ export const RETRY_TYPES = {
     type listed above, outside a duel, and only once. */
 export function retryAllowed(task, j) {
   if (!task || !j || j.pending || j.ok !== false) return false;
-  if (task.duel || task.retried) return false;
+  /* Not in the placement round either (item 84, ui/tour.js): its first
+     answer is the one it learns from. */
+  if (task.duel || task.retried || task.placement) return false;
   const rule = RETRY_TYPES[task.type];
   return !!rule && rule(task);
 }

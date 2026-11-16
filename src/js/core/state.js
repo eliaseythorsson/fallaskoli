@@ -7,6 +7,7 @@ import { SKILL_IDS, defaultEnabled } from "./skills.js";
 import { createPolicy, blankPolicy, sanitisePolicy } from "./policy.js";
 import { overallLevel, skillLevel, easeOf } from "./progress.js";
 import { visitLevels, cleanLevels, levelsFromXp } from "./difficulty.js";
+import { cleanTour } from "./placement.js";
 import { timeContext, mondayOf, weekKeys, isBreakWeek } from "./calendar.js";
 import { checkDayEnd, legacyStreakCredit } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
@@ -125,6 +126,10 @@ export function blankState() {
        the day, the last sixty) and the reviews passed per day (five weeks).
        Pattern ids, days and counts. */
     mend: blankMend(),
+    /* The guided first run (item 84, core/placement.js): null until it has
+       begun; then { st: "open"|"done"|"skipped", at, d, placed, year }. A
+       pupil with no answers and no record is offered it once. */
+    tour: null,
   };
 }
 
@@ -231,6 +236,8 @@ export function migrate(raw) {
     seenTypes: cleanSeenTypes(raw.seenTypes),
     /* Items 56 and 58: rebuilt field by field (core/mending.js). */
     mend: sanitiseMend(raw.mend),
+    /* Item 84: the record of the first run, or null (core/placement.js). */
+    tour: cleanTour(raw.tour),
   });
   S.run = 0;
 

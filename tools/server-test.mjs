@@ -78,6 +78,9 @@ const browser = await puppeteer.launch({
 async function fresh() {
   const ctx = await browser.createBrowserContext();
   const page = await ctx.newPage();
+  /* Item 84: a new account is met by the guided first run; these checks are
+     about other things (tools/tour-test.mjs is the first run's own). */
+  await page.evaluateOnNewDocument(() => { window.FALLASKOLI_NO_TOUR = true; });
   await page.setViewport({ width: 1100, height: 900 });
   page.on("pageerror", (e) => problems.push("pageerror: " + e.message));
   page.on("console", (m) => {

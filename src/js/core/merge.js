@@ -25,6 +25,7 @@ import { mergeLevels } from "./difficulty.js";
 import { mergeByType } from "./mastery.js";
 import { mergeByNode } from "./skillmap.js";
 import { mergeSeenTypes } from "./examples.js";
+import { mergeTour } from "./placement.js";
 
 const num = (x) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
 const obj = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : {});
@@ -212,6 +213,10 @@ export function mergeStates(base, local, remote) {
   /* Getting better (items 56 and 58, core/mending.js): a pattern mended on
      either device is no longer waiting, and the counts add. */
   out.mend = mergeMend(B.mend, L.mend, R.mend);
+
+  /* The guided first run (item 84, core/placement.js): ended on either
+     device is ended on both — nobody is walked through it twice. */
+  out.tour = mergeTour(L.tour, R.tour);
 
   out.lastActive = later(L.lastActive, R.lastActive);
   out.settled = later(L.settled, R.settled);
