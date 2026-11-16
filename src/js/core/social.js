@@ -16,6 +16,7 @@ import { dkey } from "./state.js";
 import { BADGES } from "./badges.js";
 import { overallRank } from "./progress.js";
 import { estimateShare } from "./rarity.js";
+import { goalWeekOf } from "./classgoal.js";
 
 const BY_ID = new Map(BADGES.map((b) => [b.id, b]));
 
@@ -238,9 +239,11 @@ export const MIN_PIONEER = 3;
  * @param board    GET /leaderboard, any metric — every row carries xp and week
  * @param result   GET /social `lastWeek`
  * @param memo     S.social: who was ahead of me the last time I looked
+ * @param goal     GET /classgoal (item 59): the group's goal and its total
  * @returns { ctx, memo } — `memo` is the new value to save
  */
-export function socialContext({ me, roster = [], board = [], result = null, memo = null, week = weekKey() }) {
+export function socialContext({ me, roster = [], board = [], result = null, memo = null, week = weekKey(),
+                                goal = null }) {
   const mine = roster.find((u) => u.profile === me) || null;
   const others = roster.filter((u) => u.profile !== me);
   const row = board.find((r) => r.profile === me) || null;
@@ -274,6 +277,10 @@ export function socialContext({ me, roster = [], board = [], result = null, memo
       tie: !!row && (row.xp || 0) > 0 &&
         board.some((r) => r.profile !== me && r.xp === row.xp),
       twins: ((mine && mine.newIds) || []).some((id) => isSecret(id) && otherNew.has(id)),
+      /* The week the group met the goal its teacher set, if this learner is
+         owed its badge (core/classgoal.js `goalWeekOf`). Needs no roster and
+         no board: the pupils who keep off the board get it too. */
+      goalWeek: goalWeekOf(goal),
     },
     memo: { week, ahead },
   };

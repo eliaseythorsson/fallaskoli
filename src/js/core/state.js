@@ -11,9 +11,10 @@ import { timeContext, mondayOf, weekKeys, isBreakWeek } from "./calendar.js";
 import { checkDayEnd, legacyStreakCredit } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
 import { blankReview, sanitiseReview } from "./review.js";
-import { cleanByType } from "./mastery.js";
+import { cleanByType, masteryOf } from "./mastery.js";
 import { cleanByNode } from "./skillmap.js";
 import { cleanSeenTypes } from "./examples.js";
+import { blankMend, sanitiseMend, patternsMended, reviewsOnTime } from "./mending.js";
 
 export const STATE_VERSION = 11;
 
@@ -119,6 +120,11 @@ export function blankState() {
        type not in it shows one worked example on its first card
        (core/examples.js). */
     seenTypes: {},
+    /* Getting better, counted (items 56 and 58, core/mending.js): the error
+       patterns active and waiting to be mended, the patterns mended (with
+       the day, the last sixty) and the reviews passed per day (five weeks).
+       Pattern ids, days and counts. */
+    mend: blankMend(),
   };
 }
 
@@ -223,6 +229,8 @@ export function migrate(raw) {
     byType: cleanByType(raw.byType),
     byNode: cleanByNode(raw.byNode),
     seenTypes: cleanSeenTypes(raw.seenTypes),
+    /* Items 56 and 58: rebuilt field by field (core/mending.js). */
+    mend: sanitiseMend(raw.mend),
   });
   S.run = 0;
 
@@ -795,6 +803,16 @@ export function badgeContext(S, sess, extra = {}, now = new Date()) {
     correct: null, pickChanges: 0, goldfish: false,
     social: null,
     allOtherBadges: false,
+    /* ---- getting better (items 56 and 58, core/mending.js) ----
+       Different error patterns ever mended, reviews ever passed on time,
+       and a skill's mastery mark (core/mastery.js, 0–4). The mark is read
+       only for the skill a badge asks about, and once per context. */
+    mended: patternsMended(S),
+    reviewsOnTime: reviewsOnTime(S),
+    mastery: (() => {
+      const seen = {};
+      return (skill) => (seen[skill] ??= masteryOf(S, skill, now).level);
+    })(),
     ...extra,
   };
 }

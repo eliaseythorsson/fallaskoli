@@ -21,6 +21,7 @@
 
 import { ASSIGN } from "../src/js/core/assignment.js";
 import { SAMPLE } from "../src/js/core/classifiercheck.js";
+import { CLASS_GOAL } from "../src/js/core/classgoal.js";
 
 export const RETENTION = {
   pendingDays: 30,      // an unanswered request for access
@@ -59,7 +60,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
 /* 2026-11-16 (v6.13, items 37 and 65): the group's teacher or guardian sees
    the error patterns and assignment results of the learners in the group. A
    new recipient, so the version moves (docs/PRIVACY.md §3). */
-export const PRIVACY_VERSION = "2026-11-18";
+export const PRIVACY_VERSION = "2026-11-19";
 
 /* 2026-11-17 (v6.13, items 17 and 38): right and wrong answers are counted
    anonymously to set the difficulty of the questions, and a group's teacher
@@ -70,7 +71,15 @@ export const PRIVACY_VERSION = "2026-11-18";
    version or a later one counts (server/calibrate.mjs). */
 export const CALIBRATION_NOTICE = "2026-11-17";
 
-/* 2026-11-18 (v6.13, item 83): the group's teacher or guardian can open one
+/* 2026-11-18 (v6.13, item 59): a group's teacher may set a weekly goal the
+   group reaches together, and EVERY learner of the group then sees one total
+   that their own answers are part of — those not on the board too. A new
+   recipient of something derived from a child's progress (the group, as a
+   sum), so the version moves (docs/PRIVACY.md §1c). CALIBRATION_NOTICE stays:
+   it names the first version that describes the counting, and this one still
+   does. */
+
+/* 2026-11-19 (v6.13, item 83): the group's teacher or guardian can open one
    pupil's skill map. The recipient is the one of 2026-11-16, but what they
    see is more — the mastery mark of every curriculum node, the reviews
    waiting there and the cells missed — so the version moves and the notice
@@ -122,6 +131,8 @@ export function privacyPage(cfg) {
   <p>Fallaskóli telur nafnlaust hve oft spurningum er svarað rétt og rangt, til að stilla
      hve erfiðar þær eru. Þú getur slökkt á því fyrir þig.</p>
   <p>Enginn annar nemandi sér neitt um þig nema þú kveikir sjálf(ur) á stigatöflunni.</p>
+  <p>Ef kennarinn setur hópnum sameiginlegt markmið sjá allir í hópnum eina samtölu fyrir
+     vikuna, og þín svör teljast með. Enginn sér hvað þú lagðir til.</p>
   <p>Kennari eða forsjáraðili hópsins þíns sér hvernig þér gengur í villumynstrum og
      verkefnum, svo hann geti hjálpað þér — en aldrei það sem þú skrifar. Hann getur líka
      skoðað færnikortið þitt.</p>
@@ -210,6 +221,12 @@ export function privacyPage(cfg) {
       gælunafnið, stig, XP, merkin þín og titilinn sem þú velur. Mínútur sjást
       aðeins ef þú kveikir sérstaklega á þeim. Þú getur slökkt aftur hvenær sem er.
       Notendur í öðrum hópum sjá þig aldrei.</li>
+  <li><b>Allur hópurinn, ef kennarinn setur sameiginlegt markmið</b> — sér eina samtölu
+      fyrir vikuna: hve mörg rétt svör hópurinn hefur gefið, eða hve margir hafa lokið
+      tilteknum fjölda lota. Þín svör teljast með, líka þótt þú sért ekki á stigatöflunni,
+      en enginn sér hvað þú lagðir til — hvorki tölu né nafn. Í hópi með færri en
+      ${CLASS_GOAL.minPupils} nemendum er ekkert sýnt, svo að samtalan sé aldrei tala eins
+      nemanda.</li>
   <li><b>Kennari eða forsjáraðili hópsins þíns</b> — sá sem umsjónarmaður hefur gert
       að forsjáraðila í hópnum — sér gælunafnið þitt, villumynstrin þín (hve oft svar
       var rangt af síðustu svörum sem prófa hvert mynstur, eins og þú sérð sjálf(ur)

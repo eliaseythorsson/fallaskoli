@@ -483,7 +483,7 @@ test("the privacy notice says what the teacher sees, and the version moved", asy
   /* Item 83: the teacher can open the skill map, and the version moved again. */
   assert.match(r.text, /opnað færnikortið þitt/);
   assert.match(r.text, /ekki hvaða orð\s+fóru úrskeiðis hjá þér/);
-  assert.ok(PRIVACY_VERSION >= "2026-11-18" && r.text.includes(`Síðast breytt ${PRIVACY_VERSION}`));
+  assert.ok(PRIVACY_VERSION >= "2026-11-19" && r.text.includes(`Síðast breytt ${PRIVACY_VERSION}`));
 });
 
 test("erasure: a pupil's results go; an assignment a guardian set stays, nameless", async () => {
