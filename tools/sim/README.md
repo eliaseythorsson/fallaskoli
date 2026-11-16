@@ -45,6 +45,10 @@ effects of the one question it shows, as `app.pickTask` does. `burn.mjs` should 
 items marked as there were vocabulary questions shown (`or_utundan` is shown and marks nothing; the
 numeral items `to_samr` and `to_flt` are no longer vocabulary and are not counted — critique item 20).
 
-Not yet tests. Suggested thresholds when they become one (`tests/simulation.test.js`):
-every type ≥ 150 distinct questions per band; a pupil at 85% reaches level-3 sentences within ten
-questions; items marked asked = items shown; exact repeats in 30 single-topic sessions < 10%.
+Since item 72 a small version of these is a test: `tests/sim.test.js` (about ten seconds of CPU).
+It grades through `core/answer.js` `judge` and `settle`: `simulate({ respond, builderRng })` — the pupil
+decides with probability p whether to know the answer, `respond(task, knows)` turns that into a right or a
+wrong response, `judge` says which it was, and the builders draw from the seeded `builderRng`. Without
+those two options the scripts behave as before (the answer is a modelled coin; the builders use `Math.random`).
+The test asserts ranges (strong pupils get higher levels, a miss comes back the next day, exact repeats
+per category under a ceiling, level 5 in the window `progress.js` promises), not the figures printed here.
