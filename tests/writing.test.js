@@ -454,11 +454,44 @@ test("the image: the default stays the plain one; the `greynir` target carries t
   assert.match(froms[0], /node:22-alpine AS plain/);
   const g = df.slice(df.indexOf("AS greynir"));
   assert.match(g, /COPY server\/greynir_worker\.py/);
-  assert.match(g, /requirements\.txt[\s\S]*requirements-writing\.txt/, "the build's pins are installed with it");
+  /* Installed by hash, wheels only, the build's lock with the writing check's
+     (item 80's discipline): GreynirCorrect cannot move the grammar libraries. */
+  assert.match(g, /--require-hashes --only-binary=:all:[\s\\]*-r \/tmp\/req\/requirements-build\.txt -r \/tmp\/req\/requirements-writing-build\.txt/);
   const ignore = (await fs.readFile(path.join(root, ".dockerignore"), "utf8")).split("\n").map((l) => l.trim());
   assert.ok(ignore.includes("!server/greynir_worker.py"), "*.py is ignored; the worker is let back in");
   const req = await fs.readFile(path.join(root, "server", "requirements-writing.txt"), "utf8");
   assert.match(req, /^reynir-correct==\d+\.\d+\.\d+$/m, "pinned exactly, like requirements.txt");
+});
+
+test("the image: the `greynir` target is pinned like the build container, and its lock is complete", async () => {
+  const root = path.dirname(HERE);
+  const read = (f) => fs.readFile(path.join(root, f), "utf8");
+  const pins = (text) => Object.fromEntries([...text.matchAll(/^([A-Za-z0-9_.-]+)==([^\s\\]+)/gm)]
+    .map((m) => [m[1].toLowerCase().replace(/_/g, "-"), m[2]]));
+  const df = await read("Dockerfile"), dfb = await read("Dockerfile.build");
+  /* The same exact Python and Node images as Dockerfile.build, on x86_64 (the
+     platform the locks' hashes are for). */
+  for (const arg of ["PYTHON_IMAGE", "NODE_IMAGE"]) {
+    const re = new RegExp(`^ARG ${arg}=(\\S+)`, "m");
+    assert.equal(re.exec(df)?.[1], re.exec(dfb)?.[1], `${arg}: Dockerfile and Dockerfile.build disagree`);
+  }
+  assert.ok(df.indexOf("ARG PYTHON_IMAGE") < df.indexOf("\nFROM "), "an ARG used in FROM must come before the first FROM");
+  for (const f of df.split("\n").filter((l) => /^FROM .*greynir/.test(l)))
+    assert.match(f, /--platform=linux\/amd64/, f);
+  /* The human list and the lock agree; every lock entry has a hash; nothing in
+     the writing lock overlaps (and so could contradict) the build's lock. */
+  const want = pins(await read("server/requirements-writing.txt"));
+  const lockText = await read("server/requirements-writing-build.txt");
+  const lock = pins(lockText), build = pins(await read("requirements-build.txt"));
+  assert.deepEqual(lock, want);
+  const entries = lockText.split(/\n(?=[A-Za-z])/).filter((e) => /^[A-Za-z]/.test(e));
+  for (const e of entries) assert.match(e, /--hash=sha256:[0-9a-f]{64}/, "no hash: " + e.split("\n")[0]);
+  for (const name of Object.keys(lock)) assert.ok(!(name in build), `${name} is in both locks`);
+  /* What the check's packages require is in one lock or the other. */
+  for (const dep of ["reynir", "typing-extensions", "cffi", "certifi", "icegrams-data"])
+    assert.ok(lock[dep] || build[dep], "missing from the locks: " + dep);
+  /* The worker's own comment and the server guide name the files that exist. */
+  assert.match(await read("server/greynir_worker.py"), /requirements-writing\.txt/);
 });
 
 test("the notice: version 2026-11-21 names both paragraphs (items 45 and 46), and the short version no longer says the teacher never sees what is written", async () => {

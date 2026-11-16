@@ -8,6 +8,13 @@
 #   ./build.sh          on your computer, first
 #   fly deploy          then this file is used        (docs/HOSTING.md)
 
+# The optional `greynir` target below is built on the build container's own
+# pinned images (Dockerfile.build); they are named here because Docker reads
+# an ARG in a FROM line only from before the first FROM. The plain image does
+# not use them.
+ARG PYTHON_IMAGE=python:3.13.18-slim-bookworm
+ARG NODE_IMAGE=node:22.23.4-bookworm-slim
+
 FROM node:22-alpine AS plain
 
 WORKDIR /app
@@ -64,15 +71,30 @@ CMD ["node", "server/server.mjs"]
 # switch the check on does not need it, and without it the app offers the
 # weekly task unchecked. server/writing.mjs starts server/greynir_worker.py
 # the first time a group with the check on needs it (docs/SERVER.md).
-FROM node:22-bookworm-slim AS greynir
-RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip \
- && rm -rf /var/lib/apt/lists/*
-# The build's own pins first, so GreynirCorrect cannot move reynir/islenska.
-COPY requirements.txt /tmp/req/requirements.txt
-COPY server/requirements-writing.txt /tmp/req/requirements-writing.txt
-RUN pip3 install --break-system-packages --no-cache-dir \
-      -r /tmp/req/requirements.txt -r /tmp/req/requirements-writing.txt \
+#
+# Pinned like the build container (Dockerfile.build, item 80), and on the very
+# same images: Python 3.13.18 and Node 22.23.4, exact, on x86_64. The Python
+# packages are installed by hash, wheels only — the build's own lock
+# (requirements-build.txt: reynir, islenska, tokenizer and what they pull in)
+# together with the writing check's (server/requirements-writing-build.txt) —
+# so GreynirCorrect cannot move the grammar libraries, and the checker reads
+# a text with exactly the parser the data was built with.
+# (PYTHON_IMAGE and NODE_IMAGE are declared at the top of this file: Docker
+# reads an ARG in a FROM line only from before the first FROM.)
+# hadolint ignore=DL3029
+FROM --platform=linux/amd64 ${NODE_IMAGE} AS greynir-node
+# hadolint ignore=DL3029
+FROM --platform=linux/amd64 ${PYTHON_IMAGE} AS greynir
+COPY --from=greynir-node /usr/local/bin/node /usr/local/bin/node
+COPY requirements-build.txt /tmp/req/requirements-build.txt
+COPY server/requirements-writing-build.txt /tmp/req/requirements-writing-build.txt
+RUN pip install --no-cache-dir --disable-pip-version-check \
+      --require-hashes --only-binary=:all: \
+      -r /tmp/req/requirements-build.txt -r /tmp/req/requirements-writing-build.txt \
  && rm -rf /tmp/req /root/.cache
+# The server drops root for uid/gid 1000 (`node` in the plain image); Debian's
+# python image has no such user, so it is made here with the same numbers.
+RUN groupadd -g 1000 node && useradd -u 1000 -g 1000 -M -s /usr/sbin/nologin node
 WORKDIR /app
 COPY --from=plain /app /app
 COPY server/greynir_worker.py ./server/greynir_worker.py
@@ -82,7 +104,9 @@ ENV NODE_ENV=production \
     FALLASKOLI_TRUST_PROXY=1 \
     FALLASKOLI_UID=1000 \
     FALLASKOLI_GID=1000 \
-    FALLASKOLI_WRITING_PYTHON=python3
+    FALLASKOLI_WRITING_PYTHON=python3 \
+    PYTHONHASHSEED=0 \
+    PYTHONDONTWRITEBYTECODE=1
 EXPOSE 8080
 CMD ["node", "server/server.mjs"]
 

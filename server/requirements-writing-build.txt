@@ -1,0 +1,25 @@
+# The writing check's Python packages, locked (item 46, Dockerfile target
+# `greynir`), in the manner of requirements-build.txt (item 80).
+#
+# server/requirements-writing.txt says WHICH packages the check adds to the
+# build's grammar libraries. This file pins each of them, and what they pull
+# in beyond requirements-build.txt, to an exact file by its SHA-256, for
+# CPython 3.13 on x86_64 Linux. The `greynir` target installs
+#   pip install --require-hashes --only-binary=:all: \
+#     -r requirements-build.txt -r server/requirements-writing-build.txt
+# so the two locks together are the whole set: reynir-correct needs reynir and
+# typing_extensions, icegrams needs cffi (all three in requirements-build.txt),
+# certifi and icegrams-data (here).
+#
+# Hashes taken from PyPI with `pip download --no-deps --only-binary=:all:
+#   --python-version 3.13 --platform manylinux_2_28_x86_64 …` and sha256sum.
+# Changing a line here: change server/requirements-writing.txt with it.
+
+reynir-correct==4.2.0 \
+    --hash=sha256:8eb3b328e52874d86d7e4662022de8cf264765e5c548b172a76c963ab22df681
+icegrams==2.3.0 \
+    --hash=sha256:5d4549c72e1539623125365780f0dac84b371a1cb2a82ee495e09b41f1d8fc2b
+icegrams-data==2026.11.0 \
+    --hash=sha256:28e51af7462eff6524307ab7f7d5a8bb3639d0eca0beb80ac8710efd15178bbf
+certifi==2026.10.18 \
+    --hash=sha256:73191c47aaa79da394e8fee2dbc2ec827432cab56311122c9e47abf79e390f62

@@ -776,6 +776,15 @@ fly deploy --build-target greynir
 and give the machine at least 1 GB (`fly scale memory 1024`). Without the
 target everything else works, and the weekly task is offered unchecked.
 
+That target is pinned like the build container (`Dockerfile.build`): the same
+exact Python and Node images on x86_64, and the Python packages installed by
+hash from `requirements-build.txt` together with
+`server/requirements-writing-build.txt`, so the checker reads a text with
+exactly the parser the data was built with. To move GreynirCorrect, change
+`server/requirements-writing.txt` and `server/requirements-writing-build.txt`
+together (the hashes come from `pip download`, as the file says);
+`tests/writing.test.js` holds them together.
+
 ---
 
 ## Part 5 — upgrading to a new version
