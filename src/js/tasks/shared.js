@@ -207,6 +207,26 @@ export const cellEase = (lex, view, skill, m) =>
   (forcedCell(view) || !lex.cellHardness ? 1
     : hardnessWeight(axisLevel(view, skill), lex.cellHardness(m)));
 
+/** The same factor WITHIN the case of `m`: the cell is scored against the
+    bare singular of its own case (*hests* for *hestanna*), so only what the
+    number and the article add counts — not the case itself.
+
+    For a builder that has already decided how often each case is asked
+    (the noun cloze, critique item 15: the dative and the genitive often, the
+    nominative little). The cell table scores the genitive singular 3 and
+    the dative 2, so `cellEase` alone put every genitive at its floor at
+    þyngd 1 and the genitive fell back to the rarest case — undoing item 15.
+    With this, a beginner is asked the genitive as often as item 15 wants,
+    and mostly *hests*, *bókar*; *hestanna* stays rare until the level reaches
+    it (item 16). A mark without a case, or without scores, counts 1. */
+export function caseCellEase(lex, view, skill, m) {
+  if (forcedCell(view) || !lex.cellHardness) return 1;
+  const base = m.replace(/^(.*?(?:NF|ÞF|ÞGF|EF))(?:ET|FT)(?:gr)?$/, "$1ET");
+  const h = lex.cellHardness(m), h0 = lex.cellHardness(base);
+  if (h == null || h0 == null) return 1;
+  return hardnessWeight(axisLevel(view, skill), 1 + Math.max(0, h - h0));
+}
+
 /** Word choice: common words first, rarer as the skill level grows, regular
     words first and irregular ones as the level of the session grows, and
     words this child gets wrong come back sooner. */
