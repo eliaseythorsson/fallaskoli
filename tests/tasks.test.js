@@ -272,7 +272,7 @@ test("the analysis question always offers the answer it is looking for", () => {
 
 test("under í or á only a noun with that convention is substituted", () => {
   /* "Strákarnir fóru í ströndina" — grammatical, and not Icelandic. The build
-     marks such a slot `ps`; a noun may stand there only if noun_classes.py
+     marks such a slot `ps`; a noun may stand there only if pipeline/noun_classes.py
      records the same preposition for it (`p`). */
   const withPs = lex.sentences.filter((s) => s.ps);
   assert.ok(withPs.length > 20, `only ${withPs.length} sentences carry ps`);

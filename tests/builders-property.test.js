@@ -151,7 +151,7 @@ function isFormOf(form, m, entries, paradigm = null) {
   /* An item the build wrote by hand (the dates' ordinals: *þann sautjánda*)
      names no word, and the in-app lexicon is a school vocabulary that has
      not got *sautjándi*. Its forms come out of BÍN when the data is built
-     (build_exercises.py, which fails on a form BÍN lacks); here the answer
+     (pipeline/build_exercises.py, which fails on a form BÍN lacks); here the answer
      must be the form its own paradigm gives for the cell. */
   if (m && !entries.length && paradigm && (paradigm[m] || []).some((f) => key(f) === key(form))) {
     if (!lex.analyse(form).length) BY_PARADIGM.add(CURRENT);
@@ -173,7 +173,7 @@ function isFormOf(form, m, entries, paradigm = null) {
 }
 /* Which types were let through on their own paradigm because the lexicon has
    not got the form: only the dates' ordinals (*sautjánda*) and a few hand-written
-   items of fs_sogn (*bakarann*), whose words build_exercises.py checks against
+   items of fs_sogn (*bakarann*), whose words pipeline/build_exercises.py checks against
    BÍN and stops on a form BÍN lacks. Nothing else may. */
 const BY_PARADIGM = new Set();
 let CURRENT = null;

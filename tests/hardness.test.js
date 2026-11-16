@@ -9,7 +9,7 @@
      3. nothing is starved — every class of word and every cell still comes
         at every level.
 
-   The scores are measured on BÍN's paradigms by irregularity.py at build
+   The scores are measured on BÍN's paradigms by pipeline/irregularity.py at build
    time; this file reads them out of the bundle as the app does. */
 
 import test from "node:test";

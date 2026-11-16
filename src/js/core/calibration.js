@@ -1,7 +1,7 @@
 /* Calibration from real answers (critique item 17) — the arithmetic.
 
    Levels, band lists and hardness scores are set by hand or measured on the
-   paradigm (irregularity.py). Once pupils use the program, the share of
+   paradigm (pipeline/irregularity.py). Once pupils use the program, the share of
    right answers says how hard something REALLY is. The owner's condition:
    nobody is going to look at numbers each term, so everything from the
    counting to the adjustment runs by itself, and is built so that it cannot

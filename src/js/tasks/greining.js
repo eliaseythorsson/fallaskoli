@@ -97,7 +97,7 @@ export const grTap = (lex, view, rng) => tapTask(lex, view, rng, "greining",
   { "nafnorð": 3, "sagnorð": 3, "lýsingarorð": 2.5, "fornafn": 2, "atviksorð": 1.5, "forsetning": 1.5, "töluorð": 0.6 });
 
 /* Sort words into classes: dictionary forms that are one class whatever BÍN
-   entry they are read as (build_exercises.py), so a bare word is never a
+   entry they are read as (pipeline/build_exercises.py), so a bare word is never a
    trick question. */
 export function grSort(lex, view, rng) {
   const P = view.policy;

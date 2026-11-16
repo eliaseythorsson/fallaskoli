@@ -9,7 +9,7 @@
 
    The rest holds the generated questions to what the hand-written ones were
    held to: every form is BÍN's (here: the lexicon's, or data/exercises.js,
-   which build_exercises.py looked up in BÍN), there is one right answer, and
+   which pipeline/build_exercises.py looked up in BÍN), there is one right answer, and
    a review gets the cell it asks for. */
 
 import test from "node:test";
@@ -105,7 +105,7 @@ test("adjective frames: what is built is the adjective's own BÍN form, of an ad
   assert.ok(seen.size > 200, `only ${seen.size} framed sentences`);
 });
 
-test("adjective frames: no state, no nationality, no comparison nobody makes (adj_classes.py NO_COMPARE)", () => {
+test("adjective frames: no state, no nationality, no comparison nobody makes (pipeline/adj_classes.py NO_COMPARE)", () => {
   /* item 23 added the first seven to NO_COMPARE; the lexicon has no
      comparison forms for any of them, so no frame can show one */
   for (const o of ["fatlaður", "blindur", "haltur", "þunglyndur", "lasinn", "kvefaður", "ágætur",

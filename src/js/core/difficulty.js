@@ -70,7 +70,7 @@
    The level above was, until v6.13, only the length of the sentence. But
    *maður*, *kýr* and *bók* are harder than *hestur* in a sentence of any
    length, and the genitive plural is harder than the accusative singular.
-   The build now scores both on a scale of 1–5 (irregularity.py: `irr` on
+   The build now scores both on a scale of 1–5 (pipeline/irregularity.py: `irr` on
    every noun, adjective and verb of the lexicon, and a table of cells), and
    the SAME level chooses on that axis too — `hardnessWeight` below, used by
    tasks/shared.js for the choice of word (`wordWeight`) and of cell
@@ -114,7 +114,7 @@ import { secondLanguage } from "./profile.js";
 /* Difficulty runs 1-7: 1-5 is year 8, 6 is year 9 and 7 is year 10
  * (core/curriculum.js TOP_LEVEL). Levels 6 and 7 have sentences of their own
  * since v6.13: two subordinate clauses, þolmynd, viðtengingarháttur þátíðar,
- * óbein ræða (sentences.py says what earns a sentence its level). A pupil
+ * óbein ræða (pipeline/sentences.py says what earns a sentence its level). A pupil
  * reaches them only where the policy has them switched on: `levelRanges`
  * below stops each skill at the policy's highest þyngd. */
 export const MIN = 1, MAX = 7;

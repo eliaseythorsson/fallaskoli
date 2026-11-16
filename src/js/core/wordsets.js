@@ -46,7 +46,7 @@ export const THEMES = [
 
 /* ---------- 2. Semantic classes: many of one kind ------------------------ */
 
-/* `s` on a noun is its meaning class (noun_classes.py). */
+/* `s` on a noun is its meaning class (pipeline/noun_classes.py). */
 export const KINDS = [
   { id: "dyr", ico: "🦓", nm: "Dýragarðurinn", ds: "25 dýraheiti í safninu",
     classes: ["animal", "critter"], n: 25, est: 0.28 },

@@ -2,8 +2,8 @@
  *
  * BÍN makes every generated form correct and nothing makes a generated
  * sentence SENSIBLE: "Ferðin tafðist vegna ævinnar" agrees perfectly. What
- * keeps nonsense out is three hand-made tables — noun_classes.py (what a noun
- * means, and which nouns nobody has read), adj_classes.py (what an adjective
+ * keeps nonsense out is three hand-made tables — pipeline/noun_classes.py (what a noun
+ * means, and which nouns nobody has read), pipeline/adj_classes.py (what an adjective
  * is said of, and which adjectives are not compared) and the `need` of every
  * frame. These tests hold the tables to what they promise, on the real data:
  *
@@ -48,7 +48,7 @@ const KNOWN_BAD = [
   "rangari börn", "breskustu", "dauðari", "breskari",
   /* a time or an idea as the cause of a delay, or as what one cannot do without
      (*sumar* the season, not the *sumarbústaður*, a building — and a building
-     may cause a delay: noun_classes.py `_CAUSE`) */
+     may cause a delay: pipeline/noun_classes.py `_CAUSE`) */
   /Ferðin tafðist vegna (ævi|sumar(?!bústað)|vetr|morg|kvöld|vik|mánað|hamingj|framtíð|málsins|málanna|mark)/,
   /Þetta gengur ekki án (sumra|morguns|kvölda|bils|uppnáms|boðs|hverfa|lands|grass|svæðis)(?!\p{L})/u,
   /Ferðin tafðist vegna (nefsins|háranna|fingursins|glassins|herbergisins|síðunnar)/,

@@ -61,3 +61,23 @@ test("core/mix.js and core/today.js export only what something imports", () => {
     }
   }
 });
+
+/* Review of v6.13, S15: item 79 moved the Python build to pipeline/ (and the
+   frequency list and the dictionary to sources/, the build's JSON to data/).
+   Comments name them by the path they have now, as they name every other
+   file (core/mix.js, server/writing.mjs). tasks/ordaford.js is left to the
+   branch that is rewriting it (fix/review-content) and is fixed after it. */
+test("comments name the Python modules by their path under pipeline/", () => {
+  const MODULES = "adj_classes|build_bundle|build_exercises|build_freq|build_lexicon|build_sentences|content_io|" +
+    "definitions|exercises|government|irregularity|noun_classes|parse_guard|parse_overrides|phrases|sentences|vocab_filter";
+  const bare = new RegExp(`(?<![\\w/.-])(${MODULES})\\.py\\b`);
+  const LATER = new Set(["src/js/tasks/ordaford.js"]);
+  const found = [];
+  for (const f of sources()) {
+    if (LATER.has(f) || f === "tests/shared-helpers.test.js") continue;
+    read(f).split("\n").forEach((line, k) => {
+      if (bare.test(line) && !/sys\.argv/.test(line)) found.push(`${f}:${k + 1}`);
+    });
+  }
+  assert.deepEqual(found, []);
+});

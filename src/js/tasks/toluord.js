@@ -95,7 +95,7 @@ export function tableNumeral(lex, view, rng) {
 
 /* The nouns a numeral table may show: the everyday helper nouns of the
    pronoun table, and the commonest countable things and animals of the
-   lexicon (noun_classes.py) that have the forms — never a mass noun or one
+   lexicon (pipeline/noun_classes.py) that have the forms — never a mass noun or one
    nobody says in the plural. Once per lexicon, gender and number. */
 const COUNTED = new Set(["animal", "object", "vehicle", "building", "furniture", "book"]);
 const TABLE_NOUNS = new WeakMap();
@@ -138,8 +138,8 @@ function numeralCells(view, w, kyn, fc = null) {
 /* ================= In a sentence (v6.11) ================================= */
 
 /* v6.13 (critique item 23): the hand-written items and the frames of
-   exercises.py NUMERAL_FRAMES and PLURAL_ONLY_FRAMES, with nouns chosen by
-   meaning (noun_classes.py) and every form out of BÍN (build_exercises.py).
+   pipeline/exercises.py NUMERAL_FRAMES and PLURAL_ONLY_FRAMES, with nouns chosen by
+   meaning (pipeline/noun_classes.py) and every form out of BÍN (pipeline/build_exercises.py).
    The frames are expanded here, once per data file, into items of the same
    shape as the hand-written ones, so everything below treats both alike. */
 const CARD = { 1: ["einn", "to"], 2: ["tveir", "to"], 3: ["þrír", "to"], 4: ["fjórir", "to"] };

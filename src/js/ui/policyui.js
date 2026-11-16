@@ -164,7 +164,7 @@ export function renderPolicyEditor(el, policy, {
     <label class="polsw">
       <input type="checkbox" id="pol-safevocab" ${policy.safeVocab !== false ? "checked" : ""}>
       <span><b>Sía út gróf orð, niðrandi orð og blótsyrði</b><br>
-        <small>Sjálfgefið kveikt. Listinn er í <code>vocab_filter.py</code> og
+        <small>Sjálfgefið kveikt. Listinn er í <code>pipeline/vocab_filter.py</code> og
           ferðast með gögnunum, svo hann er sýnilegur og hægt að ræða hann.</small></span>
     </label>` : ""}
 

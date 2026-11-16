@@ -19,7 +19,7 @@
 
    What it reads, and nothing else:
      content/**\/*.tsv           the items (the same files the build reads,
-                                 parsed the way content_io.py parses them)
+                                 parsed the way pipeline/content_io.py parses them)
      src/js/content/lessons.js   the Lesefni pages (left in JavaScript: the
      src/js/content/examples.js  app imports them as they are)
      content/REVIEW-NOTES.md     the notes                                    */
@@ -47,7 +47,7 @@ export const KINDS = [
 
 /* ---------- reading ----------------------------------------------------- */
 
-/** One TSV file as content_io.py reads it: comments, a header line, one item
+/** One TSV file as pipeline/content_io.py reads it: comments, a header line, one item
     per line, missing trailing fields empty. Each row keeps its line number
     and the comment lines written right above it. */
 export function parseTsv(text) {

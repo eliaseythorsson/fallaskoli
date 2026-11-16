@@ -61,7 +61,7 @@ const BARE_ON_PURPOSE = [
      kvöld": no frame is right for all of them) and of a sum of money */
   [/^(time|money)$/, /^ÞGF(ET|FT)$/],
   /* v6.13 (item 30), from narrowing the frames that took any noun
-     (noun_classes.py NEED_FIX):
+     (pipeline/noun_classes.py NEED_FIX):
      "Þetta gengur ekki án ___" was the bare genitive of everything, and gave
      "án morguns", "án kvölda", "án hverfa", "án lands", "án grass" … */
   [/^time$/, /^EF(ET|FT)$/],

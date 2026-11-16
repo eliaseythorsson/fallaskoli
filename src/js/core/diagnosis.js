@@ -232,7 +232,7 @@ export const PATTERNS = [
     rule: "Í óbeinni ræðu hverfa gæsalappirnar, *ég* verður *hann* eða *hún* og sögnin fer í **viðtengingarhátt**. Á eftir *sagði*: *væri, kæmi, hefði farið*. Á eftir *segir*: *sé, komi, hafi farið*.",
     lesson: "raeda", tags: ["speech"], types: ["raeda", "umritun"] },
   /* v6.13 (critique 26): two patterns that only the hand-written error hunt
-     (exercises.py HUNT) exercises. Both are among the best-known slips of
+     (pipeline/exercises.py HUNT) exercises. Both are among the best-known slips of
      Icelandic teenagers and nothing above describes them: neither is a wrong
      case or a wrong form — the words are right and the choice between them
      is not. */
@@ -258,7 +258,7 @@ export const patternById = (id) => BY_ID.get(id) || null;
 
 /* ---------- the hand-written error hunt ------------------------------------
  *
- * Every item of the Villuveiðar bank (exercises.py HUNT) names the patterns
+ * Every item of the Villuveiðar bank (pipeline/exercises.py HUNT) names the patterns
  * it is filed under; these are all of them (tests/hunt-bank.test.js holds the
  * list to the bank). An item is ONE chance to make ONE known slip, so it must
  * count for its own patterns and no others — *læknirar* is a chance for

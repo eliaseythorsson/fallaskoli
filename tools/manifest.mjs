@@ -48,7 +48,7 @@ const INPUTS = [
   /* v6.13: what an adjective is shown with, and which adjectives are not compared */
   "pipeline/adj_classes.py",
   /* v6.13 (item 82): the hand-written content left Python for content/*.tsv;
-     sentences.py and exercises.py read it through content_io.py */
+     pipeline/sentences.py and pipeline/exercises.py read it through pipeline/content_io.py */
   "pipeline/content_io.py",
   ...contentFiles(),
 ];
@@ -110,9 +110,9 @@ export async function compute() {
   for (const f of ARTIFACTS) artifacts[f] = await hashFile(f);
 
   const sents = JSON.parse(await readFile(p("data/sentences.json"), "utf8"));
-  /* The bundle rather than lexicon.json: definitions and the corpus frequency
-     score are attached on the way out by build_bundle.py and never written back,
-     so `definitions` counted from lexicon.json was always 0. */
+  /* The bundle rather than data/lexicon.json: definitions and the corpus frequency
+     score are attached on the way out by pipeline/build_bundle.py and never written back,
+     so `definitions` counted from data/lexicon.json was always 0. */
   const lex = await (async () => {
     const js = await readFile(p("data/data_bundle.js"), "utf8");
     const a = js.indexOf("{"), b = js.lastIndexOf("};");

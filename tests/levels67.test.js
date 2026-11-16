@@ -114,7 +114,7 @@ test("the build could vouch for the clauses of every level 6 and 7 sentence", ()
 });
 
 test("level 6 and 7 sentences can be asked as a cloze with their own noun", () => {
-  /* The slot is `none` on all of them (sentences.py), so the cloze needs the
+  /* The slot is `none` on all of them (pipeline/sentences.py), so the cloze needs the
      slot's own noun to be in the lexicon with the form the sentence uses. */
   for (const lvl of [6, 7]) {
     const withSlot = lex.sentences.filter((s) => s.lvl === lvl && s.slot != null);

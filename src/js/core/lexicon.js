@@ -15,7 +15,7 @@ import { normalise } from "./grading.js";
                            adjectives, verbs; absent on the closed classes)
      lex.cellHardness(m)   how hard the cell with BÍN mark `m` is, 1–5
 
-   Both come out of the build (irregularity.py explains how they are
+   Both come out of the build (pipeline/irregularity.py explains how they are
    measured; `DATA.lex.cellh` is the cell table). Item 17 — calibration from
    what pupils actually get wrong — changes them by passing `hardness` below:
    the builders never see where a score came from. */

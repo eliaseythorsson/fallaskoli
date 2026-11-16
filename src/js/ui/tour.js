@@ -65,7 +65,7 @@ const PLACEMENT_LABEL = "🧭 Byrjunarstaður";
    Everything a pupil reads in the first run is here, in one place, so that a
    native reader can check it in one sitting. The line under the welcome
    declines "þú" the way the page's tagline declines "skóli" (hér er skóli,
-   um skóla, frá skóla, til skóla); the four forms are BÍN's (lexicon.json:
+   um skóla, frá skóla, til skóla); the four forms are BÍN's (data/lexicon.json:
    þú · þig · þér · þín). */
 export const TEXT = {
   skip: "Sleppa kynningunni",

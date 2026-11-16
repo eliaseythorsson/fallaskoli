@@ -15,7 +15,7 @@
    3. the same for the material that does not come from the lexicon at all:
       the sentence bank and the hand-written exercises.
 
-   KNOWN is written here, not read from vocab_filter.py, on purpose: a word
+   KNOWN is written here, not read from pipeline/vocab_filter.py, on purpose: a word
    taken off the block list by mistake must fail a test, not quietly pass it. */
 
 import test from "node:test";
@@ -211,7 +211,7 @@ test("nothing outside the lexicon carries one either: sentences, exercises, defi
   assert.deepEqual(hits(JSON.stringify(EX)), [], "the hand-written exercises");
   const defs = lex.all.filter((w) => w.d && hits(w.d).length && !DEF_ALLOWED[w.o]).map((w) => `${w.o}: ${w.d}`);
   assert.deepEqual(defs, [], "a definition of a word the pupil does see");
-  /* A dictionary example is not needed for the meaning, and build_bundle.py
+  /* A dictionary example is not needed for the meaning, and pipeline/build_bundle.py
      drops one that uses a blocked word: none may be left. */
   const ex = lex.all.filter((w) => w.x && hits(w.x).length).map((w) => `${w.o}: ${w.x}`);
   assert.deepEqual(ex, [], "a dictionary example");

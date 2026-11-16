@@ -88,7 +88,7 @@ export const sentPool = (lex, view, skill, maxLvl) => {
 /* ---------- choosing by difficulty (v6.13, critique item 13) --------------
  *
  * About twenty question types built the same questions at þyngd 1 and 5:
- * the hand-written ones (every item of exercises.py now carries a level,
+ * the hand-written ones (every item of pipeline/exercises.py now carries a level,
  * judged by the rule written there) and a few that drew from the whole
  * sentence bank. These two choose what is near the band instead.
  *

@@ -1,5 +1,5 @@
 /* The hand-written content lives in content/**\/*.tsv (critique item 82), and
-   the build reads it through content_io.py into sentences.py and exercises.py.
+   the build reads it through pipeline/content_io.py into pipeline/sentences.py and pipeline/exercises.py.
 
    These tests hold three things:
    - every file is well formed: a header, no line with more fields than the
@@ -154,7 +154,7 @@ test("a mistake in a file stops the build and names the file and the line", { sk
   assert.equal(r.status, 0, r.stderr);
 });
 
-test("exercises.py: an item that breaks a list's own rule names its line", { skip: py ? false : "no Python 3" }, () => {
+test("pipeline/exercises.py: an item that breaks a list's own rule names its line", { skip: py ? false : "no Python 3" }, () => {
   /* The loader's checks beyond the cell types: a numeral frame needs nouns
      OR classes; a motion set needs motion, rest and nouns. Run on a copy of
      the content with one line broken. */

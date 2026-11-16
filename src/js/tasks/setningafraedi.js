@@ -98,7 +98,7 @@ export function synSort(lex, view, rng) {
 
 /* ================= Phrases: nafnliður, sagnliður, forsetningarliður (item 28)
  *
- * The phrases come from the build (`ph` on the sentence, phrases.py), which
+ * The phrases come from the build (`ph` on the sentence, pipeline/phrases.py), which
  * records one only where the parser's node and the word classes inside it
  * agree, and where no neighbouring word could belong to it. The builders
  * below read them and narrow further; they never draw a phrase themselves.
