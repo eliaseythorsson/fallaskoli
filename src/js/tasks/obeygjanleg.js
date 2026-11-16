@@ -14,7 +14,12 @@ import { wordKey } from "../core/state.js";
 import { built, FX } from "./effects.js";
 import { tapTask } from "./tap.js";
 import { pairOf, pick, shuffle, bandFor, levelFor, sentPool, nearBand, itemsForBand, tokenKey, tokensOf, cap1, textSentence, lexWord,
-         clean } from "./shared.js";
+         clean, forcedItem } from "./shared.js";
+
+/** The fewest items or sentences a band chooses among (critique item 23):
+    ob_st and ob_flokka have too few at the low levels for a window of the
+    band alone. */
+const POOL_FLOOR = 150;
 
 /* ================= Which class =========================================== */
 
@@ -137,7 +142,13 @@ export function obAdvPrep(lex, view, rng) {
 /** Choose the conjunction: every wrong option makes the sentence wrong. */
 export function obConj(lex, view, rng) {
   const P = view.policy;
-  const x = pick(itemsForBand(view, "obeygjanleg", EX.conjunction, (y) => y.t), rng);
+  /* The hand-written items and the generated contrast sets (critique item
+     23), the nearest 150 to the band at least; a review asks for the very
+     item (`force.item`). */
+  const want = forcedItem(view);
+  const items = want ? EX.conjunction.filter((y) => y.t === want) : EX.conjunction;
+  if (!items.length) return null;
+  const x = pick(want ? items : itemsForBand(view, "obeygjanleg", items, (y) => y.t, POOL_FLOOR), rng);
   const { s, i } = textSentence(x.t);
   const cap = i === 0;
   const fix = (f) => (cap ? cap1(f) : f);
@@ -146,7 +157,7 @@ export function obConj(lex, view, rng) {
     title: "Veldu samtenginguna", question: "Hvaða samtenging passar í eyðuna?",
     options: shuffle([x.a, ...x.w], rng).map(fix), answer: fix(x.a), why: x.why,
     base: 8, lvl: levelFor(P, x.lvl), cell: "ofl:samtenging", word: lexWord(lex, x.a, "st"),
-    tags: ["conj"], miss: ["samtengingar"],
+    item: x.t, tags: ["conj"], miss: ["samtengingar"],
   }, [FX.exSeen(x.t)]);
 }
 
@@ -172,9 +183,14 @@ const sortableSentences = (lex) => {
 export function obSort(lex, view, rng) {
   const P = view.policy;
   /* The sentences near the band (critique item 13: until v6.13 any sentence
-     of the bank, level 1 or 5, at every band). */
+     of the bank, level 1 or 5, at every band) — the nearest 150 at least
+     (critique item 23). A short sentence seldom holds three indeclinable
+     words: the bank has about thirty at levels 1-3, and a window of twelve
+     gave a pupil the same thirty sentences week after week. So a low band
+     reaches up to the longer sentences until it has 150 to choose from,
+     and the higher bands keep to their own levels. */
   const pool = nearBand(sortableSentences(lex).filter((s) => P.level(s.lvl)), (s) => s.lvl,
-    bandFor(view, "obeygjanleg"), 12);
+    bandFor(view, "obeygjanleg"), POOL_FLOOR);
   for (let k = 0; k < 60; k++) {
     const s = pick(pool, rng);
     if (!s) return null;
@@ -207,10 +223,10 @@ export const TYPES = [
     build: obAdvPrep },
   { id: "ob_st", skill: "obeygjanleg", weight: 4, renderer: "choice",
     tags: ["conj"],
-    bands: [1, 3, 4, 5],
+    bands: [1, 4],
     build: obConj },
   { id: "ob_flokka", skill: "obeygjanleg", weight: 3, renderer: "sort",
     tags: ["ofl", "ofl:ao_fs"],
-    bands: [1, 4, 5, 6, 7],
+    bands: [1, 5, 6, 7],
     build: obSort },
 ];
