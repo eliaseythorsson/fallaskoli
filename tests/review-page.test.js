@@ -55,12 +55,15 @@ test("review page: every Lesefni page and every worked example is an item", () =
   const src = readFileSync(path.join(root, "src/js/content/lessons.js"), "utf8").split("\n");
   for (const it of lessons) assert.match(src[it.line - 1], /id: "/, it.text);
   const ex = col.items.filter((it) => it.kind === "synidaemi");
-  assert.equal(ex.length, Object.keys(EXAMPLES).length);
+  /* one per type, and one per kind where a type has kinds (umritun) */
+  const kinds0 = Object.values(EXAMPLES).reduce((n, e) => n + Object.keys(e.byKind || {}).length, 0);
+  assert.ok(kinds0 >= 9, kinds0);
+  assert.equal(ex.length, Object.keys(EXAMPLES).length + kinds0);
   const esrc = readFileSync(path.join(root, "src/js/content/examples.js"), "utf8").split("\n");
   for (const it of ex) {
-    const type = it.fields.find(([k]) => k === "gerð")[1];
-    assert.equal(esrc[it.line - 1].trim(), type + ": {", type);
-    assert.equal(it.answer, EXAMPLES[type].a);
+    const [type, kind] = it.fields.find(([k]) => k === "gerð")[1].split(" · ");
+    assert.equal(esrc[it.line - 1].trim(), (kind || type) + ": {", type);
+    assert.equal(it.answer, kind ? EXAMPLES[type].byKind[kind].a : EXAMPLES[type].a);
   }
   /* and every item belongs to a kind the page knows */
   const kinds = new Set(KINDS.map(([k]) => k));
