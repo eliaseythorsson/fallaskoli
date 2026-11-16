@@ -21,7 +21,7 @@
  * program.
  */
 
-import { migrate } from "../src/js/core/state.js";
+import { migrate, FRAMES_MAX } from "../src/js/core/state.js";
 import { BADGES } from "../src/js/core/badges.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { sanitiseReview, REVIEW_MAX } from "../src/js/core/review.js";
@@ -195,6 +195,11 @@ export function cleanState(raw, { today = new Date() } = {}) {
      sources. `migrate` already did this; it is said again here because this
      file is where the server's trust is decided. */
   S.difficulty = cleanLevels(S.difficulty);
+
+  /* Sentences seen as frames (v6.13): `migrate` has already kept only short
+     keys and whole counts (core/state.js `cleanFrames`); here the counts are
+     held to the same ceiling as every other counter. */
+  S.frames = Object.fromEntries(pairs(S.frames, FRAMES_MAX, 8).map(([k, v]) => [k, n(v, 100000)]));
 
   S.counters = Object.fromEntries(pairs(S.counters, 20, 40).map(([k, v]) => [k, n(v)]));
   S.periods = smallJSON(S.periods, 60000) || {};

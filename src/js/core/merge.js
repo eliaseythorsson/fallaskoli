@@ -191,6 +191,10 @@ export function mergeStates(base, local, remote) {
      skill the record changed last wins whole. */
   out.difficulty = mergeLevels(B.difficulty, L.difficulty, R.difficulty);
 
+  /* Sentences seen as frames (v6.13): counts that only ever grow, added like
+     any counter. */
+  out.frames = counters(B.frames, L.frames, R.frames, keys(L.frames, R.frames));
+
   out.lastActive = later(L.lastActive, R.lastActive);
   out.settled = later(L.settled, R.settled);
 

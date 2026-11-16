@@ -17,8 +17,8 @@ import { diffOf } from "../core/difficulty.js";
 import { wordKey } from "../core/state.js";
 import { adjectiveHelperForm, adjectiveGenders } from "../core/helpers.js";
 import { explainDegree } from "./explain.js";
-import { nounSentence, adjectiveSentence, showable } from "./frames.js";
-import { built } from "./effects.js";
+import { nounSentence, adjectiveSentence, nounFrames, adjectiveFrames, showable, frameKey } from "./frames.js";
+import { built, FX } from "./effects.js";
 import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, cellWanted,
          topByRank, wordWeight, cellEase, nearBand, cap1, caseWord } from "./shared.js";
 
@@ -108,12 +108,29 @@ const REVERSE_POOLS = [
   { cls: "hk", skill: "nafnord", fl: "nafnorð" },
 ];
 
+/* Which sentence carries the question (v6.13, critique item 24). Ten frames
+   made 60% of these questions: *Þetta gengur ekki án ___* and *Ferðin
+   tafðist vegna ___* were the only frames for the indefinite genitive of
+   most nouns, and abstract nouns (a third of them) fit almost nothing else.
+   Now a bank sentence carries at most one reverse-analysis question a
+   session (`sess.frames`), and among the sentences that can show the form,
+   those this pupil has met least are likelier (`S.frames`): among the
+   sentences that fit a form by 1 / (1 + times seen)², and among a word's
+   forms by how fresh their best sentence is (below). Both are written only
+   when the question is shown, by the `frame` effect. A form whose every
+   sentence is used up this session is not asked as a bare word instead; the
+   bare word stays for forms no sentence can show at all. A rescue drill asks
+   about one word again and again, and may reuse its sentences. */
+const frameWeight = (S) => (key) => 1 / (1 + ((S.frames && S.frames[key]) || 0)) ** 2;
+
 export function taskReverse(lex, view, rng) {
   const { S, sess } = view;
   const P = view.policy;
   const only = view.drillWord || null;
   const pools = REVERSE_POOLS.filter((p) => P.skill(p.skill) && (!only || p.cls === only.c));
   if (!pools.length) return null;
+  const used = new Set(only ? [] : sess.frames || []);
+  const weight = frameWeight(S);
 
   for (let k = 0; k < 60; k++) {
     const p = pick(pools, rng);
@@ -145,14 +162,39 @@ export function taskReverse(lex, view, rng) {
     if (["kk", "kvk", "hk"].includes(p.cls)) marks = marks.filter((m) => showable(w, m));
     if (!marks.length) continue;
 
+    /* How fresh the best sentence that could show each form is: 1 for one
+       this pupil has never met, 1 / (1 + times met) otherwise, 0 when every
+       one has had its turn this session. Choosing among the sentences that
+       fit a form is not enough — for some forms one sentence is all there is
+       (the indefinite genitive of an abstract noun: *Þetta gengur ekki án
+       ___*) — so a form whose sentences are worn gives way to the word's
+       other forms. A form no sentence can show keeps its old chance: it is
+       asked as a bare word (never an adjective), as before. */
+    const levelOk = (n) => P.level(n);
+    const isNoun = ["kk", "kvk", "hk"].includes(p.cls);
+    const inBank = lex.occurrencesOf(w.o, w.c).filter((r) => !(r.t.u || []).length && P.level(r.s.lvl));
+    const fresh = (mm) => {
+      const keys = [
+        ...inBank.filter((r) => r.t.m === mm).map((r) => frameKey(r.s)),
+        ...(p.cls === "lo" ? adjectiveFrames(lex, w, mm, levelOk)
+          : isNoun ? nounFrames(lex, w, mm, levelOk) : []).map((f) => frameKey(f.s)),
+      ];
+      if (!keys.length) return p.cls === "lo" ? 0 : 1;
+      const open = keys.filter((key) => !used.has(key));
+      return open.length ? Math.max(...open.map((key) => Math.sqrt(weight(key)))) : 0;
+    };
+    const reach = new Map(marks.map((mm) => [mm, fresh(mm)]));
+    marks = marks.filter((mm) => reach.get(mm) > 0);
+    if (!marks.length) continue;
     /* Cells this pupil gets wrong come more often; at a low level the
-       easier cells do (`cellEase`, item 16). */
+       easier cells do (`cellEase`, item 16); and a form whose sentences are
+       fresh more than one whose sentences are worn (item 24). */
     const ease = (mm) => cellEase(lex, view, p.skill, mm);
     const m = wpick(marks, (mm) => {
       const rec = S.cells[mm];
-      if (!rec) return 2 * ease(mm);
-      const n = rec.c + rec.w;
-      return (n < 3 ? 2 : 0.5 + 2.5 * (rec.w / n)) * ease(mm);
+      const n = rec ? rec.c + rec.w : 0;
+      const cell = !rec || n < 3 ? 2 : 0.5 + 2.5 * (rec.w / n);
+      return cell * reach.get(mm) * ease(mm);
     }, rng);
     const form = w.forms[m].find((f) => counts.get(f) === 1);
     if (!form) continue;
@@ -161,23 +203,22 @@ export function taskReverse(lex, view, rng) {
        with this exact word in it; a frame with this word substituted in
        (tasks/frames.js); the bare form out of BÍN — still needed for verbs,
        which are never substituted. */
-    const occ = lex.occurrencesOf(w.o, w.c)
-      .filter((r) => r.t.m === m && !(r.t.u || []).length && P.level(r.s.lvl));
+    const occ = inBank.filter((r) => r.t.m === m && !used.has(frameKey(r.s)));
     if (occ.length) {
-      const r = pick(occ, rng);
+      const r = wpick(occ, (x) => weight(frameKey(x.s)), rng);
       return built({
         type: "parse", skill: p.skill, base: 4, picks: {},
         s: r.s, i: r.i, t: r.t, a: readMark(r.t.m),
         cell: r.t.m, word: wordKey(w.o, w.c), lvl: r.s.lvl,
         lemmaWord: w,
         homograph: lex.homographClasses(w.o).length > 1 ? lex.homographClasses(w.o) : null,
-      });
+      }, [FX.frame(frameKey(r.s))]);
     }
 
     const maxLvl = bandFor(view, p.skill);
-    const opts = { maxLvl, levelOk: (n) => P.level(n), rng };
+    const opts = { maxLvl, levelOk, rng, avoid: used, weight };
     const made = p.cls === "lo" ? adjectiveSentence(lex, w, m, form, opts)
-      : ["kk", "kvk", "hk"].includes(p.cls) ? nounSentence(lex, w, m, form, opts)
+      : isNoun ? nounSentence(lex, w, m, form, opts)
         : null;
     if (made) {
       return built({
@@ -186,7 +227,7 @@ export function taskReverse(lex, view, rng) {
         cell: m, word: wordKey(w.o, w.c), lvl: made.lvl,
         lemmaWord: w, framed: true,
         homograph: lex.homographClasses(w.o).length > 1 ? lex.homographClasses(w.o) : null,
-      });
+      }, [FX.frame(made.key)]);
     }
 
     /* v6.11: an adjective is never analysed as a bare word — the sentence
