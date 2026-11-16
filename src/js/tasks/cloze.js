@@ -11,7 +11,7 @@ import { wordKey } from "../core/state.js";
 import { explainSlot } from "./explain.js";
 import { substitutable, acceptsNoun, candidateNouns, settled, repeatsNoun } from "./frames.js";
 import { pick, wpick, shuffle, askable, sentPool, drilling, forced, forcedCell, wordWeight,
-         isTimeNoun, bandFor } from "./shared.js";
+         isTimeNoun, bandFor, cellEase } from "./shared.js";
 
 /* How often a slot of each case is let through when the cloze is `balanced`
    (critique item 15). The bank is full of subjects, so left alone 37% of the
@@ -52,7 +52,15 @@ export function nounCloze(lex, view, rng, { noun = null, only = null, balanced =
     if (!askable(P, t.m)) continue;
     /* Not in a drill: that asks about one word and takes the sentence it can get. */
     const weigh = balanced && !drilling(view);
-    if (weigh && rng() >= CASE_ODDS[a.fall]) continue;
+    /* The second axis (item 16): at a low level a hard cell — the genitive
+       plural, a form with the article — is kept less often, but it is never
+       shut out (`cellEase` has a floor). It multiplies the odds per case rather than
+       replacing them: the dative and the genitive stay commoner than the
+       nominative at every level. Not in a drill, and not for the word asked
+       again after a wrong answer: those take the sentence they can get. */
+    const ease = drilling(view) || noun ? 1 : cellEase(lex, view, "nafnord", t.m);
+    const odds = (weigh ? CASE_ODDS[a.fall] : 1) * ease;
+    if (odds < 1 && rng() >= odds) continue;
     const open = substitutable(s);
     /* A drill wants its own word, so a sentence with its noun fixed is no use. */
     if (drilling(view) && !open) continue;

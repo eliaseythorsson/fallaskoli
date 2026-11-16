@@ -240,7 +240,29 @@ print('homograph additions:',len(extra),
       [f"{x['o']}·{x['c']}" for x in extra[:12]])
 print('  rejected by filters 1-2:',len(skipped),skipped[:10])
 
-data={'v':5,'src':'BÍN via BinPackage; tíðni úr OpenSubtitles-lista','orders':ORDERS,'w':W}
+# The second axis of difficulty (v6.13, critique item 16): how irregular each
+# paradigm is (`irr`, 1-5) and how hard each cell is (`cellh`, one digit per
+# cell in the order of ORDERS). Measured here, on the finished paradigms —
+# after the same-name merge, so *brenna* is scored with both its pasts — and
+# explained in irregularity.py. These two fields are the ONLY place the
+# scores are kept; the app reads them and nothing else (core/lexicon.js).
+import irregularity
+_irr=collections.defaultdict(collections.Counter)
+_why=collections.Counter()
+for x in W:
+    sc=irregularity.score(x,ORDERS)
+    if sc is None: continue
+    x['irr']=sc[0]
+    _irr['no' if x['c'] in NOUNS else x['c']][sc[0]]+=1
+    for fl in sc[1]: _why[fl]+=1
+for k in ('no','lo','so'):
+    print('  irregularity %s:'%k,' '.join('%d:%d'%(n,_irr[k][n]) for n in range(1,6)))
+print('  irregularity flags:',' '.join('%s:%d'%kv for kv in sorted(_why.items())))
+for n in range(1,6):
+    print('  irr %d:'%n,' '.join(x['o'] for x in W if x.get('irr')==n)[:110])
+
+data={'v':5,'src':'BÍN via BinPackage; tíðni úr OpenSubtitles-lista','orders':ORDERS,
+      'cellh':irregularity.cell_table(ORDERS),'w':W}
 json.dump(data,open('lexicon.json','w'),ensure_ascii=False,separators=(',',':'))
 cnt=collections.Counter(x['c'] for x in W)
 print('words:',len(W),dict(cnt))

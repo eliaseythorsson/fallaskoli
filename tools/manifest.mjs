@@ -38,6 +38,8 @@ const INPUTS = [
   "freq_raw.txt", "sentences.py", "noun_classes.py", "definitions.py",
   "vocab_filter.py", "government.py", "parse_guard.py", "parse_overrides.py",
   "build_freq.py", "build_lexicon.py", "build_sentences.py", "build_bundle.py",
+  /* v6.13: the irregularity and cell scores written into the lexicon (item 16) */
+  "irregularity.py",
   /* v6.11: the hand-written exercise items and the build that resolves them in BÍN */
   "exercises.py", "build_exercises.py",
 ];

@@ -60,6 +60,8 @@ What the build does, in order:
    sentences, exercises and definitions use ×3, film register (vocab_filter.py
    `SUBTITLE_REGISTER`, and ÍNO's *niðrandi*/*gróft*) ×0.1
 2. `build_lexicon.py` — every attested lemma's paradigm out of BÍN → `lexicon.json`
+   (and, by `irregularity.py`, how irregular each paradigm is, `irr` 1–5, and
+   how hard each cell is, `cellh` — the second axis of difficulty)
 3. `build_sentences.py` — every sentence in `sentences.py` parsed by Greynir
    and checked by `parse_guard.py` → `sentences.json`
 4. `build_bundle.py` — lexicon + sentences + semantic classes + definitions
@@ -81,6 +83,10 @@ What the build does, in order:
 ```
 sentences.py          the sentence bank: (level, text, slot, need[, options])
 noun_classes.py       semantic class of every noun; í/á convention; exclusions
+irregularity.py       how irregular a paradigm is (stems counted on BÍN's forms:
+                      umlaut, syncope, -j-/-v-, consonant change, strong verbs)
+                      and the table of how hard each cell is; the app lets the
+                      level choose on both (core/difficulty.js hardnessWeight)
 government.py         which cases prepositions and verbs govern — used only to
                       REJECT a parse that contradicts it, never to assert one
 parse_guard.py        the checks every token passes: the lemma is plausible, the

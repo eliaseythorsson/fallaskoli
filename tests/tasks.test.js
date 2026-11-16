@@ -215,9 +215,13 @@ test("the top skill level covers most of the vocabulary", () => {
 test("common words are still many times likelier than rare ones", () => {
   /* The other side of the same request: "could common words still come up more
      often?" */
-  const view = { S: { skills: {}, words: {} }, sess: { seen: [] } };
-  const common = lex.nouns.find((x) => x.r <= 5);
-  const rare = lex.nouns[lex.nouns.length - 1];
+  /* v6.13: the weight also reads the session's level and the policy (the
+     second axis, item 16), and the commonest nouns are the irregular ones —
+     so the comparison is between two words of the same irregularity. */
+  const view = { S: { skills: {}, words: {} }, sess: { seen: [], diff: {} }, policy: { maxLevel: 7 } };
+  const regular = lex.nouns.filter((x) => x.irr === 1).sort((a, b) => a.r - b.r);
+  const common = regular[0], rare = regular[regular.length - 1];
+  assert.ok(common.r <= 10, `the commonest regular noun has rank ${common.r}`);
   const wc = wordWeight(lex, view, common, "nafnord");
   const wr = wordWeight(lex, view, rare, "nafnord");
   assert.ok(wc / wr > 20, `a common word is only ${(wc / wr).toFixed(1)}x likelier`);

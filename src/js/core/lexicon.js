@@ -8,6 +8,21 @@
 import { ordKey, CLASSNAME, readMark } from "./marks.js";
 import { normalise } from "./grading.js";
 
+/* The scores of the second difficulty axis (critique item 16) are read here
+   and nowhere else:
+
+     w.irr                 how irregular the word's paradigm is, 1–5 (nouns,
+                           adjectives, verbs; absent on the closed classes)
+     lex.cellHardness(m)   how hard the cell with BÍN mark `m` is, 1–5
+
+   Both come out of the build (irregularity.py explains how they are
+   measured; `DATA.lex.cellh` is the cell table). Item 17 — calibration from
+   what pupils actually get wrong — changes them by passing `hardness` below:
+   the builders never see where a score came from. */
+const HARD_LO = 1, HARD_HI = 5;
+const hardScore = (v) => (typeof v === "number" && Number.isFinite(v)
+  ? Math.max(HARD_LO, Math.min(HARD_HI, v)) : null);
+
 /**
  * @param DATA          the bundle
  * @param opts.hide     words to leave out entirely — the vocabulary filter
@@ -18,10 +33,31 @@ import { normalise } from "./grading.js";
  *                      not the noun). Removed before anything indexes the
  *                      corpus, so they are absent from the exercises, the
  *                      collection and the totals alike.
+ * @param opts.hardness scores that replace the build's (item 17):
+ *                      { words: { "maður|kk": 4.5 }, cells: { "EFFT": 4 } } —
+ *                      a word by `wordKey` (lemma|class), a cell by its BÍN
+ *                      mark. Fractions are fine; values are held to 1–5 and
+ *                      anything that is not a number is ignored.
  */
-export function buildLexicon(DATA, { hide = null } = {}) {
+export function buildLexicon(DATA, { hide = null, hardness = null } = {}) {
   const ORD = DATA.lex.orders;
   const skip = hide && hide.size ? hide : null;
+  const adjWord = (hardness && hardness.words) || {};
+  const adjCell = (hardness && hardness.cells) || {};
+
+  /* mark → hardness. The same mark means the same cell wherever it stands
+     (a noun's NFET and a personal pronoun's), and the build gives it the
+     same score, so one flat table serves every class. */
+  const cellHard = new Map();
+  Object.entries(DATA.lex.cellh || {}).forEach(([key, digits]) =>
+    (ORD[key] || []).forEach((m, i) => {
+      const h = hardScore(Number(String(digits)[i]));
+      if (h != null) cellHard.set(m, h);
+    }));
+  Object.entries(adjCell).forEach(([m, v]) => {
+    const h = hardScore(v);
+    if (h != null) cellHard.set(m, h);
+  });
 
   const hidden = (w) => skip.has(w.o) || skip.has(`${w.o}|${w.c}`);
   const W = (skip ? DATA.lex.w.filter((w) => !hidden(w)) : DATA.lex.w).map((w) => {
@@ -33,7 +69,10 @@ export function buildLexicon(DATA, { hide = null } = {}) {
     } else {
       forms.OBEYGJANLEGT = [w.f];
     }
-    return { ...w, lemma: w.o, forms, fl: CLASSNAME[w.c] || w.c };
+    const out = { ...w, lemma: w.o, forms, fl: CLASSNAME[w.c] || w.c };
+    const adj = hardScore(adjWord[`${w.o}|${w.c}`]);
+    if (adj != null) out.irr = adj;
+    return out;
   });
 
   const byClass = {};
@@ -126,6 +165,10 @@ export function buildLexicon(DATA, { hide = null } = {}) {
     adjectives: byClass.lo || [],
     verbs: byClass.so || [],
     sentences: DATA.sent,
+
+    /** How hard the cell with this BÍN mark is, 1–5, or null if it has no
+        score (see the top of this file). */
+    cellHardness: (m) => cellHard.get(m) ?? null,
 
     /** Sentence tokens of a word class that are safe to build a question on. */
     slotsFor: (fl) => conf().byFl[fl] || [],

@@ -11,7 +11,7 @@ import { wordKey } from "../core/state.js";
 import { explainVerbForm, conjugationNote } from "./explain.js";
 import { built } from "./effects.js";
 import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, topByRank,
-         shareForLevel, wordWeight, cellWeight } from "./shared.js";
+         shareForLevel, wordWeight, cellWeight, cellEase } from "./shared.js";
 
 /* ================= Sagnbeyging ========================================== */
 
@@ -93,13 +93,18 @@ export function taskVerb(lex, view, rng) {
      third person singular with *það*: "það snjóar", never "ég snjóa". */
   const subs = v.t3 ? THIRD_ONLY_SUBJECTS : SUBJECTS;
 
+  /* Among the tenses that are open, and among the persons, the easier cells
+     come more often at a low level (`cellEase`, item 16): the present before
+     the subjunctive, *ég* before *þið*. A tense is weighed by its third
+     person singular. */
   const P = view.policy;
+  const ease = (m) => cellEase(lex, view, "sagnord", m);
   for (let k = 0; k < 12; k++) {
-    const [pref, label] = pick(specs, rng);
+    const [pref, label] = wpick(specs, ([p]) => ease(p + "-3P-ET"), rng);
     const cands = subs.filter(([sfx]) =>
       v.forms[pref + "-" + sfx] && askable(P, pref + "-" + sfx));
     if (!cands.length) continue;
-    const [sfx, who] = pick(cands, rng);
+    const [sfx, who] = wpick(cands, ([x]) => ease(pref + "-" + x), rng);
     return verbTask(view, v, pref, label, sfx, who);
   }
   return null;
@@ -156,7 +161,8 @@ export function taskVerbSlot(lex, view, rng) {
   if (!slots.length) return null;
 
   const r = wpick(slots, (x) =>
-    cellWeight(S, x.t.m) * wordWeight(lex, view, x.w, "sagnord"), rng);
+    cellWeight(S, x.t.m) * cellEase(lex, view, "sagnord", x.t.m)
+      * wordWeight(lex, view, x.w, "sagnord"), rng);
   const { s, i, t, w: v } = r;
 
   return built({
@@ -238,10 +244,10 @@ export const TYPES = [
     build: taskVerbSlot },
   { id: "verb", skill: "sagnord", weight: 8, renderer: "verb",
     tags: ["form", "num", "verb:agree", "verb:mm", "verb:strongpast", "verb:tense", "verb:vh"],
-    bands: [1, 3, 4],
+    bands: [1, 2, 3, 4, 5],
     build: taskVerb },
   { id: "tbl_so", skill: "sagnord", weight: 5, renderer: "table",
     tags: ["form", "num", "verb:agree", "verb:mm", "verb:tense", "verb:vh"],
-    bands: [1, 3, 4],
+    bands: [1, 2, 3, 4, 5],
     build: tableVerb },
 ];
