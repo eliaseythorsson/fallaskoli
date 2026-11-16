@@ -7,7 +7,9 @@ import { migrate, blankState, newSession, todayKey, badgeContext, settleDays,
 import { applyDecay } from "./core/progress.js";
 import { checkBadges, checkLogin, celebrate } from "./core/badges.js";
 import { collectionSummary } from "./core/collection.js";
-import { nextTask, drillTask, makeView, applyEffects } from "./tasks/index.js";
+import { nextTask, drillTask, makeView, withView, applyEffects, planOpening, nextOpening,
+  scheduleReask, nextReask } from "./tasks/index.js";
+import { reviewLine } from "./core/review.js";
 import { statusOf, weakWords, drillable, startDrill, drillStep, settleDrill } from "./core/wordhealth.js";
 import { grantXp } from "./core/state.js";
 import { renderDrillBar } from "./ui/drill.js";
@@ -232,8 +234,13 @@ const app = {
   runDone: null,
   runNotice: null,
 
-  /** Begin a session. `focus`: pattern ids, for a session aimed at them. */
-  startRun(topic, n, focus = null) {
+  /**
+   * Begin a session. `focus`: pattern ids, for a session aimed at them.
+   * `opts.review: false` starts it without the reviews a session otherwise
+   * opens with (core/review.js) — for a caller whose few questions are all
+   * spoken for.
+   */
+  startRun(topic, n, focus = null, opts = {}) {
     if (this.duelRun) { this.openView("practice"); return; }
     this.drill = null; this.drillOffer = null; this.drillDone = null;
     this.forcedNoun = null;
@@ -246,7 +253,13 @@ const app = {
       chances: {}, misses: {}, found: [],
       before: activePatterns(this.S, 6).map((p) => p.id),
       startedAt: Date.now(),
+      /* The review queue (core/review.js, tasks/review.js): `review` is the
+         keys of the due entries this session opens with, `reask` the nouns of
+         missed clozes waiting for their turn three to five questions on. */
+      review: [], reask: [],
     };
+    if (opts.review !== false)
+      this.run.review = planOpening(this.S, todayKey(), n, this.reviewPolicy(), this.run.focus);
     this.S.settings.runTopic = topic === MINE.id ? this.S.settings.runTopic : topic;
     this.S.settings.runSize = n;
     this.save();
@@ -263,6 +276,29 @@ const app = {
       skills: SKILL_IDS.includes(r.topic) ? [r.topic] : null,
       types: r.focus ? [...focusTypes(r.focus)] : null,
     });
+  },
+
+  /**
+   * The policy a review is asked under: the session's topic, but not the
+   * narrowing to the question types of the patterns it is aimed at — a review
+   * is asked in the type it was missed in.
+   */
+  reviewPolicy() {
+    const r = this.run;
+    return narrowPolicy(effectivePolicy(this.S), {
+      skills: r && SKILL_IDS.includes(r.topic) ? [r.topic] : null, types: null,
+    });
+  },
+
+  /**
+   * A wrong cloze: its noun comes back three to five questions on, not at
+   * once (critique item 19). Called by the cloze's renderer, which says under
+   * the verdict which of the two it will be. True if the session is long
+   * enough; otherwise the review queue has it for tomorrow.
+   */
+  planReask(task) {
+    if (!this.run || this.drill || this.duelRun || !task || !task.inRun) return false;
+    return scheduleReask(this.run, task, rng);
   },
 
   /**
@@ -298,6 +334,19 @@ const app = {
       effects.set(b.task, b.effects);
       return b.task;
     };
+    /* v6.13, the review queue. A session opens with up to three entries that
+       are due; and the noun of a cloze missed earlier in the session comes
+       back when its turn has come. Both are ordinary questions built by the
+       ordinary builders (tasks/review.js) and are outside the mix rule: there
+       are at most three of the first, and the second is held to the share of
+       clozes a session may have. */
+    const rv = withView(view, { policy: this.reviewPolicy(), mix: null });
+    const due = nextOpening(this.lex, rv, rng, r)
+      || nextReask(this.lex, rv, rng, r, (counts.fill || 0) + 1 <= maxOf("fill", r.n));
+    if (due) {
+      applyEffects(this, due.effects);
+      return due.task;
+    }
     const t = this.forcedNoun ? build()
       : pickTargeted(build, ids, { p: r.focus ? 0.85 : 0.4, tries: r.focus ? 8 : 5, rnd: rng });
     if (t) applyEffects(this, effects.get(t));
@@ -512,11 +561,12 @@ const app = {
        findings (core/answer.js) and they arrive here; a caller that still
        hands over the raw `resp` gets it diagnosed as before. Neither goes
        further than here — the badge context below is built from `extra`. */
-    const { resp, findings: judged, ...rest } = extra;
+    const { resp, findings: judged, review, ...rest } = extra;
     extra = rest;
     const findings = judged || diagnose(this.cur, resp);
     const chances = noteDiagnosis(this.S, this.cur, findings, extra.correct ?? null, todayKey());
     showFindings(findings, extra.correct);
+    showReview(review);
     const r = this.run;
     if (r && this.cur && this.cur.inRun && !this.cur.closed) {
       this.cur.closed = true;
@@ -615,6 +665,18 @@ function showFindings(findings, verdict) {
   const names = real.map((f) => (patternById(f.p) || {}).nm).filter(Boolean);
   v.insertAdjacentHTML("beforeend", `<p class="diagline">🔎 <b>Villugreining:</b> ${
     names.map(esc).join(" · ")}</p>`);
+}
+
+/**
+ * One line under a right answer that was a review (core/review.js): when it
+ * comes next, or that it is done with. `review` is what `noteReview` said
+ * happened in the queue; nothing is shown unless an entry moved.
+ */
+function showReview(review) {
+  const v = document.querySelector("#verdict .verdict");
+  if (!v || !review || v.querySelector(".reviewline")) return;
+  const line = reviewLine(review);
+  if (line) v.insertAdjacentHTML("beforeend", `<p class="streakline reviewline">🔁 ${esc(line)}</p>`);
 }
 
 /**

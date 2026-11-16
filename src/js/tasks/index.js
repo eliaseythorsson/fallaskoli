@@ -9,6 +9,8 @@
      effects.js         what showing a question changes, as data
      next.js            choosing the next question of a session or a duel
      drill.js           the rescue drill: questions about one word
+     review.js          a review: an entry of the queue (core/review.js) asked
+                        again, with its cell or word forced
      shared.js          the random source, word choice, pools, small helpers
      cloze.js, tap.js   the two builders more than one category asks for
      frames.js          sentence frames: one word lifted out, another put in
@@ -32,3 +34,4 @@ export { nextTask } from "./next.js";
 export { drillTask, DRILL_PLAN, DRILL_MEANING_TURN } from "./drill.js";
 export { makeView, withView } from "./view.js";
 export { applyEffects, built, FX } from "./effects.js";
+export { reviewTask, planOpening, nextOpening, scheduleReask, nextReask } from "./review.js";

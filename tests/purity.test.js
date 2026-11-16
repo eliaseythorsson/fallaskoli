@@ -182,7 +182,9 @@ test("the view is read-only, and deriving one leaves the first as it was", () =>
 /* ---------- effects: applied for the task that is shown, and only then ---- */
 
 test("a vocabulary item is marked as asked when its question is shown, not when it is built", () => {
-  for (const id of ["meaning", "or_heiti", "or_samhengi", "or_myndun", "to_samr", "to_flt"]) {
+  /* Not to_samr and to_flt: since v6.13 the numeral items are grammar, not
+     vocabulary, and are not marked at all (tests/review.test.js). */
+  for (const id of ["meaning", "or_heiti", "or_samhengi", "or_myndun"]) {
     const p = pupil(3, 5);
     const spec = typeById(id);
     const before = copy(p.S.vocab);

@@ -6,25 +6,70 @@
      to_dags  the ordinal in a date ("Í dag er ___ (3.) maí")
      to_flt   einir, tvennir, þrennir, fernir with a plural-only noun
 
-   All but the table are hand-written items (data/exercises.js). to_samr and
-   to_flt are spaced like vocabulary (`pickVocab` in tasks/shared.js). */
+   All but the table are hand-written items (data/exercises.js).
+
+   v6.13 (critique item 20): to_samr and to_flt are GRAMMAR, and are no
+   longer spaced like vocabulary. Until now they went through `pickVocab`
+   (tasks/shared.js): never the same item twice in a day, never within a
+   week, a month after two showings. That suits the meaning of a word —
+   known once, known — and is the opposite of what numeral agreement needs,
+   which is to be met again. They were also filed in the vocabulary record
+   under the key of another question type ("samhengi", which is or_samhengi),
+   and their frequency rank was looked up on the list of answers instead of
+   the word, so every item had rank 5000 and was only ever reached when the
+   rank window had widened all the way. Now:
+
+     - a missed item comes back through the review queue (core/review.js):
+       the next day, then after 3, 7 and 21 days;
+     - within a visit an item is not asked twice while others are left
+       (`fresh` + `FX.exSeen`, tasks/shared.js — the gate to_val always had);
+     - nothing is written to the vocabulary record, and no rank is read: the
+       items are numerals one to four, and all of them are for everybody.   */
 
 import { EX } from "../../../data/exercises.js";
 import { CASES, GENDERS } from "../core/marks.js";
 import { wordKey } from "../core/state.js";
 import { built, FX } from "./effects.js";
-import { pick, wpick, shuffle, randInt, bandFor, levelFor, forced, drilling, wordWeight,
-         sameInEveryCell, cap1, caseWord, textSentence, fresh, lexWord, pickVocab } from "./shared.js";
+import { pick, wpick, shuffle, randInt, bandFor, levelFor, forced, drilling, forcedCell,
+         forcedItem, wordWeight, cellWeight, sameInEveryCell, cap1, caseWord, textSentence,
+         fresh, lexWord } from "./shared.js";
+
+/* What a review may ask of the hand-written numeral items (tasks/review.js):
+   the cell ("to:KVK-ÞFFT") and the numeral (*tveir*). Both or nothing. */
+const numeralAsked = (view) => {
+  const fc = forcedCell(view), fw = forced(view, ["to"]);
+  return (x) => (!fc || "to:" + x.m === fc) && (!fw || (x.l === fw.o && x.c === fw.c));
+};
 
 /* ================= Beygingartafla ======================================== */
 
 export function tableNumeral(lex, view, rng) {
-  const { sess } = view;
   const pool = [...(lex.byClass.to || []), ...(lex.byClass.rt || [])];
   if (!pool.length) return null;
   if (drilling(view) && !forced(view, ["to", "rt"])) return null;
-  const w = forced(view, ["to", "rt"]) || wpick(pool, (x) => wordWeight(lex, view, x, "toluord"), rng);
-  const kyn = pick(["KK", "KVK", "HK"], rng);
+  /* A review (tasks/review.js) asks for the table its cell is in — of the
+     review's own word, or of a numeral that has such a table (most ordinals
+     have no plural worth asking: *þriðju* × 4). */
+  const fc = forcedCell(view);
+  const f = /^(KK|KVK|HK)-/.exec(fc || "");
+  if (fc && !f) return null;
+  const able = fc && !forced(view, ["to", "rt"]) ? pool.filter((x) => numeralCells(view, x, f[1], fc)) : pool;
+  if (!able.length) return null;
+  const w = forced(view, ["to", "rt"]) || wpick(able, (x) => wordWeight(lex, view, x, "toluord"), rng);
+  const kyn = f ? f[1] : pick(["KK", "KVK", "HK"], rng);
+  const made = numeralCells(view, w, kyn, fc);
+  if (!made) return null;
+  const { cells, num } = made;
+  return built({
+    type: "table", kind: "to", skill: "toluord", w, cells,
+    title: `${w.o} · ${GENDERS[kyn.toLowerCase()]} ${num === "ET" ? "eintala" : "fleirtala"}`,
+    base: 5, word: wordKey(w.o, w.c), lvl: bandFor(view, "toluord"), paradigm: w.forms,
+  });
+}
+
+/** The four cells of a numeral's table in one gender, or null. With `fc`,
+    only the table that cell is in. */
+function numeralCells(view, w, kyn, fc = null) {
   /* The singular where the word has one — *einn*, *annar*, *þriðji* — and
      the plural for *tveir*, *þrír*, *fjórir*, which have nothing else. The
      order used to be the other way round, so *einn* was only ever asked as
@@ -35,13 +80,10 @@ export function tableNumeral(lex, view, rng) {
       .map((cs) => ({ m: `${kyn}-${(cs.k === "ÞG" ? "ÞGF" : cs.k)}${num}`, label: cs.name }))
       .filter((c) => w.forms[c.m]);
     if (cells.length < 4) continue;
+    if (fc && !cells.some((c) => c.m === fc)) continue;
     if (sameInEveryCell(w, cells)) continue;
     if (!view.policy.marks(cells.map((c) => c.m))) continue;
-    return built({
-      type: "table", kind: "to", skill: "toluord", w, cells,
-      title: `${w.o} · ${GENDERS[kyn.toLowerCase()]} ${num === "ET" ? "eintala" : "fleirtala"}`,
-      base: 5, word: wordKey(w.o, w.c), lvl: bandFor(view, "toluord"), paradigm: w.forms,
-    });
+    return { cells, num };
   }
   return null;
 }
@@ -52,12 +94,16 @@ export function tableNumeral(lex, view, rng) {
 export function toAgree(lex, view, rng) {
   const P = view.policy;
   const b = bandFor(view, "toluord");
-  const items = EX.numeralAgree.filter((x) => P.mark(x.m) && (b >= 2 || x.case !== "EF"));
+  if (drilling(view) && !forced(view, ["to"])) return null;
+  const reviewing = !!(forcedCell(view) || forced(view, ["to"]));
+  /* The genitive from þyngd 2 — but a review asks for what was missed. */
+  const items = EX.numeralAgree.filter((x) => P.mark(x.m) &&
+    (reviewing ? numeralAsked(view)(x) : b >= 2 || x.case !== "EF"));
   if (!items.length) return null;
-  const v = pickVocab(view, rng, "samhengi", items, (y) => y.t,
-    (y) => { const e = lex.lookup(y.a.o, y.a.c); return e && e.r ? e.r : 5000; });
-  if (!v) return null;
-  const x = v.x;
+  /* Not the same sentence twice in a visit while others are left; among
+     those, the cells this pupil gets wrong come up more often (`cellWeight`:
+     up to five times as often as one always right). */
+  const x = wpick(fresh(view, agreeKey, items), (y) => cellWeight(view.S, "to:" + y.m), rng);
   const { s, i } = textSentence(x.t);
   const cap = i === 0;
   const noun = s.tok[i + 1].w;
@@ -69,13 +115,20 @@ export function toAgree(lex, view, rng) {
     why: `*${noun}* er ${GENDERS[x.g]}, ${caseWord(x.case)}, ${x.n === 1 ? "eintala" : "fleirtala"} — og töluorðið líka: **${x.a[0]}**.`,
     base: 10, lvl: levelFor(P, x.case === "EF" ? 3 : x.case === "ÞGF" ? 2 : 1),
     cell: "to:" + x.m, word: lexWord(lex, x.l, x.c), tags: [], cap, numeral: x,
-  }, [v.fx]);
+  }, [FX.exSeen(agreeKey(x))]);
 }
+
+/* The keys the session remembers these items by (`sess.exSeen`). One sentence
+   carries four items — "Ég á ___ (1/2/3/4) systur" — so the number is part of
+   the key. to_val shares the sentences and has its own keys ("c" + …). */
+const agreeKey = (x) => `a${x.n}:${x.t}`;
+const pluralKey = (x) => `p${x.n}:${x.t}`;
 
 /** The same item as a choice between forms of the numeral. */
 export function toChoice(lex, view, rng) {
   const P = view.policy;
-  const items = EX.numeralAgree.filter((x) => P.mark(x.m) && x.n > 1);
+  if (drilling(view) && !forced(view, ["to"])) return null;
+  const items = EX.numeralAgree.filter((x) => P.mark(x.m) && x.n > 1 && numeralAsked(view)(x));
   if (!items.length) return null;
   const x = pick(fresh(view, (y) => "c" + y.t, items), rng);
   const para = EX.para[`${x.l}|${x.c}`] || {};
@@ -108,7 +161,10 @@ export function toDate(lex, view, rng) {
   const P = view.policy;
   const b = bandFor(view, "toluord");
   const D = EX.dates;
-  const frames = D.frames.filter((f) => P.mark(`KK-${f.case}ET`));
+  if (drilling(view)) return null;
+  /* A review (tasks/review.js) asks for the case that was missed. */
+  const frames = D.frames.filter((f) => P.mark(`KK-${f.case}ET`) &&
+    (!forcedCell(view) || forcedCell(view) === "to:dags-" + f.case));
   if (!frames.length) return null;
   const f = pick(frames, rng);
   const mi = randInt(12, rng);
@@ -136,12 +192,15 @@ export function toDate(lex, view, rng) {
 export function toPlural(lex, view, rng) {
   const P = view.policy;
   const KY = { kk: "KK", kvk: "KVK", hk: "HK" };
-  const items = EX.pluralOnly.filter((x) => P.mark(`${KY[x.g]}-${x.case}FT`));
+  if (drilling(view)) return null;
+  /* A review (tasks/review.js) asks for the very item that was missed:
+     *tvennar buxur* is known noun by noun. */
+  const want = forcedItem(view);
+  const items = EX.pluralOnly.filter((x) => P.mark(`${KY[x.g]}-${x.case}FT`) &&
+    (!want || pluralKey(x) === want));
   if (!items.length) return null;
-  const v = pickVocab(view, rng, "samhengi", items, (y) => y.t,
-    (y) => { const e = lex.lookup(y.a.o, y.a.c); return e && e.r ? e.r : 5000; });
-  if (!v) return null;
-  const x = v.x;
+  if (!want && forcedCell(view) && forcedCell(view) !== "to:fleirtoluord") return null;
+  const x = pick(want ? items : fresh(view, pluralKey, items), rng);
   const { s, i } = textSentence(x.t);
   const cap = i === 0;
   const noun = s.tok[i + 1].w;
@@ -153,8 +212,10 @@ export function toPlural(lex, view, rng) {
     hint: `*${x.noun}* er aðeins til í fleirtölu.`,
     why: `Orð sem eru aðeins til í fleirtölu (*buxur, skæri, gleraugu, tónleikar*) taka **einir, tvennir, þrennir, fernir**: *${x.a[0]} ${noun}*${x.plain.length ? ` — ekki *${x.plain[0]} ${noun}*` : ""}.`,
     base: 12, lvl: levelFor(P, 3), cell: "to:fleirtoluord", word: null,
+    /* What the review queue knows this item by (core/review.js `i`). */
+    item: pluralKey(x),
     tags: ["plnum"], cap,
-  }, [v.fx]);
+  }, [FX.exSeen(pluralKey(x))]);
 }
 
 export const TYPES = [

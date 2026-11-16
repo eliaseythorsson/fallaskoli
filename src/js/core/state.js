@@ -10,6 +10,7 @@ import { initDiff } from "./difficulty.js";
 import { timeContext } from "./calendar.js";
 import { checkDayEnd } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
+import { blankReview, sanitiseReview } from "./review.js";
 
 export const STATE_VERSION = 11;
 
@@ -85,6 +86,10 @@ export function blankState() {
     /* Practice sessions (v6.10): the last 40, newest last —
        {at: ms, d: date, topic, n, c, j: judged, xp, top: [pattern ids]}. */
     runs: [],
+    /* The review queue (v6.13, core/review.js): what was missed and when it
+       is next to be asked — { items: [entry …], stats: { … } }. That file
+       describes the shape; nothing else writes to it. */
+    review: blankReview(),
   };
 }
 
@@ -154,6 +159,9 @@ export function migrate(raw) {
     duels: raw.duels && typeof raw.duels === "object" ? { ...raw.duels } : {},
     diag: raw.diag && typeof raw.diag === "object" && !Array.isArray(raw.diag) ? { ...raw.diag } : {},
     runs: Array.isArray(raw.runs) ? raw.runs.filter((r) => r && typeof r === "object").slice(-40) : [],
+    /* Rebuilt field by field: a state saved before the queue existed gets an
+       empty one, and nothing of the wrong shape survives a load. */
+    review: sanitiseReview(raw.review),
   });
   S.run = 0;
 

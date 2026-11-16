@@ -9,7 +9,7 @@
 
 import { bandOf } from "../core/difficulty.js";
 import { built } from "./effects.js";
-import { pick, bandFor } from "./shared.js";
+import { pick, bandFor, forcedCell } from "./shared.js";
 
 /* ================= Setningarhlutar ======================================= */
 
@@ -20,10 +20,15 @@ export function taskSyntax(lex, view, rng) {
   const usable = lex.sentences.filter((x) => P.level(x.lvl));
   const pool = usable.filter((s) => s.tok.some((t) => t.r) && s.lvl <= b);
   if (!pool.length && !usable.length) return null;
-  const s = pick(pool.length ? pool : usable, rng);
+  /* A review (tasks/review.js) asks for the role that was missed. */
+  const fc = forcedCell(view);
+  const has = (x) => x.tok.some((t) => "setn:" + t.r === fc);
+  const from = !fc ? (pool.length ? pool : usable) : pool.some(has) ? pool.filter(has) : usable.filter(has);
+  if (!from.length) return null;
+  const s = pick(from, rng);
   const roles = [...new Set(s.tok.filter((t) => t.r).map((t) => t.r))];
   if (!roles.length) return null;
-  const askRole = pick(roles, rng);
+  const askRole = fc ? fc.slice(5) : pick(roles, rng);
   return built({
     type: "syntax", skill: "setningafraedi", s, askRole, picked: null,
     base: 12, cell: "setn:" + askRole, lvl: s.lvl,
@@ -44,11 +49,16 @@ const roleHead = (t, s, i) => !t.rn && !(t.ra || []).length && ROLES.concat("ób
 export function synRole(lex, view, rng) {
   const P = view.policy;
   const b = Math.max(3, bandFor(view, "setningafraedi"));
-  const roles = b >= 4 ? [...ROLES, "óbeint andlag"] : ROLES;
+  /* A review (tasks/review.js) asks for the role that was missed — the
+     indirect object too, though it is otherwise kept for þyngd 4. */
+  const fc = forcedCell(view);
+  const roles = b >= 4 || fc === "setn:óbeint andlag" ? [...ROLES, "óbeint andlag"] : ROLES;
   const hits = [];
   lex.sentences.forEach((s) => {
     if (!P.level(s.lvl) || s.lvl > b) return;
-    s.tok.forEach((t, i) => { if (roles.includes(t.r) && roleHead(t, s, i)) hits.push({ s, i, t }); });
+    s.tok.forEach((t, i) => {
+      if (roles.includes(t.r) && roleHead(t, s, i) && (!fc || "setn:" + t.r === fc)) hits.push({ s, i, t });
+    });
   });
   if (!hits.length) return null;
   const h = pick(hits, rng);

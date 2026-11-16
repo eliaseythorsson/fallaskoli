@@ -91,6 +91,7 @@ import { diagnose } from "./diagnosis.js";
 import { computeXp, dayMult, easeOf } from "./progress.js";
 import { record, tallyAnswer, dayRec, dayStreak, todayKey, answerShape, wordKey } from "./state.js";
 import { bumpDiff } from "./difficulty.js";
+import { noteReview } from "./review.js";
 
 /* ========================================================================
  * 1. What the pupil's history says — read-only
@@ -892,7 +893,12 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
     }
   }
   if (!j.finish) return null;
-  const out = { ...j.finish, findings: j.findings };
+  /* The review queue (core/review.js): a miss goes in, due tomorrow; a right
+     answer on an entry that is due moves it out. Here, on the one path every
+     answer takes, so that a new question type cannot forget it. `review`
+     says what happened, for the line under the verdict. */
+  const review = noteReview(S, task, j, todayKey());
+  const out = { ...j.finish, findings: j.findings, review };
   /* The badges for a quick or a curious answer read its time and its shape
      together; both only when the answer was right. */
   if ("answer" in j.finish) out.answerMs = j.ok ? ms : 0;

@@ -25,12 +25,24 @@
      drillWord   the word of a rescue drill, or null (set by tasks/drill.js)
      mix         { n, counts } for the mix rule of a session, or null
      inRun       inside a practice session
-     huntPrefer  the Villuveiðar error kinds this child misses              */
+     huntPrefer  the Villuveiðar error kinds this child misses
+     force       what a review asks for (tasks/review.js), or null:
+                 { cell, word, item, avoid } — the cell (a BÍN mark, or
+                 whatever the type files its answers under), the word (a
+                 lexicon entry), a hand-written item's key, and a sentence
+                 not to use again. A builder honours what it can and builds
+                 nothing else: with `force` set it returns the question asked
+                 for or null, never some other question. A forced word is
+                 also the view's `drillWord`, so every builder that can ask
+                 about one given word (the rescue drill) already honours it;
+                 `forcedCell` in tasks/shared.js reads the cell. A builder
+                 that does not know the hook simply builds as usual, and
+                 tasks/review.js keeps the question only if it matches.      */
 
 import { effectivePolicy, todayKey } from "../core/state.js";
 
 export function makeView({ S, sess, policy = null, today = null, forcedNoun = null,
-  drillWord = null, mix = null, inRun = false, huntPrefer = null }) {
+  drillWord = null, mix = null, inRun = false, huntPrefer = null, force = null }) {
   return Object.freeze({
     S, sess,
     policy: policy || effectivePolicy(S),
@@ -40,6 +52,7 @@ export function makeView({ S, sess, policy = null, today = null, forcedNoun = nu
     mix: mix || null,
     inRun: !!inRun,
     huntPrefer: huntPrefer || [],
+    force: force ? Object.freeze({ ...force }) : null,
   });
 }
 
