@@ -1,0 +1,44 @@
+# Fallstjórn: frumlög ópersónulegra sagna
+#
+# Persónufornöfn eins og BÍN skráir þau (við = ég í fleirtölu …).
+#
+# Dálkar:
+#   frumlag  uppflettimynd|orðflokkur|tala og greinir
+#   bónus    0, 1 eða 2: hversu miklu þyngra frumlagið gerir spurninguna
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# (lemma, class, column, level bonus). Personal pronouns as BÍN has them
+# (við = ég FT …); *það* only in the plural (*þau*): *því langar* is no one.
+# People a child talks about; with the article where Icelandic uses it.
+#
+
+frumlag	bónus
+ég|pfn|ET	0
+þú|pfn|ET	0
+hann|pfn|ET	0
+hún|pfn|ET	0
+ég|pfn|FT	1
+þú|pfn|FT	1
+hann|pfn|FT	1
+hún|pfn|FT	1
+það|pfn|FT	1
+mamma|kvk|ET	1
+pabbi|kk|ET	1
+amma|kvk|ET	1
+afi|kk|ET	1
+strákur|kk|ETgr	1
+stelpa|kvk|ETgr	1
+kennari|kk|ETgr	1
+þjálfari|kk|ETgr	1
+nágranni|kk|ETgr	1
+barn|hk|ETgr	1
+strákur|kk|FTgr	2
+stelpa|kvk|FTgr	2
+krakki|kk|FTgr	2
+barn|hk|FTgr	2
+kennari|kk|FTgr	2

@@ -22,7 +22,7 @@
 
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -44,7 +44,26 @@ const INPUTS = [
   "exercises.py", "build_exercises.py",
   /* v6.13: what an adjective is shown with, and which adjectives are not compared */
   "adj_classes.py",
+  /* v6.13 (item 82): the hand-written content left Python for content/*.tsv;
+     sentences.py and exercises.py read it through content_io.py */
+  "content_io.py",
+  ...contentFiles(),
 ];
+
+/** Every file under content/ that the build reads, sorted so the manifest's
+    order does not depend on the file system. */
+function contentFiles() {
+  const out = [];
+  const walk = (rel) => {
+    for (const e of readdirSync(p(rel), { withFileTypes: true })) {
+      const r = rel + "/" + e.name;
+      if (e.isDirectory()) walk(r);
+      else if (e.name.endsWith(".tsv")) out.push(r);
+    }
+  };
+  if (existsSync(p("content"))) walk("content");
+  return out.sort();
+}
 
 /* Artefacts: what the build *writes*. A change here is a consequence. */
 const ARTIFACTS = [

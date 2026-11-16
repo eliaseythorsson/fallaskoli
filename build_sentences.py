@@ -700,8 +700,8 @@ def annotate(lvl, text, slot, need, opts=None):
 
     This is the whole of what the build does per sentence. It is a function so
     that a candidate sentence can be tried on its own (tools/try-sentences.py)
-    before it is written into sentences.py; every gap this release fills in the
-    bank was found and checked that way.
+    before it is written into content/setningar/setningar.tsv; every gap this
+    release fills in the bank was found and checked that way.
     """
     g, b, guard = engines()
     s = g.parse_single(text)
@@ -1005,14 +1005,16 @@ def check_lengths(records):
             print(f'   þyngd {lvl}: {n} orð (lágmark {floor}) — {text!r}')
         raise SystemExit(
             'Setning á þyngd 6 eða 7 er styttri en þyngdarstigið krefst. '
-            'Færðu hana niður um þyngdarstig — sjá lengdartöfluna í sentences.py.')
+            'Færðu hana niður um þyngdarstig í content/setningar/setningar.tsv — '
+            'sjá lengdartöfluna í sentences.py.')
     if over:
         print('OF LANGAR SETNINGAR:', len(over))
         for lvl, n, cap, text in over:
             print(f'   þyngd {lvl}: {n} orð (hámark {cap}) — {text!r}')
         raise SystemExit(
             'Setning er lengri en þyngdarstigið leyfir. Færðu hana upp um '
-            'þyngdarstig eða styttu hana — sjá lengdartöfluna í sentences.py.')
+            'þyngdarstig eða styttu hana (content/setningar/setningar.tsv) — '
+            'sjá lengdartöfluna í sentences.py.')
 
 
 def check_numeral_predicative(records):
@@ -1045,7 +1047,8 @@ def check_numeral_predicative(records):
 
 
 def main():
-    """The build: every sentence in sentences.py, annotated and written out."""
+    """The build: every sentence of the bank (content/setningar/setningar.tsv,
+    read by sentences.py), annotated and written out."""
     g, b, guard = engines()
     # The manifest (tools/manifest.mjs) is keyed on a sentence's *text*, so two
     # sentences with the same text mean only one of them is ever fingerprinted — the
@@ -1057,7 +1060,7 @@ def main():
     for _lvl, _text, _slot, _need, *_ in sentences.S:
         if _text in _seen_text:
             raise SystemExit(
-                'Sama setningin tvisvar í sentences.py: %r (eyður: %s og %s).\n'
+                'Sama setningin tvisvar í content/setningar/setningar.tsv: %r (eyður: %s og %s).\n'
                 'Handfestan er lykluð eftir texta, svo afrit fela breytingar. '
                 'Breyttu textanum eða fjarlægðu aðra færsluna.'
                 % (_text, _seen_text[_text], _slot))
@@ -1071,7 +1074,7 @@ def main():
     for text, (was, _now) in noun_classes.NEED_FIX.items():
         if written.get(text, None) != was:
             raise SystemExit(
-                'noun_classes.NEED_FIX: %r — setningin er ekki í sentences.py með need=%r '
+                'noun_classes.NEED_FIX: %r — setningin er ekki í content/setningar/setningar.tsv með þörf=%r '
                 '(þar stendur %r). Lagaðu töfluna eða fjarlægðu færsluna.'
                 % (text, was, written.get(text)))
     print('needs narrowed by noun_classes.NEED_FIX:', len(noun_classes.NEED_FIX))

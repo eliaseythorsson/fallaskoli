@@ -1,0 +1,30 @@
+# Töluorð: rammar fyrir fleirtöluorð
+#
+# Rammar skrifaðir fyrir það sem fleirtöluorðin merkja.
+#
+# Dálkar:
+#   þyngd  1–5
+#   rammi  setningin; ___ er töluorðið, {N} nafnorðið
+#   fall   fall nafnorðsins
+#   tölur  hvaða tölur má spyrja um
+#   hópar  hópar úr fleirtoluord-hopar.tsv, aðskildir með bili
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+
+þyngd	rammi	fall	tölur	hópar
+2	Ég á ___ {N}.	ÞF	1, 2, 3, 4	trousers glasses tool
+2	Hún keypti ___ {N}.	ÞF	1, 2, 3, 4	trousers glasses tool
+2	Hér eru ___ {N}.	NF	1, 2, 3, 4	trousers glasses tool
+2	Mig vantar ___ {N}.	ÞF	1, 2, 3, 4	trousers glasses tool
+3	Ég fann ___ {N} í skúffunni.	ÞF	1, 2, 3, 4	trousers glasses tool
+3	Hann kom heim með ___ {N}.	ÞF	1, 2, 3, 4	trousers glasses tool
+4	Það er gat á ___ {N}.	ÞGF	1, 2, 3	trousers
+3	Á húsinu eru ___ {N}.	NF	1, 2, 3, 4	door
+4	Á bænum búa ___ {N}.	NF	1, 2, 3, 4	people
+4	Í veislunni voru ___ {N}.	NF	1, 2, 3, 4	people
+4	Liðið fékk ___ {N} á mótinu.	ÞF	1, 2, 3, 4	prize
+4	Hún hefur unnið ___ {N}.	ÞF	1, 2, 3, 4	prize
+4	Við höfum haldið ___ {N} saman.	ÞF	1, 2, 3, 4	feast

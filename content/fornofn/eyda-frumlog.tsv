@@ -1,0 +1,45 @@
+# Fornöfn: frumlög rammanna
+#
+# Frumlögin sem sett eru í rammana í eyda-sagnir.tsv og eyda-forsetningar.tsv.
+#
+# Dálkar:
+#   frumlag  uppflettimynd|orðflokkur|BÍN-mark frumlagsins
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# PRONOUN_GAP and REFLEXIVE above are 32 and 11 sentences; a pupil met each
+# again within a few sessions. The frames below are filled in by
+# build_exercises.py, every word out of BÍN, and nothing in them is an
+# inflected form written here.
+#
+# fn_eyda. A personal pronoun after a verb or a preposition that
+# government.py lists with ONE case. The case is not written here: the build
+# reads it from that table and stops on a verb or preposition it gives two.
+# Each frame is said by every subject below, the verb in BÍN's form for that
+# subject, and the pupil writes any personal pronoun but the subject's own
+# person (tasks/fornofn.js: not *ég* after *ég* or *við*, not *hann* after
+# *hann*).
+#   who  "p": only a person reads naturally in the blank — so not *það* in
+#        the singular ("Ég hrósaði því"); "pt": a person or a thing ("Ég
+#        fann það").
+# Level = length (the subject and the blank one word each), +1 for a plural
+# pronoun, +1 for the genitive — PRONOUN_GAP's rule, applied by the builder.
+#
+
+frumlag
+ég|pfn|NFET
+ég|pfn|NFFT
+hann|pfn|NFET
+hún|pfn|NFET
+það|pfn|NFFT
+mamma|kvk|NFET
+pabbi|kk|NFET
+amma|kvk|NFET
+afi|kk|NFET
+kennari|kk|NFETgr
+stelpa|kvk|NFETgr
+strákur|kk|NFETgr

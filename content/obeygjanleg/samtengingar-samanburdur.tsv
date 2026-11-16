@@ -1,0 +1,77 @@
+# Óbeygjanleg orð: en á eftir miðstigi
+#
+# Raunverulegur samanburður: aðeins *en* getur fylgt miðstiginu.
+#
+# Dálkar:
+#   lýsingarorð  lýsingarorðið (í frumstigi); línur með sama orði eiga saman
+#   fyrra        það sem er t.d. eldra: uppflettimynd|tala og greinir, eða persónufornafn eitt sér
+#   seinna       það sem borið er saman við, eins
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Choose the conjunction, generated (critique item 23). Contrast sets in
+# which the GRAMMAR or plain fact leaves exactly one option, so they can be
+# multiplied without a person weighing each sentence's shades:
+#   en       after a comparative (from BÍN, in the subject's gender): only
+#            *en* can follow *eldri*. Only true comparisons.
+#   og/né/eða  *bæði … og*, *hvorki … né*, *annaðhvort … eða*: the first
+#            word fixes the second. *Annaðhvort* takes a singular verb, so
+#            only one person on each side.
+#   hvort    an indirect yes/no question after *veit ekki*, *man ekki*
+#   sem      a relative clause on a noun
+#   að       what was said or thought
+#   af því að / svo að   cause and result, both ways round, only where the
+#            reverse is absurd (*Það rigndi af því að við vorum inni*)
+#   áður en / eftir að   two events that can only come in one order
+# The meaning-only choices (ef / þegar / þótt / nema, enda) stay hand-written
+# in CONJUNCTION above. The wrong options of each set are rotated so that no
+# conjunction is a wrong option in more than a third of all items (item 25).
+# Level = length, as CONJUNCTION; +1 for the sets where the meaning decides
+# (cause and result, before and after).
+#
+
+lýsingarorð	fyrra	seinna
+# (adjective, [(subject, column | None for a pronoun), (the other, column | None)])
+gamall	afi|ET	pabbi|ET
+gamall	amma|ET	mamma|ET
+gamall	pabbi|ET	ég
+gamall	mamma|ET	ég
+ungur	pabbi|ET	afi|ET
+ungur	mamma|ET	amma|ET
+ungur	ég	pabbi|ET
+ungur	ég	mamma|ET
+stór	fíll|ETgr	mús|ETgr
+stór	hestur|ETgr	hundur|ETgr
+stór	hvalur|ETgr	fiskur|ETgr
+stór	kýr|ETgr	köttur|ETgr
+stór	björn|ETgr	refur|ETgr
+stór	hús|ETgr	kofi|ETgr
+lítill	mús|ETgr	fíll|ETgr
+lítill	hundur|ETgr	hestur|ETgr
+lítill	köttur|ETgr	kýr|ETgr
+lítill	refur|ETgr	björn|ETgr
+lítill	fiskur|ETgr	hvalur|ETgr
+hár	fjall|ETgr	hús|ETgr
+hár	tré|ETgr	blóm|ETgr
+hár	gíraffi|ETgr	hestur|ETgr
+þungur	steinn|ETgr	fjöður|ETgr
+þungur	bíll|ETgr	hjól|ETgr
+þungur	fíll|ETgr	hestur|ETgr
+léttur	fjöður|ETgr	steinn|ETgr
+léttur	hjól|ETgr	bíll|ETgr
+fljótur	bíll|ETgr	hjól|ETgr
+fljótur	flugvél|ETgr	bíll|ETgr
+hlýr	sumar|ETgr	vetur|ETgr
+hlýr	júlí|ET	janúar|ET
+kaldur	vetur|ETgr	sumar|ETgr
+kaldur	janúar|ET	júlí|ET
+langur	vika|ETgr	dagur|ETgr
+langur	mánuður|ETgr	vika|ETgr
+langur	ár:hk|ETgr	mánuður|ETgr
+stuttur	dagur|ETgr	vika|ETgr
+stuttur	vika|ETgr	mánuður|ETgr
+stuttur	mánuður|ETgr	ár:hk|ETgr

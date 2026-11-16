@@ -118,20 +118,22 @@ What the build does, in order:
    (and, by `irregularity.py`, how irregular each paradigm is, `irr` 1–5, and
    how hard each cell is, `cellh` — the second axis of difficulty)
    (minus the comparison forms of the adjectives `adj_classes.py` lists as not compared)
-3. `build_sentences.py` — every sentence in `sentences.py` parsed by Greynir
-   and checked by `parse_guard.py` → `sentences.json`
+3. `build_sentences.py` — every sentence of the bank
+   (`content/setningar/setningar.tsv`, read by `sentences.py`) parsed by
+   Greynir and checked by `parse_guard.py` → `sentences.json`
 4. `build_bundle.py` — lexicon + sentences + semantic classes + definitions
    → `data/data_bundle.js`; `build_exercises.py` — the hand-written items in
-   `exercises.py`, every answer, option and cue looked up in BÍN →
-   `data/exercises.js`
+   `content/*/*.tsv` (read by `exercises.py`), every answer, option and cue
+   looked up in BÍN → `data/exercises.js`
 5. `tools/manifest.mjs` — a fingerprint of all of the above. If anything
    changed since the last accepted build the build stops and lists the change;
    `--accept` records it. This is what stops a parser upgrade from quietly
    changing a grammatical analysis.
 6. `node --test tests/*.test.js`, then `tools/build.mjs` bundles `src/` into
    the HTML file (and `dist/web/`, the same program as a folder for a web
-   host — see *Installing it* above), then `tools/browser-test.mjs` and
-   `tools/server-test.mjs` drive it in a real Chromium.
+   host — see *Installing it* above) and `tools/review.mjs` writes the review
+   page (`dist/review.html`, see "Efnið" below), then `tools/browser-test.mjs`
+   and `tools/server-test.mjs` drive it in a real Chromium.
 
 `node tools/pack.mjs` writes `dist/fallaskoli-v<version>-src.zip` with everything
 the build needs. CI (`.github/workflows/ci.yml`) also runs the unit tests, the
@@ -142,7 +144,17 @@ attaches the HTML, the zip and the web folder to a release.
 ## Where things are
 
 ```
-sentences.py          the sentence bank: (level, text, slot, need[, options])
+content/              ALL HAND-WRITTEN CONTENT, one TAB-separated file per list,
+                      readable and editable without reading code (see "Efnið"):
+                      setningar/ (the sentence bank), villuveidar/ (the real
+                      errors), lysingarord/ fornofn/ toluord/ fallstjorn/
+                      obeygjanleg/ ordafordi/ (exercise items and frames);
+                      REVIEW-NOTES.md, what a native reader should check
+content_io.py         the reader of content/*.tsv (stdlib only);
+                      `python3 content_io.py` checks every file in a second
+sentences.py          reads the sentence bank: (level, text, slot, need[,
+                      options]); the rules for writing a sentence, and GROUPS
+noun_classes.py       semantic class of every noun; í/á convention; exclusions
 irregularity.py       how irregular a paradigm is (stems counted on BÍN's forms:
                       umlaut, syncope, -j-/-v-, consonant change, strong verbs)
                       and the table of how hard each cell is; the app lets the
@@ -165,15 +177,15 @@ phrases.py            kinds of subordinate clause and phrase, written into a
                       sentence only when the parse and a closed table of what
                       such a clause looks like agree (years 9–10)
 definitions.py        a handful of hand-written definitions; the rest are ÍNO
-exercises.py          hand-written items for the v6.11 question types (pronouns,
-                      numerals, dates, government, synonyms …): sentences and
-                      lemma + class + BÍN mark only; build_exercises.py
-                      resolves every form in BÍN and checks every word.
-                      Also frames that build_exercises.py fills in from BÍN
-                      (v6.13): pronouns after the verbs and prepositions of
-                      government.py, reflexive pairs, numerals × nouns by
-                      meaning, adjective frames around the helper nouns of
-                      adj_classes.py
+exercises.py          reads the hand-written items for the v6.11 question types
+                      (pronouns, numerals, dates, government, synonyms …) and
+                      the frames build_exercises.py fills in from BÍN (v6.13)
+                      out of content/, under the names the build has always
+                      used; keeps the rules for levels and the closed tables
+                      (ordinals, months, multi-word conjunctions). Items are
+                      sentences and lemma + class + BÍN mark only;
+                      build_exercises.py resolves every form in BÍN and
+                      checks every word
 vocab_filter.py       lemma errors and words for acts of violence (always
                       removed), the coarse-word block list (on by default,
                       the administrator can switch it off), and the words
@@ -303,7 +315,9 @@ tools/                build, version (the file name), manifest, coverage, pack,
                       Chromium (browser-test, server-test), load-test,
                       try-sentences.py, task-snapshot.mjs (what the builders
                       build from fixed seeds — to compare two versions) and
-                      sim/ (simulated pupils; see its README)
+                      sim/ (simulated pupils; see its README), review.mjs (the review
+                      page), content-from-py.py (moved the content out of
+                      Python; for branches made before)
 tests/                node --test tests/*.test.js
 _grammar-audit/       the audit's notes, and three scripts that print what the
                       app generates so a person can read it (see below)
@@ -335,12 +349,47 @@ every noun in every one of its 16 forms inside a real sentence (all cells but
 the plural of mass nouns, excluded on purpose; `node tools/coverage.mjs` prints
 the current figures).
 
-## Adding sentences
+## Efnið — the hand-written content
 
-Add a line to `sentences.py` and run `./build.sh`. The build refuses a
-sentence that does not parse, that is longer than its level allows, whose
-analysis contradicts BÍN or the government table, or whose blank is fixed by a
-numeral. To try a candidate first:
+Every sentence, exercise item, frame and Villuveiðar item a person wrote is in
+`content/`, one plain text file per list, so that a teacher or a native reader
+can read it, correct it and add to it without reading Python:
+
+```
+content/setningar/setningar.tsv     the sentence bank (1,130 sentences)
+content/villuveidar/villur.tsv      the real errors of Villuveiðar
+content/lysingarord/ …/ordafordi/   exercise items and frames, by category
+content/REVIEW-NOTES.md             what a native reader should check first
+```
+
+**The format.** UTF-8, one item per line, the fields separated by a TAB. A line
+that starts with `#` is a comment. The first other line names the columns, and
+the comment block at the top of each file says in Icelandic what each column
+holds (`þyngd`, `setning`, `svar`, `skýring` …). A word asked about is written
+`lemma|class|BÍN mark` (`hún|pfn|ÞGFET`); a list is comma-separated. Nothing is
+quoted, so a field cannot hold a TAB. `content_io.py` explains every column type.
+
+**Editing.** Any text editor that keeps TABs works, and so does a spreadsheet
+(LibreOffice, Excel, Google Sheets): open the file as tab-separated, keep the
+header row and the column order, and save it again as *tab-separated text,
+UTF-8*. Then:
+
+```
+python3 content_io.py      # a second: every file read, or the file and line that is wrong
+./build.sh                 # the real check: every form against BÍN, every sentence through Greynir
+git diff content/          # one changed line per changed item
+```
+
+The build stops on a column moved or renamed, a field that is not what its
+column holds, a word BÍN does not have, a sentence Greynir cannot parse or a
+claim the government table contradicts, and names the file and line or the
+sentence. The manifest then stops once more on purpose: read what it lists and
+accept it (`./build.sh --accept`).
+
+**Adding sentences.** Add a line to `content/setningar/setningar.tsv`. The build
+refuses a sentence that does not parse, that is longer than its level allows,
+whose analysis contradicts BÍN or the government table, or whose blank is fixed
+by a numeral. To try a candidate first:
 
 ```
 python3 tools/try-sentences.py "Ég sá hestana í gær." hestur concrete
@@ -360,7 +409,28 @@ node _grammar-audit/sample-new.mjs 8      # the v6.11 types, eight of each
 Three things to know when writing one: use the past tense for a transitive
 verb with *ég* (*Ég sé hestana* parses as the subjunctive of *vera*); keep
 the subject *ég* or *við* where the gender should stay free; and say exactly
-which nouns the blank accepts — `drink` for *Ég drekk ___*, not `thing`.
+which nouns the blank accepts — `drink` for *Ég drekk ___*, not `thing`. The
+full rules are at the top of `sentences.py`, and the rules for each exercise
+list at the top of its file.
+
+**The review page.** `node tools/review.mjs` (also run by `./build.sh`) writes
+`dist/review.html`: one self-contained page with every hand-written item —
+the files above, the 24 Lesefni pages and the worked examples — each with its
+answer, explanation, level and file:line. It filters by kind, level, text and
+by *þarf að athuga*: the items a note in `content/REVIEW-NOTES.md` is about,
+with the note beside them. A reader marks items *Í lagi* or *Athuga*, writes a
+comment, and *Sækja athugasemdir* downloads the marks as a text file; nothing
+leaves the browser. To flag something new for a native reader, add a note to
+`REVIEW-NOTES.md` with `Leita:` phrases from the items (the tests fail if a
+phrase stops finding one).
+
+**What is still in code.** The Lesefni pages and the worked examples
+(`src/js/content/lessons.js`, `examples.js`) are plain data in JavaScript that
+the app imports as it is; they are on the review page, and are edited where
+they are. The closed grammatical tables (ordinals, months, multi-word
+conjunctions, `sentences.GROUPS`), the clause and phrase rules of `phrases.py`
+and the short list of adjectives that fit a kind of noun in
+`src/js/tasks/frames.js` stay in code too.
 
 ## The guard, briefly
 

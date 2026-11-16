@@ -1,0 +1,31 @@
+# Töluorð: einir, tvennir, þrennir, fernir
+#
+# Fleirtöluorð (buxur, skæri, jól) taka töluorðin einir, tvennir, þrennir, fernir.
+#
+# Dálkar:
+#   þyngd    1–5
+#   rammi    setningin; ___ er töluorðið, {N} nafnorðið
+#   fall     fall nafnorðsins: NF, ÞF, ÞGF eða EF
+#   tölur    hvaða tölur má spyrja um (1 tekur eintölu)
+#   nafnorð  nafnorðin, aðskilin með kommu
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Plural-only nouns: einir, tvennir, þrennir, fernir.
+#
+# Level = length + 1; +1 for the dative, +1 for a noun whose plural-only
+# meaning is itself a puzzle (hjón, jól) or a perfect tense around it.
+#
+
+þyngd	rammi	fall	tölur	nafnorð
+3	Ég keypti ___ {N} í gær.	ÞF	1, 2, 3	buxur, skæri, gleraugu
+2	Hann á ___ {N}.	ÞF	1, 2, 3, 4	buxur, gleraugu, skæri
+2	Í ganginum eru ___ {N}.	NF	2, 3, 4	dyr
+3	Við fórum á ___ {N} í sumar.	ÞF	1, 2, 3, 4	tónleikar
+4	Hún hefur haldið ___ {N} hjá ömmu.	ÞF	2, 3, 4	jól
+4	Í brúðkaupinu dönsuðu ___ {N} saman.	NF	2, 3, 4	hjón
+4	Það er gat á ___ {N}.	ÞGF	1, 2, 3	buxur

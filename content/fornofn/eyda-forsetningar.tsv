@@ -1,0 +1,36 @@
+# Fornöfn: forsetningar sem stýra falli fornafnsins
+#
+# Úr hverri línu verða til rammar: frumlag + sögn + (orð) + forsetning + ___ + framhald.
+#
+# Dálkar:
+#   forsetning  forsetningin
+#   sögn        sögnin (nafnháttur)
+#   tíð         NT nútíð eða ÞT þátíð
+#   milli       orð milli sagnar og forsetningar; autt ef ekkert
+#   framhald    það sem kemur á eftir eyðunni, aðskilið með kommu; (ekkert) = ekkert
+#   hver        p: aðeins manneskja passar í eyðuna; pt: manneskja eða hlutur
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# (preposition, verb, tense, words between the verb and the preposition,
+#  what follows the blank, who)
+#
+
+forsetning	sögn	tíð	milli	framhald	hver
+um	tala	ÞT		(ekkert), í gær	pt
+um	hugsa	ÞT		(ekkert), í allan dag	pt
+frá	fá	ÞT	bréf	(ekkert)	p
+frá	heyra	ÞT		í gær	p
+hjá	gista	ÞT		í nótt	p
+hjá	sitja	ÞT		(ekkert), í tímanum	p
+handa	kaupa	ÞT	gjöf	(ekkert)	p
+handa	baka	ÞT	köku	(ekkert)	p
+án	fara	ÞT		(ekkert), í gær	p
+til	fara	ÞT		í gær	p
+af	taka	ÞT	mynd	(ekkert)	pt
+nálægt	sitja	ÞT		(ekkert)	pt
+gegn	keppa	ÞT		(ekkert)	p
