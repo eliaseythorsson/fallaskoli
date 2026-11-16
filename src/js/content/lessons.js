@@ -1046,6 +1046,7 @@ export const LESSONS = [
         "**Lýsingarorð og nafnorð**: lýsingarorðið fylgir nafnorðinu í kyni, tölu og falli. „Ég hef **mikinn** áhuga“ (karlkyn), ekki *mikið áhuga*.",
       ] },
       { tip: "Lestu hverja setningu upphátt. Ef eitthvað hljómar skrítið, spyrðu: Hvað stýrir fallinu hér? Við hvaða orð á þetta orð að laga sig?" },
+      { p: "Frá **þyngd 3** eru villurnar þær sem heyrast oft í daglegu tali: *mér langar* (rétt: *mig langar*), *ég vill* (*ég vil*), *til drottningu* (*til drottningar*), *tvær buxur* (*tvennar buxur*). Sumt af þessu er ekki beinlínis rangt heldur á það ekki við í vönduðu ritmáli; þá stendur „í vönduðu máli“ í skýringunni. Stundum þarf að laga tvö orð sem standa saman, og þá smellir þú á þau bæði í einu." },
       { h: "Setningasmiðja" },
       { p: "Þú færð orðin í **orðabókarmynd**, til dæmis *ég – gefa – vinur – bók*. Þú býrð til setninguna og beygir hvert orð: „Ég gaf vini bók.“ Á spjöldunum stendur það sem ekki sést annars staðar: tíð sagnarinnar, og hvort nafnorðið er í fleirtölu eða með greini. Fallið finnur þú sjálf(ur) út frá hlutverki orðsins." },
       { h: "Umritun" },

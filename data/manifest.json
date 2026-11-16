@@ -20,15 +20,15 @@
   "build_lexicon.py": "52a648e467b68e02e28bd1415218de6b8b91e4caca3cd2f935017f943bd92677",
   "build_sentences.py": "a7537d1f5330176a48511daf207a399b5d725f63bd797fbf761b33796a7dc944",
   "build_bundle.py": "fe38a60d2104d9c4b2602dba7b98b884ba46ec422f8d318b7a6a72b523b70f84",
-  "exercises.py": "93ba91a59dbcf3916efd4f4c07bdf74fb969dc4708541a0d34fcf923958575e2",
-  "build_exercises.py": "61d27b244c624e3972ff4569c938d56de49e9f6ff0c8751c5b0490da939452ad"
+  "exercises.py": "33b2c4141a760ab9ec36aa7b6e5a9c04de44ecea8f436cdb547e934b7a2c5b16",
+  "build_exercises.py": "f95de72a7d97fe0786f61665f9b1faecde7f4b136b903fc021b3fcaed3998213"
  },
  "artifacts": {
-  "freq_lemmas.json": "fd6c1cefb55857cd3bd1f1015846ff6564398ab337558ec074efd4b20fdb44ca",
-  "lexicon.json": "ed690ccd9fe89231681f646f6f75266a735d38e3e8127deb325c4263beba866a",
+  "freq_lemmas.json": "ceede29335d687ad3b6b2b0b8a31d235af34ae2c4c27368adbd2b9bbc634f927",
+  "lexicon.json": "a9401a29f10f3e92994a909ce68ea4784cef90c91079d4b7f06a6ef5396ab3c5",
   "sentences.json": "08b7fbb3698441131ddb053dbd2afeae3a126abceff75fd8c13c1336d14b2ceb",
-  "data/data_bundle.js": "3b3935aafb63b5cc2231520dbc7a35b5957f1603c1347ca8ae2ac7d7d5dac40f",
-  "data/exercises.js": "44696193c170340b78daae6106c2dfc653b87656e49e838010acde1ac0aad501"
+  "data/data_bundle.js": "816ad1f3afbfa81b03fd4ae8b7993b51bafe695680fed6fc912b1109ef6253f8",
+  "data/exercises.js": "c9c3a073d7b73d4de0131bdba1538b7e1ad12d66d24c150fb9530fd2db4a48fa"
  },
  "counts": {
   "words": 6564,

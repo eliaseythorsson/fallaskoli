@@ -2,7 +2,10 @@
    just recognises it.
 
      villur      Villuveiðar — two sentences, one above the other, with one
-                 or two wrong case or agreement forms to find and fix
+                 or two errors to find and fix: from þyngd 3 the slips
+                 Icelandic teenagers really make (the hand-written bank,
+                 exercises.py HUNT), below that a generated wrong case or
+                 agreement form
      smidja      Setningasmiðja — word cards in their dictionary form
                  ("ég – gefa – vinur – bók"); build the sentence, inflecting
                  every word
@@ -20,12 +23,14 @@
    Grading these three is in core/answer.js (`gradeHunt`, `gradeWorkshop`,
    `gradeTransform`); this file only builds. */
 
+import { EX } from "../../../data/exercises.js";
 import { readMark, caseName, GENDERS } from "../core/marks.js";
+import { patternById } from "../core/diagnosis.js";
 import { normalise } from "../core/grading.js";
 import { wordKey } from "../core/state.js";
 import { explainVerbForm } from "./explain.js";
-import { built } from "./effects.js";
-import { pick, shuffle, askable, bandFor, sentPool } from "./shared.js";
+import { built, FX } from "./effects.js";
+import { pick, shuffle, askable, bandFor, sentPool, levelFor, fresh } from "./shared.js";
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -577,8 +582,21 @@ export function workshop(lex, s) {
 
 /* ========================================================== VILLUVEIÐAR === */
 
-/* Three kinds of error, each one a form BÍN has for the same word in a cell
-   the sentence does not allow:
+/* Two sources of errors (v6.13, critique item 26).
+
+   THE BANK — exercises.py HUNT, built into EX.hunt: sentences written by hand,
+   each with one slip a native teenager really makes (*mér langar*, *ég vill*,
+   *til drottningu*, *tvær buxur*, *læknirar*), its correction checked against
+   BÍN by the build, and an explanation. `bankHunt` below.
+
+   THE GENERATOR — the rest of this section: a form BÍN has for the same word
+   in a cell the sentence does not allow. Much of what it makes no native
+   speaker would say (*Stelpan hlaupa*), which is exactly what a beginner and
+   a pupil with Icelandic as a second language do get wrong. `errorHunt`.
+
+   `huntSource` decides which one a pupil meets.
+
+   The generator makes three kinds of error:
      fall      a noun in the wrong case, where the case is fixed by a
                preposition of one case or a verb whose government the build
                confirmed, or the nominative of a subject
@@ -904,9 +922,117 @@ const endsPlainish = (s) => s.tok.length && [".", "!", "?"].includes(s.tok[s.tok
 
 const PROD = "malbeiting";
 
+/* ---------- which errors: the bank or the generator ----------------------
+ *
+ * The bank from þyngd 3, the generator below it. Þyngd 1–2 is where a pupil
+ * is still learning the cases and the agreement the generator breaks; from 3
+ * the sentences are long enough that its errors read as nonsense, and the
+ * pupil is ready for the slips heard in every school corridor.
+ *
+ * THE HOOK FOR A SECOND-LANGUAGE PROFILE (critique item 45). A pupil learning
+ * Icelandic as a second language makes the generator's errors, not the
+ * bank's, at every þyngd. Nothing sets this yet: item 45 adds the profile
+ * switch, and all it has to do for Villuveiðar is make `secondLanguage`
+ * true — by saving `settings.secondLanguage` or by changing this one
+ * function to read wherever the profile is kept. Nothing else in this file
+ * asks who the pupil is. */
+export const BANK_FROM_BAND = 3;
+export const secondLanguage = (view) =>
+  !!(view && view.S && view.S.settings && view.S.settings.secondLanguage);
+
+/** "bank" or "generated": the kind of error hunt this pupil gets at this þyngd. */
+export function huntSource(view, band) {
+  if (secondLanguage(view)) return "generated";
+  return band >= BANK_FROM_BAND ? "bank" : "generated";
+}
+
+/* ---------- the bank ------------------------------------------------------ */
+
+/** The key an item of the bank is remembered by within a session. */
+const bankKey = (x) => "villa:" + x.t;
+
+/** The items of the bank a pupil may meet at this þyngd: those written for it
+    or for a lower one, whose inflection (where the correction is an inflected
+    form) the curriculum has switched on. */
+export function bankPool(view, band) {
+  const P = view.policy;
+  return EX.hunt.filter((x) => x.b <= band && x.ms.every((m) => askable(P, m)));
+}
+
+/** One item of the bank as a line of a hunt: its tokens, with the wrong form
+    shown in place of the right one. The correction may be two words that
+    change places (*við hvorn* → *hvor við*); they are one token, mended in
+    one box. */
+function bankLine(x) {
+  return {
+    s: { t: x.t, bank: true },
+    toks: x.toks.map((w, i) => (i !== x.i
+      ? { w, right: w, punct: PUNCT.has(w), err: null }
+      : {
+        w: x.w, right: w, punct: false,
+        err: {
+          kind: "mál", why: x.why, label: "málnotkun", gov: null,
+          answers: x.a,
+          /* Not one cell of one word: nothing is written to the cell and word
+             statistics. What it IS, is the error patterns it is filed under
+             (core/diagnosis.js reads `patterns` before `kind`). */
+          m: null, wrongMark: null, word: null,
+          patterns: x.p,
+          alt: null, altWhy: null,
+        },
+      })),
+  };
+}
+
+/**
+ * Two sentences from the bank, one error in each — the same shape as
+ * `errorHunt`, so one renderer and one judge serve both.
+ *
+ * `prefer`: the Villuveiðar kinds the error diagnosis asks for (the `hunt` of
+ * the pupil's active patterns); an item filed under such a pattern is chosen
+ * first. The second sentence is about something else than the first: two
+ * *mér langar* in one question would give the second away.
+ * Returns { hunt, items } or null when the pupil may meet fewer than two.
+ */
+export function bankHunt(view, rng, { band = 7, prefer = [] } = {}) {
+  const pool = bankPool(view, band);
+  if (pool.length < 2) return null;
+  const wanted = (x) => x.p.some((id) => prefer.includes((patternById(id) || {}).hunt));
+  const unseen = fresh(view, bankKey, pool);
+  const aimed = unseen.filter(wanted);
+  const first = pick(aimed.length ? aimed : unseen, rng);
+  const apart = (x) => x !== first && !x.p.some((id) => first.p.includes(id)) &&
+    !(x.w === first.w && x.a[0] === first.a[0]);
+  const others = [unseen.filter(apart), pool.filter(apart), pool.filter((x) => x !== first)]
+    .find((list) => list.length);
+  const items = shuffle([first, pick(others, rng)], rng);
+  return {
+    items,
+    hunt: {
+      lines: items.map(bankLine),
+      errors: items.length,
+      lvl: Math.max(...items.map((x) => x.b)),
+      /* For whoever draws the question: these are slips of usage, spelling
+         and the written norm, not only "villa í falli eða samræmi". */
+      source: "bank",
+    },
+  };
+}
+
 export function taskHunt(lex, view, rng) {
   const P = view.policy;
   const band = bandFor(view, PROD);
+  if (huntSource(view, band) === "bank") {
+    const b = bankHunt(view, rng, { band, prefer: view.huntPrefer });
+    if (b) {
+      return built({
+        type: "villur", skill: PROD, hunt: b.hunt, edits: {},
+        base: 6 + 4 * b.hunt.errors, lvl: levelFor(P, b.hunt.lvl), cell: "villur", word: null,
+      }, b.items.map((x) => FX.exSeen(bankKey(x))));
+    }
+    /* Fewer than two items allowed (a curriculum with most inflection
+       switched off): the generator, as below þyngd 3. */
+  }
   const pool = sentPool(lex, view, PROD);
   if (pool.length < 6) return null;
   for (let k = 0; k < 6; k++) {
@@ -986,8 +1112,16 @@ export const TYPES = [
     bands: [1, 2, 3],
     build: taskWorkshop },
   { id: "villur", skill: "malbeiting", weight: 8, renderer: "villur",
+    /* The `bank:` tags are the patterns the hand-written bank files its items
+       under (core/diagnosis.js BANK_PATTERNS); the rest are the generator's. */
     tags: ["agree:kyn", "case:EF", "case:ÞF", "case:ÞGF", "gov:fs", "gov:so", "hunt",
-      "verb:agree"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
+      "verb:agree",
+      "bank:ad_af", "bank:ef", "bank:ending", "bank:fallstjorn_fs", "bank:fallstjorn_so",
+      "bank:fleirtoluord", "bank:hattur", "bank:hljodvarp", "bank:hvor", "bank:kyn_samraemi",
+      "bank:n_nn", "bank:nf_aukafall", "bank:opersonuleg", "bank:samtengingar",
+      "bank:sogn_frumlag", "bank:sterk_veik_sogn", "bank:thf_thgf", "bank:tholmynd", "bank:y_i"],
+    /* 1–2: the generator, on the sentences of that þyngd. 3, 4, 5: the bank,
+       each step adding the items written for it. Nothing new above 5. */
+    bands: [1, 2, 3, 4, 5],
     build: taskHunt },
 ];

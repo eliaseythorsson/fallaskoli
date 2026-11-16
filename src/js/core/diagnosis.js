@@ -35,7 +35,10 @@ import { normalise, stripAccents } from "./grading.js";
  *  lesson    the Lesefni page that teaches it
  *  tags      which questions test it (see `tagsOf`)
  *  types     question types a session aimed at it is drawn from
- *  hunt      the Villuveiðar error kind that exercises it, if any            */
+ *  hunt      the Villuveiðar error kind that exercises it, if any: one of the
+ *            generator's three ("fall", "samræmi", "sögn"), or — for a
+ *            pattern only the hand-written bank exercises — "bank:<id>"
+ *            (see BANK_PATTERNS below)                                        */
 const CASE_TYPES = ["fill", "govern", "parse", "revform", "tbl_no", "villur", "smidja",
   "no_val", "fs_fsno", "fs_sogn", "fs_hreyf", "fn_eyda", "to_samr", "to_dags"];
 const FORM_TYPES = ["fill", "verb", "verbslot", "tbl_no", "tbl_lo", "tbl_so", "tbl_fn", "smidja",
@@ -167,6 +170,17 @@ export const PATTERNS = [
   { id: "ordmyndun", ok: "orðmyndun", nm: "Orðmyndun",
     rule: "Forskeyti og viðskeyti breyta orðum: *ó-* snýr merkingunni við (*heppinn – óheppinn*), *-ari* er sá sem gerir (*kenna – kennari*), *-ing/-un* gera nafnorð úr sögn (*æfa – æfing*).",
     lesson: "ordafordi", tags: ["wordform"], types: ["or_myndun"] },
+  /* v6.13 (critique 26): two patterns that only the hand-written error hunt
+     (exercises.py HUNT) exercises. Both are among the best-known slips of
+     Icelandic teenagers and nothing above describes them: neither is a wrong
+     case or a wrong form — the words are right and the choice between them
+     is not. */
+  { id: "hvor", ok: "hvor, hvor annar og hvorugur", nm: "Hvor, hvor annar og hvorugur",
+    rule: "Um **tvo** er notað *hvor*, um fleiri *hver*. Í vönduðu máli beygjast *hvor* og *annar* ekki saman: *hvor* fylgir frumlaginu og *annar* tekur fallið — *þeir hjálpuðu hvor öðrum*, *þær töluðu hvor við aðra*. *Hvorugur* er eintala: *hvorugur þeirra kom*.",
+    lesson: "fornofn", tags: [], types: [] },
+  { id: "ad_af", ok: "að og af", nm: "Að eða af",
+    rule: "*Að* og *af* hljóma líkt en eru tvö orð. Með *að*: *leita að, hlæja að, spyrja að, gera grín að, dást að, komast að því, að mínu mati, að sjálfsögðu*. Með *af*: *stoltur af, hafa gaman af, nóg af, mikið af, missa af*.",
+    lesson: "obeygjanleg", tags: [], types: [] },
   /* v6.13 (critique 31): not an error of the child's but a count of the
      classifier's blind spot. A wrong answer nothing above could read is
      written here and NOWHERE else — before, it counted as a success for every
@@ -180,6 +194,32 @@ export const PATTERNS = [
 
 const BY_ID = new Map(PATTERNS.map((p) => [p.id, p]));
 export const patternById = (id) => BY_ID.get(id) || null;
+
+/* ---------- the hand-written error hunt ------------------------------------
+ *
+ * Every item of the Villuveiðar bank (exercises.py HUNT) names the patterns
+ * it is filed under; these are all of them (tests/hunt-bank.test.js holds the
+ * list to the bank). An item is ONE chance to make ONE known slip, so it must
+ * count for its own patterns and no others — *læknirar* is a chance for
+ * "Röng ending", not for every pattern that reads the tag "form" (accents,
+ * y/ý, n/nn …). Hence a tag of its own per pattern, `bank:<id>`, which only
+ * a bank item carries (`tagsOf`). Each listed pattern also gets:
+ *   types  "villur" — a session aimed at the pattern may draw an error hunt;
+ *   hunt   "bank:<id>" unless the generator already exercises it — the kind
+ *          `huntPreferFor` hands the builder, which then picks the bank's
+ *          items for this pattern first.
+ * Written here rather than into each entry above so that the list is in one
+ * place and reads as what it is. */
+export const BANK_PATTERNS = ["opersonuleg", "sogn_frumlag", "ef", "fallstjorn_fs", "fallstjorn_so",
+  "thf_thgf", "nf_aukafall", "hattur", "hvor", "kyn_samraemi", "tholmynd", "fleirtoluord",
+  "ending", "hljodvarp", "sterk_veik_sogn", "ad_af", "samtengingar", "y_i", "n_nn"];
+export const bankTag = (id) => "bank:" + id;
+for (const id of BANK_PATTERNS) {
+  const p = BY_ID.get(id);
+  p.tags = [...p.tags, bankTag(id)];
+  if (!p.types.includes("villur")) p.types = [...p.types, "villur"];
+  if (!p.hunt) p.hunt = bankTag(id);
+}
 
 /* ---------- what a question tests ---------------------------------------- */
 
@@ -249,7 +289,9 @@ export function tagsOf(t) {
     case "villur":
       tags.add("hunt");
       huntErrors(t).forEach((e) => {
-        if (e.kind === "fall") {
+        /* An item of the hand-written bank says itself what it tests. */
+        if (e.patterns) e.patterns.forEach((id) => tags.add(bankTag(id)));
+        else if (e.kind === "fall") {
           const a = readMark(e.m);
           if (a.fall) tags.add("case:" + caseKey(a.fall));
           tags.add(e.gov === "so" ? "gov:so" : "gov:fs");
@@ -590,7 +632,10 @@ export function diagnose(task, resp) {
         if (!tk.err || g.fixed.includes(key)) return;
         const e = tk.err;
         const ex = { said: tk.w, right: e.answers[0] };
-        if (e.kind === "fall") {
+        /* An item of the hand-written bank names its patterns; one filed
+           under none is left unread ("Ógreint"), which is what it is. */
+        if (e.patterns) e.patterns.forEach((id) => push(id, { ex }));
+        else if (e.kind === "fall") {
           push(casePattern(readMark(e.m).fall, readMark(e.wrongMark).fall), { ex });
           push(e.gov === "so" ? "fallstjorn_so" : "fallstjorn_fs", { ex });
         } else if (e.kind === "samræmi") push("kyn_samraemi", { ex });
