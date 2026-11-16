@@ -894,7 +894,8 @@ function submitClause(app) {
 /* ================= 12. Málbeiting (v6.9) ===============================
  *
  * Three questions where the child writes the Icelandic. Builders in
- * tasks/production.js; what is graded here is always a form BÍN has.
+ * tasks/malbeiting.js, grading in core/answer.js; what is graded is always
+ * a form BÍN has.
  */
 
 /* ---------- Villuveiðar --------------------------------------------------- */

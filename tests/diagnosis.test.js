@@ -12,7 +12,7 @@ import { mergeStates } from "../src/js/core/merge.js";
 import { cleanState } from "../server/guard.mjs";
 import { TASKS } from "../src/js/tasks/index.js";
 import { errorHunt } from "../src/js/tasks/malbeiting.js";
-import { gradeHunt } from "../src/js/tasks/production.js";
+import { gradeHunt } from "../src/js/core/answer.js";
 import { ask } from "./helpers.js";
 import {
   PATTERNS, patternById, casePattern, patternsForCells, patternsForForm, diagnose,

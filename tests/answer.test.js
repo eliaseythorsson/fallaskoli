@@ -32,7 +32,8 @@ import { SKILL_IDS } from "../src/js/core/skills.js";
 import { createPolicy } from "../src/js/core/policy.js";
 import { gradeForm, stripAccents, normalise } from "../src/js/core/grading.js";
 import { diagnose } from "../src/js/core/diagnosis.js";
-import { TASKS, nextTask } from "../src/js/tasks/index.js";
+import { TASKS } from "../src/js/tasks/index.js";
+import { show, ask } from "./helpers.js";
 import { judge, judgeBonus, settle, parseRows, judgeSyntax, askedCells, JUDGED_TYPES,
          BONUS_XP } from "../src/js/core/answer.js";
 import { RENDER } from "../src/js/ui/render.js";
@@ -137,7 +138,7 @@ const FIXED = [
     { ok: false, verdict: "wrong", xp: 0, found: ["tid"], near: "tid" }],
   ["the other tense of lesa", LESA, { text: form("lesa", "so", "GM-FH-ÞT-3P-ET") },
     { ok: false, verdict: "wrong", xp: 0, found: ["tid"], near: "tid" }],
-  ["the wrong person", LESA, { text: form("lesa", "so", "GM-FH-NT-3P-FT") },
+  ["the wrong person", LESA, { text: form("lesa", "so", "GM-FH-NT-2P-ET") },
     { ok: false, verdict: "wrong", xp: 0, found: ["sogn_frumlag"] }],
 
   /* A gap with no BÍN mark (word formation): right, an accent forgiven, wrong. */
@@ -264,7 +265,7 @@ function realTasks(pupil, n = 6, diffs = [2, 4, 6]) {
     const ctx = builderCtx(pupil, diff);
     for (const spec of TASKS) {
       for (let made = 0, tries = 0; made < n / diffs.length && tries < 40; tries++) {
-        const t = spec.gen(ctx);
+        const t = show(ctx, spec.build);
         if (!t) continue;
         t.typeId = spec.id;
         out.push(t);
@@ -772,7 +773,7 @@ test("a whole session can be played without a screen", () => {
   const types = new Set();
   let right = 0;
   for (let n = 0; n < 250; n++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     assert.ok(t, "no task");
     types.add(t.type);
     /* Three in four right, the rest wrong where a wrong answer can be made. */

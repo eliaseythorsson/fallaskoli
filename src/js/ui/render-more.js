@@ -1,5 +1,6 @@
-/* Renderers for the v6.11 question shapes (tasks/more.js): gap, choice,
-   tap and sort — and the optional Orðaforði bonus sentence.
+/* Renderers for the v6.11 question shapes — gap, choice, tap and sort, which
+   every category in tasks/ builds (tasks/registry.js names the renderer of
+   each question type) — and for the optional Orðaforði bonus sentence.
 
    Same contract as ui/render.js: RENDER.x draws; submitX collects the
    response, has core/answer.js `judge` it, and hands the judgement to

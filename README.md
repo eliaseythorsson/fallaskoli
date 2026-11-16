@@ -121,7 +121,7 @@ src/js/tasks/         the question builders, one file per category:
                       next question, drill.js runs the rescue drill; shared.js,
                       cloze.js and tap.js are what the categories share;
                       frames.js the sentence frames, explain.js the
-                      explanations, production.js the grading of Málbeiting
+                      explanations
 src/js/ui/            rendering: render.js (one renderer per task type;
                       render-more.js for gap, choice, tap, sort and the
                       Orðaforði bonus),

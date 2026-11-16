@@ -17,7 +17,7 @@ import { ask, show } from "./helpers.js";
 import { explainSlot } from "../src/js/tasks/explain.js";
 import { TRANSFORMS, workshop, errorHunt, errorCandidates, confirmed, joinTokens, taskHunt, taskWorkshop,
          taskTransform } from "../src/js/tasks/malbeiting.js";
-import { gradeWorkshop, gradeHunt, gradeTransform } from "../src/js/tasks/production.js";
+import { gradeWorkshop, gradeHunt, gradeTransform } from "../src/js/core/answer.js";
 
 const lex = buildLexicon(DATA);
 const ctxWith = () => {
@@ -338,7 +338,7 @@ test("a badge earned on a wrong answer waits for the next right one", () => {
 });
 
 test("v6.10 Setningasmiðja: a missing accent is a slip, a wrong form is 'rangt beygt', not extra", async () => {
-  const { gradeWorkshop } = await import("../src/js/tasks/production.js");
+  const { gradeWorkshop } = await import("../src/js/core/answer.js");
   const cards = [
     { text: "ég", answers: ["ég"], e: { forms: { NFET: ["ég"], ÞFET: ["mig"] } } },
     { text: "muna", answers: ["man"], e: { forms: { "GM-NH": ["muna"], "GM-FH-NT-1P-ET": ["man"], "GM-FH-NT-1P-FT": ["munum"] } } },
