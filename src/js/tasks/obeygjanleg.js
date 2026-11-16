@@ -203,7 +203,7 @@ export const TYPES = [
     build: obTap },
   { id: "ob_fsao", skill: "obeygjanleg", weight: 4, renderer: "choice",
     tags: ["ofl", "ofl:ao_fs"],
-    bands: [1, 2, 3, 4, 5],
+    bands: [1, 2, 3, 4, 5, 6, 7],
     build: obAdvPrep },
   { id: "ob_st", skill: "obeygjanleg", weight: 4, renderer: "choice",
     tags: ["conj"],
@@ -211,6 +211,6 @@ export const TYPES = [
     build: obConj },
   { id: "ob_flokka", skill: "obeygjanleg", weight: 3, renderer: "sort",
     tags: ["ofl", "ofl:ao_fs"],
-    bands: [1, 4, 5],
+    bands: [1, 4, 5, 6, 7],
     build: obSort },
 ];

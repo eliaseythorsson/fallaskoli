@@ -389,7 +389,7 @@ export const TYPES = [
      (item 13) rightly counted these three as ignoring difficulty. */
   { id: "lo_beyging", skill: "lysingarord", weight: 8, renderer: "gap",
     tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3, 4, 5, 6],
+    bands: [1, 2, 3, 4, 5, 6, 7],
     build: loStrongWeak },
   { id: "lo_stig", skill: "lysingarord", weight: 6, renderer: "gap",
     tags: ["adj", "agree:kyn", "case:NF", "case:ÞF", "form", "num"],
@@ -397,6 +397,6 @@ export const TYPES = [
     build: loDegree },
   { id: "lo_samr", skill: "lysingarord", weight: 7, renderer: "gap",
     tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3, 4, 5, 6],
+    bands: [1, 2, 3, 4, 5, 6, 7],
     build: loAgree },
 ];
