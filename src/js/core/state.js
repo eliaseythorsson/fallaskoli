@@ -1,3 +1,4 @@
+// @ts-check
 /* User state and session state.
 
    Everything that is persisted goes through here. The functions take the state

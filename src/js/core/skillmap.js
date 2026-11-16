@@ -1,3 +1,4 @@
+// @ts-check
 /* The skill map (critique item 83): where a pupil stands, node by node.
  *
  * Framvinda showed four separate views — Styrkleikar eftir efni, Villumynstur,

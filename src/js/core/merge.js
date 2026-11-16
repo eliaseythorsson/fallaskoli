@@ -1,3 +1,4 @@
+// @ts-check
 /* Two devices, one child: putting two copies of the progress back together.
  *
  * Until v6.3 the whole state went up and the last write won, so a phone left

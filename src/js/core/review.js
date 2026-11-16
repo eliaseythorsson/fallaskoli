@@ -1,3 +1,4 @@
+// @ts-check
 /* The review queue: what was missed comes back, spaced out (critique 18–20).
  *
  * Until v6.13 the program had no spaced repetition for grammar. After a wrong

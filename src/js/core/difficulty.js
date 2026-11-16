@@ -1,3 +1,4 @@
+// @ts-check
 /* Difficulty is tracked per skill, and kept between visits.
 
    Doing well at declining nouns should not hand out harder verb moods. Each

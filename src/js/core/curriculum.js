@@ -1,3 +1,4 @@
+// @ts-check
 /* The curriculum map as data (item 39). The prose, the sources and what could
  * and could not be verified are in docs/CURRICULUM.md; read that first.
  *

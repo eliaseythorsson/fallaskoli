@@ -1,3 +1,4 @@
+// @ts-check
 /* The catalogue of question types.
 
    One file per category (the twelve skills of core/skills.js), and in each

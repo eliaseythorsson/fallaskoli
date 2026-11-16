@@ -1,3 +1,4 @@
+// @ts-check
 /* Judging an answer — every question type, in one place, without a screen.
  *
  * Until v6.13 each of the seventeen submit handlers in ui/render.js and

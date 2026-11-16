@@ -1,3 +1,4 @@
+// @ts-check
 /* "Dagsins lota" — today's session (critique item 21).
 
    The picker used to offer ten categories and no advice. A pupil who did not

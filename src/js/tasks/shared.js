@@ -1,3 +1,4 @@
+// @ts-check
 /* What the category files share: the random source, word choice, sentence
    pools, the curriculum gate, and the small text helpers.
 

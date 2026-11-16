@@ -1,3 +1,4 @@
+// @ts-check
 /* The mastery mark (critique item 44): how well a pupil knows something, not
  * how much they have practised it.
  *

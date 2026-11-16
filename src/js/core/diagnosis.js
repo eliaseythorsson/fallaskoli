@@ -1,3 +1,4 @@
+// @ts-check
 /* Error diagnosis (v6.10).
 
    A wrong answer says that something went wrong; this module says WHAT. It
