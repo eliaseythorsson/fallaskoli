@@ -44,6 +44,12 @@ export function renderTask(app) {
   const fn = RENDER[app.cur.type];
   if (!fn) throw new Error("Enginn birtir fyrir " + app.cur.type);
   fn(app);
+  /* Item 51: the verdict is a live region, so a screen reader says "Rétt" or
+     "Ekki alveg" when it is written. Set here, once, rather than in each of
+     the renderers that draw an empty #verdict: the region is in the page
+     before anything is put into it, which is what makes it announce. */
+  const vd = document.getElementById("verdict");
+  if (vd) { vd.setAttribute("role", "status"); vd.setAttribute("aria-live", "polite"); }
   /* Lesefni (v6.7): every question links to the page that teaches it. */
   const eb = document.querySelector("#task .eyebrow");
   /* Same reason as skillTag: before the answer, a word-class question links to

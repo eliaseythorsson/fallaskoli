@@ -178,6 +178,7 @@ export function renderRunBar(app) {
      them, so a thin bar along the bottom of the line says how far instead
      (head.html decides which of the two shows). */
   el.innerHTML = `<div class="runline" role="status" aria-label="${esc(said)}" title="${esc(said)}">
+    <span class="sr-only">${esc(said)}</span>
     <span class="runico" aria-hidden="true">${topicIco(r.topic)}</span>
     <b class="runtopic" aria-hidden="true">${esc(name)}</b>
     <span class="drilldots rundots" aria-hidden="true">${dots.join("")}</span>

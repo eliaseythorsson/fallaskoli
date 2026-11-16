@@ -41,6 +41,8 @@
   --mono:"IBM Plex Mono",ui-monospace,monospace;
 }
 *{box-sizing:border-box}
+/* Text for screen readers only (item 51). */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 html,body{margin:0;padding:0}
 body{background-color:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
   /* rúðustrikað: the desk is a sheet of squared paper */
@@ -731,7 +733,12 @@ table.board td.mono{white-space:nowrap}
   background:linear-gradient(#8B6B43 0,#8B6B43 5px,#30363B 5px)}
 
 .blackboard textarea{color:var(--ink)}
-.blackboard input::placeholder,.blackboard textarea::placeholder{color:rgba(243,241,231,.45)}
+/* Item 51, measured (tests/contrast.test.js): chalk-dim on the board is 6.1:1
+   (5.2:1 on the lightest smear), so the gloss and every other grey line is
+   fine. Two things on the board fell below 4.5:1 and are raised: `.faint`
+   (opacity .7 gave 3.8:1) and the placeholder (alpha .45 gave 3.5:1). */
+.blackboard .faint{opacity:.92}
+.blackboard input::placeholder,.blackboard textarea::placeholder{color:rgba(243,241,231,.7)}
 .blackboard table.decl input{border:1px solid rgba(243,241,231,.16)}
 .blackboard input:disabled,.blackboard textarea:disabled{opacity:1;-webkit-text-fill-color:currentColor}
 .blackboard button.go,.blackboard label.go{background:var(--chalk);border-color:var(--chalk);color:var(--board-deep)}
