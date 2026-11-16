@@ -97,6 +97,11 @@ src/js/app.js         start-up and wiring; the only holder of state
 src/js/core/          pure modules, no DOM: marks, lexicon, grading, leniency,
                       state, progress, badges, rarity, policy, definitions,
                       diagnosis (the error patterns) …
+src/js/core/answer.js judging an answer, for every question type:
+                      judge(task, response, pupil) → { ok, verdict, findings,
+                      xp, … } decides and changes nothing; settle() writes
+                      the result into the state. The renderers only collect
+                      the response and draw the verdict
 src/js/core/mix.js    the mix rule for a session: ≥3 kinds of question, none
                       over ~40%, tables ≤30%, analysis ≤35%
 src/js/core/curriculum.js  the curriculum map as data: the official
@@ -116,7 +121,7 @@ src/js/tasks/         the question builders, one file per category:
                       next question, drill.js runs the rescue drill; shared.js,
                       cloze.js and tap.js are what the categories share;
                       frames.js the sentence frames, explain.js the
-                      explanations, production.js the grading of Málbeiting
+                      explanations
 src/js/ui/            rendering: render.js (one renderer per task type;
                       render-more.js for gap, choice, tap, sort and the
                       Orðaforði bonus),

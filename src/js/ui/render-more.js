@@ -1,17 +1,15 @@
-/* Renderers for the v6.11 question shapes (tasks/more.js): gap, choice,
-   tap and sort — and the optional Orðaforði bonus sentence.
+/* Renderers for the v6.11 question shapes — gap, choice, tap and sort, which
+   every category in tasks/ builds (tasks/registry.js names the renderer of
+   each question type) — and for the optional Orðaforði bonus sentence.
 
-   Same contract as ui/render.js: RENDER.x draws, submitX grades, records
-   once, and ends in app.finish({ correct, resp }). `resp` is what the error
-   diagnosis reads (core/diagnosis.js). */
+   Same contract as ui/render.js: RENDER.x draws; submitX collects the
+   response, has core/answer.js `judge` it, and hands the judgement to
+   `conclude`, which settles it and ends in app.finish. Nothing is graded or
+   recorded here. */
 
-import { RENDER, sentenceHTML, whyBox, spend, xpFor, enterToSubmit, skillTag, slipNote,
+import { RENDER, sentenceHTML, whyBox, conclude, enterToSubmit, skillTag, slipNote,
          nearNote, multLine, PUNCT } from "./render.js";
-import { gradeForm, normalise } from "../core/grading.js";
-import { verdictOf } from "../core/leniency.js";
-import { record, answerShape, dayStreak } from "../core/state.js";
-import { dayMult } from "../core/progress.js";
-import { bumpDiff } from "../core/difficulty.js";
+import { judge, judgeBonus, settle, bonusVerdict, BONUS_XP } from "../core/answer.js";
 import { $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO } from "./dom.js";
 
 const eyebrow = (t) =>
@@ -70,57 +68,38 @@ RENDER.gap = function (app) {
   $("check").onclick = () => submitGap(app);
 };
 
-/** A verdict for a gap without a BÍN mark (word formation): right, an
-    accent forgiven, or wrong. */
-function plainVerdict(g) {
-  if (g.verdict === "correct") return { ok: true, factor: 1, klass: "ok", slip: null, near: null };
-  if (g.verdict === "accents") return { ok: true, factor: 0.95, klass: "near", near: null,
-    slip: { id: "accents", head: "Rétt — en gáðu að broddunum", note: "Svarið er rétt en það vantar brodd (eða einum er ofaukið)." } };
-  return { ok: false, factor: 0, klass: "no", slip: null, near: null };
-}
-
 function submitGap(app) {
   const t = app.cur;
   const val = $("ans").value;
-  const g = gradeForm(val, { accepted: t.answers, paradigm: t.paradigm });
-  if (g.verdict === "empty") return;
-  if (g.verdict === "hedged") {
+  const j = judge(t, { text: val, hinted: !!t.hinted }, app);
+  if (j.verdict === "empty") return;
+  if (j.verdict === "hedged") {
     $("verdict").innerHTML = `<div class="verdict neutral"><h3>Veldu eina mynd</h3>
-      <p>Þú skrifaðir fleiri en eina mynd (${g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.</p></div>`;
+      <p>Þú skrifaðir fleiri en eina mynd (${j.detail.g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.</p></div>`;
     return;
   }
-  const v = t.m ? verdictOf(g, t.m) : plainVerdict(g);
-  const ok = v.ok;
-  const xpFull = xpFor(app, t, { ok, hinted: !!t.hinted });
-  const xp = xpFor(app, t, { ok, hinted: !!t.hinted, factor: v.factor });
-  const shape = answerShape(val);
-  const took = spend(app);
-  record(app.S, app.sess, { skill: t.skill, cell: t.cell, word: t.word, ok, xp, ms: took, answer: shape, hinted: !!t.hinted });
-  if (t.tip) $("hint").disabled = true;
-  bumpDiff(app.sess, app.S, t.skill, ok);
-
-  /* Tvær buxur for tvennar buxur: the one mistake this question is about. */
-  const plain = !ok && t.plain && t.plain.some((f) => normalise(f) === normalise(val));
-  const right = t.answers.slice(0, 2).map(esc).join(" / ");
-  const solved = solvedSentence(t, t.answers[0]);
-  $("verdict").innerHTML = ok
-    ? `<div class="verdict ${v.klass}"><span class="xpop">+${xp} XP</span>
+  /* `plain` — tvær buxur for tvennar buxur: the one mistake this question
+     is about. */
+  const { v, xpFull, plain } = j.detail;
+  const ok = j.ok, xp = j.xp;
+  conclude(app, t, j, () => {
+    if (t.tip) $("hint").disabled = true;
+    const right = t.answers.slice(0, 2).map(esc).join(" / ");
+    const solved = solvedSentence(t, t.answers[0]);
+    $("verdict").innerHTML = ok
+      ? `<div class="verdict ${v.klass}"><span class="xpop">+${xp} XP</span>
       <h3>${v.slip ? esc(v.slip.head) : cheer(CHEERS_OK)}</h3>${solved}
       ${v.slip ? `<p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>. Rétt er <span class="forms">${right}</span>.</p>` : ""}
       ${slipNote(v.slip, xp, xpFull)}${whyBox(t.why)}
       <p class="streakline">${app.S.run} í röð${multLine(app, xp)}. Enter fyrir næstu.</p></div>`
-    : `<div class="verdict no"><h3>${cheer(CHEERS_NO)}</h3>
+      : `<div class="verdict no"><h3>${cheer(CHEERS_NO)}</h3>
       <p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>. Rétt er <span class="forms">${right}</span>.</p>
       ${plain ? `<div class="why"><b>athugið</b>${fmt(`*${t.answers[0]}* — ekki *${val.trim()}*: orðið á eftir er aðeins til í fleirtölu.`)}</div>` : ""}
       ${nearNote(v)}${solved}${whyBox(t.why)}
       <p class="streakline">Enter fyrir næstu.</p></div>`;
-  $("ans").disabled = true;
-  bonusBox(app, t);
-  const also = ok ? [] : [...(t.missOther || []), ...(plain ? ["fleirtoluord"] : [])];
-  app.finish({ correct: ok, answer: ok ? shape : null, answerMs: ok ? took : 0, slip: ok && !!v.slip,
-    resp: t.m
-      ? { kind: "form", items: [{ m: t.m, typed: val, g, accepted: t.answers }], also, ex: { said: val.trim(), right: t.answers[0] } }
-      : { kind: "patterns", ids: also, ex: { said: val.trim(), right: t.answers[0] } } });
+    $("ans").disabled = true;
+    bonusBox(app, t);
+  });
 }
 
 /* ================= choice =============================================== */
@@ -158,11 +137,12 @@ RENDER.choice = function (app) {
 
 function submitChoice(app) {
   const t = app.cur;
-  if (t.picked == null) {
+  const j = judge(t, { picked: t.picked }, app);
+  if (j.pending) {
     $("verdict").innerHTML = `<div class="verdict neutral"><p>Veldu eitt svar.</p></div>`;
     return;
   }
-  const ok = t.picked === t.answer;
+  const ok = j.ok, xp = j.xp;
   document.querySelectorAll(".opts button").forEach((b) => {
     b.disabled = true;
     const v = t.options[+b.dataset.v];
@@ -170,31 +150,16 @@ function submitChoice(app) {
     else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
     b.removeAttribute("aria-pressed");
   });
-  const xp = xpFor(app, t, { ok });
-  record(app.S, app.sess, { skill: t.skill, cell: t.cell, word: t.word, ok, xp, ms: spend(app) });
-  bumpDiff(app.sess, app.S, t.skill, ok);
   const defs = (t.defs || []).map((e) => `<li><b>${esc(e.o)}</b>: ${esc(e.d)}</li>`).join("");
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
+  conclude(app, t, j, () => {
+    $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
     ${!t.mark && t.s && t.i >= 0 ? solvedSentence(t, t.answer) : `<p>Rétt svar: <span class="forms">${esc(t.answer)}</span>.</p>`}
     ${whyBox(t.why)}
     ${defs ? `<div class="why"><b>í orðabók</b><ul class="deflist">${defs}</ul></div>` : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
-  bonusBox(app, t);
-  const ex = { said: t.picked, right: t.answer };
-  const also = ok ? [] : (t.miss || []);
-  let resp = { kind: "patterns", ids: also, ex };
-  if (t.m && t.paradigm) {
-    const g = gradeForm(t.picked, { accepted: [t.answer], paradigm: t.paradigm, allowHelpers: false });
-    /* The options say which cell was meant: *borðið* offered against
-       *borðinu* is the accusative, not the nominative it also is. */
-    if (t.optMarks && g.otherMarks) {
-      const only = g.otherMarks.filter((m) => t.optMarks.includes(m));
-      if (only.length) g.otherMarks = only;
-    }
-    resp = { kind: "form", items: [{ m: t.m, typed: t.picked, accepted: [t.answer], g }], also, ex };
-  }
-  app.finish({ correct: ok, resp });
+    bonusBox(app, t);
+  });
 }
 
 /* ================= tap ================================================== */
@@ -227,14 +192,14 @@ RENDER.tap = function (app) {
 
 function submitTap(app) {
   const t = app.cur;
-  if (!t.sel.size) {
+  const jd = judge(t, { sel: [...t.sel] }, app);
+  if (jd.pending) {
     $("verdict").innerHTML = `<div class="verdict neutral"><p>Smelltu á að minnsta kosti eitt orð.</p></div>`;
     return;
   }
   const want = new Set(t.targets);
-  const extra = [...t.sel].filter((j) => !want.has(j));
-  const missed = t.targets.filter((j) => !t.sel.has(j));
-  const ok = !extra.length && !missed.length;
+  const { extra, missed } = jd.detail;
+  const ok = jd.ok, xp = jd.xp;
   t.done = true;
   document.querySelectorAll(".pickw").forEach((el) => {
     const j = +el.dataset.j;
@@ -242,24 +207,17 @@ function submitTap(app) {
     if (want.has(j)) el.classList.add(t.sel.has(j) ? "right" : "missed");
     else if (t.sel.has(j)) el.classList.add("wrongpick");
   });
-  const xp = xpFor(app, t, { ok });
-  record(app.S, app.sess, { skill: t.skill, cell: t.cell, ok, xp, ms: spend(app) });
-  bumpDiff(app.sess, app.S, t.skill, ok);
   const words = (js) => js.map((j) => `<span class="forms">${esc(t.s.tok[j].w)}</span>`).join(", ");
   const what = t.whole ? `${t.cls}in` : `${t.cls}${t.targets.length > 1 ? "" : ""}`;
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
+  conclude(app, t, jd, () => {
+    $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
     <p>${t.whole ? `${esc(what.charAt(0).toUpperCase() + what.slice(1))}: ${words(t.targets)}.`
       : `${t.targets.length === 1 ? "Rétt orð" : "Réttu orðin"} (${esc(t.cls)}): ${words(t.targets)}.`}</p>
     ${missed.length ? `<p>Þú misstir af: ${words(missed)}.</p>` : ""}
     ${extra.length ? `<p>Ekki ${esc(t.cls)}: ${words(extra)}${t.whole ? "" : ` — ${extra.map((j) => `*${t.s.tok[j].w}* er ${t.s.tok[j].c || "?"}`).map(fmt).join(", ")}`}.</p>` : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
-  const ids = ok ? [] : t.tags.includes("clause") ? ["setningagerd"]
-    : (["atviksorð", "forsetning"].includes(t.cls) && [...extra, ...missed].some((j) => ["atviksorð", "forsetning"].includes(t.s.tok[j].c))
-      ? ["ao_fs"] : ["ordflokkur"]);
-  app.finish({ correct: ok, resp: { kind: "patterns", ids,
-    ex: { said: [...t.sel].sort((a, b) => a - b).map((j) => t.s.tok[j].w).join(", "),
-          right: t.targets.map((j) => t.s.tok[j].w).join(", ") } } });
+  });
 }
 
 /* ================= sort ================================================= */
@@ -293,63 +251,40 @@ RENDER.sort = function (app) {
 
 function submitSort(app) {
   const t = app.cur;
-  if (t.items.some((_, k) => !t.picks[k])) {
+  const j = judge(t, { picks: t.picks }, app);
+  if (j.pending) {
     $("verdict").innerHTML = `<div class="verdict neutral"><p>Settu hvert orð í flokk fyrst.</p></div>`;
     return;
   }
-  let good = 0;
-  const wrong = [];
+  const { good, wrong } = j.detail;
+  const ok = j.ok, xp = j.xp;
   document.querySelectorAll(".sortrow .opts").forEach((box) => {
-    const k = +box.dataset.q;
-    const it = t.items[k];
+    const it = t.items[+box.dataset.q];
     box.querySelectorAll("button").forEach((b) => {
       b.disabled = true;
       if (b.dataset.v === it.cls) b.classList.add("right");
       else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
       b.removeAttribute("aria-pressed");
     });
-    if (t.picks[k] === it.cls) good++; else wrong.push({ it, said: t.picks[k] });
   });
-  const ok = !wrong.length;
-  const xp = xpFor(app, t, { ok });
-  record(app.S, app.sess, { skill: t.skill, cell: t.cell, ok, xp, ms: spend(app) });
-  bumpDiff(app.sess, app.S, t.skill, ok);
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
+  conclude(app, t, j, () => {
+    $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : `${good} af ${t.items.length} rétt`}</h3>
     ${wrong.length ? `<ul class="exlist">${wrong.map((x) => `<li><span class="forms">${esc(x.it.w)}</span> er <b>${esc(x.it.cls)}</b>, ekki ${esc(x.said)}.</li>`).join("")}</ul>` : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
-  const roles = t.tags.includes("syn");
-  const ids = ok ? [] : roles ? ["setningalidir"]
-    : wrong.some((x) => ["atviksorð", "forsetning"].includes(x.it.cls) && ["atviksorð", "forsetning"].includes(x.said))
-      ? ["ao_fs"] : ["ordflokkur"];
-  app.finish({ correct: ok, resp: { kind: "patterns", ids,
-    ex: wrong[0] ? { said: `${wrong[0].it.w}: ${wrong[0].said}`, right: wrong[0].it.cls } : null } });
+  });
 }
 
 /* ================= Orðaforði: the bonus sentence =========================
  *
  * v6.11: the free-text sentence is no longer a question of its own in a
  * session. After a graded Orðaforði question the child MAY write a sentence
- * with the word; XP only if the word is in it (any of its BÍN forms), the
- * sentence has three words or more, is not one already written this visit
- * and is not the dictionary's own example. Nothing is graded right or
- * wrong, and skipping costs nothing: Enter on Áfram goes on as always. */
+ * with the word. Whether it earns the bonus (`bonusVerdict`) and what the
+ * bonus is are decided in core/answer.js; skipping costs nothing: Enter on
+ * Áfram goes on as always. */
 
-export const BONUS_XP = 6;
-
-/** Does this sentence earn the bonus? `seen`: texts already used. */
-export function bonusVerdict(text, entry, seen = []) {
-  const key = normalise(text);
-  const words = key.split(" ").filter(Boolean);
-  if (words.length < 3) return { ok: false, why: "Skrifaðu heila setningu — að minnsta kosti þrjú orð." };
-  if (seen.includes(key)) return { ok: false, why: "Þessa setningu ertu búin(n) að skrifa — prófaðu nýja." };
-  if (entry.x && normalise(entry.x) === key) return { ok: false, why: "Þetta er dæmið úr orðabókinni — búðu til þína eigin setningu." };
-  const forms = new Set(Object.values(entry.forms || {}).flat().map(normalise).filter((f) => f && !f.includes(" ")));
-  forms.add(normalise(entry.o));
-  if (!words.some((w) => forms.has(w)))
-    return { ok: false, why: `Orðið *${entry.o}* (í einhverri mynd) þarf að vera í setningunni.` };
-  return { ok: true };
-}
+/* Moved to core/answer.js in v6.13; exported from here too for the tests. */
+export { bonusVerdict, BONUS_XP };
 
 function bonusBox(app, t) {
   const e = t.bonus;
@@ -365,16 +300,14 @@ function bonusBox(app, t) {
   const send = () => {
     const ta = $("bonustext");
     if (!ta || ta.disabled || !ta.value.trim()) return;
-    const seen = (app.sess.bonusTexts ||= []);
-    const r = bonusVerdict(ta.value, e, seen);
-    if (!r.ok) {
-      $("bonusverdict").innerHTML = `<p class="streakline">${fmt(r.why)}</p>`;
+    const j = judgeBonus(t, ta.value, app);
+    if (j.pending) {
+      $("bonusverdict").innerHTML = `<p class="streakline">${fmt(j.detail.why)}</p>`;
       return;
     }
-    seen.push(normalise(ta.value));
-    const xp = Math.round(BONUS_XP * dayMult(dayStreak(app.S)));
-    record(app.S, app.sess, { skill: "ordaford", word: t.word, ok: true, xp, counts: false, ms: 0 });
-    app.S.counters.meanings = (app.S.counters.meanings || 0) + 1;
+    /* Not a question, so no `conclude`: the question above has ended. */
+    settle(app.S, app.sess, t, j);
+    const xp = j.xp;
     ta.disabled = true;
     $("bonusgo").disabled = true;
     $("bonusverdict").innerHTML = `<p><span class="xpop">+${xp} XP</span> Flott setning!</p>`;

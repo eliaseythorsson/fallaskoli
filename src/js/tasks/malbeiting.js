@@ -17,8 +17,8 @@
    feature the build marked as uncertain. A sentence that cannot meet that is
    skipped, never guessed at. Pure module, no DOM.
 
-   Grading these three is in tasks/production.js (on its way to
-   core/answer.js); this file only builds. */
+   Grading these three is in core/answer.js (`gradeHunt`, `gradeWorkshop`,
+   `gradeTransform`); this file only builds. */
 
 import { readMark, caseName, GENDERS } from "../core/marks.js";
 import { normalise } from "../core/grading.js";

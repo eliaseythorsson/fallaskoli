@@ -15,7 +15,8 @@
  * *bíðum*, it is the past tense. Beygingartöflur stay strict — a table colours
  * each cell, and a forgiven cell would not add up.
  *
- * One decision, made here, read by every submit handler. */
+ * One decision, made here, read for every written answer by core/answer.js
+ * (`judge`) — and so the same on the screen, in a duel and in a simulation. */
 
 import { readMark } from "./marks.js";
 
@@ -110,7 +111,8 @@ export function slipFor(g, target) {
 /**
  * The whole verdict for one written answer, in one call.
  *
- * Returns what every submit handler needs and nothing it does not:
+ * Returns what the judge (core/answer.js) and the verdict box need and nothing
+ * they do not:
  *
  *   ok      count it as a correct answer — for the run, the streak, the
  *           spacing and the badges. A forgiven slip is `true`: the answer is

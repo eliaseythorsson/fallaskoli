@@ -15,7 +15,7 @@ import { SKILL_IDS } from "../src/js/core/skills.js";
 import { createPolicy } from "../src/js/core/policy.js";
 import * as MORE from "../src/js/tasks/ordaford.js";
 import { transformPassive, transformOpener, alsoRight } from "../src/js/tasks/malbeiting.js";
-import { gradeTransform, tailLeftOut } from "../src/js/tasks/production.js";
+import { gradeTransform, tailLeftOut } from "../src/js/core/answer.js";
 import { show } from "./helpers.js";
 import { spellingSlip, diagnose } from "../src/js/core/diagnosis.js";
 import { gradeForm } from "../src/js/core/grading.js";

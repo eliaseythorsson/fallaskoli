@@ -508,11 +508,13 @@ const app = {
    */
   finish(extra = {}) {
     /* v6.10: what went wrong, and which of the child's error patterns it
-       belongs to (core/diagnosis.js). `resp` is the answer as the submit
-       handler saw it; it goes no further than here. */
-    const { resp, ...rest } = extra;
+       belongs to (core/diagnosis.js). v6.13: the judge has already made the
+       findings (core/answer.js) and they arrive here; a caller that still
+       hands over the raw `resp` gets it diagnosed as before. Neither goes
+       further than here — the badge context below is built from `extra`. */
+    const { resp, findings: judged, ...rest } = extra;
     extra = rest;
-    const findings = diagnose(this.cur, resp);
+    const findings = judged || diagnose(this.cur, resp);
     const chances = noteDiagnosis(this.S, this.cur, findings, extra.correct ?? null, todayKey());
     showFindings(findings, extra.correct);
     const r = this.run;

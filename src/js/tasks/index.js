@@ -13,7 +13,8 @@
      cloze.js, tap.js   the two builders more than one category asks for
      frames.js          sentence frames: one word lifted out, another put in
      explain.js         the explanation under an answer
-     production.js      grading of the Málbeiting questions (until core/answer.js)
+
+   Grading is not in this folder: core/answer.js judges every question type.
 
    A builder is pure: build(lex, view, rng) → { task, effects } or null. It
    changes nothing and draws only from the `rng` it is handed — the global
