@@ -23,7 +23,8 @@
                the task is not counted: it is a label, not a different
                question.) It says WHERE a type changes, not how much: for
                that, tools/sim/pools.mjs counts the distinct questions per
-               band.
+               band, and tests/pools.js holds a type to at least 150 at
+               every band it declares (critique item 23).
      build     (lex, view, rng) → { task, effects } or null. Pure: see
                tasks/view.js and tasks/effects.js.
      drill     (optional) (lex, view, rng, entry) → the same, about one given
