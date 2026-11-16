@@ -133,7 +133,7 @@ export const NODES = [
     year: 9, hv: "ordflokkar", types: ["verb", "verbslot", "tbl_so"], lesson: "hattur",
     cover: "full", attrs: { hattur: ["VH"] } },
   { id: "so-bodhattur", nm: "Boðháttur", cat: "sagnord", year: 9, hv: "ordflokkar",
-    types: ["revform"], lesson: "hattur", cover: "part", item: 27,
+    types: ["revform", "so_bodhattur"], lesson: "hattur", cover: "full",
     attrs: { hattur: ["BH"] } },
   { id: "so-fallhaettir", nm: "Fallhættir: nafnháttur, lýsingarhættir og sagnbót",
     cat: "sagnord", year: 9, hv: "ordflokkar", types: ["revform"], lesson: "hattur",
@@ -142,9 +142,9 @@ export const NODES = [
     types: ["verb", "verbslot", "tbl_so"], lesson: "mynd", cover: "full",
     attrs: { mynd: ["MM"] } },
   { id: "so-tholmynd", nm: "Þolmynd", cat: "sagnord", year: 9, hv: "ordflokkar",
-    types: ["umritun"], lesson: "mynd", cover: "part", item: 27 },
+    types: ["umritun", "so_mynd"], lesson: "mynd", cover: "full" },
   { id: "so-sterkar-veikar", nm: "Sterkar og veikar sagnir og kennimyndir", cat: "sagnord",
-    year: 9, hv: "ordflokkar", types: [], lesson: "sterkar-veikar", cover: "none", item: 27 },
+    year: 9, hv: "ordflokkar", types: ["so_beyging"], lesson: "sterkar-veikar", cover: "full" },
 
   /* ---- Óbeygjanleg orð ---- */
   { id: "ob-flokkar", nm: "Að þekkja óbeygjanleg orð", cat: "obeygjanleg", year: 8,

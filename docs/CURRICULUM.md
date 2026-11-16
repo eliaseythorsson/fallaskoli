@@ -28,10 +28,9 @@ document and the program cannot disagree. Everything else here is prose.
    schools differ.
 3. **Against the one criterion that is about grammar proper, the app is in good
    shape**: all eleven word classes, their inflection and their role are
-   covered by 49 question types and 21 Lesefni pages.
-4. **The gaps** are (a) things Lesefni teaches and no question asks: strong
-   and weak verbs with kennimyndir,
-   the boðháttur, the þolmynd as something to recognise, compound tenses;
+   covered by 52 question types and 21 Lesefni pages.
+4. **The gaps** are (a) things Lesefni teaches and no question asks:
+   compound tenses;
    (b) year 9–10 material that is not in the app at all: kinds of subordinate
    clause, phrases (nafnliður and the rest), word parts and compounds, sound
    changes, direct and indirect speech, register, idioms and proverbs;
@@ -116,7 +115,7 @@ every year.
 <!-- curriculum:criteria:start -->
 | Hæfniviðmið (heading in the aðalnámskrá) | Section | Within reach of a drill app? | Nodes | With questions | Fully covered |
 | --- | --- | --- | --- | --- | --- |
-| Orðflokkar | Mál og málnotkun | yes: the app's main subject | 31 | 28 | 23 |
+| Orðflokkar | Mál og málnotkun | yes: the app's main subject | 31 | 29 | 26 |
 | Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 11 | 6 | 5 |
 | Fjölbreytt málnotkun | Mál og málnotkun | partly | 2 | 1 | 1 |
 | Sköpunarkraftur | Mál og málnotkun | partly | 1 | 1 | 1 |
@@ -184,11 +183,11 @@ evidence above. Later years keep practising it.
 | `fn-afturbeygt` | Afturbeygt fornafn: sér eða honum, sinn eða hans | Orðflokkar | Fornöfn og greinir | Afturbeygt eða ekki (`fn_aftur`) | Fornöfn (`fornofn`) | yes |
 | `so-samsettar-tidir` | Samsettar tíðir | Orðflokkar | Sagnorð | none yet | Tíð sagna (`tid`) | **no** |
 | `so-vidtengingarhattur` | Framsöguháttur og viðtengingarháttur | Orðflokkar | Sagnorð | Beygðu sögnina (`verb`); Sögn í setningu (`verbslot`); Beygingartafla — sagnorð (`tbl_so`) | Hættir sagna (`hattur`) | yes |
-| `so-bodhattur` | Boðháttur | Orðflokkar | Sagnorð | Greindu beygðu myndina (`revform`) | Hættir sagna (`hattur`) | in part |
+| `so-bodhattur` | Boðháttur | Orðflokkar | Sagnorð | Greindu beygðu myndina (`revform`); Boðháttur (`so_bodhattur`) | Hættir sagna (`hattur`) | yes |
 | `so-fallhaettir` | Fallhættir: nafnháttur, lýsingarhættir og sagnbót | Orðflokkar | Sagnorð | Greindu beygðu myndina (`revform`) | Hættir sagna (`hattur`) | in part |
 | `so-midmynd` | Germynd og miðmynd | Orðflokkar | Sagnorð | Beygðu sögnina (`verb`); Sögn í setningu (`verbslot`); Beygingartafla — sagnorð (`tbl_so`) | Myndir sagna (`mynd`) | yes |
-| `so-tholmynd` | Þolmynd | Orðflokkar | Sagnorð | Umritun (`umritun`) | Myndir sagna (`mynd`) | in part |
-| `so-sterkar-veikar` | Sterkar og veikar sagnir og kennimyndir | Orðflokkar | Sagnorð | none yet | Sterkar og veikar sagnir (`sterkar-veikar`) | **no** |
+| `so-tholmynd` | Þolmynd | Orðflokkar | Sagnorð | Umritun (`umritun`); Germynd, miðmynd eða þolmynd? (`so_mynd`) | Myndir sagna (`mynd`) | yes |
+| `so-sterkar-veikar` | Sterkar og veikar sagnir og kennimyndir | Orðflokkar | Sagnorð | Sterk eða veik sögn? (`so_beyging`) | Sterkar og veikar sagnir (`sterkar-veikar`) | yes |
 | `ob-fs-ao` | Forsetning eða atviksorð | Orðflokkar | Óbeygjanleg orð | Forsetning eða atviksorð (`ob_fsao`) | Óbeygjanleg orð (`obeygjanleg`) | yes |
 | `ob-samtengingar` | Samtengingar | Orðflokkar | Óbeygjanleg orð | Veldu samtenginguna (`ob_st`) | Óbeygjanleg orð (`obeygjanleg`) | yes |
 | `ob-atviksord` | Flokkar atviksorða og stigbreyting þeirra | Orðflokkar | Óbeygjanleg orð | none yet | none yet | **no** |
@@ -254,10 +253,7 @@ cannot practise it on its own and the skill map cannot measure it.
 | `no-kyn-tala` | Kyn og tala nafnorða | 8 | only inside `parse` | `kyn-tala` |
 | `fn-greinir` | Laus og viðskeyttur greinir | 8 | only inside `tbl_fn` | `greinir` |
 | `so-samsettar-tidir` | Samsettar tíðir | 9 | **missing** | `tid` |
-| `so-bodhattur` | Boðháttur | 9 | only inside `revform` | `hattur` |
 | `so-fallhaettir` | Fallhættir: nafnháttur, lýsingarhættir og sagnbót | 9 | only inside `revform` | `hattur` |
-| `so-tholmynd` | Þolmynd | 9 | only inside `umritun` | `mynd` |
-| `so-sterkar-veikar` | Sterkar og veikar sagnir og kennimyndir | 9 | **missing** | `sterkar-veikar` |
 
 ### Item 28: new material
 
@@ -291,14 +287,16 @@ Notes for whoever takes these on:
   kvöld?*), so *spurnarfornafn* is an option in every question from þyngd 3
   but the right answer of only one; more questions in `sentences.py` would
   fix that.
-- **The boðháttur**: measured over 1,350 questions, the three types that make
-  a pupil produce a verb form (`verb`, `verbslot`, `tbl_so`) ask
-  framsöguháttur and viðtengingarháttur, germynd and miðmynd, and never the
-  boðháttur. It turns up only as a form to recognise in `revform`. A test
-  pins this, and will fail (asking for the node to be upgraded) when a builder
-  starts asking it.
-- **The þolmynd** is produced in `umritun` (about one question in sixteen) and
-  never recognised.
+- **Done (item 27, second half):** strong and weak verbs with their
+  kennimyndir (`so_beyging`), the three myndir with the þolmynd to recognise
+  (`so_mynd`) and the boðháttur written (`so_bodhattur`) have question types
+  of their own, in the 9. bekkur preset. The three types that make a pupil
+  produce a verb form in a sentence or a table (`verb`, `verbslot`,
+  `tbl_so`) still never ask the boðháttur; `so_bodhattur` does, outside a
+  sentence, because the bank has no imperative sentence. Most þolmynd
+  sentences are at level 6–7, so at þyngd 1–2 `so_mynd` asks the eight
+  shortest of them; more short þolmynd sentences in `sentences.py` would
+  widen that.
 - **Item 28's candidates are all confirmed** as material that textbooks or
   plans for years 9–10 cover: kinds of subordinate clause, phrases, word parts
   and compounds, direct and indirect speech, spelling, punctuation. The check
@@ -322,9 +320,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 10 of 12 | 39 of 49 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
-| 9. bekkur | 10 of 12 | 43 of 49 | 1–6 | no new category; types `fn_aftur`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 12 of 12 | 49 of 49 | 1–7 | Setningafræði, Setningagerðir; types `syntax`, `setn_hlut`, `setn_flokka`, `clause`, `gerd_finna`, `gerd_upphaf` |
+| 8. bekkur | 10 of 12 | 39 of 52 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
+| 9. bekkur | 10 of 12 | 46 of 52 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 12 of 12 | 52 of 52 | 1–7 | Setningafræði, Setningagerðir; types `syntax`, `setn_hlut`, `setn_flokka`, `clause`, `gerd_finna`, `gerd_upphaf` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:

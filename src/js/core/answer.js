@@ -43,6 +43,9 @@
  *   choice                      { picked: value }
  *   kenni                       { picked: "sterk" | "veik", text? } — the
  *                               genitive singular when the task `askGen`
+ *   slots                       { texts: [text, …], picked? } — one text per
+ *                               box of `task.slots`; `picked` when the task
+ *                               has `options`
  *   tap                         { sel: [tokenIndex, …] }
  *   villur                      { edits: { "line:token": text } }
  *
@@ -866,6 +869,79 @@ JUDGES.kenni = (t, response, hist) => {
     resp,
     finish: { slip: ok && !!(v && v.slip) },
     detail: { picked, answer: t.answer, kindOk, formOk, g, v, xpFull, typed: text },
+  });
+};
+
+/* ---- slots: forms written in boxes, and perhaps a pick (item 27) ----------
+ *
+ * Sterk eða veik sögn and the boðháttur (tasks/sagnord.js). Each box is one
+ * BÍN cell (`slot.m`), graded like any written form (core/grading.js; a
+ * missing accent forgiven at a cost, core/leniency.js), against every form
+ * BÍN lists for it. The words the box stands between may be typed too
+ * (`pre`, `post`: *í gær kallaði ég*, *ég hef kallað*). Where the task has
+ * `options`, the pick must be right as well. Right only when everything is.
+ *
+ * A wrong form that is a mistake the builder knows by name (`slot.missIf`:
+ * *kom* for *komdu*) is filed under that name only; the paradigm would read
+ * *kom* as a past tense and blame the tense. Every other wrong form goes to
+ * the diagnosis as a written form, with the verb's conjugation, so that
+ * *lesaði* is a strong verb made weak. */
+const slotText = (raw, sl) => {
+  let s = String(raw ?? "").trim().replace(/[!.?]+$/, "").trim();
+  const low = () => s.toLowerCase();
+  for (const p of [...(sl.pre || [])].sort((a, b) => b.length - a.length))
+    if (low().startsWith(p + " ")) { s = s.slice(p.length).trim(); break; }
+  for (const p of sl.post || [])
+    if (low().endsWith(" " + p)) { s = s.slice(0, -p.length).trim(); break; }
+  return s;
+};
+
+JUDGES.slots = (t, response, hist) => {
+  const given = response.texts || [];
+  const items = [];
+  for (const [k, sl] of (t.slots || []).entries()) {
+    const text = slotText(given[k], sl);
+    const g = gradeForm(text, { accepted: sl.accepted, paradigm: t.paradigm, allowHelpers: false });
+    if (g.verdict === "empty") return pending("empty", { at: k });
+    if (g.verdict === "hedged") return pending("hedged", { g, at: k });
+    const v = verdictOf(g, sl.m);
+    const known = v.ok ? null
+      : (sl.missIf || []).find((x) => x.f.some((f) => normalise(f) === normalise(text))) || null;
+    items.push({ m: sl.m, text, g, v, ok: v.ok, accepted: sl.accepted, known });
+  }
+  const picked = response.picked;
+  if (t.options && (picked == null || picked === "")) return pending("incomplete");
+  const formsOk = items.every((x) => x.ok);
+  const kindOk = !t.options || picked === t.answer;
+  const ok = formsOk && kindOk;
+  const factor = items.reduce((f, x) => Math.min(f, x.v.factor), 1);
+  const slip = (items.find((x) => x.ok && x.v.slip) || {}).v || null;
+  const xpFull = xpFor(hist, t, { ok });
+  const xp = xpFor(hist, t, { ok, factor });
+
+  const also = kindOk ? [] : [...((t.missFor && t.missFor[picked]) || t.miss || [])];
+  const add = (id) => { if (!also.includes(id)) also.push(id); };
+  items.filter((x) => !x.ok).forEach((x) =>
+    (x.known ? x.known.ids : (t.slots.find((sl) => sl.m === x.m) || {}).miss || []).forEach(add));
+  /* Wrong forms nothing named, and right ones with a slip (a soft "broddar"). */
+  const written = items.filter((x) => (!x.ok && !x.known) || (x.ok && x.v.slip))
+    .map((x) => ({ m: x.m, typed: x.text, g: x.g, accepted: x.accepted, conj: t.conj || null }));
+  const firstWrong = items.find((x) => !x.ok);
+  const ex = !kindOk ? { said: picked, right: t.answer }
+    : firstWrong ? { said: firstWrong.text, right: firstWrong.accepted[0] } : null;
+  const resp = written.length ? { kind: "form", items: written, also, ex } : { kind: "patterns", ids: also, ex };
+
+  return result(t, {
+    ok, verdict: VERDICT(ok, ok && !!slip),
+    effects: [
+      rec({ skill: t.skill, cell: t.cell, word: t.word, ok, xp, timed: true }),
+      bump(t.skill, ok),
+    ],
+    resp,
+    finish: { slip: ok && !!slip },
+    detail: { picked, answer: t.answer, kindOk, formsOk, xpFull, slip,
+              items: items.map(({ m, text, ok: good, v, accepted, known }) =>
+                ({ m, typed: text, ok: good, v, accepted, known: !!known })) },
   });
 };
 

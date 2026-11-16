@@ -46,6 +46,8 @@ export function lessonFor(task) {
       if (task.type === "parse" && /^(FSB|FVB)-/.test(m)) return first("lo-beyging");
       return first("lo-beyging", "samraemi");
     case "sagnord":
+      /* item 27: a question about one thing a page teaches says which page. */
+      if (task.lesson && BY_ID.has(task.lesson)) return task.lesson;
       if (/(^|\s|-)MM-/.test(m) || /^MM-/.test(m)) return first("mynd");
       if (/-(VH|BH)(-|\b)|GM-BH|LHÞT|LHNT|SAGNB|-NH\b/.test(m)) return first("hattur");
       if (/-ÞT-/.test(m)) return first("tid", "persona-tala");

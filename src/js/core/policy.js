@@ -132,6 +132,12 @@ export const QUESTION_TYPES = [
     ds: "Persónu-, afturbeygt, eignar-, ábendingar-, spurnar- eða óákveðið fornafn í setningu" },
   { id: "no_beyging", nm: "Sterkt eða veikt nafnorð",   skill: "nafnord",
     ds: "Sterk eða veik beyging af eignarfalli eintölu: til hests, til pabba. Frá þyngd 5 er eignarfallið skrifað" },
+  { id: "so_beyging", nm: "Sterk eða veik sögn?",      skill: "sagnord",
+    ds: "Sterk eða veik sögn eftir þátíðinni: í gær kallaði ég, í gær tók ég. Frá þyngd 3 er þátíðin skrifuð, frá þyngd 5 kennimyndirnar" },
+  { id: "so_mynd",   nm: "Germynd, miðmynd eða þolmynd?", skill: "sagnord",
+    ds: "Mynd sagnar í setningu: hittust, var byggt — og þú lest, sem er germynd þótt það endi á -st" },
+  { id: "so_bodhattur", nm: "Boðháttur",               skill: "sagnord",
+    ds: "Boðháttur skrifaður: komdu, lestu, farðu — og frá þyngd 3 fleirtalan: komið" },
 ];
 
 export const TYPE_IDS = QUESTION_TYPES.map((t) => t.id);
@@ -378,7 +384,7 @@ export function setPolicyFlag(policy, dim, key, value) {
  * year adds, so these sentences are revisited when the nodes change. */
 const PRESET_TEXT = {
   8: "Fallorð, sagnorð, óbeygjanleg orð, orðflokkagreining, fallstjórn, orðaforði og málbeiting.",
-  9: "Allt úr 8. bekk og að auki afturbeygt fornafn, samtengingar, forsetning eða atviksorð og ópersónulegar sagnir.",
+  9: "Allt úr 8. bekk og að auki afturbeygt fornafn, samtengingar, forsetning eða atviksorð, ópersónulegar sagnir, sterkar og veikar sagnir, þolmynd og boðháttur.",
   10: "Allt úr 9. bekk og að auki setningafræði og setningagerðir.",
 };
 

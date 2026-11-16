@@ -100,7 +100,7 @@ export const PATTERNS = [
     lesson: "mynd", tags: ["verb:mm"], types: ["verb", "verbslot", "parse", "revform"] },
   { id: "sterk_veik_sogn", ok: "þátíð sterkra sagna", nm: "Sterk sögn beygð eins og veik",
     rule: "Sterkar sagnir fá **enga** endingu -aði, -ði eða -ti í þátíð; þær skipta um sérhljóð: *bíta – beit*, *hlaupa – hljóp*, *gefa – gaf*. Lærðu kennimyndirnar.",
-    lesson: "sterkar-veikar", tags: ["verb:strongpast"], types: ["verb", "verbslot", "tbl_so"] },
+    lesson: "sterkar-veikar", tags: ["verb:strongpast"], types: ["verb", "verbslot", "tbl_so", "so_beyging"] },
   { id: "hljodvarp", ok: "sérhljóðabreytingar", nm: "Sérhljóð breytist í stofni",
     rule: "Mörg orð skipta um sérhljóð í beygingu: *bók – bækur, fjörður – firði, barn – börn, taka – tók*. Gáðu að stofninum, ekki bara endingunni.",
     lesson: "nafnord-beyging", tags: ["form"], types: FORM_TYPES },
@@ -185,6 +185,29 @@ export const PATTERNS = [
   { id: "beyging_no_nf", ok: "að láta eignarfallið ráða", nm: "Nefnifallið látið ráða beygingunni",
     rule: "Ekki horfa bara á nefnifallið. *Herbergi* endar á sérhljóði, en eignarfallið er *herbergis*: það endar á *-s* og þess vegna er beygingin **sterk**.",
     lesson: "nafnord-beyging", tags: ["nobeyg:nf"], types: ["no_beyging"] },
+  /* item 27, second half: strong and weak verbs, the three myndir, the
+     boðháttur — each with the mistake its Lesefni page warns of. */
+  { id: "beyging_so", ok: "sterkar og veikar sagnir", nm: "Sterk og veik sögn",
+    rule: "Segðu *í gær* og sögnina með *ég*. Fær þátíðin endingu með *ð*, *d* eða *t* (*kallaði, heyrði, kenndi, keypti*)? Þá er sögnin **veik**. Engin ending, og sérhljóðið breytist (*tók, fór, beit*)? Þá er hún **sterk**.",
+    lesson: "sterkar-veikar", tags: ["sobeyg"], types: ["so_beyging"] },
+  { id: "beyging_so_hljod", ok: "að láta endinguna ráða", nm: "Sérhljóðið látið ráða",
+    rule: "Sérhljóðið breytist líka í sumum veikum sögnum: *kaupa – keypti*, *telja – taldi*, *spyrja – spurði*. Þær eru samt **veikar**, því að þær fá endingu. Það er endingin sem ræður.",
+    lesson: "sterkar-veikar", tags: ["sobeyg:hljod"], types: ["so_beyging"] },
+  { id: "mynd_greina", ok: "myndir sagna", nm: "Germynd, miðmynd og þolmynd",
+    rule: "Endar sögnin á *-st* í nafnhætti (*að hittast*)? **Miðmynd**. Er *vera* eða *verða* með lýsingarhætti þátíðar og frumlagið gerir ekkert sjálft (*Húsið var byggt*)? **Þolmynd**. Annars er það **germynd**.",
+    lesson: "mynd", tags: ["somynd"], types: ["so_mynd"] },
+  { id: "mynd_st", ok: "að prófa nafnháttinn", nm: "Germynd á -st tekin fyrir miðmynd",
+    rule: "Ekki eru öll orð sem enda á *-st* í miðmynd. *Þú lest* og *þú veist* eru germynd í 2. persónu. Prófaðu nafnháttinn: *að lesa* endar ekki á *-st*, en *að hittast* gerir það.",
+    lesson: "mynd", tags: ["somynd:st"], types: ["so_mynd"] },
+  { id: "bodhattur", ok: "boðhátt", nm: "Boðháttur",
+    rule: "Boðháttur er skipun. Við einn er *þú* fest aftan á sögnina: *kom* + *þú* → *komdu*, *les* + *þú* → *lestu*, *far* + *þú* → *farðu*. Við fleiri en einn: *komið, lesið, farið*.",
+    lesson: "hattur", tags: ["bodh"], types: ["so_bodhattur"] },
+  { id: "bodh_styfdur", ok: "boðhátt með þú", nm: "Stýfður boðháttur í stað boðháttar",
+    rule: "*Kom* og *far* eru **stýfður boðháttur**, gömul mynd sem sést helst í ljóðum. Í venjulegu máli er *þú* fest aftan á: *komdu*, *farðu*, *lestu*.",
+    lesson: "hattur", tags: ["bodh:st"], types: ["so_bodhattur"] },
+  { id: "bodh_nh", ok: "að mynda boðhátt", nm: "Boðháttur myndaður af nafnhætti",
+    rule: "Boðhátturinn er ekki nafnhátturinn með *-ðu*: ekki *komaðu* heldur *komdu*, ekki *lesaðu* heldur *lestu*. Taktu *-a* af nafnhættinum (*kom-*, *les-*) og festu *þú* aftan á. Sagnir eins og *kalla* halda *a*-inu: *kallaðu*.",
+    lesson: "hattur", tags: ["bodh:nh"], types: ["so_bodhattur"] },
   /* v6.13 (critique 26): two patterns that only the hand-written error hunt
      (exercises.py HUNT) exercises. Both are among the best-known slips of
      Icelandic teenagers and nothing above describes them: neither is a wrong
@@ -299,8 +322,8 @@ export function tagsOf(t) {
       break;
     case "tap": case "sort":
     /* item 27: the builder says what it tests (the typed genitive only from
-       þyngd 5). */
-    case "kenni":
+       þyngd 5; the written kennimyndir from þyngd 3). */
+    case "kenni": case "slots":
       (t.tags || []).forEach((x) => tags.add(x));
       break;
     case "clause": tags.add("clause"); break;

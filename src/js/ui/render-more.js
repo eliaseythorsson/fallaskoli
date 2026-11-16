@@ -10,7 +10,7 @@
 import { RENDER, sentenceHTML, whyBox, conclude, enterToSubmit, skillTag, slipNote,
          nearNote, multLine, PUNCT } from "./render.js";
 import { judge, judgeBonus, settle, bonusVerdict, BONUS_XP } from "../core/answer.js";
-import { $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO } from "./dom.js";
+import { $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO, freshEnter } from "./dom.js";
 
 const eyebrow = (t) =>
   `<p class="eyebrow"><span>${esc(t.title)}</span>${skillTag(t)}<b>þyngd ${t.lvl}</b></p>`;
@@ -21,6 +21,9 @@ const blankHTML = (t) =>
 
 function questionSentence(t) {
   if (!t.s) return "";
+  /* Several words marked as one (item 27: the verb phrase *var byggt*). */
+  if (t.marks) return `<p class="sentence">${t.s.tok.map((x, j) => (PUNCT.has(x.w) ? x.w
+    : (j ? " " : "") + (t.marks.includes(j) ? `<span class="target">${esc(x.w)}</span>` : esc(x.w)))).join("")}</p>`;
   if (t.i == null || t.i < 0) return `<p class="sentence">${sentenceHTML(t.s, -1, "")}</p>`;
   const tok = t.s.tok[t.i];
   const inner = t.mode === "replace" || t.mark
@@ -260,6 +263,109 @@ function submitKenni(app) {
     <h3>${ok ? cheer(CHEERS_OK) : !kindOk ? "Ekki alveg" : "Beygingin rétt, eignarfallið ekki"}</h3>
     <p><span class="forms">til ${gen}</span> · beygingin er <b>${esc(t.answer)}</b>.</p>
     ${said}${ok ? slipNote(v && v.slip, xp, xpFull) : nearNote(v)}${whyBox(t.why)}
+    <p class="streakline">Enter fyrir næstu.</p></div>`;
+  });
+}
+
+/* ================= slots: forms in boxes, perhaps a pick (item 27) ========
+ *
+ * Sterk eða veik sögn and the boðháttur. What is shown of the word, then one
+ * box per form asked (the words around a box as the lesson says them: *í gær
+ * … ég*), then sterk / veik when the task has options. The boxes are the
+ * paradigm table's (`table.decl`), so they keep its layout on a phone. */
+
+RENDER.slots = function (app) {
+  const t = app.cur;
+  t.picked = null;
+  const shown = t.show.map((x) => `${x.h ? esc(x.h) + " " : ""}<b>${esc(x.f)}</b>`).join(" · ");
+  const rows = (t.slots || []).map((sl, k) => `<tr><th class="rowh">${esc(sl.h)}${
+    sl.hint ? ` <span>(${esc(sl.hint)})</span>` : ""}</th>
+      <td><div class="cellrow"><input type="text" data-k="${k}" aria-label="${esc(sl.h)}" autocomplete="off" autocapitalize="off" spellcheck="false">${
+        sl.after ? `<span class="helpernoun">${esc(sl.after)}</span>` : ""}</div>
+      <span class="fix" data-fix="${k}"></span></td></tr>`).join("");
+  $("task").innerHTML = `
+  <div class="card">
+    ${eyebrow(t)}
+    <p class="sentence">${shown}</p>
+    <p class="gloss">${fmt(t.question)}</p>
+    ${rows ? `<table class="decl slotbox">${rows}</table><div class="keys" id="keys"></div>` : ""}
+    ${t.options ? `<div class="qrow"><div class="opts" data-q="val">
+      ${t.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>` : ""}
+    <div class="answer"><button class="go" id="check">Athuga</button></div>
+    <div id="verdict"></div>
+  </div>`;
+  const box = document.querySelector("#task .opts");
+  if (box) {
+    box.onclick = (e) => {
+      const b = e.target.closest("button");
+      if (!b || b.disabled) return;
+      box.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      t.picked = t.options[+b.dataset.v];
+    };
+    box.addEventListener("keydown", (e) => {
+      const k = +e.key;
+      if (k >= 1 && k <= t.options.length) box.querySelectorAll("button")[k - 1].click();
+    });
+  }
+  const ins = [...document.querySelectorAll("table.slotbox input")];
+  if (ins.length) {
+    wireKeys();
+    ins[0].focus();
+    /* Enter goes to the next box, and from the last one checks the answer
+       (or, with options still to pick, waits for the pick). */
+    ins.forEach((el, k) => el.addEventListener("keydown", (e) => {
+      if (!freshEnter(e)) return;
+      e.preventDefault();
+      if (k + 1 < ins.length) ins[k + 1].focus();
+      else submitSlots(app);
+    }));
+  }
+  $("check").onclick = () => submitSlots(app);
+};
+
+function submitSlots(app) {
+  const t = app.cur;
+  if (t.done) return;
+  const ins = [...document.querySelectorAll("table.slotbox input")];
+  const j = judge(t, { picked: t.picked, texts: ins.map((el) => el.value) }, app);
+  if (j.pending) {
+    const at = j.detail && j.detail.at;
+    if (at != null && ins[at]) ins[at].focus();
+    $("verdict").innerHTML = j.verdict === "hedged"
+      ? `<div class="verdict neutral"><h3>Veldu eina mynd</h3>
+      <p>Þú skrifaðir fleiri en eina mynd (${j.detail.g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.</p></div>`
+      : `<div class="verdict neutral"><p>${j.verdict === "empty"
+        ? "Skrifaðu í alla reitina."
+        : `Veldu ${t.options.map(esc).join(" eða ")}.`}</p></div>`;
+    return;
+  }
+  t.done = true;
+  const ok = j.ok, xp = j.xp;
+  const { items, kindOk, formsOk, xpFull, slip } = j.detail;
+  ins.forEach((el, k) => {
+    const it = items[k];
+    el.classList.add(it.ok ? "ok" : "no");
+    el.disabled = true;
+    if (!it.ok) document.querySelector(`[data-fix="${k}"]`).textContent = it.accepted.join(" / ");
+  });
+  document.querySelectorAll("#task .opts button").forEach((b) => {
+    b.disabled = true;
+    const val = t.options[+b.dataset.v];
+    if (val === t.answer) b.classList.add("right");
+    else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
+    b.removeAttribute("aria-pressed");
+  });
+  const solution = (t.solution || []).map((x) => `${x.h ? esc(x.h) + " " : ""}<span class="forms">${esc(x.f)}</span>`).join(" · ");
+  const head = ok ? cheer(CHEERS_OK)
+    : !t.options || (!kindOk && !formsOk) ? "Ekki alveg"
+    : !kindOk ? `Rétt skrifað, en sögnin er ${esc(t.answer)}`
+    : "Rétt valið, en athugaðu myndirnar";
+  const near = items.map((it) => it.v).find((v) => v && v.near) || null;
+  conclude(app, t, j, () => {
+    $("verdict").innerHTML = `<div class="verdict ${ok ? (slip ? slip.klass : "ok") : "no"}"><span class="xpop">+${xp} XP</span>
+    <h3>${head}</h3>
+    <p>${solution}${t.options ? ` · sögnin er <b>${esc(t.answer)}</b>` : ""}.</p>
+    ${ok ? slipNote(slip && slip.slip, xp, xpFull) : nearNote(near)}${whyBox(t.why)}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
   });
 }
