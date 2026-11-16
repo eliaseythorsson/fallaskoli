@@ -558,7 +558,7 @@ for f in frames:
         # and not *þegar* after *man*: *ég man þegar ég var lítill* is good
         # Icelandic, so *ég man ekki þegar …* is not plainly wrong
         remember = " man " in f
-        conj_item(f.replace("{C}", c), "hvort", ["ef", "hvort sem", "sem" if remember else "þegar"],
+        conj_item(f.replace("{C}", c), "hvort", ["ef", "hvort sem", "þótt" if remember else "þegar"],
                   "Óbein spurning hefst á *hvort*: *" + f.split(" ___")[0].lower() + " hvort …* — "
                   + ("*ef* táknar skilyrði." if remember else "*ef* táknar skilyrði og *þegar* tíma.")); k += 1
 for t in X.CONJ_RELATIVE:
