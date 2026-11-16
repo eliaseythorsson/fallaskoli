@@ -12,6 +12,38 @@ import { wpick } from "./shared.js";
 import { TASKS, typeById, enabled, weightOf } from "./registry.js";
 
 /**
+ * A built question as the session will show it: its type written on it, and
+ * the effects of showing it completed with what the session knows afterwards
+ * — how long since a table and since a meaning question, and the words it
+ * has met (tasks/shared.js `wordWeight` makes them rarer for a while).
+ */
+function shown(type, b, after = []) {
+  if (!b) return null;
+  const { task } = b;
+  task.typeId = type.id;
+  const words = [task.n, task.w, task.v].filter(Boolean).map((x) => x.o);
+  return built(task, [
+    ...b.effects,
+    FX.since(type.id.startsWith("tbl"), type.id === "meaning"),
+    ...(words.length ? [FX.seen(words)] : []),
+    ...after,
+  ]);
+}
+
+/**
+ * Build one question of a GIVEN type: { task, effects } or null. The same
+ * thing `nextTask` returns once it has chosen the type — for a caller that
+ * already knows which type it wants. A duel does (core/duel.js): the types
+ * come from the duel's plan, and each player is built their own question of
+ * each. Nothing is checked here but that the type exists; whether it is
+ * switched on was the plan's business.
+ */
+export function buildTask(lex, view, rng, typeId) {
+  const type = typeById(typeId);
+  return type ? shown(type, type.build(lex, view, rng)) : null;
+}
+
+/**
  * Choose and build the next task: { task, effects } or null.
  * Only enabled skills can appear; a builder that cannot produce a good
  * question returns null and is skipped rather than guessing.
@@ -66,21 +98,8 @@ export function nextTask(lex, view, rng) {
     }, rng);
     if (tried.has(choice.id) && tried.size < avail.length) continue;
     tried.add(choice.id);
-    const b = choice.build(lex, view, rng);
-    if (b) {
-      const { task } = b;
-      task.typeId = choice.id;
-      /* What the session knows once this question has been shown: how long
-         since a table and since a meaning question, and the words it has met
-         (tasks/shared.js `wordWeight` makes them rarer for a while). */
-      const words = [task.n, task.w, task.v].filter(Boolean).map((x) => x.o);
-      return built(task, [
-        ...b.effects,
-        FX.since(choice.id.startsWith("tbl"), choice.id === "meaning"),
-        ...(words.length ? [FX.seen(words)] : []),
-        ...after,
-      ]);
-    }
+    const b = shown(choice, choice.build(lex, view, rng), after);
+    if (b) return b;
   }
 
   /* The last resort walks only the builders that ARE available and returns

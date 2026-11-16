@@ -583,15 +583,33 @@ async function openTab(page, view) {
   await A.ctx.close(); await B.ctx.close();
 }
 
-/* ---------- 9. A duel, end to end (v6.7) ---------------------------------
+/* ---------- 9. A duel, end to end (v6.7; graded by the server, v6.13) -------
  * One child challenges another from Skólastofan; the challenge appears on the
- * other's blackboard; both get the same questions; the one with more right
- * wins, and the result, the badge and the ⚔️ on the board follow. */
+ * other's blackboard. Each presses play, gets their OWN questions (the same
+ * types in the same order, other words) and answers; the browser sends the
+ * answers and the SERVER counts them (critique items 62 and 63). The one on
+ * the lower level is given a right answer in advance (item 66). The result,
+ * the badge and the ⚔️ on the board follow.
+ *
+ * This test builds both players' questions here in Node from the seeds the
+ * server holds, exactly as the server does when it grades — so "the browser
+ * built the same questions as the server" is checked between a real browser
+ * running the bundled file and Node running the modules. */
 {
   const ua = await mkUser("einvigia", "learner"), ub = await mkUser("einvigib", "learner");
   /* On the board means having progress on the server, as for the board. */
-  const { blankState: blank } = await import("../src/js/core/state.js");
-  await app.store.putState(ua.id, blank());
+  const { blankState: blank, newSession } = await import("../src/js/core/state.js");
+  const { skillNeed } = await import("../src/js/core/progress.js");
+  const { createPolicy } = await import("../src/js/core/policy.js");
+  const { nextTask, buildTask, makeView, applyEffects } = await import("../src/js/tasks/index.js");
+  const { duelTasks, signature } = await import("../src/js/core/duel.js");
+  const { buildLexicon } = await import("../src/js/core/lexicon.js");
+  const { DATA } = await import("../data/data_bundle.js");
+  const { rightResponse, wrongResponse } = await import("../tests/helpers.js");
+  /* A is two levels above B in nouns: B is given one right answer of ten. */
+  const strong = blank();
+  strong.skills.nafnord.xp = skillNeed(3);
+  await app.store.putState(ua.id, strong);
   await app.store.putState(ub.id, blank());
   const A = await fresh(), B = await fresh();
   await login(A.page, "einvigia");
@@ -606,34 +624,88 @@ async function openTab(page, view) {
   const stored = await app.store.duels();
   ok(stored.length === 1 && stored[0].a === ua.id && stored[0].b === ub.id && stored[0].n === 10,
     "the challenge did not reach the server as made");
+  const duel = stored[0];
+  ok(duel.lv && duel.lv.a === 3 && duel.lv.b === 1, "the duel does not know the two levels: " + JSON.stringify(duel.lv));
 
   await login(B.page, "einvigib");
   await B.page.waitForSelector("#duelbar [data-duelgo]", { timeout: 15000 });
   const offer = await B.page.$eval("#duelbar", (el) => el.innerText);
   ok(/skorar á þig/.test(offer) && /einvigia/.test(offer), "the challenge is not on the blackboard: " + offer);
+  ok(/Þú færð 1 rétt svar í forgjöf/.test(offer), "the offer does not say that B starts one answer ahead: " + offer);
 
-  /* Both start; the questions must be the same. Answers go through finish()
-     and next() — the duel's own path — A eight right, B five. */
-  const play = (page, right) => page.evaluate(async (right) => {
+  /* Item 62. Before play, the browser holds no seed … */
+  const held = await B.page.evaluate(() => JSON.stringify([window.FALLASKOLI.duelList, window.FALLASKOLI.duelInfo]));
+  ok(![duel.seed, duel.keys.a, duel.keys.b].some((x) => held.includes(String(x))) && !/"seed"|"key"/.test(held),
+    "the list of duels carries a seed before the pupil has pressed play");
+  /* … and what the developer tools could post until now is refused. */
+  const forged = await B.page.evaluate(async (id) => {
+    const post = (body) => fetch(`/duels/${id}/result`, { method: "POST", credentials: "include",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.status);
+    return [await post({ c: 10, n: 10, sig: "s" }), await post({ answers: Array(10).fill({ text: "a" }), sig: "s" })];
+  }, duel.id);
+  ok(forged[0] === 400 && forged[1] === 409, "a forged result was not refused: " + forged.join());
+  ok(!(await app.store.duels())[0].res.b, "a forged result was stored");
+
+  /* The questions as the server will build them, and the answers to give:
+     the first `right` right, the rest wrong. */
+  const lex = buildLexicon(DATA, { hide: new Set(DATA.blocked || []) });
+  const deps = { nextTask, buildTask, makeView, applyEffects, blankState: blank, newSession, createPolicy };
+  const questions = (side) => duelTasks(lex, { ...duel, side, key: duel.keys[side] }, deps);
+  const qa = questions("a"), qb = questions("b");
+  const answersFor = (tasks, right) => tasks.map((t, i) => (i < right ? rightResponse(t) : wrongResponse(t)));
+
+  /* Play. A question with one text box is answered through the box and the
+     button, as a pupil does — that is the path that keeps the answer for the
+     server (ui/render.js `conclude`). The other kinds are answered through
+     the same two calls `conclude` makes. */
+  const play = (page, answers, right) => page.evaluate(async (answers, right) => {
     const app = window.FALLASKOLI;
-    app.startDuel(app.duelList[0].id);
+    await app.startDuel(app.duelList[0].id);
     const run = app.duelRun;
-    const sig = run.tasks.map((t) => t.typeId + ":" + (t.word || "") + ":" + (t.m || t.cell || "")).join("|");
-    const n = run.tasks.length;
-    for (let i = 0; i < n; i++) { app.finish({ correct: i < right }); if (app.duelRun) app.next(); }
-    await new Promise((r) => setTimeout(r, 800));
-    return { sig, n, left: !!app.duelRun };
-  }, right);
+    if (!run) return { started: false, bar: document.getElementById("duelbar").innerText };
+    const sig = run.sig, n = run.tasks.length, types = run.tasks.map((t) => t.typeId);
+    const strip = document.getElementById("duelbar").innerText;
+    let typed = 0;
+    for (let i = 0; i < n; i++) {
+      const box = document.getElementById("ans"), check = document.getElementById("check");
+      if (["fill", "gap", "verb", "verbslot"].includes(app.cur.type) && box && check && answers[i].text) {
+        box.value = answers[i].text;
+        check.click();
+        typed++;
+      }
+      /* Every other kind — and a box that did not take the answer. */
+      if (run.i === i) {
+        app.duelAnswer(app.cur, answers[i]);
+        app.finish({ correct: i < right });
+      }
+      if (app.duelRun) app.next();
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+    return { started: true, sig, n, types, strip, typed, left: !!app.duelRun,
+      sent: app.duelSent && { c: app.duelSent.c, n: app.duelSent.n, error: app.duelSent.error || null } };
+  }, answers, right);
   await openTab(A.page, "practice");
-  const pa = await play(A.page, 8);
-  const pb = await play(B.page, 5);
+  const pa = await play(A.page, answersFor(qa, 8), 8);
+  const pb = await play(B.page, answersFor(qb, 5), 5);
+  ok(pa.started && pb.started, "a duel did not start: " + (pa.bar || pb.bar || ""));
   ok(pa.n === 10 && pb.n === 10, `the duel has ${pa.n} and ${pb.n} questions, not 10`);
-  ok(pa.sig === pb.sig, "the two children did not get the same questions");
+  ok(pa.sig === signature(qa) && pb.sig === signature(qb),
+    "the browser did not build the questions the server grades");
+  ok(pa.sig !== pb.sig, "item 63: the two children got the same questions");
+  ok(pa.types.join() === pb.types.join(), "item 63: the two children's questions are not of the same types, line by line");
+  ok(/ekki þær sömu/.test(pa.strip), "the strip does not say that the questions are not the same: " + pa.strip);
+  ok(/einvigib er á lægra stigi en þú í þessu efni og fær því 1 rétt svar í forgjöf/.test(pa.strip),
+    "the strip does not tell A about B's handicap: " + pa.strip);
+  ok(pa.typed + pb.typed > 0, "no question was answered through its text box — the path that keeps the answer was not run");
   ok(!pa.left && !pb.left, "the duel did not end after the last question");
+  ok(pa.sent && !pa.sent.error && pa.sent.c === 8, "A is not shown the server's score: " + JSON.stringify(pa.sent));
 
+  /* The scores are the SERVER's count of the answers it was sent. */
   const done = await app.store.duels();
   ok(done[0].res.a && done[0].res.a.c === 8 && done[0].res.b && done[0].res.b.c === 5,
-    "the server does not hold both scores: " + JSON.stringify(done[0].res));
+    "the server did not grade both sets of answers: " + JSON.stringify(done[0].res));
+  ok(done[0].res.a.n === 10 && !("answers" in done[0].res.a) && !/xq/.test(JSON.stringify(done[0])),
+    "the server kept the answers, not only the score");
 
   await A.page.evaluate(() => window.FALLASKOLI.loadDuels());
   await A.page.waitForFunction(() => (window.FALLASKOLI.S.duels || {})[window.FALLASKOLI.duelList[0]?.id] === "w",
@@ -645,13 +717,24 @@ async function openTab(page, view) {
   ok(ra.book.join() === "w", "the winner's state does not record the win: " + ra.book.join());
   ok(ra.win && ra.first, "the duel badges were not awarded");
   ok(/Sigur/.test(ra.bar) && /8\/10/.test(ra.bar), "the blackboard does not announce the win: " + ra.bar);
+  /* Item 66: the result says what was given, to whom, and the sum. */
+  ok(/fékk því 1 rétt svar\s+í forgjöf \(5 \+ 1 = 6\)/.test(ra.bar) && /jafnara/.test(ra.bar),
+    "the winner is not told about the handicap: " + ra.bar);
   const rb = await B.page.evaluate(async () => { await window.FALLASKOLI.loadDuels();
-    return Object.values(window.FALLASKOLI.S.duels || {}); });
-  ok(rb.join() === "l", "the loser's state does not record the loss: " + rb.join());
+    return { book: Object.values(window.FALLASKOLI.S.duels || {}), bar: document.getElementById("duelbar").innerText }; });
+  ok(rb.book.join() === "l", "the loser's state does not record the loss: " + rb.book.join());
+  ok(/Þú fékkst 1 rétt svar í forgjöf \(5 \+ 1 = 6\)/.test(rb.bar), "B is not shown the sum with the handicap: " + rb.bar);
 
   await A.page.evaluate(() => window.FALLASKOLI.save(true));
   await new Promise((r) => setTimeout(r, 600));
   await openTab(A.page, "class");
+  /* The window announcing the duel badges may lie over the tabs, so the view
+     is opened by the call the tab makes. */
+  await A.page.evaluate(() => window.FALLASKOLI.openView("class"));
+  await A.page.waitForFunction(() => /Sigur/.test(document.getElementById("duelroom")?.innerText || ""),
+    { timeout: 10000 }).catch(() => {});
+  const room = await A.page.$eval("#duelroom", (el) => el.innerText);
+  ok(/forgjöf hins: \+1/.test(room), "the duel room does not show the handicap beside the scores: " + room);
   await A.page.evaluate(() => document.querySelector('[data-metric="duels"]').click());
   await A.page.waitForFunction(() => document.querySelector('[data-metric="duels"]')?.getAttribute("aria-pressed") === "true",
     { timeout: 8000 });

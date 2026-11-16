@@ -1092,7 +1092,13 @@ export const JUDGED_TYPES = Object.keys(JUDGES);
 export function judge(task, response = {}, pupil = null) {
   const fn = task && JUDGES[task.type];
   if (!fn) throw new Error("Enginn dómari fyrir " + (task && task.type));
-  return fn(task, response || {}, historyOf(pupil));
+  const j = fn(task, response || {}, historyOf(pupil));
+  /* The response that was judged, kept beside the judgement — a duel sends
+     it to the server, which judges it again (core/duel.js `gradeDuel`). Not
+     enumerable: it is not part of the verdict, and nothing that copies or
+     compares a judgement should see it. */
+  Object.defineProperty(j, "given", { value: response || {}, enumerable: false });
+  return j;
 }
 
 /**

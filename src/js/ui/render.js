@@ -172,6 +172,8 @@ function spend(app) {
 function conclude(app, task, j, draw) {
   const took = j.effects.some((e) => e.timed) ? spend(app) : 0;
   const extra = settle(app.S, app.sess, task, j, { ms: took });
+  /* A duel keeps the answer itself: the server grades it (item 62). */
+  if (task.duel && app.duelAnswer) app.duelAnswer(task, j.given);
   draw();
   app.finish(extra);
 }
