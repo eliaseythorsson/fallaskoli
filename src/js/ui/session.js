@@ -1,6 +1,6 @@
 /* Practice sessions (v6.10): the Æfa tab's picker, the strip above a session
-   in progress, and the summary at the end. Rules live in app.js (the run
-   itself), core/diagnosis.js (what went wrong and why), core/today.js
+   in progress, and the summary at the end. Rules live in core/run.js and
+   control/session.js (the run itself), core/diagnosis.js (what went wrong and why), core/today.js
    (today's session) and core/streak.js ("Þrjár í röð"); this file draws.
 
    A session is today's session (v6.13, item 21: the one big button), or one
@@ -75,7 +75,7 @@ export function usable(app, ids) {
 
    The homework the group's teacher set, at the very top of Æfa: above today's
    session, because it is the one thing somebody else asked for. One tap
-   starts it (app.js `startAssignment`). Only on a server; a pupil with no
+   starts it (control/session.js `startAssignment`). Only on a server; a pupil with no
    server has no teacher, and `app.assignments` is empty. */
 
 /** Can this pupil be asked anything on the assignment's material? The
@@ -318,7 +318,7 @@ function streakBar(app, el) {
 }
 
 /**
- * Under the verdict of a diagnosed wrong answer (app.js `offerStreak`): the
+ * Under the verdict of a diagnosed wrong answer (control/drill.js `offerStreak`): the
  * offer of three questions on the pattern just named. Áfram keeps the focus,
  * so Enter still simply goes on — the three are offered, never imposed.
  */

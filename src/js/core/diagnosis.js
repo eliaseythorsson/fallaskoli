@@ -13,7 +13,7 @@
    child has had the CHANCE to make the error (a question that tests it) and
    how often they made it. The rate, not the count, is what the summary of a
    session reports, and what decides which patterns are "active". Active
-   patterns are fed back into the choice of questions (app.js `pickTask`):
+   patterns are fed back into the choice of questions (control/session.js `pickTask`):
    a question that tests one of them is preferred, so what goes wrong comes
    back until it stops going wrong.
 
@@ -921,7 +921,8 @@ const NO_PRAISE = new Set(["broddar", "stafsetning", "y_i", "n_nn", "dh_d", "hlj
   "nf_aukafall", "sogn_obeygd", "fall_annad", "ofleidretting", UNREAD]);
 
 /**
- * The report on a finished session. `run` is app.js's record of it:
+ * The report on a finished session. `run` is the session's record of it
+ * (core/run.js `newRun`):
  * { chances: {id: n}, misses: {id: n}, found: [{p, ex}] , before: [ids] }.
  * Returns what the summary screen shows; pure.
  *

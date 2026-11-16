@@ -524,7 +524,7 @@ async function person(username, { board = true, group } = {}) {
 }
 
 /* A player's questions, built here from what POST /start gave — exactly as
-   the browser builds them (src/js/app.js `startDuel`). */
+   the browser builds them (src/js/control/duel.js `startDuel`). */
 const built = (start) => duelTasks(duelLex, { ...start.data.duel, seed: start.data.seed, key: start.data.key }, deps);
 /* The first `right` answered right, the rest wrong. */
 const answersFor = (tasks, right) => tasks.map((t, i) => (i < right ? rightResponse(t) : wrongResponse(t)));

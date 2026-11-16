@@ -26,7 +26,7 @@
    Like every builder this is pure: build(…) → { task, effects } or null, and
    the effects are applied by whoever shows the task. The three functions at
    the bottom keep a SESSION's plan (which reviews it opens with, which noun
-   is to come back) on the run object they are handed, as app.js `pickTask`
+   is to come back) on the run object they are handed, as control/session.js `pickTask`
    keeps the rest of it. */
 
 import { chancesIn } from "../core/diagnosis.js";

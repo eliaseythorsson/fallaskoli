@@ -374,7 +374,7 @@ the patterns the assignment's material tests, ordered as above.
 Which result counts: until the pupil has done the whole assignment, the latest
 attempt that got at least as far; after that, a later complete attempt only if
 it has a higher share right. The browser sends one result when a session on the
-assignment ends, finished or not (`app.js endRun`). Like a duel's result it is
+assignment ends, finished or not (`control/session.js endRun`). Like a duel's result it is
 the browser's word: the server checks the numbers are possible, not that they
 are true (item 62 is about duels; homework is not a contest).
 

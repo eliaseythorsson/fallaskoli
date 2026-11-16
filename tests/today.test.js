@@ -3,7 +3,7 @@
    The planner says what each of the ten questions is about: the due reviews
    first, then the active error patterns, then new material, about 3 / 4 / 3,
    bending when a source is empty — and always inside the curriculum policy.
-   The last test runs a plan through the builders the way app.js `pickTask`
+   The last test runs a plan through the builders the way control/session.js `pickTask`
    does, so a plan is not only a list of good intentions. */
 
 import test from "node:test";
@@ -186,7 +186,7 @@ test("a plan runs: reviews, then questions that test the pattern, then new mater
   const view = makeView({ S, sess, policy: POLICY, today: D0, inRun: true });
   const run = { review: plan.reviews.slice() };
   const asked = [];
-  /* as app.js pickTask: the opening first, then one slot per question */
+  /* as control/session.js pickTask: the opening first, then one slot per question */
   for (let b; (b = nextOpening(lex, view, rng, run));) asked.push({ kind: "review", task: b.task });
   assert.equal(asked.length, 3, "the session did not open with its three reviews");
   assert.ok(asked.every((x) => x.task.review), "an opening question is not a review");

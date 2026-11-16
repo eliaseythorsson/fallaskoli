@@ -195,7 +195,17 @@ vocab_filter.py       lemma errors and words for acts of violence (always
                       the administrator can switch it off), and the words
                       build_freq.py ranks down as film-subtitle register
 
-src/js/app.js         start-up and wiring; the only holder of state
+src/js/app.js         start-up and wiring; the only holder of state, and
+                      where the controllers meet: every question is drawn
+                      by its `next` and ends in its `finish`
+src/js/control/       one controller per part of practice, mixed into app
+                      (critique item 76): session.js (sessions, today's,
+                      assignments, Lesefni and skill-map sessions), drill.js
+                      (the rescue drill and "Þrjár í röð"), duel.js (duels
+                      and team duels), live.js (a live class round)
+src/js/core/run.js    a session without its screen: the record it keeps,
+                      the policy its questions are asked under, counting an
+                      answer, the summary
 src/js/core/          pure modules, no DOM: marks, lexicon, grading, leniency,
                       state, progress, badges, rarity, policy, definitions,
                       diagnosis (the error patterns) …

@@ -12,7 +12,7 @@
 
    about 3 / 4 / 3 of ten. This file only PLANS: it says which kind of
    question each of the ten is, which entry or pattern it is about, and
-   nothing else. app.js `pickTask` builds each slot with the ordinary
+   nothing else. control/session.js `pickTask` builds each slot with the ordinary
    builders, so a slot that cannot be built falls back to new material and the
    session is still ten questions long.
 

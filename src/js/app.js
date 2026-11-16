@@ -1,12 +1,26 @@
-/* Start-up and wiring. This is the only place that holds the state. */
+/* Start-up and wiring. This is the only place that holds the state.
+
+   `app` is where the parts of the program meet (critique item 76). What it
+   holds itself: the saved state and the session, the server and the account,
+   the calibration counts, the badges, saving, the tabs and the settings, and
+   start-up. Practice is in four controllers, each mixed into `app` by `meet`
+   (below the app object):
+
+     control/session.js   sessions and the ways into one (pure parts: core/run.js)
+     control/drill.js     the rescue drill and "Þrjár í röð"
+     control/duel.js      duels and team duels
+     control/live.js      a live class round
+
+   `next` and `finish` stay here: every question is drawn by the first and
+   ends in the second, and each controller takes its turn in them. */
 
 import { DATA } from "../../data/data_bundle.js";
 import { buildLexicon } from "./core/lexicon.js";
-import { migrate, blankState, newSession, todayKey, badgeContext, settleDays, noteQuestion, noteLogin, effectivePolicy } from "./core/state.js";
+import { migrate, blankState, newSession, todayKey, badgeContext, settleDays,
+  noteQuestion, noteLogin, effectivePolicy, cleanWeekGoal } from "./core/state.js";
 import { applyDecay } from "./core/progress.js";
-import { checkBadges, checkLogin, celebrate } from "./core/badges.js";
+import { checkBadges, checkLogin, celebrate, noteAccidents } from "./core/badges.js";
 import { collectionSummary } from "./core/collection.js";
-import { cleanWeekGoal } from "./core/state.js";
 import { renderDrillBar } from "./ui/drill.js";
 import { createStore } from "./storage/index.js";
 import { createClock } from "./core/timing.js";
@@ -14,7 +28,8 @@ import { createDefinitions, bundledSource, remoteSource } from "./core/definitio
 import { serverMode, createServer, serverDriver, liftLocalState } from "./core/server.js";
 import { CAL, eventOf, cleanTable, tableIsEmpty, lexHardness } from "./core/calibration.js";
 import { SAMPLE, samplesOf } from "./core/classifiercheck.js";
-import { $, esc, wireGlossary, queueBadges, hideTip, wirePrivacyLinks, setKeypadPref, keypadOn, keypadEnv, wireKeys, applyComfort } from "./ui/dom.js";
+import { $, esc, wireGlossary, queueBadges, hideTip, wirePrivacyLinks,
+  setKeypadPref, keypadOn, keypadEnv, wireKeys, applyComfort } from "./ui/dom.js";
 import { measurable, badgeWindows, windowsFor } from "./core/rarity.js";
 import { socialContext } from "./core/social.js";
 import { DEFAULT_METRIC } from "./core/leaderboard.js";
@@ -325,34 +340,6 @@ function meet(target, ...parts) {
   return target;
 }
 meet(app, sessionControl(), drillControl(), duelControl(), liveControl());
-
-/**
- * The accident badges (core/badges.js §14d), counted at the one place that
- * knows a question has ended.
- *
- *   slipRun    answers in a row accepted with a slip (`extra.slip`)
- *   wordCases  how many of the four cases one word has been answered in this
- *              session — a table hands over all four at once, so it is left out
- *   goldfish   the first miss on a word that had gone right five times
- */
-function noteAccidents(S, sess, cur, extra) {
-  if (extra.correct === true) sess.slipRun = extra.slip ? (sess.slipRun || 0) + 1 : 0;
-  else if (extra.correct === false) sess.slipRun = 0;
-
-  const word = cur && cur.word;
-  const cs = /^(NF|ÞGF|ÞF|EF)/.exec(String((cur && cur.cell) || ""));
-  if (extra.correct === true && word && cs && !("perfectTable" in extra)) {
-    const map = (sess.wordCases ||= {});
-    const set = (map[word] ||= []);
-    if (!set.includes(cs[1])) set.push(cs[1]);
-    sess.wordCasesBest = Math.max(sess.wordCasesBest || 0, set.length);
-  }
-
-  const rec = word ? S.words[word] : null;
-  const goldfish = extra.correct === false && !!rec && (rec.c || 0) >= 5 &&
-    (rec.w || 0) === 1;
-  return { goldfish, pickChanges: (cur && cur.changes) || 0 };
-}
 
 /* ---------- tabs --------------------------------------------------------
  *

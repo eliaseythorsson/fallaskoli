@@ -26,7 +26,7 @@
    review queue. A pattern is offered once per session; a miss inside the
    three offers nothing (the pupil is already working on it).
 
-   Pure: no DOM, no clock, no random numbers. app.js keeps the record.        */
+   Pure: no DOM, no clock, no random numbers. control/drill.js keeps the record.  */
 
 import { patternById } from "./diagnosis.js";
 

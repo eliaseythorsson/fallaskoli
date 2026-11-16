@@ -104,7 +104,7 @@ export function targetName(t) {
 export const KIND_NAME = { skill: "Flokkur", pattern: "Villumynstur", node: "Námskrá", year: "Bekkur" };
 
 /**
- * What a session on this target is narrowed to (app.js `runPolicy`):
+ * What a session on this target is narrowed to (core/run.js `runPolicy`):
  *   skills  categories, or null for any
  *   types   question types, or null for any of the categories'
  *   focus   error patterns the questions are aimed at (as in "Villurnar mínar")
