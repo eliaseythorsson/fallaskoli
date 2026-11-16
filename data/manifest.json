@@ -12,23 +12,23 @@
   "sentences.py": "631a73f625bc746326bec232ad193892559b7e5cfa1464239953dc38b0652cb1",
   "noun_classes.py": "89a44ca30a413f444390d6eb295c83323e57a18ee987fed58156300ea5a58d10",
   "definitions.py": "079b24e933230de93043e4e99af77bc694e82e46a7ea5e379a001328957eed11",
-  "vocab_filter.py": "7a99eb988f36ddbc2d0abe92cf0abe6dd6dd5bdae0e7ac5ed78e33d4eabb2b96",
+  "vocab_filter.py": "11a5d3aed276a309432afd7514d2e3e55c334d4d6c4d7e2bc1aa08a9ef3a6901",
   "government.py": "855b64fe163a3548b4590e60503de2ca6a702a0e4ed053bea6552de6e104fe72",
   "parse_guard.py": "9eb26f6b3760b1a57a0061bdd65f116564b94d1d3fd5732b9c8b3704659f9a49",
   "parse_overrides.py": "8c247a4c2379695f21114ad2c37a4dfa1a853616787e473d976d761dbdfad03d",
-  "build_freq.py": "94e2319ddc30d46eaca1577e7a86ce78a7c20b9aac6433143718c9f23bfddff8",
-  "build_lexicon.py": "f953ec55d1c5277e9db461d677c570e996e14d0ede8aec01ca626fade0c0bb93",
-  "build_sentences.py": "c5dd29c7b5011e5a3d48aad0800b76bc1e061cb1ab047cd7231c904a12b95103",
-  "build_bundle.py": "842c03947211a3af8039622637f14cc9ee32acb154a8032f316b66edeaa6c6cb",
+  "build_freq.py": "d3e2833570d0b0e71e1aae04c09d60b8bcf30db4a75a7242c3bcbd770015df1a",
+  "build_lexicon.py": "52a648e467b68e02e28bd1415218de6b8b91e4caca3cd2f935017f943bd92677",
+  "build_sentences.py": "a7537d1f5330176a48511daf207a399b5d725f63bd797fbf761b33796a7dc944",
+  "build_bundle.py": "fe38a60d2104d9c4b2602dba7b98b884ba46ec422f8d318b7a6a72b523b70f84",
   "exercises.py": "93ba91a59dbcf3916efd4f4c07bdf74fb969dc4708541a0d34fcf923958575e2",
-  "build_exercises.py": "fc8af63e717d69913fdd7a686578f88a8560dbcadd269e22d0881e56f9877760"
+  "build_exercises.py": "61d27b244c624e3972ff4569c938d56de49e9f6ff0c8751c5b0490da939452ad"
  },
  "artifacts": {
-  "freq_lemmas.json": "8d3063ebe66f3ae33e79a20ae9a846da0a31ee0ed30f7c713bcb8dc9962062c5",
-  "lexicon.json": "faed940290ba5856323145cf0888c74450302c3f67b147ae08cf748cacd327a4",
+  "freq_lemmas.json": "fd6c1cefb55857cd3bd1f1015846ff6564398ab337558ec074efd4b20fdb44ca",
+  "lexicon.json": "ed690ccd9fe89231681f646f6f75266a735d38e3e8127deb325c4263beba866a",
   "sentences.json": "08b7fbb3698441131ddb053dbd2afeae3a126abceff75fd8c13c1336d14b2ceb",
-  "data/data_bundle.js": "5516f3e6a19420a1ece4a73274bee14e1700192fbde7cec72cc175f6fc3dc990",
-  "data/exercises.js": "6ac4e17a89181fa43af058c9d4af461c0510e76f9d8a0de4612972e827f6b2ba"
+  "data/data_bundle.js": "3b3935aafb63b5cc2231520dbc7a35b5957f1603c1347ca8ae2ac7d7d5dac40f",
+  "data/exercises.js": "44696193c170340b78daae6106c2dfc653b87656e49e838010acde1ac0aad501"
  },
  "counts": {
   "words": 6564,
@@ -36,7 +36,7 @@
   "uncertain_tokens": 653,
   "rejected_tokens": 93,
   "clause_unsure": 0,
-  "definitions": 6510,
+  "definitions": 6509,
   "rare_words": 449,
   "guard": {
    "hard": 0,

@@ -302,8 +302,17 @@ export function createPolicy(allowed, chosen) {
 
     /** Whether the coarse vocabulary filter is on for this child. The child
         cannot turn it off: it is the administrator's switch alone, which is
-        the point of it. */
-    safeVocab: A.safeVocab === true,
+        the point of it.
+
+        ON unless an administrator has explicitly written `false` (v6.13,
+        item 9). Before v6.13 it was off unless written `true`, and the
+        subtitle corpus served *píka* and *tík* to a pupil whose teacher had
+        never opened the settings. A saved ceiling carries `safeVocab` only
+        when somebody clicked the box (`sanitisePolicy` keeps booleans and
+        nothing else, and the editor writes it only on a change), so `null`
+        means "never decided" and becomes on, and an administrator who
+        unticked it keeps that choice. */
+    safeVocab: A.safeVocab !== false,
 
     /** For the interface: is this switch the administrator's to explain? */
     allowedBy: {

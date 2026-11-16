@@ -255,8 +255,10 @@ test("the vocabulary filter is the administrator's switch, not the child's", () 
      admins/superusers can set"*. A child who could switch it off would make it
      decorative. */
   assert.equal(createPolicy({ safeVocab: true }, { safeVocab: false }).safeVocab, true);
-  assert.equal(createPolicy(null, { safeVocab: true }).safeVocab, false);
-  assert.equal(createPolicy(null, null).safeVocab, false);
+  assert.equal(createPolicy({ safeVocab: false }, { safeVocab: true }).safeVocab, false);
+  /* On unless the administrator says false (v6.13, item 9; tests/safevocab.test.js). */
+  assert.equal(createPolicy(null, { safeVocab: false }).safeVocab, true);
+  assert.equal(createPolicy(null, null).safeVocab, true);
 });
 
 test("the list of words the filter removes travels with the data", () => {
@@ -264,9 +266,10 @@ test("the list of words the filter removes travels with the data", () => {
      filter cannot be on for one class and off for another. */
   assert.ok(Array.isArray(DATA.blocked), "DATA.blocked is missing from the bundle");
   assert.ok(DATA.blocked.length > 0);
-  /* Every lemma listed is actually in the corpus — a list of words that are not
-     there is a list nobody can check. */
-  const have = new Set(DATA.lex.w.map((w) => w.o));
+  /* Every entry listed is actually in the corpus — a list of words that are not
+     there is a list nobody can check. An entry is a lemma, or "lemma|class"
+     for one reading of a homograph. */
+  const have = new Set(DATA.lex.w.flatMap((w) => [w.o, `${w.o}|${w.c}`]));
   assert.deepEqual(DATA.blocked.filter((l) => !have.has(l)), []);
 });
 
@@ -274,12 +277,14 @@ test("switching the filter on takes the words out of the whole corpus", () => {
   const open = buildLexicon(DATA);
   const safe = buildLexicon(DATA, { hide: new Set(DATA.blocked) });
   /* Counted from the entries, not from the list: a blocked LEMMA can have more
-     than one entry (one per word class), and filtering is by lemma. */
-  const removed = open.all.filter((w) => DATA.blocked.includes(w.o)).length;
+     than one entry (one per word class), and filtering is by lemma — or by
+     lemma and class, for an entry written "lemma|class". */
+  const gone = new Set(DATA.blocked);
+  const isGone = (w) => gone.has(w.o) || gone.has(`${w.o}|${w.c}`);
+  const removed = open.all.filter(isGone).length;
   assert.ok(removed >= DATA.blocked.length);
   assert.equal(safe.all.length, open.all.length - removed);
-  const gone = new Set(DATA.blocked);
-  assert.deepEqual(safe.all.filter((w) => gone.has(w.o)), []);
+  assert.deepEqual(safe.all.filter(isGone), []);
   /* Out of the collection totals too, not merely hidden in the exercises. */
   assert.ok(safe.nouns.length <= open.nouns.length);
   assert.deepEqual(safe.hidden.sort(), [...DATA.blocked].sort());
