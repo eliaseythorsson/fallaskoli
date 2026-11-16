@@ -16,7 +16,7 @@
  *      and offers the look-up links.
  *      The word a question is ABOUT is never glossed (sentenceHTML puts the
  *      blank or the highlight there instead), and neither are the words of a
- *      question answered by tapping words (Villuveiðar, Setningarliðir): a
+ *      question answered by tapping words (Villuveiðar, Setningarhlutar): a
  *      tap there is the answer.
  *
  *   2. "Lesa upphátt": the sentence read aloud by the browser's own speech

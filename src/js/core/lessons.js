@@ -14,7 +14,11 @@ import { NODES } from "./curriculum.js";
 export { LESSONS };
 
 const BY_ID = new Map(LESSONS.map((l) => [l.id, l]));
-export const lessonById = (id) => BY_ID.get(id) || null;
+/* Pages that were renamed: the old id still opens the page (a link or a
+   saved `lessonOpen` from before). core/state.js `migrate` moves the
+   pupil's read mark. */
+export const LESSON_RENAMED = { setningalidir: "setningarhlutar" };
+export const lessonById = (id) => BY_ID.get(id) || BY_ID.get(LESSON_RENAMED[id]) || null;
 
 /** The pages of one skill, in the order they were written. */
 export const lessonsOfSkill = (skill) => LESSONS.filter((l) => l.skill === skill);
@@ -76,7 +80,7 @@ export function lessonFor(task) {
     case "ordaford": return first("ordafordi");
     /* item 28: the three year-10 pages. The cell says which question it is. */
     case "setningafraedi":
-      return /^lidur:/.test(task.cell || "") ? first("lidir", "setningalidir") : first("setningalidir");
+      return /^lidur:/.test(task.cell || "") ? first("lidir", "setningarhlutar") : first("setningarhlutar");
     case "setningagerd":
       return /^tegund:/.test(task.cell || "") ? first("aukasetningar", "setningagerdir") : first("setningagerdir");
     case "malbeiting":
@@ -107,7 +111,7 @@ export const TERM_LESSON = {
   ordflokkur: "ordflokkar", fallord: "ordflokkar", nafnord: "ordflokkar",
   lysingarord: "ordflokkar", sagnord: "ordflokkar",
   stjorn: "fallstjorn",
-  frumlag: "setningalidir", umsogn: "setningalidir", andlag: "setningalidir", sagnfylling: "setningalidir",
+  frumlag: "setningarhlutar", umsogn: "setningarhlutar", andlag: "setningarhlutar", sagnfylling: "setningarhlutar",
   adalsetning: "setningagerdir", aukasetning: "setningagerdir",
 };
 export const lessonForTerm = (id) => (BY_ID.has(TERM_LESSON[id]) ? TERM_LESSON[id] : null);

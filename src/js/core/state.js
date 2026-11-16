@@ -179,6 +179,21 @@ export function cleanFrames(raw) {
 /** Bring any older saved blob up to the current shape without losing data.
     @param {any} raw  whatever was saved, of any age, or nothing
     @returns {State} */
+/* Lesefni pages whose id changed: the pupil's read mark moves with the page
+   (v6.13 review, S12: *setningalidir* → *setningarhlutar*). Kept here and
+   not imported from core/lessons.js, which this module must not depend on. */
+const READ_RENAMED = { setningalidir: "setningarhlutar" };
+function renamedRead(raw) {
+  const out = raw && typeof raw === "object" && !Array.isArray(raw) ? { ...raw } : {};
+  for (const [from, to] of Object.entries(READ_RENAMED)) {
+    if (from in out) {
+      if (!(to in out)) out[to] = out[from];
+      delete out[from];
+    }
+  }
+  return out;
+}
+
 export function migrate(raw) {
   const S = blankState();
   if (!raw || typeof raw !== "object") return S;
@@ -226,7 +241,7 @@ export function migrate(raw) {
     social: raw.social && typeof raw.social === "object" ? raw.social : null,
     drills: raw.drills && typeof raw.drills === "object" ? { ...raw.drills } : {},
     drillDays: raw.drillDays && typeof raw.drillDays === "object" ? { ...raw.drillDays } : {},
-    read: raw.read && typeof raw.read === "object" ? { ...raw.read } : {},
+    read: renamedRead(raw.read),
     duels: raw.duels && typeof raw.duels === "object" ? { ...raw.duels } : {},
     diag: raw.diag && typeof raw.diag === "object" && !Array.isArray(raw.diag) ? { ...raw.diag } : {},
     runs: Array.isArray(raw.runs) ? raw.runs.filter((r) => r && typeof r === "object").slice(-40) : [],

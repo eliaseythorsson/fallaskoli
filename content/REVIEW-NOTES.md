@@ -115,12 +115,13 @@ content/setningar/setningar.tsv): lestu hvort hver *svo að*-setning er um
 tilgang eða afleiðingu eins og hátturinn segir. Nánar í docs/CURRICULUM.md,
 „What item 28 built“.
 
-## „Setningarliðir“: heiti síðunnar
-Leita: `Setningarliðir`
-Úr: docs/39-curriculum-map, feat/28-years-9-10 (atriði 28, 39)
+## „Setningarhlutar“: heiti síðunnar
+Leita: `Setningarhlutar`
+Úr: docs/39-curriculum-map, feat/28-years-9-10, fix/review-content (atriði 28, 39; rýni S12)
 
-Eldri síðan heitir *Setningarliðir* og rekst nú á nýju síðuna um nafnlið,
-sagnlið og forsetningarlið. Ætti hún að heita *Setningarhlutar*?
+Síðan um frumlag, umsögn, andlag og sagnfyllingu hét *Setningarliðir* og
+rakst á síðuna um nafnlið, sagnlið og forsetningarlið. Hún heitir nú
+*Setningarhlutar*. Er það orðið sem skólinn notar?
 
 ## Aðalsetning og aukasetning
 Leita: `Aukasetning getur ekki staðið ein`

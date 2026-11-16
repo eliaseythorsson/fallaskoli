@@ -327,7 +327,7 @@ export const LESSONS = [
       { q: "Hvort er rétt: „Stelpurnar eru glaðir“ eða „Stelpurnar eru glaðar“?", a: "Stelpurnar eru glaðar (kvenkyn, fleirtala)." },
       { q: "Settu rétta mynd af tveir: „Ég á ___ bækur.“", a: "Tvær (kvenkyn, þolfall)." },
     ],
-    related: ["lo-beyging", "kyn-tala", "setningalidir"],
+    related: ["lo-beyging", "kyn-tala", "setningarhlutar"],
   },
 
   /* ------------------------------------------------------------------ 8 */
@@ -367,7 +367,7 @@ export const LESSONS = [
       { q: "Hvort er rétt: „Krakkarnir fór út“ eða „Krakkarnir fóru út“?", a: "Krakkarnir fóru út. Frumlagið er í fleirtölu." },
       { q: "Settu rétta mynd af fara: „Þú og Sara ___ saman.“", a: "Farið (þú og Sara = þið)." },
     ],
-    related: ["tid", "setningalidir", "fallstjorn"],
+    related: ["tid", "setningarhlutar", "fallstjorn"],
   },
 
   /* ------------------------------------------------------------------ 9 */
@@ -853,7 +853,7 @@ export const LESSONS = [
       { q: "Hvaða falli stýrir sögnin sakna?", a: "Eignarfalli (sakna einhvers)." },
       { q: "Hvort er rétt: „mig langar“ eða „mér langar“?", a: "Mig langar." },
     ],
-    related: ["foll", "obeygjanleg", "setningalidir"],
+    related: ["foll", "obeygjanleg", "setningarhlutar"],
   },
 
   /* ----------------------------------------------------------------- 18 */
@@ -908,14 +908,19 @@ export const LESSONS = [
       { q: "Nefndu andheiti orðsins stór.", a: "Lítill (eða smár)." },
       { q: "Hvað er að skýringunni „Kennari er sá sem kennir“?", a: "Hún notar orð af sömu rót (kenna). Betra: Kennari er manneskja sem vinnur við að fræða nemendur í skóla." },
     ],
-    related: ["ordflokkar", "setningalidir"],
+    related: ["ordflokkar", "setningarhlutar"],
   },
 
   /* ----------------------------------------------------------------- 19 */
   {
-    id: "setningalidir",
+    /* "Setningarliðir" until the v6.13 review (S12): Málvísir's
+       setningarliðir are the phrases of the page after this one (nafnliður,
+       sagnliður …), and two pages with names that close were confusing.
+       Frumlag, umsögn, andlag and sagnfylling are setningarhlutar. The old
+       id is still understood (core/lessons.js `lessonById`, core/state.js). */
+    id: "setningarhlutar",
     skill: "setningafraedi",
-    nm: "Setningarliðir",
+    nm: "Setningarhlutar",
     lead: "Hver setning er sett saman úr hlutum sem hafa hver sitt hlutverk. Helstu hlutarnir eru frumlag, umsögn, andlag og sagnfylling. Þú finnur þá með því að spyrja spurninga.",
     blocks: [
       { h: "Umsögn — finndu hana fyrst" },
@@ -962,7 +967,7 @@ export const LESSONS = [
       { tip: "Röðin er alltaf sú sama: finndu fyrst umsögnina, svo frumlagið og síðast andlag eða sagnfyllingu." },
     ],
     check: [
-      { q: "Hvaða setningarlið er best að finna fyrst?", a: "Umsögnina (sögnina)." },
+      { q: "Hvaða setningarhluta er best að finna fyrst?", a: "Umsögnina (sögnina)." },
       { q: "Hvert er frumlagið í „Hundurinn elti köttinn“?", a: "Hundurinn (hver elti?)." },
       { q: "Hvert er andlagið í „Hundurinn elti köttinn“?", a: "Köttinn (elti hvern?)." },
       { q: "Hvað kallast orðið þreytt í „Stelpan er þreytt“?", a: "Sagnfylling." },
@@ -1034,7 +1039,7 @@ export const LESSONS = [
       { q: "Finndu sagnliðinn í „Pabbi lagaði hjólið mitt“.", a: "Lagaði hjólið mitt: sögnin og andlag hennar." },
       { q: "Hvers konar liður er „hjólið mitt“ í „Pabbi lagaði hjólið mitt“?", a: "Nafnliður. Hann er andlag sagnarinnar." },
     ],
-    related: ["setningalidir", "fallstjorn", "obeygjanleg"],
+    related: ["setningarhlutar", "fallstjorn", "obeygjanleg"],
   },
 
   /* ----------------------------------------------------------------- 20 */
@@ -1093,7 +1098,7 @@ export const LESSONS = [
       { q: "Hvaða setningagerð er „að spila fótbolta“ í „Mér finnst gaman að spila fótbolta“?", a: "Nafnháttarsetning." },
       { q: "Nefndu þrjár samtengingar sem tengja saman aðalsetningar.", a: "Og, en, eða." },
     ],
-    related: ["aukasetningar", "setningalidir", "hattur", "obeygjanleg"],
+    related: ["aukasetningar", "setningarhlutar", "hattur", "obeygjanleg"],
   },
   /* --------------------------------------------------- (item 28, year 10) */
   {
