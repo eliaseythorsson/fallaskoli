@@ -690,9 +690,14 @@ test("a table: every cell's XP and the bonus are what recording cell by cell gav
       /* The review queue is the one thing `settle` writes that the old
          handlers did not (v6.13, core/review.js): a table with a wrong cell
          leaves one entry — its first wrong cell — and a perfect one none. */
-      const { review, byType, ...rest } = b.S;
-      const { review: none, byType: noTypes, ...was } = a.S;
+      const { review, byType, byNode, ...rest } = b.S;
+      const { review: none, byType: noTypes, byNode: noNodes, ...was } = a.S;
       assert.deepEqual(none.items, []);
+      /* And the answer by curriculum node, for the nodes that are one feature
+         of their types (item 83, core/skillmap.js): at most one answer per
+         node for the whole table. */
+      assert.deepEqual(noNodes || {}, {});
+      for (const r of Object.values(byNode)) assert.deepEqual([r.n, r.h.length], [1, 1], t.title);
       /* So is the answer by question type (item 44, core/mastery.js): one
          answer for the whole table, right only when every cell was. */
       assert.deepEqual(noTypes || {}, {});

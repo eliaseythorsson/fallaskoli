@@ -21,6 +21,10 @@ COPY src/js/core ./src/js/core
 COPY src/js/tasks ./src/js/tasks
 # core/examples.js (the worked example of a question type) reads its texts here.
 COPY src/js/content/examples.js ./src/js/content/examples.js
+# The skill map of one pupil for their teacher (item 83, core/skillmap.js) is
+# computed on the server by the very function the pupil's own map is drawn
+# from, and that function reads the Lesefni pages for a node's rule.
+COPY src/js/content/lessons.js ./src/js/content/lessons.js
 COPY data/data_bundle.js data/exercises.js ./data/
 COPY tools/version.mjs ./tools/version.mjs
 # The built program (dist/ is git-ignored; ./build.sh makes it). The server

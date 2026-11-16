@@ -84,11 +84,11 @@ export function masteryHTML(m) {
 const one = (k) => k % 10 === 1 && k % 100 !== 11;
 const num = (x) => Number(x || 0).toLocaleString("is-IS");
 
-function flagHTML(st) {
+function flagHTML(st, teacher = false) {
   if (st.locked || !st.needsWork) return "";
   const text = needsText(st);
   /* The number of reviews due; "!" when it is an error pattern alone. */
-  return `<span class="smflag" title="${esc("Bíður þín: " + text)}"><i aria-hidden="true">${st.due ? (st.due > 9 ? "9+" : st.due) : "!"}</i></span>`;
+  return `<span class="smflag" title="${esc((teacher ? "Bíður nemandans: " : "Bíður þín: ") + text)}"><i aria-hidden="true">${st.due ? (st.due > 9 ? "9+" : st.due) : "!"}</i></span>`;
 }
 
 function nodeHTML(n, { teacher }) {
@@ -107,7 +107,7 @@ function nodeHTML(n, { teacher }) {
       data-node="${esc(n.id)}" data-level="${lvl}" aria-label="${esc(sentence + (n.on ? "" : " Slökkt í námsefninu."))}">
     <span class="smglyph">${ringSVG(lvl)}</span>
     <span class="smtext"><b>${esc(n.nm)}</b><small>${facts}${n.on ? "" : " · slökkt"}</small></span>
-    ${flagHTML(n)}</button></li>`;
+    ${flagHTML(n, teacher)}</button></li>`;
 }
 
 /* ---------- one category: the head (Styrkleikar eftir efni) and its trail ------- */
@@ -185,7 +185,7 @@ export function mapHTML(view, { teacher = false, title = "Færnikort", wide = tr
     ${legendHTML({ teacher, wide })}
     ${next.length ? `<div class="smnext"><span class="smnextlbl">${teacher ? "Mest bíður hér:" : "Byrjaðu hér:"}</span>
       ${next.map((n) => `<button type="button" class="smnextbtn" data-node="${esc(n.id)}">${
-        ringSVG(n.mastery.level, 18)}<span>${esc(n.nm)}</span>${flagHTML(n)}</button>`).join("")}</div>` : ""}
+        ringSVG(n.mastery.level, 18)}<span>${esc(n.nm)}</span>${flagHTML(n, teacher)}</button>`).join("")}</div>` : ""}
     <div class="smlanes">${view.cats.map((c) => laneHTML(c, { teacher })).join("")}</div>
   </div>`;
 }
@@ -275,7 +275,7 @@ export function nodePanelHTML(node, d, { teacher = false, cat = null, canPractis
       <small>${d.answers ? `alls ${svor(d.answers)}` : "ekkert svar enn"}</small></div>`}
     <div class="smfact${d.needsWork ? " warn" : ""}"><span>${teacher ? "Bíður nemandans" : "Bíður þín"}</span>
       <b>${d.due ? `${d.due} í upprifjun` : d.active.length ? "Algeng villa" : "Ekkert"}</b>
-      <small>${needs ? esc(needs) : "Ekkert bíður upprifjunar í dag og engin villa er algeng núna."}${
+      <small>${needs ? esc(needs) + "." : "Ekkert bíður upprifjunar í dag og engin villa er algeng núna."}${
         d.waiting > d.due ? ` ${d.waiting - d.due} í viðbót ${one(d.waiting - d.due) ? "kemur" : "koma"} til upprifjunar síðar.` : ""}</small></div>
   </div>`;
 
@@ -318,7 +318,9 @@ export function nodePanelHTML(node, d, { teacher = false, cat = null, canPractis
           : `<p class="smhint">Þetta efni er ekki opið í námsefninu þínu. Því er breytt undir <b>Stillingar og námsefni</b>.</p>`}
         ${lessonBtn}</div>`;
 
-  return `<div class="smpanel" data-panel="${esc(node.id)}">${eyebrow}${facts}${teacher ? "" : rule}${patterns}${cells}${words}${actions}</div>`;
+  /* The button comes straight after the three facts: a pupil who opened a
+     node to practise it should not have to scroll past the tables for it. */
+  return `<div class="smpanel" data-panel="${esc(node.id)}">${eyebrow}${facts}${teacher ? "" : actions}${teacher ? "" : rule}${patterns}${cells}${words}${teacher ? actions : ""}</div>`;
 }
 
 /* ---------- wiring ---------------------------------------------------------------- */
@@ -400,7 +402,7 @@ export function renderSkillMap(app) {
 export function drawTeacherMap(el, data) {
   if (!el) return;
   const view = data.map;
-  el.innerHTML = mapHTML(view, { teacher: true, title: "Færnikort · " + data.pupil.name, wide: isWide() }) +
+  el.innerHTML = (data.pupil.practised ? "" : `<p class="sub faint">${esc(data.pupil.name)} hefur ekki æft sig enn — kortið er autt.</p>`) + mapHTML(view, { teacher: true, title: "Færnikort · " + data.pupil.name, wide: isWide() }) +
     (view.loose.length ? `<div class="chartbox">${loosePatternsHTML(view.loose)}</div>` : "");
   wireMap(el, { view });
 }
