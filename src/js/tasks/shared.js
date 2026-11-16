@@ -301,3 +301,26 @@ export function headsTimePhrase(lex, s, i) {
   if (!n || n.c !== "nafnorð") return false;
   return isTimeNoun(lex.entryForToken ? lex.entryForToken(n) : null);
 }
+
+/* ---------- two-option questions asked in pairs (item 43) ------------------
+ *
+ * A question with two options is right half the time by guessing and paid
+ * the same XP. The three of them (fs_hreyf, ob_fsao, fn_aftur) are all
+ * built on a CONTRAST — the same word or sentence in two roles — so they are
+ * asked as the contrast: both sentences on one card, each with its own two
+ * options, and the answer counts only when both are right.
+ *
+ * The task is the first sentence's question as before, with the second's
+ * under `second` (same fields: s, i, mark, gloss, question, options, answer,
+ * why, m, paradigm, optMarks, miss). `core/answer.js` `JUDGES.choice` grades
+ * both; `ui/render-more.js` `RENDER.choice` draws both. A task without
+ * `second` is unchanged. */
+export const PAIR_LEAD = "Tvær setningar með sama orðið. Báðar þurfa að vera réttar.";
+
+/** The fields of one half of a pair, taken off a built choice task. */
+const HALF = ["s", "i", "mark", "gloss", "question", "options", "answer", "why", "m", "paradigm", "optMarks", "miss"];
+export const halfOf = (t) => Object.fromEntries(HALF.filter((k) => t[k] !== undefined).map((k) => [k, t[k]]));
+
+/** `first` and `second` are two choice tasks made by the type's single-question
+    code; the pair is `first` with `second` attached, and a lead line. */
+export const pairOf = (first, second) => ({ ...first, second: halfOf(second), lead: PAIR_LEAD });

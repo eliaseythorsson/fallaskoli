@@ -104,58 +104,82 @@ function submitGap(app) {
 
 /* ================= choice =============================================== */
 
+/* One half of a choice card: the sentence, the gloss, the question, the two
+   options. A plain choice has one; a pair (item 43, tasks/shared.js `pairOf`)
+   has two, one under the other, each with its own `.opts`. */
+const choiceHalf = (h, n) => `
+    ${questionSentence(h)}
+    ${h.gloss ? `<p class="gloss choicegloss">💬 ${fmt(h.gloss)}</p>` : ""}
+    <p class="gloss">${fmt(h.question)}</p>
+    <div class="qrow"><div class="opts" data-q="${n}">
+      ${h.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>`;
+
 RENDER.choice = function (app) {
   const t = app.cur;
-  t.picked = null;
+  const halves = t.second ? [t, t.second] : [t];
+  t.picked = null; t.picked2 = null;
   $("task").innerHTML = `
   <div class="card">
     ${eyebrow(t)}
-    ${questionSentence(t)}
-    ${t.gloss ? `<p class="gloss choicegloss">💬 ${fmt(t.gloss)}</p>` : ""}
-    <p class="gloss">${fmt(t.question)}</p>
-    <div class="qrow"><div class="opts" data-q="val">
-      ${t.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>
+    ${t.second && t.lead ? `<p class="gloss">${fmt(t.lead)}</p>` : ""}
+    ${halves.map((h, n) => (n ? '<hr class="pairrule">' : "") + choiceHalf(h, n)).join("")}
     <div class="answer"><button class="go" id="check">Athuga</button></div>
     <div id="verdict"></div>
   </div>`;
-  const box = document.querySelector(".opts");
-  box.onclick = (e) => {
-    const b = e.target.closest("button");
-    if (!b || b.disabled) return;
-    box.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-    const v = t.options[+b.dataset.v];
-    if (t.picked && t.picked !== v) t.changes = (t.changes || 0) + 1;
-    t.picked = v;
-  };
-  /* 1–4 on the keyboard pick an option. */
-  box.addEventListener("keydown", (e) => {
-    const k = +e.key;
-    if (k >= 1 && k <= t.options.length) box.querySelectorAll("button")[k - 1].click();
+  document.querySelectorAll(".opts").forEach((box) => {
+    const n = +box.dataset.q, h = halves[n], slot = n ? "picked2" : "picked";
+    box.onclick = (e) => {
+      const b = e.target.closest("button");
+      if (!b || b.disabled) return;
+      box.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      const v = h.options[+b.dataset.v];
+      if (t[slot] && t[slot] !== v) t.changes = (t.changes || 0) + 1;
+      t[slot] = v;
+    };
+    /* 1–4 on the keyboard pick an option — on a single question only; with
+       two questions on the card the numbers would be ambiguous. */
+    if (!t.second) box.addEventListener("keydown", (e) => {
+      const k = +e.key;
+      if (k >= 1 && k <= h.options.length) box.querySelectorAll("button")[k - 1].click();
+    });
   });
   $("check").onclick = () => submitChoice(app);
 };
 
 function submitChoice(app) {
   const t = app.cur;
-  const j = judge(t, { picked: t.picked }, app);
+  const halves = t.second ? [t, t.second] : [t];
+  const j = judge(t, { picked: t.picked, picked2: t.picked2 }, app);
   if (j.pending) {
-    $("verdict").innerHTML = `<div class="verdict neutral"><p>Veldu eitt svar.</p></div>`;
+    $("verdict").innerHTML = `<div class="verdict neutral"><p>${t.second ? "Veldu eitt svar í hvorri setningu." : "Veldu eitt svar."}</p></div>`;
     return;
   }
   const ok = j.ok, xp = j.xp;
-  document.querySelectorAll(".opts button").forEach((b) => {
-    b.disabled = true;
-    const v = t.options[+b.dataset.v];
-    if (v === t.answer) b.classList.add("right");
-    else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
-    b.removeAttribute("aria-pressed");
+  document.querySelectorAll(".opts").forEach((box) => {
+    const h = halves[+box.dataset.q];
+    box.querySelectorAll("button").forEach((b) => {
+      b.disabled = true;
+      const v = h.options[+b.dataset.v];
+      if (v === h.answer) b.classList.add("right");
+      else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
+      b.removeAttribute("aria-pressed");
+    });
   });
   const defs = (t.defs || []).map((e) => `<li><b>${esc(e.o)}</b>: ${esc(e.d)}</li>`).join("");
+  /* A pair says, for each sentence, whether it was right and why. */
+  const pairBody = () => halves.map((h, n) => {
+    const got = n ? t.picked2 : t.picked;
+    const line = !h.s ? `<b>${esc(h.answer)}</b>`
+      : h.mark || h.i < 0 ? `${sentenceHTML(h.s, -1, "")} — <b>${esc(h.answer)}</b>`
+      : sentenceHTML(h.s, h.i, `<b>${esc(h.answer)}</b>`);
+    return `<p>${got === h.answer ? "✓" : "✗"} ${line}</p>${whyBox(h.why)}`;
+  }).join("");
   conclude(app, t, j, () => {
     $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
-    ${!t.mark && t.s && t.i >= 0 ? solvedSentence(t, t.answer) : `<p>Rétt svar: <span class="forms">${esc(t.answer)}</span>.</p>`}
-    ${whyBox(t.why)}
+    ${t.second ? pairBody()
+      : `${!t.mark && t.s && t.i >= 0 ? solvedSentence(t, t.answer) : `<p>Rétt svar: <span class="forms">${esc(t.answer)}</span>.</p>`}
+    ${whyBox(t.why)}`}
     ${defs ? `<div class="why"><b>í orðabók</b><ul class="deflist">${defs}</ul></div>` : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
     bonusBox(app, t);
