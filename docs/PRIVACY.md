@@ -32,7 +32,7 @@ It is not legal advice. For a real question, Persónuvernd answers them:
 
 | Requirement | How it is met |
 |---|---|
-| Collect as little as possible | No email, no birth date, no real name, no kennitala. A username, a nickname, a password hash, progress. Answers are never stored — only whether they were right. |
+| Collect as little as possible | No email, no birth date, no real name, no kennitala. A username, a nickname, a password hash, progress. Answers are never stored — only whether they were right. (One exception, off unless a teacher switches it on for their group: an anonymous sample of wrong word forms, §1b.) |
 | Private by default (Art. 25) | Nobody is on the board or roster until they switch it on themselves; minutes are a second switch. Groups never see each other. |
 | Consent that can be shown (Art. 7, 8) | Each account records who consented, when, and to which version of the notice (§3). |
 | A notice a child can read (Art. 12–13) | `/personuvernd`, linked from the login card and from *Aðgangurinn minn*. Its retention figures are read from the same settings the server acts on. |
@@ -43,6 +43,7 @@ It is not legal advice. For a real question, Persónuvernd answers them:
 | Security (Art. 32) | Passwords as scrypt hashes; session tokens stored hashed; HTTPS only; login and registration rate-limited per address; strict content-security policy; the server does not run as root; backups encrypted with your passphrase. |
 | No third parties | The page loads nothing from anybody: fonts are inside the file. No analytics, no advertising. One cookie, strictly necessary, so no cookie banner. |
 | Accountability | *Atburðaskrá* records every administrative action, by id. |
+| Statistics without people (v6.13) | Right and wrong answers are counted per question type, level, inflection cell and irregularity score, with no account, group or time, to set the difficulty automatically. A learner can switch their own contribution off. See §1b. |
 | A teacher sees only what helps them teach (v6.13) | The guardian of a group sees, for the learners of that group only, the error-pattern figures the child sees themselves, and the scores of assignments — never anything typed, never a date. The child's account page names who that is. See §1a. |
 
 What it does **not** do, and you should know:
@@ -101,6 +102,71 @@ assignments; nothing changes for them.
 
 ---
 
+## 1b. Counting answers, and the sample of wrong answers (v6.13, items 17 and 38)
+
+Two new things the server does with what happens in practice. Neither needs
+anything from you once you have decided the two questions marked **Decide**.
+
+### The anonymous count
+
+| | |
+|---|---|
+| **What arrives** | For each fresh question a counted learner answers: the question type, the level (þyngd) their skill stood at, the inflection cell(s) asked for (BÍN marks), the built-in irregularity score of the word (1–5) — not the word — and right or wrong. The server accepts nothing else; there is no field a typed answer could travel in. |
+| **What is kept** | `calibration.json`: per (type, level, cell, score) two numbers, right and total, added up over everybody; the adjustment table worked out from them; a log of what each weekly run changed. No account, no group, no time of an answer. |
+| **What is personal, and for how long** | `calibration-quota.json`: how many answers each account has contributed **today**, in all and towards each number — needed to hold the caps that stop one account flooding the count. Replaced when the day changes, removed at once when the account is erased, and **not** in backups. This is the only place an account stands next to its answers. |
+| **Why** | So the difficulty of the questions follows what pupils actually find hard, without anybody reviewing numbers (`docs/SERVER.md` §4.3). |
+| **Who is counted** | Learners only, active, with a consent record, not held for review — and not if they untick *Telja svörin mín með í nafnlausri talningu* under *Aðgangurinn minn*. Guardians, teachers and you are never counted. |
+| **Who sees it** | You: totals, the table and the log, on the admin page. Every logged-in browser receives the adjustment table (it has to apply it). |
+| **Can a published number be one child's?** | No adjustment is made unless at least three different accounts contributed to that number on one day and at least three counted learners were active in the last two weeks. On a server with one or two children nothing is ever published. |
+| **Erasure** | The counts carry no identity, so an erased account's past answers stay in the sums and cannot be taken out — the notice says so. They fade by themselves: every week each count is multiplied by 0.85. |
+
+**Lawful basis, and the decision.** The account's consent, as for everything
+else: `PRIVACY_VERSION` moved to `2026-11-17` and the notice describes the
+counting, in the short version too. What is stored is anonymous; the only
+personal processing is receiving the answer and the one-day tally.
+
+**Decide (1): who is counted from the day you upgrade.**
+
+- *Default* — every learner with a consent record is counted, with the switch
+  to opt out. This follows what was done for the teacher's view in this same
+  version: the notice changed, the families are told, and nobody has to do
+  anything. It is the right choice if you tell the families before upgrading.
+- `FALLASKOLI_CALIBRATION=strict` — an account is counted only if its consent
+  was recorded for the notice of 2026-11-17 or later (new accounts; or existing
+  ones after you record consent again under *Meira*), or if the learner ticked
+  the box themselves. Choose this if you would rather nobody's practice were
+  counted on the strength of a notice they agreed to before it said so. On a
+  small server it may mean the calibration never has enough pupils to do
+  anything, which is harmless.
+- `FALLASKOLI_CALIBRATION=0` — none of it.
+
+### The sample of wrong answers
+
+This is the **one exception** to "nothing a child types is stored", so it is
+built to be small, anonymous and somebody's deliberate choice.
+
+| | |
+|---|---|
+| **Off by default** | Nothing is sampled until a teacher (the guardian of a group, or you) ticks *Geyma nafnlaust sýni af röngum svörum úr þessum hópi* in Skólastofan. Per group. Unticking stops it. Switching it on or off is written to *Atburðaskrá*. `FALLASKOLI_SAMPLES=0` forbids it for the whole server. |
+| **What is kept** | `samples.json`, at most 500 entries: the question type, the word asked about, the cell asked for, the form expected, **the wrong form the pupil typed**, how the error diagnosis classified it, and the month. No account, no group, no day. Entries are stored in random order, so neighbours in the file say nothing about having come from one pupil. |
+| **What is never kept** | Anything that is not one word of letters resembling a form of the word on the card: a sentence, a name, a number, a swear word, "veit ekki" are dropped by the browser before sending and again by the server (`cleanSample`). A right answer, and an answer to anything but a written inflection, is never a sample. |
+| **Why** | To check automatically whether the error diagnosis classifies real mistakes correctly; until now it was tested only on invented ones. Nobody reads the sample as part of running the server: the check is a program (`docs/SERVER.md` §4.3). |
+| **Who sees it** | You, on the admin page (as figures per error pattern) and as a file if you download it — for a developer to add to the tests. Not the teacher, not other pupils. |
+| **The pupil's side** | The notice says it; *Aðgangurinn minn* shows, in bold, when the pupil's group has it switched on; unticking the counting there takes the pupil out of the sample as well. At most 20 of one pupil's answers a day can enter it. |
+| **Retention** | 12 months from the month it was taken, or until you press *Eyða sýninu*. A newer answer replaces a random older one once there are 500. |
+| **Erasure** | A sample cannot be traced to an account — that is the point — so it cannot be found to erase for one person. The notice says so plainly. If a family asks, *Eyða sýninu* erases the whole sample. |
+
+**Decide (2): whether teachers may switch it on at all.** It is defensible: a
+wrong inflection of a given word, with nothing to connect it to anybody, tells
+nothing about a person. But it does change the sentence families have been
+told — "what you type is not stored" — and a teacher is not the child's
+guardian. So: either set `FALLASKOLI_SAMPLES=0`, or make it a rule that the
+families of a group are told before its teacher ticks the box. If the
+downloaded file is ever put in the public repository, look through it first
+(it holds only word forms, but it is the one moment a person should look).
+
+---
+
 ## 2. Record of processing (Art. 30) — *vinnsluskrá*
 
 Fill in the bracketed parts and keep it with your papers. If Persónuvernd ever
@@ -109,14 +175,14 @@ asks for it they may want it in Icelandic; the content is what matters.
 | | |
 |---|---|
 | **Controller** | [your name], [address], [the contact address in the notice] |
-| **Purpose** | Running an Icelandic grammar trainer for invited children and their families: logging in, keeping progress across devices, an optional leaderboard within a group, and (v6.13) letting the group's teacher or guardian see the group's error patterns and set and check assignments. |
+| **Purpose** | Running an Icelandic grammar trainer for invited children and their families: logging in, keeping progress across devices, an optional leaderboard within a group, (v6.13) letting the group's teacher or guardian see the group's error patterns and set and check assignments, and (v6.13) setting the difficulty of the questions from anonymous counts of right and wrong answers and checking the error diagnosis against an anonymous sample of wrong word forms. |
 | **Legal basis** | Consent, Art. 6(1)(a) — the user's own from 16, a parent's or guardian's below. Recorded per account. |
 | **Data subjects** | Invited learners (mostly teenagers); their parents or guardians (name only, as the consent record); administrators. |
-| **Data** | Username; nickname; password hash; role, group, status; date created; day last seen; consent record (who, when, how, notice version); visibility choices; progress (XP, levels, badges with dates, which words and inflection cells were practised and how often right or wrong, answers and minutes per day, settings); results of assignments set by the group's guardian (answered, right, finished). Transiently: IP address, for rate-limiting, in memory only. |
-| **Not collected** | Email, real name, date of birth, kennitala, phone, photos, free text. No special categories. |
+| **Data** | Username; nickname; password hash; role, group, status; date created; day last seen; consent record (who, when, how, notice version); visibility choices; progress (XP, levels, badges with dates, which words and inflection cells were practised and how often right or wrong, answers and minutes per day, settings); results of assignments set by the group's guardian (answered, right, finished); the learner's own choice about being counted in the statistics. For one day: how many of the account's answers have been counted that day (§1b). Transiently: IP address, for rate-limiting, in memory only. **Anonymous, not personal data:** the counts of right and wrong answers; and, only for groups whose teacher switched it on, the sample of wrong word forms (§1b). |
+| **Not collected** | Email, real name, date of birth, kennitala, phone, photos, free text (the sample of §1b keeps single word forms that resemble the word asked about, and nothing else a pupil types). No special categories. |
 | **Recipients** | Other users of the same group, only what the user switches on. The guardian(s) of the user's own group: the error-pattern figures and assignment results (§1a). Processor: Fly.io, Inc. (hosting). Nobody else. |
 | **Transfers outside the EEA** | Data is stored in Amsterdam. The processor is a US company certified under the EU–US Data Privacy Framework and bound by its data processing agreement (check the signed copy for the transfer terms). |
-| **Retention** | While the account exists; erased after 18 months without a login; unanswered access requests after 30 days; backups at most 30 days. |
+| **Retention** | While the account exists; erased after 18 months without a login; unanswered access requests after 30 days; backups at most 30 days. The one-day tally: until the next day. Anonymous counts fade by 15 % a week; a sampled answer is kept at most 12 months. |
 | **Security** | See §1. |
 | **Last reviewed** | [date] |
 
@@ -151,6 +217,15 @@ takes effect immediately; backups follow within 30 days.
 bump `PRIVACY_VERSION` in `server/privacy.mjs`, tell the families, and decide
 whether the change needs fresh consent.
 
+**Versions so far.** `2026-11-16`: the group's teacher sees error patterns and
+assignment results (§1a). `2026-11-17`: the anonymous count of answers and the
+optional sample of wrong answers (§1b), and the sentence that a duel's answers
+are sent to the server to be graded and are not stored (only the score is
+kept) — all arrive with v6.13, so one message
+to the families covers them. The date is the notice's version, not the day
+you deploy; set it to your release date if you prefer, and keep
+`CALIBRATION_NOTICE` in the same file equal to it.
+
 ---
 
 ## 4. Processors
@@ -184,6 +259,8 @@ under 16; make sure it *is* the parent — the consent record names them.
 | "What does the teacher see?" | §1a, and the child's *Aðgangurinn minn* names the group's guardian. |
 | "The teacher must not see it" | Move the child to a group of its own (*Meira → Hópur*), or erase the account. |
 | "Take them off the leaderboard" | The user's own switch — or *Taka af stigatöflu* if they cannot. |
+| "Do not count my child's answers" | The child unticks *Telja svörin mín með í nafnlausri talningu* under *Aðgangurinn minn* (it also keeps them out of the answer sample). For everybody: `FALLASKOLI_CALIBRATION=0`. |
+| "Delete what my child typed" | Nothing typed is stored unless the group's teacher switched the sample on. If so: the sample is anonymous and cannot be searched by child — press *Eyða sýninu* on the admin page, which erases all of it. |
 | "Stop processing but keep it" (restriction) | *Útiloka* — the account is blocked and its progress kept. |
 | A complaint | Answer it. They may also go to Persónuvernd, and the notice tells them so. |
 
@@ -204,6 +281,10 @@ Note each request and what you did; a line in a notebook is enough.
 | The audit trail | The last 2,000 entries; ids, never names | Automatic |
 | The monthly badge-rarity count | 24 months; anonymous counts | Automatic |
 | An assignment and its results | 30 days after its deadline | Automatic (`ASSIGN.keepDays`, printed in the notice from the same constant) |
+| How much an account has contributed to the count today | Until the next day; at once when the account is erased; never in a backup | Automatic |
+| The anonymous counts of right and wrong answers | They fade: ×0.85 every week, and a count that has faded to nothing is dropped | Automatic |
+| The log of what calibration changed | The last 60 weekly runs; no people in it | Automatic |
+| A sampled wrong answer (only if a teacher switched it on) | 12 months (`SAMPLE.months`, printed in the notice), at most 500 at a time | Automatic; *Eyða sýninu* erases all at once |
 
 ---
 
@@ -278,6 +359,9 @@ the honest answer to "what could go wrong" is short enough to write down here:
 | An account taken over | Rate limits; hashed passwords; reset logs out everywhere; nothing sensitive inside |
 | The data folder exposed | No contact details or real names in it by design; hashes, not passwords; encrypted backups |
 | Data kept after it is wanted | Automatic retention; one erasure for every route |
+| A published difficulty adjustment revealing how one child does | Nothing is adjusted on fewer than three accounts; the table says nothing about who |
+| Something personal typed into an answer box and kept in the sample | Off by default, per group, a teacher's audited choice; only single words resembling a form of the word asked about pass; no account, group or day beside them; 500 at most, 12 months |
+| Somebody flooding the count to make the program easier or harder | Caps per account per day and per number; shrinkage; a quarter step a week, one level at most; accounts held for review are not counted |
 | The host misusing data | DPA; EEA region; nothing but this app on the machine |
 
 If you would rather be certain, Persónuvernd publishes a list of processing that

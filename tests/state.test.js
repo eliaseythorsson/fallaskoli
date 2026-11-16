@@ -38,7 +38,7 @@ test("v4 state migrates without being lost", () => {
      flag was not recorded, but the ANSWERS were, and `loginStreak` treats a day
      with answers on it as a day the program was opened. Nothing is lost. */
   assert.deepEqual(S.days["2026-08-01"],
-    { a: 20, c: 18, xp: 210, ms: 0, nw: 0, sk: {}, g: null, lg: 0 });
+    { a: 20, c: 18, xp: 210, ms: 0, nw: 0, sk: {}, g: null, lg: 0, wg: null });
 });
 
 test("the old three switches become skills", () => {

@@ -354,14 +354,43 @@ export function createPolicy(allowed, chosen) {
  * A policy narrowed for one practice session (v6.10): only `skills` (if
  * given) and only `types` (if given), inside what `P` already allows.
  */
-export function narrowPolicy(P, { skills = null, types = null } = {}) {
+export function narrowPolicy(P, { skills = null, types = null, attrs = null } = {}) {
   const S = skills ? new Set(skills) : null;
   const T = types ? new Set(types) : null;
-  return {
+  const out = {
     ...P,
     skill: (id) => (!S || S.has(id)) && P.skill(id),
     type: (id) => (!T || T.has(id)) && P.type(id),
   };
+  /* `attrs` (item 41, and the nodes of item 83): { group: [keys] } — only
+     these keys of these groups, e.g. { tid: ["ÞT"] } for a session on the
+     past tense. `mark` reads the features itself, as the policy's own does,
+     so a cell is held to both. */
+  const A = attrs && Object.keys(attrs).length
+    ? Object.fromEntries(Object.entries(attrs).map(([g, keys]) => [g, new Set(keys)])) : null;
+  if (A) {
+    out.attr = (group, key) => (!A[group] || A[group].has(key)) && P.attr(group, key);
+    out.mark = (m) => P.mark(m) &&
+      Object.entries(featuresOf(m)).every(([g, k]) => !k || !A[g] || A[g].has(k));
+    out.marks = (list) => (list || []).every((m) => out.mark(m));
+  }
+  return out;
+}
+
+/**
+ * The child's own switches with these categories and question types switched
+ * ON — for a session the child asked for by name ("Æfa þetta" on a Lesefni
+ * page, item 41): reading a page and pressing its button is a clearer choice
+ * than a box left unticked in the settings. Only the child's layer: the
+ * administrator's ceiling still applies (`createPolicy(allowed, …)`). Levels
+ * and attributes stay as the child set them. Pure; returns a new policy.
+ */
+export function openFor(chosen, { skills = [], types = [] } = {}) {
+  const C = chosen || blankPolicy();
+  const out = { ...C, skills: { ...(C.skills || {}) }, types: { ...(C.types || {}) } };
+  for (const k of skills) out.skills[k] = true;
+  for (const k of types) delete out.types[k];
+  return out;
 }
 
 /* ---------- one switch ---------------------------------------------------- */

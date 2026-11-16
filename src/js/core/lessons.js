@@ -9,6 +9,7 @@
    Pure functions. No DOM.                                                  */
 
 import { LESSONS } from "../content/lessons.js";
+import { NODES } from "./curriculum.js";
 
 export { LESSONS };
 
@@ -214,6 +215,69 @@ export function brokenTables(lex) {
     if (b.table && !buildTable(lex, b)) out.push(`${l.id} #${i} ${b.table} ${[].concat(b.w).join(",")}`);
   }));
   return out;
+}
+
+/* ---------- "Æfa þetta": practice on exactly what a page teaches (item 41) -- */
+
+/**
+ * Pages that teach and have nothing to practise, by decision rather than by
+ * accident. Empty today: every page is the `lesson` of at least one
+ * curriculum node with question types. A page added without a node fails
+ * tests/lessons-practice.test.js until it gets one or is listed here.
+ */
+export const READING_ONLY = new Set([]);
+
+/** How many questions "Æfa þetta" asks. */
+export const PRACTICE_SIZE = 5;
+
+/**
+ * What a page's "Æfa þetta" session asks, read off the curriculum nodes
+ * (core/curriculum.js) whose Lesefni page it is — never typed by hand, so the
+ * map, the skill map of item 83 and this button cannot drift apart.
+ *
+ *   types  every question type of those nodes
+ *   cats   the nodes' categories (a type that serves several, the reverse
+ *          analysis, is then asked only in these: `practiceSkills`)
+ *   attrs  { group: [keys] } where EVERY node of the page that has questions
+ *          narrows the same group (the tense page asks the past tense, the
+ *          mood page every mood but the indicative); a group only some of
+ *          them narrow is left open, so no node is cut out
+ *
+ * @returns {{id, types:string[], cats:string[], attrs:object}|null} null for a
+ *   page with nothing to practise (READING_ONLY, or no such page)
+ */
+export function lessonPractice(id) {
+  if (!BY_ID.has(id) || READING_ONLY.has(id)) return null;
+  const nodes = NODES.filter((n) => n.lesson === id && n.types.length);
+  if (!nodes.length) return null;
+  const types = [...new Set(nodes.flatMap((n) => n.types))];
+  const cats = [...new Set(nodes.map((n) => n.cat))];
+  const attrs = {};
+  const groups = new Set(nodes.flatMap((n) => Object.keys(n.attrs || {})));
+  for (const g of groups) {
+    if (!nodes.every((n) => n.attrs && n.attrs[g])) continue;
+    attrs[g] = [...new Set(nodes.flatMap((n) => n.attrs[g]))];
+  }
+  return { id, types, cats, attrs };
+}
+
+/**
+ * The categories such a session switches on: the nodes' own, and the
+ * category of every type that serves only one (*Kyn og tala* is asked inside
+ * the word-class analysis, which is Orðflokkagreining). A type that serves
+ * several (`anyOf`) adds none of its own, so it stays inside the page's.
+ * Pure: the catalogue is passed in (tasks/registry.js TASKS), since core/
+ * does not import tasks/.
+ */
+export function practiceSkills(practice, catalogue) {
+  if (!practice) return [];
+  const byId = new Map((catalogue || []).map((t) => [t.id, t]));
+  const out = new Set(practice.cats);
+  for (const id of practice.types) {
+    const t = byId.get(id);
+    if (t && !t.anyOf) out.add(t.skill);
+  }
+  return [...out];
 }
 
 /* ---------- what has been read --------------------------------------------- */

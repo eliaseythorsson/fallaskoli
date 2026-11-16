@@ -37,12 +37,20 @@
                  about one given word (the rescue drill) already honours it;
                  `forcedCell` in tasks/shared.js reads the cell. A builder
                  that does not know the hook simply builds as usual, and
-                 tasks/review.js keeps the question only if it matches.      */
+                 tasks/review.js keeps the question only if it matches.
+     cal         the calibration table (core/calibration.js), or null. Only
+                 ordinary practice passes one — an empty table when the
+                 server has published none. It does two things in
+                 tasks/next.js: a type the table has moved is built a step
+                 easier or harder, and the task is marked as one whose answer
+                 may be counted (`calBand`). A duel, a drill and a review
+                 pass none: two browsers must build the same duel from one
+                 seed whatever table each has fetched.                       */
 
 import { effectivePolicy, todayKey } from "../core/state.js";
 
 export function makeView({ S, sess, policy = null, today = null, forcedNoun = null,
-  drillWord = null, mix = null, inRun = false, huntPrefer = null, force = null }) {
+  drillWord = null, mix = null, inRun = false, huntPrefer = null, force = null, cal = null }) {
   return Object.freeze({
     S, sess,
     policy: policy || effectivePolicy(S),
@@ -53,6 +61,7 @@ export function makeView({ S, sess, policy = null, today = null, forcedNoun = nu
     inRun: !!inRun,
     huntPrefer: huntPrefer || [],
     force: force ? Object.freeze({ ...force }) : null,
+    cal: cal || null,
   });
 }
 

@@ -21,6 +21,8 @@
 
 import { mergeReview } from "./review.js";
 import { mergeLevels } from "./difficulty.js";
+import { mergeByType } from "./mastery.js";
+import { mergeSeenTypes } from "./examples.js";
 
 const num = (x) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
 const obj = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : {});
@@ -56,6 +58,10 @@ function mergeDay(b, l, r) {
     out.sk[k] = add(obj(obj(b).sk)[k], obj(obj(l).sk)[k], obj(obj(r).sk)[k]);
   out.g = obj(l).g ?? obj(r).g ?? null;
   out.lg = obj(l).lg || obj(r).lg ? 1 : 0;
+  /* The weekly goal in force that day (item 57): the lower, as `weekGoalFor`
+     judges a week by the lowest stamped on it. */
+  const wl = obj(l).wg, wr = obj(r).wg;
+  if (wl || wr) out.wg = wl && wr ? Math.min(wl, wr) : (wl || wr);
   return out;
 }
 
@@ -194,12 +200,17 @@ export function mergeStates(base, local, remote) {
   /* Sentences seen as frames (v6.13): counts that only ever grow, added like
      any counter. */
   out.frames = counters(B.frames, L.frames, R.frames, keys(L.frames, R.frames));
+  /* Per question type (v6.13, item 44, core/mastery.js): the counts add, the
+     recent history is the side answered last. Types met (item 41): met on
+     either device is met, on the earlier day. */
+  out.byType = mergeByType(B.byType, L.byType, R.byType);
+  out.seenTypes = mergeSeenTypes(L.seenTypes, R.seenTypes);
 
   out.lastActive = later(L.lastActive, R.lastActive);
   out.settled = later(L.settled, R.settled);
 
   /* The child's own switches: whichever device changed them. */
-  for (const k of ["goal", "enabled", "policy", "settings", "showcase", "title"])
+  for (const k of ["goal", "weekGoal", "enabled", "policy", "settings", "showcase", "title"])
     out[k] = choice(B[k], L[k], R[k]);
 
   /* The ceiling is the administrator's and always comes from the server. */

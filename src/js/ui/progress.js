@@ -4,7 +4,8 @@ import { CASES, COLS, mark } from "../core/marks.js";
 import {
   overallLevel, overallRank, skillSummary, dayMult,
 } from "../core/progress.js";
-import { dayStreak, dkey, todayKey, effectivePolicy } from "../core/state.js";
+import { dayStreak, weekStreak, weekProgress, dkey, todayKey, effectivePolicy } from "../core/state.js";
+import { weeksInARow } from "../core/calendar.js";
 import { fmtDuration } from "../core/timing.js";
 import { bandOf } from "../core/difficulty.js";
 import { $, esc } from "./dom.js";
@@ -14,6 +15,7 @@ import { holidayName } from "../core/calendar.js";
 import { statusOf } from "../core/wordhealth.js";
 import { dueEntries, dueLine } from "../core/review.js";
 import { typeById, enabled } from "../tasks/index.js";
+import { masteryOf, masteryLine } from "../core/mastery.js";
 
 /** The entries waiting for review that this pupil may be asked now: the same
     test a session's opening applies (tasks/review.js planOpening), so the
@@ -70,13 +72,25 @@ export function tallyHTML(done, goal) {
     <span class="tallytext">${text}</span>`;
 }
 
+/* "2 af 4 dögum í þessari viku", and when the goal is met "Vikumarkmiði náð,
+   5 dagar í þessari viku". Digits and "af … dögum" (dative plural, whatever
+   the number) so no numeral has to be declined. */
+export function weekLine({ done, goal, met }) {
+  return met
+    ? `Vikumarkmiði náð, ${done} dagar í þessari viku`
+    : `${done} af ${goal} dögum í þessari viku`;
+}
+
 export function renderHeader(app) {
   const S = app.S;
   const d = S.days[todayKey()] || { a: 0, c: 0 };
   $("s-xp").textContent = S.xp.toLocaleString("is-IS");
   $("s-acc").textContent = d.a ? Math.round(100 * d.c / d.a) + "%" : "—";
   $("s-run").textContent = S.run;
-  $("s-days").textContent = dayStreak(S);
+  /* Item 57: the streak is weeks in which the weekly goal was met. */
+  $("s-days").textContent = weekStreak(S);
+  const wp = weekProgress(S);
+  $("s-weeks").title = `${weeksInARow(weekStreak(S))} · ${weekLine(wp)}`;
   const L = overallLevel(S.xp);
   $("lvlbar").style.width = Math.round(100 * L.into / L.need) + "%";
   $("lvlname").textContent = "Stig " + L.level + " · " + overallRank(L.level);
@@ -111,20 +125,35 @@ export function renderHeader(app) {
 
 /* ---------- stig eftir flokkum ---------------------------------------- */
 
-export function skillGridHTML(S) {
+/* The mastery mark (item 44, core/mastery.js) beside the stig: four pips
+   and a word, with what it rests on in the title and the line below. The
+   stig is XP and rises with any practice; the mark is how secure the skill
+   is at the pupil's level. Mark 0 says plainly that there is too little. */
+function masteryHTML(m) {
+  const line = masteryLine(m);
+  const pips = [1, 2, 3, 4].map((k) => `<i class="${k <= m.level ? "on" : ""}"></i>`).join("");
+  return `<span class="mastery m${m.level}" title="${esc(line)}" aria-label="${esc(`Vald: ${m.label}. ${line}`)}">
+    <span class="mpips" aria-hidden="true">${pips}</span><b>${esc(m.label)}</b></span>`;
+}
+
+export function skillGridHTML(S, now = Date.now()) {
   const rows = skillSummary(S);
   const best = Math.max(...rows.map((r) => r.level));
   return `<div class="skillgrid">` + rows.map((r) => {
     const pct = Math.round(100 * r.into / r.need);
     const strong = r.level === best && r.answers >= 10;
-    const weak = r.acc != null && r.acc < 0.6 && r.answers >= 10;
-    return `<div class="skillcard${r.enabled ? "" : " off"}">
+    /* The old "þarf æfingu" tag read the skill's accuracy over all time; the
+       mastery mark reads the recent answers at the pupil's level and says
+       the same thing when it is true now (mark 1). */
+    const m = masteryOf(S, r.id, now);
+    return `<div class="skillcard${r.enabled ? "" : " off"}" data-skill="${esc(r.id)}" data-mastery="${m.level}">
       <div class="skhead"><span class="skico">${r.meta.ico}</span>
         <span class="sknm">${esc(r.meta.nm)}</span>
         <span class="skcur">${esc(r.meta.cur)}</span></div>
       <div class="sklvl">Stig ${r.level} · ${esc(r.rank)}
         ${strong ? '<i class="tagstrong">sterkasta</i>' : ""}
-        ${weak ? '<i class="tagweak">þarf æfingu</i>' : ""}</div>
+        ${masteryHTML(m)}</div>
+      <div class="skmeta mline">${esc(masteryLine(m))}</div>
       <div class="skbar"><i style="width:${pct}%"></i></div>
       <div class="skmeta">${r.xp.toLocaleString("is-IS")} XP ·
         ${r.answers ? Math.round(100 * r.acc) + "% rétt af " + r.answers : "ekkert svarað enn"}
@@ -280,7 +309,7 @@ export function renderStats(app) {
   $("tiles").innerHTML = `
     <div class="tile"><span>Í dag</span><b>${d.c} / ${d.a}</b><small>${d.a ? Math.round(100 * d.c / d.a) : 0}% rétt · ${d.xp} XP · markmið ${S.goal}</small></div>
     <div class="tile"><span>Alls</span><b>${acc}%</b><small>${S.totalCorrect} rétt af ${S.totalAnswers} · ${active} virkir dagar</small></div>
-    <div class="tile"><span>Dagaröð</span><b>${dayStreak(S)}</b><small>margfaldari ×${dayMult(dayStreak(S)).toFixed(2)}</small></div>
+    <div class="tile"><span>Vikur í röð</span><b>${weekStreak(S)}</b><small>${weekLine(weekProgress(S))} · margfaldari ×${dayMult(dayStreak(S)).toFixed(2)}</small></div>
     <div class="tile"><span>Heildarstig</span><b>${L.level}</b><small>${overallRank(L.level)} · ${(L.need - L.into).toLocaleString("is-IS")} XP í næsta</small></div>`;
   $("skillgrid").innerHTML = skillGridHTML(S);
   const rows = lastDays(S, 30);

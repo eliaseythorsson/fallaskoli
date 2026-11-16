@@ -96,7 +96,8 @@ import { verdictOf, SLIP_XP, RETRY_XP } from "./leniency.js";
 import { diagnose } from "./diagnosis.js";
 import { computeXp, dayMult, easeOf } from "./progress.js";
 import { record, tallyAnswer, dayRec, dayStreak, todayKey, answerShape, wordKey } from "./state.js";
-import { bumpDiff } from "./difficulty.js";
+import { bumpDiff, bandOf } from "./difficulty.js";
+import { noteTypeAnswer } from "./mastery.js";
 import { noteReview } from "./review.js";
 
 /* ========================================================================
@@ -1091,7 +1092,13 @@ export const JUDGED_TYPES = Object.keys(JUDGES);
 export function judge(task, response = {}, pupil = null) {
   const fn = task && JUDGES[task.type];
   if (!fn) throw new Error("Enginn dómari fyrir " + (task && task.type));
-  return fn(task, response || {}, historyOf(pupil));
+  const j = fn(task, response || {}, historyOf(pupil));
+  /* The response that was judged, kept beside the judgement — a duel sends
+     it to the server, which judges it again (core/duel.js `gradeDuel`). Not
+     enumerable: it is not part of the verdict, and nothing that copies or
+     compares a judgement should see it. */
+  Object.defineProperty(j, "given", { value: response || {}, enumerable: false });
+  return j;
 }
 
 /**
@@ -1257,6 +1264,9 @@ export const firstSaid = (response) =>
  */
 export function settle(S, sess, task, j, { ms = 0 } = {}) {
   if (!j || j.pending) return null;
+  /* Item 44: the step the pupil was at in this skill BEFORE the answer
+     moves it — the level the question was asked at (core/mastery.js). */
+  const band = sess && sess.diff && task && task.skill ? bandOf(sess, task.skill) : null;
   for (const e of j.effects) {
     switch (e.do) {
       case "record": {
@@ -1281,6 +1291,10 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
     }
   }
   if (!j.finish) return null;
+  /* Item 44: one answer to this question type, at that step — what the
+     mastery mark reads (core/mastery.js). A duel is asked at the duel's
+     level, not the pupil's, and does not count. */
+  if (!task.duel && band != null) noteTypeAnswer(S, task.typeId, band, j.ok);
   /* The review queue (core/review.js): a miss goes in, due tomorrow; a right
      answer on an entry that is due moves it out. Here, on the one path every
      answer takes, so that a new question type cannot forget it. `review`

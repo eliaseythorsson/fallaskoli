@@ -10,6 +10,79 @@ import { built, FX } from "./effects.js";
 import { withView } from "./view.js";
 import { wpick } from "./shared.js";
 import { TASKS, typeById, enabled, weightOf } from "./registry.js";
+import { bandOf, diffOf, clamp, MIN, MAX } from "../core/difficulty.js";
+import { typeShift } from "../core/calibration.js";
+
+/* ---------- calibration (critique item 17, core/calibration.js) -----------
+ *
+ * The table says of some types that pupils at a certain level find them
+ * harder, or easier, than the other questions asked at that level. Such a
+ * type is built from a view in which the level stands a step lower or higher
+ * — a COPY of the session with the levels changed, so the builder stays what
+ * it is and the pupil's real level is untouched. Every skill is looked up at
+ * its own level: a type is filed under one skill and may build for another
+ * (the cloze is a noun type and also asks adjectives and pronouns), and the
+ * count is kept by the level of the skill the question was built for
+ * (`markForCount`). The shifted level stays inside the skill's range
+ * (core/difficulty.js `levelRanges`), so a skill that may not move does not,
+ * and a level the policy forbids is not reached.
+ *
+ * Without a table on the view (a duel, a drill, a review, a program with no
+ * server) nothing here does anything. */
+function viewForType(view, t) {
+  if (!view.cal) return view;
+  const diff = { ...view.sess.diff };
+  let moved = false;
+  if (!view.cal.types || !view.cal.types[t.id]) return view;
+  for (const skill of Object.keys(view.sess.diff)) {
+    const s = typeShift(view.cal, t.id, bandOf(view.sess, skill));
+    if (!s) continue;
+    const [lo, hi] = (view.sess.range && view.sess.range[skill]) || [MIN, MAX];
+    const to = clamp(diffOf(view.sess, skill) + s, lo, Math.max(lo, hi));
+    if (to !== diff[skill]) { diff[skill] = to; moved = true; }
+  }
+  return moved ? withView(view, { sess: { ...view.sess, diff } }) : view;
+}
+
+/** Mark a task of ordinary practice as one whose answer may be counted, with
+    the level its skill REALLY stood at (not the shifted one): the table is
+    keyed by where the pupil is, and says what to build for them there. */
+function markForCount(view, task) {
+  if (view.cal && !view.force && !view.drillWord && task.skill)
+    task.calBand = bandOf(view.sess, task.skill);
+}
+
+/**
+ * A built question as the session will show it: its type written on it, and
+ * the effects of showing it completed with what the session knows afterwards
+ * — how long since a table and since a meaning question, and the words it
+ * has met (tasks/shared.js `wordWeight` makes them rarer for a while).
+ */
+function shown(type, b, after = []) {
+  if (!b) return null;
+  const { task } = b;
+  task.typeId = type.id;
+  const words = [task.n, task.w, task.v].filter(Boolean).map((x) => x.o);
+  return built(task, [
+    ...b.effects,
+    FX.since(type.id.startsWith("tbl"), type.id === "meaning"),
+    ...(words.length ? [FX.seen(words)] : []),
+    ...after,
+  ]);
+}
+
+/**
+ * Build one question of a GIVEN type: { task, effects } or null. The same
+ * thing `nextTask` returns once it has chosen the type — for a caller that
+ * already knows which type it wants. A duel does (core/duel.js): the types
+ * come from the duel's plan, and each player is built their own question of
+ * each. Nothing is checked here but that the type exists; whether it is
+ * switched on was the plan's business.
+ */
+export function buildTask(lex, view, rng, typeId) {
+  const type = typeById(typeId);
+  return type ? shown(type, type.build(lex, view, rng)) : null;
+}
 
 /**
  * Choose and build the next task: { task, effects } or null.
@@ -24,7 +97,7 @@ export function nextTask(lex, view, rng) {
   const after = view.forcedNoun ? [FX.clearForcedNoun()] : [];
   if (view.forcedNoun) {
     const b = typeById("fill").build(lex, view, rng);
-    if (b) return built(b.task, [...b.effects, ...after]);
+    if (b) { b.task.typeId = "fill"; return built(b.task, [...b.effects, ...after]); }
     view = withView(view, { forcedNoun: null });
   }
   const P = view.policy;
@@ -66,28 +139,15 @@ export function nextTask(lex, view, rng) {
     }, rng);
     if (tried.has(choice.id) && tried.size < avail.length) continue;
     tried.add(choice.id);
-    const b = choice.build(lex, view, rng);
-    if (b) {
-      const { task } = b;
-      task.typeId = choice.id;
-      /* What the session knows once this question has been shown: how long
-         since a table and since a meaning question, and the words it has met
-         (tasks/shared.js `wordWeight` makes them rarer for a while). */
-      const words = [task.n, task.w, task.v].filter(Boolean).map((x) => x.o);
-      return built(task, [
-        ...b.effects,
-        FX.since(choice.id.startsWith("tbl"), choice.id === "meaning"),
-        ...(words.length ? [FX.seen(words)] : []),
-        ...after,
-      ]);
-    }
+    const b = shown(choice, choice.build(lex, viewForType(view, choice), rng), after);
+    if (b) { markForCount(view, b.task); return b; }
   }
 
   /* The last resort walks only the builders that ARE available and returns
      null if nothing is possible. No material beats material switched off. */
   for (const t of [...avail, ...all.filter((x) => !avail.includes(x))]) {
-    const b = t.build(lex, view, rng);
-    if (b) { b.task.typeId = t.id; return built(b.task, [...b.effects, ...after]); }
+    const b = t.build(lex, viewForType(view, t), rng);
+    if (b) { b.task.typeId = t.id; markForCount(view, b.task); return built(b.task, [...b.effects, ...after]); }
   }
   return null;
 }

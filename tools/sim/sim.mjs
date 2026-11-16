@@ -14,6 +14,8 @@ const RV = await import(R + "/src/js/core/review.js");
 const { narrowPolicy } = await import(R + "/src/js/core/policy.js");
 const DG = await import(R + "/src/js/core/diagnosis.js");
 const PR = await import(R + "/src/js/core/progress.js");
+const AN = await import(R + "/src/js/core/answer.js");
+const { RETRY_XP } = await import(R + "/src/js/core/leniency.js");
 const DF = await import(R + "/src/js/core/difficulty.js");
 const { maxOf } = await import(R + "/src/js/core/mix.js");
 const lex = buildLexicon(DATA);
@@ -25,7 +27,7 @@ function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 10139
 const sig = (t) => t.type === "villur" ? "villur|" + t.hunt.lines.map((l) => l.toks.map((x) => x.w).join(" ")).join("/") : t.type === "sort" ? t.typeId + "|" + (t.s ? t.s.t : "") + t.items.map((x) => x.w).join(",") : t.type === "tap" ? t.typeId + "|" + (t.s ? t.s.t : JSON.stringify(t.toks || "")) + "|" + t.cls : t.type === "parse" ? t.typeId + "|" + (t.s ? t.s.t : "") + "|" + t.t.w + "|" + t.i : t.type === "syntax" ? "syntax|" + t.s.t + "|" + t.askRole : t.type === "clause" ? "clause|" + t.s.t + "|" + t.span.from : t.type==="meaning" ? "meaning|"+t.word : [t.typeId, t.s ? t.s.t : (t.title || ""), t.prompt || t.question || "", (t.answers || [t.answer || ""])[0], t.cue || "", t.pron || "", t.askRole || ""].join("|");
 const sentOf = (t) => (t.s ? t.s.t : null);
 
-export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2, size = 10, topic = "blandad", allSkills = false, seed = 1, review = true }) {
+export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2, size = 10, topic = "blandad", allSkills = false, seed = 1, review = true, rewards = false, activeDays = null }) {
   const rnd = rng(seed);
   const S = ST.blankState();
   if (allSkills) SKILL_IDS.forEach((id) => { S.enabled[id] = true; });
@@ -37,7 +39,9 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
     offset = d * 86400000;
     app.sess = ST.newSession(S);
     const xp0 = S.xp;
-    for (let r = 0; r < perDay; r++) {
+    /* `activeDays(d)` false: the pupil does not turn up (a weekend, a cold). */
+    const sessions = !activeDays || activeDays(d) ? perDay : 0;
+    for (let r = 0; r < sessions; r++) {
       const run = { topic, n: size, i: 0, items: [], focus: null, review: [], reask: [] };
       app.run = run;
       // as app.startRun: the session opens with up to three due reviews (core/review.js)
@@ -74,8 +78,18 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
         const judged = !(t.type === "meaning");
         const ok = judged ? rnd() < p : true;
         const ease = ST.easeFor ? ST.easeFor(S, { cell: t.cell, word: t.word, skill: t.skill }) : 0.5;
-        const xp = ok ? PR.computeXp({ base: t.base || 8, lvl, ease, run: S.run, streak: 0 }) : 0;
+        /* `rewards` (item 60): what the app really pays, not only the base XP of
+           a right answer — the day-streak multiplier (core/state.js dayStreak,
+           as core/answer.js reads it), a perfect table's bonus, and half XP for
+           a second try that mends a miss (RETRY_TYPES; the pupil tries again
+           7 times in 10 and mends it a quarter more often than a first try). */
+        const streak = rewards ? ST.dayStreak(S) : 0;
+        const full = PR.computeXp({ base: t.base || 8, lvl, ease, run: S.run, streak });
+        let xp = ok ? full : 0;
+        if (rewards && ok && t.type === "table") xp += Math.round(30 * PR.dayMult(streak));
         ST.record(S, app.sess, { skill: t.skill, cell: t.cell, word: t.word, ok, xp, counts: judged });
+        if (rewards && !ok && judged && AN.RETRY_TYPES[t.type] && AN.RETRY_TYPES[t.type](t) && rnd() < 0.7 && rnd() < Math.min(0.9, p + 0.25))
+          ST.grantXp(S, Math.max(1, Math.round(full * RETRY_XP)));
         DF.bumpDiff(app.sess, S, t.skill, ok);
         // v6.13: the noun comes back 3–5 questions on (tasks/review.js), not at once;
         // `review: false` keeps the old rule, for a before/after comparison
