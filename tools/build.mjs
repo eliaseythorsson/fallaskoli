@@ -10,6 +10,7 @@ import { readFile, writeFile, stat, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { htmlPath, VERSION } from "./version.mjs";
+import { pwaFiles } from "./pwa.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const p = (...x) => path.join(root, ...x);
@@ -74,7 +75,24 @@ const body = await readFile(p("src/body.html"), "utf8");
 const tail = await readFile(p("src/tail.html"), "utf8");
 
 await mkdir(path.dirname(OUT), { recursive: true });
-await writeFile(OUT, head + body + js + "\n" + tail, "utf8");
+const html = head + body + js + "\n" + tail;
+await writeFile(OUT, html, "utf8");
 
 const { size } = await stat(OUT);
 console.log(`built ${path.relative(root, OUT)} — ${(size / 1024).toFixed(0)} KB`);
+
+/* ---------- dist/web/: the same program, installable (item 54) ----------
+   The HTML above stays the one file that opens by a double click. Beside it,
+   a folder for a web host: the same bytes as index.html, with the manifest,
+   the icons and the service worker (tools/pwa.mjs, src/sw.js). Put the
+   folder's contents anywhere on the web and the program can be installed and
+   opened offline. Written only for the normal build, not for a build to a
+   path of one's own (`node tools/build.mjs some/where.html`). */
+if (!process.argv[2]) {
+  const WEB = path.join(path.dirname(OUT), "web");
+  await mkdir(WEB, { recursive: true });
+  await writeFile(path.join(WEB, "index.html"), html, "utf8");
+  const { build: stamp, files } = pwaFiles(Buffer.from(html, "utf8"));
+  for (const [name, buf] of files) await writeFile(path.join(WEB, name), buf);
+  console.log(`built ${path.relative(root, WEB)}/ — index.html + ${files.size} files, worker ${stamp}`);
+}

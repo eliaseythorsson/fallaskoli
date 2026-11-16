@@ -1,0 +1,5 @@
+# The build image needs one file from this folder; the source itself is
+# mounted when the container runs (build-in-container.sh). Docker reads this
+# file instead of .dockerignore for Dockerfile.build (BuildKit, Docker 23+).
+*
+!requirements-build.txt

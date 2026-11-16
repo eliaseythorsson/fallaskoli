@@ -36,6 +36,7 @@ import { renderTeacher } from "./ui/teacher.js";
 import { renderSkillMap } from "./ui/skillmap.js";
 import { nodeSession } from "./core/skillmap.js";
 import { nodeById } from "./core/curriculum.js";
+import { startPWA, rememberServer, wasServer, renderOffline } from "./ui/pwa.js";
 import { mergeStates } from "./core/merge.js";
 import { renderLessons, suggestLesson, wireLessons } from "./ui/lessons.js";
 import { renderDuelBar, renderDuelRoom } from "./ui/duel.js";
@@ -1495,7 +1496,16 @@ async function connectServer() {
   if (!serverMode()) return false;
   const candidate = createServer("");
   const found = await candidate.probe();
-  if (!found.server) return false;
+  if (!found.server) {
+    /* Item 54: opened offline from the worker's cache. On an address that
+       was a server, local progress would be a second, separate one: say
+       there is no connection instead (ui/pwa.js). A host that ANSWERED
+       without being a server is a plain web host, and is remembered so. */
+    if (found.offline && wasServer()) { renderOffline(); return "gate"; }
+    if (!found.offline) rememberServer(false);
+    return false;
+  }
+  rememberServer(true);
   app.server = candidate;
   if (!found.me) {
     const config = await app.server.config();
@@ -1589,6 +1599,10 @@ function judgeSocial() {
 }
 
 async function init() {
+  /* Item 54: served from a host with the worker's files, the program can be
+     installed and opened offline, and offers a new version when there is
+     one. From a file this does nothing at all. */
+  startPWA({ beforeReload: () => store.flush() });
   const connected = await connectServer();
   if (connected === "gate") {            // the gate is up; nothing else happens
     /* …and nothing of the program shows behind it: no tabs, no "0 XP" (v6.10). */

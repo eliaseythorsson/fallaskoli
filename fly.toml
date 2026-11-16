@@ -50,6 +50,10 @@ primary_region = "ams"
 
 # ONE machine, always. The data is files on one disk; a second machine would
 # have a second, empty disk. Never `fly scale count 2`.
+#
+# 512 MB is enough for a family or a couple of classes (about 150 pupils
+# practising at the same time). For more, "1gb" — measured in
+# docs/SERVER.md §4.4 (tools/load-test.mjs).
 [[vm]]
   size = "shared-cpu-1x"
   memory = "512mb"

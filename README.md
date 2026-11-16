@@ -36,6 +36,19 @@ makes demo1–demo3 for trying several accounts yourself; open each on its own
 address (`http://demo1.localhost:8080`, `http://demo2.localhost:8080` …) to stay
 logged in as all of them at once.
 
+**Installing it (v6.13).** Served over http(s), the program can sit on the
+home screen of a phone or a Chromebook and opens without a network. The build
+writes `dist/web/` for this: the same program as `index.html`, with a manifest,
+icons (the board's tally mark in chalk, drawn by `tools/pwa.mjs`) and a service
+worker (`src/sw.js`). Put that folder's contents on any web host;
+`server/server.mjs` serves the same files by itself. The worker caches the
+program and nothing else — never an answer from the server — and when a new
+version is published it says *Ný útgáfa er tilbúin — endurhlaða* instead of
+swapping it under the pupil. On a server the progress lives on the server, so
+offline the program says it has no connection rather than starting a second
+progress in the browser. Opened from a file, none of this happens: no worker,
+no manifest, the same single file.
+
 For one child on several devices the second row is the simplest: put the file
 anywhere on the web and open the same link everywhere. Progress is then kept
 per device; **Stillingar og námsefni → Færa milli tækja** moves it between devices as
@@ -55,6 +68,31 @@ Needs Python 3.10+ with `pip`, Node 18+, and for the browser checks a Chromium
 (`CHROME_PATH=/path/to/chrome`; they are skipped otherwise). Debian/Ubuntu:
 `apt install -y nodejs npm python3 python3-pip`. The grammar libraries ship
 Linux wheels for x86_64 only.
+
+**The same bytes on any computer (v6.13).** `./build.sh` on your own machine
+uses whatever Python and processor it finds — and with the very same library
+versions, an ARM Linux VM (which compiles the parser from source) parsed one
+token differently from an x86_64 one. The committed data is the x86_64 build.
+To build exactly that anywhere, Mac included, with Docker:
+
+```
+./build-in-container.sh             # = ./build.sh, in the build container
+./build-in-container.sh --accept    # = ./build.sh --accept
+```
+
+`Dockerfile.build` pins the platform (linux/amd64; emulated on an
+Apple-silicon Mac, so slower), Python 3.13.18, Node 22.23.4, and every Python
+package by its hash (`requirements-build.txt` — change it together with
+`requirements.txt`). Your source folder is mounted, so the results land where
+`./build.sh` puts them; your own `node_modules` is not touched. The licence
+list keeps its date while it is unchanged, so a rebuild changes no byte. CI
+(`.github/workflows/ci.yml`, job `reproducible`) runs this on every push and
+fails if the rebuilt data differs from what is committed. Two things the
+container could not check where it was written (no access to Docker Hub): it
+was never built, only read and linted (hadolint), and the image tags carry no
+digest yet — `docker buildx imagetools inspect python:3.13.18-slim-bookworm`
+(and the same for `node:22.23.4-bookworm-slim`) prints the digest to add after
+the tag in `Dockerfile.build`, which makes the pin final.
 
 What the build does, in order:
 
@@ -77,8 +115,9 @@ What the build does, in order:
    `--accept` records it. This is what stops a parser upgrade from quietly
    changing a grammatical analysis.
 6. `node --test tests/*.test.js`, then `tools/build.mjs` bundles `src/` into
-   the HTML file, then `tools/browser-test.mjs` and `tools/server-test.mjs`
-   drive it in a real Chromium.
+   the HTML file (and `dist/web/`, the same program as a folder for a web
+   host — see *Installing it* above), then `tools/browser-test.mjs` and
+   `tools/server-test.mjs` drive it in a real Chromium.
 
 `node tools/pack.mjs` writes `dist/fallaskoli-v6.12-src.zip` with everything.
 
