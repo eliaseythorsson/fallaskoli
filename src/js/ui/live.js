@@ -30,6 +30,7 @@ import { $, esc, fmt } from "./dom.js";
 import { RENDER, renderTask } from "./render.js";
 import { renderRunBar } from "./session.js";
 import { LIVE } from "../core/live.js";
+import { setGlossContext } from "../core/glossary.js";
 
 /* Icelandic agreement with a number: 1, 21, 31 … take the singular, 11 not. */
 const one = (n) => n % 10 === 1 && n % 100 !== 11;
@@ -206,6 +207,7 @@ export function drawCard(app, task) {
   try {
     const fn = RENDER[task.type];
     if (!fn) throw new Error("no renderer");
+    setGlossContext(task.skill);
     fn(shim);
   } catch {
     slot.innerHTML = `<div class="card"><p>${fmt(task.question || task.title || "")}</p></div>`;

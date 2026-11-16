@@ -11,7 +11,7 @@
 
 import { CASES, COLS, mark, describeMark, caseName } from "../core/marks.js";
 import { lessonLinkHTML } from "./lessons.js";
-import { abbr, markHTML } from "../core/glossary.js";
+import { abbr, markHTML, setGlossContext } from "../core/glossary.js";
 import { agreementNote, normalise } from "../core/grading.js";
 import { judge, settle, parseRows, judgeSyntax, judgeRetry, retryAllowed, hideAnswer } from "../core/answer.js";
 import { runMult, dayMult } from "../core/progress.js";
@@ -85,6 +85,10 @@ export function renderTask(app) {
      carries its gloss (ui/secondlang.js). Set for the whole life of the
      question, so the sentence drawn again with the answer keeps them. */
   glossFor = l2On(app) ? glossToken(app) : null;
+  /* *sterk*, *veik*, *beyging* in a question of nafnorð or sagnorð are that
+     class's (v6.13 review, S4). Set for the life of the question: its verdict
+     is drawn later, under the same subject. */
+  setGlossContext(app.cur.skill);
   fn(app);
   showExample(app);
   decorateTask(app);

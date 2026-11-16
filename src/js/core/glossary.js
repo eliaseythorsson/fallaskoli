@@ -46,10 +46,12 @@ export const TERMS = [
     keys: ["greinir", "greini", "greinis", "með greini", "án greinis", "viðskeyttur greinir", "laus greinir"],
     ds: "Greinirinn segir að átt sé við eitthvað ákveðið. Í íslensku hengist hann oftast aftan á orðið — **hestur → hesturinn** — og kallast þá viðskeyttur greinir. Lausi greinirinn *hinn* sést nær eingöngu í hátíðlegu máli." },
   { id: "sterkbeyging", nm: "Sterk beyging lýsingarorðs", q: "sterk beyging",
-    keys: ["sterk beyging", "sterka beygingu", "sterkri beygingu", "sterkrar beygingar", "sterkbeygt", "sterk", "SB"],
+    keys: ["sterk beyging", "sterka beygingu", "sterkri beygingu", "sterkrar beygingar", "sterkbeygt", "sterk", "SB",
+      "sterk beyging lýsingarorðs", "sterk beyging lýsingarorða", "sterka beygingu lýsingarorða"],
     ds: "Lýsingarorð sem stendur með nafnorði **án greinis** tekur sterka beygingu, og endingin fer eftir kyni: *grænn hestur*, *græn kona*, *grænt barn*. Sterkbeygð mynd endar oft á samhljóði." },
   { id: "veikbeyging", nm: "Veik beyging lýsingarorðs", q: "veik beyging",
-    keys: ["veik beyging", "veika beygingu", "veikri beygingu", "veikrar beygingar", "veikbeygt", "veik", "VB"],
+    keys: ["veik beyging", "veika beygingu", "veikri beygingu", "veikrar beygingar", "veikbeygt", "veik", "VB",
+      "veik beyging lýsingarorðs", "veik beyging lýsingarorða", "veika beygingu lýsingarorða"],
     ds: "Lýsingarorð sem er veikbeygt endar á sérhljóði í öllum föllum, bæði í eintölu og fleirtölu, og stendur oftast með nafnorði **með ákveðnum greini**: *græni hesturinn*, *grænu konunni*. Lýsingarorð með nafnorðum án greinis hafa hins vegar oftast sterka beygingu." },
   /* "stig" on its own is deliberately *not* a key here. The program uses that
      word for the child's overall level ("Stig 7") and for difficulty, and every
@@ -99,11 +101,30 @@ export const TERMS = [
   { id: "thatid", nm: "Þátíð", q: "þátíð", keys: ["þátíð", "þátíðar", "ÞT"],
     ds: "Það sem var: *ég **las***. Þátíðin sýnir líka hvort sögnin er sterk eða veik." },
   { id: "sterksogn", nm: "Sterk sögn", q: "sterk sögn",
-    keys: ["sterk sögn", "sterkri sögn", "sterk beyging sagnar"],
+    keys: ["sterk sögn", "sterkri sögn", "sterk beyging sagnar", "sterkar sagnir", "sterkra sagna"],
     ds: "Sterk sögn myndar þátíð með því að **breyta sérhljóði stofnsins** og fær enga -ði/-di/-ti endingu: *taka → **tók***, *bíta → **beit***." },
   { id: "veiksogn", nm: "Veik sögn", q: "veik sögn",
-    keys: ["veik sögn", "veikri sögn", "veik beyging sagnar"],
+    keys: ["veik sögn", "veikri sögn", "veik beyging sagnar", "veikar sagnir", "veikra sagna"],
     ds: "Veik sögn myndar þátíð með **endingu**, *-aði*, *-ði*, *-di* eða *-ti*: *kalla → **kallaði***, *heyra → **heyrði***, *kenna → **kenndi***, *kaupa → **keypti***." },
+  /* v6.13 review (S4): nouns and verbs have a strong and a weak declension
+     too. Until then "sterk" in "Er beygingin sterk eða veik?" (Sterkt eða
+     veikt nafnorð?) opened "Sterk beyging lýsingarorðs". The phrases that
+     name the word class resolve here everywhere; the bare words (*sterk*,
+     *veik*, *beygingin*) by the subject being shown (`setGlossContext`). */
+  { id: "sterknafnord", nm: "Sterkt nafnorð", q: "sterk beyging nafnorða",
+    keys: ["sterkt nafnorð", "sterk nafnorð", "sterkra nafnorða", "sterk beyging nafnorða",
+      "sterka beygingu nafnorða", "sterkbeygt nafnorð"],
+    ds: "Nafnorð beygist sterkt ef eignarfall eintölu endar á **samhljóði**, oftast *-s* eða *-ar*: til *hests*, til *vinar*, til *bókar*, til *húss*." },
+  { id: "veiknafnord", nm: "Veikt nafnorð", q: "veik beyging nafnorða",
+    keys: ["veikt nafnorð", "veik nafnorð", "veikra nafnorða", "veik beyging nafnorða",
+      "veika beygingu nafnorða", "veikbeygt nafnorð"],
+    ds: "Nafnorð beygist veikt ef það endar á **sérhljóði** í öllum föllum eintölu: *pabbi*, um *pabba*, frá *pabba*, til *pabba*." },
+  { id: "beyging_no", nm: "Beyging nafnorða", q: "beyging nafnorða",
+    keys: ["beyging nafnorða", "beygingu nafnorða"],
+    ds: "Nafnorð beygjast annaðhvort **sterkt** eða **veikt**. Skoðaðu eignarfall eintölu: endar það á samhljóði (til *hests*) er beygingin sterk, en endar orðið á sérhljóði í öllum föllum eintölu (til *pabba*) er hún veik." },
+  { id: "beyging_so", nm: "Beyging sagna", q: "beyging sagna",
+    keys: ["beyging sagna", "beygingu sagna"],
+    ds: "Sagnir skiptast í **sterkar** og **veikar** eftir því hvernig þær mynda þátíð. Veik sögn fær endingu, *-aði*, *-ði*, *-di* eða *-ti* (*kalla – kallaði*); sterk sögn breytir sérhljóði stofnsins (*taka – tók*)." },
   { id: "opersonuleg", nm: "Ópersónuleg sögn", q: "ópersónuleg sögn",
     keys: ["ópersónuleg", "ópersónuleg sögn", "ópersónulegar sagnir"],
     ds: "Sögn sem hefur ekkert frumlag í nefnifalli. Frumlagið stendur þá í þolfalli eða þágufalli: **mig** langar, **mér** finnst." },
@@ -233,9 +254,48 @@ const CASE_SENSITIVE_ABBR = [
 
 const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/* Lengri lyklar fyrst svo "veika beygingu" vinni yfir "beygingu". */
-const ALL_KEYS = TERMS.flatMap((t) => t.keys.map((k) => ({ k, id: t.id })))
+/* ---------- the subject being shown (v6.13 review, S4) ------------------
+
+   *sterk*, *veik* and *beyging* mean one thing beside an adjective, another
+   beside a noun and a third beside a verb. On a page or a question of
+   nafnorð or sagnorð these bare words open that word class's entry; with
+   no subject (or any other) they open the adjective's, as before. A phrase
+   that names the class itself ("sterk beyging lýsingarorðs", "sterk sögn")
+   is longer and wins wherever it stands. The task and Lesefni renderers set
+   the subject (ui/render.js `renderTask`, ui/live.js, ui/lessons.js). */
+const BEYGING_FORMS = ["beyging", "beygingu", "beygingin", "beygingar", "beyginguna", "beygingunni"];
+export const GLOSS_CONTEXT = {
+  nafnord: {
+    sterk: "sterknafnord", veik: "veiknafnord", sterkt: "sterknafnord", veikt: "veiknafnord",
+    "sterk beyging": "sterknafnord", "veik beyging": "veiknafnord",
+    "sterka beygingu": "sterknafnord", "veika beygingu": "veiknafnord",
+    "sterkri beygingu": "sterknafnord", "veikri beygingu": "veiknafnord",
+    "sterkrar beygingar": "sterknafnord", "veikrar beygingar": "veiknafnord",
+    sterkbeygt: "sterknafnord", veikbeygt: "veiknafnord",
+    ...Object.fromEntries(BEYGING_FORMS.map((k) => [k, "beyging_no"])),
+  },
+  sagnord: {
+    sterk: "sterksogn", veik: "veiksogn", sterkar: "sterksogn", veikar: "veiksogn",
+    "sterk beyging": "sterksogn", "veik beyging": "veiksogn",
+    "sterka beygingu": "sterksogn", "veika beygingu": "veiksogn",
+    ...Object.fromEntries(BEYGING_FORMS.map((k) => [k, "beyging_so"])),
+  },
+};
+let CONTEXT = null;
+/** The subject (a skill id) whose meaning the bare words take; null: none. */
+export function setGlossContext(skill) {
+  CONTEXT = GLOSS_CONTEXT[skill] ? skill : null;
+}
+
+/* Lengri lyklar fyrst svo "veika beygingu" vinni yfir "beygingu". The words
+   only a subject gives a meaning (*sterkt*, *sterkar*) are found too, and
+   left alone where no subject claims them. */
+const ALL_KEYS = [
+  ...TERMS.flatMap((t) => t.keys.map((k) => ({ k, id: t.id }))),
+  ...Object.values(GLOSS_CONTEXT).flatMap((m) => Object.keys(m).map((k) => ({ k, id: null }))),
+]
   .filter((x) => !CASE_SENSITIVE_ABBR.includes(x.k))
+  .filter((x, i, a) => a.findIndex((y) => y.k.toLowerCase() === x.k.toLowerCase()) === i || x.id)
   .sort((a, b) => b.k.length - a.k.length);
 
 /* No lookbehind: `(?<![\\p{L}])` throws at construction on Safari before
@@ -250,7 +310,7 @@ const KEY_RE = new RegExp(
   NOT_LETTER_BEFORE + "(" + ALL_KEYS.map((x) => escRe(x.k)).join("|") + ")(?![\\p{L}])",
   "giu"
 );
-const KEY_LOOKUP = new Map(ALL_KEYS.map((x) => [x.k.toLowerCase(), x.id]));
+const KEY_LOOKUP = new Map(ALL_KEYS.filter((x) => x.id).map((x) => [x.k.toLowerCase(), x.id]));
 
 const ABBR_RE = new RegExp(
   NOT_LETTER_BEFORE + "(" + CASE_SENSITIVE_ABBR.map(escRe).join("|") + ")(?![\\p{L}])",
@@ -296,7 +356,8 @@ export function glossify(html) {
       hits.push({ at, len: text.length, text, id });
     }
   };
-  collect(KEY_RE, (t) => KEY_LOOKUP.get(t.toLowerCase()));
+  const ctx = CONTEXT ? GLOSS_CONTEXT[CONTEXT] : null;
+  collect(KEY_RE, (t) => (ctx && ctx[t.toLowerCase()]) || KEY_LOOKUP.get(t.toLowerCase()));
   collect(ABBR_RE, (t) => ABBR[t]);
 
   /* The longest match wins when two overlap. */
