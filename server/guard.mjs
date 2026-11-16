@@ -98,7 +98,8 @@ export function cleanState(raw, { today = new Date() } = {}) {
     const sk = {};
     for (const [id, v] of pairs(d.sk, 40)) if (SKILLS.has(id)) sk[id] = n(v);
     days[k] = { a: n(d.a), c: n(d.c), xp: n(d.xp), ms: n(d.ms, 86400000), nw: n(d.nw),
-      sk, g: d.g == null ? null : n(d.g, 499), lg: d.lg ? 1 : 0 };
+      sk, g: d.g == null ? null : n(d.g, 499), lg: d.lg ? 1 : 0,
+      wg: d.wg == null ? null : Math.min(Math.max(n(d.wg, 7), 2), 7) };
   }
   S.days = days;
 

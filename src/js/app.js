@@ -13,7 +13,7 @@ import { reviewLine, queuePattern } from "./core/review.js";
 import { planToday } from "./core/today.js";
 import { STREAK_N, streakPattern, startStreak, stepStreak, streakEntry, streakLine } from "./core/streak.js";
 import { statusOf, weakWords, drillable, startDrill, drillStep, settleDrill } from "./core/wordhealth.js";
-import { grantXp } from "./core/state.js";
+import { grantXp, cleanWeekGoal } from "./core/state.js";
 import { renderDrillBar } from "./ui/drill.js";
 import { createStore } from "./storage/index.js";
 import { createClock } from "./core/timing.js";
@@ -1165,6 +1165,11 @@ function wireSettings() {
   $("goalsave").onclick = () => {
     const v = parseInt($("goalin").value, 10);
     if (v > 0 && v < 500) { app.S.goal = v; app.save(true); renderStats(app); app.refresh(); }
+  };
+  /* Item 57: the weekly goal, 2-7 days; the week streak is read from it at once. */
+  $("weekin").onchange = (e) => {
+    app.S.weekGoal = cleanWeekGoal(e.target.value);
+    app.save(true); renderStats(app); app.refresh();
   };
   $("set-decay").onchange = (e) => { app.S.settings.decay = e.target.checked; app.save(true); };
   $("set-gloss").onchange = (e) => { app.S.settings.glossary = e.target.checked; app.save(true); };
