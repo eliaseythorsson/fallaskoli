@@ -919,6 +919,59 @@ ok(switchCounts.types === QT_COUNT, `${switchCounts.types} question-type switche
 ok(switchCounts.levels === 7, `${switchCounts.levels} difficulty switches, expected 7`);
 ok(switchCounts.attrs === 30, `${switchCounts.attrs} attribute switches, expected 30`);
 
+/* v6.13 (item 39): three year presets above the switches. A press sets the
+   switches to what the curriculum map says the year covers, the editor says
+   which year is chosen, and one switch changed by hand unchooses it. The
+   state is put back afterwards so the checks below start where they did. */
+{
+  const before = await page.evaluate(() => JSON.stringify({
+    enabled: window.FALLASKOLI.S.enabled, policy: window.FALLASKOLI.S.policy }));
+  const read = () => page.evaluate(() => ({
+    buttons: [...document.querySelectorAll("#policyeditor button[data-preset]")]
+      .map((b) => b.textContent.trim()),
+    pressed: [...document.querySelectorAll('#policyeditor button[aria-pressed="true"]')]
+      .map((b) => b.dataset.preset),
+    setn: document.querySelector('#policyeditor input[data-dim="skills"][data-key="setningafraedi"]').checked,
+    obst: document.querySelector('#policyeditor input[data-dim="types"][data-key="ob_st"]').checked,
+    lvl6: document.querySelector('#policyeditor input[data-dim="levels"][data-key="6"]').checked,
+    saved: window.FALLASKOLI.S.enabled.setningafraedi,
+    line: document.querySelector("#polpresetnow").textContent,
+  }));
+  const press = (y) => page.evaluate((year) =>
+    document.querySelector(`#policyeditor button[data-preset="${year}"]`).click(), y);
+
+  let v = await read();
+  ok(v.buttons.join("|") === "8. bekkur|9. bekkur|10. bekkur", `preset buttons: ${v.buttons.join("|")}`);
+  ok(v.pressed.length === 0, `a new pupil is on no preset, but ${v.pressed} is pressed`);
+
+  await press(10);
+  v = await read();
+  ok(v.pressed.join() === "10" && v.setn && v.obst && v.lvl6 && v.saved === true,
+    `10. bekkur: ${JSON.stringify(v)}`);
+
+  await press(8);
+  v = await read();
+  ok(v.pressed.join() === "8" && !v.setn && !v.obst && !v.lvl6 && v.saved === false,
+    `8. bekkur: ${JSON.stringify(v)}`);
+  ok(v.line.startsWith("8. bekkur"), `the line under the buttons says "${v.line}"`);
+
+  await page.evaluate(() =>
+    document.querySelector('#policyeditor input[data-dim="types"][data-key="ob_st"]').click());
+  v = await read();
+  ok(v.pressed.length === 0 && v.line.startsWith("Enginn bekkur"),
+    `one switch changed by hand should unchoose the year: ${JSON.stringify(v)}`);
+
+  await page.evaluate((raw) => {
+    const A = window.FALLASKOLI, was = JSON.parse(raw);
+    for (const k of Object.keys(A.S.enabled)) delete A.S.enabled[k];
+    Object.assign(A.S.enabled, was.enabled);
+    A.S.policy = was.policy;
+    A.reloadPolicy(); A.save();
+  }, before);
+  await openTab("progress");
+  await openTab("settings");
+}
+
 /* ---------- 4b. The collection and hidden badges ---------- */
 await openTab("progress");
 /* Hidden badges live in the CATALOGUE view. The cabinet opens on the rarity
