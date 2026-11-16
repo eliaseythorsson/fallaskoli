@@ -103,11 +103,20 @@ src/js/core/curriculum.js  the curriculum map as data: the official
                       criteria, the nodes (one thing a pupil learns, with its
                       year, question types and Lesefni page) and what the
                       8., 9. and 10. bekkur presets switch on
-src/js/tasks/         the question builders (index.js; more.js for the v6.11
-                      types in every category), sentence frames
-                      (frames.js), explanations (explain.js) and the
-                      production questions — Villuveiðar, Setningasmiðja,
-                      Umritun (production.js)
+src/js/tasks/         the question builders, one file per category:
+                      nafnord.js, lysingarord.js, sagnord.js, fornofn.js,
+                      toluord.js, obeygjanleg.js, greining.js, fallstjorn.js,
+                      ordaford.js, setningafraedi.js, malbeiting.js,
+                      setningagerd.js. registry.js is the catalogue: every
+                      question type declares its skill, renderer, diagnosis
+                      tags and the steps of difficulty it knows. A builder is
+                      pure — build(lex, view, rng) → { task, effects }
+                      (view.js, effects.js): it changes nothing and never
+                      draws a random number of its own. next.js chooses the
+                      next question, drill.js runs the rescue drill; shared.js,
+                      cloze.js and tap.js are what the categories share;
+                      frames.js the sentence frames, explain.js the
+                      explanations, production.js the grading of Málbeiting
 src/js/ui/            rendering: render.js (one renderer per task type;
                       render-more.js for gap, choice, tap, sort and the
                       Orðaforði bonus),
@@ -121,7 +130,8 @@ server/               the optional multi-user server (Node, JSON files on disk):
                       privacy.mjs (the notice), backup.mjs, admin.mjs (CLI)
 Dockerfile, fly.toml  the server as a container, and where it runs
 tools/                build, manifest, coverage, pack, ÍNO converter, tests in
-                      Chromium, try-sentences.py
+                      Chromium, try-sentences.py, task-snapshot.mjs (what the
+                      builders build from fixed seeds — to compare two versions)
 tests/                node --test; 505 tests
 _grammar-audit/       the audit's notes, and three scripts that print what the
                       app generates so a person can read it (see below)

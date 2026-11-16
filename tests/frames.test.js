@@ -12,7 +12,9 @@ import assert from "node:assert/strict";
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
-import { taskReverse, taskFill } from "../src/js/tasks/index.js";
+import { taskReverse } from "../src/js/tasks/lysingarord.js";
+import { taskFill } from "../src/js/tasks/nafnord.js";
+import { show, rng } from "./helpers.js";
 import { frameIndex, fillFrame, acceptsNoun, nounSentence, adjectiveSentence,
          sentenceText, frameCoverage, candidateNouns, showable,
          fittingAdjectives } from "../src/js/tasks/frames.js";
@@ -41,7 +43,7 @@ test("bílstjórana can be shown inside a sentence", () => {
   assert.ok(w, "bílstjóri should be in the vocabulary");
   const form = w.forms["ÞFFTgr"][0];
   assert.equal(form, "bílstjórana");
-  const made = nounSentence(lex, w, "ÞFFTgr", form);
+  const made = nounSentence(lex, w, "ÞFFTgr", form, { rng });
   assert.ok(made, "no frame for ÞFFTgr");
   assert.ok(made.s.t.includes("bílstjórana"), made.s.t);
   assert.equal(made.s.tok[made.i].m, "ÞFFTgr");
@@ -64,7 +66,7 @@ test("every concrete noun form the analysis can ask about has a sentence", () =>
          frame is right for all of them) and of a sum of money. */
       if (!showable(w, m)) continue;
       if ((w.s === "time" || w.s === "money") && /^ÞGF(ET|FT)$/.test(m)) continue;
-      if (!nounSentence(lex, w, m, w.forms[m][0])) missing.push(`${w.o}|${w.c}|${w.s} ${m}`);
+      if (!nounSentence(lex, w, m, w.forms[m][0], { rng })) missing.push(`${w.o}|${w.c}|${w.s} ${m}`);
     }
   }
   assert.deepEqual(missing.slice(0, 30), [], `${missing.length} uncovered`);
@@ -94,16 +96,16 @@ test("an adjective is only put into a sentence beside a noun it suits", () => {
   }
   assert.ok(frames > 20, `only ${frames} adjective frames`);
   const odd = lex.lookup("svangur", "lo");
-  for (const m of askableMarks(odd)) assert.equal(adjectiveSentence(lex, odd, m, odd.forms[m][0]), null);
+  for (const m of askableMarks(odd)) assert.equal(adjectiveSentence(lex, odd, m, odd.forms[m][0], { rng }), null);
   const fine = lex.lookup("gamall", "lo");
-  assert.ok(askableMarks(fine).some((m) => adjectiveSentence(lex, fine, m, fine.forms[m][0])));
+  assert.ok(askableMarks(fine).some((m) => adjectiveSentence(lex, fine, m, fine.forms[m][0], { rng })));
 });
 
 test("verbs are never substituted into a frame", () => {
   const c = ctx();
   let verbs = 0, framedVerbs = 0;
   for (let i = 0; i < 1500; i++) {
-    const t = taskReverse(c);
+    const t = show(c, taskReverse);
     if (!t || t.skill !== "sagnord") continue;
     verbs += 1;
     if (t.framed) framedVerbs += 1;
@@ -116,7 +118,7 @@ test("the analysis question almost always has a sentence now", () => {
   const c = ctx();
   let n = 0, bare = 0;
   for (let i = 0; i < 2000; i++) {
-    const t = taskReverse(c);
+    const t = show(c, taskReverse);
     if (!t) continue;
     n += 1;
     if (t.standalone) bare += 1;
@@ -192,7 +194,7 @@ test("a frame that pins a gender is not given a noun of another gender", () => {
       /* nounSentence must never return THIS frame for that word. Run it a few
          times: the choice is random, so one call proves little. */
       for (let i = 0; i < 30; i++) {
-        const made = nounSentence(lex, other, mark, other.forms[mark][0]);
+        const made = nounSentence(lex, other, mark, other.forms[mark][0], { rng });
         if (made) assert.notEqual(made.s.t, sentenceText(f.s.tok),
           `${other.o}|${other.c} put into a ${f.rk} frame`);
       }
@@ -238,7 +240,7 @@ test("a mass noun is never put into a plural slot", () => {
 test("a sentence under með is never a cloze", () => {
   const c = ctx();
   for (let i = 0; i < 400; i++) {
-    const t = taskFill(c);
+    const t = show(c, taskFill);
     if (t) assert.ok(!t.s.nf, t.s.t);
   }
   assert.ok(lex.sentences.some((s) => s.nf), "no nf sentence in the bank");
@@ -251,7 +253,7 @@ test("the noun cloze is untouched by any of this", () => {
   const c = ctx();
   let built = 0;
   for (let i = 0; i < 200; i++) {
-    const t = taskFill(c);
+    const t = show(c, taskFill);
     if (!t) continue;
     built += 1;
     assert.equal(t.s.derived, undefined);

@@ -19,7 +19,7 @@ import assert from "node:assert/strict";
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession, effectivePolicy } from "../src/js/core/state.js";
-import { nextTask } from "../src/js/tasks/index.js";
+import { ask } from "./helpers.js";
 import {
   createPolicy, featuresOf, sanitisePolicy, policyProblem, blankPolicy,
   ATTRIBUTES, QUESTION_TYPES, TYPE_IDS, LEVELS,
@@ -36,7 +36,7 @@ function run(mutate, n = 900) {
   const ctx = { lex, S, sess: newSession(S), forcedNoun: null };
   const out = [];
   for (let i = 0; i < n; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     if (t) out.push(t);
   }
   return out;
@@ -225,7 +225,7 @@ test("an impossible policy produces no question rather than a wrong one", () => 
   const S = blankState();
   SKILLS.forEach((s) => { S.enabled[s.id] = false; });
   const ctx = { lex, S, sess: newSession(S), forcedNoun: null };
-  assert.equal(nextTask(ctx), null);
+  assert.equal(ask(ctx), null);
 });
 
 test("the effective policy is read off the state the same way everywhere", () => {

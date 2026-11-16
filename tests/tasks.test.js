@@ -9,7 +9,10 @@ import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession, record, wordKey } from "../src/js/core/state.js";
 import { bumpDiff } from "../src/js/core/difficulty.js";
-import { nextTask, TASKS, verbConjugation, topByRank, shareForLevel, wordWeight } from "../src/js/tasks/index.js";
+import { TASKS } from "../src/js/tasks/index.js";
+import { verbConjugation } from "../src/js/tasks/sagnord.js";
+import { topByRank, shareForLevel, wordWeight } from "../src/js/tasks/shared.js";
+import { ask } from "./helpers.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { readMark, isStyfdur } from "../src/js/core/marks.js";
 import { parseRows } from "../src/js/ui/render.js";
@@ -75,7 +78,7 @@ test("5000 tasks in a row are all intact", () => {
   const ctx = ctxWith();
   const seen = new Set();
   for (let i = 0; i < 5000; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     checkTask(t);
     seen.add(t.typeId);
     /* let the child answer sometimes right and sometimes wrong so difficulty drifts */
@@ -93,7 +96,7 @@ test("tasks appear at every difficulty level", () => {
   const ctx = ctxWith();
   const levels = new Set();
   for (let i = 0; i < 3000; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     levels.add(t.lvl);
     bumpDiff(ctx.sess, ctx.S, t.skill, true);
     record(ctx.S, ctx.sess, { skill: t.skill, ok: true, xp: 20 });
@@ -107,7 +110,7 @@ test("a switched-off skill never appears", () => {
   S.enabled.nafnord = true;
   const ctx = { lex, S, sess: newSession(S), forcedNoun: null };
   for (let i = 0; i < 400; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     assert.equal(t.skill, "nafnord", `${t.typeId} slapp í gegn`);
   }
 });
@@ -117,7 +120,7 @@ test("syntax is off by default (year 9)", () => {
   assert.equal(S.enabled.setningafraedi, false);
   const ctx = { lex, S, sess: newSession(S), forcedNoun: null };
   for (let i = 0; i < 300; i++)
-    assert.notEqual(nextTask(ctx).type, "syntax");
+    assert.notEqual(ask(ctx).type, "syntax");
 });
 
 test("both readings of a homograph exist in the corpus", () => {
@@ -167,7 +170,7 @@ test("no sentence points at a mark the word does not have", () => {
 test("the catalogue and the renderers stay in step", () => {
   for (const t of TASKS) {
     assert.ok(SKILL_IDS.includes(t.skill), `${t.id} points at an unknown skill`);
-    assert.equal(typeof t.gen, "function");
+    assert.equal(typeof t.build, "function");
   }
 });
 
@@ -212,11 +215,11 @@ test("the top skill level covers most of the vocabulary", () => {
 test("common words are still many times likelier than rare ones", () => {
   /* The other side of the same request: "could common words still come up more
      often?" */
-  const ctx = { S: { skills: {}, words: {} }, sess: { seen: [] }, lex: lex };
+  const view = { S: { skills: {}, words: {} }, sess: { seen: [] } };
   const common = lex.nouns.find((x) => x.r <= 5);
   const rare = lex.nouns[lex.nouns.length - 1];
-  const wc = wordWeight(ctx, common, "nafnord");
-  const wr = wordWeight(ctx, rare, "nafnord");
+  const wc = wordWeight(lex, view, common, "nafnord");
+  const wr = wordWeight(lex, view, rare, "nafnord");
   assert.ok(wc / wr > 20, `a common word is only ${(wc / wr).toFixed(1)}x likelier`);
 });
 
@@ -230,7 +233,7 @@ test("no question is ever built on a stýfður boðháttur", () => {
   const ctx = ctxWith();
   const bad = [];
   for (let i = 0; i < 10000; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     if (!t) continue;
     const marks = [t.m, t.cell, t.t && t.t.m, ...(t.cells || []).map((c) => c.m)];
     for (const m of marks)
@@ -252,7 +255,7 @@ test("the analysis question always offers the answer it is looking for", () => {
   const ctx = ctxWith();
   const bad = [];
   for (let i = 0; i < 4000; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     if (!t || t.type !== "parse") continue;
     for (const r of parseRows(t.a, t.t)) {
       const opts = r.opts().map((o) => (typeof o === "string" ? o : o.v));
@@ -274,7 +277,7 @@ test("under í or á only a noun with that convention is substituted", () => {
   const ctx = ctxWith();
   const bad = [];
   for (let i = 0; i < 3000; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     if (!t || !t.s || !t.s.ps) continue;
     const slot = t.s.derived ? t.i : t.s.slot;
     const tok = t.s.tok[slot];

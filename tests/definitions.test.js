@@ -23,7 +23,7 @@ import {
 } from "../src/js/core/definitions.js";
 import { defBox } from "../src/js/ui/dom.js";
 import { CLASSNAME } from "../src/js/core/marks.js";
-import { meaningPool } from "../src/js/tasks/index.js";
+import { meaningPool } from "../src/js/tasks/ordaford.js";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FIXTURES = path.join(ROOT, "tests", "fixtures");

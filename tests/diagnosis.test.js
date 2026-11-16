@@ -10,15 +10,17 @@ import { gradeForm } from "../src/js/core/grading.js";
 import { narrowPolicy } from "../src/js/core/policy.js";
 import { mergeStates } from "../src/js/core/merge.js";
 import { cleanState } from "../server/guard.mjs";
-import { nextTask, TASKS } from "../src/js/tasks/index.js";
-import { errorHunt, gradeHunt } from "../src/js/tasks/production.js";
+import { TASKS } from "../src/js/tasks/index.js";
+import { errorHunt } from "../src/js/tasks/malbeiting.js";
+import { gradeHunt } from "../src/js/tasks/production.js";
+import { ask } from "./helpers.js";
 import {
   PATTERNS, patternById, casePattern, patternsForCells, patternsForForm, diagnose,
   noteDiagnosis, standingOf, activePatterns, tagsOf, chancesIn, targets, focusTypes,
   huntPreferFor, pickTargeted, runReport,
   spellingPattern, vowelChange, wilsonLower, standings, UNREAD, MIN_CHANCES,
 } from "../src/js/core/diagnosis.js";
-import { verbConjugation } from "../src/js/tasks/index.js";
+import { verbConjugation } from "../src/js/tasks/sagnord.js";
 import { normalise } from "../src/js/core/grading.js";
 import { LESSONS } from "../src/js/core/lessons.js";
 
@@ -113,7 +115,7 @@ test("a hunt: a missed error is its pattern, a changed correct word is over-corr
   const rnd = (() => { let x = 7; return () => ((x = (x * 16807) % 2147483647) / 2147483647); })();
   let checked = 0;
   for (let k = 0; k < 80 && checked < 10; k++) {
-    const h = errorHunt(lex, lex.sentences.filter((s) => s.lvl <= 3), { count: 2, rnd });
+    const h = errorHunt(lex, lex.sentences.filter((s) => s.lvl <= 3), rnd, { count: 2 });
     if (!h) continue;
     const task = { type: "villur", hunt: h };
     const ti = h.lines[0].toks.findIndex((t) => !t.err && !t.punct &&
@@ -181,7 +183,7 @@ test("a session on one skill draws only that skill's questions", () => {
     const ctx = ctxFor(S);
     ctx.policy = narrowPolicy(effectivePolicy(S), { skills: [topic] });
     for (let k = 0; k < 25; k++) {
-      const t = nextTask(ctx);
+      const t = ask(ctx);
       assert.ok(t, `${topic}: no question`);
       const spec = TASKS.find((x) => x.id === t.typeId);
       assert.ok(spec.skill === topic || (spec.anyOf || []).includes(topic), `${topic}: got ${t.typeId}`);
@@ -199,7 +201,7 @@ test("questions aimed at a pattern come more often", () => {
     let hit = 0;
     let x = 99; const rnd = () => ((x = (x * 16807) % 2147483647) / 2147483647);
     for (let k = 0; k < 120; k++) {
-      const t = pickTargeted(() => nextTask(ctx), ids, { p, tries: 6, rnd });
+      const t = pickTargeted(() => ask(ctx), ids, { p, tries: 6, rnd });
       if (t && targets(t, ids)) hit++;
     }
     return hit;

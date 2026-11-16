@@ -10,7 +10,8 @@ import { DATA } from "../data/data_bundle.js";
 import { EX } from "../data/exercises.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
-import { nextTask, TASKS } from "../src/js/tasks/index.js";
+import { TASKS, typeById } from "../src/js/tasks/index.js";
+import { ask, show } from "./helpers.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { QUESTION_TYPES, createPolicy, narrowPolicy } from "../src/js/core/policy.js";
 import { mixGate, mixReport, maxOf, capOf } from "../src/js/core/mix.js";
@@ -19,7 +20,7 @@ import { diagnose, runReport, chancesIn } from "../src/js/core/diagnosis.js";
 import { bonusVerdict } from "../src/js/ui/render-more.js";
 
 const lex = buildLexicon(DATA);
-const NEW = TASKS.filter((t) => t.gen && !["fill", "verbslot", "verb", "parse", "revform", "govern", "indecl",
+const NEW = TASKS.filter((t) => t.build && !["fill", "verbslot", "verb", "parse", "revform", "govern", "indecl",
   "syntax", "clause", "tbl_no", "tbl_lo", "tbl_so", "tbl_fn", "tbl_to", "meaning", "umritun", "smidja", "villur"].includes(t.id));
 
 function ctxFor(skill = null, diff = 2) {
@@ -70,7 +71,7 @@ test("every new question type can be built, and every task it builds is intact",
     let built = 0;
     for (let k = 0; k < 60; k++) {
       const ctx = ctxFor(null, 1 + (k % 5));
-      const t = spec.gen(ctx);
+      const t = show(ctx, spec.build);
       if (!t) continue;
       built++;
       checkNew(t, spec.id);
@@ -101,7 +102,7 @@ function session(skill, n) {
     const counts = {};
     types.forEach((x) => { counts[x] = (counts[x] || 0) + 1; });
     ctx.mix = { n, counts };
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     ctx.mix = null;
     if (!t) break;
     types.push(t.typeId);
@@ -151,7 +152,7 @@ test("a Lýsingarorð analysis question is always inside a sentence", () => {
   const spec = TASKS.find((t) => t.id === "revform");
   for (let k = 0; k < 120; k++) {
     const ctx = ctxFor("lysingarord", 1 + (k % 5));
-    const t = spec.gen(ctx);
+    const t = show(ctx, spec.build);
     if (!t) continue;
     assert.ok(!t.standalone, `a bare adjective: ${t.t && t.t.w}`);
     assert.ok(t.s && t.s.tok[t.i], "no sentence");
@@ -190,7 +191,7 @@ test("the bonus sentence: the word must be in it, three words, not a repeat", ()
 
 test("diagnosis: the new questions name their own error patterns", () => {
   const ctx = ctxFor(null, 3);
-  const fs = TASKS.find((t) => t.id === "fs_hreyf").gen(ctx);
+  const fs = show(ctx, typeById("fs_hreyf").build);
   const wrong = fs.options.find((o) => o !== fs.answer);
   const g = gradeForm(wrong, { accepted: [fs.answer], paradigm: fs.paradigm, allowHelpers: false });
   /* as submitChoice does: the options say which cell the wrong one is */
@@ -199,9 +200,9 @@ test("diagnosis: the new questions name their own error patterns", () => {
   const ids = f.map((x) => x.p);
   assert.ok(ids.includes("hreyfing") && ids.includes("thf_thgf"), ids.join());
   assert.ok(chancesIn(fs).includes("hreyfing"));
-  const rf = TASKS.find((t) => t.id === "fn_aftur").gen(ctx);
+  const rf = show(ctx, typeById("fn_aftur").build);
   assert.ok(chancesIn(rf).includes("afturbeyging"));
-  const pl = TASKS.find((t) => t.id === "to_flt").gen(ctx);
+  const pl = show(ctx, typeById("to_flt").build);
   assert.ok(chancesIn(pl).includes("fleirtoluord"));
   assert.deepEqual(diagnose(rf, { kind: "patterns", ids: ["afturbeyging"], ex: null }).map((x) => x.p), ["afturbeyging"]);
 });

@@ -10,11 +10,14 @@ import { SKILL_IDS } from "../src/js/core/skills.js";
 import { normalise, judge } from "../src/js/core/grading.js";
 import { readMark } from "../src/js/core/marks.js";
 import { BADGES, celebrate } from "../src/js/core/badges.js";
-import { TASKS, nextTask, taskGovern, headsTimePhrase, taskHunt, taskWorkshop,
-         taskTransform } from "../src/js/tasks/index.js";
+import { TASKS } from "../src/js/tasks/index.js";
+import { taskGovern } from "../src/js/tasks/fallstjorn.js";
+import { headsTimePhrase } from "../src/js/tasks/shared.js";
+import { ask, show } from "./helpers.js";
 import { explainSlot } from "../src/js/tasks/explain.js";
-import { TRANSFORMS, workshop, gradeWorkshop, errorHunt, gradeHunt, errorCandidates,
-         confirmed, joinTokens, gradeTransform } from "../src/js/tasks/production.js";
+import { TRANSFORMS, workshop, errorHunt, errorCandidates, confirmed, joinTokens, taskHunt, taskWorkshop,
+         taskTransform } from "../src/js/tasks/malbeiting.js";
+import { gradeWorkshop, gradeHunt, gradeTransform } from "../src/js/tasks/production.js";
 
 const lex = buildLexicon(DATA);
 const ctxWith = () => {
@@ -177,7 +180,7 @@ test("every error is a real form, wrong in its place, and not a form of the righ
 test("a hunt is two sentences with one error each at most, and grades fixes, misses and false alarms", () => {
   const rnd = (() => { let x = 5; return () => ((x = (x * 16807) % 2147483647) / 2147483647); })();
   for (let k = 0; k < 60; k++) {
-    const h = errorHunt(lex, lex.sentences.filter((s) => s.lvl <= 3), { count: 1 + (k % 2), rnd });
+    const h = errorHunt(lex, lex.sentences.filter((s) => s.lvl <= 3), rnd, { count: 1 + (k % 2) });
     assert.ok(h, "no hunt");
     assert.equal(h.lines.length, 2, "v6.10: always two sentences");
     assert.equal(h.errors, 1 + (k % 2));
@@ -202,7 +205,7 @@ test("v6.10: *vera* is no longer most of the verb errors", () => {
   const rnd = (() => { let x = 11; return () => ((x = (x * 16807) % 2147483647) / 2147483647); })();
   let verbs = 0, vera = 0;
   for (let k = 0; k < 300; k++) {
-    const h = errorHunt(lex, lex.sentences.filter((s) => s.lvl <= 4), { count: 2, rnd });
+    const h = errorHunt(lex, lex.sentences.filter((s) => s.lvl <= 4), rnd, { count: 2 });
     if (!h) continue;
     h.lines.forEach((ln) => ln.toks.forEach((tk) => {
       if (!tk.err || tk.err.kind !== "sögn") return;
@@ -238,7 +241,7 @@ test("v6.10: an agreement error may be mended at either end, when one word does 
   assert.ok(alts >= 30, `only ${alts} errors with a second fix`);
   /* Graded: the other end mended is fixed, and is not a false alarm. */
   for (let k = 0; k < 400; k++) {
-    const h = errorHunt(lex, lex.sentences.filter((s) => s.lvl <= 4), { count: 1, rnd });
+    const h = errorHunt(lex, lex.sentences.filter((s) => s.lvl <= 4), rnd, { count: 1 });
     const errTok = h && h.lines.flatMap((l, li) => l.toks.map((t, ti) => ({ t, key: `${li}:${ti}` })))
       .find((x) => x.t.err && x.t.err.alt);
     if (!errTok) continue;
@@ -261,7 +264,7 @@ test("the production questions come out of nextTask, intact, and under their own
   const ctx = ctxWith();
   const seen = {};
   for (let i = 0; i < 2500; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     seen[t.typeId] = (seen[t.typeId] || 0) + 1;
     if (["villur", "smidja", "umritun"].includes(t.typeId)) {
       assert.equal(t.skill, "malbeiting");
@@ -278,7 +281,7 @@ test("a switched-off production type never appears", () => {
   const ctx = ctxWith();
   ctx.S.chosen = { types: { villur: false } };
   ctx.S.allowed = { types: { villur: false } };
-  for (let i = 0; i < 600; i++) assert.notEqual(nextTask(ctx).typeId, "villur");
+  for (let i = 0; i < 600; i++) assert.notEqual(ask(ctx).typeId, "villur");
 });
 
 /* ---------- time phrases ---------- */
@@ -288,7 +291,7 @@ test("a preposition that heads a time phrase is never a fallstjórn question", (
   assert.equal(headsTimePhrase(lex, s, 2), true);
   const ctx = ctxWith();
   for (let i = 0; i < 3000; i++) {
-    const t = taskGovern(ctx);
+    const t = show(ctx, taskGovern);
     if (!t || t.t.c !== "forsetning") continue;
     assert.equal(headsTimePhrase(lex, t.s, t.i), false, `${t.s.t}: ${t.t.w}`);
   }

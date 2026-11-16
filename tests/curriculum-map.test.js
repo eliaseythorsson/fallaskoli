@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession, migrate, effectivePolicy } from "../src/js/core/state.js";
-import { nextTask } from "../src/js/tasks/index.js";
+import { ask } from "./helpers.js";
 import { SKILLS, SKILL_IDS, defaultEnabled } from "../src/js/core/skills.js";
 import {
   QUESTION_TYPES, TYPE_IDS, ATTRIBUTES, LEVELS, blankPolicy, createPolicy,
@@ -143,7 +143,7 @@ test("the verb types ask the moods and voices the map credits them with, and no 
   sess.diff.sagnord = 5;
   const ctx = { lex, S, sess, forcedNoun: null, policy };
   for (let i = 0; i < 400; i++) {
-    const t = nextTask(ctx);
+    const t = ask(ctx);
     if (!t) continue;
     for (const m of [t.m, t.cell, ...(t.cells || []).map((c) => c.m)].filter(Boolean)) {
       for (const tag of String(m).split("-")) seen.add(tag);
@@ -289,7 +289,7 @@ for (const year of YEARS) {
     const skills = new Set(), seen = new Set();
     let made = 0;
     for (let i = 0; i < 500; i++) {
-      const t = nextTask(ctx);
+      const t = ask(ctx);
       if (!t) continue;
       made++;
       skills.add(t.skill);

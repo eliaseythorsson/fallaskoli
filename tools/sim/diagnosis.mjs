@@ -3,14 +3,18 @@ const { DATA } = await import(R + "/data/data_bundle.js");
 const { buildLexicon } = await import(R + "/src/js/core/lexicon.js");
 const { blankState, newSession } = await import(R + "/src/js/core/state.js");
 const { SKILL_IDS } = await import(R + "/src/js/core/skills.js");
-const { taskFill, taskVerb, taskVerbSlot } = await import(R + "/src/js/tasks/index.js");
+const { makeView } = await import(R + "/src/js/tasks/index.js");
+const { nounCloze } = await import(R + "/src/js/tasks/cloze.js");
+const { taskVerb, taskVerbSlot } = await import(R + "/src/js/tasks/sagnord.js");
+const rng = () => Math.random();
 const { gradeForm, normalise } = await import(R + "/src/js/core/grading.js");
 const { diagnose } = await import(R + "/src/js/core/diagnosis.js");
 const { readMark } = await import(R + "/src/js/core/marks.js");
 const lex = buildLexicon(DATA);
 const S = blankState(); SKILL_IDS.forEach((id) => { S.enabled[id] = true; });
 const sess = newSession(S);
-const ctx = { lex, S, sess, forcedNoun: null, noExtras: true };
+const view = () => makeView({ S, sess });
+const taskOf = (b) => (b ? b.task : null);
 const res = {};
 const add = (kind, pats, ex) => { const r = (res[kind] ||= { n: 0, pats: {}, none: 0, ex: [] }); r.n++; if (!pats.length) { r.none++; if (r.ex.length < 6) r.ex.push(ex); } pats.forEach((p) => { r.pats[p] = (r.pats[p] || 0) + 1; }); };
 const run = (t, kind, typed, para) => {
@@ -25,7 +29,7 @@ const run = (t, kind, typed, para) => {
 const CASES = ["NF", "ÞF", "ÞGF", "EF"];
 for (let k = 0; k < 4000; k++) {
   sess.diff.nafnord = 1 + (k % 5); sess.seen = [];
-  const t = taskFill(ctx); if (!t || t.extra) continue;
+  const t = nounCloze(lex, view(), rng); if (!t) continue;
   const P = t.n.forms, m = t.m, a = readMark(m);
   const cs = a.fall === "ÞG" ? "ÞGF" : a.fall;
   const mk = (c, num, gr) => c + (num === "eintala" ? "ET" : "FT") + (gr ? "gr" : "");
@@ -48,7 +52,7 @@ for (let k = 0; k < 4000; k++) {
 }
 for (let k = 0; k < 4000; k++) {
   sess.diff.sagnord = 1 + (k % 5); sess.seen = [];
-  const t = k % 2 ? taskVerb(ctx) : taskVerbSlot(ctx); if (!t || !t.v && !t.shown) continue;
+  const t = taskOf(k % 2 ? taskVerb(lex, view(), rng) : taskVerbSlot(lex, view(), rng)); if (!t || !t.v && !t.shown) continue;
   const v = t.v || lex.lookup(t.shown, "so"); if (!v) continue;
   const P = v.forms, a = readMark(t.m); const r = t.answers[0];
   const stem = v.o.replace(/a$/, "");
