@@ -90,7 +90,10 @@ noun_classes.py       semantic class of every noun; í/á convention; exclusions
 irregularity.py       how irregular a paradigm is (stems counted on BÍN's forms:
                       umlaut, syncope, -j-/-v-, consonant change, strong verbs)
                       and the table of how hard each cell is; the app lets the
-                      level choose on both (core/difficulty.js hardnessWeight)
+                      level choose on both (core/difficulty.js hardnessWeight).
+                      On a server both, and each question type's place on the
+                      level scale, are adjusted from anonymous counts of right
+                      and wrong answers (core/calibration.js; docs/SERVER.md §4.3)
 noun_classes.py       semantic class of every noun; í/á convention; exclusions;
                       which nouns nobody has read (not used in a frame); the
                       needs of a few frames narrowed (NEED_FIX)
@@ -180,7 +183,9 @@ src/fonts/            the three typefaces, inlined into the built file
 server/               the optional multi-user server (Node, JSON files on disk):
                       server.mjs (routes), store.mjs (files, cache, erasure),
                       auth.mjs, guard.mjs (what is stored and believed),
-                      privacy.mjs (the notice), backup.mjs, admin.mjs (CLI)
+                      privacy.mjs (the notice), backup.mjs, admin.mjs (CLI),
+                      calibrate.mjs (anonymous counts of answers → a weekly
+                      table of adjustments; the opt-in sample of wrong answers)
 Dockerfile, fly.toml  the server as a container, and where it runs
 tools/                build, manifest, coverage, pack, ÍNO converter, tests in
                       Chromium, try-sentences.py, task-snapshot.mjs (what the

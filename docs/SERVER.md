@@ -486,6 +486,98 @@ parent you made guardian of a group of several families will, from v6.13, see
 the patterns of every child in it. If that is not what the families agreed to,
 give each family its own group, or change the role.
 
+### 4.3 Difficulty that sets itself (v6.13)
+
+**You do not have to do anything in this section, ever.** It is here so that
+you know what the server is doing on its own, and where the off switch is.
+
+The levels of the questions were set by hand, and the hardness of each word
+and inflection cell was measured on the paradigm. Neither knows what pupils
+actually find hard. So the server now counts, **anonymously**, how often each
+kind of question is answered right — per question type, level (þyngd), cell
+and irregularity score — and once a week it works out from those counts
+whether something is harder or easier than it was labelled, and adjusts:
+
+| What is adjusted | How far it can ever move |
+|---|---|
+| A question type's place on the level scale (a type pupils at þyngd 3 find harder than the other þyngd-3 questions is built for them as if they were a little lower) | a quarter of a level per week; never more than **one level** from where it was built |
+| How hard an inflection cell counts (e.g. genitive plural) on the 1–5 scale | a quarter of a point per week; never more than **one point** |
+| What an irregularity score (1–5) is worth | the same |
+
+The browser fetches the small table of adjustments when the program loads and
+applies it. A browser with no server (the file opened from disk, a hosted
+page), or a server with too little data, uses the built-in values exactly as
+before — the table only ever *adjusts*; no question is created or changed by
+it. Duels ignore it, so both sides always get the same questions.
+
+**Why it is safe to leave alone:**
+
+- *Few answers change little.* Every estimate is pulled towards the built-in
+  value with the weight of 40–60 answers, nothing moves on fewer than 40–60
+  answers or on a difference that could be chance, and each thing is compared
+  with the **typical** other question at that level (the median), so one odd
+  type cannot drag the others.
+- *One pupil is not a measurement.* Nothing is adjusted unless at least **3**
+  different pupils contributed to that number on one day and at least 3
+  counted pupils have been active in the last two weeks. A family server with
+  one or two children therefore never adjusts anything — that is intended;
+  the per-pupil difficulty (their own level per category) already handles it.
+- *A flood cannot move it far.* One account can contribute at most 400
+  answers a day, and towards any one number only 12 (a type and level) or 8
+  (a cell) a day. Someone sending ten thousand wrong answers is counted as
+  one pupil having a bad day. An account held for implausible numbers
+  (*í yfirferð*) is not counted at all, and neither are you or the teachers.
+- *Old answers fade.* Each week every count is multiplied by 0.85, so last
+  term's pupils do not decide this term's difficulty, and the file stays small
+  (at most 8,000 keys).
+
+**The record.** *Umsjón → Sjálfvirk kvörðun og villugreining* shows the last
+runs: when, how many pupils, how many new answers, and each value that moved
+(*spurningagerð fill, þyngd 3: 0 → −0,25*). A run that changed something is
+also a line in *Atburðaskrá* (`kerfi — kvörðun`). It is a log, not a to-do
+list.
+
+**The off switch.** Two settings (in `fly.toml` under `[env]`, or the
+`Environment=` lines of the systemd unit), then restart:
+
+| Setting | Effect |
+|---|---|
+| `FALLASKOLI_CALIBRATION=0` | Nothing is counted, no table is handed out — every browser is back on the built-in values at its next load — and no answers are sampled. What is already stored stays in `calibration.json`; delete that file if you want it gone. |
+| `FALLASKOLI_CALIBRATION=strict` | As normal, but only pupils whose consent was recorded for the privacy notice of 2026-11-17 or later (or who ticked the box themselves under *Aðgangurinn minn*) are counted. See `docs/PRIVACY.md` §1b. |
+| `FALLASKOLI_SAMPLES=0` | The sample of wrong answers (below) cannot be switched on by anybody. |
+
+**Whose answers are counted.** Learners with a consent record, unless they
+untick *Telja svörin mín með í nafnlausri talningu* under *Aðgangurinn minn*.
+Only fresh questions of ordinary practice: not reviews, rescue drills, "Þrjár
+í röð", duels, second tries or hinted answers.
+
+**The files** (in the data folder): `calibration.json` (counts, the table, the
+log — no account in it), `calibration-quota.json` (how much each account has
+contributed *today*; replaced every day, not in backups), `samples.json`.
+
+#### The sample of wrong answers (off unless a teacher turns it on)
+
+The error diagnosis (*villugreining*) was only ever tested on mistakes somebody
+made up. To check it against what pupils really write, a **teacher can switch
+on, for their own group**, an anonymous sample of wrong inflected forms:
+*Skólastofan → Fyrir kennarann → Sýni af röngum svörum*. It is **off by
+default**, because it is the one place where something a child typed is kept.
+What is kept, at most 500 in all: the word asked about, the form expected, the
+form typed (one word, and only if it resembles a form of that word — a name or
+a sentence is dropped), and how the diagnosis classified it. No account, no
+group, no date beyond the month; a sample expires after 12 months.
+
+The server then checks the diagnosis **by itself**: every sampled answer is
+compared with all the forms of its word, and *Sjálfvirk kvörðun og
+villugreining* shows, per error pattern, how often that comparison disagrees
+with what the pupil was told, how often the form was ambiguous, and how many
+answers the diagnosis could not read. *Sækja sýnið* downloads the sample; saved
+as `tests/fixtures/wrong-answers.json` it becomes part of the test suite.
+*Eyða sýninu* empties it.
+
+**Before a teacher switches it on, the families of that group should be told**
+(`docs/PRIVACY.md` §1b).
+
 ---
 
 ## Part 5 — upgrading to a new version
