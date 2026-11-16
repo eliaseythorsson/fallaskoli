@@ -26,7 +26,7 @@ of the roadmap: use the table to confirm the parse instead of trusting it.
 PREP_CASES = {
     # --- accusative only ---
     "um": {"þf"}, "umfram": {"þf"}, "gegnum": {"þf"}, "kringum": {"þf"},
-    "við": {"þf"}, "umhverfis": {"þf"},
+    "umhverfis": {"þf"},
 
     # --- dative only ---
     "að": {"þgf"}, "af": {"þgf"}, "frá": {"þgf"}, "gegn": {"þgf"},
@@ -44,10 +44,15 @@ PREP_CASES = {
     "fyrir ofan": {"þf"}, "fyrir neðan": {"þf"}, "fyrir innan": {"þf"},
     "fyrir handan": {"þf"}, "meðfram": {"þgf"},
 
-    # --- two cases: motion (þf) or rest (þgf) ---
+    # --- two cases: motion (þf) or rest (þgf), or by meaning ---
     "í": {"þf", "þgf"}, "á": {"þf", "þgf"}, "eftir": {"þf", "þgf"},
     "fyrir": {"þf", "þgf"}, "með": {"þf", "þgf"}, "undir": {"þf", "þgf"},
     "yfir": {"þf", "þgf"},
+    # *við* is accusative by place and with most verbs (*við húsið*, *tala við
+    # kennarann*) but dative with some (*taka við bréfinu*, *bregðast við
+    # fréttunum*). Listed as accusative only until v6.13, so the build threw
+    # out every correct *taka við* + dative sentence (critique item 7a).
+    "við": {"þf", "þgf"},
 }
 
 # Prepositions that cannot disambiguate a surface form, because they govern more

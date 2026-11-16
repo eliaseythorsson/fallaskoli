@@ -55,7 +55,7 @@ export const PATTERNS = [
     rule: "Finndu fyrst hvað stýrir fallinu: forsetning, sögn eða hlutverk orðsins (frumlag er oftast í nefnifalli). Prófaðu svo *hestur – um hest – frá hesti – til hests*.",
     lesson: "foll", tags: ["case:NF", "case:ÞF", "case:ÞGF", "case:EF"], types: CASE_TYPES, hunt: "fall" },
   { id: "fallstjorn_fs", ok: "fallstjórn forsetninga", nm: "Fallstjórn forsetninga",
-    rule: "Hver forsetning stýrir sínu falli: *um* þolfalli, *frá* þágufalli, *til* eignarfalli. Aðeins *í, á, undir, yfir, með, eftir, fyrir* geta stýrt tveimur.",
+    rule: "Hver forsetning stýrir sínu falli: *um* þolfalli, *frá* þágufalli, *til* eignarfalli. Aðeins *í, á, undir, yfir, með, eftir, fyrir* og *við* geta stýrt tveimur: *við húsið* (þf.) en *taka við bréfinu* (þgf.).",
     lesson: "fallstjorn", tags: ["gov:fs"], types: ["govern", "villur", "fill", "fs_fsno", "fs_hreyf"], hunt: "fall" },
   { id: "fallstjorn_so", ok: "fallstjórn sagna", nm: "Fallstjórn sagna",
     rule: "Sögnin velur fall andlagsins: *sjá hest* (þf.), *hjálpa hesti* (þgf.), *sakna hests* (ef.). Prófaðu sögnina með *mig – mér – mín*.",
@@ -81,6 +81,11 @@ export const PATTERNS = [
   { id: "sogn_frumlag", ok: "persónu og tölu sagna", nm: "Persóna og tala sagnar",
     rule: "Finndu frumlagið fyrst. Sögnin lagar sig að því í persónu og tölu: *ég fer, við förum, kennarinn segir, kennararnir segja*.",
     lesson: "persona-tala", tags: ["verb:agree"], types: ["verb", "verbslot", "tbl_so", "villur", "umritun", "smidja"], hunt: "sögn" },
+  /* v6.13 (critique 34): the verb's twin of "Nefnifall þar sem á að beygja" —
+     the dictionary form copied off the card where a finite form was asked. */
+  { id: "sogn_obeygd", ok: "að beygja sögnina", nm: "Sögnin ekki beygð",
+    rule: "Sögnin á spjaldinu eða í orðabókinni stendur í **nafnhætti** (*hlaupa, klæðast*). Í setningunni lagar hún sig að frumlaginu og tíðinni — beygðu hana áður en þú skrifar hana: *ég hleyp, hún hljóp*.",
+    lesson: "persona-tala", tags: ["verb:agree"], types: ["verb", "verbslot", "tbl_so", "smidja"] },
   { id: "tid", ok: "tíð sagna", nm: "Tíð sagnar",
     rule: "Lestu hvaða tíð er beðið um. **Nútíð**: *ég fer*. **Þátíð**: *ég fór*. Í gær → þátíð; á morgun → oftast nútíð.",
     lesson: "tid", tags: ["verb:tense"], types: ["verb", "verbslot", "tbl_so", "umritun"] },
@@ -88,7 +93,7 @@ export const PATTERNS = [
     rule: "**Viðtengingarháttur** lýsir því sem er óvisst, ósk eða skilyrði: *ef ég væri, hún sagði að hann kæmi*. **Framsöguháttur** segir frá: *ég er, hann kom*.",
     lesson: "hattur", tags: ["verb:vh"], types: ["verb", "verbslot", "parse", "revform"] },
   { id: "mynd", ok: "germynd og miðmynd", nm: "Germynd og miðmynd",
-    rule: "**Miðmynd** endar á *-st*: *hlakka – hlakkast*, *klæða – klæðast*, *gleðja – gleðjast*. Germynd hefur enga -st endingu.",
+    rule: "**Miðmynd** endar á *-st*: *klæða – klæðast*, *gleðja – gleðjast*, *sjá – sjást*. Germynd hefur enga -st endingu.",
     lesson: "mynd", tags: ["verb:mm"], types: ["verb", "verbslot", "parse", "revform"] },
   { id: "sterk_veik_sogn", ok: "þátíð sterkra sagna", nm: "Sterk sögn beygð eins og veik",
     rule: "Sterkar sagnir fá **enga** endingu -aði, -ði eða -ti í þátíð; þær skipta um sérhljóð: *bíta – beit*, *hlaupa – hljóp*, *gefa – gaf*. Lærðu kennimyndirnar.",
@@ -105,6 +110,20 @@ export const PATTERNS = [
   { id: "stafsetning", ok: "stafsetningu", nm: "Stafsetning",
     rule: "Einn stafur var rangur, of mikið eða vantaði — í stofninum, ekki í endingunni (*villtuð*, ekki *viltuð*). Beygingin var rétt; lestu svarið yfir áður en þú sendir það.",
     lesson: null, tags: ["form"], types: FORM_TYPES },
+  /* v6.13 (critique 32): three spelling patterns of their own. Each is a word
+     inflected right and spelt wrong in one known way, so it is told apart
+     from "Stafsetning" (any one-letter slip) and, above all, from the vowel
+     and ending patterns it used to be filed under: *firir* is not a vowel
+     change, *kalladi* is not a wrong ending. */
+  { id: "y_i", ok: "y, ý og ey", nm: "y, ý og ey",
+    rule: "*y, ý* og *ey* hljóma eins og *i, í* og *ei*. Leitaðu að skyldu orði: ef þar er *u, o, ú, jú, jó* eða *au* er skrifað **y, ý** eða **ey**: *fullur – fylla, hús – hýsa, ljós – lýsa, hlaupa – hleypur*. Sum orð þarf bara að læra: *fyrir, yfir*.",
+    lesson: null, tags: ["form"], types: FORM_TYPES },
+  { id: "n_nn", ok: "n og nn", nm: "n eða nn",
+    rule: "Greinirinn hefur **tvö n** í nefnifalli og þolfalli eintölu í karlkyni (*hesturinn, hestinn*) en **eitt n** í nefnifalli eintölu í kvenkyni (*bókin, konan*). Hvorugkynið hefur *-ið* (*barnið*).",
+    lesson: "greinir", tags: ["form"], types: FORM_TYPES },
+  { id: "dh_d", ok: "ð og d", nm: "ð eða d",
+    rule: "Í þátíð veikra sagna: **-ði** á eftir sérhljóði og *r, f, g* (*náði, heyrði, hafði, sagði*), **-di** oftast á eftir *l, m, n* (*taldi, dæmdi, kenndi*), **-ti** á eftir *p, t, k, s* (*keypti, mætti, vakti, kyssti*). *-aði* er alltaf með ð (*kallaði*). Segðu orðið upphátt: **ð** er mjúkt, **d** er hart.",
+    lesson: "sterkar-veikar", tags: ["form"], types: FORM_TYPES },
   { id: "ordflokkur", ok: "orðflokka", nm: "Orðflokkar ruglast",
     rule: "Spurðu hvað orðið gerir: nafnorð nefnir, lýsingarorð lýsir og stigbreytist, sögn segir hvað gerist, fornafn kemur í stað nafnorðs.",
     lesson: "ordflokkar", tags: ["ofl"], types: ["parse", "indecl", "gr_smella", "gr_flokka", "ob_smella", "ob_flokka"] },
@@ -118,7 +137,7 @@ export const PATTERNS = [
     rule: "Aðalsetning getur staðið ein. Aukasetning hefst oftast á samtengingu (*að, sem, þegar, ef*) og er liður í annarri setningu.",
     lesson: "setningagerdir", tags: ["clause"], types: ["clause", "gerd_finna", "gerd_upphaf"] },
   { id: "v2", ok: "orðaröð: sögnin í öðru sæti", nm: "Sögnin í öðru sæti",
-    rule: "Í íslenskri aðalsetningu er sögnin alltaf **annar liður**: *Í gær **fór** ég* — ekki *Í gær ég fór*.",
+    rule: "Í íslenskri fullyrðingarsetningu er sögnin **annar liður**: *Í gær **fór** ég* — ekki *Í gær ég fór*.",
     lesson: "malbeiting", tags: ["v2"], types: ["umritun"] },
   { id: "tholmynd", ok: "þolmynd", nm: "Þolmynd",
     rule: "Andlagið verður frumlag, *vera* tekur tíðina og lýsingarhátturinn lagar sig að nýja frumlaginu: *Amma bakaði kökuna* → *Kakan var bökuð*.",
@@ -148,6 +167,15 @@ export const PATTERNS = [
   { id: "ordmyndun", ok: "orðmyndun", nm: "Orðmyndun",
     rule: "Forskeyti og viðskeyti breyta orðum: *ó-* snýr merkingunni við (*heppinn – óheppinn*), *-ari* er sá sem gerir (*kenna – kennari*), *-ing/-un* gera nafnorð úr sögn (*æfa – æfing*).",
     lesson: "ordafordi", tags: ["wordform"], types: ["or_myndun"] },
+  /* v6.13 (critique 31): not an error of the child's but a count of the
+     classifier's blind spot. A wrong answer nothing above could read is
+     written here and NOWHERE else — before, it counted as a success for every
+     pattern the question tested. `n` is every wrong answer, `w` the ones left
+     unread, so the rate is the share of misses the diagnosis cannot explain.
+     `meta`: no question tests it, it is never "active", nothing practises it. */
+  { id: "ogreint", ok: "", nm: "Ógreint",
+    rule: "Svarið var rangt en villugreiningin kunni ekki að flokka villuna. Talan sýnir hve oft það gerist — þetta er ekki villa sem þú þarft að æfa sérstaklega.",
+    lesson: null, tags: [], types: [], meta: true },
 ];
 
 const BY_ID = new Map(PATTERNS.map((p) => [p.id, p]));
@@ -283,11 +311,21 @@ export function markDiff(target, other) {
 export function patternsForCells(target, others) {
   if (!target || !others || !others.length) return [];
   /* A form usually belongs to several cells; the nearest reading is the one
-     the child most likely meant. */
+     the child most likely meant. On a tie, a dative target prefers the
+     accusative reading (v6.13, critique 33): *barn* for *barni* is both
+     nominative and accusative, and the error teachers see there is the
+     accusative and dative confused, not a word left in the nominative. */
+  const tgtCase = caseKey(readMark(target).fall);
+  const pref = (m) => (tgtCase === "ÞGF" && caseKey(readMark(m).fall) === "ÞF" ? 0 : 1);
   const best = others.map((m) => ({ m, d: markDiff(target, m) }))
-    .filter((x) => x.d.length).sort((x, y) => x.d.length - y.d.length)[0];
+    .filter((x) => x.d.length).sort((x, y) => x.d.length - y.d.length || pref(x.m) - pref(y.m))[0];
   if (!best) return [];
   const a = readMark(target), b = readMark(best.m);
+  /* v6.13 (critique 34): the infinitive — the form on the card — typed where
+     a finite verb was asked is one error, "not inflected", not a wrong person
+     plus a wrong tense. *hlaupa* for *hljóp*. */
+  const inf = others.find((m) => /(^|-)NH$/.test(m));
+  if (inf && FINITE.has(a.háttur)) return [{ p: "sogn_obeygd", other: inf }];
   const out = [];
   for (const f of best.d) {
     if (f === "fall") out.push(casePattern(a.fall, b.fall));
@@ -306,8 +344,31 @@ export function patternsForCells(target, others) {
   return [...new Set(out.filter(Boolean))].slice(0, 2).map((p) => ({ p, other: best.m }));
 }
 
+const FINITE = new Set(["framsöguháttur", "viðtengingarháttur", "boðháttur"]);
+
 const VOWELS = /[aáeéiíoóuúyýæö]/g;
-const WEAK_PAST = /(aði|aðir|uðu|uð|aðist|uðust|ði|ðir|ðu|ðist|ðust|di|dir|du|dist|dust|ti|tir|tu|tist|tust)$/;
+/* The endings of the weak past, every person and number, active and middle:
+   -aði/-ði/-di/-ti and their plurals. Until v6.13 the plural persons were
+   missing (*-uðum, -uðuð, -ðum, -dum, -tum* …), so a regularised strong past
+   like *ganguðum* or *hefjuðuð* got no diagnosis at all (critique 8). The
+   regex finds the LONGEST weak ending at the end of a word: the engine tries
+   the earliest start first. */
+const WEAK_PAST = new RegExp("(" + [
+  "aði", "aðir", "aðist",
+  "uðu", "uðum", "uðuð", "uðust", "uðumst", "uð",
+  "ði", "ðir", "ðist", "ðu", "ðum", "ðuð", "ðust", "ðumst",
+  "di", "dir", "dist", "du", "dum", "duð", "dust", "dumst",
+  "ti", "tir", "tist", "tu", "tum", "tuð", "tust", "tumst",
+].join("|") + ")$");
+
+/* Vowel pairs that alternate inside a stem by i- or u-umlaut (hljóðvarp):
+   *barn – börn, kennari – kennurum, bók – bækur, koma – kemur, sonur –
+   synir, hús – hýsa, köttur – ketti, hlaupa – hleypur*. Used to tell a
+   vowel change in the stem from a wrong vowel in an ending (*börninum* for
+   *börnunum* is the ending). Ablaut (*bíta – beit, finna – fundum*) is in the
+   root syllable, which `vowelChange` accepts whatever the pair. */
+const UMLAUT = new Set(["a|ö", "a|u", "a|e", "á|æ", "o|e", "ó|æ", "o|y", "u|y", "ú|ý", "ö|e", "au|ey"]
+  .flatMap((x) => { const [p, q] = x.split("|"); return [`${p}|${q}`, `${q}|${p}`]; }));
 
 const commonPrefix = (a, b) => { let i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++; return i; };
 
@@ -331,13 +392,78 @@ export function patternsForForm(typed, accepted, target, conj = null) {
   if (!w) return [];
   const r = right.split(" ").pop();
   if (w === r) return [];
-  const a = readMark(target || "");
-  if (conj === "sterk" && a.tíð === "þátíð" && WEAK_PAST.test(w) && !WEAK_PAST.test(r)) return ["sterk_veik_sogn"];
+  if (strongMadeWeak(w, r, target, conj)) return ["sterk_veik_sogn"];
+  /* v6.13 (critique 32): the spelling patterns come before the vowel test,
+     which would otherwise read *firir* as a vowel change. */
+  const sp = spellingPattern(w, r);
+  if (sp) return [sp];
   const skel = (x) => x.replace(VOWELS, "");
   const first = commonPrefix(w, r);
-  if (skel(w) === skel(r) && first < Math.max(2, r.length - 3)) return ["hljodvarp"];
+  if (skel(w) === skel(r) && first < Math.max(2, r.length - 3) && vowelChange(w, r)) return ["hljodvarp"];
   if (first >= 2 && r.length - first <= 5 && Math.abs(w.length - r.length) <= 4) return ["ending"];
   return [];
+}
+
+/**
+ * A strong verb's past given a weak ending — one the right form does not
+ * itself end in (*sátum* ends in -tum and is strong; *sitjuðum* or *sittum*
+ * for it is not), or one that adds a syllable (*bjóðuðum* for *buðum*, whose
+ * stem happens to end in ð). Checked before the spelling patterns, so
+ * *gengdum* for *gengum* is the strong verb made weak, not a letter too many.
+ */
+function strongMadeWeak(w, r, target, conj) {
+  if (conj !== "sterk" || readMark(target || "").tíð !== "þátíð") return false;
+  /* Only the vowels differ (*staði* for *stæði*): a vowel error, not a
+     weak ending. */
+  if (w.replace(VOWELS, "") === r.replace(VOWELS, "")) return false;
+  const weak = WEAK_PAST.exec(w);
+  return !!weak && (!r.endsWith(weak[1]) || w.length - r.length >= 2);
+}
+
+/**
+ * Is the difference between two words with the same consonants a vowel
+ * change in the stem? Yes if it falls in the first vowel group (the root:
+ * *bókur/bækur*, *tók/taka*), or if every vowel that differs is an umlaut
+ * pair (*kennarum/kennurum*). No for *börninum/börnunum*: *i/u* in the
+ * second syllable is the article's ending, not hljóðvarp (critique 32).
+ */
+export function vowelChange(w, r) {
+  /* One vowel letter is one group, but for the diphthongs au, ei, ey:
+     *sjóunum* is ó-u-u, so *sjóinum* differs in the ending, not the root. */
+  const groups = (x) => x.match(/au|ei|ey|[aáeéiíoóuúyýæö]/g) || [];
+  const gw = groups(w), gr = groups(r);
+  if (gw.length !== gr.length) return false;
+  const diff = gr.map((g, k) => (g === gw[k] ? null : k)).filter((k) => k !== null);
+  if (!diff.length) return false;
+  if (diff.every((k) => k === 0)) return true;
+  return diff.every((k) => UMLAUT.has(`${gw[k]}|${gr[k]}`));
+}
+
+/* The letters each spelling pattern swaps: i/í for y/ý (ei for ey follows),
+   ð for d. */
+const Y_I = { i: "y", í: "ý", y: "i", ý: "í" };
+const sameBut = (w, r, ok) => w.length === r.length && w !== r &&
+  [...w].every((c, k) => c === r[k] || ok(c, r[k]));
+
+/**
+ * A known spelling error, not an inflection error (v6.13, critique 32):
+ *   y_i   only i ↔ y and í ↔ ý differ (*firir, lísa, heira*)
+ *   dh_d  only ð ↔ d differ (*kalladi, dæmði*)
+ *   n_nn  one n doubled or undoubled (*hestin, konann*)
+ *   stafsetning  any other one-letter slip (see `spellingSlip`)
+ * or null. Both words are single, normalised forms.
+ */
+export function spellingPattern(w, r) {
+  w = normalise(w); r = normalise(r);
+  if (!w || !r || w === r || w.includes(" ") || r.includes(" ")) return null;
+  if (sameBut(w, r, (c, d) => Y_I[c] && (Y_I[c] === d || stripAccents(Y_I[c]) === stripAccents(d)))) return "y_i";
+  if (sameBut(w, r, (c, d) => (c === "ð" && d === "d") || (c === "d" && d === "ð"))) return "dh_d";
+  if (Math.abs(w.length - r.length) === 1) {
+    const [long, short] = w.length > r.length ? [w, r] : [r, w];
+    const p = commonPrefix(long, short);
+    if (long[p] === "n" && (long[p - 1] === "n" || long[p + 1] === "n") && long.slice(p + 1) === short.slice(p)) return "n_nn";
+  }
+  return spellingSlip(w, r) ? "stafsetning" : null;
 }
 
 const VOWEL1 = /^[aáeéiíoóuúyýæö]$/;
@@ -379,8 +505,15 @@ function formItem(it) {
   if (g.verdict === "accents") return [{ p: "broddar", soft: true, ex }];
   if (g.verdict === "otherform")
     return patternsForCells(m, g.otherMarks).map((x) => ({ ...x, ex, m }));
-  if (g.verdict === "wrong" && [].concat(accepted || []).some((a) => spellingSlip(typed, a)))
-    return [{ p: "stafsetning", ex, m }];
+  if (g.verdict === "wrong") {
+    const r0 = normalise([].concat(accepted || [])[0] || "").split(" ").pop();
+    if (strongMadeWeak(nearest(typed, r0) || "", r0, m, conj)) return [{ p: "sterk_veik_sogn", ex, m }];
+    /* Against every accepted form, not only the first. */
+    for (const a of [].concat(accepted || [])) {
+      const sp = spellingPattern(nearest(typed, a) || "", a);
+      if (sp) return [{ p: sp, ex, m }];
+    }
+  }
   return patternsForForm(typed, accepted, m, conj).map((p) => ({ p, ex, m }));
 }
 
@@ -497,6 +630,7 @@ export function diagnose(task, resp) {
 
 export const HISTORY = 16;      // hits and misses kept per pattern
 const EXAMPLES = 3;
+export const UNREAD = "ogreint";
 
 /**
  * Write one answer into `S.diag`. Every pattern the question tested gets a
@@ -504,12 +638,30 @@ const EXAMPLES = 3;
  * wrong); every pattern found gets a miss (`w`). A soft finding (a missing
  * accent on an answer accepted as right) counts as a miss of its own
  * pattern and nothing else. `verdict` is the question's: true, false or null.
+ *
+ * v6.13 (critique 31): a WRONG answer with no real finding says nothing
+ * about the patterns the question tested — the child got something wrong
+ * that the classifier could not read, and that is not a success for each of
+ * them. Nothing is written to them; the miss is counted under "ogreint"
+ * instead. Every wrong answer is a chance for "ogreint", so its rate is the
+ * share of wrong answers left unread. Returns the patterns the question
+ * tested and that were written — never "ogreint", which belongs to no
+ * session report.
  */
 export function noteDiagnosis(S, task, findings, verdict, today) {
   if (verdict !== true && verdict !== false) return [];
   const book = (S.diag ||= {});
   const missed = new Set(findings.map((f) => f.p));
-  const chances = new Set([...chancesIn(task), ...missed]);
+  const unread = verdict === false && !findings.some((f) => !f.soft);
+  if (verdict === false) {
+    const r = (book[UNREAD] ||= { n: 0, w: 0, h: "", last: null, ex: [] });
+    r.n++;
+    if (unread) { r.w++; r.last = today || r.last; }
+    r.h = ((r.h || "") + (unread ? "0" : "1")).slice(-HISTORY);
+  }
+  /* Unread: only what was found (a soft accent miss) is written. */
+  const chances = new Set(unread ? [...missed] : [...chancesIn(task), ...missed]);
+  chances.delete(UNREAD);
   for (const id of chances) {
     if (!BY_ID.has(id)) continue;
     const r = (book[id] ||= { n: 0, w: 0, h: "", last: null, ex: [] });
@@ -529,6 +681,32 @@ export function noteDiagnosis(S, task, findings, verdict, today) {
   return [...chances].filter((id) => BY_ID.has(id));
 }
 
+/* When is a pattern "active"? (v6.13, critique 35.) Until v6.12: two misses
+   in the window and a rate of at least one in five — so two slips in ten
+   questions flagged a pattern. Now the window needs at least MIN_CHANCES
+   answers, and the LOWER bound of the miss rate must clear ACTIVE_RATE: we
+   want to be fairly sure the child misses it at least one time in five, not
+   merely that they did so lately.
+
+   The bound is Wilson's score interval, one-sided at 95 % (z = 1.645). It is
+   the usual choice for a proportion from few trials: unlike the plain
+   p ± z·√(p(1−p)/n) it stays inside 0…1 and does not collapse to zero width
+   at 0 or n misses. What it asks for in practice (window of 16 at most):
+       5 answers → 3 misses     8 answers → 4     12 answers → 5     16 → 6
+   Two slips are never enough on their own. */
+export const MIN_CHANCES = 5;
+export const ACTIVE_RATE = 0.2;
+const Z = 1.645;
+
+/** Lower bound of the Wilson score interval for k misses in n answers. */
+export function wilsonLower(k, n, z = Z) {
+  if (!n) return 0;
+  const p = k / n, z2 = z * z;
+  const centre = p + z2 / (2 * n);
+  const margin = z * Math.sqrt((p * (1 - p)) / n + z2 / (4 * n * n));
+  return Math.max(0, (centre - margin) / (1 + z2 / n));
+}
+
 /** How a pattern stands: totals, the recent window and the direction. */
 export function standingOf(rec) {
   const h = (rec && rec.h) || "";
@@ -544,18 +722,24 @@ export function standingOf(rec) {
   return {
     n: (rec && rec.n) || 0, w: (rec && rec.w) || 0,
     seen: h.length, misses, rate, trend,
-    /* Active: missed at least twice lately, and at least one time in five. */
-    active: misses >= 2 && rate >= 0.2,
+    /* Active: enough answers lately, and a miss rate we are fairly sure
+       is at least one in five (see MIN_CHANCES above). */
+    active: h.length >= MIN_CHANCES && wilsonLower(misses, h.length) > ACTIVE_RATE,
     score: misses * 2 + Math.min(10, ((rec && rec.w) || 0) * 0.2) + rate * 4,
   };
 }
 
-/** Every pattern this child has met, worst first. */
+/** Every pattern this child has met, worst first; "Ógreint" (a count, not
+    an error of the child's) last, and never active. */
 export function standings(S) {
   return Object.entries((S && S.diag) || {})
     .filter(([id]) => BY_ID.has(id))
-    .map(([id, rec]) => ({ id, ...BY_ID.get(id), ...standingOf(rec), ex: rec.ex || [] }))
-    .sort((a, b) => b.score - a.score);
+    .map(([id, rec]) => {
+      const p = { id, ...BY_ID.get(id), ...standingOf(rec), ex: rec.ex || [] };
+      if (p.meta) p.active = false;
+      return p;
+    })
+    .sort((a, b) => (a.meta ? 1 : 0) - (b.meta ? 1 : 0) || b.score - a.score);
 }
 
 /** The patterns that are going wrong now, worst first (at most `limit`). */
@@ -595,6 +779,9 @@ export function pickTargeted(next, ids, { p = 0.4, tries = 5, rnd = Math.random 
 
 /* ---------- one session ---------------------------------------------------- */
 
+const NO_PRAISE = new Set(["broddar", "stafsetning", "y_i", "n_nn", "dh_d", "hljodvarp", "ending",
+  "nf_aukafall", "sogn_obeygd", "fall_annad", "ofleidretting", UNREAD]);
+
 /**
  * The report on a finished session. `run` is app.js's record of it:
  * { chances: {id: n}, misses: {id: n}, found: [{p, ex}] , before: [ids] }.
@@ -613,10 +800,11 @@ export function runReport(run, S, only = null) {
      and did not go wrong once. */
   const mended = (run.before || []).filter((id) => (chances[id] || 0) >= 2 && !misses[id])
     .map((id) => ({ id, ...BY_ID.get(id), chances: chances[id] }));
-  /* Clean: tested at least three times in the session without a miss. */
+  /* Clean: tested at least three times in the session without a miss.
+     Not the catch-alls and slips, which every written form "tests" — no
+     "Rétt í öllu um y, ý og ey" after ten nouns without a y (v6.13). */
   const clean = Object.keys(chances).filter((id) => BY_ID.has(id) && chances[id] >= 3 && !misses[id]
-    && !mended.some((m) => m.id === id) &&
-    !["broddar", "stafsetning", "hljodvarp", "ending", "nf_aukafall", "fall_annad", "ofleidretting"].includes(id))
+    && !mended.some((m) => m.id === id) && !NO_PRAISE.has(id))
     .map((id) => ({ id, ...BY_ID.get(id), chances: chances[id] }))
     .sort((a, b) => b.chances - a.chances);
   /* The one thing to remember: the worst real (not soft) pattern of the
