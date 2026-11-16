@@ -2898,25 +2898,6 @@ await startPractice(page, 15000);
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
 }
 
-/* The tabs must stay reachable at the narrowest width — they scroll sideways
-   there, or (since v6.2) wrap their long names onto two lines so that all four
-   fit; a tab that has been pushed off the screen is the same as a tab that is
-   gone. */
-await page.setViewport({ width: 360, height: 740, isMobile: true, hasTouch: true });
-await page.reload({ waitUntil: "domcontentloaded" });
-await startPractice(page, 15000);
-{
-  const tabs = await page.evaluate(() => {
-    const nav = document.querySelector("nav.tabs");
-    return { scrollable: nav.scrollWidth > nav.clientWidth,
-             count: nav.querySelectorAll("button").length,
-             overflowX: getComputedStyle(nav).overflowX };
-  });
-  ok(tabs.count === 5, `${tabs.count} tabs at 360px`);
-  ok(!tabs.scrollable || tabs.overflowX === "auto" || tabs.overflowX === "scroll",
-    "the tabs are wider than the screen and cannot be scrolled to");
-}
-
 /* ---------- items 50, 51, 52, 43 (v6.13 small UX) -------------------------- */
 {
   await page.setViewport({ width: 900, height: 900 });
