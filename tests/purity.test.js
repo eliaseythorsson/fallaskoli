@@ -285,7 +285,7 @@ test("candidates that are thrown away use nothing up (the session as app.pickTas
   const ids = ["merking", "ef", "thf_thgf"];
   let shown = 0, candidates = 0;
   const shownKeys = [];
-  for (let q = 0; q < 150; q++) {
+  for (let q = 0; q < 300; q++) {
     const v = view(p, { inRun: true });
     const effects = new Map();
     const t = pickTargeted(() => {

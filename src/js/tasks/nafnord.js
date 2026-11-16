@@ -28,7 +28,7 @@ export function taskFill(lex, view, rng) {
   const pDem = Math.min(0.45, 0.25 + 0.05 * (diffOf(sess, "nafnord") - 1));
 
   const P = view.policy;
-  const task = nounCloze(lex, view, rng, { noun: view.forcedNoun });
+  const task = nounCloze(lex, view, rng, { noun: view.forcedNoun, balanced: true });
   if (!task) return null;
   const { s, n, a } = task;
   const t = s.tok[s.slot];
