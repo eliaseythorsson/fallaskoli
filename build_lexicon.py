@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Generate the app lexicon straight out of BÍN. No hand entry, no CSV."""
 from islenska import Bin
-import json, collections, os, vocab_filter as vf
+import json, collections, os, vocab_filter as vf, adj_classes
 b=Bin()
 freq=json.load(open('freq_lemmas.json'))
 # [lemma, class, corpus score, rank key]; the file is in rank-key order (build_freq.py)
@@ -239,6 +239,22 @@ W+=extra
 print('homograph additions:',len(extra),
       [f"{x['o']}·{x['c']}" for x in extra[:12]])
 print('  rejected by filters 1-2:',len(skipped),skipped[:10])
+
+# Comparison. BÍN lists a miðstig and an efsta stig for nearly every adjective,
+# mechanically: *velkomnari*, *dauðastur*, *breskari*, *óléttust*. The ones
+# nobody uses (adj_classes.NO_COMPARE — the rule is at the top of that file)
+# are taken out of the paradigm here, at the source, so that no table,
+# analysis question, cloze or review can show one: a cell that is empty is a
+# cell the app does not have. The positive degree is untouched.
+_lo=ORDERS['lo']
+_stripped=[]
+for x in W:
+    if x['c']!='lo' or adj_classes.compares(x['o']): continue
+    cells=x['f'].split(';')
+    kept=[('' if m[:3] in ('MST','ESB','EVB') else c) for m,c in zip(_lo,cells)]
+    if kept!=cells:
+        x['f']=';'.join(kept); _stripped.append(x['o'])
+print('  adjectives shown in the positive degree only:',len(_stripped))
 
 data={'v':5,'src':'BÍN via BinPackage; tíðni úr OpenSubtitles-lista','orders':ORDERS,'w':W}
 json.dump(data,open('lexicon.json','w'),ensure_ascii=False,separators=(',',':'))

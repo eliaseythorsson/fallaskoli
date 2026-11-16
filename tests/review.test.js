@@ -34,6 +34,7 @@ import {
 } from "../src/js/core/review.js";
 import { TASKS, typeById, nextTask, makeView, withView, applyEffects,
   reviewTask, planOpening, nextOpening, scheduleReask, nextReask } from "../src/js/tasks/index.js";
+import { substitutable, acceptsNoun, repeatsNoun } from "../src/js/tasks/frames.js";
 
 const lex = buildLexicon(DATA);
 const D0 = "2026-11-16";
@@ -626,7 +627,13 @@ test("item 19: after a wrong cloze the noun is not the next question; it comes b
   assert.equal(reaskAt(9, 10, () => 0), null);
 
   /* in sessions: miss the first plain cloze that comes, answer everything else right */
-  let checked = 0;
+  let checked = 0, sameCell = 0;
+  /* Can some other sentence show this noun in this cell? */
+  const elsewhere = (n, cell, not) => lex.sentences.some((s) => s.t !== not && s.slot != null && !s.nf
+    && s.tok[s.slot].m === cell
+    && (substitutable(s)
+      ? acceptsNoun({ rk: s.rk, need: s.need, ps: s.ps || null }, n, cell) && !repeatsNoun(s, s.slot, n)
+      : s.tok[s.slot].l === n.o));
   for (let seed = 0; seed < 30; seed++) {
     const p = pupil(3);
     let missed = null;
@@ -645,7 +652,15 @@ test("item 19: after a wrong cloze the noun is not the next question; it comes b
     const gap = back[0].i - missed.i;
     assert.ok(gap >= 3 && gap <= 5, `came back after ${gap}`);
     assert.equal(back[0].t.word, missed.t.word, "the same noun");
-    assert.equal(back[0].t.cell, missed.t.cell, "in the cell that was missed");
+    /* In the cell that was missed — where another sentence can show the noun
+       in it. Where none can, the same noun in another cell (tasks/review.js
+       nextReask). Since v6.13 (item 30) that happens: the genitive plural of
+       a time word had "Þetta gengur ekki án ___" as its second sentence, and
+       "án mánaða" is not asked any more. */
+    if (elsewhere(missed.t.n, missed.t.cell, missed.t.s.t)) {
+      sameCell++;
+      assert.equal(back[0].t.cell, missed.t.cell, "in the cell that was missed");
+    }
     assert.notEqual(back[0].t.s.t, missed.t.s.t, "in another sentence");
     assert.equal(back[0].t.review, undefined, "the repeat within a session is not the review");
     /* …and once more through the queue the next day: the right answer the
@@ -657,6 +672,7 @@ test("item 19: after a wrong cloze the noun is not the next question; it comes b
     assert.equal(tomorrow[0].t.word, missed.t.word);
   }
   assert.ok(checked >= 15, `too few sessions to say anything (${checked})`);
+  assert.ok(sameCell >= checked - 3, `the same cell is the rule, another cell the exception (${sameCell} of ${checked})`);
 });
 
 test("item 19: the renderer no longer makes the missed noun the next question", () => {
