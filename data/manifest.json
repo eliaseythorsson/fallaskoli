@@ -17,18 +17,19 @@
   "parse_guard.py": "9eb26f6b3760b1a57a0061bdd65f116564b94d1d3fd5732b9c8b3704659f9a49",
   "parse_overrides.py": "8c247a4c2379695f21114ad2c37a4dfa1a853616787e473d976d761dbdfad03d",
   "build_freq.py": "d3e2833570d0b0e71e1aae04c09d60b8bcf30db4a75a7242c3bcbd770015df1a",
-  "build_lexicon.py": "62a9bcb00171ade26e291e0c38f238f33e45415af54cd008b9e8d47c77e0582d",
+  "build_lexicon.py": "0d094c953b2276dc79cb48820e84c0fefcb5df362cf0b56a4ec9ecec7fe9f953",
   "build_sentences.py": "5ff95c7fed3b0dc3da9b5f504f3705ee73d2ec7e165a61d660b20dbf744f6bc4",
   "build_bundle.py": "8ec95b4875a3bc91c93e388deb74f57bf5068fcd9f6f5ddfee4485afd38f6ccd",
+  "irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
   "exercises.py": "33b2c4141a760ab9ec36aa7b6e5a9c04de44ecea8f436cdb547e934b7a2c5b16",
   "build_exercises.py": "f95de72a7d97fe0786f61665f9b1faecde7f4b136b903fc021b3fcaed3998213",
   "adj_classes.py": "c99fa73e57f52d16a55c4cc573e8413a65f7434de5bb36f4ea2d2bd5ae205e7a"
  },
  "artifacts": {
   "freq_lemmas.json": "80f109d6d6ce4b1131a525f035dbc0d30361984f711a90bc109a38a7be9ac5fe",
-  "lexicon.json": "d4de71f3bb187314ab6914d53bbe496e865f24ef8f636f92891e4ab6ff091445",
+  "lexicon.json": "1b5f894f9653049bee64263517480b50ca386153a282f3ebe8185c904b71ca7d",
   "sentences.json": "7358f434ba675204db13c5f01d47e5f839584fe2c45fd89aa2fce7783b82338d",
-  "data/data_bundle.js": "7758fc6ebe83268df78cdaf6e64a8d533332cbca0cd53f8a8acbdc2b4fefddbd",
+  "data/data_bundle.js": "80d2363c6dd4aa7736fc5786e4d68f924290f66052a34f858c910cb3df041a0e",
   "data/exercises.js": "dd0b49f56451fcca8ca151d7ed17cbe7c0adb9eb9a65bc2d4116535edf3020bf"
  },
  "counts": {
