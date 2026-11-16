@@ -13,6 +13,7 @@ import { existsSync } from "node:fs";
 import { QUESTION_TYPES } from "../src/js/core/policy.js";
 import { lessonPractice } from "../src/js/core/lessons.js";
 import { EXAMPLES } from "../src/js/content/examples.js";
+import { NODES } from "../src/js/core/curriculum.js";
 const EXAMPLE_TYPES = new Set(Object.keys(EXAMPLES));
 const QT_COUNT = QUESTION_TYPES.length;
 
@@ -3025,12 +3026,14 @@ await page.setViewport({ width: 1100, height: 900 });
 
   /* 44: the mastery mark beside every category's stig. */
   await page.evaluate(() => window.FALLASKOLI.openView("progress"));
-  const marks = await page.evaluate(() => [...document.querySelectorAll("#skillgrid .skillcard")].map((c) => ({
+  /* Since item 83 the category's card is the head of its trail on the skill map. */
+  await page.evaluate(() => document.querySelector('button[data-pane="stats"]').click());
+  const marks = await page.evaluate(() => [...document.querySelectorAll("#skillmap .smlane:not(.planned)")].map((c) => ({
     skill: c.dataset.skill, level: Number(c.dataset.mastery),
-    mark: c.querySelector(".sklvl .mastery b")?.innerText || "", line: c.querySelector(".mline")?.innerText || "",
-    pips: c.querySelectorAll(".mastery .mpips i").length,
+    mark: c.querySelector(".smmark .mastery b")?.innerText || "", line: c.querySelector(".mline")?.innerText || "",
+    pips: c.querySelectorAll(".mastery .mpips i").length, stig: c.querySelector(".smstig")?.innerText || "",
   })));
-  ok(marks.length === 12 && marks.every((m) => m.mark && m.line && m.pips === 4 && m.level >= 0 && m.level <= 4),
+  ok(marks.length === 12 && marks.every((m) => m.mark && m.line && m.pips === 4 && m.level >= 0 && m.level <= 4 && /^Stig \d+$/.test(m.stig)),
     `every category should carry a mastery mark beside its stig: ${JSON.stringify(marks.slice(0, 3))}`);
   const no = marks.find((m) => m.skill === "nafnord");
   ok(no && /rétt á þyngd|svör á þyngd|vantar/.test(no.line), `Nafnorð's mark does not say what it rests on: ${JSON.stringify(no)}`);
@@ -3059,6 +3062,195 @@ await page.setViewport({ width: 1100, height: 900 });
   ok(st.marked.every((b) => b == null), "a question was marked for counting with no server: " + st.marked);
   ok(st.queued === 0, "answers were queued for a server that does not exist");
   ok(st.adjusted === 0, `${st.adjusted} words carry a calibrated score with no server`);
+  await page.close();
+}
+
+/* ---------- item 83: the skill map ------------------------------------------
+ * Framvinda is one map: a ring per curriculum node under its category and
+ * year, locked where no question asks the material yet. It must fit a 390 px
+ * phone and a desktop without sideways scrolling; a ring opens the node; and
+ * the node's button starts a session of exactly the node's question types.
+ * The four panels the map replaced are gone. */
+{
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess && window.FALLASKOLI.lex", { timeout: 15000 });
+  const REVIEW = "c:fill|ÞGFFT|hestur|kk";
+  /* This block has a page of its own, so its own real click (see `tap`). */
+  const tap = async (selector) => {
+    const box = await page.evaluate((sel) => {
+      const el = document.querySelector(sel);
+      if (!el) return null;
+      el.scrollIntoView({ block: "center" });
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }, selector);
+    if (!box) { ok(false, `nothing to click at ${selector}`); return; }
+    await page.mouse.click(box.x, box.y);
+  };
+  const dismissModalsOn = async (pg) => {
+    for (let i = 0; i < 80 && (await pg.$(".scrim")); i++) {
+      await pg.evaluate(() => { const b = document.getElementById("badgeok"); if (b) b.click(); });
+      await new Promise((r) => setTimeout(r, 30));
+    }
+  };
+  /* A pupil with a little history: Föllin fjögur answered three days ago,
+     þolfall/þágufall going wrong, one review due there; and a past-tense
+     record for the node that is one feature of the verb types. */
+  await page.evaluate((key) => {
+    const A = window.FALLASKOLI, S = A.S;
+    const day = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+    const today = day(Date.now()), at = Date.now() - 3 * 86400000;
+    S.byType.fill = { n: 12, c: 7, h: "AAaAaAaAAaAa", at };
+    S.byNode["so-tid"] = { n: 10, c: 10, h: "AAAAAAAAAA", at: Date.now() };
+    S.diag.thf_thgf = { n: 14, w: 10, h: "0000000000", last: today, ex: [] };
+    S.diag.broddar = { n: 9, w: 3, h: "110110111", last: today, ex: [] };
+    S.cells["ÞGFFT"] = { c: 2, w: 5 }; S.cells.NFET = { c: 9, w: 0 };
+    S.review.items.push({ k: key, t: "fill", sk: "nafnord", p: "thf_thgf", c: "ÞGFFT", w: "hestur|kk", i: null,
+      s: 0, due: today, add: today, last: today, l: 2, ok: 0 });
+    A.openView("progress");
+    document.querySelector('button[data-pane="stats"]').click();
+  }, REVIEW);
+  await page.waitForSelector("#skillmap .smnode", { timeout: 5000 });
+
+  const open = NODES.filter((n) => n.types.length), locked = NODES.filter((n) => !n.types.length);
+  const readMap = () => page.evaluate(() => {
+    const board = document.querySelector("#skillmap .skillboard");
+    const nodes = [...document.querySelectorAll("#skillmap .smtrail .smnode")];
+    const box = (el) => { const r = el.getBoundingClientRect(); return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), r: Math.round(r.right) }; };
+    const foll = document.querySelector('#skillmap .smtrail .smnode[data-node="no-foll"]');
+    return {
+      overflow: document.documentElement.scrollWidth - innerWidth,
+      board: box(board), ids: nodes.map((n) => n.dataset.node),
+      locked: nodes.filter((n) => n.classList.contains("locked")).map((n) => n.dataset.node),
+      unlabelled: nodes.filter((n) => !(n.getAttribute("aria-label") || "").includes(n.querySelector("b").innerText.trim())).length,
+      rings: nodes.filter((n) => !n.querySelector("svg.smring")).length,
+      small: nodes.map(box).filter((b) => b.h < 44).length,
+      outside: nodes.map(box).filter((b) => b.x < 0 || b.r > innerWidth + 1).length,
+      lanes: [...document.querySelectorAll("#skillmap .smlane")].map((l) => box(l).x),
+      years: [...document.querySelectorAll("#skillmap .smyear")].map((y) => y.innerText.trim()),
+      foll: foll && { text: foll.innerText.replace(/\s+/g, " ").trim(), label: foll.getAttribute("aria-label"),
+        flag: foll.querySelector(".smflag")?.innerText.trim() || "", level: foll.dataset.level },
+      tid: document.querySelector('#skillmap .smnode[data-node="so-tid"]')?.dataset.level,
+      next: [...document.querySelectorAll("#skillmap .smnextbtn")].map((b) => b.dataset.node),
+      loose: document.querySelector("#loosepatterns")?.innerText || "",
+      old: ["skillgrid", "diaglist", "heat", "wordlist"].filter((id) => document.getElementById(id)),
+      heads: [...document.querySelectorAll("#pane-stats h2")].map((h) => h.innerText.trim()),
+    };
+  });
+  const m = await readMap();
+  ok(m.overflow <= 1, `the skill map scrolls sideways at 390 px by ${m.overflow}px`);
+  ok(m.board.x >= 0 && m.board.r <= 391, `the board does not fit a 390 px phone: ${JSON.stringify(m.board)}`);
+  ok(JSON.stringify([...m.ids].sort()) === JSON.stringify(NODES.map((n) => n.id).sort()),
+    `the map should draw every curriculum node once: ${m.ids.length} of ${NODES.length}`);
+  ok(JSON.stringify([...m.locked].sort()) === JSON.stringify(locked.map((n) => n.id).sort()),
+    `the locked nodes should be exactly those without questions: ${m.locked}`);
+  ok(m.unlabelled === 0 && m.rings === 0, `${m.unlabelled} nodes without a spoken label, ${m.rings} without a ring`);
+  ok(m.small === 0 && m.outside === 0, `${m.small} nodes are smaller than a finger (44 px), ${m.outside} reach outside the screen`);
+  ok(new Set(m.lanes).size === 1, `on a phone the categories should stack in one column: ${[...new Set(m.lanes)]}`);
+  ok(["8. BEKKUR", "9. BEKKUR", "10. BEKKUR"].every((y) => m.years.some((x) => x.toUpperCase() === y)), `the years are not named on the trails: ${[...new Set(m.years)]}`);
+  ok(m.foll && m.foll.level === "1" && m.foll.flag === "1" && /Þarf æfingu · fyrir 3 dögum/.test(m.foll.text),
+    `Föllin fjögur should show its mark, when it was last trained and one review due: ${JSON.stringify(m.foll)}`);
+  ok(m.foll && /Vald: Þarf æfingu\. Síðast æft fyrir 3 dögum\. Bíður þín: 1 atriði bíður upprifjunar · 1 villumynstur algengt núna\./.test(m.foll.label),
+    `the node's label should say the three facts: ${m.foll && m.foll.label}`);
+  ok(m.tid === "4" || m.tid === "3", `Nútíð og þátíð should read its own record: mark ${m.tid}`);
+  ok(m.next[0] === "no-foll", `"Byrjaðu hér" should name the node with a review due: ${m.next}`);
+  ok(/Broddar|brodd/i.test(m.loose) && !/Þolfall og þágufall/.test(m.loose), `the patterns of no node belong under the map, the others on their nodes: ${m.loose.slice(0, 120)}`);
+  ok(m.old.length === 0 && !m.heads.some((h) => /Styrkleikar|Villumynstur|Hvar liggja|Orð sem þarf/.test(h)),
+    `the panels the map replaced are still there: ${m.old} ${m.heads}`);
+
+  /* A ring opens the node. */
+  await tap('#skillmap .smtrail .smnode[data-node="no-foll"]');
+  await page.waitForSelector('.smpanel[data-panel="no-foll"]', { timeout: 4000 });
+  const panel = await page.evaluate(() => {
+    const p = document.querySelector(".smpanel"), r = p.getBoundingClientRect();
+    return { text: p.innerText.replace(/\s+/g, " "), fits: r.left >= 0 && r.right <= innerWidth + 1,
+      overflow: document.documentElement.scrollWidth - innerWidth,
+      facts: p.querySelectorAll(".smfact").length, rule: !!p.querySelector(".smrule"),
+      patterns: [...p.querySelectorAll(".smpatterns li b")].map((b) => b.innerText),
+      cells: [...p.querySelectorAll(".smcells li b")].map((b) => b.innerText),
+      grid: p.querySelectorAll(".smgrid table.heat td").length,
+      words: [...p.querySelectorAll(".smwords .chip")].map((c) => c.innerText.replace(/\s+/g, " ")),
+      lesson: p.querySelector("[data-lesson]")?.dataset.lesson, go: p.querySelector("[data-nodego]")?.innerText || "",
+      title: document.querySelector(".scrim .sheethead h3")?.innerText || "" };
+  });
+  ok(panel.fits && panel.overflow <= 1, "the opened node does not fit a 390 px phone");
+  ok(/Föllin fjögur/.test(panel.title) && panel.facts === 3 && /Hve vel\?.*Síðast æft.*Bíður þín/.test(panel.text),
+    `the opened node should say the three facts: ${panel.title} / ${panel.text.slice(0, 160)}`);
+  ok(panel.rule && panel.patterns.includes("Þolfall og þágufall ruglast"), `the node should show its rule and its error pattern: ${panel.patterns}`);
+  ok(panel.cells[0] === "þágufall, fleirtala, án greinis" && panel.grid === 16, `the worst cells and the noun table: ${panel.cells} / ${panel.grid} cells`);
+  ok(panel.words.length === 1 && /hestur/.test(panel.words[0]), `the words waiting: ${panel.words}`);
+  ok(panel.lesson === "foll" && /Æfa þetta · 10 spurningar/.test(panel.go), `a Lesefni link and the button: ${panel.lesson} / ${panel.go}`);
+
+  /* Its button starts a session of exactly the node's question types,
+     opening with the node's own review. */
+  await tap(".smpanel [data-nodego]");
+  await page.waitForFunction("window.FALLASKOLI.run && window.FALLASKOLI.cur && !document.querySelector('.smpanel')", { timeout: 5000 });
+  const want = NODES.find((n) => n.id === "no-foll").types;
+  const run = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    const out = { n: A.run.n, types: [...A.run.types], label: document.querySelector("#runbar")?.innerText || "",
+      view: !document.getElementById("view-practice").hidden, first: A.cur.review || null, firstWord: A.cur.word, asked: [] };
+    for (let k = 0; k < 10 && A.run; k++) { out.asked.push(A.cur.typeId); A.finish({ correct: true }); A.next(); }
+    out.done = !A.run || !!A.runDone;
+    return out;
+  });
+  ok(run.view && run.n === 10 && JSON.stringify([...run.types].sort()) === JSON.stringify([...want].sort()),
+    `the node's button should start ten questions of its types (${want}): ${JSON.stringify({ n: run.n, types: run.types })}`);
+  ok(run.asked.length === 10 && run.asked.every((t) => want.includes(t)), `a question of another type was asked in the node's session: ${run.asked}`);
+  ok(run.first === REVIEW && run.firstWord === "hestur|kk", `the session should open with the node's own review: ${run.first} ${run.firstWord}`);
+  ok(/Föllin fjögur/.test(run.label), `the bar should name the node: ${run.label}`);
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+  await dismissModalsOn(page);
+
+  /* A node that is one feature of its types asks that feature only. */
+  const tid = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.practiseNode("so-tid");
+    const out = { types: [...A.run.types], asked: [] };
+    for (let k = 0; k < 10 && A.run; k++) { out.asked.push([A.cur.typeId, A.cur.type, A.cur.cell || ""]); A.finish({ correct: true }); A.next(); }
+    A.run = null; A.runDone = null; A.next();
+    return out;
+  });
+  const tidTypes = NODES.find((n) => n.id === "so-tid").types;
+  ok(tid.asked.length === 10 && tid.asked.every(([t]) => tidTypes.includes(t)), `Nútíð og þátíð asked another type: ${JSON.stringify(tid.asked)}`);
+  ok(tid.asked.filter(([, type]) => type !== "table").every(([, , cell]) => /ÞT/.test(cell)), `Nútíð og þátíð asked something that is not the past tense: ${JSON.stringify(tid.asked)}`);
+  await dismissModalsOn(page);
+
+  /* A locked node opens, says so, and starts nothing. */
+  await page.evaluate(() => { window.FALLASKOLI.openView("progress"); document.querySelector('button[data-pane="stats"]').click(); });
+  await tap(`#skillmap .smtrail .smnode[data-node="${locked[0].id}"]`);
+  await page.waitForSelector(".smpanel.locked", { timeout: 4000 });
+  const lock = await page.evaluate(() => ({ text: document.querySelector(".smpanel").innerText, go: !!document.querySelector(".smpanel [data-nodego]") }));
+  ok(/Læst/.test(lock.text) && /Engar spurningar/.test(lock.text) && !lock.go, `a locked node should say so and offer no session: ${lock.text.slice(0, 120)}`);
+  await page.keyboard.press("Escape");
+  await page.waitForFunction("!document.querySelector('.smpanel')", { timeout: 3000 }).catch(() => ok(false, "Escape did not close the node"));
+  const back = await page.evaluate(() => document.activeElement && document.activeElement.dataset.node);
+  ok(back === locked[0].id, `focus should return to the ring the node was opened from: ${back}`);
+
+  /* The Lesefni link of a node opens the page. */
+  await tap('#skillmap .smtrail .smnode[data-node="no-foll"]');
+  await page.waitForSelector(".smpanel [data-lesson]", { timeout: 4000 });
+  await tap(".smpanel [data-lesson]");
+  await page.waitForFunction("!document.getElementById('view-lessons').hidden && !document.querySelector('.smpanel')", { timeout: 4000 })
+    .catch(() => ok(false, "the node's Lesefni link did not open Lesefni"));
+
+  /* A desktop: the same map in columns, and still no sideways scrolling. */
+  await page.setViewport({ width: 1280, height: 900 });
+  await page.evaluate(() => { window.FALLASKOLI.openView("progress"); document.querySelector('button[data-pane="stats"]').click(); });
+  await new Promise((r) => setTimeout(r, 200));
+  const d = await readMap();
+  ok(d.overflow <= 1 && d.outside === 0, `the skill map scrolls sideways at 1280 px by ${d.overflow}px`);
+  ok(new Set(d.lanes).size >= 2, `on a desktop the categories should stand in columns: ${[...new Set(d.lanes)]}`);
+  ok(d.ids.length === NODES.length && d.foll.flag === "1", "the desktop map lost nodes or the flag");
+  await tap('#skillmap .smtrail .smnode[data-node="no-foll"]');
+  await page.waitForSelector('.smpanel[data-panel="no-foll"]', { timeout: 4000 });
+  ok(await page.evaluate(() => { const r = document.querySelector(".smpanel").getBoundingClientRect(); return r.width > 300 && r.right <= innerWidth; }),
+    "the opened node does not fit the desktop");
+  ok(open.length > 30 && errors.length === 0, `errors while the skill map was used: ${errors.join(" | ")}`);
   await page.close();
 }
 

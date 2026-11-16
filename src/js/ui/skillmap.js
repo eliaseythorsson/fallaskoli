@@ -332,7 +332,7 @@ const standingIn = (view, id) => view.cats.flatMap((c) => c.groups.flatMap((g) =
  * Open one node in a sheet. `ctx` says whose map it is:
  *   { app }                    the pupil's own, from the state
  *   { view }                   a teacher's, from what the server sent
- * Focus returns to the ring it was opened from (ui/dom.js openSheet).
+ * Focus returns to the ring it was opened from.
  */
 export function openNode(ctx, id) {
   const node = nodeById(id);
@@ -352,7 +352,12 @@ export function openNode(ctx, id) {
     canPractise = !!(app.canPractiseNode && app.canPractiseNode(id));
     drill = new Set(weakWords(app.S, app.lex).filter((w) => w.drillable).map((w) => w.key));
   }
-  const sheet = openSheet(node.nm, nodePanelHTML(node, d, { teacher, cat, canPractise, drillable: drill }));
+  /* Whoever opened it with the keyboard is put back on the ring they came
+     from when it closes — unless the page has moved on (a session started). */
+  const from = typeof document !== "undefined" ? document.activeElement : null;
+  const sheet = openSheet(node.nm, nodePanelHTML(node, d, { teacher, cat, canPractise, drillable: drill }), {
+    onClose: () => { if (from && from.isConnected && from.offsetParent !== null) from.focus(); },
+  });
   sheet.el.addEventListener("click", (e) => {
     const go = e.target.closest("[data-nodego]");
     if (go) { sheet.close(); app.practiseNode(go.dataset.nodego); return; }
