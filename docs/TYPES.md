@@ -67,6 +67,7 @@ The pure modules, where the shared shapes matter most:
 | `core/skillmap.js` | the curriculum nodes' standing (`Standing`), `S.byNode`, the teacher's copy |
 | `core/curriculum.js` | `NODES` as `Node[]`, the presets |
 | `core/today.js` | today's session plan |
+| `core/run.js` | a practice session without its screen: the record (`Run`), its policy, counting an answer, the summary |
 | `core/diagnosis.js` | findings, `S.diag`, the pattern standings |
 | `core/merge.js` | the three-way merge, typed at its edges (`State` in and out) |
 | `tasks/registry.js` | the catalogue: every category's `TYPES` must fit `TaskType` |

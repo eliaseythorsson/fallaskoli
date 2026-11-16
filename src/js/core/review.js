@@ -15,7 +15,7 @@
  *   a wrong answer on it  starts it again at one day
  *
  * A session opens with up to three due entries (tasks/review.js builds them
- * with the cell or the word forced; app.js `pickTask` asks for them).
+ * with the cell or the word forced; control/session.js `pickTask` asks for them).
  *
  * Pure: no DOM, no clock, no random numbers. Every function that needs "today"
  * is handed it — a day key ("2026-11-16"), a Date or a millisecond count.

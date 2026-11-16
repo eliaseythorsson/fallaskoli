@@ -1,7 +1,7 @@
 /* Duels on the screen (v6.7): the strip on the blackboard — a challenge
    waiting, a duel in progress, a result — and the duel room in Skólastofan,
-   where a challenge is made. The rules are in core/duel.js; app.js runs the
-   duel; this file only draws and wires buttons. */
+   where a challenge is made. The rules are in core/duel.js; control/duel.js
+   runs the duel; this file only draws and wires buttons. */
 
 import { DUEL, DUEL_TOPICS, topicName } from "../core/duel.js";
 import { effectivePolicy } from "../core/state.js";
@@ -109,7 +109,7 @@ export function renderDuelBar(app) {
 
   const parts = [];
   /* Between pressing play and the first question: the seeds are fetched and
-     the questions built (app.js `startDuel`). */
+     the questions built (control/duel.js `startDuel`). */
   if (app.duelStarting) {
     parts.push(`<div class="drillstrip duel" role="status"><span class="drillico">⚔️</span>
       <div class="drilltext"><b>Sæki spurningarnar…</b></div></div>`);

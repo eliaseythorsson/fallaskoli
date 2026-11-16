@@ -10,7 +10,7 @@
         you in? The answer sets the year preset (core/policy.js). "Ég veit
         það ekki" is an answer too; the round then suggests one.
      2. The placement round: twelve to fifteen ordinary questions on the
-        ordinary board, run as a session (app.js `startRun` with
+        ordinary board, run as a session (control/session.js `startRun` with
         `opts.placement`), so everything a session has is there and behaves
         as it always will — the slim line, the worked example on a type's
         first card, the explanation under a wrong answer. Two things are
@@ -51,12 +51,12 @@ import {
   TOUR_STEPS, MIN_ANSWERS,
 } from "../core/placement.js";
 
-/* The builders' random source, as in app.js: looked up at each call, so the
+/* The builders' random source, as in control/rng.js: looked up at each call, so the
    browser test's fixed seed takes. */
 const rng = () => Math.random();
 
 /** The topic id of the placement run. Not a skill and not one of the
-    picker's topics: it is never saved as a session (app.js `endRun`). */
+    picker's topics: it is never saved as a session (control/session.js `endRun`). */
 export const PLACEMENT_TOPIC = "byrjun";
 const PLACEMENT_LABEL = "🧭 Byrjunarstaður";
 
@@ -404,7 +404,7 @@ export function createTour(app) {
     if (!app.run) showSteps(0);
   }
 
-  /** app.js `pickTask`: the next question of the round — the skill the plan
+  /** control/session.js `pickTask`: the next question of the round — the skill the plan
       says, at the level the staircase stands at. A slot nothing can be built
       for is dropped, so the round is as long as what can be asked. */
   function pick() {
@@ -441,7 +441,8 @@ export function createTour(app) {
     pl.st = placementAnswer(pl.st, ok);
     r.n = pl.st.plan.length + pl.extra;
     if (r.i >= r.n) {
-      /* After app.js has written "Sjá samantekt →" on the button. */
+      /* After the session controller has written "Sjá samantekt →" on the
+         button (control/session.js `runAnswered`). */
       const b = $("check");
       if (b) queueMicrotask(() => queueMicrotask(() => {
         if (/^(Áfram|Sjá samantekt)/.test(b.textContent)) b.textContent = TEXT.last;
@@ -467,7 +468,7 @@ export function createTour(app) {
     sheet.el.querySelector("#tourquit-no").focus();
   }
 
-  /** app.js `endRun`: the round is over (finished, left, or out of
+  /** control/session.js `endRun`: the round is over (finished, left, or out of
       questions). Write what it found, and say so. */
   function placementOver(r) {
     const S = app.S, pl = r.placement;

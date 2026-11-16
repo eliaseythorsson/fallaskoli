@@ -513,7 +513,7 @@ test("building a review changes nothing; the same seed builds the same review", 
  * 5. A session: it opens with what is due; a missed noun comes back later
  * ====================================================================== */
 
-/** A session as app.js `pickTask` runs it, with `answer(task, i)` → right? */
+/** A session as control/session.js `pickTask` runs it, with `answer(task, i)` → right? */
 function session(p, n, answer, { today = D0, rng = seeded(77), topic = null, focus = null } = {}) {
   const policy = topic ? narrowPolicy(POLICY, { skills: [topic], types: null }) : POLICY;
   const run = { n, i: 0, items: [], review: planOpening(p.S, today, n, policy, focus), reask: [] };

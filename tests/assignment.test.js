@@ -13,6 +13,7 @@ import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { narrowPolicy, blankPolicy } from "../src/js/core/policy.js";
+import { runPolicy } from "../src/js/core/run.js";
 import { seeded } from "../src/js/core/duel.js";
 import { standingOf, focusTypes, targets, PATTERNS, huntPreferFor } from "../src/js/core/diagnosis.js";
 import { NODES, presetContent } from "../src/js/core/curriculum.js";
@@ -71,15 +72,16 @@ test("scope: what a session on each target is narrowed to", () => {
   assert.equal(scopeOf({ kind: "skill", id: "nope" }), null);
 });
 
-/* A session as app.js builds it: the assignment's policy, narrowed to the
-   focus pattern's types, and the error hunt told which bank items to prefer. */
+/* A session as the session controller builds it (control/session.js): the
+   assignment's policy, narrowed to the focus pattern's types (core/run.js
+   `runPolicy`), and the error hunt told which bank items to prefer. */
 function buildFor(t, band, tries = 40, rngSeed = 7) {
   const S = blankState();
   const sess = newSession(S);
   Object.keys(sess.diff).forEach((k) => { sess.diff[k] = band; });
   /* A pattern left off the list has no scope of its own; build it as one. */
   const sc = scopeOf(t) || { skills: null, types: [...focusTypes([t.id])], focus: [t.id] };
-  const policy = narrowPolicy(assignmentPolicy(S, t), { types: sc.focus ? [...focusTypes(sc.focus)] : null });
+  const policy = runPolicy(S, { assignment: { target: t }, focus: sc.focus });
   const view = makeView({ S, sess, policy, inRun: true, today: "2026-11-16",
     huntPrefer: huntPreferFor(sc.focus || []) });
   const rng = seeded(rngSeed);

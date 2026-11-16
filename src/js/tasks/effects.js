@@ -4,7 +4,7 @@
    way — the vocabulary word marked as asked, the hand-written item remembered
    so it is not asked again straight away, the words the session has met — is
    returned beside the task as a list of effects, and whoever SHOWS the task
-   applies them: app.js for a practice session, core/duel.js for a duel.
+   applies them: the app (control/*.js) for practice, core/duel.js for a duel.
 
    This is what stops a candidate that is built and thrown away from using
    anything up. Until v6.13 `pickTargeted` built up to five candidates and

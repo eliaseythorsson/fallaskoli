@@ -710,7 +710,7 @@ export function buildBadges() {
 
   /* ---- 14i. Duels (v6.7) ----
      Only a server can hold a duel, so these are `social` like the badges of
-     14e and judged when a duel's result arrives (`when: "duel"`, app.js).
+     14e and judged when a duel's result arrives (`when: "duel"`, control/duel.js `loadDuels`).
      `c.duel` is { played, wins, perfect, tie } — `played` and `wins` are
      totals over every settled duel, the other two about the one just settled. */
   const duelB = (id, ico, nm, ds, est, test, opts = {}) => B.push({
@@ -1058,4 +1058,34 @@ export function celebrate(held, won, correct) {
   const due = (held || []).slice();
   (won || []).forEach((b) => { if (!has(due, b)) due.push(b); });
   return { show: due, held: [] };
+}
+
+/**
+ * The accident badges (§14d above), counted when a question has ended —
+ * app.js `finish`, the one place that knows it (moved here from app.js,
+ * critique item 76). Writes into the session; returns what goes into the
+ * badge context of this answer.
+ *
+ *   slipRun    answers in a row accepted with a slip (`extra.slip`)
+ *   wordCases  how many of the four cases one word has been answered in this
+ *              session — a table hands over all four at once, so it is left out
+ *   goldfish   the first miss on a word that had gone right five times
+ */
+export function noteAccidents(S, sess, cur, extra) {
+  if (extra.correct === true) sess.slipRun = extra.slip ? (sess.slipRun || 0) + 1 : 0;
+  else if (extra.correct === false) sess.slipRun = 0;
+
+  const word = cur && cur.word;
+  const cs = /^(NF|ÞGF|ÞF|EF)/.exec(String((cur && cur.cell) || ""));
+  if (extra.correct === true && word && cs && !("perfectTable" in extra)) {
+    const map = (sess.wordCases ||= {});
+    const set = (map[word] ||= []);
+    if (!set.includes(cs[1])) set.push(cs[1]);
+    sess.wordCasesBest = Math.max(sess.wordCasesBest || 0, set.length);
+  }
+
+  const rec = word ? S.words[word] : null;
+  const goldfish = extra.correct === false && !!rec && (rec.c || 0) >= 5 &&
+    (rec.w || 0) === 1;
+  return { goldfish, pickChanges: (cur && cur.changes) || 0 };
 }

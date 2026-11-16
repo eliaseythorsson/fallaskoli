@@ -393,7 +393,7 @@ export function freshEnter(e, notBefore = 0) {
  * One window at a time, each dismissed on purpose: `freshEnter` rejects key
  * repeats and each window ignores anything older than itself. Whoever opened
  * the queue is told when it drains — that callback hands the keyboard back to
- * the Áfram button (`armNext` in app.js). */
+ * the Áfram button (`armNext` in ui/verdict.js). */
 let badgeQueue = [];
 let queueDone = null;
 

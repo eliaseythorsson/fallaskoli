@@ -1,6 +1,6 @@
 /* Practice sessions (v6.10): the Æfa tab's picker, the strip above a session
-   in progress, and the summary at the end. Rules live in app.js (the run
-   itself), core/diagnosis.js (what went wrong and why), core/today.js
+   in progress, and the summary at the end. Rules live in core/run.js and
+   control/session.js (the run itself), core/diagnosis.js (what went wrong and why), core/today.js
    (today's session) and core/streak.js ("Þrjár í röð"); this file draws.
 
    A session is today's session (v6.13, item 21: the one big button), or one
@@ -21,20 +21,21 @@ import { dueNow } from "./progress.js";
 import { dueLine } from "../core/review.js";
 import { todayLine } from "../core/today.js";
 import { STREAK_N } from "../core/streak.js";
+import { TOPIC } from "../core/run.js";
 import { targetName, KIND_NAME, dueText, assignmentPolicy } from "../core/assignment.js";
 import { writingOfferHTML, wireWritingOffer } from "./writing.js";
 
 export const RUN_SIZES = [10, 15, 20];
 
 /* Two topics that are not a skill. */
-export const MIXED = { id: "blandad", nm: "Blandað", ico: "🎲", ds: "Allt sem er kveikt á, í bland" };
-export const MINE = { id: "villur", nm: "Villurnar mínar", ico: "🎯",
+export const MIXED = { id: TOPIC.MIXED, nm: "Blandað", ico: "🎲", ds: "Allt sem er kveikt á, í bland" };
+export const MINE = { id: TOPIC.MINE, nm: "Villurnar mínar", ico: "🎯",
   ds: "Spurningar sem prófa einmitt það sem hefur farið úrskeiðis hjá þér" };
 /* v6.13 (item 21): today's session — not a card among the others but the
    button above them (core/today.js plans it). */
-export const TODAY = { id: "dagsins", nm: "Dagsins lota", ico: "☀️" };
+export const TODAY = { id: TOPIC.TODAY, nm: "Dagsins lota", ico: "☀️" };
 /* v6.13 (item 65): a session that answers an assignment the teacher set. */
-export const ASSIGNED = { id: "verkefni", nm: "Verkefni", ico: "📌" };
+export const ASSIGNED = { id: TOPIC.ASSIGNED, nm: "Verkefni", ico: "📌" };
 
 export function topicName(id) {
   if (id === MIXED.id) return MIXED.nm;
@@ -74,7 +75,7 @@ export function usable(app, ids) {
 
    The homework the group's teacher set, at the very top of Æfa: above today's
    session, because it is the one thing somebody else asked for. One tap
-   starts it (app.js `startAssignment`). Only on a server; a pupil with no
+   starts it (control/session.js `startAssignment`). Only on a server; a pupil with no
    server has no teacher, and `app.assignments` is empty. */
 
 /** Can this pupil be asked anything on the assignment's material? The
@@ -317,7 +318,7 @@ function streakBar(app, el) {
 }
 
 /**
- * Under the verdict of a diagnosed wrong answer (app.js `offerStreak`): the
+ * Under the verdict of a diagnosed wrong answer (control/drill.js `offerStreak`): the
  * offer of three questions on the pattern just named. Áfram keeps the focus,
  * so Enter still simply goes on — the three are offered, never imposed.
  */

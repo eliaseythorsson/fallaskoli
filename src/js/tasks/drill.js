@@ -133,7 +133,7 @@ export function patternTask(lex, view, rng, p, avoid = [], prefer = null) {
 /**
  * All of "Þrjár í röð" at once: `n` questions on the pattern `p`, each on
  * another word where one can be had, or null if not all `n` can be built —
- * the offer is made only when the three are there (app.js `offerStreak`).
+ * the offer is made only when the three are there (control/drill.js `offerStreak`).
  * Pure like the rest: nothing is applied until a question is shown.
  * @param from  the question the miss was made in: its word is not asked
  *              again at once, and its type is tried first
