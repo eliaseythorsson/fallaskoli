@@ -2138,6 +2138,10 @@ await page.setViewport({ width: 1100, height: 900 });
     A.reloadPolicy(); A.save();
     A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
     Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = 4; });
+    /* Pinning the level must also drop the warm-up the visit owes: the
+       first right answer would give it back (core/difficulty.js nextLevel)
+       and the case's second question come from a higher þyngd. */
+    A.sess.warm = {};
     A.startRun("malbeiting", 40, null, { review: false });
   });
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
@@ -2504,6 +2508,10 @@ await page.setViewport({ width: 1100, height: 900 });
       A.reloadPolicy();
       A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
       Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+      /* Pinning the level must also drop the warm-up the visit owes: the
+         first right answer would give it back (core/difficulty.js nextLevel)
+         and the case's second question come from a higher þyngd. */
+      A.sess.warm = {};
       A.startRun(c.topic, 10, [c.focus], { review: false });
     }, c);
     await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
@@ -2566,6 +2574,10 @@ await page.setViewport({ width: 1100, height: 900 });
         A.reloadPolicy();
         A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
         Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+        /* Pinning the level must also drop the warm-up the visit owes: the
+           first right answer would give it back (core/difficulty.js nextLevel)
+           and the case's second question come from a higher þyngd. */
+        A.sess.warm = {};
         A.startRun("sagnord", 10, [c.focus], { review: false });
       }, c);
       await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
@@ -2667,6 +2679,10 @@ await startPractice(page, 15000);
         A.reloadPolicy();
         A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
         Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+        /* Pinning the level must also drop the warm-up the visit owes: the
+           first right answer would give it back (core/difficulty.js nextLevel)
+           and the case's second question come from a higher þyngd. */
+        A.sess.warm = {};
         A.startRun(c.topic, 10, [c.focus], { review: false });
       }, c);
       await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
