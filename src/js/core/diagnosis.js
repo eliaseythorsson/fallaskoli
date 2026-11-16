@@ -525,8 +525,8 @@ const ROW_PATTERN = {
 
 /**
  * Everything that went wrong in one answer, as findings
- * `{ p, soft?, ex?: {said, right}, m?, other? }`. `resp` is what the submit
- * handler saw (ui/render.js); a question with nothing to diagnose gives [].
+ * `{ p, soft?, ex?: {said, right}, m?, other? }`. `resp` is the answer as the
+ * judge saw it (core/answer.js); a question with nothing to diagnose gives [].
  */
 export function diagnose(task, resp) {
   if (!task || !resp) return [];
