@@ -363,11 +363,27 @@ async function closeWindows(page) {
   });
 
   const { ctx, page } = await fresh();
+  /* The overtaking badge is judged as soon as the server's picture arrives
+     (app.js loadSocial, not awaited at start-up). login() starts a session
+     only once the first card is drawn — and if the roster won that race, the
+     badge was judged on the picker, where its window rightly opens, and the
+     check below failed about one run in six. So the roster is held until the
+     session has begun: the badge is then always judged over a question. */
+  await page.evaluateOnNewDocument(() => {
+    const real = window.fetch.bind(window);
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    window.__releaseRoster = release;
+    window.fetch = (input, init) => /\/roster(\?|$)/.test(String((input && input.url) || input))
+      ? gate.then(() => real(input, init)) : real(input, init);
+  });
   await login(page, "ceci");
-  /* The overtaking badge is judged as soon as the roster arrives. Since
-     item 61 its window does NOT open over the question — login() has started
-     a session, and windows wait for its summary; the badge itself is in the
-     cabinet at once (checked below, `seen.mine`). */
+  ok(await page.evaluate(() => !!window.FALLASKOLI.run && !window.FALLASKOLI.S.badges.soc_overtake),
+    "the session had not begun, or the badge was judged, before the roster was let through");
+  await page.evaluate(() => window.__releaseRoster());
+  /* Since item 61 its window does NOT open over the question — the session's
+     windows wait for its summary; the badge itself is in the cabinet at once
+     (checked below, `seen.mine`). */
   await page.waitForFunction(() => !!window.FALLASKOLI.S.badges.soc_overtake, { timeout: 10000 }).catch(() => {});
   const modal = await page.evaluate(() => document.querySelector(".scrim .modal")?.textContent || "");
   ok(!/Framúrakstur/.test(modal), "the Framúrakstur window opened over a question in a session (item 61)");
@@ -1111,7 +1127,7 @@ async function closeWindows(page) {
     });
   }
   await P1.page.waitForFunction(() => /Þú fékkst 10 af 10/.test(document.getElementById("duelbar")?.innerText || ""), { timeout: 15000 });
-  /* The strip shows the browser's own count at once (app.js endDuel) and the
+  /* The strip shows the browser's own count at once (control/duel.js endDuel) and the
      POST lands a moment later, so wait for the server to have stored it
      rather than reading once (that raced, and failed now and then). */
   const lifaId = (await app.store.users()).find((u) => u.username === "lifa").id;
