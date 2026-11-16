@@ -23,6 +23,10 @@ import { patternById, UNREAD } from "../core/diagnosis.js";
 import { YEARS } from "../core/curriculum.js";
 import { ASSIGN, ASSIGNABLE_PATTERNS, ASSIGNABLE_NODES, KIND_NAME, targetName, dueText }
   from "../core/assignment.js";
+/* Item 64: the live class round has its own file; its section sits here. */
+import { drawLiveTeacher } from "./live.js";
+/* …and so has the team duel (item 67). */
+import { drawTeamTeacher } from "./teamduel.js";
 import { CLASS_GOAL, GOAL_OPTIONS, goalText, progressText } from "../core/classgoal.js";
 import { renderClassGoal } from "./classgoal.js";
 
@@ -260,8 +264,9 @@ export async function renderTeacher(app) {
 
   box.innerHTML = `<h2 class="sec first">Fyrir kennarann</h2>
     <p class="sub">Aðeins kennari eða forsjáraðili hópsins sér þennan hluta, og umsjónarmaður.
-      Hér sést hvernig nemendum hópsins gengur í villumynstrum og verkefnum — tölur, ekki
-      það sem þeir skrifa.</p>
+      Hér setur þú hópnum markmið vikunnar og verkefni og stýrir lifandi umferð og
+      bekkjareinvígjum. Neðar sést hvernig nemendum hópsins gengur í villumynstrum og verkefnum,
+      og færnikort hvers og eins — tölur, ekki það sem þeir skrifa.</p>
     ${list.length > 1 ? `<div class="polactions"><label class="lbl" for="tc-group">Hópur</label>
       <select id="tc-group">${list.map((g) => `<option value="${esc(g.id)}"${g.id === group ? " selected" : ""}>${
         esc(g.name)} (${g.pupils})</option>`).join("")}</select></div>` : ""}
@@ -286,6 +291,9 @@ export async function renderTeacher(app) {
       <div id="tc-note-msg"></div>
     </div>
     <div id="tc-list"><p class="sub faint">Sæki verkefnin…</p></div>
+
+    <div id="tc-live"></div>
+    <div id="tc-team"></div>
 
     <h3 class="sec2">Villumynstur hópsins</h3>
     <p class="sub">Nemendur niður, villumynstur þvert, algengasta villa hópsins fremst. Í hverjum reit:
@@ -320,6 +328,9 @@ export async function renderTeacher(app) {
         t.pupils.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
     } catch (e) { $("tc-table").innerHTML = verdict(e.message); }
     $("tc-what").innerHTML = targetOptionsHTML(worst);
+    /* The same material, the class's worst patterns first (item 64). */
+    await Promise.all([drawLiveTeacher(app, group, targetOptionsHTML(worst)),
+      drawTeamTeacher(app, group, targetOptionsHTML(worst))]);
   };
   const drawList = async (msg = "") => {
     let data;

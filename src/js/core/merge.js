@@ -124,6 +124,12 @@ export function mergeStates(base, local, remote) {
       const l = obj(L[part])[k], r = obj(R[part])[k];
       out[part][k] = !l ? r : !r && !obj(B[part])[k] ? l
         : counters(obj(B[part])[k], l, r, ["c", "w"]);
+      /* A word's last dozen outcomes (`h`) follow whichever device answered it
+         since `base`; a device that did not touch the word must not put its
+         older history over the other's (found by tests/state-property.test.js). */
+      const b = obj(B[part])[k];
+      if (part === "words" && l && r && b && typeof r.h === "string"
+          && num(l.c) + num(l.w) === num(b.c) + num(b.w)) out[part][k].h = r.h;
     }
   }
 

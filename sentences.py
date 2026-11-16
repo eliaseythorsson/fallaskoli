@@ -458,6 +458,63 @@ S = [
 (2, "Kötturinn faldi sig á milli bílanna.",    "bíll",     "vehicle|struct|building|furniture|object|plant"),
 (2, "Ég man ekki lengur lit bílsins.",         "bíll",     "item|food|plant|animal|struct|building|nature"),
 
+# ---- a verb or preposition that governs one case (critique item 23) ----------
+# Short sentences for "Hvaða falli stýrir orðið?" at þyngd 1: every one has a
+# verb from government.py with one case, or a preposition with one, or both.
+# The band's sentences gave about 120 such questions; a pupil met them again
+# within weeks. No slot: the cloze is not changed by these.
+(1, "Ég treysti vini mínum.",              None,      None),
+(1, "Hún gleymdi húfunni sinni.",          None,      None),
+(1, "Við söknum ömmu mikið.",              None,      None),
+(1, "Við biðum hans lengi.",               None,      None),
+(1, "Hún svaraði kennaranum strax.",       None,      None),
+(1, "Strákurinn týndi lyklinum.",          None,      None),
+(1, "Pabbi lokaði glugganum.",             None,      None),
+(1, "Ég skilaði bókinni í gær.",           None,      None),
+(1, "Hún hrósaði mér mikið.",              None,      None),
+(1, "Mamma safnar frímerkjum.",            None,      None),
+(1, "Við leituðum lyklanna.",              None,      None),
+(1, "Hann gætti barnanna.",                None,      None),
+(1, "Ég nennti þessu ekki.",               None,      None),
+(1, "Kennarinn hjálpaði mér.",             None,      None),
+(1, "Ég fór til ömmu.",                    None,      None),
+(1, "Hún kom úr skólanum.",                None,      None),
+(1, "Ég fékk bréf frá afa.",               None,      None),
+(1, "Við gengum um bæinn.",                None,      None),
+(1, "Hann býr hjá ömmu sinni.",            None,      None),
+(1, "Ég keypti blóm handa mömmu.",         None,      None),
+(1, "Kötturinn hljóp undan hundinum.",     None,      None),
+(1, "Ég drakk mjólk úr glasi.",            None,      None),
+(1, "Við lukum verkefninu.",               None,      None),
+(1, "Hann stal hjólinu mínu.",             None,      None),
+(1, "Hún bjargaði kettinum.",              None,      None),
+(1, "Ég trúi þér ekki.",                   None,      None),
+(1, "Hún kastaði boltanum.",               None,      None),
+(1, "Við nutum sólarinnar.",               None,      None),
+(1, "Ég henti ruslinu.",                   None,      None),
+(1, "Hún hrósaði stráknum.",               None,      None),
+(1, "Við gengum framhjá kirkjunni.",       None,      None),
+# and eighteen more (pool of govern at þyngd 1 was 159, too near 150): only
+# verbs and prepositions government.py lists with one case
+(1, "Ég sakna afa míns.",                  None,      None),
+(1, "Við hjálpuðum ömmu.",                 None,      None),
+(1, "Strákurinn gleymdi nestinu.",         None,      None),
+(1, "Ég fór til læknisins.",               None,      None),
+(1, "Kötturinn svaf hjá mér.",             None,      None),
+(1, "Pabbi keypti gjöf handa mér.",        None,      None),
+(1, "Hún svaraði spurningunni.",           None,      None),
+(1, "Við biðum strætisvagnsins.",          None,      None),
+(1, "Ég leitaði lykilsins.",               None,      None),
+(1, "Hann gekk um garðinn.",               None,      None),
+(1, "Barnið hló að trúðnum.",              None,      None),
+(1, "Fuglinn flaug frá hreiðrinu.",        None,      None),
+(1, "Hún tók bók úr hillunni.",            None,      None),
+(1, "Hann kastaði steininum.",             None,      None),
+(1, "Mamma lokaði hurðinni.",              None,      None),
+(1, "Ég fer aldrei án húfu.",              None,      None),
+(1, "Strákurinn bjargaði kettlingnum.",    None,      None),
+(1, "Hún skilaði lyklinum.",               None,      None),
+
 # =============================================================================
 # LEVEL 2 — 5-7 words
 # =============================================================================

@@ -21,14 +21,21 @@ const { maxOf } = await import(R + "/src/js/core/mix.js");
 const lex = buildLexicon(DATA);
 
 // seeded rng for the learner; the builders are handed Math.random, as in app.js
-const appRng = () => Math.random();
 function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
 
 const sig = (t) => t.type === "villur" ? "villur|" + t.hunt.lines.map((l) => l.toks.map((x) => x.w).join(" ")).join("/") : t.type === "sort" ? t.typeId + "|" + (t.s ? t.s.t : "") + t.items.map((x) => x.w).join(",") : t.type === "tap" ? t.typeId + "|" + (t.s ? t.s.t : JSON.stringify(t.toks || "")) + "|" + t.cls : t.type === "parse" ? t.typeId + "|" + (t.s ? t.s.t : "") + "|" + t.t.w + "|" + t.i : t.type === "syntax" ? "syntax|" + t.s.t + "|" + t.askRole : t.type === "clause" ? "clause|" + t.s.t + "|" + t.span.from : t.type==="meaning" ? "meaning|"+t.word : [t.typeId, t.s ? t.s.t : (t.title || ""), t.prompt || t.question || "", (t.answers || [t.answer || ""])[0], t.cue || "", t.pron || "", t.askRole || ""].join("|");
 const sentOf = (t) => (t.s ? t.s.t : null);
 
-export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2, size = 10, topic = "blandad", allSkills = false, seed = 1, review = true, rewards = false, activeDays = null }) {
+/* `respond(task, wantRight)` (v6.13, item 72) switches the pupil's answer from a
+   modelled coin to the real grader: the pupil decides with probability p whether
+   to know the answer, `respond` turns that into a response in the shape
+   core/answer.js reads, `judge` says whether it was right and what it earns, and
+   `settle` writes it exactly as the app does (record, difficulty, review queue).
+   `builderRng` replaces Math.random for the builders (a seeded rng makes a run
+   repeatable). Without them nothing changes from before. */
+export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2, size = 10, topic = "blandad", allSkills = false, seed = 1, review = true, rewards = false, activeDays = null, respond = null, builderRng = null }) {
   const rnd = rng(seed);
+  const appRng = builderRng || (() => Math.random());
   const S = ST.blankState();
   if (allSkills) SKILL_IDS.forEach((id) => { S.enabled[id] = true; });
   const app = { lex, S, sess: null, forcedNoun: null, policy: null, mix: null, run: null, huntPrefer: null };
@@ -76,7 +83,20 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
         let p = ability - 0.04 * (lvl - 1) - typePenalty + learn * Math.min(n, 40);
         p = Math.max(0.05, Math.min(0.98, p));
         const judged = !(t.type === "meaning");
-        const ok = judged ? rnd() < p : true;
+        let ok, findings;
+        if (respond) {
+          /* The real grader. A question that is not judged (meaning) is answered
+             as the app answers it: no wrong answer exists. */
+          const knows = judged ? rnd() < p : true;
+          const j = AN.judge(t, respond(t, knows), { S, sess: app.sess });
+          ok = j.ok === true || !judged;
+          AN.settle(S, app.sess, t, j);
+          findings = j.findings || [];
+          const ch0 = DG.chancesIn(t);
+          if (!ok && judged && !findings.length && ch0.length) findings = [{ p: ch0[Math.floor(rnd() * ch0.length)] }];
+          if (!ok && t.type === "fill" && !t.noRepeat) { if (review) scheduleReask(run, t, appRng); else app.forcedNoun = t.n; }
+        } else {
+        ok = judged ? rnd() < p : true;
         const ease = ST.easeFor ? ST.easeFor(S, { cell: t.cell, word: t.word, skill: t.skill }) : 0.5;
         /* `rewards` (item 60): what the app really pays, not only the base XP of
            a right answer — the day-streak multiplier (core/state.js dayStreak,
@@ -100,10 +120,13 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
           const recs = t.type === "table" ? (t.cells || []).map((c, k) => ({ do: "record", cell: c.m, word: t.word, ok: ok || k > 0 })) : [];
           RV.noteReview(S, t, { ok, findings: [], effects: recs }, ST.todayKey());
         }
+        }
         run.i++;
         // diagnosis: pick one tested pattern as the miss
-        const ch = DG.chancesIn(t);
-        const findings = !ok && ch.length ? [{ p: ch[Math.floor(rnd() * ch.length)] }] : [];
+        if (!respond) {
+          const ch = DG.chancesIn(t);
+          findings = !ok && ch.length ? [{ p: ch[Math.floor(rnd() * ch.length)] }] : [];
+        }
         if (judged) DG.noteDiagnosis(S, t, findings, ok, ST.todayKey());
         if (review && judged && findings.length) { const e = RV.entryByKey(S, RV.keyFor({ t: t.typeId || t.type, c: t.type === "table" ? (t.cells[0] || {}).m : t.cell, w: t.word, i: t.item, p: findings[0].p })); if (e && !e.p) e.p = findings[0].p; }
         run.items.push({ type: t.typeId || t.type });

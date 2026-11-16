@@ -12,7 +12,7 @@ import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { createPolicy } from "../src/js/core/policy.js";
 import { judge } from "../src/js/core/answer.js";
-import { fsMotion } from "../src/js/tasks/fallstjorn.js";
+import { fsMotion, motionPairs } from "../src/js/tasks/fallstjorn.js";
 import { obAdvPrep } from "../src/js/tasks/obeygjanleg.js";
 import { fnReflex } from "../src/js/tasks/fornofn.js";
 import { show } from "./helpers.js";
@@ -104,7 +104,11 @@ test("43: only real contrasts are asked — no motion/rest sentence without its 
   assert.ok(lone.size > 0, "the bank has loners (yfir girðing, yfir fjall)");
   for (const t of many(fsMotion, 300)) {
     assert.ok(!lone.has(t.s.t) && !lone.has(t.second.s.t), t.s.t);
-    const [x, y] = [t.s.t, t.second.s.t].map((tx) => EX.motionRest.find((z) => z.t === tx));
+    /* the halves by text and answer: a set's sentence stands with many
+       nouns (item 23, MOTION_SETS) */
+    const halves = motionPairs().flatMap((p) => [p.go, p.stay]);
+    const [x, y] = [t, t.second].map((h) => halves.find((z) => z.t === h.s.t &&
+      [...z.thf, ...z.thgf].includes(h.answer)));
     assert.equal(x.prep, y.prep); assert.equal(x.noun, y.noun); assert.notEqual(x.motion, y.motion);
   }
 });

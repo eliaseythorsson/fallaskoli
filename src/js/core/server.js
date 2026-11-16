@@ -124,6 +124,27 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     teacherAssignments: (group) => call("GET", `/teacher/assignments?group=${enc(group)}`),
     setAssignment: (form) => call("POST", "/teacher/assignments", form),
     removeAssignment: (id) => call("DELETE", `/teacher/assignments/${enc(id)}`),
+    /* --- a live class round (v6.13, item 64; server/live.mjs) ---
+       The teacher's routes, then the pupil's. The two `…Url` are event
+       streams, opened with `new EventSource(url)`. */
+    teacherLive: (group) => call("GET", `/teacher/live?group=${enc(group)}`),
+    startLive: (form) => call("POST", "/teacher/live", form),
+    liveNext: (id) => call("POST", `/teacher/live/${enc(id)}/next`),
+    liveClose: (id) => call("POST", `/teacher/live/${enc(id)}/close`),
+    liveEnd: (id) => call("POST", `/teacher/live/${enc(id)}/end`),
+    liveBoardUrl: (id) => url(`/teacher/live/${enc(id)}/events`),
+    live: () => call("GET", "/live"),
+    joinLive: (id) => call("POST", `/live/${enc(id)}/join`),
+    liveAnswer: (id, q, response) => call("POST", `/live/${enc(id)}/answer`, { q, response }),
+    liveEventsUrl: (id) => url(`/live/${enc(id)}/events`),
+    /* --- team duels (v6.13, item 67; server/teamduel.mjs) --- */
+    teacherTeamDuels: (group) => call("GET", `/teacher/teamduels?group=${enc(group)}`),
+    setTeamDuel: (form) => call("POST", "/teacher/teamduels", form),
+    acceptTeamDuel: (id) => call("POST", `/teacher/teamduels/${enc(id)}/accept`),
+    removeTeamDuel: (id) => call("DELETE", `/teacher/teamduels/${enc(id)}`),
+    teamDuels: () => call("GET", "/teamduels"),
+    teamDuelStart: (id) => call("POST", `/teamduels/${enc(id)}/start`),
+    teamDuelResult: (id, answers, sig) => call("POST", `/teamduels/${enc(id)}/result`, { answers, sig }),
     /* --- calibration and the answer sample (v6.13, items 17 and 38) ---
        `calibration()` is asked once per load: the table to apply, and
        whether this account's answers are counted at all. */

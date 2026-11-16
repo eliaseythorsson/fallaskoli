@@ -45,6 +45,7 @@ It is not legal advice. For a real question, Persónuvernd answers them:
 | Accountability | *Atburðaskrá* records every administrative action, by id. |
 | Statistics without people (v6.13) | Right and wrong answers are counted per question type, level, inflection cell and irregularity score, with no account, group or time, to set the difficulty automatically. A learner can switch their own contribution off. See §1b. |
 | A class goal shows totals only (v6.13) | When a guardian sets a weekly goal, the group sees one total its learners' answers feed into — never who put in what, and nothing in a group of fewer than five. See §1c. |
+| A live round keeps nothing; a team duel keeps numbers (v6.13) | A round on the projector lives in memory for the lesson; the wall names only pupils who are on the leaderboard, everyone else is a numbered player. A team duel keeps numbers only; the teacher sees their own pupils' results, the pupils only the teams' means. See §1d. |
 | A teacher sees only what helps them teach (v6.13) | The guardian of a group sees, for the learners of that group only, the error-pattern figures the child sees themselves, and the scores of assignments — never anything typed, never a date. The child's account page names who that is. See §1a. |
 
 What it does **not** do, and you should know:
@@ -220,6 +221,43 @@ board as much as for those on it. So, precisely:
 
 ---
 
+## 1d. A live round in class, and team duels (v6.13, items 64 and 67)
+
+**A live round** is a game on the projector: the teacher starts it, the pupils
+of the group join on their own devices and answer the same questions at the
+same time. What it means for privacy:
+
+- **Nothing is stored.** The round lives in the server's memory for the lesson:
+  who joined, right or wrong and the points per question. It is never written
+  to disk, is not in a backup, and is forgotten 10 minutes after the round ends
+  (or at once, if the server restarts). The answers are sent to the server to
+  be graded, as a duel's, and dropped. What stays is in the pupil's own
+  progress, as with any question they answer.
+- **The wall is a public screen.** The projector shows the top five after each
+  question and the top three at the end. A pupil is named there only if they
+  have chosen to be on the leaderboard (and are not hidden or held — the
+  leaderboard's own rule); everybody else is *Leikmaður 1, 2 …*, a number that
+  belongs to that round only, and each pupil's own screen says which number is
+  theirs. Nobody is listed at the bottom.
+- The class's commonest error pattern at the end is a count of pupils, not a
+  name.
+
+**A team duel** is half a class against the other half, or one class against
+another. It is stored (`teamduels.json`): the teams as user ids, each pupil's
+key to their own questions and their result as numbers (`c` right of `n`), never
+the answers. **The group's teacher sees each of their own pupils' result by
+name** — a new thing a teacher sees, like an assignment's result, so the notice
+says it and `PRIVACY_VERSION` moved to `2026-11-20`. The pupils see their own
+result and the two teams' means and how many have played, never a classmate's
+or an opponent's score or name. Against another class, that class's teacher
+sees only the teams' figures, and must accept before their pupils are put in
+the game. A guardian setting one is shown the names and sizes of the other
+groups (to pick an opponent) — group names, not people. Erased 30 days after it
+is over, and with a pupil's account; in the pupil's own export and in the
+backup.
+
+---
+
 ## 2. Record of processing (Art. 30) — *vinnsluskrá*
 
 Fill in the bracketed parts and keep it with your papers. If Persónuvernd ever
@@ -228,12 +266,12 @@ asks for it they may want it in Icelandic; the content is what matters.
 | | |
 |---|---|
 | **Controller** | [your name], [address], [the contact address in the notice] |
-| **Purpose** | Running an Icelandic grammar trainer for invited children and their families: logging in, keeping progress across devices, an optional leaderboard within a group, (v6.13) letting the group's teacher or guardian see the group's error patterns and set and check assignments, and (v6.13) setting the difficulty of the questions from anonymous counts of right and wrong answers and checking the error diagnosis against an anonymous sample of wrong word forms. |
+| **Purpose** | Running an Icelandic grammar trainer for invited children and their families: logging in, keeping progress across devices, an optional leaderboard within a group, (v6.13) letting the group's teacher or guardian see the group's error patterns and a pupil's skill map, set and check assignments and set a weekly class goal, (v6.13) live rounds in class and team duels set by the teacher, and (v6.13) setting the difficulty of the questions from anonymous counts of right and wrong answers and checking the error diagnosis against an anonymous sample of wrong word forms. |
 | **Legal basis** | Consent, Art. 6(1)(a) — the user's own from 16, a parent's or guardian's below. Recorded per account. |
 | **Data subjects** | Invited learners (mostly teenagers); their parents or guardians (name only, as the consent record); administrators. |
-| **Data** | Username; nickname; password hash; role, group, status; date created; day last seen; consent record (who, when, how, notice version); visibility choices; progress (XP, levels, badges with dates, which words and inflection cells were practised and how often right or wrong, answers and minutes per day, settings); results of assignments set by the group's guardian (answered, right, finished); the learner's own choice about being counted in the statistics. For one day: how many of the account's answers have been counted that day (§1b). Transiently: IP address, for rate-limiting, in memory only. **Anonymous, not personal data:** the counts of right and wrong answers; and, only for groups whose teacher switched it on, the sample of wrong word forms (§1b). |
+| **Data** | Username; nickname; password hash; role, group, status; date created; day last seen; consent record (who, when, how, notice version); visibility choices; progress (XP, levels, badges with dates, which words and inflection cells were practised and how often right or wrong, answers and minutes per day, settings); results of assignments set by the group's guardian (answered, right, finished); team duels (team, right answers); during a live round only, in memory, right answers and points; the learner's own choice about being counted in the statistics. For one day: how many of the account's answers have been counted that day (§1b). Transiently: IP address, for rate-limiting, in memory only. **Anonymous, not personal data:** the counts of right and wrong answers; and, only for groups whose teacher switched it on, the sample of wrong word forms (§1b). |
 | **Not collected** | Email, real name, date of birth, kennitala, phone, photos, free text (the sample of §1b keeps single word forms that resemble the word asked about, and nothing else a pupil types). No special categories. |
-| **Recipients** | Other users of the same group, only what the user switches on. The guardian(s) of the user's own group: the error-pattern figures and assignment results (§1a). The whole group, only when its guardian sets a weekly goal: one total for the week that the user's right answers or sessions are part of (§1c). Processor: Fly.io, Inc. (hosting). Nobody else. |
+| **Recipients** | Other users of the same group, only what the user switches on. The guardian(s) of the user's own group: the error-pattern figures, the skill map, assignment and team-duel results (§1a, §1d). The whole group, only when its guardian sets a weekly goal: one total for the week that the user's right answers or sessions are part of (§1c). The group, on the projector in a live round: the nickname of a pupil on the leaderboard among the top five, otherwise an alias (§1d). Processor: Fly.io, Inc. (hosting). Nobody else. |
 | **Transfers outside the EEA** | Data is stored in Amsterdam. The processor is a US company certified under the EU–US Data Privacy Framework and bound by its data processing agreement (check the signed copy for the transfer terms). |
 | **Retention** | While the account exists; erased after 18 months without a login; unanswered access requests after 30 days; backups at most 30 days. The one-day tally: until the next day. Anonymous counts fade by 15 % a week; a sampled answer is kept at most 12 months. |
 | **Security** | See §1. |
@@ -276,13 +314,16 @@ optional sample of wrong answers (§1b), and the sentence that a duel's answers
 are sent to the server to be graded and are not stored (only the score is
 kept). `2026-11-18`: the class goal's weekly total, which every learner of the
 group feeds and the group sees (§1c). `2026-11-19`: the teacher can open one
-pupil's skill map (§1a). All arrive with v6.13, so one message
-to the families covers them. The date is the notice's version, not the day
+pupil's skill map (§1a). `2026-11-20`: live rounds in class (nothing stored; on
+the wall a pupil is named only if on the leaderboard) and team duels (the
+teacher sees each pupil's result) (§1d). All arrive with v6.13, so one message
+to the families covers them, and a family is told once, of the last version.
+The date is the notice's version, not the day
 you deploy; set it to your release date if you prefer, and then give
 `CALIBRATION_NOTICE` in the same file that date too. Until then the two
-differ (`2026-11-17` and `2026-11-19`) on purpose: `CALIBRATION_NOTICE` names
+differ (`2026-11-17` and `2026-11-20`) on purpose: `CALIBRATION_NOTICE` names
 the first version that describes the anonymous count, and must never be
-later than the notice that is live.
+later than the notice that is live (a test holds it).
 
 ---
 
@@ -339,6 +380,8 @@ Note each request and what you did; a line in a notebook is enough.
 | The audit trail | The last 2,000 entries; ids, never names | Automatic |
 | The monthly badge-rarity count | 24 months; anonymous counts | Automatic |
 | An assignment and its results | 30 days after its deadline | Automatic (`ASSIGN.keepDays`, printed in the notice from the same constant) |
+| A live round | In memory only; 10 minutes after it ends, or at a restart | Automatic (`LIVE.keepMs`) |
+| A team duel and its results | 30 days after it is over; a challenge nobody accepted after 3 days | Automatic (`TEAM.keepDays`, `TEAM.pendingDays`) |
 | How much an account has contributed to the count today | Until the next day; at once when the account is erased; never in a backup | Automatic |
 | The anonymous counts of right and wrong answers | They fade: ×0.85 every week, and a count that has faded to nothing is dropped | Automatic |
 | The log of what calibration changed | The last 60 weekly runs; no people in it | Automatic |

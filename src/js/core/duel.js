@@ -35,6 +35,7 @@
 import { SKILLS } from "./skills.js";
 import { skillLevel, skillNeed } from "./progress.js";
 import { clamp } from "./difficulty.js";
+import { narrowPolicy } from "./policy.js";
 
 export const DUEL = {
   sizes: [10, 15, 20],      // as practice sessions (ui/session.js RUN_SIZES)
@@ -305,9 +306,16 @@ function duelHost(duel, deps) {
   const sess = newSession(S);
   const D = duelDifficulty(duel.level);
   Object.keys(sess.diff).forEach((k) => { sess.diff[k] = D; });
+  /* v6.13 (items 64, 67): a live class round or a team duel is set by a
+     teacher, on a node of the curriculum map or a year as well as a whole
+     category. `types` narrows the plan to the node's question types, and
+     `allowed` holds it to the server's default ceiling. A duel between two
+     pupils carries neither, and is built exactly as before. */
+  const base = createPolicy(duel.allowed || null, S.policy);
   return {
     S, sess, forcedNoun: null,
-    policy: createPolicy(null, S.policy),
+    policy: Array.isArray(duel.types) && duel.types.length
+      ? narrowPolicy(base, { types: duel.types }) : base,
     /* The day is part of the view; a duel has none of its own. A fixed one,
        so that a duel built a minute before midnight and one built a minute
        after are the same duel. */
@@ -384,8 +392,10 @@ export const shapeKey = (t) => { const s = shapeOf(t); return `${s.type}~${s.lvl
  *     case a word governs (the cell is the governing word, and *handa*
  *     always takes the dative), every "which kind is this?" choice, and
  *     "find the subject" (it is nearly always the first word);
- *   - the cell is one hand-written item (fs_sogn, fs_operson): the same
- *     cell is the same question;
+ *   - the cell is one hand-written item (fs_sogn): the same cell is the
+ *     same question. (fs_operson was here until critique item 23 asked each
+ *     impersonal verb with two dozen subjects: *stjórn:langa* is now *mig*,
+ *     *okkur*, *strákinn* …, and the cell no longer gives the answer.);
  *   - so few words share a cell that it comes to the same thing: *four* in
  *     the masculine accusative is *fjóra* whatever the sentence (to_samr,
  *     to_val, fn_stad). (lo_beyging was one until v6.13: its frames now put
@@ -403,7 +413,7 @@ export const shapeKey = (t) => { const s = shapeOf(t); return `${s.type}~${s.lvl
 export const CELL_IS_ANSWER = new Set([
   "parse", "revform", "govern", "indecl", "syntax", "ob_fsao", "setn_hlut",
   "fn_flokkar", "no_beyging", "so_mynd", "gerd_tegund", "setn_lidir",
-  "fs_sogn", "fs_operson",
+  "fs_sogn",
   "to_samr", "to_val", "fn_stad",
 ]);
 

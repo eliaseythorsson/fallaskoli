@@ -16,9 +16,11 @@ import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { createPolicy } from "../src/js/core/policy.js";
-import { fsVerb, fsPrepNoun, fsMotion } from "../src/js/tasks/fallstjorn.js";
+import { fsVerb, fsPrepNoun, fsMotion, motionPairs } from "../src/js/tasks/fallstjorn.js";
 import { obConj } from "../src/js/tasks/obeygjanleg.js";
 import { show } from "./helpers.js";
+import { freshView } from "./pools.js";
+import { seeded } from "../src/js/core/duel.js";
 
 const lex = buildLexicon(DATA);
 function ctx(diff = 2) {
@@ -111,7 +113,10 @@ test("item 6: the built question offers exactly the two forms and the right one 
   for (let k = 0; k < 200; k++) {
     const t = show(ctx(), fsMotion);
     if (!t) continue;
-    const x = EX.motionRest.find((y) => y.t === t.s.t);
+    /* a set's sentence stands with many nouns (item 23): the half is the
+       one whose forms include the answer */
+    const x = motionPairs().flatMap((p) => [p.go, p.stay])
+      .find((y) => y.t === t.s.t && [...y.thf, ...y.thgf].includes(t.answer));
     assert.deepEqual([...t.options].sort(), [x.thf[0], x.thgf[0]].sort());
     assert.equal(t.answer, (x.motion ? x.thf : x.thgf)[0]);
   }
@@ -159,5 +164,16 @@ test("item 25: the question is built with a multi-word conjunction, capitalised 
     if (t.i === 0) t.options.forEach((o) => assert.match(o, /^\p{Lu}/u, o));
     seen.add(t.answer.toLowerCase());
   }
-  assert.ok(seen.has("af því að") && seen.has("til þess að"), [...seen].join(", "));
+  assert.ok(seen.has("af því að"), [...seen].join(", "));
+  /* Every item whose answer is a multi-word conjunction, built on purpose
+     (a review's `force.item`): since item 23 there are 219 items and one
+     *til þess að* among them, so 600 random draws missed it now and then. */
+  const multi = EX.conjunction.filter((x) => x.a.includes(" "));
+  assert.ok(multi.some((x) => x.a === "til þess að"));
+  for (const x of multi) {
+    const t = obConj(lex, freshView(x.lvl, { force: { item: x.t } }), seeded(x.t.length)).task;
+    assert.equal(t.item, x.t);
+    assert.ok(t.options.includes(t.answer) && t.answer.toLowerCase() === x.a, x.t);
+    if (t.i === 0) t.options.forEach((o) => assert.match(o, /^\p{Lu}/u, o));
+  }
 });
