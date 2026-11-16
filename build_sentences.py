@@ -9,7 +9,7 @@ surface form cannot settle is marked uncertain so the app never asks about it.
 """
 from reynir import Greynir
 from islenska import Bin
-import json, sentences, noun_classes, parse_guard, parse_overrides
+import json, sentences, noun_classes, parse_guard, parse_overrides, phrases
 
 # The parser, BÍN and the guard are built on first use, so that
 # tools/try-sentences.py can annotate one candidate sentence without running
@@ -623,9 +623,13 @@ def tidy_clauses(toks, paths):
             k[a] = k[a - 1]
     # d. af því + að, vegna þess + að: the conjunction is all three words
     #    (orsakartenging), so the clause begins at *af* / *vegna*.
+    #    v6.13 (item 28): *til þess að* likewise (tilgangstenging), where the
+    #    *til* is not the main verb's own ("hlakka til þess að ..."):
+    #    phrases.til_thess_opens_clause is the one place that decides it.
     for a, b in runs():
         if a >= 2 and k[a] == 'aukasetning' and toks[a]['w'].lower() == 'að' \
-                and (toks[a - 2]['w'].lower(), toks[a - 1]['w'].lower()) in CAUSAL_HEADS:
+                and ((toks[a - 2]['w'].lower(), toks[a - 1]['w'].lower()) in CAUSAL_HEADS
+                     or phrases.til_thess_opens_clause(toks, a)):
             k[a - 1] = k[a - 2] = 'aukasetning'
     # e. V2 after a fronted clause; trailing words at the end
     rr = runs()
@@ -683,6 +687,12 @@ def clause_coordination_unsure(toks):
             return True
     return False
 
+
+
+def _only_adverb(b, word):
+    """Does BÍN know this word form as an adverb and as nothing else?"""
+    entries = b.lookup(word.lower())[1]
+    return bool(entries) and all(e.ofl == 'ao' for e in entries)
 
 
 def annotate(lvl, text, slot, need, opts=None):
@@ -943,6 +953,19 @@ def annotate(lvl, text, slot, need, opts=None):
         rec['rk'] = req_kyn
     if clause_unsure:
         rec['ku'] = True
+    # ---- 7. kinds of subordinate clause, and phrases (item 28) -------------
+    # Recorded only where the parse and a closed table agree; see phrases.py.
+    # A sentence whose clause structure is not vouched for (`ku`) says
+    # nothing about the kind of its clauses either.
+    spans = phrases.tree_spans(s.tree)
+    if not clause_unsure:
+        cl = phrases.classify_clauses(toks, spans)
+        if cl:
+            rec['cl'] = cl
+    ph = phrases.phrases(toks, spans, clause_unsure,
+                         only_adverb=lambda w: _only_adverb(b, w))
+    if ph:
+        rec['ph'] = ph
     return rec
 
 

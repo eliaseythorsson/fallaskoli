@@ -64,6 +64,14 @@ def show(lvl, text, slot, need):
         if t.get('rj'):
             flag += '  [tekið úr umferð]'
         print(f'      {i:>2} {t["w"]:<16} {str(t["c"]):<16} {t.get("m") or "—":<18}{flag}')
+    # Kinds of subordinate clause and phrases (phrases.py): read these too.
+    words = lambda r: ' '.join(t['w'] for t in rec['tok'][r['a']:r['b'] + 1])
+    if rec.get('ku'):
+        print('      setningaskipan ekki staðfest (ku)')
+    for r in rec.get('cl', []):
+        print(f'      {r["t"]}{" (með setningu inni í sér)" if r.get("n") else ""}: {words(r)}')
+    for r in rec.get('ph', []):
+        print(f'      {r["t"]}{" (í fl)" if r.get("i") else ""}: {words(r)}')
     return rec
 
 
