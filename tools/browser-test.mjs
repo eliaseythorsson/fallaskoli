@@ -2207,6 +2207,119 @@ await page.setViewport({ width: 1100, height: 900 });
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
 }
 
+/* ---------- item 28: years 9 and 10, drawn, shown and answered -------------
+ * The four new types (kinds of subordinate clause, kinds of phrase, find the
+ * forsetningarliður, indirect speech) at a phone's width and a desktop's, at
+ * a low and a high þyngd. As for item 27, a short session aimed at the
+ * type's own error pattern narrows the session to it. Each question must
+ * come, fit the screen without sideways scrolling, underline what it asks
+ * about, take a right answer and a wrong one through real clicks and typing,
+ * and explain itself under both. */
+{
+  const CASES = [
+    { focus: "aukasetn_tegund", topic: "setningagerd", band: 1, types: ["gerd_tegund"], options: 3 },
+    { focus: "aukasetn_tegund", topic: "setningagerd", band: 4, types: ["gerd_tegund"], options: 7 },
+    { focus: "aukasetn_tegund", topic: "setningagerd", band: 6, types: ["gerd_tegund"], options: 9 },
+    { focus: "lidir", topic: "setningafraedi", band: 1, types: ["setn_lidir", "lid_finna"], options: 3 },
+    { focus: "lidir", topic: "setningafraedi", band: 5, types: ["setn_lidir", "lid_finna"], options: 4 },
+    { focus: "obein_raeda", topic: "malbeiting", band: 1, types: ["raeda"] },
+    { focus: "obein_raeda", topic: "malbeiting", band: 5, types: ["raeda", "umritun"] },
+  ];
+  const SCREENS = [
+    { w: 390, h: 844, touch: true },
+    { w: 1280, h: 900, touch: false },
+  ];
+  for (const vp of SCREENS) {
+    await page.setViewport({ width: vp.w, height: vp.h, isMobile: vp.touch, hasTouch: vp.touch, deviceScaleFactor: 1 });
+    for (const c of CASES) {
+      await dismissModals();
+      await page.evaluate((c) => {
+        const A = window.FALLASKOLI;
+        A.S.enabled[c.topic] = true;
+        A.reloadPolicy();
+        A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+        Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+        A.startRun(c.topic, 10, [c.focus], { review: false });
+      }, c);
+      await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+      const at = `${c.focus} at þyngd ${c.band}, ${vp.w} px`;
+      const seen = new Set();
+      /* Two questions for a single type; up to eight where two types share
+         the pattern, until both have come (right and wrong by turns). */
+      const rounds = c.focus === "lidir" ? 8 : 2;
+      for (let k = 0; k < rounds; k++) {
+        const correct = k % 2 === 0;
+        /* A session aimed at a pattern still asks something else now and
+           then (about one question in seven), of the pattern's types: here
+           another kind of Umritun. Those are passed over. */
+        for (let skip = 0; skip < 12; skip++) {
+          const other = await page.evaluate(() => {
+            const t = window.FALLASKOLI.cur;
+            return t.type === "umritun" && t.kind !== "indirect";
+          });
+          if (!other) break;
+          await page.evaluate(() => window.FALLASKOLI.next());
+          await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+        }
+        const q = await page.evaluate(() => {
+          const t = window.FALLASKOLI.cur;
+          const marks = [...document.querySelectorAll("#task .sentence .clausemark")]
+            .map((el) => el.textContent).filter((x) => x.trim());
+          const card = document.querySelector("#task .card").getBoundingClientRect();
+          return { type: t.type, typeId: t.typeId, kind: t.kind || null, n: (t.options || []).length,
+            buttons: document.querySelectorAll("#task .opts button").length,
+            marks, span: t.span ? t.s.tok.slice(t.span.from, t.span.to + 1).map((x) => x.w) : null,
+            picks: document.querySelectorAll("#task .pickw").length,
+            words: t.s ? t.s.tok.filter((x) => !/^[.,!?;:]$/.test(x.w)).length : 0,
+            input: !!document.querySelector("#task #ans"),
+            shown: document.querySelector("#task .sentence")?.textContent || "",
+            from: t.from || null, eyebrow: document.querySelector("#task .eyebrow")?.textContent || "",
+            gloss: [...document.querySelectorAll("#task .gloss")].map((el) => el.textContent).join(" "),
+            wide: document.documentElement.scrollWidth - window.innerWidth,
+            cardRight: Math.round(card.right), inner: window.innerWidth,
+            checkSeen: (() => { const r = document.getElementById("check").getBoundingClientRect(); return r.width > 40 && r.height > 20; })() };
+        });
+        ok(c.types.includes(q.typeId), `${at}: drew ${q.typeId}`);
+        seen.add(q.typeId);
+        ok(q.wide <= 1, `${at}: the page scrolls sideways by ${q.wide} px (${q.typeId})`);
+        ok(q.cardRight <= q.inner + 1, `${at}: the card runs off the screen (${q.cardRight} > ${q.inner})`);
+        ok(q.checkSeen, `${at}: no Athuga button`);
+        if (q.typeId === "gerd_tegund" || q.typeId === "setn_lidir") {
+          ok(q.type === "choice", `${at}: ${q.typeId} is drawn as ${q.type}`);
+          ok(q.buttons === q.n && (q.typeId === "gerd_tegund" ? q.n === c.options : q.n >= 3 && q.n <= 4),
+            `${at}: ${q.buttons} option buttons for ${q.n} options`);
+          ok(q.span && q.marks.join(" ") === q.span.join(" "),
+            `${at}: underlined "${q.marks.join(" ")}", asked about "${(q.span || []).join(" ")}"`);
+          ok(/undirstrikaði/.test(q.gloss), `${at}: no instruction line: ${q.gloss}`);
+        } else if (q.typeId === "lid_finna") {
+          ok(q.type === "tap" && q.picks === q.words, `${at}: ${q.picks} words to click of ${q.words}`);
+          ok(/forsetningarlið/.test(q.gloss), `${at}: no instruction line: ${q.gloss}`);
+        } else {
+          ok(q.type === "umritun" && q.kind === "indirect" && q.input, `${at}: ${q.type}/${q.kind}`);
+          ok(q.from && q.shown === q.from && /: „.+“$/.test(q.shown), `${at}: the quote is not shown: ${q.shown}`);
+          ok(/óbeina ræðu/.test(q.gloss), `${at}: no instruction line: ${q.gloss}`);
+          if (q.typeId === "raeda") ok(/Bein og óbein ræða/.test(q.eyebrow), `${at}: heading "${q.eyebrow}"`);
+        }
+        await answerOneNoNext(correct);
+        await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
+        const v = await page.$eval("#verdict .verdict", (el) => ({ cls: el.className,
+          why: el.querySelector(".why")?.textContent || "",
+          wide: document.documentElement.scrollWidth - window.innerWidth }));
+        ok(correct ? /\bok\b/.test(v.cls) : /\bno\b/.test(v.cls), `${at}: a ${correct ? "right" : "wrong"} answer to ${q.typeId} drew "${v.cls}"`);
+        ok(v.why.length > 30, `${at}: no explanation under the answer (${q.typeId})`);
+        ok(v.wide <= 1, `${at}: the verdict makes the page scroll sideways by ${v.wide} px`);
+        await dismissModals();
+        await page.evaluate(() => window.FALLASKOLI.next());
+        await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+        if (k >= 1 && c.focus === "lidir" && seen.size === 2 && k % 2 === 1) break;
+      }
+      if (c.focus === "lidir") ok(seen.size === 2, `${at}: only ${[...seen]} came in eight questions`);
+    }
+  }
+  await page.setViewport({ width: 1100, height: 900 });
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+}
+
 /* The tabs must stay reachable at the narrowest width — they scroll sideways
    there, or (since v6.2) wrap their long names onto two lines so that all four
    fit; a tab that has been pushed off the screen is the same as a tab that is
