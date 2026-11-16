@@ -20,6 +20,7 @@
  */
 
 import { mergeReview } from "./review.js";
+import { mergeLevels } from "./difficulty.js";
 
 const num = (x) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
 const obj = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : {});
@@ -185,6 +186,10 @@ export function mergeStates(base, local, remote) {
      missed it; the rule for an entry both devices changed is in
      core/review.js `mergeReview`. */
   out.review = mergeReview(B.review, L.review, R.review);
+
+  /* Saved levels (v6.13, core/difficulty.js): a position, not a count — per
+     skill the record changed last wins whole. */
+  out.difficulty = mergeLevels(B.difficulty, L.difficulty, R.difficulty);
 
   out.lastActive = later(L.lastActive, R.lastActive);
   out.settled = later(L.settled, R.settled);

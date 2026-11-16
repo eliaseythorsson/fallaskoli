@@ -664,6 +664,12 @@ test("a table: every cell's XP and the bonus are what recording cell by cell gav
       assert.equal(j.detail.bonus, old.bonus, `${t.title}: bonus`);
       if (goalToday && j.ok) assert.equal(j.detail.bonus, Math.round(30 * dayMult(4)), t.title);
       settle(b.S, b.sess, t, j, { ms: 0 });
+      /* The saved level is stamped with the clock (core/difficulty.js); the two
+         paths ran a moment apart. */
+      for (const k of Object.keys(a.S.difficulty || {})) {
+        if (b.S.difficulty[k]) b.S.difficulty[k].at = a.S.difficulty[k].at;
+        if (b.sess.seenAt) b.sess.seenAt[k] = a.sess.seenAt[k];
+      }
       /* The review queue is the one thing `settle` writes that the old
          handlers did not (v6.13, core/review.js): a table with a wrong cell
          leaves one entry — its first wrong cell — and a perfect one none. */
@@ -722,7 +728,15 @@ test("settle: the XP, one tally per answer, the run, the time and the difficulty
       assert.ok(timed <= 1, at);
       assert.equal(day.ms || 0, timed ? 4321 : 0, `${at}: the time`);
       if (j.ok === null) assert.equal(sess.diff[t.skill], diff0, `${at}: difficulty moved`);
-      else assert.ok(j.ok ? sess.diff[t.skill] > diff0 : sess.diff[t.skill] < diff0 || diff0 === 1, `${at}: difficulty`);
+      /* v6.13 (items 11, 12): every judged answer is written into the saved
+         level's history; one right is half of a pair and does not lower the
+         level, one wrong lowers it. */
+      else {
+        const saved = S.difficulty[t.skill];
+        assert.ok(saved && saved.h.endsWith(j.ok ? "1" : "0"), `${at}: the saved history`);
+        assert.equal(saved.d, sess.diff[t.skill], `${at}: saved = live`);
+        assert.ok(j.ok ? sess.diff[t.skill] >= diff0 : sess.diff[t.skill] < diff0 || diff0 === 1, `${at}: difficulty`);
+      }
       /* What app.finish is told. */
       assert.equal(extra.correct, j.ok, at);
       assert.equal(extra.findings, j.findings, at);

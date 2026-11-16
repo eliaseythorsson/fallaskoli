@@ -1966,7 +1966,11 @@ await page.setViewport({ width: 1100, height: 900 });
     ok(!sum.bare, `${topic}: an empty "Rétt:" line in the summary`);
     if (topic === "ordaford") {
       ok(bonus, "Orðaforði: no bonus sentence offered under a graded question");
-      ok(!/sögn|Sögnin|þátíð|nútíð/.test(sum.text), "Orðaforði: a verb tip in the summary: " + sum.text.slice(0, 120));
+      /* The word-formation rule (Orðmyndun, core/diagnosis.js) is Orðaforði's
+         own and says "-ing/-un gera nafnorð úr sögn"; that phrase is not a
+         verb tip. */
+      ok(!/sögn|Sögnin|þátíð|nútíð/.test(sum.text.replace(/nafnorð úr sögn/g, "")),
+        "Orðaforði: a verb tip in the summary: " + sum.text.slice(0, 120));
     }
   }
   /* The bonus pays only when the word is in the sentence. */

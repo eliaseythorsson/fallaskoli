@@ -1,8 +1,70 @@
-/* Difficulty is tracked per skill.
+/* Difficulty is tracked per skill, and kept between visits.
 
    Doing well at declining nouns should not hand out harder verb moods. Each
-   skill has its own number, 1-5, inside the session, and it starts where that
-   skill's level warrants.                                                 */
+   skill has its own level on the 1–7 scale (þyngd), and since v6.13 that
+   level is SAVED with the progress (`S.difficulty`) instead of being rebuilt
+   from the skill's XP on every page load.
+
+   Why (critique items 11 and 12): the old number started each visit between
+   1.0 and 3.5 according to XP and rose 0.25–0.3 per right answer in that
+   skill only. In Blandað a skill meets one or two questions a day, so it
+   never climbed: over 40 simulated days a pupil who got 86% right and one who
+   got 46% right were served the same mean sentence level, 2.2 and 2.1.
+
+   ---- the rule ------------------------------------------------------------
+
+   Inside a visit (item 12), per skill:
+     * two right in a row raise the level half a step (STEP);
+     * one wrong lowers it half a step;
+     * the level does not rise while fewer than 80% of the skill's last dozen
+       answers were right (UP_GATE, WINDOW). A plain "two up, one down"
+       staircase settles where p² = ½, about 71% right — below the 75–85% the
+       critique aims for. Holding the rise back while recent accuracy is low
+       moves the balance point to about 79% (simulated with several slopes of
+       accuracy against level; it barely depends on the slope). A wrong
+       answer is never forgiven, so "one wrong lowers half" holds literally.
+   So the level is driven by the skill's recent accuracy, not by XP: XP is
+   read only once, to place a pupil who had progress before this existed
+   (`levelsFromXp`).
+
+   Between visits (item 11):
+     * a visit starts half a step below where the last one ended (WARMUP);
+     * the first RIGHT answer in that skill gives the half step back — it has
+       shown the level still holds — and counts as the first of a pair.
+   Without the give-back, a Blandað skill answered right twice a day would go
+   +½ in the visit and −½ at the next one, and never climb. With it, it
+   climbs half a step a day when the answers are right.
+   The two-in-a-row count and the last dozen outcomes are saved too, so a run
+   that spans two days in Blandað still counts.
+
+   ---- where the level may go ------------------------------------------------
+
+   Not above what the pupil may meet, and not above where anything changes:
+   `levelRanges` gives each skill [lo, hi] from the effective policy (its
+   lowest and highest allowed þyngd), the highest band any allowed type of
+   the skill DECLARES (tasks/registry.js `bands` — a skill whose types all
+   say [1] does not move at all), and one above the hardest sentence the
+   policy allows: tasks/shared.js `sentPool` serves sentences of level b−1..b
+   and falls back to EVERY sentence when that window is empty, so a level two
+   above the hardest sentence would make the questions easier, not harder.
+   The app hands the ranges to the session (`sess.range`); without them the
+   level runs over the whole 1–7 scale. A level already above `hi` (the
+   policy was tightened) is not pulled down by a right answer; a wrong one
+   steps down from `hi`.
+
+   ---- the saved record, per skill ------------------------------------------
+
+     S.difficulty[skill] = { d, r, h, at, src }
+       d    the level where the last answer left it, 1–7, in halves
+       r    right answers in a row towards the next rise (0 or 1)
+       h    the last dozen outcomes, oldest first, as "1"/"0"
+       at   when it last changed (ms) — the later record wins a merge
+       src  what set it: "play" (answers), "xp" (the one-off migration),
+            "cal" (a calibration: items 40/84, `setSkillLevel`)
+   A skill with no record is at level 1 with no history.
+
+   Pure apart from the default clock argument (`now = Date.now()`), which a
+   test or a simulation passes. */
 
 import { SKILL_IDS } from "./skills.js";
 import { skillLevel } from "./progress.js";
@@ -12,27 +74,250 @@ import { skillLevel } from "./progress.js";
 export const MIN = 1, MAX = 7;
 export const clamp = (v, a = MIN, b = MAX) => Math.max(a, Math.min(b, v));
 
-/* Deliberately asymmetric: sentences grow longer faster than they shrink. */
-export const upStep = (level) => 0.20 + 0.05 * level;
-export const downStep = (level) => 0.75 / (1 + 0.20 * (level - 1));
+/** The step up after two right in a row, and down after one wrong (item 12). */
+export const STEP = 0.5;
+/** How far below its last level a skill starts a new visit (item 11). */
+export const WARMUP = 0.5;
+/** Right answers in a row that earn a step up. */
+export const RUN_UP = 2;
+/** The recent answers the accuracy gate reads, and the share that must be right. */
+export const WINDOW = 12, UP_GATE = 0.8;
+/** Below this many recent answers there is too little to judge: no gate. */
+export const GATE_MIN = 4;
 
-export function startingDiff(skillXp) {
-  const L = skillLevel(skillXp || 0).level;
-  return clamp(1 + (L - 1) * 0.3, 1, 3.5);
+const SOURCES = new Set(["play", "xp", "cal"]);
+const round2 = (x) => Math.round(x * 100) / 100;
+const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
+
+/* ---------- the saved record ---------------------------------------------- */
+
+/** The saved record of one skill, or the default for a skill never met. Read-only. */
+export function levelRecord(S, skill) {
+  const r = S && isObj(S.difficulty) ? S.difficulty[skill] : null;
+  return isObj(r) ? r : { d: MIN, r: 0, h: "", at: 0, src: "play" };
 }
 
-/** Fresh per-session difficulty map seeded from saved per-skill XP. */
-export function initDiff(S) {
+/** The saved level of one skill (where its last visit ended). */
+export const storedLevel = (S, skill) => levelRecord(S, skill).d;
+
+/** The share right among recent outcomes, or null when there are too few. */
+export function recentAccuracy(h) {
+  const s = String(h || "");
+  if (s.length < GATE_MIN) return null;
+  return [...s].filter((c) => c === "1").length / s.length;
+}
+
+/**
+ * THE way to set a skill's level from outside the answer loop — a placement
+ * round or a guided first run (critique items 40 and 84) calls this and
+ * nothing else.
+ *
+ * Writes `S.difficulty[skill]` (clamped to 1–7, two decimals) with `src` and
+ * the time, and starts the run and the recent history afresh: answers given
+ * at other levels say nothing about the new one. If the live session is
+ * passed, the level takes effect at once (no warm-up for that skill).
+ *
+ * @param {object} S        the pupil's state (changed)
+ * @param {string} skill    a skill id (core/skills.js)
+ * @param {number} level    the new level
+ * @param {{source?: "cal"|"play"|"xp", now?: number, sess?: object,
+ *          history?: string}} [opts]  `history`: outcomes to keep as the
+ *          recent history, e.g. the calibration answers ("1"/"0")
+ * @returns {object} the record written
+ */
+export function setSkillLevel(S, skill, level, { source = "cal", now = Date.now(), sess = null, history = "" } = {}) {
+  if (!SKILL_IDS.includes(skill)) throw new Error("Óþekktur flokkur: " + skill);
+  const d = round2(clamp(Number(level) || MIN));
+  const rec = {
+    d, r: 0, h: String(history || "").replace(/[^01]/g, "").slice(-WINDOW),
+    at: now, src: SOURCES.has(source) ? source : "cal",
+  };
+  (S.difficulty ||= {})[skill] = rec;
+  if (sess) {
+    (sess.diff ||= {})[skill] = d;
+    if (sess.warm) delete sess.warm[skill];
+    (sess.seenAt ||= {})[skill] = now;
+  }
+  return rec;
+}
+
+/**
+ * The one-off migration for a pupil who has progress from before levels were
+ * saved: the level the old code started each visit at (from the skill's XP,
+ * 1–3.5), in halves — held at 2 for a skill answered at least 20 times with
+ * fewer than 60% right, since XP counts only the right answers. Only skills
+ * above level 1 get a record. `at` is 0, so any record made by answering wins
+ * a merge against it.
+ */
+export function levelsFromXp(skills) {
   const out = {};
-  SKILL_IDS.forEach((id) => { out[id] = startingDiff((S.skills[id] || {}).xp || 0); });
+  SKILL_IDS.forEach((id) => {
+    const s = isObj(skills) && isObj(skills[id]) ? skills[id] : {};
+    const L = skillLevel(s.xp || 0).level;
+    let d = Math.round(clamp(1 + (L - 1) * 0.3, 1, 3.5) * 2) / 2;
+    const n = (s.c || 0) + (s.w || 0);
+    if (n >= 20 && (s.c || 0) / n < 0.6) d = Math.min(d, 2);
+    if (d > MIN) out[id] = { d, r: 0, h: "", at: 0, src: "xp" };
+  });
   return out;
 }
 
-export function bumpDiff(sess, S, skill, ok) {
-  const L = skillLevel((S.skills[skill] || {}).xp || 0).level;
-  const cur = sess.diff[skill] ?? 1;
-  sess.diff[skill] = clamp(cur + (ok ? upStep(L) : -downStep(L)));
-  return sess.diff[skill];
+/**
+ * A saved `difficulty` as it may be trusted: known skills only, every field
+ * bounded. Used by `migrate` (core/state.js) and by the server's guard.
+ */
+export function cleanLevels(raw) {
+  const out = {};
+  if (!isObj(raw)) return out;
+  for (const id of SKILL_IDS) {
+    const v = raw[id];
+    if (!isObj(v)) continue;
+    const d = typeof v.d === "number" && Number.isFinite(v.d) ? round2(clamp(v.d)) : MIN;
+    const r = Number.isInteger(v.r) ? clamp(v.r, 0, RUN_UP - 1) : 0;
+    const h = typeof v.h === "string" ? v.h.replace(/[^01]/g, "").slice(-WINDOW) : "";
+    const at = typeof v.at === "number" && Number.isFinite(v.at) ? Math.min(Math.max(0, Math.round(v.at)), 1e13) : 0;
+    out[id] = { d, r, h, at, src: SOURCES.has(v.src) ? v.src : "play" };
+  }
+  return out;
+}
+
+/**
+ * Two devices, one pupil (core/merge.js): a level is a position, not a
+ * count, so it does not add. Per skill, the record changed last wins whole —
+ * level, run and history belong together. `base` is accepted for the shape
+ * of the other merges and not needed: a side that did not change it since
+ * base has the older `at`.
+ */
+export function mergeLevels(base, local, remote) {
+  const L = isObj(local) ? local : {}, R = isObj(remote) ? remote : {};
+  const out = {};
+  for (const k of new Set([...Object.keys(R), ...Object.keys(L)])) {
+    const l = L[k], r = R[k];
+    const w = !isObj(l) ? r : !isObj(r) ? l : ((r.at || 0) > (l.at || 0) ? r : l);
+    if (isObj(w)) out[k] = { ...w };
+  }
+  return out;
+}
+
+/* ---------- the visit ------------------------------------------------------- */
+
+/**
+ * The session's starting levels: each skill half a step below its saved
+ * level, with the saved level kept in `warm` to be given back by the first
+ * right answer. Saved state is not touched — reloading the page five times
+ * costs nothing. `seenAt` remembers each record's time, so a newer one
+ * brought in by a merge is noticed (`bumpDiff`).
+ *
+ * @returns {{diff: object, warm: object, seenAt: object, visitDay: string}}
+ */
+export function visitLevels(S, day) {
+  const diff = {}, warm = {}, seenAt = {};
+  SKILL_IDS.forEach((id) => {
+    const rec = levelRecord(S, id);
+    diff[id] = round2(Math.max(MIN, rec.d - WARMUP));
+    if (diff[id] < rec.d) warm[id] = rec.d;
+    seenAt[id] = rec.at || 0;
+  });
+  return { diff, warm, seenAt, visitDay: day };
+}
+
+/** The starting level of every skill for a new visit. */
+export const initDiff = (S) => visitLevels(S, null).diff;
+
+/**
+ * Where each skill's level may go under this policy: { skill: [lo, hi] }.
+ * See "where the level may go" at the top. Pure: the catalogue and the
+ * sentences are passed in (core/ does not import tasks/).
+ *
+ * @param {object} P          an effective policy (core/policy.js createPolicy)
+ * @param {object[]} types    tasks/registry.js TASKS: { id, skill, anyOf?, bands }
+ * @param {object[]} sentences the lexicon's sentences ({ lvl })
+ */
+export function levelRanges(P, types, sentences) {
+  const lo = P.minLevel ?? MIN, polHi = P.maxLevel ?? MAX;
+  let top = 0;
+  (sentences || []).forEach((s) => { if (s.lvl > top && P.level(s.lvl)) top = s.lvl; });
+  const sentHi = top ? top + 1 : MAX;
+  const out = {};
+  SKILL_IDS.forEach((id) => {
+    const bandTop = (types || [])
+      .filter((t) => (t.skill === id || (t.anyOf || []).includes(id)) && (!P.type || P.type(t.id)))
+      .reduce((m, t) => Math.max(m, ...(t.bands || [MIN])), MIN);
+    out[id] = [lo, Math.max(lo, Math.min(polHi, bandTop, sentHi))];
+  });
+  return out;
+}
+
+/**
+ * Give the session its ranges, and keep the levels it SERVES inside them: a
+ * level above `hi` (a tightened policy, a calibration) would otherwise reach
+ * the sentence fallback described at the top. Only the live level moves; the
+ * saved one changes with the next answer in that skill.
+ */
+export function applyRanges(sess, ranges) {
+  sess.range = ranges;
+  if (!ranges || !sess.diff) return sess;
+  for (const [id, [lo, hi]] of Object.entries(ranges))
+    if (id in sess.diff) sess.diff[id] = clamp(sess.diff[id], lo, hi);
+  return sess;
+}
+
+/* ---------- one answer -------------------------------------------------------- */
+
+/**
+ * The rule, on numbers alone. Pure.
+ *
+ * @param {{live:number, r:number, h:string, warm?:number, lo?:number, hi?:number}} at
+ * @param {boolean} ok
+ * @returns {{live:number, r:number, h:string}}
+ */
+export function nextLevel({ live, r = 0, h = "", warm = null, lo = MIN, hi = MAX }, ok) {
+  const hist = (String(h) + (ok ? "1" : "0")).slice(-WINDOW);
+  const acc = recentAccuracy(hist);
+  const mayRise = acc === null || acc >= UP_GATE;
+  const up = (to) => (live >= hi ? live : Math.max(lo, Math.min(hi, to)));
+  let next = live, run = r;
+  if (!ok) {
+    next = Math.max(lo, Math.min(live, hi) - STEP);
+    run = 0;
+  } else if (warm != null && warm > live) {
+    /* The first right answer of the visit gives the warm-up back. */
+    if (mayRise) next = up(warm);
+    run = 1;
+  } else {
+    run = r + 1;
+    if (run >= RUN_UP) {
+      run = 0;
+      if (mayRise) next = up(live + STEP);
+    }
+  }
+  return { live: round2(next), r: run, h: hist };
+}
+
+/**
+ * One judged answer in `skill`: move the session's level (`sess.diff`) and
+ * write it, with the run and the history, into the saved state. Called once
+ * per question by core/answer.js `settle` (the "bump" effect). `ok` that is
+ * not true or false (a question with no right answer) changes nothing.
+ */
+export function bumpDiff(sess, S, skill, ok, now = Date.now()) {
+  if (typeof ok !== "boolean" || !skill) return diffOf(sess, skill);
+  const rec = levelRecord(S, skill);
+  sess.diff ||= {}; sess.warm ||= {}; sess.seenAt ||= {};
+  /* Another device moved this skill since this visit last looked (a merge
+     brought a newer record): carry on from there. */
+  if ((rec.at || 0) > (sess.seenAt[skill] || 0)) {
+    sess.diff[skill] = rec.d;
+    delete sess.warm[skill];
+  }
+  const [lo, hi] = (sess.range && sess.range[skill]) || [MIN, MAX];
+  const n = nextLevel({ live: sess.diff[skill] ?? rec.d, r: rec.r, h: rec.h,
+    warm: sess.warm[skill], lo, hi }, ok);
+  delete sess.warm[skill];
+  sess.diff[skill] = n.live;
+  (S.difficulty ||= {})[skill] = { d: n.live, r: n.r, h: n.h, at: now, src: "play" };
+  sess.seenAt[skill] = now;
+  return n.live;
 }
 
 export const diffOf = (sess, skill) => sess.diff[skill] ?? 1;
