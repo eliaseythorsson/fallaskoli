@@ -21,6 +21,7 @@ import { drawTeacherMap } from "./skillmap.js";
 import { SKILLS } from "../core/skills.js";
 import { patternById, UNREAD } from "../core/diagnosis.js";
 import { YEARS } from "../core/curriculum.js";
+import { utcDay as dayOf } from "../core/calendar.js";
 import { ASSIGN, ASSIGNABLE_PATTERNS, ASSIGNABLE_NODES, KIND_NAME, targetName, dueText }
   from "../core/assignment.js";
 /* Item 64: the live class round has its own file; its section sits here. */
@@ -35,7 +36,6 @@ import { drawTeacherWriting } from "./writing.js";
 const verdict = (text, kind = "bad") =>
   (text ? `<div class="verdict ${kind}"><p>${esc(text)}</p></div>` : "");
 const pct = (x) => Math.round(100 * (x || 0));
-const dayOf = (ms) => new Date(ms).toISOString().slice(0, 10);
 const TREND = { betra: "▲", verra: "▼", jafnt: "●" };
 const TREND_WORD = { betra: "á uppleið", verra: "á niðurleið", jafnt: "svipað" };
 

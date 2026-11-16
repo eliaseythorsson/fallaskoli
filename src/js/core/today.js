@@ -74,11 +74,11 @@ import { QUESTION_TYPES } from "./policy.js";
 /** The size of today's session. */
 export const TODAY_SIZE = 10;
 /** The base shares of reviews and patterns; new material is the rest. */
-export const SHARE = { review: 0.3, pattern: 0.4 };
+const SHARE = { review: 0.3, pattern: 0.4 };
 /** At most this many patterns are worked on in one session. */
-export const TODAY_PATTERNS = 3;
+const TODAY_PATTERNS = 3;
 /** New material comes from at least this many skills … */
-export const FRESH_MIN = 3;
+const FRESH_MIN = 3;
 /** … and enough of them that none has more than this many new questions. */
 export const FRESH_PER = 2;
 /** The core skills a new pupil's new material comes from first, in this order. */
