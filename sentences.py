@@ -494,6 +494,26 @@ S = [
 (1, "Ég henti ruslinu.",                   None,      None),
 (1, "Hún hrósaði stráknum.",               None,      None),
 (1, "Við gengum framhjá kirkjunni.",       None,      None),
+# and eighteen more (pool of govern at þyngd 1 was 159, too near 150): only
+# verbs and prepositions government.py lists with one case
+(1, "Ég sakna afa míns.",                  None,      None),
+(1, "Við hjálpuðum ömmu.",                 None,      None),
+(1, "Strákurinn gleymdi nestinu.",         None,      None),
+(1, "Ég fór til læknisins.",               None,      None),
+(1, "Kötturinn svaf hjá mér.",             None,      None),
+(1, "Pabbi keypti gjöf handa mér.",        None,      None),
+(1, "Hún svaraði spurningunni.",           None,      None),
+(1, "Við biðum strætisvagnsins.",          None,      None),
+(1, "Ég leitaði lykilsins.",               None,      None),
+(1, "Hann gekk um garðinn.",               None,      None),
+(1, "Barnið hló að trúðnum.",              None,      None),
+(1, "Fuglinn flaug frá hreiðrinu.",        None,      None),
+(1, "Hún tók bók úr hillunni.",            None,      None),
+(1, "Hann kastaði steininum.",             None,      None),
+(1, "Mamma lokaði hurðinni.",              None,      None),
+(1, "Ég fer aldrei án húfu.",              None,      None),
+(1, "Strákurinn bjargaði kettlingnum.",    None,      None),
+(1, "Hún skilaði lyklinum.",               None,      None),
 
 # =============================================================================
 # LEVEL 2 — 5-7 words
