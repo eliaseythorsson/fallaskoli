@@ -766,10 +766,12 @@ export const TYPES = [
     tags: ["form", "num", "verb:agree", "verb:mm", "verb:tense", "verb:vh"],
     bands: [1, 2, 3, 4, 5],
     build: tableVerb },
-  /* item 27 */
+  /* item 27. so_beyging and so_bodhattur have their own steps at 3 and 5;
+     the verb is chosen by `wordWeight`, which since item 16 reads the level
+     at every step to 5 (regular words first), so 2 and 4 move too. */
   { id: "so_beyging", skill: "sagnord", weight: 5, renderer: "slots",
     tags: ["form", "sobeyg", "sobeyg:hljod", "verb:strongpast"],
-    bands: [1, 3, 5],
+    bands: [1, 2, 3, 4, 5],
     build: soBeyging },
   { id: "so_mynd", skill: "sagnord", weight: 5, renderer: "choice",
     tags: ["somynd", "somynd:st"],
@@ -777,6 +779,6 @@ export const TYPES = [
     build: soMynd },
   { id: "so_bodhattur", skill: "sagnord", weight: 5, renderer: "slots",
     tags: ["bodh", "bodh:nh", "bodh:st", "form"],
-    bands: [1, 3, 5],
+    bands: [1, 2, 3, 4, 5],
     build: soBodhattur },
 ];

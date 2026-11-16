@@ -68,10 +68,11 @@ test("a type that declares steps builds harder questions as the band rises", () 
 test("the types the critique found flat now follow the band", () => {
   /* item 13's whole list — the three Setningagerðir types take their level
      from the sentence since item 14 (flat to þyngd 4, as they declare, and
-     rising from 5) — and the two types item 27a added since. */
+     rising from 5) — and the types items 27a, 27b and 28 added since. */
   const was = ["govern", "clause", "gerd_finna", "gerd_upphaf", "lo_beyging", "lo_stig", "lo_samr",
     "fn_aftur", "to_val", "ob_st", "ob_fsao", "ob_flokka", "fs_hreyf", "fs_sogn", "fs_operson",
-    "or_samhengi", "or_myndun", "or_utundan", "tbl_fn", "tbl_to", "fn_flokkar", "no_beyging"];
+    "or_samhengi", "or_myndun", "or_utundan", "tbl_fn", "tbl_to", "fn_flokkar", "no_beyging",
+    "so_beyging", "so_mynd", "so_bodhattur", "gerd_tegund", "setn_lidir", "lid_finna", "raeda"];
   for (const id of was) {
     const spec = typeById(id);
     assert.ok(spec.bands.length > 1, `${id} still declares no steps`);

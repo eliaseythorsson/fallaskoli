@@ -71,7 +71,7 @@ const WEAK_PAST = /(aði|ði|di|ti)$/;
  * so_beyging
  * ====================================================================== */
 
-const SB = new Map([1, 3, 5].map((b) => [b, buildMany(soBeyging, b, 1500)]));
+const SB = new Map(typeById("so_beyging").bands.map((b) => [b, buildMany(soBeyging, b, 1500)]));
 
 test("so_beyging: the lesson's rule, BÍN's forms, and every form BÍN lists accepted", () => {
   for (const [band, tasks] of SB) {
@@ -312,7 +312,7 @@ test("so_mynd: a review asks the same mynd, the same verb, never the sentence ju
  * so_bodhattur
  * ====================================================================== */
 
-const BH = new Map([1, 3, 5].map((b) => [b, buildMany(soBodhattur, b, 1500)]));
+const BH = new Map(typeById("so_bodhattur").bands.map((b) => [b, buildMany(soBodhattur, b, 1500)]));
 
 test("so_bodhattur: BÍN's forms, every one of them accepted, and the explanation", () => {
   for (const [band, tasks] of BH) {
@@ -429,7 +429,9 @@ test("all three are in the curriculum switch, the map, the 9. bekkur preset and 
     assert.equal(q.get(id).skill, "sagnord");
     assert.equal(typeById(id).skill, "sagnord");
     assert.equal(typeById(id).renderer, renderer);
-    assert.deepEqual(typeById(id).bands, [1, 3, 5]);
+    /* so_beyging and so_bodhattur also move at 2 and 4: they choose by
+       `wordWeight`, which reads the level at every step (item 16). */
+    assert.deepEqual(typeById(id).bands, id === "so_mynd" ? [1, 3, 5] : [1, 2, 3, 4, 5]);
   }
   for (const [node, type] of [["so-sterkar-veikar", "so_beyging"], ["so-tholmynd", "so_mynd"],
                               ["so-bodhattur", "so_bodhattur"]]) {
