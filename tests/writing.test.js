@@ -460,3 +460,19 @@ test("the image: the default stays the plain one; the `greynir` target carries t
   const req = await fs.readFile(path.join(root, "server", "requirements-writing.txt"), "utf8");
   assert.match(req, /^reynir-correct==\d+\.\d+\.\d+$/m, "pinned exactly, like requirements.txt");
 });
+
+test("the notice: version 2026-11-21 names both paragraphs (items 45 and 46), and the short version no longer says the teacher never sees what is written", async () => {
+  const { PRIVACY_VERSION, privacyPage, privacyConfig } = await import("../server/privacy.mjs");
+  assert.ok(PRIVACY_VERSION >= "2026-11-21", "free text a child writes, and a second-language flag: a new version");
+  const html = privacyPage(privacyConfig({}));
+  assert.ok(html.includes(`Síðast breytt ${PRIVACY_VERSION}`));
+  assert.match(html, /<h2>Ritun vikunnar: textinn sem þú skrifar<\/h2>/);
+  assert.match(html, /<h2>Íslenska sem annað mál<\/h2>/);
+  assert.match(html, new RegExp(`Mest ${WRITING.keepPerPupil} textar`));
+  assert.doesNotMatch(html, /aldrei það sem þú skrifar\./, "with keeping on the teacher can read a Ritun vikunnar text");
+  const doc = await fs.readFile(path.join(HERE, "..", "docs", "PRIVACY.md"), "utf8");
+  assert.match(doc, /## 1e\. Icelandic as a second language/);
+  assert.match(doc, /## 1f\. Ritun vikunnar/);
+  assert.ok(doc.includes(`\`${PRIVACY_VERSION}\`: the second-language`), "§3 lists the version and what it added");
+  assert.doesNotMatch(doc, /has not moved `PRIVACY_VERSION`|has not been moved by this\s+branch/);
+});
