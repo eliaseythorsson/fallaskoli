@@ -2,12 +2,14 @@
 
 ## Where things stand
 
-6,510 words out of 6,564 have a definition (99%); the 54 without one are
-listed with the reason at the end of `data/ino-report.json`. They come from ÍNO wherever
-the extract has one and from the hand-written table in `definitions.py`
-otherwise — `build_bundle.py` prints the split. Meaning questions are only drawn
-from words that have a definition, so any gap is silent; before the ÍNO extract
-arrived it was 75 words.
+Nearly every word the program teaches has a definition. They come from ÍNO
+wherever the extract has one and from the hand-written table in
+`definitions.py` otherwise — `build_bundle.py` prints the split. The words
+without one are listed, each with the reason, in `data/ino-report.json`
+(`unmatched`), and `node tools/checkdefs.mjs` follows a definition through every
+hand-off to the screen. No figure is repeated here, because it would be out of
+date at the next build. Meaning questions are only drawn from words that have a
+definition, so any gap is silent.
 
 ## No, the program should not call Árnastofnun
 
@@ -24,7 +26,8 @@ dictionary.
 
 1. **Fetch the extract** from Árnastofnun/CLARIN, outside this environment. This
    is manual work done once. What arrives is `islensk_nutimamalsordabok.zip`,
-   and inside it one **XML** file of about 38 MB — not JSON. The admin page
+   and inside it one **XML** file of some tens of MB — not JSON (the one in this
+   repository is `islensk_nutimamalsordabok_2026-02.xml`). The admin page
    will not take it, and should not: see the next step.
 2. **Convert it once**, on the owner's own machine:
 
@@ -53,17 +56,15 @@ dictionary.
 3. **`build_bundle.py` picks it up automatically** if the file exists: it is
    read, joined on `bin_id`, and `definitions.py` becomes the fallback for what
    is missing. Nothing else in the build changes.
-   Or, without a rebuild: upload the same `data/ino.json` on the **Gögn** tab.
+   Or, without a rebuild: upload the same `data/ino.json` as the administrator, under **Umsjón** (the dataset box).
    `PUT /admin/dataset` reads the identical shape, and the status line then
-   shows the count, the date and the source. The program fetches the whole set
-   once, at start-up, through `GET /definitions/all` — never one request per
-   word.
+   shows the count, the date and the source.
 
    **Check the build's own line.** `build_bundle.py` prints what it found:
 
    ```
-   ÍNO found: 6237 entries
-   definitions attached: 6237 (ÍNO 6237, hand-written 12)
+   ÍNO found: <n> entries (format 2)
+   definitions attached: <n> (ÍNO <n>, hand-written <n>)
    ```
 
    A count in single or double digits means the file is not what it should be —
@@ -72,12 +73,14 @@ dictionary.
    attaching nothing in silence.
 4. **On a server**, `/definitions` serves the same data set and
    `core/definitions.js` switches from `bundledSource` to
-   `[remoteSource, bundledSource]`. The file the child opens then does not have
-   to carry 50,000 definitions with it.
+   `[remoteSource, bundledSource]`: `GET /definitions?bin_id=…` answers one word
+   at a time (cached in the browser), with the bundled definition as the
+   fallback. The bundled file still carries the definitions of the words the
+   program teaches, so it works offline and opened from a file.
 
-## What this opens up
+## What this opened up
 
-Meaning questions go from about 6,200 words to very nearly the
-whole vocabulary, and *bar*, *bekkur* and the rest that currently show only
-lookup links get a real definition. This is the largest single change still
-outstanding.
+Meaning questions are drawn from nearly the whole vocabulary, and words that
+once showed only lookup links (*bar*, *bekkur* …) have a real definition. The
+definitions are ÍNO's (CC BY-SA 4.0), so ShareAlike applies to the built file
+(README, *Licences*).

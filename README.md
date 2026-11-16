@@ -17,8 +17,11 @@ epli*, not *ferskt barn*) and which adjectives are not compared (*dauður*,
 
 ## Running it
 
-The app is one HTML file, `dist/fallaskoli-v6.12.html` (built by `./build.sh`; not
-committed — every release is a git tag). It works three ways, with
+The app is one HTML file, `dist/fallaskoli-v<version>.html` (built by `./build.sh`; not
+committed — every release is a git tag and its file is attached to the release).
+The version is in `package.json` and nowhere else: `tools/version.mjs` reads it
+for every tool that needs the file name, and this README deliberately names no
+version or test count, which would only go stale. It works three ways, with
 nothing configured — the program looks at where it was loaded from:
 
 | how it is opened | where progress lives |
@@ -50,6 +53,16 @@ offline the program says it has no connection rather than starting a second
 progress in the browser. Opened from a file, none of this happens: no worker,
 no manifest, the same single file.
 
+**What the server adds.** Accounts and groups, a leaderboard inside a group (its
+default metric counts what got *better* this week, not how long the child sat
+there), duels that the server grades, and a teacher's part of Skólastofan for
+the guardian of a group: the class's error patterns, one pupil's skill map,
+homework (*Verkefni*), a weekly class goal, a live round on the projector and
+team duels. The server also counts answers anonymously and, once enough have
+come in, adjusts the difficulty of question types and cells by itself
+(`docs/SERVER.md` §4.3). Every route is in `docs/API.md`, and what each of
+these lets a teacher see is in `docs/PRIVACY.md` §1a–1d.
+
 For one child on several devices the second row is the simplest: put the file
 anywhere on the web and open the same link everywhere. Progress is then kept
 per device; **Stillingar og námsefni → Færa milli tækja** moves it between devices as
@@ -65,7 +78,7 @@ and progress that follows the child automatically and merges between devices.
 ./build.sh --accept     # after a deliberate change to the data
 ```
 
-Needs Python 3.10+ with `pip`, Node 18+, and for the browser checks a Chromium
+Needs Python 3.10+ with `pip`, Node 20+ (CI and the container use 22), and for the browser checks a Chromium
 (`CHROME_PATH=/path/to/chrome`; they are skipped otherwise). Debian/Ubuntu:
 `apt install -y nodejs npm python3 python3-pip`. The grammar libraries ship
 Linux wheels for x86_64 only.
@@ -120,13 +133,16 @@ What the build does, in order:
    host — see *Installing it* above), then `tools/browser-test.mjs` and
    `tools/server-test.mjs` drive it in a real Chromium.
 
-`node tools/pack.mjs` writes `dist/fallaskoli-v6.12-src.zip` with everything.
+`node tools/pack.mjs` writes `dist/fallaskoli-v<version>-src.zip` with everything
+the build needs. CI (`.github/workflows/ci.yml`) also runs the unit tests, the
+bundle and the data manifest on every push, and refuses a commit that contains
+personal data or a built file; `.github/workflows/release.yml` builds a tag and
+attaches the HTML, the zip and the web folder to a release.
 
 ## Where things are
 
 ```
 sentences.py          the sentence bank: (level, text, slot, need[, options])
-noun_classes.py       semantic class of every noun; í/á convention; exclusions
 irregularity.py       how irregular a paradigm is (stems counted on BÍN's forms:
                       umlaut, syncope, -j-/-v-, consonant change, strong verbs)
                       and the table of how hard each cell is; the app lets the
@@ -145,6 +161,9 @@ parse_guard.py        the checks every token passes: the lemma is plausible, the
                       mark exists in BÍN, government agrees with the table,
                       features the form cannot settle are marked uncertain
 parse_overrides.py    declared decisions about readings the guard accepts
+phrases.py            kinds of subordinate clause and phrase, written into a
+                      sentence only when the parse and a closed table of what
+                      such a clause looks like agree (years 9–10)
 definitions.py        a handful of hand-written definitions; the rest are ÍNO
 exercises.py          hand-written items for the v6.11 question types (pronouns,
                       numerals, dates, government, synonyms …): sentences and
@@ -206,7 +225,7 @@ src/js/core/classgoal.js  the class goal (item 59): a weekly target the
                       the bar in ui/classgoal.js
 src/js/core/examples.js  the worked example on the first card of a type a
                       pupil has not met (item 41; the texts are in
-                      content/examples.js, every form checked against BÍN
+                      src/js/content/examples.js, every form checked against BÍN
                       by tests/examples.test.js), and `S.seenTypes`
 src/js/core/mix.js    the mix rule for a session: ≥3 kinds of question, none
                       over ~40%, tables ≤30%, analysis ≤35%
@@ -214,6 +233,29 @@ src/js/core/curriculum.js  the curriculum map as data: the official
                       criteria, the nodes (one thing a pupil learns, with its
                       year, question types and Lesefni page) and what the
                       8., 9. and 10. bekkur presets switch on
+src/js/core/skillmap.js  the skill map (item 83): every node with how well
+                      (the mastery mark), when it was last trained and
+                      whether it needs work (an active pattern, reviews due);
+                      `standingOfNode(node, S)`, and `teacherMap` for the same
+                      map of one pupil on the teacher's screen
+src/js/core/difficulty.js  difficulty kept per skill and saved with the
+                      progress (`S.difficulty`): half a step up after two
+                      right in a row, down after a miss, held back while
+                      recent accuracy is low; the hardness of a word and a
+                      cell (`hardnessWeight`)
+src/js/core/duel.js, teamduel.js, live.js, assignment.js, classview.js
+                      the rules of duels (the same seed gives both pupils
+                      the same plan; the server grades the answers), team
+                      duels, a live class round, a teacher's assignments and
+                      the class's error-pattern table — each shared by the
+                      server and the browser so both read the same numbers
+src/js/core/calibration.js, classifiercheck.js  difficulty set from anonymous
+                      counts of answers, and the check of the error
+                      classifier against a sample of real wrong answers
+                      (server/calibrate.mjs holds what only a server has)
+src/js/core/merge.js, server.js, social.js, leaderboard.js  progress from two
+                      devices put together, the program's one view of the
+                      server, and what pupils see of each other
 src/js/tasks/         the question builders, one file per category:
                       nafnord.js, lysingarord.js, sagnord.js, fornofn.js,
                       toluord.js, obeygjanleg.js, greining.js, fallstjorn.js,
@@ -234,25 +276,40 @@ src/js/ui/            rendering: render.js (one renderer per task type;
                       render-more.js for gap, choice, tap, sort and the
                       Orðaforði bonus),
                       session.js (the Æfa picker, a session, its summary),
+                      skillmap.js (Merki og framvinda), teacher.js, live.js,
+                      teamduel.js, duel.js, classgoal.js (Skólastofan),
+                      lessons.js (Lesefni), drill.js, reports.js, pwa.js,
                       dom.js, panels.js, progress.js, account.js, policyui.js
+src/js/content/       hand-written texts in the program: the worked examples
+                      and the Lesefni pages
 src/head.html         the stylesheet
+src/sw.js             the service worker: caches the program, never an answer
 src/fonts/            the three typefaces, inlined into the built file
 server/               the optional multi-user server (Node, JSON files on disk):
                       server.mjs (routes), store.mjs (files, cache, erasure),
                       auth.mjs, guard.mjs (what is stored and believed),
                       privacy.mjs (the notice), backup.mjs, admin.mjs (CLI),
                       calibrate.mjs (anonymous counts of answers → a weekly
-                      table of adjustments; the opt-in sample of wrong answers)
+                      table of adjustments; the opt-in sample of wrong answers),
+                      classgoal.mjs, live.mjs (in memory, server-sent events),
+                      teamduel.mjs, privs.mjs (give up root)
 Dockerfile, fly.toml  the server as a container, and where it runs
-tools/                build, manifest, coverage, pack, ÍNO converter, tests in
-                      Chromium, try-sentences.py, task-snapshot.mjs (what the
-                      builders build from fixed seeds — to compare two versions)
-tests/                node --test; 505 tests
+Dockerfile.build, build-in-container.sh   the pinned build (see above)
+test-together.sh      the server for several testers on your own computer
+.github/workflows/    ci.yml (tests, bundle, manifest, the reproducible build)
+                      and release.yml (a tag → a release)
+tools/                build, version (the file name), manifest, coverage, pack,
+                      pwa (manifest and icons), ÍNO converter, tests in
+                      Chromium (browser-test, server-test), load-test,
+                      try-sentences.py, task-snapshot.mjs (what the builders
+                      build from fixed seeds — to compare two versions) and
+                      sim/ (simulated pupils; see its README)
+tests/                node --test tests/*.test.js
 _grammar-audit/       the audit's notes, and three scripts that print what the
                       app generates so a person can read it (see below)
 docs/                 HOSTING.md (Fly.io), PRIVACY.md (GDPR: the record, consent,
                       requests, a breach), SERVER.md (your own machine), API.md,
-                      DEFINITIONS.md, CURRICULUM.md (the app against the
+                      DEFINITIONS.md, LESEFNI.md, CURRICULUM.md (the app against the
                       aðalnámskrá and the textbooks; its tables are written by
                       tools/curriculum-doc.mjs)
 ```
@@ -273,9 +330,10 @@ in the sentence agrees with it). `fixed` means an adjective or pronoun sits
 beside the slot and no swap is allowed; `nf` means the sentence is never used
 as a cloze, because the case after *með* depends on what is meant.
 
-That one mechanism — frames × BÍN — is how 733 sentences show 3,700 nouns in
-every one of their 16 forms inside a real sentence (99.7% of all cells; the
-rest are mass nouns in the plural, excluded on purpose).
+That one mechanism — frames × BÍN — is how the frames of the sentence bank show
+every noun in every one of its 16 forms inside a real sentence (all cells but
+the plural of mass nouns, excluded on purpose; `node tools/coverage.mjs` prints
+the current figures).
 
 ## Adding sentences
 
@@ -321,4 +379,4 @@ OpenSubtitles frequency list (hermitdave/FrequencyWords), Bricolage Grotesque,
 Public Sans and IBM Plex Mono (OFL; bundled, notice in `src/fonts/OFL.txt`), and
 Íslensk nútímamálsorðabók (CC BY-SA 4.0) for the definitions. The full list
 is at the bottom of the Stillingar og námsefni tab and in `data/licenses.js`. ShareAlike applies to the built
-file: it contains 6,000 of ÍNO's definitions.
+file: it contains ÍNO's definitions.

@@ -29,7 +29,7 @@ agreement — it takes five minutes).
    ./build.sh
    ```
 
-   **You should see** `built fallaskoli-v6.3.html` at the end. Nothing is built
+   **You should see** `built dist/fallaskoli-v<version>.html` at the end (the version is in `package.json`). Nothing is built
    on Fly: the container only carries this file and the server.
 
 2. Decide two things you will be asked for:
