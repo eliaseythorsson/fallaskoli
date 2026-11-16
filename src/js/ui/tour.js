@@ -89,6 +89,8 @@ export const TEXT = {
     title: "Sleppa spurningunum?",
     enough: (k, n) => `Þú hefur svarað ${k} af ${n} spurningum. Það dugar til að finna byrjunarstað.`,
     few: (k, n) => `Þú hefur svarað ${k} af ${n} spurningum. Það er of lítið til að finna byrjunarstað, svo þú byrjar á þyngd 1 í öllu efni.`,
+    /* A replay: the pupil has levels already, and they stay. */
+    fewKept: (k, n) => `Þú hefur svarað ${k} af ${n} spurningum. Það er of lítið til að finna byrjunarstað, svo þyngdin verður eins og hún var.`,
     stay: "Halda áfram",
     go: "Sleppa spurningunum",
   },
@@ -98,6 +100,8 @@ export const TEXT = {
     body: "Takk fyrir svörin! Svona byrjar þú í hverju efni. Þyngdin fylgir þér svo: hún hækkar þegar vel gengur og lækkar þegar eitthvað reynist erfitt.",
     noneTitle: "Þá byrjum við á byrjuninni",
     none: "Þú byrjar á þyngd 1 í öllu efni. Þyngdin hækkar svo af sjálfu sér þegar vel gengur.",
+    keptTitle: "Þyngdin er óbreytt",
+    kept: "Svörin voru of fá til að finna byrjunarstað, svo þyngdin í hverju efni er eins og hún var.",
     level: (nm, band, top) => `${nm}: þyngd ${band} af ${top}`,
     capLeft: "Efni",
     cap: (top) => `þyngd, 1–${top}`,
@@ -452,7 +456,7 @@ export function createTour(app) {
     const k = r.placement.st.hist.length;
     const Q = TEXT.quit;
     const sheet = openSheet(Q.title, `
-      <p>${esc(k >= MIN_ANSWERS ? Q.enough(k, r.n) : Q.few(k, r.n))}</p>
+      <p>${esc(k >= MIN_ANSWERS ? Q.enough(k, r.n) : T.replay ? Q.fewKept(k, r.n) : Q.few(k, r.n))}</p>
       <div class="answer"><button type="button" class="go" id="tourquit-no">${esc(Q.stay)}</button>
         <button type="button" class="ghost" id="tourquit-yes">${esc(Q.go)}</button></div>`);
     sheet.el.querySelector("#tourquit-no").onclick = () => sheet.close();
@@ -531,8 +535,8 @@ export function createTour(app) {
       }
     }
     const root = card({
-      title: placed ? R.title : R.noneTitle,
-      body: `<p>${esc(placed ? R.body : R.none)}</p>`,
+      title: placed ? R.title : T.replay ? R.keptTitle : R.noneTitle,
+      body: `<p>${esc(placed ? R.body : T.replay ? R.kept : R.none)}</p>`,
       extra: (placed ? levelsHTML(result) : "") + yearHTML,
       actions: `<button type="button" class="go" id="tour-go">${esc(R.go)}</button>`,
       wide: placed,
@@ -757,8 +761,8 @@ export function createTour(app) {
     replay() {
       const note = $("tour-note");
       heal();
-      if (T.phase) return false;
       if (app.run || app.duelRun || app.drill) { if (note) note.textContent = TEXT.busy; return false; }
+      if (T.phase) return false;
       if (note) note.textContent = "";
       begin({ replay: true });
       return true;
