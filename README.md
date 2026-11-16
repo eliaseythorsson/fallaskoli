@@ -144,6 +144,12 @@ src/js/core/mastery.js  the mastery mark (item 44): per question type the
                       "Fullt vald", from recent accuracy at the pupil's
                       level and reviews passed on time; thresholds at the
                       top of the file
+src/js/core/mending.js  getting better, counted (items 56, 58): an error
+                      pattern is *mended* when it was active and has since
+                      been right ten times in a row, the last on a later day;
+                      reviews passed per day; this week's "Framfarir" (the
+                      leaderboard figure, capped per day so volume cannot
+                      raise it) — `S.mend`, its sanitiser and its merge
 src/js/core/examples.js  the worked example on the first card of a type a
                       pupil has not met (item 41; the texts are in
                       content/examples.js, every form checked against BÍN

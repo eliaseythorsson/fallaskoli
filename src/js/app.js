@@ -41,6 +41,7 @@ import { TASKS } from "./tasks/index.js";
 const typesOfSkill = (id) => new Set(TASKS.filter((t) => t.skill === id || (t.anyOf || []).includes(id)).map((t) => t.id));
 import { diagnose, noteDiagnosis, activePatterns, huntPreferFor, focusTypes, pickTargeted,
   patternById, runReport } from "./core/diagnosis.js";
+import { noteMending } from "./core/mending.js";
 import { SKILL_IDS } from "./core/skills.js";
 import { renderPicker, renderRunBar, renderSummary, renderDiagnosisPanel, confirmQuit,
   topics, usable, MINE, MIXED, TODAY, ASSIGNED, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
@@ -905,8 +906,13 @@ const app = {
     extra = rest;
     const findings = judged || diagnose(this.cur, resp);
     const chances = noteDiagnosis(this.S, this.cur, findings, extra.correct ?? null, todayKey());
+    /* Items 56 and 58: an active pattern now right ten times in a row, on a
+       later day than it went wrong, is mended (core/mending.js) — before the
+       badge context below is built, so the badge comes with this answer. */
+    const mendedNow = noteMending(this.S, chances, todayKey());
     showFindings(findings, extra.correct);
     showReview(review);
+    showMended(mendedNow);
     const r = this.run;
     const runQuestion = !!(r && this.cur && this.cur.inRun && !this.cur.closed);
     if (r && this.cur && this.cur.inRun && !this.cur.closed) {
@@ -1028,6 +1034,19 @@ function showFindings(findings, verdict) {
  * comes next, or that it is done with. `review` is what `noteReview` said
  * happened in the queue; nothing is shown unless an entry moved.
  */
+/**
+ * One line under the answer that mended an error pattern (items 56 and 58):
+ * the pupil sees it the moment it happens, not only on the badge shelf.
+ */
+function showMended(ids) {
+  const v = document.querySelector("#verdict .verdict");
+  if (!v || !ids || !ids.length || v.querySelector(".mendline")) return;
+  const names = ids.map((id) => (patternById(id) || {}).nm).filter(Boolean);
+  if (!names.length) return;
+  v.insertAdjacentHTML("beforeend", `<p class="streakline mendline">🩹 Þú hefur lagað þetta: <b>${
+    names.map(esc).join(" · ")}</b> — tíu rétt svör í röð.</p>`);
+}
+
 function showReview(review) {
   const v = document.querySelector("#verdict .verdict");
   if (!v || !review || v.querySelector(".reviewline")) return;

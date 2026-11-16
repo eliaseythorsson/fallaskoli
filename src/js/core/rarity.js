@@ -80,6 +80,15 @@ export const FAMILIES = {
   rescue:      { at: 1,  share: 0.35, half: 6 },    // different words rescued
   strong:      { at: 25, share: 0.55, half: 110 },  // words held at 80%+
   vocab:       { at: 250, share: 0.60, half: 450 }, // the leaderboard's Orðaforði
+  /* v6.13, item 56 (badges.js §14j). A mending needs a pattern to go wrong
+     often first, and then ten right over two days: even the first is green,
+     and different patterns run out fast. Reviews on time come to everyone
+     who misses things and comes back. The mastery mark: "Gott vald" is where
+     a pupil whose level is still rising settles; "Fullt vald" needs the
+     level to have stopped and nine in ten right, with the reviews kept. */
+  mend:         { at: 1,  share: 0.40, half: 3 },   // different patterns mended
+  reviewontime: { at: 10, share: 0.50, half: 70 },  // reviews passed on time
+  mastery:      { at: 3,  share: 0.40, half: 1 },   // a skill's mastery mark
 };
 
 /* No badge is certain and none impossible. The floor is ADDED, not clamped:

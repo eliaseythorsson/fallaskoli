@@ -58,6 +58,8 @@ const GROUPS = [
      be visible from day one so the child knows they exist. */
   ["yfir", "Það sem allt endar í"],
   ["fyrst", "Fyrstu skrefin"],
+  /* Item 56: what pays for getting better, high on the page on purpose. */
+  ["framfarir", "Framfarir"],
   ["röð", "Réttar í röð"],
   ["dagar", "Dagar og þrautseigja"],
   ["safn", "Samtals"],
