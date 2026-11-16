@@ -3316,6 +3316,8 @@ await page.setViewport({ width: 1100, height: 900 });
   await page.evaluate(() => { const A = window.FALLASKOLI; delete A.S.settings.writingDone; A.save(true); A.openView("practice"); A.next(); });
   const offer = await page.evaluate(() => { const b = document.querySelector(".writebox"); return b ? b.innerText : null; });
   ok(offer && /Skrifaðu þrjár setningar um/.test(offer) && /Skrifa →/.test(offer), `item 46: the picker should offer the week's writing: ${offer}`);
+  ok(/Hér er enginn yfirlestur\. Þú lest textann sjálf\(ur\) yfir\./.test(offer || ""),
+    `review S14: offline the offer must say nothing reads the text over: ${offer}`);
   await tapIn("#writego");
   await page.waitForSelector("#wr-text", { timeout: 3000 }).catch(() => ok(false, "item 46: the writing card did not open"));
   const card = await page.evaluate(() => ({

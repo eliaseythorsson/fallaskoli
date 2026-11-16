@@ -1534,6 +1534,7 @@ async function closeWindows(page) {
   /* Back to the picker, as "Velja annað efni" does after a session. */
   await P.page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.cur = null; A.next(); });
   await P.page.waitForSelector("#writego", { timeout: 10000 });
+  ok(!(await P.page.$(".writebox .wrselfonly")), "review S14: on a server the offer says there is no read-over");
   await P.page.click("#writego");
   await P.page.waitForFunction(() => { const b = document.getElementById("wr-check"); return b && !b.hidden; }, { timeout: 10000 })
     .catch(() => ok(false, "item 46: 'Lesa yfir' did not appear for a group with the check on"));

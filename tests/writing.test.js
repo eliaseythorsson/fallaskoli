@@ -30,7 +30,7 @@ import { blankState } from "../src/js/core/state.js";
 import { weekKey } from "../src/js/core/social.js";
 import { WRITING, TOPICS, topicFor, promptFor, cleanText, countSentences, cleanAnnotations,
   followEdit, nextOpen, writingDone, markWritingDone } from "../src/js/core/writing.js";
-import { modeHTML, markedHTML, noteHTML, notesDoneHTML, writingOfferHTML, teacherWritingHTML }
+import { modeHTML, markedHTML, noteHTML, notesDoneHTML, writingOfferHTML, teacherWritingHTML, SELF_ONLY }
   from "../src/js/ui/writing.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -151,6 +151,10 @@ test("the offer in the picker: the week's prompt, and whether it is done", () =>
   assert.match(writingOfferHTML(S, week), /Skrifa →/);
   markWritingDone(S, week);
   assert.match(writingOfferHTML(S, week), /lokið í þessari viku/);
+  /* Review S14: with no server the offer says nothing reads the text over. */
+  assert.ok(writingOfferHTML(S, week, { selfOnly: true }).includes(SELF_ONLY));
+  assert.ok(!writingOfferHTML(S, week).includes(SELF_ONLY), "on a server the card says what happens, after asking it");
+  assert.equal(SELF_ONLY, "Hér er enginn yfirlestur. Þú lest textann sjálf(ur) yfir.");
 });
 
 test("the teacher's card: off by default, keeping needs the check, kept texts escaped", () => {
