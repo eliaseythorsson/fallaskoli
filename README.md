@@ -129,7 +129,8 @@ What the build does, in order:
    changed since the last accepted build the build stops and lists the change;
    `--accept` records it. This is what stops a parser upgrade from quietly
    changing a grammatical analysis.
-6. `node --test tests/*.test.js`, then `tools/build.mjs` bundles `src/` into
+6. `node --test tests/*.test.js` and `npm run typecheck` (tsc over the modules
+   that start with `// @ts-check`; see `docs/TYPES.md`), then `tools/build.mjs` bundles `src/` into
    the HTML file (and `dist/web/`, the same program as a folder for a web
    host — see *Installing it* above) and `tools/review.mjs` writes the review
    page (`dist/review.html`, see "Efnið" below), then `tools/browser-test.mjs`
@@ -138,7 +139,9 @@ What the build does, in order:
 `node tools/pack.mjs` writes `dist/fallaskoli-v<version>-src.zip` with everything
 the build needs. CI (`.github/workflows/ci.yml`) also runs the unit tests, the
 bundle and the data manifest on every push, and refuses a commit that contains
-personal data or a built file; `.github/workflows/release.yml` builds a tag and
+personal data or a built file; `.github/workflows/typecheck.yml` runs the type
+check on its own, so a type error is reported as one;
+`.github/workflows/release.yml` builds a tag and
 attaches the HTML, the zip and the web folder to a release.
 
 ## Where things are
@@ -308,7 +311,8 @@ server/               the optional multi-user server (Node, JSON files on disk):
 Dockerfile, fly.toml  the server as a container, and where it runs
 Dockerfile.build, build-in-container.sh   the pinned build (see above)
 test-together.sh      the server for several testers on your own computer
-.github/workflows/    ci.yml (tests, bundle, manifest, the reproducible build)
+.github/workflows/    ci.yml (tests, bundle, manifest, the reproducible build),
+                      typecheck.yml (tsc, docs/TYPES.md)
                       and release.yml (a tag → a release)
 tools/                build, version (the file name), manifest, coverage, pack,
                       pwa (manifest and icons), ÍNO converter, tests in

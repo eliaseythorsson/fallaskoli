@@ -102,3 +102,19 @@ test("docs/TYPES.md names every checked module", () => {
   const doc = read("docs/TYPES.md");
   for (const f of listed) assert.ok(doc.includes(f.replace(/^src\/js\//, "")), `docs/TYPES.md does not mention ${f}`);
 });
+
+test("the type-check workflow runs on the same Node as ci.yml, from the lockfile", () => {
+  /* typecheck.yml is a workflow of its own (a type error is named as one),
+     but it must not drift from ci.yml: the same exact Node (that of
+     Dockerfile.build), `npm ci` so the pinned typescript is the one used. */
+  const nodeOf = (f) => {
+    const m = read(f).match(/node-version:\s*["']?([\d.]+)/);
+    assert.ok(m, `${f} names no node-version`);
+    return m[1];
+  };
+  assert.equal(nodeOf(".github/workflows/typecheck.yml"), nodeOf(".github/workflows/ci.yml"));
+  const wf = read(".github/workflows/typecheck.yml");
+  assert.match(wf, /npm ci\b/);
+  assert.match(wf, /npm run typecheck\b/);
+  assert.match(read("build.sh"), /npm run -s typecheck\b/, "build.sh no longer runs the type check");
+});
