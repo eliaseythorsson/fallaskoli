@@ -32,7 +32,6 @@ import { startPWA, rememberServer, wasServer, renderOffline } from "./ui/pwa.js"
 import { mergeStates } from "./core/merge.js";
 import { renderLessons, suggestLesson, wireLessons } from "./ui/lessons.js";
 import { renderDuelRoom } from "./ui/duel.js";
-import { pollLive, liveAnswer as sendLiveAnswer, renderLiveBar } from "./ui/live.js";
 import { levelRanges, applyRanges } from "./core/difficulty.js";
 import { TASKS } from "./tasks/index.js";
 import { diagnose, noteDiagnosis } from "./core/diagnosis.js";
@@ -43,6 +42,7 @@ import { showFindings, showReview, showMended, armNext } from "./ui/verdict.js";
 import { sessionControl } from "./control/session.js";
 import { drillControl } from "./control/drill.js";
 import { duelControl } from "./control/duel.js";
+import { liveControl } from "./control/live.js";
 
 /* A calibration table that changes nothing (see `app.viewCal`). */
 const EMPTY_TABLE = Object.freeze({ v: CAL.v, types: {}, cells: {}, irr: {} });
@@ -79,19 +79,6 @@ const app = {
   sess: null,
   cur: null,
   forcedNoun: null,
-
-  /* ---- a live class round (v6.13, item 64; ui/live.js) ----
-     `liveRun` is the round this pupil has joined: its id, the server's last
-     picture of it and the event stream; `liveOffer` a round in the group not
-     yet joined; `liveNote` a line to show when one has ended. None of it is
-     saved: the server holds the round, for the length of a lesson. */
-  liveRun: null,
-  liveOffer: null,
-  liveNote: null,
-  /** Is there a round to join? (ui/live.js `pollLive`) */
-  loadLive() { return pollLive(this); },
-  /** The answer just judged, for the server (ui/render.js `conclude`). */
-  liveAnswer(task, response) { sendLiveAnswer(this, task, response); },
 
   /* ---- calibration (item 17, core/calibration.js) ----
      `cal` is the table the server published, cleaned — or null: no server,
@@ -191,8 +178,8 @@ const app = {
        pressing Áfram (ui/reports.js). */
     if (this.cur) this.prevTask = { task: this.cur, card: captureCard() };
     /* A live round: the next question comes from the teacher, not from
-       Áfram (ui/live.js). The card stays as it is. */
-    if (this.liveRun) { renderLiveBar(this); return; }
+       Áfram (control/live.js). The card stays as it is. */
+    if (this.liveNext()) return;
     /* A duel's next question (control/duel.js). */
     if (this.duelNext()) return;
     /* A rescue drill, or "Þrjár í röð" (control/drill.js). */
@@ -337,7 +324,7 @@ function meet(target, ...parts) {
   }
   return target;
 }
-meet(app, sessionControl(), drillControl(), duelControl());
+meet(app, sessionControl(), drillControl(), duelControl(), liveControl());
 
 /**
  * The accident badges (core/badges.js §14d), counted at the one place that
@@ -771,11 +758,9 @@ async function init() {
       if (app.server) app.loadLive();
     }
   });
-  /* A live round is started in the lesson, so the look for one is frequent:
-     one small request every 15 seconds while the tab is open. */
-  if (app.server) setInterval(() => {
-    if (document.visibilityState === "visible" && !app.liveRun) app.loadLive();
-  }, 15000);
+  /* A live round is started in the lesson: a look for one every 15 seconds
+     (control/live.js). */
+  app.watchLive();
   /* …and while it is open, a look every five minutes. One small request. */
   if (app.server) setInterval(() => {
     if (document.visibilityState === "visible" && !app.duelRun) { app.loadDuels(); app.loadAssignments(); }
