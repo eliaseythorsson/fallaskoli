@@ -15,6 +15,9 @@ import { hashPassword, newId } from "../server/auth.mjs";
 import { blankState } from "../src/js/core/state.js";
 import { standingOf } from "../src/js/core/diagnosis.js";
 import { ASSIGN } from "../src/js/core/assignment.js";
+import { teacherMap } from "../src/js/core/skillmap.js";
+import { migrate } from "../src/js/core/state.js";
+import { PRIVACY_VERSION } from "../server/privacy.mjs";
 
 let base, dir, app;
 const PW = "lykilordid-mitt";
@@ -187,6 +190,103 @@ test("the administrator may look at any group, and is told when it does not exis
   assert.ok(g.data.groups.some((x) => x.id === GB && x.pupils === 1));
   const gk = await C.kennA("GET", "/teacher/groups");
   assert.deepEqual(gk.data.groups.map((x) => x.id), [GA], "a guardian is offered another group");
+});
+
+/* ---------- item 83 (d): one pupil's skill map -------------------------------- */
+
+/* Anna's state with more in it than the diagnosis: answers by question type
+   (three days ago), a review that is due on a word, XP. The diagnosis is the
+   one `setup` gave her, so the tests of the class table read what they did. */
+async function annaPractises() {
+  const cur = (await app.store.stateRec(U.anna.id)).state;
+  const S = { ...blankState(), diag: cur.diag };
+  const at = Date.now() - 3 * 86400000;
+  S.byType.fill = { n: 12, c: 7, h: "AAaAaAaAAaAa", at };
+  S.byNode["so-tid"] = { n: 9, c: 8, h: "AAAAAAAaA", at };
+  S.xp = { ...S.xp, nafnord: 54321 };
+  S.cells = { ÞGFFT: { c: 2, w: 5 } };
+  S.words = { "fjörður|kk": { c: 1, w: 4 } };
+  const due = day();
+  S.review.items.push({ k: "c:fill|ÞGFFT|fjörður|kk", t: "fill", sk: "nafnord", p: "thf_thgf", c: "ÞGFFT",
+    w: "fjörður|kk", i: null, s: 0, due, add: inDays(-1), last: inDays(-1), l: 2, ok: 0 });
+  await app.store.putState(U.anna.id, S);
+  return { at, due };
+}
+const nodesIn = (map) => map.cats.flatMap((c) => c.groups.flatMap((g) => g.nodes));
+
+test("a guardian opens the skill map of a pupil of their own group", async () => {
+  const { at, due } = await annaPractises();
+  const r = await C.kennA("GET", `/teacher/skillmap?pupil=${U.anna.id}`);
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.data.group, { id: GA, name: "Bekkur A" });
+  assert.deepEqual(r.data.pupil, { id: U.anna.id, name: "Anna", practised: true });
+  const map = r.data.map;
+  assert.equal(map.teacher, true);
+  /* The same map the pupil has, node for node (core/skillmap.js). */
+  const own = teacherMap(migrate((await app.store.stateRec(U.anna.id)).state));
+  assert.deepEqual(nodesIn(map).map((n) => [n.id, n.locked, n.mastery && n.mastery.level, n.due, n.active]),
+    nodesIn(own).map((n) => [n.id, n.locked, n.mastery && n.mastery.level, n.due, n.active]));
+  const foll = nodesIn(map).find((n) => n.id === "no-foll");
+  assert.deepEqual([foll.mastery.level, foll.mastery.n, foll.mastery.right, foll.due, foll.active, foll.needsWork],
+    [1, 12, 7, 1, ["thf_thgf"], true]);
+  assert.deepEqual(map.details["no-foll"].cells.map((c) => [c.label, c.missed, c.due]),
+    [["þágufall, fleirtala, án greinis", 2, 1]]);
+  assert.ok(map.next.includes("no-foll"));
+  /* And nothing the notice says a teacher does not see: no word, no example,
+     no date or time of practice, no raw history, no XP. */
+  for (const secret of ["fjörður", "hestur", "ÞGFET", due, inDays(-1), "2026-11-01", String(at), "54321",
+    '"h":', '"ex":', '"at":', '"last"', "lastDays", '"words"', '"xp"', "anna\"", "lykilord"])
+    assert.ok(!r.text.includes(secret), `the teacher's map carries ${secret}`);
+  /* By name of the group too, and the administrator for any group. */
+  assert.equal((await C.kennA("GET", `/teacher/skillmap?group=${GA}&pupil=${U.anna.id}`)).status, 200);
+  assert.equal((await C.admin("GET", `/teacher/skillmap?group=${GA}&pupil=${U.anna.id}`)).status, 200);
+});
+
+test("a pupil who has not practised has a map too: every node 'Of fá svör'", async () => {
+  const r = await C.kennB("GET", `/teacher/skillmap?pupil=${U.cecilia.id}`);
+  assert.equal(r.status, 200);
+  const fresh = await makeUser("nyr-nemandi", { group: GB, name: "Nýr" });
+  const n = await C.kennB("GET", `/teacher/skillmap?pupil=${fresh.id}`);
+  assert.equal(n.status, 200);
+  assert.equal(n.data.pupil.practised, false);
+  assert.ok(nodesIn(n.data.map).every((x) => x.locked || (x.mastery.level === 0 && !x.needsWork)));
+  await app.store.updateUsers((users) => users.filter((u) => u.id !== fresh.id));
+});
+
+test("the skill map of a pupil: nobody but the teacher of that pupil's group", async () => {
+  const q = `/teacher/skillmap?pupil=${U.anna.id}`;
+  const leak = /Anna|no-foll|thf_thgf|mastery/;
+  /* Not logged in; a pupil — herself included, and a classmate. */
+  const anon = await C.anon("GET", q + "&group=" + GA);
+  assert.equal(anon.status, 401);
+  for (const c of [C.anna, C.bjarni, C.cecilia]) {
+    const r = await c("GET", q + "&group=" + GA);
+    assert.equal(r.status, 403);
+    assert.ok(!leak.test(r.text), "a refusal carried data");
+  }
+  /* Another group's guardian: refused for the group when they name it, and
+     told "not in this group" when they ask under their own — the very answer
+     an id that does not exist gets, so it says nothing about who exists. */
+  const named = await C.kennB("GET", q + "&group=" + GA);
+  assert.equal(named.status, 403);
+  const own = await C.kennB("GET", q);
+  const none = await C.kennB("GET", "/teacher/skillmap?pupil=enginn-slikur");
+  assert.deepEqual([own.status, none.status], [404, 404]);
+  assert.equal(own.text, none.text);
+  for (const r of [named, own, none]) assert.ok(!leak.test(r.text), "a refusal carried data");
+  /* Within the group: only learners who are active. Not the pending, not the
+     blocked, not the guardian themself, not the administrator. */
+  for (const u of [U.bidur, U.lokad, U.kennA, U.admin]) {
+    const r = await C.kennA("GET", `/teacher/skillmap?pupil=${u.id}`);
+    assert.equal(r.status, 404, u.username);
+    assert.equal(r.text, none.text, u.username);
+  }
+  assert.equal((await C.kennA("GET", "/teacher/skillmap")).status, 404, "no pupil named");
+  /* The administrator must name the pupil's own group as well. */
+  assert.equal((await C.admin("GET", `${q}&group=${GB}`)).status, 404);
+  assert.equal((await C.admin("GET", `${q}&group=nope`)).status, 404);
+  /* And it is a read: nothing else answers there. */
+  assert.notEqual((await C.kennA("POST", q, { x: 1 })).status, 200);
 });
 
 test("the CSV: semicolons, UTF-8 with a BOM, percentages, and no formula from a nickname", async () => {
@@ -380,6 +480,10 @@ test("the privacy notice says what the teacher sees, and the version moved", asy
   assert.match(r.text, /aldrei það sem þú skrifar/);
   assert.match(r.text, new RegExp(`eyðist ${ASSIGN.keepDays} dögum eftir skiladag`));
   assert.doesNotMatch(r.text, /Síðast breytt 2026-11-11/);
+  /* Item 83: the teacher can open the skill map, and the version moved again. */
+  assert.match(r.text, /opnað færnikortið þitt/);
+  assert.match(r.text, /ekki hvaða orð\s+fóru úrskeiðis hjá þér/);
+  assert.ok(PRIVACY_VERSION >= "2026-11-18" && r.text.includes(`Síðast breytt ${PRIVACY_VERSION}`));
 });
 
 test("erasure: a pupil's results go; an assignment a guardian set stays, nameless", async () => {

@@ -74,6 +74,7 @@ without the child switching it on. So, precisely:
 | The nickname of each **learner** in **their own group** who is active | To know whose row is whose | Learners in other groups; anybody pending or blocked; usernames, consent records, last-seen days |
 | For each error pattern: how many of the child's recent answers that test it went wrong, the totals, whether it is getting better, and whether it is "algengt núna" — **the same figures the child sees** under *Framvinda*, computed by the same function (`core/classview.js`) | To see what the class needs to practise, and who needs help with what | The example words and marks the diagnosis keeps, the date of the last miss, the raw history — and nothing the child typed, which is never stored |
 | How many wrong answers the diagnosis could not classify (*Ógreint*) | So the teacher can judge how far the table can be trusted | — |
+| **One pupil's skill map** (v6.13, item 83; `GET /teacher/skillmap`): for every node of the curriculum map the mastery mark and what it rests on (how many recent answers at the child's level, how many right, the step of difficulty), how many reviews are due and waiting there, which error patterns are active; opened, the patterns' figures and the grammatical cells missed ("þágufall, fleirtala") with their counts — **the map the child sees** under *Framvinda*, drawn by the same code from `teacherMap` (`core/skillmap.js`) | To see where one child stands in the curriculum, not only which mistakes they make | When anything was last practised (no date, no "days ago"), the **words** the child missed, XP and stig, the raw histories — and nothing the child typed |
 | For an assignment the teacher set: questions answered, how many right, finished or not | So homework can be set and checked | When it was done, how many tries, how long it took |
 
 **Lawful basis.** It is still consent, the same consent the account was made
@@ -84,6 +85,19 @@ not want it, either give them a group of their own, or erase the account; there
 is deliberately no per-child switch to hide from the teacher, because a teacher
 who sees only the children who opted in sees a class that is doing better than
 it is.
+
+**The skill map (item 83)** went in two days later and moved
+`PRIVACY_VERSION` to `2026-11-18`. The recipient is the same teacher; what is
+new is how much of one child they see: not only which error patterns, but how
+well the child commands each of the fifty-odd nodes of the curriculum. The
+route is authorised exactly as the class table (a guardian for their own
+group, the administrator for any), the pupil must be an active learner of that
+group, and every other case — another group's pupil, an adult, an id that does
+not exist — gets one and the same 404. The copy sent is smaller than the
+child's own on purpose: the notice has promised since 2026-11-16 that a
+teacher does not see *when* a child practises, so "last trained" is not sent,
+and neither are the words a child missed. `tests/skillmap.test.js` and
+`tests/teacher.test.js` hold both. **Tell the families** as for the table.
 
 **Who is guardian is your decision.** The role is given by you, per group. A
 parent made guardian of a group of several families sees every child in it.
@@ -221,10 +235,13 @@ whether the change needs fresh consent.
 assignment results (§1a). `2026-11-17`: the anonymous count of answers and the
 optional sample of wrong answers (§1b), and the sentence that a duel's answers
 are sent to the server to be graded and are not stored (only the score is
-kept) — all arrive with v6.13, so one message
+kept). `2026-11-18`: the teacher can open one pupil's skill map (§1a) — all
+arrive with v6.13, so one message
 to the families covers them. The date is the notice's version, not the day
 you deploy; set it to your release date if you prefer, and keep
-`CALIBRATION_NOTICE` in the same file equal to it.
+`CALIBRATION_NOTICE` in the same file equal to the version that first
+described the counting (`2026-11-17` here; it does not move with later
+versions).
 
 ---
 
