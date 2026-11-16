@@ -1182,6 +1182,28 @@ ul.huntlist .mk.ok{color:var(--moss)} ul.huntlist .mk.no{color:var(--rust)}
   .runpick .answer{position:sticky;bottom:0;z-index:5;background:var(--paper);padding:8px 0;margin-bottom:-8px}
 }
 .drillstrip.runstrip{border-left-color:var(--chalk-yellow);background:var(--paper-2)}
+/* v6.13 (item 21): today's session is the one big button; the categories
+   below it are the second thing on the board. */
+.todaybox{margin:0 0 4px}
+.todaybox .answer{margin-top:6px}
+button.todaygo{font-size:18px;padding:14px 28px}
+.todayline{font-size:14px;color:var(--slate);margin:10px 0 0;max-width:70ch}
+.ownpick.second{margin-top:22px;padding-top:14px;border-top:1px dashed var(--line)}
+.ownpick.second .topic{min-height:80px}
+/* v6.13 (item 36): "Þrjár í röð" — the offer under a verdict, and the rule. */
+.streakoffer{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.streakoffer p{margin:0 0 8px;font-size:14px}
+.streakintro .rule{font-size:16px;max-width:70ch}
+/* The verdict is paper on the board: its buttons are ink, not chalk. */
+.blackboard .verdict .streakoffer button.ghost{background:var(--sheet);color:var(--ink);border-color:var(--ink)}
+.blackboard .verdict .streakoffer button.ghost:hover{background:var(--lupine-soft)}
+@media (max-width:600px){
+  .todaybox .answer{position:static;margin-bottom:0}
+  button.todaygo{width:100%}
+  /* The category's start button is the secondary one now (no fill of its
+     own), so the strip it sticks in must hide the cards scrolling under it. */
+  .ownpick.second .answer{background:var(--board)}
+}
 
 /* ---- v6.13 (atriði 2, 47, 48): spurningin fær skjáinn ----
    Á meðan lota stendur yfir víkur allt sem er ofan við spurninguna — nafnið,

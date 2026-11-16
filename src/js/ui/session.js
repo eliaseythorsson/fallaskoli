@@ -1,10 +1,12 @@
 /* Practice sessions (v6.10): the Æfa tab's picker, the strip above a session
    in progress, and the summary at the end. Rules live in app.js (the run
-   itself) and core/diagnosis.js (what went wrong and why); this file draws.
+   itself), core/diagnosis.js (what went wrong and why), core/today.js
+   (today's session) and core/streak.js ("Þrjár í röð"); this file draws.
 
-   A session is one category (or all of them mixed, or the child's own error
-   patterns), 10, 15 or 20 questions, and a summary: what went right, the one
-   thing to remember, and what comes next. */
+   A session is today's session (v6.13, item 21: the one big button), or one
+   category (or all of them mixed, or the child's own error patterns) of 10,
+   15 or 20 questions; and a summary: what went right, the one thing to
+   remember, and what comes next. */
 
 import { SKILLS, skillName, skillById } from "../core/skills.js";
 import { skillLevel } from "../core/progress.js";
@@ -17,6 +19,8 @@ import { activePatterns, standings, patternById, focusTypes } from "../core/diag
 import { $, esc, fmt, openSheet } from "./dom.js";
 import { dueNow } from "./progress.js";
 import { dueLine } from "../core/review.js";
+import { todayLine } from "../core/today.js";
+import { STREAK_N } from "../core/streak.js";
 
 export const RUN_SIZES = [10, 15, 20];
 
@@ -24,13 +28,18 @@ export const RUN_SIZES = [10, 15, 20];
 export const MIXED = { id: "blandad", nm: "Blandað", ico: "🎲", ds: "Allt sem er kveikt á, í bland" };
 export const MINE = { id: "villur", nm: "Villurnar mínar", ico: "🎯",
   ds: "Spurningar sem prófa einmitt það sem hefur farið úrskeiðis hjá þér" };
+/* v6.13 (item 21): today's session — not a card among the others but the
+   button above them (core/today.js plans it). */
+export const TODAY = { id: "dagsins", nm: "Dagsins lota", ico: "☀️" };
 
 export function topicName(id) {
   if (id === MIXED.id) return MIXED.nm;
   if (id === MINE.id) return MINE.nm;
+  if (id === TODAY.id) return TODAY.nm;
   return skillName(id);
 }
-const topicIco = (id) => (id === MIXED.id ? MIXED.ico : id === MINE.id ? MINE.ico : (skillById(id) || {}).ico || "");
+const topicIco = (id) => (id === MIXED.id ? MIXED.ico : id === MINE.id ? MINE.ico
+  : id === TODAY.id ? TODAY.ico : (skillById(id) || {}).ico || "");
 
 const typeName = (id) => (QUESTION_TYPES.find((q) => q.id === id) || {}).nm || id;
 const pct = (a, b) => (b ? Math.round((100 * a) / b) : 0);
@@ -88,14 +97,27 @@ export function renderPicker(app) {
   };
   const dueText = dueLine(dueNow(app.S));
   const recent = (app.S.runs || []).slice(-4).reverse();
+  /* v6.13 (item 21): today's session first, as the one primary button; it
+     says what it holds. The categories stay below it for a pupil who wants
+     to choose, drawn as the second thing on the board. */
+  const plan = app.todayPlan ? app.todayPlan() : null;
+  const today = plan && plan.n ? `<div class="todaybox">
+      <p class="eyebrow"><span>Æfing dagsins</span><b>${plan.n} spurningar valdar fyrir þig</b></p>
+      <div class="answer"><button type="button" class="go todaygo" id="todaystart">${TODAY.ico} ${esc(TODAY.nm)} →</button></div>
+      <p class="todayline">${esc(todayLine(plan))}</p>
+    </div>` : "";
   el.innerHTML = `<div class="card runpick">
-    <p class="eyebrow"><span>Ný æfingalota</span><b>veldu efni og fjölda spurninga</b></p>
+    ${today}
+    <div class="ownpick${today ? " second" : ""}">
+    <p class="eyebrow">${today ? "<span>Eða veldu efni og fjölda spurninga</span>"
+      : "<span>Ný æfingalota</span><b>veldu efni og fjölda spurninga</b>"}</p>
     <div class="topics" role="group" aria-label="Efni">${list.map(card).join("")}</div>
     <div class="runsize" role="group" aria-label="Fjöldi spurninga">
       <span>Spurningar:</span>${RUN_SIZES.map((n) =>
         `<button type="button" class="sizeb" data-size="${n}" aria-pressed="${n === size}">${n}</button>`).join("")}
     </div>
-    <div class="answer"><button type="button" class="go" id="runstart">Byrja lotu →</button></div>
+    <div class="answer"><button type="button" class="${today ? "ghost" : "go"}" id="runstart">Byrja lotu →</button></div>
+    </div>
     ${dueText ? `<p class="runnote">📚 ${esc(dueText)}.</p>` : ""}
     ${act.length ? `<p class="runnote">🔎 Villumynstur sem fylgst er með: ${act.map((p) =>
       `<b>${esc(p.nm)}</b> <span class="faint">(${p.misses} af síðustu ${p.seen})</span>`).join(", ")}.
@@ -120,7 +142,9 @@ export function renderPicker(app) {
   });
   $("runstart").onclick = () => app.startRun(topic, size,
     topic === MINE.id ? act.map((p) => p.id) : null);
-  $("runstart").focus();
+  const go = $("todaystart");
+  if (go) go.onclick = () => app.startRun(TODAY.id, plan.n);
+  (go || $("runstart")).focus();
 }
 
 /* ---------- the line above a session --------------------------------------
@@ -163,6 +187,7 @@ export function renderRunBar(app) {
   syncSessionLayout(app);
   const r = app.run;
   if (!r || app.drill || app.duelRun) { el.innerHTML = ""; lastShown = null; return; }
+  if (app.streak) { streakBar(app, el); return; }
   /* Dots for the sizes a child can pick (RUN_SIZES); a longer run (the
      browser test drives one of 100 000) gets the count alone. */
   const dots = [];
@@ -190,6 +215,75 @@ export function renderRunBar(app) {
     lastShown = app.cur;
     if (typeof window !== "undefined" && window.scrollY > 0) window.scrollTo(0, 0);
   }
+}
+
+/* v6.13 (item 36): during "Þrjár í röð" the session's line steps aside for
+   one of the three's own, so the session's count is never seen to grow or
+   jump: "💪 Þrjár í röð: Þolfall og þágufall ruglast · 2/3", and the × goes
+   back to the session. When the three are over the session's line returns
+   at the question it was on. */
+function streakBar(app, el) {
+  const st = app.streak, r = app.run;
+  const p = patternById(st.p) || { nm: "" };
+  const open = app.cur && app.cur.streak && !app.cur.closed ? 1 : 0;
+  const shown = st.intro ? 0 : Math.min(st.n, st.i + open);
+  const dots = [];
+  for (let i = 0; i < st.n; i++) {
+    const m = st.marks[i];
+    dots.push(`<i class="${m === 1 ? "ok" : m === 0 ? "no" : i === st.i && !st.intro ? "now" : "due"}"></i>`);
+  }
+  const name = `Þrjár í röð: ${p.nm}`;
+  const said = `${name}. ${st.intro ? "Reglan" : `Spurning ${shown} af ${st.n}`}. ` +
+    `Lotan bíður á meðan, á spurningu ${Math.min(r.n, r.i + 1)} af ${r.n}.`;
+  el.innerHTML = `<div class="runline streakrun" role="status" aria-label="${esc(said)}" title="${esc(said)}">
+    <span class="sr-only">${esc(said)}</span>
+    <span class="runico" aria-hidden="true">💪</span>
+    <b class="runtopic" aria-hidden="true">${esc(name)}</b>
+    <span class="drilldots rundots" aria-hidden="true">${dots.join("")}</span>
+    <span class="runcount" aria-hidden="true">${st.intro ? "regla" : `<b>${shown}</b>/${st.n}`}</span>
+    <button type="button" class="runx" id="runstop" aria-label="Hætta og fara aftur í lotuna" title="Hætta og fara aftur í lotuna">×</button>
+    <i class="runprog" aria-hidden="true" style="width:${Math.round((100 * st.i) / st.n)}%"></i></div>`;
+  $("runstop").onclick = () => app.stopStreak();
+  if (app.cur && app.cur !== lastShown) {
+    lastShown = app.cur;
+    if (typeof window !== "undefined" && window.scrollY > 0) window.scrollTo(0, 0);
+  }
+}
+
+/**
+ * Under the verdict of a diagnosed wrong answer (app.js `offerStreak`): the
+ * offer of three questions on the pattern just named. Áfram keeps the focus,
+ * so Enter still simply goes on — the three are offered, never imposed.
+ */
+export function showStreakOffer(app, p) {
+  const v = document.querySelector("#verdict .verdict");
+  if (!v || v.querySelector(".streakoffer")) return;
+  v.insertAdjacentHTML("beforeend", `<div class="streakoffer">
+    <p><b>Viltu æfa þetta strax?</b> Þrjár stuttar spurningar um einmitt þetta.
+      Þær teljast ekki með í lotunni og svo heldur hún áfram.</p>
+    <button type="button" class="ghost" id="streakgo">💪 Þrjár í röð</button></div>`);
+  $("streakgo").onclick = () => app.startStreak();
+}
+
+/**
+ * Before the first of the three: the pattern's rule, and its Lesefni page
+ * where it has one (critique item 36: "the rule shown before the first").
+ */
+export function renderStreakIntro(app) {
+  const st = app.streak;
+  const p = patternById(st.p);
+  const page = p.lesson ? lessonById(p.lesson) : null;
+  $("task").innerHTML = `<div class="card streakintro">
+    <p class="eyebrow"><span>💪 Þrjár í röð</span><b>${esc(p.nm)}</b></p>
+    <h4 class="rememberh">Reglan</h4>
+    <p class="rule">${fmt(p.rule)}</p>
+    ${page ? `<p><button type="button" class="ghost lessonlink" data-lesson="${esc(page.id)}">📖 Lesa meira: ${esc(page.nm)}</button></p>` : ""}
+    <p class="faint">Nú koma þrjár spurningar um þetta. Þær teljast ekki með í lotunni — á eftir heldur hún áfram þar sem frá var horfið.</p>
+    <div class="answer"><button type="button" class="go" id="streakbegin">Byrja →</button>
+      <button type="button" class="ghost" id="streakskip">Sleppa og halda áfram með lotuna</button></div></div>`;
+  $("streakbegin").onclick = () => app.beginStreak();
+  $("streakskip").onclick = () => app.stopStreak();
+  $("streakbegin").focus();
 }
 
 /** "Hætta?" — what is answered is kept and summed up. */
@@ -236,6 +330,12 @@ export function renderSummary(app) {
     Object.entries(byType).filter(([, v]) => v.c === v.n && v.n >= 2)
       .forEach(([id, v]) => good.push(`<li>${esc(typeName(id))}: ${v.c} af ${v.n} rétt.</li>`));
   }
+  /* v6.13 (item 36): "Þrjár í röð" that went well. Not one that did not:
+     the pupil chose to do extra work, and that is not a thing to list. */
+  (d.streaks || []).filter((x) => x.n === STREAK_N && x.c >= x.n - 1).forEach((x) => {
+    const p = patternById(x.p);
+    if (p) good.push(`<li>Þrjár í röð um <b>${esc(p.ok || p.nm)}</b>: ${x.c === x.n ? "allar réttar" : `${x.c} af ${x.n} rétt`}.</li>`);
+  });
   if (!good.length && d.c) good.push(`<li>${d.c} ${d.c === 1 ? "rétt svar" : "rétt svör"} — og hvert rangt svar segir okkur hvað á að æfa næst.</li>`);
   const ungraded = !d.j && d.i > 0;
   if (!good.length && ungraded) good.push(`<li>Þú svaraðir ${d.i} ${d.i === 1 ? "spurningu" : "spurningum"} með eigin orðum.</li>`);

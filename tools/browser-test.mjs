@@ -2164,6 +2164,151 @@ await page.setViewport({ width: 1100, height: 900 });
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.S.review = { items: [], stats: {} }; A.next(); });
 }
 
+/* v6.13 — "Dagsins lota" (critique item 21, core/today.js). The picker has
+   one primary button above the categories; it starts a session of ten that
+   opens with the due reviews, goes on to the pupil's active error pattern and
+   ends with new material, and is written down as today's session. */
+{
+  await dismissModals();
+  const setup = await page.evaluate((lemma) => {
+    const A = window.FALLASKOLI;
+    const key = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const today = key(new Date());
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+    /* three of yesterday's misses on the test noun, and one active pattern */
+    A.S.review = { items: ["ÞGFFT", "EFET", "ÞGFETgr"].map((c) => ({ k: `f:mynd|${c}|${lemma}|kk`, t: "fill",
+      sk: "nafnord", p: "thf_thgf", c, w: `${lemma}|kk`, i: null, s: 0, due: today, add: key(y), last: key(y), l: 1, ok: 0 })),
+      stats: {} };
+    A.S.diag = { ...(A.S.diag || {}), thf_thgf: { n: 12, w: 6, h: "010101010101", last: today, ex: [] } };
+    A.S.enabled.nafnord = true;
+    A.reloadPolicy();
+    A.next();
+    const go = document.getElementById("todaystart");
+    const own = document.getElementById("runstart");
+    const topics = document.querySelector("#task .topics");
+    return {
+      go: !!go, goCls: go ? go.className : "", goText: go ? go.textContent : "",
+      ownCls: own ? own.className : "",
+      above: !!(go && topics && (go.compareDocumentPosition(topics) & Node.DOCUMENT_POSITION_FOLLOWING)),
+      focused: document.activeElement === go,
+      line: (document.querySelector("#task .todayline") || {}).textContent || "",
+    };
+  }, TEST_NOUN);
+  ok(setup.go && /\bgo\b/.test(setup.goCls) && /Dagsins lota/.test(setup.goText),
+    "no primary „Dagsins lota“ button on the picker: " + JSON.stringify(setup));
+  ok(setup.above && /\bghost\b/.test(setup.ownCls), "the categories are not below it, or their button is not the secondary one");
+  ok(setup.focused, "„Dagsins lota“ does not have the focus");
+  ok(/^3 upprifjanir, \d spurningar um villurnar þínar og \d nýjar spurningar\.$/.test(setup.line),
+    `the line under the button does not say what the session holds: "${setup.line}"`);
+  await tap("#todaystart");
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  const kinds = [];
+  for (let i = 0; i < 10; i++) {
+    const c = await page.evaluate(() => { const A = window.FALLASKOLI;
+      return { topic: A.run && A.run.topic, n: A.run && A.run.n, review: A.cur.review || null, today: A.cur.today || null,
+        tag: !!document.querySelector("#task .eyebrow .reviewtag"), bar: (document.querySelector("#runbar .runtopic") || {}).textContent || "" }; });
+    if (i === 0) {
+      ok(c.topic === "dagsins" && c.n === 10, "the button did not start a session of ten: " + JSON.stringify(c));
+      ok(/Dagsins lota/.test(c.bar), `the line above the session does not name it: "${c.bar}"`);
+    }
+    if (i < 3) ok(c.review && c.tag, `question ${i + 1} of today's session is not a due review: ` + JSON.stringify(c));
+    kinds.push(c.today);
+    await answerOne(true);
+  }
+  ok(kinds.slice(0, 3).every((k) => k === "review") && kinds.slice(3).filter((k) => k === "pattern").length >= 3
+    && kinds.slice(-2).every((k) => k === "new"),
+    "today's session is not reviews, then the pattern, then new material: " + kinds.join(","));
+  const end = await page.evaluate(() => ({ summary: !!document.querySelector("#task .summary"),
+    last: (window.FALLASKOLI.S.runs || []).slice(-1)[0], runTopic: window.FALLASKOLI.S.settings.runTopic,
+    due: window.FALLASKOLI.S.review.items.filter((e) => e.s === 0).length }));
+  ok(end.summary && end.last && end.last.topic === "dagsins" && end.last.n === 10,
+    "today's session did not end in its summary: " + JSON.stringify(end.last));
+  ok(end.runTopic !== "dagsins", "today's session took the place of the category the picker remembers");
+  ok(end.due === 0, `${end.due} of the reviews it opened with are still at the first step`);
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null;
+    A.S.review = { items: [], stats: {} }; delete A.S.diag.thf_thgf; A.next(); });
+}
+
+/* v6.13 — "Þrjár í röð" (critique item 36, core/streak.js). A diagnosed wrong
+   answer offers three questions on its pattern; the rule comes first, with
+   its Lesefni page; the three are each on the pattern, the session's count
+   does not move, and the pattern is in the review queue afterwards. */
+{
+  await dismissModals();
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null;
+    A.startRun("nafnord", 10, null, { review: false }); });
+  if (!(await forceNounCloze())) problems.push(`could not draw a noun cloze on ${TEST_NOUN} — cannot test "Þrjár í röð"`);
+  else {
+    /* the wrong case: a form of the same noun in another case, same number and article */
+    const miss = await page.evaluate(() => {
+      const A = window.FALLASKOLI, c = A.cur;
+      const m = /^(NF|ÞF|ÞGF|EF)(.*)$/.exec(c.cell);
+      const right = new Set(c.answers.map((x) => x.toLowerCase()));
+      const other = ["ÞF", "ÞGF", "EF", "NF"].filter((f) => f !== m[1])
+        .map((f) => (c.n.forms[f + m[2]] || [])[0]).find((w) => w && !right.has(w.toLowerCase()));
+      return { other, i: A.run.i, cell: c.cell };
+    });
+    await page.type("#ans", miss.other);
+    await tap("#check");
+    await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
+    await dismissModals();
+    const offer = await page.evaluate(() => ({
+      diag: (document.querySelector("#verdict .diagline") || {}).textContent || "",
+      go: !!document.getElementById("streakgo"),
+      text: (document.querySelector("#verdict .streakoffer") || {}).textContent || "",
+      focus: document.activeElement && document.activeElement.id,
+      p: window.FALLASKOLI.streakOffer && window.FALLASKOLI.streakOffer.p,
+    }));
+    ok(/Villugreining/.test(offer.diag) && offer.go && offer.p,
+      `no „Þrjár í röð“ under a diagnosed miss (${miss.other} for ${miss.cell}): ` + JSON.stringify(offer));
+    ok(/teljast ekki með í lotunni/.test(offer.text), "the offer does not say the three are outside the session's count");
+    ok(offer.focus === "check", "the offer took the focus from Áfram — Enter must still simply go on");
+    if (offer.go) {
+      await tap("#streakgo");
+      const intro = await page.evaluate(() => ({
+        card: !!document.querySelector("#task .streakintro"),
+        rule: (document.querySelector("#task .streakintro .rule") || {}).textContent || "",
+        lesson: !!document.querySelector("#task .streakintro .lessonlink[data-lesson]"),
+        bar: (document.querySelector("#runbar .streakrun .runtopic") || {}).textContent || "",
+        i: window.FALLASKOLI.run.i,
+      }));
+      ok(intro.card && intro.rule.length > 20, "the rule is not shown before the first of the three");
+      ok(intro.lesson, "the rule has no link to its Lesefni page");
+      ok(/^Þrjár í röð: /.test(intro.bar), `the session's line did not give way to the three's own: "${intro.bar}"`);
+      await tap("#streakbegin");
+      const seen = [];
+      for (let k = 0; k < 3; k++) {
+        const q = await page.evaluate(() => { const A = window.FALLASKOLI;
+          return { streak: A.cur.streak || null, targeted: !!A.cur.targeted, inRun: !!A.cur.inRun, i: A.run.i,
+            count: (document.querySelector("#runbar .runcount") || {}).textContent || "" }; });
+        seen.push(q);
+        await answerOneNoNext(k !== 1);
+        if (k < 2) await page.evaluate(() => window.FALLASKOLI.next());
+      }
+      ok(seen.every((q) => q.streak === offer.p && q.targeted && !q.inRun),
+        "the three are not all questions on the pattern: " + JSON.stringify(seen));
+      ok(seen.map((q) => q.count.trim()).join(",") === "1/3,2/3,3/3", "the three do not count 1/3, 2/3, 3/3: " + seen.map((q) => q.count).join(","));
+      ok(seen.every((q) => q.i === miss.i + 1), "the session's count moved during the three: " + JSON.stringify(seen.map((q) => q.i)));
+      const done = await page.evaluate((p) => ({
+        line: (document.querySelector("#verdict .streakend") || {}).textContent || "",
+        button: document.getElementById("check").textContent,
+        queued: window.FALLASKOLI.S.review.items.some((e) => e.p === p && e.k.startsWith("p:")),
+      }), offer.p);
+      ok(/2 af 3 rétt\. Þetta kemur aftur í upprifjun á morgun\./.test(done.line), `no line under the last of the three: "${done.line}"`);
+      ok(/Aftur í lotuna/.test(done.button), `the button after the three does not go back to the session: "${done.button}"`);
+      ok(done.queued, "the pattern is not in the review queue after the three");
+      await page.evaluate(() => window.FALLASKOLI.next());
+      const back = await page.evaluate(() => ({ streak: window.FALLASKOLI.streak, i: window.FALLASKOLI.run.i,
+        line: !!document.querySelector("#runbar .runline:not(.streakrun)"), inRun: !!window.FALLASKOLI.cur.inRun }));
+      ok(!back.streak && back.line && back.inRun && back.i === miss.i + 1,
+        "the session did not pick up where it was after the three: " + JSON.stringify(back));
+    }
+  }
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.streak = null;
+    A.S.review = { items: [], stats: {} }; A.next(); });
+}
+
 /* ---------- item 27: the two new types, drawn, shown and answered ---------
  * A short session aimed at each new type's error pattern (which narrows the
  * session to that type), at a low and a high þyngd: the question must come,
