@@ -47,16 +47,18 @@ PIP_FLAGS=""
 npm ci --no-audit --no-fund --silent 2>/dev/null || npm install --no-audit --no-fund --silent
 
 echo "── 2. frequency list (committed, not fetched) ──────────────────────"
-if command -v sha256sum >/dev/null 2>&1; then sha256sum -c freq_raw.sha256
-elif command -v shasum >/dev/null 2>&1; then shasum -a 256 -c freq_raw.sha256
+# (the checksum names the file without a folder, so it is checked from inside sources/)
+if command -v sha256sum >/dev/null 2>&1; then (cd sources && sha256sum -c freq_raw.sha256)
+elif command -v shasum >/dev/null 2>&1; then (cd sources && shasum -a 256 -c freq_raw.sha256)
 else echo "  Neither sha256sum nor shasum found." >&2; exit 1; fi
 
 echo "── 3. data ─────────────────────────────────────────────────────────"
-"$PY" build_freq.py        # repair encoding, rank lemmas   -> freq_lemmas.json
-"$PY" build_lexicon.py     # paradigms out of BÍN           -> lexicon.json
-"$PY" build_sentences.py   # parse + guard every token      -> sentences.json
-"$PY" build_bundle.py      # lexicon + sentences + classes + definitions -> data/data_bundle.js
-"$PY" build_exercises.py   # exercises.py, every form looked up in BÍN -> data/exercises.js
+# Run from the repository root; the Python modules are in pipeline/ (item 79).
+"$PY" pipeline/build_freq.py        # repair encoding, rank lemmas   -> data/freq_lemmas.json
+"$PY" pipeline/build_lexicon.py     # paradigms out of BÍN           -> data/lexicon.json
+"$PY" pipeline/build_sentences.py   # parse + guard every token      -> data/sentences.json
+"$PY" pipeline/build_bundle.py      # lexicon + sentences + classes + definitions -> data/data_bundle.js
+"$PY" pipeline/build_exercises.py   # content/*/*.tsv, every form looked up in BÍN -> data/exercises.js
 node tools/licenses.mjs    # requirements.txt + package.json -> data/licenses.js
 node tools/coverage.mjs --json | tail -14
 

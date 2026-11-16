@@ -14,7 +14,7 @@ def repair(w):
             if b.contains(t): return t
     return g
 
-def form_counts(path='freq_raw.txt'):
+def form_counts(path='sources/freq_raw.txt'):
     """Repaired surface form -> occurrences. Used by build_lexicon.py to see
     which middle-voice forms the corpus attests."""
     out=collections.Counter()
@@ -50,7 +50,7 @@ def form_counts(path='freq_raw.txt'):
 # added or removed here: the same words, in a different order.
 SCHOOL_FACTOR=3
 RERANK={'kk','kvk','hk','lo','so','ao'}
-INO_XML='islensk_nutimamalsordabok_2026-02.xml'
+INO_XML='sources/islensk_nutimamalsordabok_2026-02.xml'
 INO_COARSE=('niðrandi','gróft')
 
 def school_lemmas(best):
@@ -127,7 +127,7 @@ def rank_key(score, meta):
 if __name__=='__main__':
     uniq=collections.Counter(); share=collections.Counter()
     forms=collections.defaultdict(set); meta={}
-    for line in open('freq_raw.txt',encoding='utf-8'):
+    for line in open('sources/freq_raw.txt',encoding='utf-8'):
         p=line.split()
         if len(p)!=2: continue
         w,c=repair(p[0]),int(p[1])
@@ -161,7 +161,7 @@ if __name__=='__main__':
     # because a word was ranked down for teaching. The ORDER of the file, and
     # so the rank `r` every word gets in build_lexicon.py, follows the key.
     json.dump({str(k):[meta[k][0],meta[k][1],round(score[k]),round(key[k],1)] for k in rank},
-              open('freq_lemmas.json','w'), ensure_ascii=False)
+              open('data/freq_lemmas.json','w'), ensure_ascii=False)
     by=collections.defaultdict(list)
     for bid in rank: by[meta[bid][1]].append(meta[bid][0])
     print('lemmas kept:',len(rank))

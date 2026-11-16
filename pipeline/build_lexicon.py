@@ -3,7 +3,7 @@
 from islenska import Bin
 import json, collections, os, vocab_filter as vf, adj_classes
 b=Bin()
-freq=json.load(open('freq_lemmas.json'))
+freq=json.load(open('data/freq_lemmas.json'))
 # [lemma, class, corpus score, rank key]; the file is in rank-key order (build_freq.py)
 rows=[(int(bid),o,c,s) for bid,(o,c,s,_k) in freq.items()]
 
@@ -279,9 +279,9 @@ for n in range(1,6):
 
 data={'v':5,'src':'BÍN via BinPackage; tíðni úr OpenSubtitles-lista','orders':ORDERS,
       'cellh':irregularity.cell_table(ORDERS),'w':W}
-json.dump(data,open('lexicon.json','w'),ensure_ascii=False,separators=(',',':'))
+json.dump(data,open('data/lexicon.json','w'),ensure_ascii=False,separators=(',',':'))
 cnt=collections.Counter(x['c'] for x in W)
 print('words:',len(W),dict(cnt))
-print('lexicon.json %.0f KB'%(os.path.getsize('lexicon.json')/1024))
+print('data/lexicon.json %.0f KB'%(os.path.getsize('data/lexicon.json')/1024))
 for c in ['kk','lo','so','fn','pfn','to','gr','fs','st','ao','uh','nhm']:
     ex=[x['o'] for x in W if x['c']==c][:8]; print(f'{c:4}',' '.join(ex))

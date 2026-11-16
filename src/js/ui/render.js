@@ -132,6 +132,32 @@ const PUNCT = new Set([".", "?", "!", ","]);
 let glossFor = null;
 const wordHTML = (t) => (glossFor && glossFor(t)) || esc(t.w);
 
+/* Item 45: a line of text that is not the bank sentence itself (the passive
+   of Umritun germynd, the two lines of tenging) with a gloss on its content
+   words. The builder hands over the tokens the text was written from
+   (`fromTok`, `linesTok`); the words of the text are matched to them one for
+   one, ignoring case and punctuation, and if ANY word does not match the line
+   is shown plain: a gloss on the wrong word is worse than none. */
+function glossedText(text, toks) {
+  const plain = esc(text);
+  if (!glossFor || !toks) return plain;
+  const want = toks.filter((t) => !PUNCT.has(t.w));
+  const pieces = String(text).split(" ");
+  const out = [];
+  let at = 0;
+  for (const tok of want) {
+    /* Greynir keeps some phrases as one token (*á morgun*, *í gær*). */
+    const n = String(tok.w).split(" ").length;
+    const chunk = pieces.slice(at, at + n);
+    at += n;
+    if (chunk.length < n) return plain;
+    const m = /^(.*?)([.,?!]*)$/.exec(chunk.join(" "));
+    if (m[1].toLowerCase() !== String(tok.w).toLowerCase()) return plain;
+    out.push((glossFor({ ...tok, w: m[1] }) || esc(m[1])) + m[2]);
+  }
+  return at === pieces.length ? out.join(" ") : plain;
+}
+
 function sentenceHTML(s, i, replacement) {
   return s.tok.map((t, j) => {
     if (PUNCT.has(t.w)) return t.w;
@@ -1522,7 +1548,8 @@ RENDER.umritun = function (app) {
   const t = app.cur;
   /* v6.13: some kinds show something other than the bank sentence — a
      passive (`from`), two sentences to join (`lines`), a quotation. */
-  const shown = t.lines ? t.lines.map(esc).join("<br>") : t.from ? esc(t.from) : t.s.tok.map((tok, j) => {
+  const shown = t.lines ? t.lines.map((l, k) => glossedText(l, t.linesTok && t.linesTok[k])).join("<br>")
+    : t.from ? glossedText(t.from, t.fromTok) : t.s.tok.map((tok, j) => {
     if (PUNCT.has(tok.w)) return tok.w;
     const sp = j === 0 ? "" : " ";
     const inside = t.focus && j >= t.focus.from && j <= t.focus.to;

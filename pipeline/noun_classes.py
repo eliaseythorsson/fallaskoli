@@ -93,7 +93,7 @@ words; `EXCLUDE` is for the ones that are unfit, `NO_FRAME` for the ones that
 are merely out of place. `excluded()` is true for all three kinds, and the
 bundle marks them `nx`.
 
-`python3 noun_classes.py` prints how many nouns of the vocabulary are in no
+`python3 pipeline/noun_classes.py` prints how many nouns of the vocabulary are in no
 list; tests/semantic.test.js fails if a noun nobody has read is used.
 
 NEEDS THAT WERE TOO WIDE
@@ -1042,7 +1042,7 @@ def excluded(lemma):
 
 if __name__ == "__main__":
     import collections, json
-    L = json.load(open("lexicon.json"))
+    L = json.load(open("data/lexicon.json"))
     nouns = [w["o"] for w in L["w"] if w["c"] in ("kk", "kvk", "hk")]
     print(dict(collections.Counter(klass(n) for n in nouns)))
     print("in no list (not used in frames):", sum(1 for n in nouns if not reviewed(n)),

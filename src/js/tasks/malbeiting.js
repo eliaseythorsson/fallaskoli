@@ -460,10 +460,26 @@ export function transformPassive(lex, s) {
   const withAgent = adv.length || particle ? null
     : capFirst(joinTokens([...object.map((o) => o[0]), veraForm[0], part[0],
       ...restWords.slice(0, -1), "af", ...agent.map((a) => a[0]), "."]));
+  /* Item 45 (second-language mode): the same words of `withAgent` as tokens,
+     one for each word that is not punctuation, in order, so the card can gloss
+     them. The text is written from forms the passive needed (the object in the
+     nominative, the agent in the dative, *var* and the participle), which are
+     not tokens of the bank sentence; each carries the LEMMA and class of the
+     token it came from, never a guess from the surface form. The mark `m` is
+     left out on purpose: it described the form in the bank sentence. */
+  const as = (w, t) => ({ w, l: t.l, c: t.c, ...(t.x ? { x: t.x } : {}) });
+  const withAgentTok = withAgent === null ? null : [
+    ...s.tok.slice(O.from, oEnd + 1).map((t, k) => as(object[k][0], t)),
+    { w: veraForm[0], l: "vera", c: "sagnorð" },
+    { w: part[0], l: v.l, c: "sagnorð" },
+    ...rest.slice(0, -1).map((t) => as(t.w, t)),
+    { w: "af", l: "af", c: "forsetning" },
+    ...s.tok.slice(F.from, F.to + 1).map((t, k) => as(agent[k][0], t)),
+  ];
   return {
     kind: "passive", s,
     instruction: "Settu setninguna í **þolmynd**: láttu andlagið byrja setninguna.",
-    answers, model: shown, withAgent, objCase,
+    answers, model: shown, withAgent, withAgentTok, objCase,
     /* For the notes of the way back: the words the passive is made of. */
     pieces: { subject: object.map((o) => o[0]), vera: veraForm[0], participle: part[0],
       agent: agent.map((a) => a[0]) },
@@ -624,7 +640,7 @@ export function transformActive(lex, s) {
     checks.push({ has: pieces.subject, lacks: objWords,
       note: `Frumlag þolmyndarinnar verður andlag og fer í þolfall: *${objWords.join(" ")}*, ekki *${pieces.subject.join(" ")}*.` });
   return {
-    kind: "active", s, from: p.withAgent, model: s.t,
+    kind: "active", s, from: p.withAgent, fromTok: p.withAgentTok, model: s.t,
     instruction: "Settu setninguna í **germynd**: gerandinn (sá sem kemur á eftir *af*) verður frumlag og byrjar setninguna.",
     answers,
     why: `Í germynd er gerandinn frumlag og stendur í nefnifalli: *${subjText}*. ` +
@@ -811,9 +827,16 @@ export function transformJoin(lex, s) {
     note: `Þegar aukasetningin stendur fremst er hún fyrsti liðurinn, og sögnin í aðalsetningunni kemur strax á eftir henni — á undan frumlaginu: *${aVerb} ${aSubj.join(" ")}*.` });
   if (!coord && b.F.from !== b.vi) checks.push({ has: [conjText, bVerb, ...bSubj],
     note: `Í aukasetningu á eftir *${conjText}* stendur frumlagið á undan sögninni, eins og í venjulegri fullyrðingu: *${conjText} ${bSubj.join(" ")} ${bVerb}*.` });
+  /* Item 45: the tokens of each line, in the order of `lines` (the words are
+     those of the bank sentence; only a capital letter moves). */
+  const aTok = first === "main"
+    ? s.tok.slice(A[0], A[1] + 1)
+    : [...s.tok.slice(A[0] + 1, A[0] + 1 + aSubj.length), s.tok[A[0]], ...s.tok.slice(A[0] + 1 + aSubj.length, A[1] + 1)];
+  const bTok = s.tok.slice(B[0], B[1] + 1);
   return {
     kind: "join", s, conj: conjText,
     lines: aInv ? [bSentence, aSentence] : [aSentence, bSentence],
+    linesTok: aInv ? [bTok, aTok] : [aTok, bTok],
     from: aInv ? `${bSentence} ${aSentence}` : `${aSentence} ${bSentence}`,
     instruction: aInv
       ? `Tengdu setningarnar saman með **${conjText}**. Byrjaðu á *${Conj}* og fyrri setningunni.`

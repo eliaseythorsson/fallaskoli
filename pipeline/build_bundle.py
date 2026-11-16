@@ -2,8 +2,8 @@
 """Fold lexicon + sentences + semantics + definitions into one JS payload."""
 import json, os, re, collections, noun_classes, adj_classes, definitions, vocab_filter
 
-lex = json.load(open('lexicon.json'))
-sents = json.load(open('sentences.json'))
+lex = json.load(open('data/lexicon.json'))
+sents = json.load(open('data/sentences.json'))
 
 # Corpus frequency: the score from freq_lemmas.json is attached to every word
 # as `q`, and core/rarity.js turns it into a rarity tier. Homograph look-ups
@@ -12,7 +12,7 @@ sents = json.load(open('sentences.json'))
 # the corpus saw, but not mythical.
 HOMOGRAPH_DISCOUNT = 8
 
-freq = json.load(open('freq_lemmas.json'))
+freq = json.load(open('data/freq_lemmas.json'))
 score_of_id = {int(bid): rec[2] for bid, rec in freq.items()}
 
 best_for_lemma = collections.defaultdict(int)

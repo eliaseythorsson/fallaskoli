@@ -321,7 +321,7 @@ for lvl, t, case, ns, nouns in X.NUMERAL_PLURAL_ONLY:
 out["pluralOnly"] = items
 
 # to_samr / to_val: frames × nouns by meaning (exercises.py NUMERAL_FRAMES).
-LEXICON_NOUNS = sorted((w for w in json.load(open("lexicon.json"))["w"] if w["c"] in ("kk", "kvk", "hk")),
+LEXICON_NOUNS = sorted((w for w in json.load(open("data/lexicon.json"))["w"] if w["c"] in ("kk", "kvk", "hk")),
                        key=lambda w: w.get("r", 1e9))
 LEXICON_NOUN_SET = {w["o"] for w in LEXICON_NOUNS}
 def nouns_of(spec, where):
@@ -831,7 +831,7 @@ def pos_of(lemma, pos, where):
 # r: the word's rank in the frequency list (freq_lemmas.json, 1 = most
 # common), so the app can start with common words and move to rarer ones as
 # the child's level rises. A word the list does not have gets 99999.
-_freq = json.load(open("freq_lemmas.json"))
+_freq = json.load(open("data/freq_lemmas.json"))
 _rank = {}
 for _i, (_l, _c, _n, _k) in enumerate(sorted(_freq.values(), key=lambda x: -x[3])):   # by rank key (build_freq.py)
     _rank.setdefault((_l, _c), _i + 1)
@@ -904,7 +904,7 @@ out["wordInContext"] = items
 # the lexicon has (so a pupil has met it), the adverb one BÍN lists as an
 # adverb, in the standard form. Nothing else is claimed, so the answer is
 # certain.
-_lexw = json.load(open("lexicon.json"))["w"]
+_lexw = json.load(open("data/lexicon.json"))["w"]
 lega = []
 for w in sorted((w for w in _lexw if w["c"] == "lo" and w["o"].endswith("legur")), key=lambda w: w["r"]):
     adv = w["o"][:-2] + "a"
@@ -1061,7 +1061,7 @@ GROUP = {"kk": "nafnorð", "kvk": "nafnorð", "hk": "nafnorð", "lo": "lýsingar
          "so": "sagnorð", "fn": "fornafn", "pfn": "fornafn", "afn": "fornafn",
          "to": "töluorð", "rt": "töluorð", "ao": "atviksorð", "fs": "forsetning",
          "st": "samtenging", "uh": "upphrópun"}
-lexicon = json.load(open("lexicon.json"))
+lexicon = json.load(open("data/lexicon.json"))
 sortable = collections.defaultdict(list)
 for w in sorted(lexicon["w"], key=lambda w: w.get("r", 1e9)):
     g = GROUP.get(w["c"])

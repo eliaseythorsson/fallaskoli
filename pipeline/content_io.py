@@ -44,7 +44,7 @@ person who meets one has most likely just edited that file.
 
 import os
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "content")
+ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "content")
 EMPTY = "(ekkert)"
 
 

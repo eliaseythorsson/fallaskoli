@@ -31,7 +31,7 @@ jobs:
           bad=$(git ls-files | grep -E '^(server/data/|_prufa/|dist/|_backup/|_to_delete/)|(^|/)fallaskoli-v[0-9.]+\.html$|\.env$' || true)
           if [ -n "$bad" ]; then echo "These must not be committed:"; echo "$bad"; exit 1; fi
 
-      # The generated data (data/*.js, lexicon.json, sentences.json …) is
+      # The generated data (data/*.js, data/lexicon.json, data/sentences.json …) is
       # committed. The Python half of ./build.sh regenerates it (the
       # `reproducible` job below does exactly that); this checks that what is
       # committed is what was last accepted.
@@ -90,4 +90,4 @@ jobs:
             git diff -- data/manifest.json data/licenses.js | head -80
             exit 1
           fi
-          echo "byte-identical: $(git ls-files data lexicon.json sentences.json freq_lemmas.json | wc -l) generated files"
+          echo "byte-identical: $(git ls-files data | wc -l) generated files"

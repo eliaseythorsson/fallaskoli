@@ -176,6 +176,7 @@ test("BÍN: the build refuses a correction, a wrong form or a claim that BÍN do
   { skip: py ? false : "Python with islenska and reynir is not installed" }, () => {
     const bad = `
 import sys, runpy
+sys.path.insert(0, "pipeline")
 import exercises as X
 H = X.H
 X.HUNT = [
@@ -191,7 +192,7 @@ X.HUNT = [
     H(3, "Engin hornklofi hér.", "x", ("ég", "pfn", "NFET"), "x" * 40),
 ]
 sys.argv = ["build_exercises.py"]
-runpy.run_path("build_exercises.py", run_name="__main__")
+runpy.run_path("pipeline/build_exercises.py", run_name="__main__")
 `;
     const r = spawnSync(py, ["-c", bad], { cwd: root, encoding: "utf8", env: { ...process.env, PYTHONHASHSEED: "0" } });
     assert.equal(r.status, 1, "the build accepted a bad bank:\n" + r.stdout + r.stderr);
