@@ -20,6 +20,7 @@
  */
 
 import { mergeReview } from "./review.js";
+import { mergeMend } from "./mending.js";
 import { mergeLevels } from "./difficulty.js";
 import { mergeByType } from "./mastery.js";
 import { mergeSeenTypes } from "./examples.js";
@@ -205,6 +206,9 @@ export function mergeStates(base, local, remote) {
      either device is met, on the earlier day. */
   out.byType = mergeByType(B.byType, L.byType, R.byType);
   out.seenTypes = mergeSeenTypes(L.seenTypes, R.seenTypes);
+  /* Getting better (items 56 and 58, core/mending.js): a pattern mended on
+     either device is no longer waiting, and the counts add. */
+  out.mend = mergeMend(B.mend, L.mend, R.mend);
 
   out.lastActive = later(L.lastActive, R.lastActive);
   out.settled = later(L.settled, R.settled);

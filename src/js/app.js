@@ -25,6 +25,7 @@ import { $, esc, wireGlossary, queueBadges, hideTip, freshEnter, wirePrivacyLink
   setKeypadPref, keypadOn, keypadEnv, wireKeys, applyComfort } from "./ui/dom.js";
 import { measurable, badgeWindows, windowsFor } from "./core/rarity.js";
 import { socialContext } from "./core/social.js";
+import { DEFAULT_METRIC } from "./core/leaderboard.js";
 import { renderTask, revealTopic } from "./ui/render.js";
 import "./ui/render-more.js";
 import { wireReports, captureCard, renderReportsPanel } from "./ui/reports.js";
@@ -43,6 +44,7 @@ import { TASKS } from "./tasks/index.js";
 const typesOfSkill = (id) => new Set(TASKS.filter((t) => t.skill === id || (t.anyOf || []).includes(id)).map((t) => t.id));
 import { diagnose, noteDiagnosis, activePatterns, huntPreferFor, focusTypes, pickTargeted,
   patternById, runReport } from "./core/diagnosis.js";
+import { noteMending } from "./core/mending.js";
 import { SKILL_IDS } from "./core/skills.js";
 import { renderPicker, renderRunBar, renderSummary, renderDiagnosisPanel, confirmQuit,
   topics, usable, MINE, MIXED, TODAY, ASSIGNED, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
@@ -73,8 +75,11 @@ const app = {
   rights: null,
   roster: [],
   board: [],
-  boardMetric: "week",
+  /* Item 58: the class board opens on "Framfarir" (core/leaderboard.js). */
+  boardMetric: DEFAULT_METRIC,
   social: null,
+  /* GET /classgoal (item 59): the group's weekly goal, totals only. */
+  classGoal: null,
   badgeStats: null,
 
   /** The leaderboard, by whichever metric is currently chosen. */
@@ -981,8 +986,13 @@ const app = {
     extra = rest;
     const findings = judged || diagnose(this.cur, resp);
     const chances = noteDiagnosis(this.S, this.cur, findings, extra.correct ?? null, todayKey());
+    /* Items 56 and 58: an active pattern now right ten times in a row, on a
+       later day than it went wrong, is mended (core/mending.js) — before the
+       badge context below is built, so the badge comes with this answer. */
+    const mendedNow = noteMending(this.S, chances, todayKey());
     showFindings(findings, extra.correct);
     showReview(review);
+    showMended(mendedNow);
     const r = this.run;
     const runQuestion = !!(r && this.cur && this.cur.inRun && !this.cur.closed);
     if (r && this.cur && this.cur.inRun && !this.cur.closed) {
@@ -1110,6 +1120,19 @@ function showFindings(findings, verdict) {
  * comes next, or that it is done with. `review` is what `noteReview` said
  * happened in the queue; nothing is shown unless an entry moved.
  */
+/**
+ * One line under the answer that mended an error pattern (items 56 and 58):
+ * the pupil sees it the moment it happens, not only on the badge shelf.
+ */
+function showMended(ids) {
+  const v = document.querySelector("#verdict .verdict");
+  if (!v || !ids || !ids.length || v.querySelector(".mendline")) return;
+  const names = ids.map((id) => (patternById(id) || {}).nm).filter(Boolean);
+  if (!names.length) return;
+  v.insertAdjacentHTML("beforeend", `<p class="streakline mendline">🩹 Þú hefur lagað þetta: <b>${
+    names.map(esc).join(" · ")}</b> — tíu rétt svör í röð.</p>`);
+}
+
 function showReview(review) {
   const v = document.querySelector("#verdict .verdict");
   if (!v || !review || v.querySelector(".reviewline")) return;
@@ -1445,16 +1468,19 @@ function foldIn(merged, sent) {
 async function loadSocial() {
   if (!app.server) return;
   app.reloadSocial = loadSocial;      // ui/account.js: after "show me" changes
-  const [stats, roster, board, social] = await Promise.all([
+  const [stats, roster, board, social, goal] = await Promise.all([
     app.server.badgeStats().catch(() => null),
     app.server.roster().catch(() => null),
     app.server.leaderboard(app.boardMetric).catch(() => null),
     app.server.social().catch(() => null),
+    /* Item 59: the group's goal and its total (ui/classgoal.js draws it). */
+    app.server.classGoal().catch(() => null),
   ]);
   app.badgeStats = stats && stats.measurable ? stats : null;
   app.roster = roster || [];
   app.board = board || [];
   app.social = social || null;
+  app.classGoal = goal || null;
   judgeSocial();
   app.loadDuels();
   app.loadAssignments();
@@ -1473,6 +1499,7 @@ function judgeSocial() {
     me: app.profile.id, roster: app.roster, board: app.board,
     result: app.social ? app.social.lastWeek : null,
     memo: app.S.social, week: app.social ? app.social.week : undefined,
+    goal: app.classGoal,
   });
   app.S.social = memo;
   const won = checkBadges(

@@ -100,7 +100,7 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     exportUrl: () => url("/account/export"),
 
     /* --- what only a server can answer --- */
-    leaderboard: (metric = "week") => call("GET", `/leaderboard?metric=${encodeURIComponent(metric)}`),
+    leaderboard: (metric = "framfarir") => call("GET", `/leaderboard?metric=${encodeURIComponent(metric)}`),
     badgeStats: () => call("GET", "/badges/stats"),
     roster: () => call("GET", "/roster"),
     social: () => call("GET", "/social"),
@@ -133,6 +133,11 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     calibrationReport: () => call("GET", "/admin/calibration"),
     samplesUrl: () => url("/admin/classifier/samples.json"),
     clearSamples: () => call("DELETE", "/admin/classifier/samples"),
+    /* --- the class goal (v6.13, item 59): totals only, core/classgoal.js --- */
+    classGoal: () => call("GET", "/classgoal"),
+    teacherClassGoal: (group) => call("GET", `/teacher/classgoal?group=${enc(group)}`),
+    setClassGoal: (group, kind, n) => call("POST", "/teacher/classgoal", { group, kind, n }),
+    removeClassGoal: (group) => call("DELETE", `/teacher/classgoal?group=${enc(group)}`),
     /* error reports (v6.8) */
     sendReport: (report) => call("POST", "/reports", report),
     reports: () => call("GET", "/admin/reports"),

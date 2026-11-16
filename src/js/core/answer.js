@@ -99,6 +99,7 @@ import { record, tallyAnswer, dayRec, dayStreak, todayKey, answerShape, wordKey 
 import { bumpDiff, bandOf } from "./difficulty.js";
 import { noteTypeAnswer } from "./mastery.js";
 import { noteReview } from "./review.js";
+import { noteReviewsPassed } from "./mending.js";
 
 /* ========================================================================
  * 1. What the pupil's history says — read-only
@@ -1300,6 +1301,10 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
      answer takes, so that a new question type cannot forget it. `review`
      says what happened, for the line under the verdict. */
   const review = noteReview(S, task, j, todayKey());
+  /* Items 56 and 58: reviews passed, by day — this week's "Framfarir"
+     (core/mending.js). A duel's answers count too: a due entry answered
+     right is a review passed wherever it happens. */
+  noteReviewsPassed(S, review.passed.length + review.done.length, todayKey());
   const out = { ...j.finish, findings: j.findings, review };
   /* The badges for a quick or a curious answer read its time and its shape
      together; both only when the answer was right. */

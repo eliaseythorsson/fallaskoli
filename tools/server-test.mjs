@@ -104,12 +104,31 @@ async function login(page, username) {
    which is what proves the tabs are reachable when nothing is going on. */
 async function openTab(page, view) {
   if (await page.evaluate(() => document.body.classList.contains("insession"))) {
-    await page.click("#runstop");
-    await page.waitForSelector("#runquit-yes", { timeout: 5000 });
+    /* Right after login the first card may still be drawn again (a worked
+       example, the social picture arriving) and swallow the click: try the ×
+       again rather than fail on a race. */
+    for (let k = 0; ; k++) {
+      await page.click("#runstop");
+      try { await page.waitForSelector("#runquit-yes", { timeout: 4000 }); break; }
+      catch (e) { if (k >= 2) throw e; }
+    }
     await page.click("#runquit-yes");
     await page.waitForFunction("!document.body.classList.contains('insession')", { timeout: 5000 });
+    /* Item 61: the badge windows held during the session open on its
+       summary, and their backdrop lies over the tabs. A child closes them
+       first; so does this. */
+    await page.waitForSelector(".scrim .modal", { timeout: 1500 }).catch(() => {});
   }
+  await closeWindows(page);
   await page.click(`nav.tabs button[data-view="${view}"]`);
+}
+
+/** Close every badge window that is open, one after another. */
+async function closeWindows(page) {
+  for (let k = 0; k < 15 && await page.$(".scrim .modal button"); k++) {
+    await page.evaluate(() => document.querySelector(".scrim .modal button")?.click());
+    await new Promise((r) => setTimeout(r, 250));
+  }
 }
 
 /* ---------- 1. The gate holds against anyone not logged in ---------- */
@@ -268,11 +287,13 @@ async function openTab(page, view) {
   await openTab(page, "class");
   await page.waitForSelector("#board table.board tr", { timeout: 10000 });
 
-  /* v6.1: the board opens on the week. Both seeds earned their XP in March,
-     so this week is level at nought — press XP to get the all-time order. */
-  ok(await page.$eval('[data-metric="week"]', (b) => b.getAttribute("aria-pressed")) === "true",
-    "the board does not open on the week");
-  ok(await page.$(".weekline") !== null, "the weekly board says nothing about the week");
+  /* v6.13 (item 58): the board opens on Framfarir, and says what it counts.
+     Both seeds earned their XP in March and mended nothing, so this week is
+     level at nought — press XP to get the all-time order. */
+  ok(await page.$eval('[data-metric="framfarir"]', (b) => b.getAttribute("aria-pressed")) === "true",
+    "the board does not open on Framfarir");
+  ok((await page.$eval(".weekline", (p) => p.textContent)).includes("villumynstur"),
+    "the Framfarir board does not say what it counts");
   await page.evaluate(() => document.querySelector('[data-metric="xp"]').click());
   await page.waitForFunction(
     () => document.querySelector('[data-metric="xp"]')?.getAttribute("aria-pressed") === "true",
@@ -337,19 +358,24 @@ async function openTab(page, view) {
 
   const { ctx, page } = await fresh();
   await login(page, "ceci");
-  /* The overtaking badge opens its window over the page as soon as the roster
-     arrives — that window is the first thing to check, and it has to be out of
-     the way before a tab can be pressed. */
-  await page.waitForSelector(".scrim .modal", { timeout: 10000 }).catch(() => {});
+  /* The overtaking badge is judged as soon as the roster arrives. Since
+     item 61 its window does NOT open over the question — login() has started
+     a session, and windows wait for its summary; the badge itself is in the
+     cabinet at once (checked below, `seen.mine`). */
+  await page.waitForFunction(() => !!window.FALLASKOLI.S.badges.soc_overtake, { timeout: 10000 }).catch(() => {});
   const modal = await page.evaluate(() => document.querySelector(".scrim .modal")?.textContent || "");
-  ok(/Framúrakstur/.test(modal), "no window announced Framúrakstur");
-  await page.evaluate(() => document.querySelector(".scrim .modal button")?.click());
-  await new Promise((r) => setTimeout(r, 300));
+  ok(!/Framúrakstur/.test(modal), "the Framúrakstur window opened over a question in a session (item 61)");
+  await closeWindows(page);
   /* The child's own card is on Merki og framvinda, the others in Skólastofan. */
   await page.evaluate(() => document.querySelector('nav.tabs button[data-view="progress"]').click());
   await page.evaluate(() => document.querySelector('nav.tabs button[data-view="class"]').click());
   await page.waitForSelector("#board table.board tr.meRow", { timeout: 10000 });
   await page.waitForSelector("#roster .rosteruser", { timeout: 10000 });
+  /* Since item 58 the board opens on Framfarir; the week is one press away. */
+  await page.evaluate(() => document.querySelector('[data-metric="week"]').click());
+  await page.waitForFunction(
+    () => document.querySelector('[data-metric="week"]')?.getAttribute("aria-pressed") === "true",
+    { timeout: 10000 });
   await new Promise((r) => setTimeout(r, 500));
 
   const seen = await page.evaluate(() => {
@@ -996,6 +1022,93 @@ async function openTab(page, view) {
   ok(/1 spurningagerð/.test(rec) && /1 reit/.test(rec), "the record does not describe the table in force: " + rec.slice(0, 300));
   ok(/kveikt í 1 hóp/.test(rec), "the record does not say how many groups sample answers");
   await A.ctx.close();
+}
+
+/* ---------- 11. The class goal (item 59) ------------------------------------
+ * A guardian sets a weekly goal in Skólastofan; every pupil of the group sees
+ * one shared bar above the boards — the total, never who put in what — the
+ * pupils who are not on the board included. When the bar is full each of them
+ * gets "Saman í mark". A pupil cannot reach the teacher's route. */
+{
+  await app.store.updateGroups((g) => ({ ...g, h9b: { name: "9. B" } }));
+  const inB = async (u, share = true) => {
+    await app.store.updateUsers((list) => {
+      const x = list.find((y) => y.id === u.id);
+      x.group = "h9b"; x.share = { board: share, minutes: false };
+      return list;
+    });
+    return u;
+  };
+  await inB(await mkUser("mkennari", "guardian"));
+  const ma = await inB(await mkUser("mnemi1", "learner"));
+  const mb = await inB(await mkUser("mnemi2", "learner"));
+  await inB(await mkUser("mnemi3", "learner"), false);          // off the board, has not practised
+  await inB(await mkUser("mnemi4", "learner"), false);          // five: the least a goal needs
+  await inB(await mkUser("mnemi5", "learner"), false);
+  const { blankState: blank } = await import("../src/js/core/state.js");
+  const { weekKey } = await import("../src/js/core/social.js");
+  const monday = weekKey(new Date());
+  await app.store.putState(ma.id, { ...blank(), days: { [monday]: { a: 160, c: 150, xp: 0 } } });
+  await app.store.putState(mb.id, { ...blank(), days: { [monday]: { a: 70, c: 60, xp: 0 } } });
+
+  /* The teacher sets 500 right answers together. */
+  const T = await fresh();
+  await login(T.page, "mkennari");
+  await openTab(T.page, "class");
+  await T.page.waitForSelector('#tc-goal-what option[value="rett:500"]', { timeout: 15000 });
+  await T.page.select("#tc-goal-what", "rett:500");
+  await T.page.click("#tc-goal-set");
+  await T.page.waitForFunction(() => /komið til nemendanna/.test(document.getElementById("tc-goal-msg")?.innerText || ""),
+    { timeout: 10000 });
+  const rec = (await app.store.groups()).h9b;
+  ok(rec && Array.isArray(rec.goals) && rec.goals.length === 1 && rec.goals[0].kind === "rett" &&
+    rec.goals[0].n === 500 && !JSON.stringify(rec).includes("mkennari"),
+    "the goal did not reach the group's record as set: " + JSON.stringify(rec));
+  /* The teacher's own bar above the boards follows at once. */
+  await T.page.waitForFunction(() => /210 af 500/.test(document.getElementById("classgoal")?.innerText || ""),
+    { timeout: 10000 });
+
+  /* A pupil who is not on the board: the bar, the total, nobody's name. */
+  const P = await fresh();
+  await login(P.page, "mnemi3");
+  await openTab(P.page, "class");
+  await P.page.waitForSelector("#classgoal .goalbar", { timeout: 15000 });
+  const bar = await P.page.evaluate(() => {
+    const box = document.getElementById("classgoal");
+    const b = box.querySelector(".goalbar");
+    const board = [...document.querySelectorAll("#view-class h2.sec")].find((h) => /Stigatafla/.test(h.textContent));
+    return { text: box.innerText, now: b.getAttribute("aria-valuenow"), max: b.getAttribute("aria-valuemax"),
+      width: b.querySelector("i").style.width,
+      above: !!(box.compareDocumentPosition(board) & Node.DOCUMENT_POSITION_FOLLOWING),
+      gap: getComputedStyle(board).marginTop, barH: b.getBoundingClientRect().height };
+  });
+  ok(/500 rétt svör saman/.test(bar.text) && /Rétt svör hópsins í vikunni: 210 af 500\./.test(bar.text),
+    "the pupil's bar does not say the goal and the total: " + bar.text);
+  ok(bar.now === "210" && bar.max === "500" && bar.width === "42%", `the bar is ${bar.now}/${bar.max} at ${bar.width}`);
+  ok(!/mnemi|150|60\b/.test(bar.text), "the bar shows who put in what: " + bar.text);
+  ok(bar.above, "the class goal is not above the leaderboard");
+  ok(bar.gap === "34px" && bar.barH >= 10, `the board's heading sits ${bar.gap} under the goal; bar ${bar.barH}px`);
+  ok(!(await P.page.evaluate(() => !!window.FALLASKOLI.S.badges.soc_classgoal)), "the badge came before the goal was met");
+  const refused = await P.page.evaluate(() => Promise.all([
+    fetch("/teacher/classgoal").then((r) => r.status),
+    fetch("/teacher/classgoal", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "rett", n: 200 }) }).then((r) => r.status)]));
+  ok(refused.every((x) => x === 403), "a pupil got " + refused.join(",") + " from the teacher's goal route");
+
+  /* The teacher lowers it to 200: met. The pupil, next time they open the
+     program, has the bar full and the badge — without being on the board. */
+  await T.page.select("#tc-goal-what", "rett:200");
+  await T.page.click("#tc-goal-set");
+  await T.page.waitForFunction(() => /210 af 200/.test(document.getElementById("classgoal")?.innerText || ""),
+    { timeout: 10000 });
+  await P.ctx.close();
+  const Q = await fresh();
+  await login(Q.page, "mnemi3");
+  await Q.page.waitForFunction(() => !!window.FALLASKOLI.S.badges.soc_classgoal, { timeout: 15000 });
+  await openTab(Q.page, "class");
+  await Q.page.waitForSelector("#classgoal .goalcard.met", { timeout: 10000 });
+  ok(/náð!/.test(await Q.page.$eval("#classgoal", (e) => e.innerText)), "the full bar does not say it was met");
+  await T.ctx.close(); await Q.ctx.close();
 }
 
 await browser.close();

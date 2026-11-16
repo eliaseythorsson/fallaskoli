@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BADGES, checkBadges } from "../src/js/core/badges.js";
-import { SKILL_IDS } from "../src/js/core/skills.js";
+import { SKILLS, SKILL_IDS } from "../src/js/core/skills.js";
 import { blankState, newSession, record, badgeContext } from "../src/js/core/state.js";
 
 test("there are many badges and every id is unique", () => {
@@ -117,8 +117,15 @@ test("a run within a skill is independent of the overall run", () => {
 /* v6.9: 373 badges made each one worth little. */
 test("the catalogue that can still be won is about half what it was", async () => {
   const { ACTIVE_BADGES, RETIRED_IDS, isRetired } = await import("../src/js/core/badges.js");
-  assert.ok(ACTIVE_BADGES.length <= 210, `${ACTIVE_BADGES.length} active badges`);
-  assert.ok(ACTIVE_BADGES.length >= 150, `${ACTIVE_BADGES.length} active badges`);
+  /* v6.13, item 56: the badges that pay for getting better (group
+     "framfarir": mending, reviews on time, two mastery marks per skill) are
+     counted on their own. The rule of v6.9 still holds for everything else,
+     which item 56 made smaller, not larger, to make room. */
+  const volume = ACTIVE_BADGES.filter((b) => b.group !== "framfarir");
+  const better = ACTIVE_BADGES.filter((b) => b.group === "framfarir");
+  assert.ok(volume.length <= 210, `${volume.length} active badges outside Framfarir`);
+  assert.ok(volume.length >= 150, `${volume.length} active badges outside Framfarir`);
+  assert.ok(better.length <= 2 * SKILLS.length + 10, `${better.length} Framfarir badges`);
   const ids = new Set(BADGES.map((b) => b.id));
   for (const id of RETIRED_IDS) assert.ok(ids.has(id), `retired id ${id} does not exist`);
   for (const b of BADGES) assert.equal(!!b.retired, isRetired(b.id), b.id);

@@ -22,6 +22,8 @@ import { patternById, UNREAD } from "../core/diagnosis.js";
 import { YEARS } from "../core/curriculum.js";
 import { ASSIGN, ASSIGNABLE_PATTERNS, ASSIGNABLE_NODES, KIND_NAME, targetName, dueText }
   from "../core/assignment.js";
+import { CLASS_GOAL, GOAL_OPTIONS, goalText, progressText } from "../core/classgoal.js";
+import { renderClassGoal } from "./classgoal.js";
 
 const verdict = (text, kind = "bad") =>
   (text ? `<div class="verdict ${kind}"><p>${esc(text)}</p></div>` : "");
@@ -167,6 +169,71 @@ async function drawSamples(app, group) {
   };
 }
 
+/* ---------- the class goal (item 59) ---------------------------------------- */
+
+/** The teacher's card for the weekly goal, from GET /teacher/classgoal. */
+export function goalCardHTML(info) {
+  if (!info) return "";
+  const cur = info.goal ? `${info.goal.kind}:${info.goal.n}` : "";
+  const few = (info.pupils || 0) < CLASS_GOAL.minPupils;
+  const now = info.goal
+    ? `<p class="sub">Markmið hópsins núna: <b>${esc(goalText(info.goal))}</b>.
+        ${info.progress && !info.progress.small ? esc(progressText(info.progress)) : ""}</p>`
+    : `<p class="sub faint">Hópurinn hefur ekkert markmið núna.</p>`;
+  return `<h3 class="sec2">Markmið vikunnar</h3>
+    <p class="sub">Markmið sem hópurinn nær saman, í stað þess að keppa innbyrðis. Nemendur sjá eina
+      sameiginlega stiku efst í Skólastofunni: samtölu hópsins, aldrei hvað hver lagði til. Allir virkir
+      nemendur hópsins teljast með, líka þeir sem eru ekki á stigatöflunni. Þegar markmiðinu er náð fá allir
+      í hópnum merkið <b>Saman í mark</b>. Markmiðið gildir í hverri viku, frá mánudegi til sunnudags,
+      þar til þú breytir því eða fjarlægir það. Lota telst með ef svarað var að minnsta kosti
+      ${CLASS_GOAL.lotaMin} spurningum í henni.</p>
+    ${now}
+    ${few ? `<p class="sub faint">Hópurinn þarf að hafa að minnsta kosti ${CLASS_GOAL.minPupils} nemendur til að
+      fá sameiginlegt markmið, svo að samtalan sé aldrei tala eins nemanda.</p>` : `
+    <div class="filters">
+      <label class="lbl" for="tc-goal-what">Markmið</label>
+      <select id="tc-goal-what">${GOAL_OPTIONS.map(([v, label]) =>
+        `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(label)}</option>`).join("")}</select>
+      <button type="button" class="go" id="tc-goal-set">Setja markmið</button>
+      ${info.goal ? `<button type="button" class="ghost" id="tc-goal-off">Fjarlægja markmiðið</button>` : ""}
+    </div>`}
+    <div id="tc-goal-msg"></div>`;
+}
+
+async function drawGoal(app, group, msg = "") {
+  const box = $("tc-goal");
+  if (!box) return;
+  let info;
+  try { info = await app.server.teacherClassGoal(group); }
+  catch (e) { box.innerHTML = verdict(e.message); return; }
+  box.innerHTML = goalCardHTML(info);
+  if (msg) $("tc-goal-msg").innerHTML = msg;
+  /* The pupils' bar above follows at once, when it is the teacher's own group. */
+  const mine = async () => {
+    try { app.classGoal = await app.server.classGoal(); } catch { /* the bar keeps its last picture */ }
+    renderClassGoal(app);
+  };
+  const set = $("tc-goal-set");
+  if (set) set.onclick = async () => {
+    const [kind, n] = String($("tc-goal-what").value || "").split(":");
+    set.disabled = true;
+    try {
+      await app.server.setClassGoal(group, kind, Number(n));
+      await drawGoal(app, group, verdict("Markmiðið er komið til nemendanna.", "good"));
+      await mine();
+    } catch (e) { $("tc-goal-msg").innerHTML = verdict(e.message); set.disabled = false; }
+  };
+  const off = $("tc-goal-off");
+  if (off) off.onclick = async () => {
+    off.disabled = true;
+    try {
+      await app.server.removeClassGoal(group);
+      await drawGoal(app, group, verdict("Markmiðið er fjarlægt.", "good"));
+      await mine();
+    } catch (e) { $("tc-goal-msg").innerHTML = verdict(e.message); off.disabled = false; }
+  };
+}
+
 /* ---------- drawing -------------------------------------------------------- */
 
 let chosenGroup = null;
@@ -197,6 +264,8 @@ export async function renderTeacher(app) {
     ${list.length > 1 ? `<div class="polactions"><label class="lbl" for="tc-group">Hópur</label>
       <select id="tc-group">${list.map((g) => `<option value="${esc(g.id)}"${g.id === group ? " selected" : ""}>${
         esc(g.name)} (${g.pupils})</option>`).join("")}</select></div>` : ""}
+
+    <div id="tc-goal"></div>
 
     <h3 class="sec2">Verkefni</h3>
     <p class="sub">Nemendur sjá verkefnið efst í Æfa og byrja á því með einum smelli. Spurningarnar eru
@@ -278,5 +347,5 @@ export async function renderTeacher(app) {
   };
 
   $("tc-what").innerHTML = targetOptionsHTML();
-  await Promise.all([drawTable(), drawList(), drawSamples(app, group)]);
+  await Promise.all([drawTable(), drawList(), drawSamples(app, group), drawGoal(app, group)]);
 }
