@@ -133,8 +133,9 @@ test("the label on each category is the year the map says it starts", () => {
 /* ---------- the verb nodes say what the questions really ask ------------- */
 
 test("the verb types ask the moods and voices the map credits them with, and no boðháttur", () => {
-  /* The map calls the boðháttur a gap because the production types never ask
-     it. If a builder starts to, this fails and the node should be upgraded. */
+  /* The map credits the boðháttur to `so_bodhattur` (item 27), not to these
+     three: they never ask it. If one starts to, this fails, and the node
+     should list it too. */
   const seen = new Set();
   const S = blankState();
   const P = createPolicy(null, { ...blankPolicy(), skills: Object.fromEntries(SKILL_IDS.map((x) => [x, x === "sagnord"])) });
@@ -181,7 +182,8 @@ test("what each year adds is what its description says", () => {
   };
   assert.deepEqual(added(8).skills, SKILL_IDS.filter((s) =>
     s !== "setningafraedi" && s !== "setningagerd").sort());
-  assert.deepEqual(added(9), { skills: [], types: ["fn_aftur", "fs_operson", "ob_fsao", "ob_st"] });
+  assert.deepEqual(added(9), { skills: [], types: ["fn_aftur", "fs_operson", "ob_fsao", "ob_st",
+    "so_beyging", "so_bodhattur", "so_mynd"] });
   assert.deepEqual(added(10), {
     skills: ["setningafraedi", "setningagerd"],
     types: ["clause", "gerd_finna", "gerd_upphaf", "setn_flokka", "setn_hlut", "syntax"],

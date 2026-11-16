@@ -340,6 +340,21 @@ async function answerOne(correct) {
       (correct ? btns[k] : btns.find((_, j) => j !== k)).click();
     }, t.options, t.answer, correct);
     await tap("#check");
+  } else if (t.type === "slots") {
+    /* item 27: the boxes typed into for real, then sterk / veik if asked.
+       Wrong: the pick when there is one, else the first box. */
+    const forms = await page.evaluate(() => window.FALLASKOLI.cur.slots.map((s) => s.accepted[0]));
+    const boxes = await page.$$("table.slotbox input");
+    for (let k = 0; k < boxes.length; k++)
+      await boxes[k].type(correct || t.options || k ? forms[k] : "xxrangt");
+    if (t.options) {
+      await page.evaluate((opts, ans, correct) => {
+        const btns = [...document.querySelectorAll("#task .opts button")];
+        const k = opts.indexOf(ans);
+        (correct ? btns[k] : btns.find((_, j) => j !== k)).click();
+      }, t.options, t.answer, correct);
+    }
+    await tap("#check");
   } else if (t.type === "tap") {
     await page.evaluate((targets, correct) => {
       const words = [...document.querySelectorAll(".pickw")];
@@ -2198,6 +2213,80 @@ await page.setViewport({ width: 1100, height: 900 });
       await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
     }
   }
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+}
+
+/* ---------- item 27, second half: three verb types, at two widths ---------
+ * Each drawn by a short session aimed at its error pattern, at a low and a
+ * high þyngd, on a phone (390 px) and a desktop (1280 px): it must come, look
+ * like what it is, fit the screen, take a right answer and a wrong one
+ * through real typing and clicks, and explain itself under both. */
+{
+  const CASES = [
+    { focus: "beyging_so", type: "so_beyging", r: "slots", band: 1, boxes: 0, options: 2 },
+    { focus: "beyging_so", type: "so_beyging", r: "slots", band: 5, boxes: 3, options: 2 },
+    { focus: "mynd_greina", type: "so_mynd", r: "choice", band: 1, boxes: 0, options: 3 },
+    { focus: "mynd_greina", type: "so_mynd", r: "choice", band: 5, boxes: 0, options: 3 },
+    { focus: "bodhattur", type: "so_bodhattur", r: "slots", band: 1, boxes: 1, options: 0 },
+    { focus: "bodhattur", type: "so_bodhattur", r: "slots", band: 5, boxes: 2, options: 0 },
+  ];
+  for (const vp of [{ w: 390, h: 844, touch: true }, { w: 1280, h: 900, touch: false }]) {
+    await page.setViewport({ width: vp.w, height: vp.h, isMobile: vp.touch, hasTouch: vp.touch });
+    for (const c of CASES) {
+      await dismissModals();
+      await page.evaluate((c) => {
+        const A = window.FALLASKOLI;
+        A.S.enabled.sagnord = true;
+        A.reloadPolicy();
+        A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+        Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+        A.startRun("sagnord", 10, [c.focus], { review: false });
+      }, c);
+      await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+      const at = `${c.type} at þyngd ${c.band}, ${vp.w} px`;
+      for (const correct of [true, false]) {
+        const q = await page.evaluate(() => {
+          const t = window.FALLASKOLI.cur;
+          const inView = (el) => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && r.width > 0; };
+          const boxes = [...document.querySelectorAll("#task table.slotbox input")];
+          const btns = [...document.querySelectorAll("#task .opts button")];
+          return { type: t.type, typeId: t.typeId, boxes: boxes.length, buttons: btns.length,
+            fits: document.documentElement.scrollWidth <= innerWidth + 1,
+            visible: [...boxes, ...btns, document.getElementById("check")].every(inView),
+            /* A box a child can see what they type in (a class name shared
+               with another rule once squeezed these to 18 px on a phone). */
+            narrow: boxes.filter((b) => b.getBoundingClientRect().width < 120).length,
+            targets: [...document.querySelectorAll("#task .sentence .target")].map((x) => x.textContent),
+            marked: t.marks ? t.marks.map((k) => t.s.tok[k].w) : null,
+            gloss: document.querySelector("#task .gloss")?.textContent || "" };
+        });
+        ok(q.type === c.r && q.typeId === c.type, `${at}: drew ${q.typeId} (${q.type})`);
+        ok(q.boxes === c.boxes, `${at}: ${q.boxes} boxes, wanted ${c.boxes}`);
+        ok(q.buttons === c.options, `${at}: ${q.buttons} option buttons, wanted ${c.options}`);
+        ok(q.fits, `${at}: the page scrolls sideways`);
+        ok(q.visible, `${at}: a box or a button is off the screen`);
+        ok(!q.narrow, `${at}: ${q.narrow} answer boxes narrower than 120 px`);
+        ok(q.gloss.length > 20, `${at}: no instruction line`);
+        if (c.type === "so_mynd") ok(q.marked && q.targets.join(" ") === q.marked.join(" "),
+          `${at}: the verb phrase is not marked (${q.targets.join(" ")})`);
+        await answerOneNoNext(correct);
+        await page.waitForSelector("#verdict .verdict:not(.neutral)", { timeout: 4000 });
+        const v = await page.$eval("#verdict .verdict", (el) => ({ cls: el.className,
+          why: el.querySelector(".why")?.textContent || "",
+          fits: document.documentElement.scrollWidth <= innerWidth + 1,
+          typed: [...document.querySelectorAll("#task table.slotbox input")].map((x) => x.value).join(", "),
+          want: (window.FALLASKOLI.cur.slots || []).map((x) => x.accepted.join("/")).join(", ") }));
+        ok(correct ? /\bok\b/.test(v.cls) : /\bno\b/.test(v.cls),
+          `${at}: a ${correct ? "right" : "wrong"} answer drew "${v.cls}" (typed ${v.typed}; BÍN ${v.want})`);
+        ok(v.why.length > 30, `${at}: no explanation under the answer`);
+        ok(v.fits, `${at}: the verdict makes the page scroll sideways`);
+        await dismissModals();
+        await page.evaluate(() => window.FALLASKOLI.next());
+        await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+      }
+    }
+  }
+  await page.setViewport({ width: 1100, height: 900 });
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
 }
 

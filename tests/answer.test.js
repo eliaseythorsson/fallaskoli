@@ -200,6 +200,7 @@ function rightResponse(t) {
     case "govern": return { picked: t.fall };
     case "indecl": case "clause": case "choice": return { picked: t.answer };
     case "kenni": return t.askGen ? { picked: t.answer, text: t.gen[0] } : { picked: t.answer };
+    case "slots": return { picked: t.options ? t.answer : undefined, texts: t.slots.map((sl) => sl.accepted[0]) };
     case "tap": return { sel: t.targets.slice() };
     case "sort": return { picks: Object.fromEntries(t.items.map((it, k) => [k, it.cls])) };
     case "villur": {
@@ -251,6 +252,13 @@ function wrongResponse(t) {
     case "kenni":
       return { response: { picked: t.options.find((o) => o !== t.answer), text: t.askGen ? t.gen[0] : undefined },
                found: ["beyging_no"] };
+    case "slots":
+      /* With a pick, the pick is wrong and the forms right; without, the
+         first form is wrong. */
+      return t.options
+        ? { response: { picked: t.options.find((o) => o !== t.answer), texts: t.slots.map((sl) => sl.accepted[0]) },
+            found: t.miss }
+        : { response: { texts: t.slots.map((sl, k) => (k ? sl.accepted[0] : "xxrangt")) }, found: t.slots[0].miss };
     case "tap": {
       const extra = t.s.tok.findIndex((x, k) => isWord(x) && !t.targets.includes(k));
       return extra < 0 ? null : { response: { sel: [...t.targets, extra] } };
@@ -449,7 +457,7 @@ test("an unfinished answer is pending for every type that can be unfinished", ()
   const empty = {
     fill: { text: "" }, verb: { text: "" }, verbslot: { text: " " }, gap: { text: "" },
     umritun: { text: "" }, smidja: { text: "  " }, meaning: { text: "" },
-    parse: { picks: {} }, syntax: {}, govern: {}, indecl: {}, clause: {}, choice: {}, kenni: {},
+    parse: { picks: {} }, syntax: {}, govern: {}, indecl: {}, clause: {}, choice: {}, kenni: {}, slots: {},
     tap: { sel: [] }, sort: { picks: {} },
   };
   for (const t of BANK) {
