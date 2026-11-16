@@ -66,11 +66,12 @@ test("a type that declares steps builds harder questions as the band rises", () 
 });
 
 test("the types the critique found flat now follow the band", () => {
-  /* item 13's list, less the three Setningagerðir types (item 14 gives them
-     sentence levels) */
-  const was = ["govern", "lo_beyging", "lo_stig", "lo_samr", "fn_aftur", "to_val", "ob_st",
-    "ob_fsao", "ob_flokka", "fs_hreyf", "fs_sogn", "fs_operson", "or_samhengi", "or_myndun",
-    "or_utundan", "tbl_fn", "tbl_to"];
+  /* item 13's whole list — the three Setningagerðir types take their level
+     from the sentence since item 14 (flat to þyngd 4, as they declare, and
+     rising from 5) — and the two types item 27a added since. */
+  const was = ["govern", "clause", "gerd_finna", "gerd_upphaf", "lo_beyging", "lo_stig", "lo_samr",
+    "fn_aftur", "to_val", "ob_st", "ob_fsao", "ob_flokka", "fs_hreyf", "fs_sogn", "fs_operson",
+    "or_samhengi", "or_myndun", "or_utundan", "tbl_fn", "tbl_to", "fn_flokkar", "no_beyging"];
   for (const id of was) {
     const spec = typeById(id);
     assert.ok(spec.bands.length > 1, `${id} still declares no steps`);
@@ -142,4 +143,26 @@ test("govern asks about sentences at the pupil's level", () => {
 test("a word's level by its rank within its class", () => {
   assert.deepEqual([1, 150, 151, 350, 351, 600, 601, 950, 951, 5000].map(classRankLevel),
     [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
+});
+
+test("the adjective gaps seldom reach more than a level above the band", () => {
+  /* v6.13: the bank has only two or three sentences with a comparative or
+     superlative at each level, and widening to twelve took lo_stig to
+     level-4 sentences at þyngd 1 (and lo_samr's predicative to level 6).
+     The bank route now stops at band + 1; a frame may still go above it when
+     the adjective has no lower frame for that form (frames.js `maxLvl` is a
+     preference), which is the 0-3% left. Before item 13: 60-70%. */
+  for (const id of ["lo_stig", "lo_beyging", "lo_samr"]) {
+    const spec = typeById(id);
+    for (const band of [1, 2, 3]) {
+      let over = 0, n = 0;
+      for (let k = 0; k < 200; k++) {
+        const b = spec.build(lex, viewAt(band), seeded(7000 + k));
+        if (!b) continue;
+        n++;
+        if (b.task.lvl > band + 1) over++;
+      }
+      assert.ok(over / n < 0.05, `${id} at þyngd ${band}: ${over} of ${n} above level ${band + 1}`);
+    }
+  }
 });

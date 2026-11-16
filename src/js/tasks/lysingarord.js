@@ -296,8 +296,12 @@ function adjSlot(lex, view, rng, want, { pred = null, frames = true } = {}) {
   /* The bank slots near the band, as every sentence question chooses
      (critique item 13). Until v6.13 these were all the bank's slots at every
      band — about 97 questions in 100 — so a beginner met as many level-5
-     sentences as level-1 ones. */
-  const near = nearBand(bank, (r) => r.s.lvl, b, 12);
+     sentences as level-1 ones. Not above band + 1, the frames' own ceiling,
+     unless the bank has nothing lower: there are only two or three sentences
+     with a comparative or superlative at each level, and widening to twelve
+     reached level 4 at þyngd 1 (and level 6 for the predicative). */
+  const low = bank.filter((r) => r.s.lvl <= b + 1);
+  const near = nearBand(low.length ? low : bank, (r) => r.s.lvl, b, 12);
   if (near.length && (!frames || rng() < 0.55)) {
     const r = pick(near, rng);
     return { s: r.s, i: r.i, w: r.w, m: r.t.m, lvl: r.s.lvl };
