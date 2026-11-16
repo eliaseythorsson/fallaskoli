@@ -150,7 +150,7 @@ function legendHTML({ teacher, wide = true }) {
     <summary><span class="smlegrings" aria-hidden="true">${[1, 2, 3, 4].map((k) => ringSVG(k, 16)).join("")}</span>Hvað merkja táknin?</summary>
     <ul class="smlegend">
     <li class="smlegmarks"><span class="smlegrings" aria-hidden="true">${LEGEND_MARKS.map((k) => ringSVG(k, 20)).join("")}</span>
-      <span><b>Hringurinn</b> fyllist eftir því sem þú nærð betra valdi á efninu:
+      <span><b>Hringurinn</b> fyllist eftir því sem ${teacher ? "nemandinn nær" : "þú nærð"} betra valdi á efninu:
         ${LEGEND_MARKS.map((k) => LABELS[k].toLowerCase()).join(" → ")}</span></li>
     ${teacher ? "" : `<li><span class="smlegword" aria-hidden="true">í gær</span>
       <span><b>Undir nafninu</b> stendur hvenær þú æfðir efnið síðast</span></li>`}
