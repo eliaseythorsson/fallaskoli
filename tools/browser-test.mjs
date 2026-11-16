@@ -1182,8 +1182,9 @@ for (const view of ["progress", "class", "settings"]) {
   ok(filled > 120, `tab ${view} is empty (${filled} characters)`);
 }
 
-/* The skill cards are on Merki og framvinda and the switches on Stillingar og
-   námsefni; both are drawn when their tab is opened. */
+/* The skill cards are on Merki og framvinda (the heads of the skill map's
+   trails) and the switches on Stillingar og námsefni; both are drawn when
+   their tab is opened. */
 await openTab("progress");
 await openTab("settings");
 /* The count is read from SKILLS, not written here. A new skill should appear
@@ -1192,7 +1193,8 @@ await openTab("settings");
    time, and then the claim would be false. */
 const skillCount = await page.evaluate(
   () => document.querySelectorAll('#policyeditor input[data-dim="skills"]').length);
-const skillCards = await page.$$eval(".skillcard", (e) => e.length);
+/* Since item 83 a skill's card is the head of its trail on the skill map. */
+const skillCards = await page.$$eval("#skillmap .smlane:not(.planned)", (e) => e.length);
 ok(skillCards === skillCount, `${skillCards} skill cards but ${skillCount} skills`);
 ok(skillCount === 12, `${skillCount} skills — 11 before Málbeiting (v6.9)`);
 
@@ -3077,7 +3079,13 @@ await page.setViewport({ width: 1100, height: 900 });
   page.on("pageerror", (e) => errors.push(e.message));
   await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
   await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  /* A pupil who starts today: the pages before this one share its storage
+     and left a pupil hundreds of answers in. Nothing after this needs them. */
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess && window.FALLASKOLI.lex", { timeout: 15000 });
+  const fresh = await page.evaluate(() => window.FALLASKOLI.S.totalAnswers);
+  ok(fresh === 0, `the skill map's pupil should start with nothing answered: ${fresh}`);
   const REVIEW = "c:fill|ÞGFFT|hestur|kk";
   /* This block has a page of its own, so its own real click (see `tap`). */
   const tap = async (selector) => {
