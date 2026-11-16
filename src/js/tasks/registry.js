@@ -134,7 +134,7 @@ export const TASKS = Object.freeze(ORDER.map((id) => Object.freeze(BY_ID.get(id)
 /** @type {(id: string) => ?TaskType} */
 export const typeById = (id) => BY_ID.get(id) || null;
 
-/* Some types serve more than one skill (the reverse analysis covers
+/** Some types serve more than one skill (the reverse analysis covers
    adjectives, verbs and nouns) and may appear if any of them is on.
    @type {(P: Pick<import("../types").Policy, "type"|"skill">, t: TaskType) => boolean} */
 export const enabled = (P, t) =>

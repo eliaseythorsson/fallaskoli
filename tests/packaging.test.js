@@ -20,7 +20,10 @@ function reachable(entry) {
   const walk = (file) => {
     if (seen.has(file)) return;
     seen.add(file);
-    const text = fs.readFileSync(path.join(ROOT, file), "utf8");
+    /* JSDoc blocks are left out: `import("../types").State` in a type
+       comment (item 74, docs/TYPES.md) names a .d.ts for the type checker,
+       and nothing is loaded at run time. */
+    const text = fs.readFileSync(path.join(ROOT, file), "utf8").replace(/\/\*\*[\s\S]*?\*\//g, "");
     const re = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)["'](\.{1,2}\/[^"']+)["']/g;
     for (let m; (m = re.exec(text));) {
       walk(path.posix.normalize(path.posix.join(path.posix.dirname(file), m[1])));

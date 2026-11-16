@@ -40,8 +40,12 @@ pinned devDependency. It is not in the built file or in the server image.
 - **`tests/typecheck.test.js`** fails if a listed module loses its
   `// @ts-check`, if one of the twelve modules below leaves the list, if a
   module carries the pragma without being listed, if a checked module uses
-  `@ts-nocheck` or `@ts-ignore`, if any code imports `types` at run time, or
-  if this page stops naming a checked module.
+  `@ts-nocheck` or `@ts-ignore`, if a type tag sits in a plain `/* */`
+  comment (where tsc ignores it), if any code imports `types` at run time,
+  or if this page stops naming a checked module.
+- **`tests/packaging.test.js`** follows the server's imports to check the
+  Dockerfile. It skips `/** */` blocks, so `import("../types")` in a type
+  comment is not taken for a file the image needs.
 
 The check is not strict (`strict` is off; `noImplicitReturns` and
 `noFallthroughCasesInSwitch` are on). A parameter without a type is
@@ -121,7 +125,7 @@ A few things that trip up TypeScript 7 in JSDoc:
   `Record<string, T>` and `{added: number, passed: number}`.
 - `@param opts.x` needs an `@param {object} opts` line before it.
 - A `@type` tag inside a plain `/* … */` comment is ignored. It must be in a
-  `/** … */` block directly above the declaration.
+  `/** … */` block directly above the declaration. The test catches this.
 
 ## Stricter, later
 

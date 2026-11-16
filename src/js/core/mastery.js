@@ -232,12 +232,13 @@ export function recentAtLevel(S, typeIds, { window = WINDOW } = {}) {
   return out;
 }
 
-/* The review figures the mark reads, out of S.review: tallies under the given
+/** The review figures the mark reads, out of S.review: tallies under the given
    stats keys, and the live entries that match, of which the overdue ones.
    @param {State} S @param {When} now @param {string[]} keys
    @param {(e: ReviewEntry) => boolean} match
    @returns {Required<ReviewFigures>} */
 function reviewFigures(S, now, keys, match) {
+  /** @type {Partial<import("../types").ReviewState>} */
   const R = (S && S.review) || {};
   const stats = isObj(R.stats) ? R.stats : {};
   const out = { added: 0, passed: 0, onTime: 0, lapsed: 0, overdue: 0 };

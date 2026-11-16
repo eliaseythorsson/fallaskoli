@@ -69,6 +69,21 @@ test("no checked module switches the check off inside", () => {
   }
 });
 
+test("no type tag is hidden in a plain /* */ comment, where tsc ignores it", () => {
+  /* tsc reads @type, @param … only in a JSDoc block (slash and two stars).
+     In a plain comment the tag looks like a type and checks nothing (found twice while item 74 was
+     written: registry.js `enabled`, mastery.js `reviewFigures`). */
+  for (const f of listed) {
+    const src = read(f);
+    const re = /\/\*(?!\*)[\s\S]*?\*\//g;
+    for (let m; (m = re.exec(src));) {
+      const line = src.slice(0, m.index).split("\n").length;
+      assert.ok(!/@(type|param|returns|typedef|template)\b/.test(m[0]),
+        `${f}:${line}: a type tag in a plain comment — open it with two stars`);
+    }
+  }
+});
+
 test("every module with // @ts-check is listed, so the list is the whole truth", () => {
   const marked = walk("src/js").filter((f) => PRAGMA.test(read(f).split("\n", 1)[0]));
   for (const f of marked) assert.ok(listed.includes(f), `${f} says // @ts-check but is not in tsconfig.json "files"`);

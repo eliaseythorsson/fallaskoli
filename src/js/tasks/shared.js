@@ -72,7 +72,7 @@ export const bandFor = (view, skill) => Math.min(bandOf(view.sess, skill), view.
 export const levelFor = (P, want) => (P.level(want) ? want
   : P.levels.reduce((b, x) => (Math.abs(x - want) < Math.abs(b - want) ? x : b), P.levels[0]));
 
-/* Sentences at about the right difficulty AND at a difficulty this child is
+/** Sentences at about the right difficulty AND at a difficulty this child is
    allowed to meet. The band is clamped to the policy's ceiling, so a class that
    is only working at þyngd 1-2 never has the band drift above it however well
    the child does.
@@ -335,9 +335,10 @@ export function textSentence(text) {
  * Recently asked hand-written items (data/exercises.js) are not asked again
  * straight away. `fresh` reads what the session remembers; the builder that
  * uses an item returns `FX.exSeen(key)` beside its task, and the item is
- * remembered when — and only when — the question is shown.
- * @template T @param {View} view @param {(x: T) => string} key @param {T[]} list
- * @returns {T[]} */
+ * remembered when — and only when — the question is shown. */
+
+/** @template T @param {View} view @param {(x: T) => string} key @param {T[]} list
+    @returns {T[]} */
 export function fresh(view, key, list) {
   const seen = view.sess.exSeen || [];
   const ok = list.filter((x) => !seen.includes(key(x)));
