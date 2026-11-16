@@ -60,7 +60,8 @@
        h    the last dozen outcomes, oldest first, as "1"/"0"
        at   when it last changed (ms) — the later record wins a merge
        src  what set it: "play" (answers), "xp" (the one-off migration),
-            "cal" (a calibration: items 40/84, `setSkillLevel`)
+            "cal" (a calibration, `setSkillLevel`), "placement" (the
+            placement round of the first run: item 84, core/placement.js)
    A skill with no record is at level 1 with no history.
 
    ---- the second axis: how hard the word and the cell are (item 16) ---------
@@ -123,7 +124,7 @@ export const WINDOW = 12, UP_GATE = 0.8;
 /** Below this many recent answers there is too little to judge: no gate. */
 export const GATE_MIN = 4;
 
-const SOURCES = new Set(["play", "xp", "cal"]);
+const SOURCES = new Set(["play", "xp", "cal", "placement"]);
 const round2 = (x) => Math.round(x * 100) / 100;
 const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
 
@@ -158,7 +159,7 @@ export function recentAccuracy(h) {
  * @param {object} S        the pupil's state (changed)
  * @param {string} skill    a skill id (core/skills.js)
  * @param {number} level    the new level
- * @param {{source?: "cal"|"play"|"xp", now?: number, sess?: object,
+ * @param {{source?: "cal"|"placement"|"play"|"xp", now?: number, sess?: object,
  *          history?: string}} [opts]  `history`: outcomes to keep as the
  *          recent history, e.g. the calibration answers ("1"/"0")
  * @returns {object} the record written
