@@ -6,10 +6,7 @@ import { migrate, blankState, newSession, todayKey, badgeContext, settleDays, no
 import { applyDecay } from "./core/progress.js";
 import { checkBadges, checkLogin, celebrate } from "./core/badges.js";
 import { collectionSummary } from "./core/collection.js";
-import { nextTask, buildTask, drillTask, makeView, applyEffects, streakTasks } from "./tasks/index.js";
-import { queuePattern } from "./core/review.js";
-import { STREAK_N, streakPattern, startStreak, stepStreak, streakEntry, streakLine } from "./core/streak.js";
-import { statusOf, weakWords, drillable, startDrill, drillStep, settleDrill } from "./core/wordhealth.js";
+import { nextTask, buildTask, makeView, applyEffects } from "./tasks/index.js";
 import { grantXp, cleanWeekGoal } from "./core/state.js";
 import { renderDrillBar } from "./ui/drill.js";
 import { createStore } from "./storage/index.js";
@@ -43,11 +40,11 @@ import { levelRanges, applyRanges } from "./core/difficulty.js";
 import { TASKS } from "./tasks/index.js";
 import { diagnose, noteDiagnosis } from "./core/diagnosis.js";
 import { noteMending } from "./core/mending.js";
-import { renderRunBar, usable, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
+import { renderRunBar, syncSessionLayout } from "./ui/session.js";
 import { LESSONS, readCount } from "./core/lessons.js";
-import { showFindings, showReview, showMended, showStreakEnd, armNext } from "./ui/verdict.js";
-import { rng } from "./control/rng.js";
+import { showFindings, showReview, showMended, armNext } from "./ui/verdict.js";
 import { sessionControl } from "./control/session.js";
+import { drillControl } from "./control/drill.js";
 
 /* A calibration table that changes nothing (see `app.viewCal`). */
 const EMPTY_TABLE = Object.freeze({ v: CAL.v, types: {}, cells: {}, irr: {} });
@@ -84,15 +81,6 @@ const app = {
   sess: null,
   cur: null,
   forcedNoun: null,
-
-  /* ---- the rescue drill (v6.6, core/wordhealth.js) ----
-     `drill` is the drill in progress, `drillOffer` a word offered for one,
-     `drillDone` the result of the last one, shown until it is closed. None of
-     it is saved: a drill abandoned by closing the tab is simply not counted. */
-  drill: null,
-  drillOffer: null,
-  drillDone: null,
-  drillOffered: new Set(),
 
   /* ---- duels (v6.7, core/duel.js) ----
      `duelInfo` is the server's last answer to GET /duels and `duelList` its
@@ -301,15 +289,6 @@ const app = {
     }
   },
 
-  /* ---- "Þrjár í röð" (item 36, core/streak.js) ----
-     `streakOffer` is the offer under the verdict just shown, with its three
-     questions already built (it is only made when all three can be);
-     `streak` the three in progress. Neither is saved: what is answered is in
-     the state like any answer, and the pattern goes into the review queue
-     when the three end. */
-  streak: null,
-  streakOffer: null,
-
   /* ---- calibration (item 17, core/calibration.js) ----
      `cal` is the table the server published, cleaned — or null: no server,
      no table yet, the switch is off, or the answer was not a table. With
@@ -361,75 +340,6 @@ const app = {
       });
   },
 
-  /* ---- "Þrjár í röð" (critique item 36, core/streak.js) ---------------- */
-
-  /**
-   * After a diagnosed wrong answer in a session: offer three questions on its
-   * pattern, under the verdict. Made only when all three can be built now —
-   * under the session's own topic if it can, else under the whole policy —
-   * so the offer never turns into two questions, or none.
-   */
-  offerStreak(findings) {
-    const r = this.run, from = this.cur;
-    if (!r || !from || this.streak || this.drill || this.duelRun || this.liveRun) return;
-    const p = streakPattern(findings, false,
-      { done: r.streaked, canPractise: (id) => usable(this, [id]) });
-    if (!p) return;
-    const three = (policy) => streakTasks(this.lex,
-      makeView({ S: this.S, sess: this.sess, policy }), rng, p, from, STREAK_N);
-    const tasks = three(this.reviewPolicy()) || three(effectivePolicy(this.S));
-    if (!tasks) return;
-    this.streakOffer = { p, tasks, t: from.typeId || from.type, sk: from.skill || null };
-    showStreakOffer(this, p);
-  },
-
-  /** The offer taken: the rule first (`next` draws it), then the three. */
-  startStreak() {
-    const o = this.streakOffer;
-    if (!o || !this.run || this.streak) return;
-    this.streakOffer = null;
-    this.run.streaked.push(o.p);
-    this.streak = { ...startStreak(o.p, { t: o.t, sk: o.sk }), queue: o.tasks };
-    this.next();
-  },
-
-  /** From the rule to the first question. */
-  beginStreak() {
-    if (!this.streak) return;
-    this.streak.intro = false;
-    this.next();
-  },
-
-  /**
-   * The three are over — done, stopped with the ×, or skipped at the rule.
-   * Whatever was answered sends the pattern to the review queue for
-   * tomorrow, and is noted for the session's summary. Safe to call twice.
-   */
-  endStreak() {
-    const st = this.streak;
-    if (!st) return;
-    if (!st.queued) {
-      st.queued = true;
-      const e = streakEntry(st);
-      if (e) {
-        queuePattern(this.S, e, todayKey());
-        if (this.run) this.run.streaks.push({ p: st.p, c: st.c, n: st.i });
-        this.save();
-      }
-    }
-    if (st.done) return;          // the last verdict is still on the screen
-    this.streak = null;
-  },
-
-  /** The × on the line of the three: back to the session, nothing lost. */
-  stopStreak() {
-    if (!this.streak) return;
-    this.streak.done = false;
-    this.endStreak();
-    this.streak = null;
-    this.next();
-  },
-
   /** A Lesefni page was opened for the first time (ui/lessons.js). */
   onRead() {
     if (!this.sess) return;
@@ -443,52 +353,6 @@ const app = {
     this.refresh();
     const { show, quiet } = windowsFor(won, this.badgeStats, { inSession: !!this.run });
     if (show.length) queueBadges(show, () => {}, quiet);
-  },
-
-  /** Begin a rescue drill on one word, from the offer or from the collection. */
-  startDrill(key) {
-    if (this.duelRun || this.liveRun) return;
-    const [lemma, cls] = String(key).split("|");
-    const entry = this.lex.lookup(lemma, cls);
-    if (!entry) return;
-    this.drill = { ...startDrill(key, this.S.words[key]), entry, turn: 0 };
-    this.policy = null;
-    this.drillOffer = null;
-    this.drillDone = null;
-    this.forcedNoun = null;
-    if (this.openView) this.openView("practice");
-    this.next();
-  },
-
-  /** Leave a drill half-way. Nothing is lost and nothing is awarded. */
-  stopDrill() {
-    this.drill = null;
-    renderDrillBar(this);
-    this.next();
-  },
-
-  /** After a question: offer a drill on a word in trouble, sparingly. */
-  considerOffer() {
-    if (this.duelRun || this.liveRun || this.run) return;
-    if (this.drill || this.drillOffer || this.drillOffered.size >= 3) return;
-    const fresh = (k) => !this.drillOffered.has(k);
-    /* The word just answered, if it is in trouble … */
-    const cur = this.cur && this.cur.word;
-    let pick = null;
-    if (cur && fresh(cur) && statusOf(this.S.words[cur]) === "weak") {
-      const [lemma, cls] = cur.split("|");
-      if (drillable(this.lex, this.lex.lookup(lemma, cls))) pick = { key: cur, lemma };
-    }
-    /* … otherwise, every fifteen questions, the worst word there is. */
-    this.sinceOffer = (this.sinceOffer || 0) + 1;
-    if (!pick && this.sinceOffer >= 15) {
-      this.sinceOffer = 0;
-      const w = weakWords(this.S, this.lex).find((x) => x.drillable && fresh(x.key));
-      if (w) pick = { key: w.key, lemma: w.lemma };
-    }
-    if (!pick) return;
-    this.drillOffered.add(pick.key);
-    this.drillOffer = pick;
   },
 
   save(immediate = false) {
@@ -537,52 +401,8 @@ const app = {
       }
       this.endDuel();
     }
-    if (this.drill) {
-      const b = drillTask(this.lex, makeView({
-        S: this.S, sess: this.sess, policy: (this.policy ||= effectivePolicy(this.S)), inRun: !!this.run,
-      }), rng, this.drill.entry, this.drill.turn++);
-      /* A noun left waiting by a cloze has no say in a drill, or after it. */
-      this.forcedNoun = null;
-      if (b) {
-        applyEffects(this, b.effects);
-        this.cur = b.task;
-        renderDrillBar(this);
-        renderRunBar(this);
-        renderTask(this);
-        clock.mark();
-        return;
-      }
-      /* Nothing can be asked about this word with what is switched on. The
-         drill ends without counting for or against anybody. */
-      this.drill = null;
-    }
-    /* An offer under the last verdict lapses when the child goes on. */
-    this.streakOffer = null;
-    /* Item 36: "Þrjár í röð" — the rule, then three questions on one error
-       pattern, inside the session but outside its count (core/streak.js). */
-    if (this.streak && this.run) {
-      const st = this.streak;
-      if (st.intro) {
-        this.cur = null;
-        renderDrillBar(this);
-        renderRunBar(this);
-        renderStreakIntro(this);
-        return;
-      }
-      const b = !st.done && st.queue.shift();
-      if (b) {
-        applyEffects(this, b.effects);
-        this.cur = b.task;
-        renderDrillBar(this);
-        renderTask(this);
-        renderRunBar(this);
-        clock.mark();
-        return;
-      }
-      st.done = false;
-      this.endStreak();
-      this.streak = null;
-    } else this.streak = null;
+    /* A rescue drill, or "Þrjár í röð" (control/drill.js). */
+    if (this.drillNext() || this.streakNext()) return;
     /* The session's next question, its summary, or the picker. */
     this.runNext();
   },
@@ -637,21 +457,10 @@ const app = {
     showReview(review);
     showMended(mendedNow);
     /* A question of the session: counted once (control/session.js). */
-    const r = this.run;
     const runQuestion = this.runAnswered(extra.correct, findings, chances);
     /* Item 36: one of "Þrjár í röð" answered — or a diagnosed miss in the
-       session, which may offer them. */
-    const st = this.streak;
-    if (st && this.cur && this.cur.streak && !this.cur.closed &&
-        (extra.correct === true || extra.correct === false)) {
-      this.cur.closed = true;
-      stepStreak(st, extra.correct);
-      renderRunBar(this);
-      if (st.done) {
-        this.endStreak();
-        showStreakEnd(streakLine(st), r && r.i >= r.n);
-      }
-    } else if (runQuestion && extra.correct === false && !r.placement) this.offerStreak(findings);
+       session, which may offer them (control/drill.js). */
+    this.streakAnswered(extra.correct, findings, runQuestion);
     const comeback = noteQuestion(this.sess, extra.correct ?? null);
     const accidents = noteAccidents(this.S, this.sess, this.cur, extra);
 
@@ -666,19 +475,9 @@ const app = {
       if (run.i >= run.tasks.length) this.endDuel();
     }
 
-    /* The rescue drill: one question further, and settled when it is over.
-       A question with no right answer (`correct: null`) does not count. */
-    let drill = null;
-    if (this.drill && this.cur && this.cur.drill &&
-        (extra.correct === true || extra.correct === false)) {
-      drillStep(this.drill, extra.correct);
-      if (this.drill.done) {
-        drill = settleDrill(this.S, this.drill, this.S.words[this.drill.key], todayKey());
-        grantXp(this.S, drill.xp);
-        this.drillDone = { ...drill, lemma: this.drill.entry.o };
-        this.drill = null;
-      }
-    }
+    /* The rescue drill: one question further, and settled when it is over
+       (control/drill.js); otherwise perhaps one is offered. */
+    const drill = this.drillAnswered(extra.correct);
     if (!this.drill && !drill) this.considerOffer();
     /* Lesefni (v6.7): a wrong answer points at the page that teaches it. */
     revealTopic(this);
@@ -751,7 +550,7 @@ function meet(target, ...parts) {
   }
   return target;
 }
-meet(app, sessionControl());
+meet(app, sessionControl(), drillControl());
 
 /**
  * The accident badges (core/badges.js §14d), counted at the one place that
