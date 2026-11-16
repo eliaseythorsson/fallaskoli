@@ -92,7 +92,7 @@
 
 import { ALL_CLASSES, CASES, MOODS } from "./marks.js";
 import { gradeForm, normalise, stripAccents, judge as judgeText } from "./grading.js";
-import { verdictOf, SLIP_XP } from "./leniency.js";
+import { verdictOf, SLIP_XP, RETRY_XP } from "./leniency.js";
 import { diagnose } from "./diagnosis.js";
 import { computeXp, dayMult, easeOf } from "./progress.js";
 import { record, tallyAnswer, dayRec, dayStreak, todayKey, answerShape, wordKey } from "./state.js";
@@ -1116,6 +1116,137 @@ export function judgeBonus(task, text, pupil = null) {
   };
 }
 
+/* ========================================================================
+ * 7. A second try (critique item 42)
+ * ======================================================================
+ *
+ * A wrong WRITTEN answer is not answered for the pupil at once. The verdict
+ * box shows the *af hverju* line (with the answer itself taken out of it,
+ * `hideAnswer`) and the name of the error pattern the judge found, the box
+ * stays open, and the pupil writes once more. Then the answer is shown,
+ * whatever the second try was.
+ *
+ * ---- which types --------------------------------------------------------
+ *
+ *   fill, verb, verbslot, gap   yes: one form written from nothing; a second
+ *                               try with the rule in view is a real attempt.
+ *   slots without options       yes (the boðháttur): forms written in boxes.
+ *   umritun                     yes: a sentence rewritten; the note on what
+ *                               went wrong (`transformNote`) is the hint.
+ *   slots with options, kenni   no: half the answer is a pick between two
+ *                               (sterk / veik). After a miss the other one is
+ *                               a certainty, not an answer.
+ *   choice, govern, indecl,     no: a pick among two to four. A second try
+ *   clause, parse, syntax,      is a near-guess and would teach guessing.
+ *   tap, sort
+ *   table, smidja, villur       no: the verdict colours every cell, card and
+ *                               word, so a second try would be made with the
+ *                               wrong ones already pointed out.
+ *   meaning                     no: there is no wrong answer.
+ *
+ * Never in a duel (`task.duel`, core/duel.js): a duel is one attempt per
+ * question for both players, and its score is compared.
+ *
+ * ---- what is recorded ---------------------------------------------------
+ *
+ * The FIRST answer is settled as it was given, at once, through the one path
+ * (`conclude` → `settle` → `app.finish`): a miss. The record of the cell,
+ * word and skill, the day's count, the run, the difficulty (`bumpDiff`), the
+ * diagnosis and the review queue all see a wrong answer, exactly as without
+ * a retry — and they see it even if the pupil walks away without trying
+ * again. That is what keeps them honest: a pupil who needed the rule shown
+ * to them did not know the form, and the review queue should bring it back
+ * tomorrow.
+ *
+ * The SECOND try is not a second answer. `judgeRetry` judges it with the
+ * same judge, and what it is worth is written as a follow-up, the way the
+ * Orðaforði bonus sentence is (`finish: null`, so nothing is counted twice):
+ *
+ *   right   RETRY_XP (half) of what a right answer earns now — granted to
+ *           the skill and the day as XP, not as a record — and the counter
+ *           `retryFixed`. Nothing else: the miss stays a miss.
+ *   wrong   nothing but the counter `retries`; the answer is shown.
+ *
+ * `retries` counts every second try and `retryFixed` the right ones, so a
+ * report can say how often the rule in view was enough. */
+
+/** The question types that offer a second try, and on what condition. */
+export const RETRY_TYPES = {
+  fill: () => true,
+  verb: () => true,
+  verbslot: () => true,
+  gap: () => true,
+  umritun: () => true,
+  slots: (t) => !t.options,
+};
+
+/** May this judged answer be tried again? Only a settled wrong answer, of a
+    type listed above, outside a duel, and only once. */
+export function retryAllowed(task, j) {
+  if (!task || !j || j.pending || j.ok !== false) return false;
+  if (task.duel || task.retried) return false;
+  const rule = RETRY_TYPES[task.type];
+  return !!rule && rule(task);
+}
+
+/* Every form that would answer the question, longest first. */
+function answersOf(task) {
+  const out = [...(task.answers || [])];
+  (task.slots || []).forEach((sl) => out.push(...(sl.accepted || [])));
+  return [...new Set(out.filter(Boolean).map(String))].sort((a, b) => b.length - a.length);
+}
+
+const reEscape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * The text with every right answer taken out: an *af hverju* line shown
+ * BEFORE the answer must not contain it. Several explain themselves with the
+ * very form (*… og töluorðið líka: **tvennar***). A whole word only, any
+ * capitals: *hest* is not taken out of *hestur*. `mask` stands in its place.
+ */
+export function hideAnswer(text, task, mask = "…") {
+  if (!text) return text;
+  let out = String(text);
+  /* No lookbehind (Safari below 16.4 throws on it, tests/browsers.test.js):
+     the character before the word is matched and put back. */
+  for (const a of answersOf(task)) {
+    const re = new RegExp(`(^|[^\\p{L}\\p{N}])${reEscape(a)}(?![\\p{L}\\p{N}])`, "giu");
+    out = out.replace(re, (_, before) => before + mask);
+  }
+  return out;
+}
+
+/**
+ * Judge the second try. `firstResponse` is the response of the first
+ * answer, which has already been settled. Pure, like `judge`.
+ *
+ * Pending — nothing is used up, the renderer asks again — when the second
+ * try is empty, hedged, or the same as the first (`verdict: "same"`).
+ * Otherwise `{ ok, verdict, retry: true, xp, effects, finish: null, … }`:
+ * `detail` and `resp` are the second try's own, for drawing; `findings` too,
+ * and they are NOT written to the diagnosis (the miss already was).
+ */
+export function judgeRetry(task, response = {}, firstResponse = null, pupil = null) {
+  const j = judge(task, response, pupil);
+  if (j.pending) return j;
+  if (firstResponse && firstSaid(response) === firstSaid(firstResponse))
+    return pending("same", j.detail);
+  const ok = j.ok === true;
+  const xp = ok && j.xp > 0 ? Math.max(1, Math.round(j.xp * RETRY_XP)) : 0;
+  const effects = [count("retries")];
+  if (ok) effects.push({ do: "grant", skill: task.skill, xp }, count("retryFixed"));
+  return {
+    ok, verdict: j.verdict, pending: false, retry: true,
+    findings: j.findings, xp, xpFull: j.xp, effects,
+    finish: null, detail: j.detail, resp: j.resp,
+  };
+}
+
+/** What was written, as `judgeRetry` compares two tries: capitals, commas
+    and spaces do not make a try new. */
+export const firstSaid = (response) =>
+  normalise(String((response && (response.text ?? (response.texts || []).join(" "))) ?? ""));
+
 /**
  * Write a judgement into the pupil's state: the one path every answer takes.
  *
@@ -1139,7 +1270,7 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
       /* A perfect table's bonus: XP that belongs to no cell. */
       case "grant":
         S.xp += e.xp;
-        S.skills[e.skill].xp += e.xp;
+        (S.skills[e.skill] ||= { xp: 0, c: 0, w: 0, bestRun: 0 }).xp += e.xp;
         dayRec(S).xp += e.xp;
         break;
       case "count": S.counters[e.counter] = (S.counters[e.counter] || 0) + 1; break;

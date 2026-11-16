@@ -23,6 +23,14 @@ import { readMark } from "./marks.js";
 /* How much of the XP survives. */
 export const SLIP_XP = { accents: 0.95, greinir: 0.90, tid: 0.90 };
 
+/* v6.13 (critique item 42): a written answer that was wrong may be tried once
+ * more, with the rule in view, before the right form is shown. A right second
+ * try earns this share of what a right first try would have earned now — the
+ * answer is still a miss in every record (core/answer.js `judgeRetry` says
+ * which), and the half is what the retry itself is worth. Which question
+ * types offer a second try is decided in core/answer.js (`retryAllowed`). */
+export const RETRY_XP = 0.5;
+
 /* The headings. `CHEERS_OK` stays for a clean answer; these replace it, and
    they open with praise on purpose — the answer was right. */
 const SLIP_TEXT = {

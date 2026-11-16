@@ -234,6 +234,8 @@ async function dismissModals() {
 
 /* v6.11: answer, and stay on the verdict (to try the bonus box). */
 let stayAfter = false;
+/* Item 42: answer wrong and stay in the second try, not revealing. */
+let keepRetry = false;
 async function answerOneNoNext(correct) {
   stayAfter = true;
   try { await answerOne(correct); } finally { stayAfter = false; }
@@ -400,6 +402,14 @@ async function answerOne(correct) {
 
   /* the verdict should appear, and "Áfram" should be armed */
   await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
+
+  /* Item 42: a wrong written answer is offered a second try first. These
+     checks want the answer: give up, which reveals it (the retry itself is
+     tested in its own section below). */
+  if (!correct && !keepRetry && await page.$("#reveal")) {
+    await tap("#reveal");
+    await page.waitForFunction("!document.querySelector('#reveal') && !document.querySelector('#verdict .retry')", { timeout: 4000 });
+  }
 
   /* v6.9: celebration follows success. A wrong answer never opens a badge
      window, whatever it earned; the windows wait for the next right answer. */
@@ -656,7 +666,26 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
     ok(after.verdict, "Enter produced no verdict — the answer was not graded");
     ok(after.answers === before + 1,
       `Enter recorded ${after.answers - before} answers instead of one — it skipped the verdict`);
-    ok(after.locked, "the input is still open after Enter — the verdict was not binding");
+    /* Item 42: a wrong written answer may be tried once more. The box is
+       open for it; a second wrong try, also by Enter, ends the question —
+       and is not a second answer. */
+    if (await page.$("#verdict .retry")) {
+      ok(!after.locked, "a second try was offered but the input is closed");
+      await page.$eval("#ans", (el) => { el.value = ""; });
+      await page.type("#ans", "þettaerheldurekkirétt");
+      await page.keyboard.press("Enter");
+      await new Promise((r) => setTimeout(r, 250));
+      const second = await page.evaluate(() => ({
+        answers: window.FALLASKOLI.S.totalAnswers,
+        retry: !!document.querySelector("#verdict .retry"),
+        locked: !!document.querySelector("#ans")?.disabled,
+      }));
+      ok(!second.retry, "Enter on the second try did not end the question");
+      ok(second.answers === before + 1, `the second try was recorded as another answer (${second.answers - before})`);
+      ok(second.locked, "the input is still open after the second try — the verdict was not binding");
+    } else {
+      ok(after.locked, "the input is still open after Enter — the verdict was not binding");
+    }
     /* And a *second* Enter, once the verdict has had time to stand, should
        move on — the button holds the focus, so it is one keystroke. */
     await new Promise((r) => setTimeout(r, 500));
@@ -708,10 +737,156 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
       "a held Enter skipped the verdict — the child never saw what was right");
     ok(held.answers === before + 1,
       `a held Enter recorded ${held.answers - before} answers instead of one`);
+    /* Item 42: the held Enter's repeats must not have used up the second try. */
+    if (await page.$("#verdict .retry")) {
+      ok(!(await page.$eval("#ans", (el) => el.disabled)), "a held Enter used up the second try");
+      await tap("#reveal");
+    }
     await cdp.detach();
   } else {
     problems.push("found no task with a text input to test a held Enter against");
   }
+}
+
+/* ---------- 2e. A second try, then the answer (critique item 42) ---------
+ *
+ * A noun cloze answered with another form of the word, on a 390 px phone:
+ * the verdict says "reyndu aftur" without the right form, keeps the box open
+ * and in view with the focus in it, names the error pattern, and has
+ * recorded ONE answer. The right form typed and Enter: right in the second
+ * try, half XP, still one answer; the pupil's form and the right one side by
+ * side, both cells highlighted on the filled-in beygingarkort; Áfram armed. */
+{
+  await dismissModals();
+  /* A change of `isMobile` reloads the page: a new session is started. */
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess", { timeout: 20000 });
+  await dismissModals();
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+    A.openView("practice");
+    A.startRun("blandad", 40);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  if (!(await forceNounCloze())) {
+    problems.push(`could not draw a noun cloze on ${TEST_NOUN} — the second try is untested`);
+  } else {
+    const plan = await page.evaluate(() => {
+      const A = window.FALLASKOLI, c = A.cur;
+      /* Another case and number entirely, so the miss is not a near one. */
+      const cn = (m) => m.replace(/gr$/, "");
+      const wrongM = Object.keys(c.n.forms).find((m) => {
+        const f = (c.n.forms[m] || [])[0];
+        return f && !c.answers.includes(f) && cn(m) !== cn(c.m) &&
+          Object.keys(c.n.forms).filter((k) => c.n.forms[k].includes(f)).every((k) => cn(k) !== cn(c.m));
+      });
+      return { right: c.answers[0], wrong: c.n.forms[wrongM][0], wrongM, m: c.m,
+        xp: A.S.xp, answers: A.S.totalAnswers, correct: A.S.totalCorrect,
+        review: A.S.review.items.length, fixed: A.S.counters.retryFixed || 0 };
+    });
+    await tap("#ans");
+    await page.type("#ans", plan.wrong);
+    await tap("#check");
+    await page.waitForSelector("#verdict .verdict.retry", { timeout: 4000 });
+    const first = await page.evaluate((right) => {
+      const A = window.FALLASKOLI;
+      const v = document.querySelector("#verdict .verdict");
+      const inp = document.getElementById("ans");
+      const r = inp.getBoundingClientRect();
+      const words = v.textContent.toLowerCase().split(/[^\p{L}]+/u);
+      return {
+        head: v.querySelector("h3").textContent,
+        role: document.getElementById("verdict").getAttribute("role"),
+        live: document.getElementById("verdict").getAttribute("aria-live"),
+        open: !inp.disabled, focused: document.activeElement === inp,
+        described: inp.getAttribute("aria-describedby"),
+        noteText: (document.getElementById("retrynote") || {}).textContent || "",
+        tellsAnswer: words.includes(right.toLowerCase()),
+        why: !!v.querySelector(".why"), diag: !!v.querySelector(".diagline"),
+        reveal: !!document.getElementById("reveal"),
+        check: document.getElementById("check").textContent,
+        answers: A.S.totalAnswers, review: A.S.review.items.length,
+        inView: r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight,
+        /* the prompt's first lines, under the box, are on the screen too */
+        promptInView: (() => { const p = document.getElementById("retrynote").getBoundingClientRect();
+          return p.top >= 0 && p.bottom <= innerHeight; })(),
+        overflow: document.documentElement.scrollWidth - innerWidth,
+      };
+    }, plan.right);
+    await page.screenshot({ path: "/tmp/fallaskoli-retry-390.png" }).catch(() => {});
+    ok(/reyndu aftur/.test(first.head), `the first miss did not ask for a second try: "${first.head}"`);
+    ok(first.role === "status" && first.live === "polite", "the verdict holding the retry prompt is not a live region");
+    ok(first.described === "retrynote" && /skrifaðu svarið aftur/.test(first.noteText),
+      "the open box does not point the screen reader at the retry prompt");
+    ok(first.open && first.focused, "the box is not open with the focus in it for the second try");
+    ok(first.inView, "at 390 px the retry input is not in view");
+    ok(first.promptInView, "at 390 px the retry prompt is below the screen");
+    ok(first.overflow <= 0, `at 390 px the retry prompt is ${first.overflow}px wider than the screen`);
+    ok(!first.tellsAnswer, `the retry prompt gives the answer (${plan.right}) away`);
+    ok(first.why, "no af hverju line under the first miss");
+    ok(first.diag, "the error pattern is not named under the first miss");
+    ok(first.reveal && first.check === "Athuga", `the buttons during the second try: reveal ${first.reveal}, "${first.check}"`);
+    ok(first.answers === plan.answers + 1, `the first miss recorded ${first.answers - plan.answers} answers`);
+    ok(first.review === plan.review + 1, "the first miss is not in the review queue");
+
+    await page.$eval("#ans", (el) => { el.value = ""; });
+    await page.type("#ans", plan.right);
+    await page.keyboard.press("Enter");
+    await page.waitForFunction("!document.querySelector('#verdict .retry')", { timeout: 4000 });
+    await new Promise((r) => setTimeout(r, 450));
+    const done = await page.evaluate((plan) => {
+      const A = window.FALLASKOLI;
+      const v = document.querySelector("#verdict .verdict");
+      const td = (cls) => [...document.querySelectorAll(`#verdict table.map.filled td.${cls}`)].map((x) => x.textContent);
+      return {
+        cls: v.className, head: v.querySelector("h3").textContent,
+        xp: +((v.querySelector(".xpop") || {}).textContent || "").replace(/[^0-9]/g, ""),
+        gained: A.S.xp - plan.xp, answers: A.S.totalAnswers, correct: A.S.totalCorrect,
+        fixed: A.S.counters.retryFixed,
+        yours: (v.querySelector(".compare .yours .forms") || {}).textContent || "",
+        right: (v.querySelector(".compare .right .forms") || {}).textContent || "",
+        on: td("on"), mine: td("yours"),
+        mapShown: (() => { const m = document.querySelector("#verdict table.map.filled");
+          return !!m && m.getBoundingClientRect().width > 0; })(),
+        locked: document.getElementById("ans").disabled,
+        reveal: !!document.getElementById("reveal"),
+        check: document.getElementById("check").textContent,
+        focus: document.activeElement && document.activeElement.id,
+        diag: !!v.querySelector(".diagline"),
+        overflow: document.documentElement.scrollWidth - innerWidth,
+      };
+    }, plan);
+    await page.screenshot({ path: "/tmp/fallaskoli-retry-390-done.png", fullPage: true }).catch(() => {});
+    ok(/\bok\b/.test(done.cls) && /annarri tilraun/.test(done.head), `a right second try drew "${done.cls}" / "${done.head}"`);
+    ok(done.xp > 0 && done.gained === done.xp, `a right second try showed +${done.xp} XP and gave ${done.gained}`);
+    ok(done.answers === plan.answers + 1 && done.correct === plan.correct,
+      "the second try was counted as an answer of its own, or as a right one");
+    ok(done.fixed === plan.fixed + 1, "the right second try was not counted");
+    ok(done.yours === plan.wrong && done.right.split(" / ").includes(plan.right),
+      `the two forms are not side by side: "${done.yours}" | "${done.right}"`);
+    ok(done.mapShown, "at 390 px the filled-in paradigm is not shown");
+    ok(done.on.length === 1 && done.on[0] === plan.right, `the right cell is not highlighted in the paradigm: ${done.on}`);
+    ok(done.mine.includes(plan.wrong), `the pupil's cell is not highlighted in the paradigm: ${done.mine}`);
+    ok(done.locked && !done.reveal, "the box is still open after the second try");
+    ok(/^(Áfram|Sjá samantekt)/.test(done.check) && done.focus === "check", `Áfram is not armed: "${done.check}", focus ${done.focus}`);
+    ok(done.diag, "the error pattern of the miss is gone from the final verdict");
+    ok(done.overflow <= 0, `at 390 px the filled-in paradigm is ${done.overflow}px wider than the screen`);
+    await page.keyboard.press("Enter");
+    await page.waitForFunction((was) => window.FALLASKOLI.cur && !window.FALLASKOLI.cur.retried, { timeout: 4000 }).catch(() => {});
+    ok(await page.evaluate(() => !!window.FALLASKOLI.cur && !window.FALLASKOLI.cur.retried),
+      "Enter after the second try did not go on");
+  }
+  await page.setViewport({ width: 1100, height: 900 });
+  await page.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess", { timeout: 20000 });
+  await dismissModals();
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null;
+    A.openView("practice");
+    A.startRun("blandad", 100000);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
 }
 
 /* ---------- 2d. Enter after a badge window ------------------------------

@@ -333,6 +333,14 @@ const app = {
     });
   },
 
+  /** Item 42: the question ends after its second try, not in `finish`. */
+  armNext() {
+    const rearm = armNext(this);
+    const r = this.run, b = $("check");
+    if (r && r.i >= r.n && b) b.textContent = "Sjá samantekt →";
+    return rearm;
+  },
+
   /**
    * A wrong cloze: its noun comes back three to five questions on, not at
    * once (critique item 19). Called by the cloze's renderer, which says under
@@ -824,7 +832,9 @@ const app = {
     this.save();
     this.refresh();
     renderDrillBar(this);
-    const rearm = armNext(this);
+    /* Item 42: a wrong written answer may be tried once more (ui/render.js
+       `offerRetry`); the box stays open and Áfram waits for the reveal. */
+    const rearm = this.cur && this.cur.retrying ? () => {} : armNext(this);
     /* Every badge above is already in the cabinet, dated. What is bounded here
        is how many of them stop the child on the way to the next question —
        core/rarity.js `badgeWindows`, and the long note above it for why the
