@@ -18,9 +18,11 @@
    What makes two questions different is `questionKey`: what the pupil SEES
    and must answer — the sentence and the place of the blank, the cue, the
    right answer, the line under the sentence; for a pair both halves; for a
-   table its title and the words beside its cells. Not the level label, not
-   the order of the options or of a pair's halves (a reshuffle is the same
-   question). */
+   table the word, its gender and number, and the cells to fill. Not the
+   level label, not the order of the options or of a pair's halves (a
+   reshuffle is the same question), and not the noun shown beside a table's
+   cells: *tveir hestar* and *tveir dagar* are the same four forms to write,
+   so another noun there is not another question. */
 
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
@@ -57,8 +59,12 @@ const half = (t) => [
 export function questionKey(t) {
   if (!t) return "null";
   if (t.type === "table") {
-    return JSON.stringify(["table", t.kind, t.title, t.sample || "",
-      t.cells.map((c) => [c.m, c.helper || ""])]);
+    /* the title minus the noun beside the word ("hver hestur · karlkyn
+       eintala" → "hver · karlkyn eintala") */
+    const [head, ...rest] = String(t.title).split(" · ");
+    const word = t.helperLemma || t.cells.some((c) => c.helper) ? head.split(" ")[0] : head;
+    return JSON.stringify(["table", t.kind, t.w ? `${t.w.o}|${t.w.c}` : "", word, ...rest, t.sample || "",
+      t.cells.map((c) => c.m)]);
   }
   const own = half(t);
   /* A pair is the same question whichever of its halves comes first. */
