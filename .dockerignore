@@ -11,7 +11,10 @@ docs
 *.py
 *.json
 !package.json
-freq_raw.txt
+# The Python build and its sources (item 79) are not part of the image.
+pipeline
+sources
+data/*.json
 .git
 .github
 _backup

@@ -238,7 +238,7 @@ class Guard:
             return True
         if self._ov and self._ov.lemma_rejected(tok["w"], tok["l"]):
             self.relemma.append((sent, i, tok["w"], tok["l"], tok.get("m"),
-                                 "yfirlýst í parse_overrides.py: þetta lemma á ekki við hér"))
+                                 "yfirlýst í pipeline/parse_overrides.py: þetta lemma á ekki við hér"))
             tok["m"] = None
             tok["rj"] = True
             return False
@@ -627,7 +627,7 @@ class Guard:
         stale = self._ov.unused(self._ov_used)
         for (s, i, w) in stale:
             self.hard.append(
-                f"Ónotuð undanþága í parse_overrides.py: tákn {i} ({w!r}) í "
+                f"Ónotuð undanþága í pipeline/parse_overrides.py: tákn {i} ({w!r}) í "
                 f"{s!r} er ekki lengur í ágreiningi. Fjarlægðu færsluna — "
                 f"annars gæti hún hulið nýja villu síðar."
             )

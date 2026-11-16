@@ -1,6 +1,6 @@
 /* ÍNO (XML, from CLARIN) -> the data set the program already accepts.
  *
- *   node tools/ino.mjs islensk_nutimamalsordabok_2026-02.xml
+ *   node tools/ino.mjs sources/islensk_nutimamalsordabok_2026-02.xml
  *   node tools/ino.mjs <skrá> --skoda          # look at the file, change nothing
  *   node tools/ino.mjs <skrá> --ut data/ino.json
  *   node tools/ino.mjs <skrá> --merkingar 2    # keep two senses, not one
@@ -10,7 +10,7 @@
  *
  * docs/DEFINITIONS.md already settled the shape the definitions arrive in —
  * `{ "<bin_id>": { def, example } }`, keyed on bin_id so that *ljós* the noun
- * and *ljós* the adjective do not share a definition. `build_bundle.py` reads
+ * and *ljós* the adjective do not share a definition. `pipeline/build_bundle.py` reads
  * it, `PUT /admin/dataset` accepts it, `/definitions` serves it and
  * `core/definitions.js` asks for it. Four places already agree.
  *
@@ -49,12 +49,12 @@
  *
  * 3. **Nothing downstream could tell that any of this had gone wrong**, because
  *    the file recorded no word class. It now records `cls` (and `pos`) on every
- *    entry, `build_bundle.py` checks it a second time against the lexicon, and
+ *    entry, `pipeline/build_bundle.py` checks it a second time against the lexicon, and
  *    `tests/definitions.test.js` fails if an entry is attached to a word of
  *    another class. Two independent checks, because one check is one place to
  *    be wrong.
  *
- * WHAT IT DOES WITH bin_id: the XML has none. It has lemmas. `lexicon.json`
+ * WHAT IT DOES WITH bin_id: the XML has none. It has lemmas. `data/lexicon.json`
  * has both — `i` is the bin_id, `o` the lemma, `c` the word class — so the join
  * happens on lemma + word class, and only for the words the program actually
  * teaches. That also keeps the upload small: the child never needed the other
@@ -336,7 +336,7 @@ if (has("skoda")) {
    this tool for real, on a fixture that contains exactly the four words the
    owner reported — sá, slá, skepna, allur — and fails if any of them comes back
    with the wrong reading. A rule nobody exercises is a rule that comes back. */
-const lexPath = flag("ordasafn", path.join(ROOT, "lexicon.json"));
+const lexPath = flag("ordasafn", path.join(ROOT, "data", "lexicon.json"));
 const lexRaw = await fs.readFile(lexPath, "utf8").catch(() => stop(
   `Could not find ${lexPath}`,
   "",
@@ -663,7 +663,7 @@ const payload = {
   licence: "CC BY-SA 4.0",
   attribution: "Þessi skýring er úr Íslenskri nútímamálsorðabók "
     + "(©Stofnun Árna Magnússonar í íslenskum fræðum — CC BY-SA 4.0).",
-  /* The version of THIS tool's output shape. `build_bundle.py` refuses to trust
+  /* The version of THIS tool's output shape. `pipeline/build_bundle.py` refuses to trust
      a file without it, because a file without it is one of the files that could
      hand a pronoun a verb's definition. */
   format: 2,

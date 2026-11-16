@@ -11,9 +11,9 @@
 # conflicts in them are resolved by re-running ./build.sh, never by hand.
 data/data_bundle.js -diff linguist-generated
 data/ino.json -diff linguist-generated
-lexicon.json -diff linguist-generated
-sentences.json linguist-generated
-freq_lemmas.json -diff linguist-generated
+data/lexicon.json -diff linguist-generated
+data/sentences.json linguist-generated
+data/freq_lemmas.json -diff linguist-generated
 data/manifest.json linguist-generated
-islensk_nutimamalsordabok_2026-02.xml -diff
-freq_raw.txt -diff
+sources/islensk_nutimamalsordabok_2026-02.xml -diff
+sources/freq_raw.txt -diff

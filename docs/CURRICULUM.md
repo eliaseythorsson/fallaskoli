@@ -334,7 +334,7 @@ of, and a place in the year-10 preset.
 
 Nothing in these four types is decided in the browser. The kind of a clause
 and the extent of a phrase are written on the sentence by the build
-(`phrases.py`: `cl` and `ph` in `sentences.json`), and only where two things
+(`pipeline/phrases.py`: `cl` and `ph` in `data/sentences.json`), and only where two things
 that do not depend on each other agree: the parser's own node over exactly
 those words, and a closed table of what such a clause or phrase looks like.
 `tools/try-sentences.py` prints both for a candidate sentence. The indirect
@@ -474,7 +474,7 @@ What a preset does not do, so nobody is surprised:
   the convention in `core/difficulty.js` (1–5 is year 8, 6 is year 9, 7 is
   year 10). Since v6.13 the bank has 139 sentences at level 6 and 78 at
   level 7: two subordinate clauses, þolmynd, viðtengingarháttur þátíðar,
-  óbein ræða, longer noun phrases (`sentences.py` says what earns a level).
+  óbein ræða, longer noun phrases (`pipeline/sentences.py` says what earns a level).
   So the year-9 and year-10 presets now give harder sentences in the cloze,
   the analysis and Setningagerðir as the pupil's difficulty rises. They are
   the same question types asked about harder sentences. Of the constructions

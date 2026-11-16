@@ -56,7 +56,9 @@ test("content/*.tsv: a header, an Icelandic description, and no line wider than 
 /* Python with nothing but the standard library reads the content. */
 const py = ["python3", "python"].find((p) => spawnSync(p, ["-c", "import sys; sys.exit(sys.version_info < (3, 8))"],
   { cwd: root }).status === 0);
-const runPy = (code) => spawnSync(py, ["-c", code], { cwd: root, encoding: "utf8",
+/* The build's Python modules live in pipeline/ (critique item 79); run from the
+   repository root, as ./build.sh does, with that folder first on the path. */
+const runPy = (code) => spawnSync(py, ["-c", "import sys; sys.path.insert(0, 'pipeline')\n" + code], { cwd: root, encoding: "utf8",
   env: { ...process.env, PYTHONHASHSEED: "0", PYTHONDONTWRITEBYTECODE: "1" } });
 
 test("the build reads every line of every file", { skip: py ? false : "no Python 3" }, () => {

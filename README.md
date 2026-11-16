@@ -9,9 +9,9 @@ Everything grammatical in the program is read out of two sources and never
 written by hand: **BÍN** (Beygingarlýsing íslensks nútímamáls, via the
 `islenska` package) for every inflected form, and **Greynir** for the
 analysis of every sentence. Two tables are built by hand, and both are only
-ever used to leave something out: `noun_classes.py` says what nouns *mean* (a
+ever used to leave something out: `pipeline/noun_classes.py` says what nouns *mean* (a
 person, a place, a drink …) so that sentences can be generated without
-nonsense, and `adj_classes.py` says what an adjective is said of (*ferskt
+nonsense, and `pipeline/adj_classes.py` says what an adjective is said of (*ferskt
 epli*, not *ferskt barn*) and which adjectives are not compared (*dauður*,
 *velkominn*, *breskur*).
 
@@ -110,20 +110,20 @@ the tag in `Dockerfile.build`, which makes the pin final.
 
 What the build does, in order:
 
-1. `build_freq.py` — the committed frequency list (`freq_raw.txt`, OpenSubtitles)
-   → `freq_lemmas.json`, ranked towards school reading: words the hand-written
-   sentences, exercises and definitions use ×3, film register (vocab_filter.py
+1. `pipeline/build_freq.py` — the committed frequency list (`sources/freq_raw.txt`, OpenSubtitles)
+   → `data/freq_lemmas.json`, ranked towards school reading: words the hand-written
+   sentences, exercises and definitions use ×3, film register (pipeline/vocab_filter.py
    `SUBTITLE_REGISTER`, and ÍNO's *niðrandi*/*gróft*) ×0.1
-2. `build_lexicon.py` — every attested lemma's paradigm out of BÍN → `lexicon.json`
-   (and, by `irregularity.py`, how irregular each paradigm is, `irr` 1–5, and
+2. `pipeline/build_lexicon.py` — every attested lemma's paradigm out of BÍN → `data/lexicon.json`
+   (and, by `pipeline/irregularity.py`, how irregular each paradigm is, `irr` 1–5, and
    how hard each cell is, `cellh` — the second axis of difficulty)
-   (minus the comparison forms of the adjectives `adj_classes.py` lists as not compared)
-3. `build_sentences.py` — every sentence of the bank
-   (`content/setningar/setningar.tsv`, read by `sentences.py`) parsed by
-   Greynir and checked by `parse_guard.py` → `sentences.json`
-4. `build_bundle.py` — lexicon + sentences + semantic classes + definitions
-   → `data/data_bundle.js`; `build_exercises.py` — the hand-written items in
-   `content/*/*.tsv` (read by `exercises.py`), every answer, option and cue
+   (minus the comparison forms of the adjectives `pipeline/adj_classes.py` lists as not compared)
+3. `pipeline/build_sentences.py` — every sentence of the bank
+   (`content/setningar/setningar.tsv`, read by `pipeline/sentences.py`) parsed by
+   Greynir and checked by `pipeline/parse_guard.py` → `data/sentences.json`
+4. `pipeline/build_bundle.py` — lexicon + sentences + semantic classes + definitions
+   → `data/data_bundle.js`; `pipeline/build_exercises.py` — the hand-written items in
+   `content/*/*.tsv` (read by `pipeline/exercises.py`), every answer, option and cue
    looked up in BÍN → `data/exercises.js`
 5. `tools/manifest.mjs` — a fingerprint of all of the above. If anything
    changed since the last accepted build the build stops and lists the change;
@@ -154,34 +154,36 @@ content/              ALL HAND-WRITTEN CONTENT, one TAB-separated file per list,
                       errors), lysingarord/ fornofn/ toluord/ fallstjorn/
                       obeygjanleg/ ordafordi/ (exercise items and frames);
                       REVIEW-NOTES.md, what a native reader should check
-content_io.py         the reader of content/*.tsv (stdlib only);
-                      `python3 content_io.py` checks every file in a second
-sentences.py          reads the sentence bank: (level, text, slot, need[,
+pipeline/             the Python half of the build (critique item 79), run from the
+                      repository root by ./build.sh; the modules import one another
+                      as siblings:
+  content_io.py       the reader of content/*.tsv (stdlib only);
+                      `python3 pipeline/content_io.py` checks every file in a second
+  sentences.py        reads the sentence bank: (level, text, slot, need[,
                       options]); the rules for writing a sentence, and GROUPS
-noun_classes.py       semantic class of every noun; í/á convention; exclusions
-irregularity.py       how irregular a paradigm is (stems counted on BÍN's forms:
+  irregularity.py     how irregular a paradigm is (stems counted on BÍN's forms:
                       umlaut, syncope, -j-/-v-, consonant change, strong verbs)
                       and the table of how hard each cell is; the app lets the
                       level choose on both (core/difficulty.js hardnessWeight).
                       On a server both, and each question type's place on the
                       level scale, are adjusted from anonymous counts of right
                       and wrong answers (core/calibration.js; docs/SERVER.md §4.3)
-noun_classes.py       semantic class of every noun; í/á convention; exclusions;
+  noun_classes.py     semantic class of every noun; í/á convention; exclusions;
                       which nouns nobody has read (not used in a frame); the
                       needs of a few frames narrowed (NEED_FIX)
-adj_classes.py        the helper nouns an adjective is shown with in its
+  adj_classes.py      the helper nouns an adjective is shown with in its
                       table, and the adjectives that are not compared
-government.py         which cases prepositions and verbs govern — used only to
+  government.py       which cases prepositions and verbs govern — used only to
                       REJECT a parse that contradicts it, never to assert one
-parse_guard.py        the checks every token passes: the lemma is plausible, the
+  parse_guard.py      the checks every token passes: the lemma is plausible, the
                       mark exists in BÍN, government agrees with the table,
                       features the form cannot settle are marked uncertain
-parse_overrides.py    declared decisions about readings the guard accepts
-phrases.py            kinds of subordinate clause and phrase, written into a
+  parse_overrides.py  declared decisions about readings the guard accepts
+  phrases.py          kinds of subordinate clause and phrase, written into a
                       sentence only when the parse and a closed table of what
                       such a clause looks like agree (years 9–10)
-definitions.py        a handful of hand-written definitions; the rest are ÍNO
-exercises.py          reads the hand-written items for the v6.11 question types
+  definitions.py      a handful of hand-written definitions; the rest are ÍNO
+  exercises.py        reads the hand-written items for the v6.11 question types
                       (pronouns, numerals, dates, government, synonyms …) and
                       the frames build_exercises.py fills in from BÍN (v6.13)
                       out of content/, under the names the build has always
@@ -190,10 +192,16 @@ exercises.py          reads the hand-written items for the v6.11 question types
                       sentences and lemma + class + BÍN mark only;
                       build_exercises.py resolves every form in BÍN and
                       checks every word
-vocab_filter.py       lemma errors and words for acts of violence (always
+  vocab_filter.py     lemma errors and words for acts of violence (always
                       removed), the coarse-word block list (on by default,
                       the administrator can switch it off), and the words
                       build_freq.py ranks down as film-subtitle register
+
+sources/              what the build starts from and cannot make: the frequency list
+                      (freq_raw.txt, with its checksum) and the ÍNO dictionary XML
+data/                 GENERATED, committed, never edited by hand: lexicon.json,
+                      sentences.json, freq_lemmas.json (the build's own stages),
+                      data_bundle.js, exercises.js, manifest.json …
 
 src/js/app.js         start-up and wiring; the only holder of state, and
                       where the controllers meet: every question is drawn
@@ -401,7 +409,7 @@ that starts with `#` is a comment. The first other line names the columns, and
 the comment block at the top of each file says in Icelandic what each column
 holds (`þyngd`, `setning`, `svar`, `skýring` …). A word asked about is written
 `lemma|class|BÍN mark` (`hún|pfn|ÞGFET`); a list is comma-separated. Nothing is
-quoted, so a field cannot hold a TAB. `content_io.py` explains every column type.
+quoted, so a field cannot hold a TAB. `pipeline/content_io.py` explains every column type.
 
 **Editing.** Any text editor that keeps TABs works, and so does a spreadsheet
 (LibreOffice, Excel, Google Sheets): open the file as tab-separated, keep the
@@ -409,7 +417,7 @@ header row and the column order, and save it again as *tab-separated text,
 UTF-8*. Then:
 
 ```
-python3 content_io.py      # a second: every file read, or the file and line that is wrong
+python3 pipeline/content_io.py      # a second: every file read, or the file and line that is wrong
 ./build.sh                 # the real check: every form against BÍN, every sentence through Greynir
 git diff content/          # one changed line per changed item
 ```
@@ -444,7 +452,7 @@ Three things to know when writing one: use the past tense for a transitive
 verb with *ég* (*Ég sé hestana* parses as the subjunctive of *vera*); keep
 the subject *ég* or *við* where the gender should stay free; and say exactly
 which nouns the blank accepts — `drink` for *Ég drekk ___*, not `thing`. The
-full rules are at the top of `sentences.py`, and the rules for each exercise
+full rules are at the top of `pipeline/sentences.py`, and the rules for each exercise
 list at the top of its file.
 
 **The review page.** `node tools/review.mjs` (also run by `./build.sh`) writes
@@ -462,7 +470,7 @@ phrase stops finding one).
 (`src/js/content/lessons.js`, `examples.js`) are plain data in JavaScript that
 the app imports as it is; they are on the review page, and are edited where
 they are. The closed grammatical tables (ordinals, months, multi-word
-conjunctions, `sentences.GROUPS`), the clause and phrase rules of `phrases.py`
+conjunctions, `sentences.GROUPS`), the clause and phrase rules of `pipeline/phrases.py`
 and the short list of adjectives that fit a kind of noun in
 `src/js/tasks/frames.js` stay in code too.
 

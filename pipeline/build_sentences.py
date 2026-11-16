@@ -23,7 +23,7 @@ def engines():
     if g is None:
         g = Greynir()
         b = Bin()
-        freq = json.load(open('freq_lemmas.json'))
+        freq = json.load(open('data/freq_lemmas.json'))
         score = {(o, c): s for _bid, (o, c, s, _k) in freq.items()}   # the corpus score, not the rank key
         guard = parse_guard.Guard(b, overrides=parse_overrides,
                                   score=lambda lemma, ofl: score.get((lemma, ofl), 0))
@@ -1105,7 +1105,7 @@ def main():
     guard.check_overrides_all_used()
     stale = parse_overrides.unused_vetoes()
     if stale:
-        print('ÓNOTAÐAR ÁKVARÐANIR í parse_overrides.py:', len(stale))
+        print('ÓNOTAÐAR ÁKVARÐANIR í pipeline/parse_overrides.py:', len(stale))
         for k in stale:
             print('   ', k)
         raise SystemExit('Færsla í CLASS_VETO/TOKEN_VETO á ekki lengur við neitt tákn. '
@@ -1146,13 +1146,13 @@ def main():
     prep_slots = [o for o in out if o.get('ps')]
     print('eyður undir forsetningu (ekki skipt út):', len(prep_slots))
 
-    json.dump(out, open('sentences.json', 'w'), ensure_ascii=False, separators=(',', ':'))
+    json.dump(out, open('data/sentences.json', 'w'), ensure_ascii=False, separators=(',', ':'))
     json.dump({'sentences': len(out), 'uncertain_tokens': amb, 'guard': rep,
                'prep_slots': len(prep_slots),
                'clause_unsure': sum(1 for o in out if o.get('ku'))},
               open('data/parse_report.json', 'w'), ensure_ascii=False, indent=1)
     import os
-    print('sentences.json %.0f KB' % (os.path.getsize('sentences.json') / 1024))
+    print('data/sentences.json %.0f KB' % (os.path.getsize('data/sentences.json') / 1024))
 
 
 

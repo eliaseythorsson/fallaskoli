@@ -31,7 +31,7 @@ node tools/build.mjs           # → dist/fallaskoli-v<version>.html
 The full `./build.sh` also regenerates all data with Python (Greynir/BÍN; needs
 Python 3.10+, and the grammar libraries only ship x86_64 Linux and macOS wheels).
 Run it whenever you touch a `*.py` file, anything under `content/` or anything
-under `data/`. `python3 content_io.py` is the one-second check of `content/`
+under `data/`. `python3 pipeline/content_io.py` is the one-second check of `content/`
 on its own (every file read, or the file and line that is wrong). On a Mac, or
 anywhere the result must match CI byte for byte, run `./build-in-container.sh`
 instead (same arguments; needs Docker): CI's `reproducible` job rebuilds the
@@ -50,7 +50,7 @@ data in that container and fails on any difference.
   manifest stopping is the point: a data change must be explained in the PR,
   with the parse-diff it printed.
 - **Do not resolve conflicts in generated files by hand** (`data/*.js`,
-  `data/manifest.json`, `lexicon.json`, `sentences.json`, `freq_lemmas.json`).
+  `data/manifest.json`, `data/lexicon.json`, `data/sentences.json`, `data/freq_lemmas.json`).
   Take main's version and re-run `./build.sh`.
 
 ## Question types: one category, one file
@@ -79,14 +79,14 @@ teacher or a native reader can read and correct it. README.md, "Efnið",
 describes the format; each file's header describes its columns in Icelandic.
 
 - Add or change content in the `.tsv` file, never as a literal in Python.
-  `sentences.py` and `exercises.py` only read the files (through
-  `content_io.py`) and give the build the lists it has always had, under the
+  `pipeline/sentences.py` and `pipeline/exercises.py` only read the files (through
+  `pipeline/content_io.py`) and give the build the lists it has always had, under the
   same names; a new column or a new list means a line there too.
 - Keep a file's comments: they hold the rules its items were written by.
   Write Icelandic for anything a teacher reads in a header.
 - Moving content must not change the build: the lists and `data/*.js` stay
   byte-identical, and the manifest's only difference is the input files.
-- A branch made before the move that edits `sentences.py` or `exercises.py`:
+- A branch made before the move that edits `pipeline/sentences.py` or `pipeline/exercises.py`:
   run `tools/content-from-py.py` on that branch's two files to get its content
   as `.tsv`, then `./build.sh`.
 - Lesefni and the worked examples stay in `src/js/content/` (the app imports

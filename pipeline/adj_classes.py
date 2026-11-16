@@ -242,7 +242,7 @@ OWN = {
 
 # Read, and shown without a helper noun. Listed so that "nobody has looked at
 # this adjective" and "somebody decided it gets none" are different things:
-# `python3 adj_classes.py` prints the adjectives of the vocabulary that are
+# `python3 pipeline/adj_classes.py` prints the adjectives of the vocabulary that are
 # in no list.
 BARE = _s("""
 afbrigðilegur afdráttarlaus afleitur agalegur alger algjör allmargur almennur
@@ -375,7 +375,7 @@ def helper_nouns():
 
 if __name__ == "__main__":
     import collections, json
-    L = json.load(open("lexicon.json"))
+    L = json.load(open("data/lexicon.json"))
     adj = [w["o"] for w in L["w"] if w["c"] == "lo"]
     print("adjectives:", len(adj), "| with a helper:", sum(1 for a in adj if helpers(a)),
           "| read, shown bare:", sum(1 for a in adj if a in BARE),

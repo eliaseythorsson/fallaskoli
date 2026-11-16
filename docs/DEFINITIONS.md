@@ -4,7 +4,7 @@
 
 Nearly every word the program teaches has a definition. They come from ÍNO
 wherever the extract has one and from the hand-written table in
-`definitions.py` otherwise — `build_bundle.py` prints the split. The words
+`pipeline/definitions.py` otherwise — `pipeline/build_bundle.py` prints the split. The words
 without one are listed, each with the reason, in `data/ino-report.json`
 (`unmatched`), and `node tools/checkdefs.mjs` follows a definition through every
 hand-off to the screen. No figure is repeated here, because it would be out of
@@ -27,7 +27,7 @@ dictionary.
 1. **Fetch the extract** from Árnastofnun/CLARIN, outside this environment. This
    is manual work done once. What arrives is `islensk_nutimamalsordabok.zip`,
    and inside it one **XML** file of some tens of MB — not JSON (the one in this
-   repository is `islensk_nutimamalsordabok_2026-02.xml`). The admin page
+   repository is `sources/islensk_nutimamalsordabok_2026-02.xml`). The admin page
    will not take it, and should not: see the next step.
 2. **Convert it once**, on the owner's own machine:
 
@@ -40,9 +40,9 @@ dictionary.
    `bin_id` is the key, not the lemma — otherwise *ljós* (noun) and *ljós*
    (adjective) get the same definition. The XML carries no bin_ids, only
    lemmas, so the tool joins on lemma **and word class** against
-   `lexicon.json`. A homograph with no word class to tell the two apart is
+   `data/lexicon.json`. A homograph with no word class to tell the two apart is
    left out rather than given a definition that may belong to the other word —
-   the same rule `parse_guard.py` applies to grammar.
+   the same rule `pipeline/parse_guard.py` applies to grammar.
 
    It keeps only the words the program teaches, which is why the result is
    small enough to send through a browser. `--allt` keeps the rest as well;
@@ -53,14 +53,14 @@ dictionary.
    The conversion happens here, once, and not in the browser or the server:
    neither the child's file nor the always-running process should carry an XML
    parser for a job that is done a single time.
-3. **`build_bundle.py` picks it up automatically** if the file exists: it is
-   read, joined on `bin_id`, and `definitions.py` becomes the fallback for what
+3. **`pipeline/build_bundle.py` picks it up automatically** if the file exists: it is
+   read, joined on `bin_id`, and `pipeline/definitions.py` becomes the fallback for what
    is missing. Nothing else in the build changes.
    Or, without a rebuild: upload the same `data/ino.json` as the administrator, under **Umsjón** (the dataset box).
    `PUT /admin/dataset` reads the identical shape, and the status line then
    shows the count, the date and the source.
 
-   **Check the build's own line.** `build_bundle.py` prints what it found:
+   **Check the build's own line.** `pipeline/build_bundle.py` prints what it found:
 
    ```
    ÍNO found: <n> entries (format 2)

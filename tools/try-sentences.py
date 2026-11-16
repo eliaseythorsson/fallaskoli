@@ -17,7 +17,7 @@ import json
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pipeline'))
 
 import build_sentences  # noqa: E402
 import noun_classes     # noqa: E402
@@ -31,7 +31,7 @@ def load_bank():
     """Noun frames (mark, pinned gender, classes) and adjective marks the bank
     already has."""
     try:
-        bank = json.load(open('sentences.json', encoding='utf-8'))
+        bank = json.load(open('data/sentences.json', encoding='utf-8'))
     except FileNotFoundError:
         return [], set()
     noun, adj = [], set()

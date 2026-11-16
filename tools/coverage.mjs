@@ -14,8 +14,8 @@ import { fileURLToPath } from "node:url";
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const p = (...x) => path.join(root, ...x);
 
-const lex = JSON.parse(await readFile(p("lexicon.json"), "utf8"));
-const sents = JSON.parse(await readFile(p("sentences.json"), "utf8"));
+const lex = JSON.parse(await readFile(p("data/lexicon.json"), "utf8"));
+const sents = JSON.parse(await readFile(p("data/sentences.json"), "utf8"));
 
 const ORD = lex.orders;
 /* The same mapping as core/marks.js -> ordKey. Numerals and the article use the

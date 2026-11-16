@@ -24,7 +24,7 @@ stops unless each cell comes back as the value it was written from.
 import ast, io, os, re, sys, tokenize, importlib.util
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(HERE, "pipeline"))
 import content_io as C
 
 OLD = sys.argv[1] if len(sys.argv) > 1 else None
