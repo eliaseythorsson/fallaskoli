@@ -20,8 +20,15 @@ const KNOWN = new Set(TYPE_IDS);
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
 
-/** The worked example of a question type, or null. */
-export const exampleFor = (typeId) => (KNOWN.has(typeId) && EXAMPLES[typeId]) || null;
+/** The worked example of a question type, or null. A type whose questions
+    come in kinds (umritun: past, passive, indirect speech …) has one example
+    per kind, `byKind`, and the question's `kind` chooses it (v6.13 review,
+    S3); a kind not listed gets the type's own. */
+export function exampleFor(typeId, kind = null) {
+  const ex = (KNOWN.has(typeId) && EXAMPLES[typeId]) || null;
+  if (!ex) return null;
+  return (kind && ex.byKind && ex.byKind[kind]) || ex;
+}
 
 /** Has this pupil met this type before? */
 export const hasSeenType = (S, typeId) => !!(S && isObj(S.seenTypes) && S.seenTypes[typeId]);
@@ -34,7 +41,7 @@ export function firstMeeting(S, task) {
   if (!task || task.duel) return null;
   const id = task.typeId;
   if (!id || hasSeenType(S, id)) return null;
-  return exampleFor(id);
+  return exampleFor(id, task.kind || null);
 }
 
 /** Write down that the pupil has met this type (today). True if it is new. */

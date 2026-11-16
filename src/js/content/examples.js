@@ -314,11 +314,75 @@ export const EXAMPLES = {
     how: "Hér er fyrsta orðið frumlag og stendur í nefnifalli. Sögnin lagar sig að því: *fylgir*. Sögnin *fylgja* stýrir þágufalli: *stráknum*.",
     forms: ["hundur|kk|NFETgr=hundurinn", "fylgja|so|GM-FH-NT-3P-ET=fylgir", "strákur|kk|ÞGFETgr=stráknum"],
   },
+  /* Umritun asks nine kinds of rewrite, and an example of another kind
+     than the question confused more than it helped (v6.13 review, S3: the
+     first question was indirect speech, the example "Á morgun …"). The
+     example is chosen by the question's `kind` (core/examples.js
+     `exampleFor`); the one at the top is for any kind not listed. */
   umritun: {
     q: "Ég fer í sund. Byrjaðu setninguna á *Á morgun …*",
     a: "Á morgun fer ég í sund.",
     how: "Sögnin sem beygist stendur í öðru sæti. Þegar *á morgun* er komið fremst fer frumlagið aftur fyrir sögnina: *fer ég*.",
     forms: ["fara|so|GM-FH-NT-1P-ET=fer"],
+    byKind: {
+      amorgun: {
+        q: "Ég fer í sund. Byrjaðu setninguna á *Á morgun …*",
+        a: "Á morgun fer ég í sund.",
+        how: "Sögnin sem beygist stendur í öðru sæti. Þegar *á morgun* er komið fremst fer frumlagið aftur fyrir sögnina: *fer ég*.",
+        forms: ["fara|so|GM-FH-NT-1P-ET=fer"],
+      },
+      igaer: {
+        q: "Ég fer í sund. Byrjaðu setninguna á *Í gær …*",
+        a: "Í gær fór ég í sund.",
+        how: "Sögnin stendur í öðru sæti, svo frumlagið fer aftur fyrir hana. *Í gær* er liðinn tími og sögnin fer í þátíð: *fór ég*.",
+        forms: ["fara|so|GM-FH-NT-1P-ET=fer", "fara|so|GM-FH-ÞT-1P-ET=fór"],
+      },
+      past: {
+        q: "Settu setninguna í **þátíð**: *Hún les bókina og fer svo að sofa.*",
+        a: "Hún las bókina og fór svo að sofa.",
+        how: "Finndu sagnirnar sem beygjast í persónu, *les* og *fer*, og settu þær í þátíð: *las* og *fór*. *Sofa* er í nafnhætti og breytist ekki.",
+        forms: ["lesa|so|GM-FH-NT-3P-ET=les", "lesa|so|GM-FH-ÞT-3P-ET=las", "fara|so|GM-FH-NT-3P-ET=fer",
+          "fara|so|GM-FH-ÞT-3P-ET=fór"],
+      },
+      plural: {
+        q: "Settu frumlagið *Strákurinn* í **fleirtölu**: *Strákurinn er glaður.*",
+        a: "Strákarnir eru glaðir.",
+        how: "*Strákurinn* verður *strákarnir*. Sögnin lagar sig að frumlaginu, *er* verður *eru*, og lýsingarorðið líka: *glaður* verður *glaðir*.",
+        forms: ["strákur|kk|NFETgr=strákurinn", "strákur|kk|NFFTgr=strákarnir", "vera|so|GM-FH-NT-3P-ET=er",
+          "vera|so|GM-FH-NT-3P-FT=eru", "glaður|lo|FSB-KK-NFET=glaður", "glaður|lo|FSB-KK-NFFT=glaðir"],
+      },
+      passive: {
+        q: "Settu setninguna í **þolmynd**: *Smiðirnir byggðu húsið.*",
+        a: "Húsið var byggt.",
+        how: "Andlagið *húsið* fer fremst og verður frumlag. Svo kemur *vera* í sömu tíð og sögnin, *var*, og lýsingarháttur þátíðar: *byggt*. Það má bæta við *af smiðunum*.",
+        forms: ["hús|hk|NFETgr=húsið", "vera|so|GM-FH-ÞT-3P-ET=var", "byggja|so|LHÞT-SB-HK-NFET=byggt",
+          "smiður|kk|ÞGFFTgr=smiðunum"],
+      },
+      active: {
+        q: "Settu setninguna í **germynd**: *Hjólið var lagað af pabba.*",
+        a: "Pabbi lagaði hjólið.",
+        how: "Sá sem stendur á eftir *af*, *pabba*, gerði það. Hann verður frumlag í nefnifalli, *pabbi*, og sögnin beygist sjálf í sömu tíð og *var*: *lagaði*.",
+        forms: ["pabbi|kk|ÞGFET=pabba", "pabbi|kk|NFET=pabbi", "laga|so|GM-FH-ÞT-3P-ET=lagaði"],
+      },
+      question: {
+        q: "Breyttu fullyrðingunni í **já/nei-spurningu**: *Hún bjargaði kettinum.*",
+        a: "Bjargaði hún kettinum?",
+        how: "Sögnin sem beygist fer fremst og frumlagið kemur strax á eftir henni: *Bjargaði hún*. Annað stendur óbreytt.",
+        forms: ["bjarga|so|GM-FH-ÞT-3P-ET=bjargaði", "köttur|kk|ÞGFETgr=kettinum"],
+      },
+      join: {
+        q: "Tengdu með **þegar** og byrjaðu á *Þegar*: *Ég kom heim. Mamma var að elda.*",
+        a: "Þegar ég kom heim var mamma að elda.",
+        how: "Aukasetningin *þegar ég kom heim* er fyrsti liðurinn. Sögnin í aðalsetningunni kemur strax á eftir henni, á undan frumlaginu: *var mamma*.",
+        forms: ["koma|so|GM-FH-ÞT-1P-ET=kom", "vera|so|GM-FH-ÞT-3P-ET=var"],
+      },
+      indirect: {
+        q: "Settu í óbeina ræðu: *Hann sagði: „Kötturinn liggur á gólfinu.“*",
+        a: "Hann sagði að kötturinn lægi á gólfinu.",
+        how: "Gæsalappirnar hverfa og setningin byrjar á *að*. Af því að *sagði* er í þátíð fer sögnin í viðtengingarhátt þátíðar: *liggur* verður *lægi*.",
+        forms: ["liggja|so|GM-FH-NT-3P-ET=liggur", "liggja|so|GM-VH-ÞT-3P-ET=lægi"],
+      },
+    },
   },
   raeda: {
     q: "Settu í óbeina ræðu: *Hann sagði: „Kötturinn liggur á gólfinu.“*",
