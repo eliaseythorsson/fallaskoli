@@ -313,3 +313,35 @@ test("server: the teacher's flag is in the pupil's own export", async () => {
   assert.equal(data.account.secondLanguageByTeacher, true);
   await C.kennA("POST", "/teacher/secondlanguage", { group: "ga", user: U.anna.id, on: false });
 });
+
+/* ---------- item 45 gap: the tokens of what Umritun shows ----------------------
+   A passive to turn back (germynd) and two sentences to join (tenging) show a
+   text the builder wrote, not the bank sentence. The card glosses its content
+   words from `fromTok` / `linesTok`; these must be exactly the words shown,
+   in order, for every sentence that makes such a question. */
+import { TRANSFORMS as UM_TRANSFORMS } from "../src/js/tasks/malbeiting.js";
+import { DATA as UM_DATA } from "../data/data_bundle.js";
+import { buildLexicon as umLexicon } from "../src/js/core/lexicon.js";
+
+const umWords = (text) => String(text).replace(/[.,?!]+(?= |$)/g, "").toLowerCase();
+const umToks = (toks) => toks.filter((t) => !/^[.,?!]$/.test(t.w)).map((t) => t.w).join(" ").toLowerCase();
+
+test("germynd and tenging: the tokens match the words shown, one for one", () => {
+  const lx = umLexicon(UM_DATA);
+  let active = 0, join = 0;
+  for (const s of lx.sentences) {
+    const a = UM_TRANSFORMS.active.build(lx, s);
+    if (a) {
+      active++;
+      assert.deepEqual(umToks(a.fromTok), umWords(a.from), a.from);
+    }
+    const j = UM_TRANSFORMS.join.build(lx, s);
+    if (j) {
+      join++;
+      j.lines.forEach((line, k) => {
+        assert.deepEqual(umToks(j.linesTok[k]), umWords(line), line);
+      });
+    }
+  }
+  assert.ok(active > 10 && join > 20, `too few to mean anything: ${active} germynd, ${join} tenging`);
+});

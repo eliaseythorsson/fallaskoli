@@ -3086,17 +3086,31 @@ await page.setViewport({ width: 1100, height: 900 });
     if (!at) { ok(false, "item 45: nothing to tap at " + sel); return; }
     await page.mouse.click(at.x, at.y);
   };
+  /* The tokens the question's text is written from, as the card glosses
+     them: a passive or two lines to join (Umritun germynd, tenging) carry
+     their own (`fromTok`, `linesTok`, tasks/malbeiting.js); a quotation shown
+     as plain text carries none; every other card shows the bank sentence
+     without the word it asks about. Item 45 and 29: until v6.13 the first two
+     got no glosses while this check counted the bank sentence's words, which
+     is why it failed on one run in ten. */
+  const SHOWN = `(A) => {
+    const c = A.cur;
+    if (c.type === "umritun" && (c.fromTok || c.linesTok)) return c.fromTok || c.linesTok.flat();
+    if (c.type === "umritun" && (c.from || c.lines)) return [];
+    return c.s ? c.s.tok.filter((t, j) => j !== c.i) : [];
+  }`;
   /* Answer until a question shows a sentence with a content word in it. */
-  const toSentence = () => page.evaluate(() => {
+  const toSentence = () => page.evaluate((SHOWN) => {
     const A = window.FALLASKOLI;
+    const shown = eval(SHOWN);
     for (let k = 0; k < 60; k++) {
       const s = document.querySelector("#task .card .sentence");
-      if (s && A.cur && A.cur.s && A.cur.s.tok.some((t) => ["nafnorð", "sagnorð", "lýsingarorð", "atviksorð"].includes(t.c))
+      if (s && A.cur && A.cur.s && shown(A).some((t) => t.l && ["nafnorð", "sagnorð", "lýsingarorð", "atviksorð"].includes(t.c))
         && !document.querySelector("#task #picker") && A.cur.type !== "hunt") return A.cur.type;
       A.finish({ correct: true }); A.next();
     }
     return null;
-  });
+  }, SHOWN);
   const off = await page.evaluate(() => ({
     voices: (window.speechSynthesis ? speechSynthesis.getVoices() : []).filter((v) => /^is/i.test(v.lang)).length,
     on: window.FALLASKOLI.S.settings.secondLanguage === true,
@@ -3113,14 +3127,14 @@ await page.setViewport({ width: 1100, height: 900 });
   ok(saved === true, "item 45: ticking the box did not switch the mode on");
   await page.evaluate(() => { const A = window.FALLASKOLI; A.finish({ correct: true }); A.next(); });
   const t1 = await toSentence();
-  const on = await page.evaluate(() => {
+  const on = await page.evaluate((SHOWN) => {
     const A = window.FALLASKOLI;
     const words = [...document.querySelectorAll("#task .card .sentence .l2w")];
-    const content = A.cur.s.tok.filter((t, j) => j !== A.cur.i && t.l && ["nafnorð", "sagnorð", "lýsingarorð", "atviksorð"].includes(t.c)).length;
+    const content = eval(SHOWN)(A).filter((t) => t.l && ["nafnorð", "sagnorð", "lýsingarorð", "atviksorð"].includes(t.c)).length;
     return { type: A.cur.type, n: words.length, content, texts: words.map((w) => w.textContent),
       btn: !!document.getElementById("l2speak"),
       voices: (window.speechSynthesis ? speechSynthesis.getVoices() : []).filter((v) => /^is/i.test(v.lang) && v.localService).length };
-  });
+  }, SHOWN);
   ok(on.n > 0 && on.n === on.content, `item 45: ${on.type}: ${on.n} glossed words, ${on.content} content words in the sentence (${on.texts.join(" ")})`);
   ok(on.btn === (on.voices > 0), `item 45: the speak button is ${on.btn ? "shown" : "hidden"} with ${on.voices} local Icelandic voices`);
   if (on.n) {
@@ -3141,6 +3155,48 @@ await page.setViewport({ width: 1100, height: 900 });
     const closed = await page.evaluate(() => { const t = document.querySelector(".tip"); return !t || t.hidden; });
     ok(closed, "item 45: a second tap on the word did not close its gloss");
   }
+  /* The two kinds of Umritun that show something other than the bank
+     sentence (item 29): a passive to turn back (germynd) and two sentences
+     to join (tenging). Asked for by name, as the item-29 check above does,
+     until each has come: every content word of what is shown is glossed, a
+     second tap on a gloss opens it, and the words are the ones shown. */
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.S.enabled.malbeiting = true;
+    A.S.policy = A.S.policy || {};
+    A.S.policy.types = { ...(A.S.policy.types || {}), smidja: false, villur: false };
+    A.reloadPolicy(); A.save();
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+    Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = 4; });
+    A.sess.warm = {};
+    A.startRun("malbeiting", 60, null, { review: false });
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  const l2kinds = new Set();
+  for (let i = 0; i < 60 && l2kinds.size < 2; i++) {
+    const r = await page.evaluate((SHOWN) => {
+      const A = window.FALLASKOLI;
+      const c = A.cur;
+      if (!c || c.type !== "umritun" || !(c.kind === "active" || c.kind === "join")) return null;
+      const want = eval(SHOWN)(A).filter((t) => t.l && ["nafnorð", "sagnorð", "lýsingarorð", "atviksorð"].includes(t.c)).map((t) => t.w.toLowerCase());
+      const got = [...document.querySelectorAll("#task .card .sentence .l2w")].map((e) => e.textContent.toLowerCase());
+      return { kind: c.kind, want, got, text: document.querySelector("#task .card .sentence").textContent };
+    }, SHOWN);
+    if (r) {
+      l2kinds.add(r.kind);
+      ok(r.want.length > 0 && JSON.stringify(r.want) === JSON.stringify(r.got),
+        `item 45: umritun/${r.kind}: glossed [${r.got.join(" ")}], content words shown [${r.want.join(" ")}] in "${r.text}"`);
+    }
+    await page.evaluate(() => { const A = window.FALLASKOLI; A.finish({ correct: true }); A.next(); });
+    await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4000 });
+  }
+  ok(l2kinds.size === 2, `item 45: germynd and tenging did not both come up in 60 questions: ${[...l2kinds]}`);
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    delete A.S.policy.types.smidja; delete A.S.policy.types.villur;
+    A.run = null; A.runDone = null;
+    A.reloadPolicy(); A.save();
+  });
   ok(errors.length === 0, `item 45: errors with the mode on: ${errors.join(" | ")}`);
   await page.close();
 
