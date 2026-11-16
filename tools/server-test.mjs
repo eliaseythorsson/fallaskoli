@@ -104,12 +104,31 @@ async function login(page, username) {
    which is what proves the tabs are reachable when nothing is going on. */
 async function openTab(page, view) {
   if (await page.evaluate(() => document.body.classList.contains("insession"))) {
-    await page.click("#runstop");
-    await page.waitForSelector("#runquit-yes", { timeout: 5000 });
+    /* Right after login the first card may still be drawn again (a worked
+       example, the social picture arriving) and swallow the click: try the ×
+       again rather than fail on a race. */
+    for (let k = 0; ; k++) {
+      await page.click("#runstop");
+      try { await page.waitForSelector("#runquit-yes", { timeout: 4000 }); break; }
+      catch (e) { if (k >= 2) throw e; }
+    }
     await page.click("#runquit-yes");
     await page.waitForFunction("!document.body.classList.contains('insession')", { timeout: 5000 });
+    /* Item 61: the badge windows held during the session open on its
+       summary, and their backdrop lies over the tabs. A child closes them
+       first; so does this. */
+    await page.waitForSelector(".scrim .modal", { timeout: 1500 }).catch(() => {});
   }
+  await closeWindows(page);
   await page.click(`nav.tabs button[data-view="${view}"]`);
+}
+
+/** Close every badge window that is open, one after another. */
+async function closeWindows(page) {
+  for (let k = 0; k < 15 && await page.$(".scrim .modal button"); k++) {
+    await page.evaluate(() => document.querySelector(".scrim .modal button")?.click());
+    await new Promise((r) => setTimeout(r, 250));
+  }
 }
 
 /* ---------- 1. The gate holds against anyone not logged in ---------- */
@@ -339,19 +358,24 @@ async function openTab(page, view) {
 
   const { ctx, page } = await fresh();
   await login(page, "ceci");
-  /* The overtaking badge opens its window over the page as soon as the roster
-     arrives — that window is the first thing to check, and it has to be out of
-     the way before a tab can be pressed. */
-  await page.waitForSelector(".scrim .modal", { timeout: 10000 }).catch(() => {});
+  /* The overtaking badge is judged as soon as the roster arrives. Since
+     item 61 its window does NOT open over the question — login() has started
+     a session, and windows wait for its summary; the badge itself is in the
+     cabinet at once (checked below, `seen.mine`). */
+  await page.waitForFunction(() => !!window.FALLASKOLI.S.badges.soc_overtake, { timeout: 10000 }).catch(() => {});
   const modal = await page.evaluate(() => document.querySelector(".scrim .modal")?.textContent || "");
-  ok(/Framúrakstur/.test(modal), "no window announced Framúrakstur");
-  await page.evaluate(() => document.querySelector(".scrim .modal button")?.click());
-  await new Promise((r) => setTimeout(r, 300));
+  ok(!/Framúrakstur/.test(modal), "the Framúrakstur window opened over a question in a session (item 61)");
+  await closeWindows(page);
   /* The child's own card is on Merki og framvinda, the others in Skólastofan. */
   await page.evaluate(() => document.querySelector('nav.tabs button[data-view="progress"]').click());
   await page.evaluate(() => document.querySelector('nav.tabs button[data-view="class"]').click());
   await page.waitForSelector("#board table.board tr.meRow", { timeout: 10000 });
   await page.waitForSelector("#roster .rosteruser", { timeout: 10000 });
+  /* Since item 58 the board opens on Framfarir; the week is one press away. */
+  await page.evaluate(() => document.querySelector('[data-metric="week"]').click());
+  await page.waitForFunction(
+    () => document.querySelector('[data-metric="week"]')?.getAttribute("aria-pressed") === "true",
+    { timeout: 10000 });
   await new Promise((r) => setTimeout(r, 500));
 
   const seen = await page.evaluate(() => {
