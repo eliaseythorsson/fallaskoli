@@ -118,6 +118,8 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     assignmentResult: (id, r) => call("POST", `/assignments/${enc(id)}/result`, r),
     teacherGroups: () => call("GET", "/teacher/groups"),
     classPatterns: (group) => call("GET", `/teacher/patterns?group=${enc(group)}`),
+    /* Item 83: the skill map of one pupil of the group (core/skillmap.js teacherMap). */
+    pupilSkillMap: (group, pupil) => call("GET", `/teacher/skillmap?group=${enc(group)}&pupil=${enc(pupil)}`),
     classPatternsCsvUrl: (group) => url(`/teacher/patterns.csv?group=${enc(group)}`),
     teacherAssignments: (group) => call("GET", `/teacher/assignments?group=${enc(group)}`),
     setAssignment: (form) => call("POST", "/teacher/assignments", form),

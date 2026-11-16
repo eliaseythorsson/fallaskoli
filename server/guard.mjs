@@ -27,6 +27,7 @@ import { SKILL_IDS } from "../src/js/core/skills.js";
 import { sanitiseReview, REVIEW_MAX, STATS_MAX } from "../src/js/core/review.js";
 import { cleanLevels } from "../src/js/core/difficulty.js";
 import { cleanByType } from "../src/js/core/mastery.js";
+import { cleanByNode } from "../src/js/core/skillmap.js";
 import { cleanSeenTypes } from "../src/js/core/examples.js";
 import { sanitiseMend } from "../src/js/core/mending.js";
 import { TYPE_IDS } from "../src/js/core/policy.js";
@@ -213,6 +214,9 @@ export function cleanState(raw, { today = new Date() } = {}) {
      letters and a time. Types met (item 41): known types only, one day each,
      not after tomorrow. Both bounded by the number of question types. */
   S.byType = cleanByType(S.byType);
+  /* The same record for the curriculum nodes that keep one (item 83,
+     core/skillmap.js): known nodes only — seven of them. */
+  S.byNode = cleanByNode(S.byNode);
   S.seenTypes = Object.fromEntries(Object.entries(cleanSeenTypes(S.seenTypes))
     .filter(([, d]) => d <= limit));
 

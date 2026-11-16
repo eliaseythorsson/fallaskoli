@@ -17,6 +17,7 @@
    number the pupil was not shown, and never anything a pupil typed. */
 
 import { $, esc } from "./dom.js";
+import { drawTeacherMap } from "./skillmap.js";
 import { SKILLS } from "../core/skills.js";
 import { patternById, UNREAD } from "../core/diagnosis.js";
 import { YEARS } from "../core/curriculum.js";
@@ -294,6 +295,14 @@ export async function renderTeacher(app) {
       flokka — það er ekki villa nemandans.</p>
     <div id="tc-table"><p class="sub faint">Sæki töfluna…</p></div>
     <p><a class="ghost filelabel" id="tc-csv" href="${esc(app.server.classPatternsCsvUrl(group))}" download>Sækja töfluna (CSV)</a></p>
+    <h3 class="sec2">Færnikort nemanda</h3>
+    <p class="sub">Sama kort og nemandinn sér sjálfur undir <b>Merki og framvinda → Framvinda</b>: hvert
+      efnisatriði námskrárinnar, hve gott vald nemandinn hefur á því og hvað bíður hans þar. Þú sérð
+      tölurnar um efnið — ekki hvenær nemandinn æfði sig, ekki hvaða orð fóru úrskeiðis og ekkert sem
+      hann skrifaði.</p>
+    <div class="polactions"><label class="lbl" for="tc-pupil">Nemandi</label>
+      <select id="tc-pupil"><option value="">Veldu nemanda…</option></select></div>
+    <div id="tc-map" aria-live="polite"></div>
     <div id="tc-samples"></div>`;
 
   const sel = $("tc-group");
@@ -306,6 +315,9 @@ export async function renderTeacher(app) {
       const t = await app.server.classPatterns(group);
       worst = t.columns;
       $("tc-table").innerHTML = patternTableHTML(t.pupils, t.columns);
+      /* The same pupils, by name, are whose map may be opened (item 83). */
+      $("tc-pupil").innerHTML = `<option value="">Veldu nemanda…</option>` +
+        t.pupils.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
     } catch (e) { $("tc-table").innerHTML = verdict(e.message); }
     $("tc-what").innerHTML = targetOptionsHTML(worst);
   };
@@ -331,6 +343,20 @@ export async function renderTeacher(app) {
         catch (e) { drawList(verdict(e.message)); }
       };
     });
+  };
+
+  /* Item 83 (d): one pupil's skill map, fetched when they are chosen. Not
+     kept: choosing again asks the server again, so it is never stale. */
+  $("tc-pupil").onchange = async () => {
+    const id = $("tc-pupil").value, el = $("tc-map");
+    if (!id) { el.innerHTML = ""; return; }
+    el.innerHTML = `<p class="sub faint">Sæki færnikortið…</p>`;
+    try {
+      const data = await app.server.pupilSkillMap(group, id);
+      /* Somebody else was chosen while this one was on its way. */
+      if ($("tc-pupil").value !== id) return;
+      drawTeacherMap(el, data);
+    } catch (e) { el.innerHTML = verdict(e.message); }
   };
 
   $("tc-set").onclick = async () => {

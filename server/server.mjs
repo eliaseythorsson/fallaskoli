@@ -58,6 +58,8 @@ import { weekKey, prevWeekKey, weekXp, newThisWeek, firstFinders, weekResult }
 import { sanitisePolicy, createPolicy } from "../src/js/core/policy.js";
 import { chosenPolicy } from "../src/js/core/state.js";
 import { pupilStandings, classColumns, patternCSV, byName } from "../src/js/core/classview.js";
+import { teacherMap } from "../src/js/core/skillmap.js";
+import { effectivePolicy, migrate } from "../src/js/core/state.js";
 import { ASSIGN, cleanTarget, patternsOf, dueProblem, isOpen, prune as pruneAssignments,
          openCount as openAssignments, cleanResult, recordResult, viewForPupil }
   from "../src/js/core/assignment.js";
@@ -1256,6 +1258,34 @@ export function createApp({
       ...securityHeaders(req),
     });
     res.end(buf);
+  });
+
+  /* Item 83 (d): the skill map of ONE pupil, for their teacher — the same
+     map the pupil has under Framvinda, drawn by the same code from what
+     `teacherMap` (core/skillmap.js) leaves in: per curriculum node the
+     mastery mark and the counts it rests on, reviews due and waiting, the
+     active error patterns, and the cells missed, as grammar. Not when
+     anything was practised, not the words missed, no XP — see `teacherMap`.
+
+     Authorised exactly as the class table: `needTeacher` holds a guardian to
+     their own group, and the pupil must be an active learner OF THAT GROUP.
+     A pupil of another group, a guardian, somebody pending or blocked and an
+     id that does not exist all get the same 404, so the answer cannot be
+     used to learn who exists. Not audited, as the table is not. */
+  on("GET", "/teacher/skillmap", async (req, res, { url }) => {
+    const t = await needTeacher(req, res, url.searchParams.get("group"));
+    if (!t) return;
+    const id = String(url.searchParams.get("pupil") || "");
+    const u = (await store.users()).find((x) => x.id === id);
+    if (!u || u.role !== "learner" || u.status !== "active" || groupOf(u) !== t.group)
+      return json(res, 404, { error: "Nemandinn er ekki í þessum hópi." });
+    const rec = await store.stateRec(u.id);
+    /* `migrate` gives every field its shape; a pupil who has not practised
+       gets the map of a blank state — every node "Of fá svör". */
+    const S = migrate(rec ? rec.state : null);
+    return json(res, 200, { group: { id: t.group, name: t.name },
+      pupil: { id: u.id, name: u.name || u.username, practised: !!rec },
+      map: teacherMap(S, Date.now(), effectivePolicy(S)) });
   });
 
   /* Item 65: the assignments of a group, with who has done them, their

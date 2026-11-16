@@ -313,6 +313,8 @@ exist. One function, `needTeacher` in `server/server.mjs`, decides it.
 GET    /teacher/groups              -> { mine, groups: [ { id, name, pupils } ] }
 GET    /teacher/patterns            -> { group: { id, name }, pupils: [ pupil ], columns: [ patternId ] }
 GET    /teacher/patterns.csv        -> the same table as text/csv (attachment)
+GET    /teacher/skillmap?pupil=ID   -> { group, pupil: { id, name, practised }, map }
+                                    404 not an active learner of the group (one answer for every such case)
 GET    /teacher/assignments         -> { group, limits, assignments: [ teacherView ], pupils: [ pupil ] }
 POST   /teacher/assignments         { group?, target: { kind, id }, n, due, note? }
                                     -> { ok, assignment }   400 bad target/size/date/note · 409 12 open
@@ -337,6 +339,20 @@ rate over the recent window, then total misses (`core/classview.js`
 per pattern (empty where not met lately) and the two Ógreint counts, separated
 by `;`, UTF-8 with a byte-order mark, and a nickname a spreadsheet would run as
 a formula is prefixed with `'`.
+
+`map` is one pupil's skill map as their teacher gets it (`core/skillmap.js`
+`teacherMap`, critique item 83): `{ teacher: true, cats, totals, next, loose,
+details }`. `cats` are the categories, each with `groups: [ { year, nodes } ]`;
+a node is `{ id, nm, year, cat, lesson, on, locked, mastery, due, waiting,
+active, needsWork }` — `mastery` is the mark of item 44 (`level` 0–4, `label`,
+`n`, `right`, `band` …), `due`/`waiting` count the node's entries in the review
+queue, `active` lists its error patterns that are "algengt núna". `details`
+maps a node id to `{ patterns, cells, grid }`: the figures of the node's
+patterns, the cells missed as `{ cell, label, missed, due, right, wrong }`, and
+for the node of the four cases the noun table's sixteen cells. Deliberately
+not in it: when anything was last practised, the words missed, XP and stig,
+the raw histories. All `/teacher/…` routes take `?group=ID`; a guardian may
+name only their own.
 
 A **target** (`core/assignment.js`) is one of
 `{ kind: "skill", id: <category> }`, `{ kind: "pattern", id: <pattern> }` (not

@@ -60,7 +60,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
 /* 2026-11-16 (v6.13, items 37 and 65): the group's teacher or guardian sees
    the error patterns and assignment results of the learners in the group. A
    new recipient, so the version moves (docs/PRIVACY.md §3). */
-export const PRIVACY_VERSION = "2026-11-18";
+export const PRIVACY_VERSION = "2026-11-19";
 
 /* 2026-11-17 (v6.13, items 17 and 38): right and wrong answers are counted
    anonymously to set the difficulty of the questions, and a group's teacher
@@ -78,6 +78,12 @@ export const CALIBRATION_NOTICE = "2026-11-17";
    sum), so the version moves (docs/PRIVACY.md §1c). CALIBRATION_NOTICE stays:
    it names the first version that describes the counting, and this one still
    does. */
+
+/* 2026-11-19 (v6.13, item 83): the group's teacher or guardian can open one
+   pupil's skill map. The recipient is the one of 2026-11-16, but what they
+   see is more — the mastery mark of every curriculum node, the reviews
+   waiting there and the cells missed — so the version moves and the notice
+   says it (docs/PRIVACY.md §1a). */
 
 export function privacyPage(cfg) {
   const missing = (what) => `<mark>[vantar: ${what}]</mark>`;
@@ -128,7 +134,8 @@ export function privacyPage(cfg) {
   <p>Ef kennarinn setur hópnum sameiginlegt markmið sjá allir í hópnum eina samtölu fyrir
      vikuna, og þín svör teljast með. Enginn sér hvað þú lagðir til.</p>
   <p>Kennari eða forsjáraðili hópsins þíns sér hvernig þér gengur í villumynstrum og
-     verkefnum, svo hann geti hjálpað þér — en aldrei það sem þú skrifar.</p>
+     verkefnum, svo hann geti hjálpað þér — en aldrei það sem þú skrifar. Hann getur líka
+     skoðað færnikortið þitt.</p>
   <p>Engar auglýsingar, engin rakning, ekkert selt. Þú getur sótt gögnin þín eða
      eytt aðganginum hvenær sem er.</p>
 </div>
@@ -223,10 +230,13 @@ export function privacyPage(cfg) {
   <li><b>Kennari eða forsjáraðili hópsins þíns</b> — sá sem umsjónarmaður hefur gert
       að forsjáraðila í hópnum — sér gælunafnið þitt, villumynstrin þín (hve oft svar
       var rangt af síðustu svörum sem prófa hvert mynstur, eins og þú sérð sjálf(ur)
-      undir <i>Framvinda</i>) og niðurstöður verkefna sem hann setur. Þetta er til
-      þess að hann geti séð hvað hópurinn þarf að æfa og hjálpað þér. Hann sér
-      <b>ekki</b> það sem þú skrifar í svörin, því það er aldrei geymt, og ekki hvenær
-      eða hve lengi þú æfir þig. Undir <i>Aðgangurinn minn</i> stendur hver það er.
+      undir <i>Framvinda</i>) og niðurstöður verkefna sem hann setur. Hann getur líka
+      opnað færnikortið þitt, sama kort og þú sérð undir <i>Framvinda</i>: hvert
+      efnisatriði, hve gott vald þú hefur á því, hve margt bíður upprifjunar þar og
+      hvaða málfræðiatriði hafa farið úrskeiðis (til dæmis „þágufall, fleirtala“).
+      Þetta er til þess að hann geti séð hvað hópurinn þarf að æfa og hjálpað þér. Hann sér
+      <b>ekki</b> það sem þú skrifar í svörin, því það er aldrei geymt, ekki hvaða orð
+      fóru úrskeiðis hjá þér og ekki hvenær eða hve lengi þú æfir þig. Undir <i>Aðgangurinn minn</i> stendur hver það er.
       Forsjáraðilar í öðrum hópum sjá ekkert um þig.</li>
   <li><b>Umsjónarmaður</b> sér notendalistann og getur skoðað framvinduna þína ef
       þess þarf, til dæmis til að laga villu. Hann sér aldrei lykilorðið. Hann sér líka

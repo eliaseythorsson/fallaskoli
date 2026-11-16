@@ -906,6 +906,42 @@ async function closeWindows(page) {
   ok(/4 af 5 \(80%\)/.test(seen), "the teacher does not see the score");
   ok(/ekki byrjað/.test(seen), "the pupil who has not started is not shown as such");
   ok(/Þolfall og þágufall ruglast/.test(seen), "the class's patterns on the material are missing");
+
+  /* Item 83 (d): the teacher opens one pupil's skill map — the pupil's own
+     map, without "last trained", the words and the button. */
+  await T.page.waitForSelector(`#tc-pupil option[value="${onnur.id}"]`, { timeout: 10000 });
+  await T.page.select("#tc-pupil", onnur.id);
+  await T.page.waitForSelector("#tc-map .skillboard.teacher .smnode", { timeout: 10000 });
+  const tmap = await T.page.evaluate(() => ({
+    title: document.querySelector("#tc-map .smtitle")?.innerText || "",
+    nodes: document.querySelectorAll("#tc-map .smtrail .smnode").length,
+    flag: document.querySelector('#tc-map .smtrail .smnode[data-node="no-foll"] .smflag')?.innerText.trim() || "",
+    label: document.querySelector('#tc-map .smtrail .smnode[data-node="no-foll"]')?.getAttribute("aria-label") || "",
+    dates: document.querySelectorAll("#tc-map .smlast").length,
+    /* The nodes and the heads of the trails — not the legend, which says
+       what the number on a yellow disc counts ("upprifjanir í dag"). */
+    text: [...document.querySelectorAll("#tc-map .smnode, #tc-map .smhead, #tc-map .smnext")].map((e) => e.innerText).join(" | "),
+    legend: document.querySelector("#tc-map .smlegend")?.innerText || "",
+    overflow: document.documentElement.scrollWidth - innerWidth,
+  }));
+  ok(/Færnikort · onnur/.test(tmap.title) && tmap.nodes >= 40, `the teacher's map of the pupil did not draw: ${tmap.title}, ${tmap.nodes} nodes`);
+  ok(tmap.flag === "!" && /Bíður nemandans: 1 villumynstur algengt núna/.test(tmap.label), `the pupil's active pattern is not on its node: ${tmap.flag} / ${tmap.label}`);
+  ok(tmap.dates === 0 && !/í gær|í dag|fyrir \d+ (dögum|vikum)|ekki æft enn|XP/.test(tmap.text), "the teacher's map says when the pupil practised, or their XP");
+  ok(/nemandinn nær/.test(tmap.legend) && !/þú nærð|bíður þín/.test(tmap.legend), "the teacher's legend speaks to the pupil: " + tmap.legend.slice(0, 160));
+  ok(tmap.overflow <= 1, `the teacher's map scrolls sideways by ${tmap.overflow}px`);
+  if (process.env.BT_SHOT) await T.page.screenshot({ path: process.env.BT_SHOT + "-map.png", fullPage: true });
+  await T.page.evaluate(() => document.querySelector('#tc-map .smtrail .smnode[data-node="no-foll"]').click());
+  await T.page.waitForSelector('.smpanel[data-panel="no-foll"]', { timeout: 5000 });
+  const tnode = await T.page.evaluate(() => { const p = document.querySelector(".smpanel"); return {
+    text: p.innerText.replace(/\s+/g, " "), go: !!p.querySelector("[data-nodego]"), facts: p.querySelectorAll(".smfact").length }; });
+  ok(/Þolfall og þágufall ruglast/.test(tnode.text) && /Bíður nemandans/.test(tnode.text) && tnode.facts === 2 && !tnode.go,
+    `the node the teacher opened should show the pattern and no session button: ${tnode.text.slice(0, 200)}`);
+  ok(!/hestur|Síðast æft/.test(tnode.text) && /ekki hvenær nemandinn æfði sig/.test(tnode.text), "the teacher's node shows a word or a date, or does not say what is left out");
+  if (process.env.BT_SHOT) await T.page.screenshot({ path: process.env.BT_SHOT + "-node.png" });
+  await T.page.keyboard.press("Escape");
+  /* A pupil is refused the route, for a classmate and for themselves. */
+  const tref = await P.page.evaluate((ids) => Promise.all(ids.map((id) => fetch("/teacher/skillmap?pupil=" + id).then((r) => r.status))), [onnur.id, nemi.id]);
+  ok(tref.every((x) => x === 403), "a pupil got " + tref.join(",") + " from the skill map route");
   await T.ctx.close(); await P.ctx.close();
 }
 

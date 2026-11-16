@@ -23,6 +23,7 @@ import { mergeReview } from "./review.js";
 import { mergeMend } from "./mending.js";
 import { mergeLevels } from "./difficulty.js";
 import { mergeByType } from "./mastery.js";
+import { mergeByNode } from "./skillmap.js";
 import { mergeSeenTypes } from "./examples.js";
 
 const num = (x) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
@@ -205,6 +206,8 @@ export function mergeStates(base, local, remote) {
      recent history is the side answered last. Types met (item 41): met on
      either device is met, on the earlier day. */
   out.byType = mergeByType(B.byType, L.byType, R.byType);
+  /* The same record per curriculum node (item 83, core/skillmap.js). */
+  out.byNode = mergeByNode(B.byNode, L.byNode, R.byNode);
   out.seenTypes = mergeSeenTypes(L.seenTypes, R.seenTypes);
   /* Getting better (items 56 and 58, core/mending.js): a pattern mended on
      either device is no longer waiting, and the counts add. */

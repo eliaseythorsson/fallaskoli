@@ -33,6 +33,9 @@ import { renderHeader, renderStats } from "./ui/progress.js";
 import { renderBadges, renderClass, renderSettings, renderData } from "./ui/panels.js";
 import { renderLogin, renderAdmin, renderAccount, renderShareCard } from "./ui/account.js";
 import { renderTeacher } from "./ui/teacher.js";
+import { renderSkillMap } from "./ui/skillmap.js";
+import { nodeSession } from "./core/skillmap.js";
+import { nodeById } from "./core/curriculum.js";
 import { mergeStates } from "./core/merge.js";
 import { renderLessons, suggestLesson, wireLessons } from "./ui/lessons.js";
 import { renderDuelBar, renderDuelRoom } from "./ui/duel.js";
@@ -46,7 +49,7 @@ import { diagnose, noteDiagnosis, activePatterns, huntPreferFor, focusTypes, pic
   patternById, runReport } from "./core/diagnosis.js";
 import { noteMending } from "./core/mending.js";
 import { SKILL_IDS } from "./core/skills.js";
-import { renderPicker, renderRunBar, renderSummary, renderDiagnosisPanel, confirmQuit,
+import { renderPicker, renderRunBar, renderSummary, confirmQuit,
   topics, usable, MINE, MIXED, TODAY, ASSIGNED, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
 import { scopeOf, assignmentPolicy } from "./core/assignment.js";
 import { LESSONS, readCount, lessonById, lessonPractice, practiceSkills, PRACTICE_SIZE } from "./core/lessons.js";
@@ -429,6 +432,8 @@ const app = {
    * spoken for. `opts.types` (with `opts.skills`, `opts.attrs`) narrows the
    * session to exactly those question types, and `opts.label` names it in
    * the bar — "Æfa þetta" on a Lesefni page (item 41, `practiceLesson`).
+   * `opts.review` may also be a list of review keys: the session opens with
+   * exactly those (a node of the skill map opens with its own, item 83).
    */
   startRun(topic, n, focus = null, opts = {}) {
     if (this.duelRun) { this.openView("practice"); return; }
@@ -469,6 +474,7 @@ const app = {
       label: opts.label || null, lesson: opts.lesson || null,
     };
     if (today) this.run.review = today.reviews.slice();
+    else if (Array.isArray(opts.review)) this.run.review = opts.review.slice();
     else if (opts.review !== false)
       this.run.review = planOpening(this.S, todayKey(), n, this.reviewPolicy(), this.run.focus);
     /* The picker remembers the CATEGORY last chosen there, and its size;
@@ -772,6 +778,47 @@ const app = {
       label: "Lesefni: " + page.nm, lesson: id,
     });
   },
+
+  /* ---- the skill map (item 83, core/skillmap.js, ui/skillmap.js) -------- */
+
+  /** The policy a session on these types runs under — the pupil's own
+      switches give way, the administrator's ceiling does not (`runPolicy`). */
+  typesPolicy({ skills, types, attrs }) {
+    const open = createPolicy(this.S.allowed || null,
+      openFor(chosenPolicy(this.S), { skills: skills || [], types }));
+    return narrowPolicy(open, { skills, types, attrs });
+  },
+
+  /** Can a session on this node ask anything at all? No for a locked node,
+      and for one the administrator's ceiling leaves nothing of. */
+  canPractiseNode(id) {
+    const s = nodeSession(nodeById(id), this.S);
+    if (!s) return false;
+    const skills = practiceSkills(s, TASKS);
+    const P = this.typesPolicy({ skills, types: s.types, attrs: s.attrs });
+    return TASKS.some((t) => s.types.includes(t.id) && P.type(t.id) &&
+        (t.anyOf ? t.anyOf.some((x) => P.skill(x)) : P.skill(t.skill))) &&
+      Object.entries(s.attrs || {}).every(([g, keys]) => keys.some((k) => P.attr(g, k)));
+  },
+
+  /**
+   * The button of an opened node: ten questions on exactly its question
+   * types (and, where the node is one feature of them, that feature),
+   * opening with the node's own reviews that are due.
+   */
+  practiseNode(id) {
+    const node = nodeById(id);
+    const s = nodeSession(node, this.S);
+    if (!s) return;
+    this.startRun(SKILL_IDS.includes(node.cat) ? node.cat : MIXED.id, s.n, null, {
+      review: s.review, types: s.types, attrs: s.attrs, skills: practiceSkills(s, TASKS),
+      label: s.label, lesson: s.lesson,
+    });
+  },
+
+  /** "Æfa" beside an error pattern that belongs to no node of the map. */
+  patternUsable(id) { return usable(this, [id]); },
+  practisePattern(id) { this.startRun(MINE.id, 10, [id]); },
 
   /** A Lesefni page was opened for the first time (ui/lessons.js). */
   onRead() {
@@ -1252,7 +1299,7 @@ const VIEWS = ["practice", "lessons", "progress", "class", "settings"];
 
 const DRAW = {
   lessons: (id) => renderLessons(app, id),
-  progress: () => { renderBadges(app); renderStats(app); renderDiagnosisPanel(app); },
+  progress: () => { renderBadges(app); renderStats(app); renderSkillMap(app); },
   class: () => {
     renderTeacher(app); renderShareCard(app); renderClass(app); renderDuelRoom(app);
     /* Fresh duel info also carries whether the account is held for review. */
