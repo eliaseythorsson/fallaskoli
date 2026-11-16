@@ -775,7 +775,7 @@ export function createTour(app) {
          that have nothing to do with the first run; they say so. */
       if (typeof window !== "undefined" && window.FALLASKOLI_NO_TOUR) return false;
       heal();
-      if (T.phase || app.run || app.duelRun || app.drill) return false;
+      if (T.phase || app.run || app.duelRun || app.drill || app.liveRun) return false;
       if (!shouldOfferTour(app.S, { role: app.profile ? app.profile.role : null })) return false;
       begin();
       return true;
@@ -784,7 +784,7 @@ export function createTour(app) {
     replay() {
       const note = $("tour-note");
       heal();
-      if (app.run || app.duelRun || app.drill) { if (note) note.textContent = TEXT.busy; return false; }
+      if (app.run || app.duelRun || app.drill || app.liveRun) { if (note) note.textContent = TEXT.busy; return false; }
       if (T.phase) return false;
       if (note) note.textContent = "";
       begin({ replay: true });
