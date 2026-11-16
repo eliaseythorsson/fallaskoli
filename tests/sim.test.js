@@ -25,6 +25,8 @@ import assert from "node:assert/strict";
 import { simulate, SKILLS, TASKS } from "../tools/sim/sim.mjs";
 import { rightResponse, wrongResponse } from "./helpers.js";
 import { seeded } from "../src/js/core/duel.js";
+import { migrate } from "../src/js/core/state.js";
+import { cleanState, suspicion } from "../server/guard.mjs";
 
 /* What a pupil who got it wrong says. Mostly the shared helper's; a syntax
    question needs a real token to point at (the screen never offers another). */
@@ -193,4 +195,19 @@ test("the simulation is repeatable: the same seeds give the same questions", () 
   const b = run({ ability: 0.7, days: 2, perDay: 1, seed: 5, builderRng: seeded(5) });
   assert.deepEqual(a.log.map((x) => x.sig + x.ok), b.log.map((x) => x.sig + x.ok));
   assert.ok(TASKS.length > 40);
+});
+
+test("what a simulated pupil saves after fourteen days, the server's guard stores as it is and does not doubt", () => {
+  /* The whole state of real play — review queue, saved levels, per-type
+     counts, diagnosis — not a hand-made one (tests/state-property.test.js). */
+  for (const [name, runs] of Object.entries(mixed)) for (const [k, r] of runs.entries()) {
+    const S = JSON.parse(JSON.stringify(r.S));
+    const today = new Date(S.lastActive + "T12:00:00Z");      // the sim's last day, not the real one
+    const want = migrate(JSON.parse(JSON.stringify(S)));
+    want.profile = { id: "local", name: "" };
+    const got = cleanState(JSON.parse(JSON.stringify(S)), { today });
+    assert.deepEqual(got, want, `${name} ${k}: the guard changed a state the client saved`);
+    assert.deepEqual(cleanState(JSON.parse(JSON.stringify(got)), { today }), got, `${name} ${k}: cleaning twice`);
+    assert.equal(suspicion(got, null, { today }), null, `${name} ${k}: a first upload looked like cheating`);
+  }
 });
