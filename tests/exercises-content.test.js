@@ -19,6 +19,8 @@ import { createPolicy } from "../src/js/core/policy.js";
 import { fsVerb, fsPrepNoun, fsMotion, motionPairs } from "../src/js/tasks/fallstjorn.js";
 import { obConj } from "../src/js/tasks/obeygjanleg.js";
 import { show } from "./helpers.js";
+import { freshView } from "./pools.js";
+import { seeded } from "../src/js/core/duel.js";
 
 const lex = buildLexicon(DATA);
 function ctx(diff = 2) {
@@ -162,5 +164,16 @@ test("item 25: the question is built with a multi-word conjunction, capitalised 
     if (t.i === 0) t.options.forEach((o) => assert.match(o, /^\p{Lu}/u, o));
     seen.add(t.answer.toLowerCase());
   }
-  assert.ok(seen.has("af því að") && seen.has("til þess að"), [...seen].join(", "));
+  assert.ok(seen.has("af því að"), [...seen].join(", "));
+  /* Every item whose answer is a multi-word conjunction, built on purpose
+     (a review's `force.item`): since item 23 there are 219 items and one
+     *til þess að* among them, so 600 random draws missed it now and then. */
+  const multi = EX.conjunction.filter((x) => x.a.includes(" "));
+  assert.ok(multi.some((x) => x.a === "til þess að"));
+  for (const x of multi) {
+    const t = obConj(lex, freshView(x.lvl, { force: { item: x.t } }), seeded(x.t.length)).task;
+    assert.equal(t.item, x.t);
+    assert.ok(t.options.includes(t.answer) && t.answer.toLowerCase() === x.a, x.t);
+    if (t.i === 0) t.options.forEach((o) => assert.match(o, /^\p{Lu}/u, o));
+  }
 });
