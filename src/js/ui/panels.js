@@ -9,6 +9,7 @@ import { showcaseOf, togglePin, titleOf, titlesOf, titleText, medalOf, medalByTi
          holders, windowed, compare, feed, weekXp, weekKey, SHOWCASE_MAX } from "../core/social.js";
 import { weekGains, MEND_POINTS, MEND_RUN, REVIEWS_PER_DAY } from "../core/mending.js";
 import { crestOf } from "../core/profile.js";
+import { renderClassGoal } from "./classgoal.js";
 import { ALL_CLASSES } from "../core/marks.js";
 import { collectionByClass } from "../core/collection.js";
 import { vocabScore, weakWords, HEALTH, DRILL, STATUS_LABEL } from "../core/wordhealth.js";
@@ -235,6 +236,7 @@ export function renderBadges(app) {
 /** Skólastofan: the board and the people. Drawn when that tab is opened and
     again when the server's picture arrives (app.js `redrawOpenView`). */
 export function renderClass(app) {
+  renderClassGoal(app);               // item 59: ui/classgoal.js
   renderLeaderboard(app);
   renderRoster(app);
 }

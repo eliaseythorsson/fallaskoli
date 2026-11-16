@@ -580,6 +580,14 @@ export function buildBadges() {
   social("soc_twins", "👯", "Samferða",
     "Þú og einhver annar funduð sama leynimerkið í sömu vikunni",
     0.12, (s) => s.twins, { once: true });
+  /* v6.13, item 59: the one badge on this shelf nobody wins against anybody.
+     The group's teacher sets a weekly goal (core/classgoal.js); when the
+     group's bar is full, every learner in it gets this, whatever each put
+     in. Once a week (`goalweek`: the week the goal was met, from the
+     server's answer), so a class that keeps meeting its goal keeps winning. */
+  social("soc_classgoal", "🎯", "Saman í mark",
+    "Hópurinn þinn náði markmiði vikunnar sem kennarinn setti",
+    0.30, (s) => !!s.goalWeek, { hidden: false, period: "goalweek" });
 
   /* ---- 14f. Which words, not how many (v6.6) ----
      The collection read for patterns: whole themes, many words of one kind,
@@ -926,6 +934,11 @@ export function periodKey(badge, time, ctx = null) {
   if (badge.period === "week") {
     const wk = ctx && ctx.social && ctx.social.lastWeek;
     return wk ? `week:${wk}` : null;
+  }
+  /* The class goal (item 59): the week in which the group met it. */
+  if (badge.period === "goalweek") {
+    const wk = ctx && ctx.social && ctx.social.goalWeek;
+    return wk ? `goal:${wk}` : null;
   }
   if (!time) return null;
   const date = `${time.year}-${pad2((time.month ?? 0) + 1)}-${pad2(time.date)}`;

@@ -43,6 +43,7 @@ import {
 import { cleanState, suspicion, MAX_STATE_BYTES } from "./guard.mjs";
 import { privacyConfig, privacyPage, CONSENT_AGE, PRIVACY_VERSION } from "./privacy.mjs";
 import { createCalibration } from "./calibrate.mjs";
+import { createClassGoal } from "./classgoal.mjs";
 import { seal, passphraseProblem } from "./backup.mjs";
 import { dropPrivileges } from "./privs.mjs";
 
@@ -1373,6 +1374,13 @@ export function createApp({
     if (problem) return json(res, problem[0], { error: problem[1] });
     return json(res, 200, { ok: true, assignment: view });
   });
+
+  /* --- the class goal (v6.13, critique item 59) --------------------------
+   * A weekly target the group reaches together, set by its teacher; one bar
+   * of totals, one badge for everyone. Everything is in server/classgoal.mjs.
+   * Routes: GET /classgoal, GET+POST+DELETE /teacher/classgoal. */
+  createClassGoal({ store, groupOf, groupsNow, audit })
+    .routes({ on, json, readBody, needUser, needTeacher });
 
   /* --- the curriculum ceiling ------------------------------------------
    *

@@ -226,11 +226,12 @@ test("champion, podium, tie, pioneer, unique and twins read the server's answer"
     result: { week: "2026-11-02", champions: ["me"], podium: ["me", "a"], players: 5 },
   });
   assert.deepEqual(ctx, { lastWeek: "2026-11-02", champion: true, podium: true, overtook: false,
-                          pioneer: true, unique: true, tie: true, twins: true });
+                          pioneer: true, unique: true, tie: true, twins: true,
+                          goalWeek: null });   // item 59: no class goal here
 
   const quiet = socialContext({ me: "b", roster, board, week: "2026-11-09", result: null }).ctx;
   assert.deepEqual(quiet, { lastWeek: null, champion: false, podium: false, overtook: false,
-                            pioneer: false, unique: false, tie: false, twins: false });
+                            pioneer: false, unique: false, tie: false, twins: false, goalWeek: null });
 });
 
 test("being first to a COMMON badge is not pioneering, and a small roster has no 'unique'", () => {

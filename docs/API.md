@@ -367,6 +367,52 @@ the table is not. Erasing a user removes their results; an assignment a
 guardian set stays with the group, its `by` cleared. Deleting a group deletes
 its assignments. All of it is in the backup.
 
+## The class goal (v6.13)
+
+Item 59. A weekly target the whole group reaches together, set by its teacher
+(the same `needTeacher` rule as above), with one shared bar in Skólastofan
+and one badge, `soc_classgoal` *Saman í mark*, for every learner of the group
+when it is met. Code: `src/js/core/classgoal.js` (the rules, shared with the
+browser) and `server/classgoal.mjs` (the routes).
+
+```
+GET    /classgoal                   -> status + { member }       anybody logged in: their own group
+GET    /teacher/classgoal           -> status + { group: { id, name }, pupils, limits }
+POST   /teacher/classgoal           { group?, kind, n } -> { ok } + status
+                                    400 not an offered goal · 409 fewer than 5 learners in the group
+DELETE /teacher/classgoal?group=g   -> { ok } + status
+```
+
+A `status` is `{ week, goal, progress, last }`:
+
+| field | shape | meaning |
+|---|---|---|
+| `week` | `YYYY-MM-DD` | the Monday of this week |
+| `goal` | `{ kind, n }` or null | `kind` `"rett"` (right answers together; `n` 200, 500, 1000, 2000, 3000 or 5000) or `"lotur"` (every learner finishes `n` sessions of at least 10 questions; `n` 1–5) |
+| `progress` | `{ kind, n, done, target, met, small }` or null | `rett`: `done` the group's right answers this week, `target` = `n`. `lotur`: `done` the learners who got there, `target` the learners. `small: true` (and both 0) with fewer than 5 learners |
+| `last` | `{ week, met }` or null | whether last week's goal was met — no figures |
+| `member` | boolean | a learner of the group, so owed the badge (the teacher sees the bar, without the badge) |
+
+**Totals only.** No pupil id, name or per-pupil figure is in any answer, the
+teacher's included (the teacher has the per-pupil picture in the routes
+above). Every active learner of the group is counted, on the board or not
+(but not one held for review, as for the board) —
+`docs/PRIVACY.md` §1c explains why, and the notice of `2026-11-18` says so.
+
+A goal holds every week from the Monday it was set until it is changed or
+removed; setting it twice in one week replaces the first. It is kept on the
+group's record (`groups.json`, `goals: [ { kind, n, from } ]`, the last three,
+`kind: "off"` for a removal) and goes when the group is deleted. Progress is
+added up on request from the day records (`c`) and the session list (`runs`)
+already in each state; nothing new is stored about a pupil. Setting and
+removing are written to the audit trail.
+
+The badge is judged in the browser with the other social badges
+(`when: "social"`), once per week the goal was met (`period: "goalweek"`):
+this week's if the bar is full, otherwise last week's if that was met, so a
+pupil away when the class got there has it on Monday. Like every badge it is
+the browser's word.
+
 ## Calibration from real answers, and the answer sample (v6.13)
 
 Items 17 and 38. `server/calibrate.mjs` holds the routes; the arithmetic is

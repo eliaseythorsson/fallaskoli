@@ -153,6 +153,12 @@ src/js/core/mending.js  getting better, counted (items 56, 58): an error
                       reviews passed per day; this week's "Framfarir" (the
                       leaderboard figure, capped per day so volume cannot
                       raise it) — `S.mend`, its sanitiser and its merge
+src/js/core/classgoal.js  the class goal (item 59): a weekly target the
+                      group's teacher sets ("2.000 rétt svör saman", "Allir
+                      ljúka þremur lotum"), the group's total (never who put
+                      in what; nothing below three pupils) and the week whose
+                      badge a pupil is owed; routes in server/classgoal.mjs,
+                      the bar in ui/classgoal.js
 src/js/core/examples.js  the worked example on the first card of a type a
                       pupil has not met (item 41; the texts are in
                       content/examples.js, every form checked against BÍN

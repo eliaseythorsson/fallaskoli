@@ -78,6 +78,8 @@ const app = {
   /* Item 58: the class board opens on "Framfarir" (core/leaderboard.js). */
   boardMetric: DEFAULT_METRIC,
   social: null,
+  /* GET /classgoal (item 59): the group's weekly goal, totals only. */
+  classGoal: null,
   badgeStats: null,
 
   /** The leaderboard, by whichever metric is currently chosen. */
@@ -1466,16 +1468,19 @@ function foldIn(merged, sent) {
 async function loadSocial() {
   if (!app.server) return;
   app.reloadSocial = loadSocial;      // ui/account.js: after "show me" changes
-  const [stats, roster, board, social] = await Promise.all([
+  const [stats, roster, board, social, goal] = await Promise.all([
     app.server.badgeStats().catch(() => null),
     app.server.roster().catch(() => null),
     app.server.leaderboard(app.boardMetric).catch(() => null),
     app.server.social().catch(() => null),
+    /* Item 59: the group's goal and its total (ui/classgoal.js draws it). */
+    app.server.classGoal().catch(() => null),
   ]);
   app.badgeStats = stats && stats.measurable ? stats : null;
   app.roster = roster || [];
   app.board = board || [];
   app.social = social || null;
+  app.classGoal = goal || null;
   judgeSocial();
   app.loadDuels();
   app.loadAssignments();
@@ -1494,6 +1499,7 @@ function judgeSocial() {
     me: app.profile.id, roster: app.roster, board: app.board,
     result: app.social ? app.social.lastWeek : null,
     memo: app.S.social, week: app.social ? app.social.week : undefined,
+    goal: app.classGoal,
   });
   app.S.social = memo;
   const won = checkBadges(
