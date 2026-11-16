@@ -191,25 +191,102 @@ that threshold the app falls back to the base rarity computed in
 `src/js/core/rarity.js`, and says so. The aggregation itself is
 `aggregate()` in that module, imported by the server, so the two cannot drift.
 
-## Duels (v6.7)
+## Duels (v6.7; graded by the server since v6.13)
 
 Only between users in the same group who are both on the leaderboard
 (`share.board`), the same rule as `/leaderboard`. See `src/js/core/duel.js`.
 
 ```
 GET  /duels                          -> { duels: [ view, ... ], canChallenge: [ { id, name } ], shown,
-                                          sizes: [10,20,30], hours: 24, maxOpen: 10 }
+                                          sizes: [10,15,20], hours: 24, maxOpen: 10 }
 POST /duels   { opponent, topic, n } -> { ok, duel: view }   400 bad topic/size · 403 not on the board
                                                               404 not challengeable · 409 10 open duels
-POST /duels/:id/result { c, n, sig } -> { ok, duel: view }   once per player, before the deadline
+POST /duels/:id/start                -> { ok, duel: view, seed, key, sig }
+                                                              404 not a party · 409 over, or already answered
+POST /duels/:id/result { answers, sig } -> { ok, duel: view } once per player, before the deadline
+                                                              400 not answers · 409 not started, or other
+                                                              questions (`sig`) · 413 too big
 ```
 
-A `view` is `{ id, challenger, opponent: { id, name }, topic, n, seed, level, data, created,
-deadline, status: open|done, mine: {c,n}|null, theirs: {c,n}|null, theyPlayed, outcome: w|l|t|null,
-sameQuestions }`. `theirs` is withheld until the viewer has answered or the duel is over.
-The questions are not stored: both browsers build them from `seed` and `level`. Void duels
-(nobody answered within 24 hours) are deleted on the next read; finished ones after 30 days.
-Erasing a user erases their duels; `/account/export` includes them.
+A `view` is `{ id, side, challenger, opponent: { id, name }, topic, n, level, data, skills, created,
+deadline, status: open|done, mine: {c,n}|null, theirs: {c,n}|null, theyPlayed,
+handicap: { mine, theirs }, outcome: w|l|t|null }`. `theirs` is withheld until the viewer has
+answered or the duel is over. A view never carries a seed.
+
+**The questions.** They are not stored. The duel holds a `seed` and one `key` per player. The
+seed makes the *plan*: which type of question, at which level, about which inflection cell, in
+which order. Each player's own questions are built from the plan and that player's key
+(`duelTasks`): the same type and level on every line and the same cell, about other words and
+other sentences. Every word and sentence of the data belongs to one of the two players in a given
+duel (`halfOf`), so the two sets do not overlap where the data allows it. Where the same cell
+means the same answer — the cell *is* the answer ("strong or weak?", "which case does *handa*
+govern?", an analysis), or so few words share it that it comes to the same thing (*four* in the
+masculine accusative is *fjóra* in any sentence) — giving both players the plan's cell would give
+the second player the first one's answer. For those types the plan fixes the kind of cell and
+each player's cell is their own draw (`CELL_IS_ANSWER`, eighteen types; a test measures every
+type and holds the list to the builders).
+
+**Starting.** `POST /duels/:id/start` hands a player `seed` and their own `key` — not the other
+player's — and records the moment once (`started`). The browser builds its questions and compares
+their signature with `sig`, the signature of what the server built; if they differ (an old tab
+after an update) the pupil is asked to reload before the first question. Starting again returns
+the same seeds: a reload in the middle of a duel continues with the same questions.
+
+**Grading.** `answers` is a list, one entry per question in order: the response in the shape
+`src/js/core/answer.js` lists for the question's type (`{ text }`, `{ picked }`, `{ cells: […] }`,
+…), or `null` for a question not answered. The server builds the player's questions again from
+the seeds and judges every response with the same `judge` the browser used (`gradeDuel`). Only a
+right answer counts; a missing, unfinished or malformed one is wrong; `n` is always the number of
+questions. Nothing else in the body is read — a `c` or `n` beside the answers is ignored, and a
+body without `answers` (what browsers posted before v6.13) is refused. The answers are graded and
+dropped: the duel keeps `{ c, n, at }` per player, never anything a pupil typed.
+
+Limits: a response may only have the keys `text, hinted, cells, texts, picked, picked2, picks,
+sel, edits`, each of its own kind (a string of at most 300 characters; a list or a flat object
+of at most 64 short entries), and at most 2 000 bytes as JSON (`cleanResponse`, `ANSWER_LIMITS`);
+the whole body at most ~44 kB; never more answers than questions.
+
+**A fair result (handicap).** A duel is played at the mean of the two players' levels in the
+topic, which favours the stronger. The duel stores both levels (`lv`), and the player on the
+lower one is given right answers in advance: none while they are within one level of each other,
+then 5% of the questions per level between them, in whole answers, at least 1 and at most 30% of
+the questions (`handicap`, `DUEL.fair`). The winner is the one with more right answers *plus
+handicap*; `mine` and `theirs` stay the right answers, and `handicap` says what was added, from
+the moment the duel is made. The 5% is a judgement, not a measurement.
+
+**What this stops, and what it does not.** Said plainly, because a teacher may rely on it:
+
+- *Stopped:* posting a score. Nobody can claim ten out of ten without giving ten right answers
+  to their own ten questions.
+- *Stopped:* reading the questions before pressing play. Until `/start` the browser holds
+  nothing they could be built from, and `/account/export` leaves the seeds out.
+- *Stopped, as far as the data allows:* the first player telling the second the answers. They
+  are answers to other questions. Measured over every topic, a player who types in the other
+  player's right answers gets about one in six right (17%) — mostly choices with two to four
+  options, where that is what guessing gives — against all of them before. The limits: closed
+  classes are small (four numerals decline, a handful of pronouns) and some hand-written
+  exercises have a dozen items, so now and then both players meet the same word or sentence —
+  about 3% of the lines in the same measurement. And 4% of the lines are a shade off the plan
+  (a neighbouring level, or another cell of the same kind) because the exact one could not be
+  had twice.
+- *Not stopped:* a pupil who can use the developer tools after pressing play. The program shows
+  the right answer the moment a question is answered, so the questions arrive with their answers;
+  from `/start` on the browser holds both, and they can be read out of memory and typed in.
+  Closing that would mean the server judging each answer as it is given and the browser never
+  holding one, which is a different program (and no duel on a poor connection). This is the same
+  as before v6.13; what is new is that it takes a programmer rather than one line.
+- *Not stopped:* looking, then answering later. A pupil can press play, read the questions,
+  reload, and take the 24 hours to find the answers — or ask somebody. `started` records when
+  play was first pressed, and nothing acts on it yet: a limit ("answer within an hour of
+  starting") is one comparison in `/result`, but it would also cost the child whose bell rang.
+- *Not stopped:* help from a person, a book or another tab. No server can.
+- *Not stopped:* two accounts in one hand. One pupil with a second account, or two friends
+  sharing passwords, can each see "their" duel.
+
+Void duels (nobody answered within 24 hours) are deleted on the next read; finished ones after
+30 days. Erasing a user erases their duels; `/account/export` includes them, without the seeds.
+A duel made before v6.13 has no keys and no levels: it gets keys when first started, and no
+handicap.
 
 ## The teacher: the class's patterns and assignments (v6.13)
 

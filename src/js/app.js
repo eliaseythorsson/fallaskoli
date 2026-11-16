@@ -7,7 +7,7 @@ import { migrate, blankState, newSession, todayKey, badgeContext, settleDays,
 import { applyDecay } from "./core/progress.js";
 import { checkBadges, checkLogin, celebrate } from "./core/badges.js";
 import { collectionSummary } from "./core/collection.js";
-import { nextTask, drillTask, makeView, withView, applyEffects, planOpening, nextOpening,
+import { nextTask, buildTask, drillTask, makeView, withView, applyEffects, planOpening, nextOpening,
   scheduleReask, nextReask, streakTasks, typeById, enabled } from "./tasks/index.js";
 import { reviewLine, queuePattern } from "./core/review.js";
 import { planToday } from "./core/today.js";
@@ -160,26 +160,61 @@ const app = {
     return r;
   },
 
-  /** Begin answering a duel: build its questions from the seed. */
-  startDuel(id) {
+  /**
+   * Begin answering a duel. The seeds are fetched now and not before
+   * (POST /duels/:id/start): a browser that holds them holds the questions.
+   * This player's questions are then built here, exactly as the server
+   * builds them to grade the answers (core/duel.js `duelTasks`).
+   */
+  async startDuel(id) {
     const v = (this.duelList || []).find((x) => x.id === id);
-    if (!v || v.status !== "open" || v.mine) return;
-    if (v.data && v.data !== dataPrint(DATA)) {
-      this.duelSent = { view: v, c: 0, n: v.n,
-        error: "Einvígið var búið til með nýrri útgáfu af forritinu. Endurhladdu síðuna (F5) og reyndu aftur." };
+    if (!v || v.status !== "open" || v.mine || this.duelRun || this.duelStarting) return;
+    /* Not started: said on the strip, with the reason. */
+    const refuse = (error) => {
+      this.duelSent = { view: v, c: 0, n: v.n, unplayed: true, error };
       this.openView("practice");
       renderDuelBar(this);
-      return;
+    };
+    if (v.data && v.data !== dataPrint(DATA)) {
+      return refuse("Einvígið var búið til með nýrri útgáfu af forritinu. Endurhladdu síðuna (F5) og reyndu aftur.");
     }
-    const tasks = duelTasks(this.lexForDuels(), v,
-      { nextTask, makeView, applyEffects, blankState, newSession, createPolicy });
-    if (!tasks.length) return;
+    this.duelStarting = id;
+    this.duelSent = null;
+    this.openView("practice");
+    renderDuelBar(this);                       // "Sæki spurningarnar…"
+    let r;
+    try { r = await this.server.duelStart(id); }
+    catch (err) {
+      this.duelStarting = null;
+      return refuse(err && err.status ? err.message
+        : "Náði ekki sambandi við þjóninn. Reyndu aftur eftir smástund.");
+    }
+    this.duelStarting = null;
+    const view = r.duel || v;
+    const tasks = duelTasks(this.lexForDuels(), { ...view, seed: r.seed, key: r.key },
+      { nextTask, buildTask, makeView, applyEffects, blankState, newSession, createPolicy });
+    if (!tasks.length) return renderDuelBar(this);
+    const sig = signature(tasks);
+    /* The server says what it will grade. If this browser built something
+       else, better to hear it now than after twenty answers. */
+    if (r.sig && r.sig !== sig) {
+      return refuse("Spurningarnar stemma ekki við þjóninn. Endurhladdu síðuna (F5) og reyndu aftur.");
+    }
     this.drill = null; this.drillOffer = null; this.drillDone = null;
-    this.duelRun = { view: v, tasks, i: 0, c: 0, marks: [] };
+    this.duelSent = null;
+    this.duelRun = { view, tasks, sig, i: 0, c: 0, marks: [], answers: [] };
     this.duelSkipped.delete(id);
     this.openView("practice");
     renderDrillBar(this);
     this.next();
+  },
+
+  /** The answer just judged, kept for the server (ui/render.js `conclude`).
+      A copy: the renderers hand over their own live objects. */
+  duelAnswer(task, response) {
+    const run = this.duelRun;
+    if (!run || run.tasks[run.i] !== task) return;
+    run.answers[run.i] = JSON.parse(JSON.stringify(response ?? null));
   },
 
   /** Give up half-way: what is unanswered counts as wrong, and it is sent. */
@@ -207,19 +242,32 @@ const app = {
   endDuel() {
     const run = this.duelRun;
     this.duelRun = null;
-    const payload = { view: run.view, c: run.c, n: run.tasks.length, sig: signature(run.tasks) };
+    /* One answer per question, in order; what was never answered is null,
+       and the server counts it wrong. The count shown meanwhile is this
+       browser's own — the server's replaces it when it answers. */
+    const answers = run.tasks.map((_, i) => run.answers[i] ?? null);
+    const payload = { view: run.view, answers, sig: run.sig };
     this.duelSent = { view: run.view, c: run.c, n: run.tasks.length };
     renderDuelBar(this);
     this.sendDuel(payload).then(() => this.loadDuels());
   },
 
-  /** Send a result; kept and retried on the next load if the network fails. */
+  /** Send the answers; kept and retried on the next load if the network fails. */
   async sendDuel(p) {
     try {
-      await this.server.duelResult(p.view.id, p.c, p.n, p.sig);
+      const r = await this.server.duelResult(p.view.id, p.answers, p.sig);
       this.duelPending = null;
+      /* The score is the server's. It is the same judge on the same
+         questions, so it is the number already on the strip — but if the two
+         ever differ, the server's is the one that counts and the one shown. */
+      const mine = r && r.duel && r.duel.mine;
+      if (mine && this.duelSent && this.duelSent.view.id === p.view.id) {
+        this.duelSent.c = mine.c; this.duelSent.n = mine.n;
+        this.duelSent.view = r.duel;
+      }
     } catch (err) {
-      /* 409: already sent or the time ran out — nothing to retry. */
+      /* 4xx: already sent, the time ran out, or the questions do not match —
+         nothing to retry. */
       if (err && err.status && err.status < 500) {
         this.duelPending = null;
         if (this.duelSent) this.duelSent.error = err.message;

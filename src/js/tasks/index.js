@@ -31,7 +31,7 @@
    renderer in ui/ if no existing one draws its shape (see registry.js).     */
 
 export { TASKS, CATEGORIES, typeById, enabled, weightOf } from "./registry.js";
-export { nextTask } from "./next.js";
+export { nextTask, buildTask } from "./next.js";
 export { drillTask, patternTask, streakTasks, DRILL_PLAN, DRILL_MEANING_TURN } from "./drill.js";
 export { makeView, withView } from "./view.js";
 export { applyEffects, built, FX } from "./effects.js";

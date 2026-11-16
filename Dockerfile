@@ -16,7 +16,10 @@ WORKDIR /app
 COPY package.json ./
 COPY server/*.mjs ./server/
 COPY src/js/core ./src/js/core
-COPY data/data_bundle.js ./data/data_bundle.js
+# The question builders and the hand-written exercises: the server builds a
+# duel's questions itself to grade the answers (v6.13, src/js/core/duel.js).
+COPY src/js/tasks ./src/js/tasks
+COPY data/data_bundle.js data/exercises.js ./data/
 COPY tools/version.mjs ./tools/version.mjs
 # The built program (dist/ is git-ignored; ./build.sh makes it). The server
 # serves the one whose number matches package.json.

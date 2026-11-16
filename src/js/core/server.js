@@ -107,7 +107,10 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     /* --- duels (v6.7) --- */
     duels: () => call("GET", "/duels"),
     challenge: (opponent, topic, n) => call("POST", "/duels", { opponent, topic, n }),
-    duelResult: (id, c, n, sig) => call("POST", `/duels/${enc(id)}/result`, { c, n, sig }),
+    /* v6.13: the seeds come when the pupil presses play, and what goes back
+       is the answers — the server grades them (core/duel.js). */
+    duelStart: (id) => call("POST", `/duels/${enc(id)}/start`),
+    duelResult: (id, answers, sig) => call("POST", `/duels/${enc(id)}/result`, { answers, sig }),
     /* --- assignments and the class's patterns (v6.13, items 37 and 65) ---
        The pupil's side first; the rest is the teacher's (guardian or
        administrator), and the server holds it to their own group. */
