@@ -21,6 +21,17 @@ const blankHTML = (t) =>
 
 function questionSentence(t) {
   if (!t.s) return "";
+  /* item 28: a run of words underlined (a clause, a phrase), as the clause
+     question marks its clause. */
+  if (t.markSpan && t.span) {
+    return `<p class="sentence">${t.s.tok.map((tok, j) => {
+      if (PUNCT.has(tok.w)) return tok.w;
+      const inside = j >= t.span.from && j <= t.span.to;
+      /* the space between two marked words is underlined with them */
+      const sp = j === 0 ? "" : inside && j > t.span.from ? `<span class="clausemark"> </span>` : " ";
+      return sp + (inside ? `<span class="clausemark">${esc(tok.w)}</span>` : esc(tok.w));
+    }).join("")}</p>`;
+  }
   if (t.i == null || t.i < 0) return `<p class="sentence">${sentenceHTML(t.s, -1, "")}</p>`;
   const tok = t.s.tok[t.i];
   const inner = t.mode === "replace" || t.mark
@@ -286,7 +297,9 @@ function submitTap(app) {
     else if (t.sel.has(j)) el.classList.add("wrongpick");
   });
   const words = (js) => js.map((j) => `<span class="forms">${esc(t.s.tok[j].w)}</span>`).join(", ");
-  const what = t.whole ? `${t.cls}in` : `${t.cls}${t.targets.length > 1 ? "" : ""}`;
+  /* `what`: the heading over the right words, where the name of the class
+     does not take the article *-in* (item 28: *forsetningarliðurinn*). */
+  const what = t.what || (t.whole ? `${t.cls}in` : `${t.cls}${t.targets.length > 1 ? "" : ""}`);
   conclude(app, t, jd, () => {
     $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
@@ -294,6 +307,7 @@ function submitTap(app) {
       : `${t.targets.length === 1 ? "Rétt orð" : "Réttu orðin"} (${esc(t.cls)}): ${words(t.targets)}.`}</p>
     ${missed.length ? `<p>Þú misstir af: ${words(missed)}.</p>` : ""}
     ${extra.length ? `<p>Ekki ${esc(t.cls)}: ${words(extra)}${t.whole ? "" : ` — ${extra.map((j) => `*${t.s.tok[j].w}* er ${t.s.tok[j].c || "?"}`).map(fmt).join(", ")}`}.</p>` : ""}
+    ${whyBox(t.why)}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
   });
 }

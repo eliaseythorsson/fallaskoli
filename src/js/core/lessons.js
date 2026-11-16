@@ -71,9 +71,13 @@ export function lessonFor(task) {
     }
     case "fallstjorn": return first("fallstjorn");
     case "ordaford": return first("ordafordi");
-    case "setningafraedi": return first("setningalidir");
-    case "setningagerd": return first("setningagerdir");
-    case "malbeiting": return first("malbeiting");
+    /* item 28: the three year-10 pages. The cell says which question it is. */
+    case "setningafraedi":
+      return /^lidur:/.test(task.cell || "") ? first("lidir", "setningalidir") : first("setningalidir");
+    case "setningagerd":
+      return /^tegund:/.test(task.cell || "") ? first("aukasetningar", "setningagerdir") : first("setningagerdir");
+    case "malbeiting":
+      return task.kind === "indirect" ? first("raeda", "malbeiting") : first("malbeiting");
     default: return null;
   }
 }

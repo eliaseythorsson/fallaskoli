@@ -132,6 +132,15 @@ export const QUESTION_TYPES = [
     ds: "Persónu-, afturbeygt, eignar-, ábendingar-, spurnar- eða óákveðið fornafn í setningu" },
   { id: "no_beyging", nm: "Sterkt eða veikt nafnorð",   skill: "nafnord",
     ds: "Sterk eða veik beyging af eignarfalli eintölu: til hests, til pabba. Frá þyngd 5 er eignarfallið skrifað" },
+  /* item 28: years 9 and 10 */
+  { id: "gerd_tegund", nm: "Hvers konar aukasetning?", skill: "setningagerd",
+    ds: "Fall-, tilvísunar- eða atvikssetning; frá þyngd 4 skýringar-, spurnar-, tíðar-, skilyrðis-, orsakar- og viðurkenningarsetning; frá þyngd 6 líka tilgangs- og afleiðingarsetning" },
+  { id: "setn_lidir", nm: "Hvers konar liður?",         skill: "setningafraedi",
+    ds: "Nafnliður, sagnliður eða forsetningarliður í setningu; frá þyngd 3 líka atviksliður" },
+  { id: "lid_finna", nm: "Finndu forsetningarliðinn",   skill: "setningafraedi",
+    ds: "Smelltu á öll orð forsetningarliðar; frá þyngd 4 geta þeir verið tveir" },
+  { id: "raeda", nm: "Bein og óbein ræða",              skill: "malbeiting",
+    ds: "Settu orð annarra í óbeina ræðu: Hún sagði að hún væri þreytt. Frá þyngd 4 er beina ræðan í þátíð: hefði farið" },
 ];
 
 export const TYPE_IDS = QUESTION_TYPES.map((t) => t.id);
@@ -379,7 +388,7 @@ export function setPolicyFlag(policy, dim, key, value) {
 const PRESET_TEXT = {
   8: "Fallorð, sagnorð, óbeygjanleg orð, orðflokkagreining, fallstjórn, orðaforði og málbeiting.",
   9: "Allt úr 8. bekk og að auki afturbeygt fornafn, samtengingar, forsetning eða atviksorð og ópersónulegar sagnir.",
-  10: "Allt úr 9. bekk og að auki setningafræði og setningagerðir.",
+  10: "Allt úr 9. bekk og að auki setningafræði (setningarhlutar og liðir), setningagerðir, tegundir aukasetninga og bein og óbein ræða.",
 };
 
 export const PRESETS = YEARS.map((year) => ({

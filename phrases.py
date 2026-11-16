@@ -328,7 +328,11 @@ NOMINAL = ('no', 'fn', 'pfn', 'abfn', 'lo', 'to', 'töl', 'raðnr', 'gr',
 HEADS = ('no', 'pfn', 'person', 'entity', 'sérnafn')
 NP_TAGS = ('NP-SUBJ', 'NP-OBJ', 'NP-IOBJ', 'NP-PRD')
 ADVP_TAGS = ('ADVP', 'ADVP-TMP-SET')
-JOINERS = ('og', 'eða', 'en', 'sem', 'né')
+JOINERS = ('og', 'eða', 'en', 'sem', 'né', 'þar')     # *þar*: "um svæði þar sem ..."
+# A pronoun that only points forward to a clause: "frá því þegar hún var lítil",
+# "eftir því að ...". The clause belongs to the phrase, so it has no certain end.
+POINTERS = ('því', 'þess', 'það')
+NOT_AL = ('hvar', 'hvenær', 'hvernig', 'hvert', 'hvaðan', 'hversu', 'áfram')
 
 
 def _plain(t):
@@ -382,6 +386,8 @@ def phrases(toks, spans, clause_unsure, only_adverb=lambda w: True):
         if x(a - 1) in ('ao', 'fs') or x(b + 1) in NOMINAL or \
                 (word(b + 1) and toks[b + 1]['w'].lower() in JOINERS):
             continue
+        if b - a == 1 and toks[b]['w'].lower() in POINTERS and word(b + 1):
+            continue
         fl.add((a, b))
         out.append({'a': a, 'b': b, 't': 'fl'})
 
@@ -390,6 +396,12 @@ def phrases(toks, spans, clause_unsure, only_adverb=lambda w: True):
         if not (tag in NP_TAGS or (tag == 'NP' and inside)):
             continue
         if not nominal_run(a, b) or not any(toks[j]['x'] in HEADS for j in range(a, b + 1)):
+            continue
+        # One nafnliður has one head. Two nouns side by side that are not
+        # head and genitive attribute (*þak hússins*) are two phrases the
+        # parser ran together: "Ég gaf [litla barninu mjólk] að drekka".
+        if sum(1 for j in range(a, b + 1) if toks[j]['x'] == 'no'
+               and 'EF' not in (toks[j].get('m') or '')) > 1:
             continue
         if not inside:
             # The head must carry a role the build CONFIRMED (subject, object,
@@ -433,6 +445,11 @@ def phrases(toks, spans, clause_unsure, only_adverb=lambda w: True):
         # adverb (*hratt, hægt*), which some books call a lýsingarorð, and
         # the particle that is also a preposition (*fór af, sneri við*).
         if not only_adverb(t['w']):
+            continue
+        # A question word that opens a clause ("spurði [hvar] ég hefði
+        # verið") and the particle of *halda áfram* are adverbs, and nobody's
+        # first example of an atviksliður: left out.
+        if t['w'].lower() in NOT_AL:
             continue
         out.append({'a': a, 'b': b, 't': 'al'})
 

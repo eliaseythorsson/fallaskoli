@@ -117,7 +117,7 @@ every year.
 | Hæfniviðmið (heading in the aðalnámskrá) | Section | Within reach of a drill app? | Nodes | With questions | Fully covered |
 | --- | --- | --- | --- | --- | --- |
 | Orðflokkar | Mál og málnotkun | yes: the app's main subject | 31 | 28 | 23 |
-| Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 11 | 6 | 5 |
+| Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 11 | 9 | 8 |
 | Fjölbreytt málnotkun | Mál og málnotkun | partly | 2 | 1 | 1 |
 | Sköpunarkraftur | Mál og málnotkun | partly | 1 | 1 | 1 |
 | Orðtök og málshættir | Mál og málnotkun | partly | 1 | 0 | 0 |
@@ -201,12 +201,12 @@ evidence above. Later years keep practising it.
 | --- | --- | --- | --- | --- | --- | --- |
 | `or-ordhlutar` | Orðhlutar og samsett orð | Einkenni málsins | Orðaforði | none yet | none yet | **no** |
 | `or-hljodbreytingar` | Hljóðbreytingar og skyldleiki orða | Einkenni málsins | Orðaforði | none yet | none yet | **no** |
-| `mb-raeda` | Bein og óbein ræða | Einkenni málsins | Málbeiting | none yet | none yet | **no** |
+| `mb-raeda` | Bein og óbein ræða | Einkenni málsins | Málbeiting | Bein og óbein ræða (`raeda`) | Bein og óbein ræða (`raeda`) | yes |
 | `setn-hlutar` | Frumlag, umsögn, andlag og sagnfylling | Einkenni málsins | Setningafræði | Smelltu á rétta orðið (`syntax`); Hvaða setningarhluti? (`setn_hlut`); Flokkaðu setningarhluta (`setn_flokka`) | Setningarliðir (`setningalidir`) | yes |
 | `setn-ordarod` | Orðaröð | Einkenni málsins | Setningafræði | Umritun (`umritun`) | Málfræðin í notkun (`malbeiting`) | in part |
-| `setn-lidir` | Nafnliður, sagnliður og forsetningarliður | Einkenni málsins | Setningafræði | none yet | none yet | **no** |
+| `setn-lidir` | Nafnliður, sagnliður og forsetningarliður | Einkenni málsins | Setningafræði | Hvers konar liður? (`setn_lidir`); Finndu forsetningarliðinn (`lid_finna`) | Nafnliður, sagnliður og forsetningarliður (`lidir`) | yes |
 | `gerd-adal-auka` | Aðalsetning, aukasetning og nafnháttarsetning | Einkenni málsins | Setningagerðir | Hvers konar setning er þetta? (`clause`); Finndu aukasetninguna (`gerd_finna`); Hvar hefst setningin? (`gerd_upphaf`) | Setningagerðir (`setningagerdir`) | yes |
-| `gerd-tegundir` | Tegundir aukasetninga | Einkenni málsins | Setningagerðir | none yet | none yet | **no** |
+| `gerd-tegundir` | Tegundir aukasetninga | Einkenni málsins | Setningagerðir | Hvers konar aukasetning? (`gerd_tegund`) | Tegundir aukasetninga (`aukasetningar`) | yes |
 <!-- curriculum:nodes:end -->
 
 ### Why each year is what it is
@@ -268,10 +268,7 @@ cannot practise it on its own and the skill map cannot measure it.
 | `or-ordhlutar` | Orðhlutar og samsett orð | 10 | **missing** | **missing** |
 | `or-hljodbreytingar` | Hljóðbreytingar og skyldleiki orða | 10 | **missing** | **missing** |
 | `mb-malsnid` | Málsnið: talmál og ritmál | 9 | **missing** | **missing** |
-| `mb-raeda` | Bein og óbein ræða | 10 | **missing** | **missing** |
 | `setn-ordarod` | Orðaröð | 10 | only inside `umritun` | `malbeiting` |
-| `setn-lidir` | Nafnliður, sagnliður og forsetningarliður | 10 | **missing** | **missing** |
-| `gerd-tegundir` | Tegundir aukasetninga | 10 | **missing** | **missing** |
 | `st-n-nn` | n eða nn | 8 | **missing** | **missing** |
 | `st-y` | y, ý og ey | 8 | **missing** | **missing** |
 | `st-stor-stafur` | Stór og lítill stafur | 8 | **missing** | **missing** |
@@ -322,9 +319,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 10 of 12 | 39 of 49 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
-| 9. bekkur | 10 of 12 | 43 of 49 | 1–6 | no new category; types `fn_aftur`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 12 of 12 | 49 of 49 | 1–7 | Setningafræði, Setningagerðir; types `syntax`, `setn_hlut`, `setn_flokka`, `clause`, `gerd_finna`, `gerd_upphaf` |
+| 8. bekkur | 10 of 12 | 39 of 53 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
+| 9. bekkur | 10 of 12 | 43 of 53 | 1–6 | no new category; types `fn_aftur`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 12 of 12 | 53 of 53 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:

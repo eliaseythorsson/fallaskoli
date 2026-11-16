@@ -195,7 +195,7 @@ export const NODES = [
   { id: "mb-malsnid", nm: "Málsnið: talmál og ritmál", cat: "malbeiting", year: 9,
     hv: "fjolbreytt", types: [], lesson: null, cover: "none", item: 28 },
   { id: "mb-raeda", nm: "Bein og óbein ræða", cat: "malbeiting", year: 10, hv: "einkenni",
-    types: [], lesson: null, cover: "none", item: 28 },
+    types: ["raeda"], lesson: "raeda", cover: "full" },
 
   /* ---- Setningafræði ---- */
   { id: "setn-hlutar", nm: "Frumlag, umsögn, andlag og sagnfylling", cat: "setningafraedi",
@@ -204,14 +204,14 @@ export const NODES = [
   { id: "setn-ordarod", nm: "Orðaröð", cat: "setningafraedi", year: 10, hv: "einkenni",
     types: ["umritun"], lesson: "malbeiting", cover: "part", item: 28 },
   { id: "setn-lidir", nm: "Nafnliður, sagnliður og forsetningarliður", cat: "setningafraedi",
-    year: 10, hv: "einkenni", types: [], lesson: null, cover: "none", item: 28 },
+    year: 10, hv: "einkenni", types: ["setn_lidir", "lid_finna"], lesson: "lidir", cover: "full" },
 
   /* ---- Setningagerðir ---- */
   { id: "gerd-adal-auka", nm: "Aðalsetning, aukasetning og nafnháttarsetning",
     cat: "setningagerd", year: 10, hv: "einkenni",
     types: ["clause", "gerd_finna", "gerd_upphaf"], lesson: "setningagerdir", cover: "full" },
   { id: "gerd-tegundir", nm: "Tegundir aukasetninga", cat: "setningagerd", year: 10,
-    hv: "einkenni", types: [], lesson: null, cover: "none", item: 28 },
+    hv: "einkenni", types: ["gerd_tegund"], lesson: "aukasetningar", cover: "full" },
 
   /* ---- Stafsetning og greinarmerki: a criterion with no category yet ---- */
   { id: "st-n-nn", nm: "n eða nn", cat: "stafsetning", year: 8, hv: "stafsetning",

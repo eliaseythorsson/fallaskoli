@@ -94,7 +94,7 @@ export const PATTERNS = [
     lesson: "tid", tags: ["verb:tense"], types: ["verb", "verbslot", "tbl_so", "umritun"] },
   { id: "hattur", ok: "hætti sagna", nm: "Framsöguháttur og viðtengingarháttur",
     rule: "**Viðtengingarháttur** lýsir því sem er óvisst, ósk eða skilyrði: *ef ég væri, hún sagði að hann kæmi*. **Framsöguháttur** segir frá: *ég er, hann kom*.",
-    lesson: "hattur", tags: ["verb:vh"], types: ["verb", "verbslot", "parse", "revform", "umritun"] },
+    lesson: "hattur", tags: ["verb:vh"], types: ["verb", "verbslot", "parse", "revform", "umritun", "raeda"] },
   { id: "mynd", ok: "germynd og miðmynd", nm: "Germynd og miðmynd",
     rule: "**Miðmynd** endar á *-st*: *klæða – klæðast*, *gleðja – gleðjast*, *sjá – sjást*. Germynd hefur enga -st endingu.",
     lesson: "mynd", tags: ["verb:mm"], types: ["verb", "verbslot", "parse", "revform"] },
@@ -185,6 +185,23 @@ export const PATTERNS = [
   { id: "beyging_no_nf", ok: "að láta eignarfallið ráða", nm: "Nefnifallið látið ráða beygingunni",
     rule: "Ekki horfa bara á nefnifallið. *Herbergi* endar á sérhljóði, en eignarfallið er *herbergis*: það endar á *-s* og þess vegna er beygingin **sterk**.",
     lesson: "nafnord-beyging", tags: ["nobeyg:nf"], types: ["no_beyging"] },
+  /* item 28: material for years 9 and 10. As with item 27, each new type has
+     its general pattern and the one mistake its Lesefni page warns of. */
+  { id: "aukasetn_tegund", ok: "tegundir aukasetninga", nm: "Tegundir aukasetninga",
+    rule: "Horfðu á **tenginguna** sem aukasetningin hefst á. *Að* → skýringarsetning, *hvort* eða spurnarorð → spurnarsetning (báðar eru **fallsetningar**). *Sem* → **tilvísunarsetning**. Hinar eru **atvikssetningar**: *þegar, áður en* (tíð), *ef, nema* (skilyrði), *af því að* (orsök), *þótt* (viðurkenning), *svo að, til þess að* (tilgangur eða afleiðing).",
+    lesson: "aukasetningar", tags: ["subkind"], types: ["gerd_tegund"] },
+  { id: "svo_ad", ok: "tilgang og afleiðingu", nm: "Tilgangur eða afleiðing: svo að",
+    rule: "Á eftir *svo að* ræður **hátturinn**. Viðtengingarháttur → **tilgangssetning**, það sem átti að gerast: *Ég vaknaði snemma svo að ég **kæmi** ekki of seint.* Framsöguháttur → **afleiðingarsetning**, það sem gerðist: *Ég gleymdi lyklunum svo að ég **komst** ekki inn.*",
+    lesson: "aukasetningar", tags: ["subkind:svo"], types: ["gerd_tegund"] },
+  { id: "lidir", ok: "setningarliði", nm: "Nafnliður, sagnliður og forsetningarliður",
+    rule: "Finndu **aðalorðið**. Nafnorð eða fornafn → **nafnliður** (*litli strákurinn*). Liðurinn byrjar á forsetningu → **forsetningarliður** (*á borðinu*). Sögn ásamt andlagi eða sagnfyllingu → **sagnliður** (*las bókina*). Eitt atviksorð → **atviksliður** (*oft*).",
+    lesson: "lidir", tags: ["lidir"], types: ["setn_lidir", "lid_finna"] },
+  { id: "lidir_fl", ok: "nafnlið inni í forsetningarlið", nm: "Nafnliður inni í forsetningarlið",
+    rule: "Forsetningarliður er **forsetning + nafnliður**: *á [gamla borðinu]*. Ef forsetningin er ekki með í því sem spurt er um er það nafnliðurinn einn.",
+    lesson: "lidir", tags: ["lidir:fl"], types: ["setn_lidir"] },
+  { id: "obein_raeda", ok: "óbeina ræðu", nm: "Bein og óbein ræða",
+    rule: "Í óbeinni ræðu hverfa gæsalappirnar, *ég* verður *hann* eða *hún* og sögnin fer í **viðtengingarhátt**. Á eftir *sagði*: *væri, kæmi, hefði farið*. Á eftir *segir*: *sé, komi, hafi farið*.",
+    lesson: "raeda", tags: ["speech"], types: ["raeda", "umritun"] },
   /* v6.13 (critique 26): two patterns that only the hand-written error hunt
      (exercises.py HUNT) exercises. Both are among the best-known slips of
      Icelandic teenagers and nothing above describes them: neither is a wrong
@@ -329,7 +346,7 @@ export function tagsOf(t) {
       /* v6.13 (item 29) */
       if (t.kind === "active") tags.add("passive");
       if (t.kind === "question" || t.kind === "join") tags.add("v2");
-      if (t.kind === "indirect") tags.add("verb:vh");
+      if (t.kind === "indirect") { tags.add("verb:vh"); tags.add("speech"); }
       break;
     default: break;
   }
@@ -682,7 +699,7 @@ export function diagnose(task, resp) {
         else push("tid", { ex });
       } else if (task.kind === "passive" || task.kind === "active") push("tholmynd", { ex });
       else if (task.kind === "question" || task.kind === "join") push("v2", { ex });
-      else if (task.kind === "indirect") push("hattur", { ex });
+      else if (task.kind === "indirect") { push("hattur", { ex }); push("obein_raeda", { ex }); }
       else if (task.kind === "past") push("tid", { ex });
       else if (task.kind === "plural") push("sogn_frumlag", { ex });
       break;
