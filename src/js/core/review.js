@@ -101,6 +101,14 @@
 
 import { chancesIn } from "./diagnosis.js";
 
+/** @typedef {import("../types").State} State */
+/** @typedef {import("../types").Task} Task */
+/** @typedef {import("../types").Judgement} Judgement */
+/** @typedef {import("../types").ReviewEntry} ReviewEntry */
+/** @typedef {import("../types").ReviewState} ReviewState */
+/** @typedef {import("../types").DayKey} DayKey */
+/** @typedef {import("../types").When} When */
+
 /** Days until the next review, by stage. */
 export const INTERVALS = [1, 3, 7, 21];
 /** The most entries the queue holds. */
@@ -124,7 +132,8 @@ const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const pad = (n) => String(n).padStart(2, "0");
 
 /** A day key from a day key, a Date or milliseconds. Local time, as
-    core/state.js `todayKey` — but never read from the clock here. */
+    core/state.js `todayKey` — but never read from the clock here.
+    @param {When} now @returns {DayKey} */
 export function dayOf(now) {
   if (typeof now === "string" && DAY_RE.test(now)) return now;
   const d = now instanceof Date ? now : new Date(now);
@@ -137,13 +146,15 @@ const dayNo = (key) => {
   return Math.round(Date.UTC(y, m - 1, d) / DAY_MS);
 };
 
-/** The day `n` days after `key`. */
+/** The day `n` days after `key`.
+    @param {DayKey} key @param {number} n @returns {DayKey} */
 export function addDays(key, n) {
   const d = new Date((dayNo(key) + n) * DAY_MS);
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
 }
 
-/** Whole days from `a` to `b` (negative if `b` is earlier). */
+/** Whole days from `a` to `b` (negative if `b` is earlier).
+    @type {(a: DayKey, b: DayKey) => number} */
 export const daysBetween = (a, b) => dayNo(b) - dayNo(a);
 
 /* ---------- identity ------------------------------------------------------- */
@@ -157,6 +168,7 @@ const ANALYSIS = new Set(["parse", "revform"]);
 /**
  * What makes two misses the same entry. See the note at the top.
  * @param {{t:string, c?:?string, w?:?string, i?:?string, p?:?string}} e
+ * @returns {string}
  */
 export function keyFor({ t, c = null, w = null, i = null, p = null }) {
   if (COMPOSITE.has(t)) return `p:${t}|${p || ""}`;
@@ -169,9 +181,11 @@ export function keyFor({ t, c = null, w = null, i = null, p = null }) {
 
 /* ---------- the queue ------------------------------------------------------ */
 
+/** @returns {ReviewState} */
 export const blankReview = () => ({ items: [], stats: {} });
 
-/** The queue of a state, made if it is not there. */
+/** The queue of a state, made if it is not there.
+    @param {State} S @returns {ReviewState} */
 function book(S) {
   if (!S.review || typeof S.review !== "object" || !Array.isArray(S.review.items))
     S.review = sanitiseReview(S.review);
@@ -179,6 +193,7 @@ function book(S) {
   return S.review;
 }
 
+/** @type {(S: State|null|undefined) => ReviewEntry[]} */
 const itemsOf = (S) => (S && S.review && Array.isArray(S.review.items) ? S.review.items : []);
 
 const isDue = (e, today) => e.due <= today;
@@ -209,7 +224,9 @@ const byDispensable = (a, b) =>
 /**
  * Drop what is stale and hold the queue to its size. Changes `S.review`.
  * Called on every answer and when a session opens; safe to call at any time.
- * @returns {object[]} the entries dropped
+ * @param {State} S
+ * @param {When} now
+ * @returns {ReviewEntry[]} the entries dropped
  */
 export function tidyReview(S, now) {
   const today = dayOf(now);
@@ -239,6 +256,11 @@ const patternOf = (findings) => {
  * What one judged answer says about the queue: the entry a miss makes
  * (`miss`), and the keys it answered right (`right`) and wrong (`wrong`).
  * Pure; reads the task and the judgement (core/answer.js `judge`).
+ *
+ * @param {Task} task
+ * @param {Pick<Judgement, "ok"|"findings"|"effects">} j
+ * @returns {{miss: ?{t:string, sk:?string, p:?string, c:?string, w:?string, i:?string},
+ *            right: string[], wrong: string[]}}
  */
 export function readAnswer(task, j) {
   const t = task.typeId || task.type;
@@ -256,7 +278,9 @@ export function readAnswer(task, j) {
 
   /* The parts the answer was recorded in. A table has one per cell; most
      questions have one, and it is the task's own cell and word. */
-  const recs = (j.effects || []).filter((e) => e.do === "record" && e.counts !== false);
+  const recs = (j.effects || []).filter(
+    /** @returns {e is import("../types").RecordEffect} */ (e) => e.do === "record" && e.counts !== false);
+  /** @type {{c: ?string, w: ?string, i?: ?string, ok: ?boolean}[]} */
   const parts = task.type === "table"
     ? recs.map((e) => ({ c: e.cell, w: e.word, ok: e.ok }))
     : [{ c: task.cell, w: task.word, i: task.item || null, ok: j.ok }];
@@ -310,6 +334,10 @@ function pass(R, e, today) {
  * the entry's own cell and word (the builder fell back to the same type and
  * pattern): it was asked as that review, and it counts as that review.
  *
+ * @param {State} S
+ * @param {Task} task
+ * @param {Pick<Judgement, "ok"|"findings"|"effects">} j
+ * @param {When} now
  * @returns {{added:?string, lapsed:string[], passed:{k:string, next:?number}[], done:string[]}}
  *   `next`: days until that entry comes again.
  */
@@ -367,7 +395,10 @@ export function noteReview(S, task, j, now) {
  * back tomorrow. `t` is the question type to ask it in; the entry is that
  * type and pattern, as a hunt's is. If it is already there it is left alone:
  * practice is not a miss.
- * @returns the entry's key
+ * @param {State} S
+ * @param {{p: string, t: string, sk?: ?string}} what
+ * @param {When} now
+ * @returns {string} the entry's key
  */
 export function queuePattern(S, { p, t, sk = null }, now) {
   const today = dayOf(now);
@@ -388,7 +419,10 @@ export function queuePattern(S, { p, t, sk = null }, now) {
 /**
  * The entries that are due, most urgent first. Stale ones are left out (they
  * are dropped the next time anything is written). Changes nothing.
- * @param can  (entry) => boolean: only those this pupil may be asked now
+ * @param {State} S
+ * @param {When} now
+ * @param {((e: ReviewEntry) => boolean)|null} [can]  only those this pupil may be asked now
+ * @returns {ReviewEntry[]}
  */
 export function dueEntries(S, now, can = null) {
   const today = dayOf(now);
@@ -432,10 +466,10 @@ export const entryByKey = (S, k) => itemsOf(S).find((e) => e.k === k) || null;
 
 /**
  * Where in a session a missed cloze is asked again.
- * @param at   the position (0-based) of the question that was missed
- * @param n    the size of the session
- * @param rng  the random source
- * @returns the position to ask it at, or null if the session is too short
+ * @param {number} at   the position (0-based) of the question that was missed
+ * @param {number} n    the size of the session
+ * @param {import("../types").Rng} rng  the random source
+ * @returns {?number} the position to ask it at, or null if the session is too short
  */
 export function reaskAt(at, n, rng) {
   const [lo, hi] = REASK_GAP;

@@ -274,6 +274,9 @@ export type Effect =
   | { do: "remember"; list: string; key: string }
   | { do: "bump"; skill: SkillId; ok: boolean | null };
 
+/** The one effect that writes an answer (core/state.js `record`). */
+export type RecordEffect = Extract<Effect, { do: "record" }>;
+
 /** The result of `judge`, `judgeRetry` and `judgeBonus`. See the top of
     core/answer.js for what each field is for. */
 export interface Judgement {

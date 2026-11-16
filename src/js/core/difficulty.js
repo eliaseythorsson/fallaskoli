@@ -104,6 +104,11 @@
 import { SKILL_IDS } from "./skills.js";
 import { skillLevel } from "./progress.js";
 
+/** @typedef {import("../types").State} State */
+/** @typedef {import("../types").Session} Session */
+/** @typedef {import("../types").LevelRecord} LevelRecord */
+/** @typedef {import("../types").Policy} Policy */
+
 /* Difficulty runs 1-7: 1-5 is year 8, 6 is year 9 and 7 is year 10
  * (core/curriculum.js TOP_LEVEL). Levels 6 and 7 have sentences of their own
  * since v6.13: two subordinate clauses, þolmynd, viðtengingarháttur þátíðar,
@@ -130,7 +135,8 @@ const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
 
 /* ---------- the saved record ---------------------------------------------- */
 
-/** The saved record of one skill, or the default for a skill never met. Read-only. */
+/** The saved record of one skill, or the default for a skill never met. Read-only.
+    @param {State} S @param {string} skill @returns {LevelRecord} */
 export function levelRecord(S, skill) {
   const r = S && isObj(S.difficulty) ? S.difficulty[skill] : null;
   return isObj(r) ? r : { d: MIN, r: 0, h: "", at: 0, src: "play" };
@@ -156,13 +162,13 @@ export function recentAccuracy(h) {
  * at other levels say nothing about the new one. If the live session is
  * passed, the level takes effect at once (no warm-up for that skill).
  *
- * @param {object} S        the pupil's state (changed)
+ * @param {State} S        the pupil's state (changed)
  * @param {string} skill    a skill id (core/skills.js)
  * @param {number} level    the new level
- * @param {{source?: "cal"|"play"|"xp", now?: number, sess?: object,
+ * @param {{source?: "cal"|"play"|"xp", now?: number, sess?: Session,
  *          history?: string}} [opts]  `history`: outcomes to keep as the
  *          recent history, e.g. the calibration answers ("1"/"0")
- * @returns {object} the record written
+ * @returns {LevelRecord} the record written
  */
 export function setSkillLevel(S, skill, level, { source = "cal", now = Date.now(), sess = null, history = "" } = {}) {
   if (!SKILL_IDS.includes(skill)) throw new Error("Óþekktur flokkur: " + skill);
@@ -187,6 +193,9 @@ export function setSkillLevel(S, skill, level, { source = "cal", now = Date.now(
  * fewer than 60% right, since XP counts only the right answers. Only skills
  * above level 1 get a record. `at` is 0, so any record made by answering wins
  * a merge against it.
+ *
+ * @param {any} skills  `S.skills` as saved, of any age
+ * @returns {Record<string, LevelRecord>}
  */
 export function levelsFromXp(skills) {
   const out = {};
@@ -204,6 +213,9 @@ export function levelsFromXp(skills) {
 /**
  * A saved `difficulty` as it may be trusted: known skills only, every field
  * bounded. Used by `migrate` (core/state.js) and by the server's guard.
+ *
+ * @param {any} raw
+ * @returns {Record<string, LevelRecord>}
  */
 export function cleanLevels(raw) {
   const out = {};
@@ -247,7 +259,10 @@ export function mergeLevels(base, local, remote) {
  * costs nothing. `seenAt` remembers each record's time, so a newer one
  * brought in by a merge is noticed (`bumpDiff`).
  *
- * @returns {{diff: object, warm: object, seenAt: object, visitDay: string}}
+ * @param {State} S
+ * @param {string|null} day
+ * @returns {{diff: Record<string, number>, warm: Record<string, number>,
+ *            seenAt: Record<string, number>, visitDay: string|null}}
  */
 export function visitLevels(S, day) {
   const diff = {}, warm = {}, seenAt = {};
@@ -268,9 +283,13 @@ export const initDiff = (S) => visitLevels(S, null).diff;
  * See "where the level may go" at the top. Pure: the catalogue and the
  * sentences are passed in (core/ does not import tasks/).
  *
- * @param {object} P          an effective policy (core/policy.js createPolicy)
- * @param {object[]} types    tasks/registry.js TASKS: { id, skill, anyOf?, bands }
- * @param {object[]} sentences the lexicon's sentences ({ lvl })
+ * @param {Pick<Policy, "level"> & Partial<Pick<Policy, "minLevel"|"maxLevel"|"type">>} P
+ *        an effective policy (core/policy.js createPolicy); a test may pass
+ *        only the parts read here
+ * @param {{id: string, skill: string, anyOf?: string[], bands?: number[]}[]} types
+ *        tasks/registry.js TASKS
+ * @param {{lvl: number}[]} sentences the lexicon's sentences
+ * @returns {Record<string, [number, number]>}
  */
 export function levelRanges(P, types, sentences) {
   const lo = P.minLevel ?? MIN, polHi = P.maxLevel ?? MAX;
@@ -292,6 +311,10 @@ export function levelRanges(P, types, sentences) {
  * level above `hi` (a tightened policy, a calibration) would otherwise reach
  * the sentence fallback described at the top. Only the live level moves; the
  * saved one changes with the next answer in that skill.
+ *
+ * @param {Session} sess
+ * @param {Record<string, [number, number]>|null} ranges
+ * @returns {Session}
  */
 export function applyRanges(sess, ranges) {
   sess.range = ranges;
@@ -338,6 +361,13 @@ export function nextLevel({ live, r = 0, h = "", warm = null, lo = MIN, hi = MAX
  * write it, with the run and the history, into the saved state. Called once
  * per question by core/answer.js `settle` (the "bump" effect). `ok` that is
  * not true or false (a question with no right answer) changes nothing.
+ *
+ * @param {Session} sess
+ * @param {State} S
+ * @param {string} skill
+ * @param {boolean|null|undefined} ok
+ * @param {number} [now]  ms
+ * @returns {number} the live level after the answer
  */
 export function bumpDiff(sess, S, skill, ok, now = Date.now()) {
   if (typeof ok !== "boolean" || !skill) return diffOf(sess, skill);
@@ -359,7 +389,9 @@ export function bumpDiff(sess, S, skill, ok, now = Date.now()) {
   return n.live;
 }
 
+/** @param {Pick<Session, "diff">} sess @param {string} skill @returns {number} */
 export const diffOf = (sess, skill) => sess.diff[skill] ?? 1;
+/** @param {Pick<Session, "diff">} sess @param {string} skill @returns {number} */
 export const bandOf = (sess, skill) => clamp(Math.round(diffOf(sess, skill)), MIN, MAX);
 
 /* ---------- the second axis: word and cell hardness (item 16) ---------------- */
