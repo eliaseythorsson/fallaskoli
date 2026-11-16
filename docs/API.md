@@ -57,6 +57,8 @@ that record cannot be made `active` by anybody. See `docs/PRIVACY.md` §3.
 groupName, share: { board, minutes }, review }`. `rights` is the row from
 `ROLES` in `src/js/core/profile.js`; roles are `learner`, `guardian` and
 `admin`, and rights are enumerated rather than derived from the role's name.
+`canTeach` (v6.13) is the guardian's and the administrator's: the teacher's
+routes below.
 
 A wrong password and an unknown username produce the same 401, after the same
 amount of work. The login limit is per address and per name-and-address, never
@@ -72,13 +74,18 @@ only in the cookie.
 The rights the privacy notice promises, without going through anybody.
 
 ```
-GET  /account            -> { profile, consent, retention, canDelete }
+GET  /account            -> { profile, consent, retention, canDelete, teachers }
 GET  /account/export     -> everything held about me, as a file
 POST /account/name       { name }                 -> { ok, profile }      2–24 chars, unique in the group
 POST /account/password   { current, password }    -> { ok }               logs out every OTHER device
 POST /account/share      { board, minutes }       -> { ok, share }
 POST /account/delete     { password } | { username }  -> 204 + cookie cleared
 ```
+
+`teachers` (v6.13) is the nicknames of the guardians of a learner's group —
+the people who see their error patterns and assignment results (below); empty
+for anybody else. The export includes `assignments`: each assignment the user
+has sent a result for, with that result.
 
 `share` is who sees me, and it starts as nobody: `board` puts the user on the
 leaderboard and roster **of their own group**; `minutes` additionally shows time
@@ -204,6 +211,74 @@ The questions are not stored: both browsers build them from `seed` and `level`. 
 (nobody answered within 24 hours) are deleted on the next read; finished ones after 30 days.
 Erasing a user erases their duels; `/account/export` includes them.
 
+## The teacher: the class's patterns and assignments (v6.13)
+
+Items 37 and 65. A **teacher** is a user with the `canTeach` right: a
+`guardian` for **their own group only**, the `admin` for any group. Every
+`/teacher/…` route takes `?group=<id>` (default: the caller's own group) and
+answers 401 to nobody, 403 to a learner, 403 to a guardian asking about
+another group (or a group that does not exist — membership is checked before
+existence), and 404 to the administrator asking about a group that does not
+exist. One function, `needTeacher` in `server/server.mjs`, decides it.
+
+```
+GET    /teacher/groups              -> { mine, groups: [ { id, name, pupils } ] }
+GET    /teacher/patterns            -> { group: { id, name }, pupils: [ pupil ], columns: [ patternId ] }
+GET    /teacher/patterns.csv        -> the same table as text/csv (attachment)
+GET    /teacher/assignments         -> { group, limits, assignments: [ teacherView ], pupils: [ pupil ] }
+POST   /teacher/assignments         { group?, target: { kind, id }, n, due, note? }
+                                    -> { ok, assignment }   400 bad target/size/date/note · 409 12 open
+DELETE /teacher/assignments/:id     -> 204                  404 no such assignment
+
+GET    /assignments                 -> { assignments: [ pupilView ] }    a learner's open ones; [] for others
+POST   /assignments/:id/result      { i, j, c } -> { ok, assignment: pupilView }
+                                    400 not 0 ≤ c ≤ j ≤ i ≤ n, i ≥ 1 · 404 not your group's · 409 past
+                                    the deadline · 429 more than 50 results for one assignment
+```
+
+A `pupil` is `{ id, name, practised, diag }`; `diag` maps a pattern id to
+`{ n, w, seen, misses, rate, trend, active }` — what `standingOf`
+(`core/diagnosis.js`) gives for the pattern, the same figures the pupil sees
+under *Framvinda*, and nothing more: not the example words (`ex`), not the date
+of the last miss, not the raw history. "Ógreint" is in `diag` under `ogreint`
+(`active` always false). Only learners who are active and in the group are
+listed, by name. `columns` is the patterns that went wrong for somebody, the
+class's worst first: most pupils with it "algengt núna", then the class's miss
+rate over the recent window, then total misses (`core/classview.js`
+`classColumns`). The CSV has a row per pupil, the miss rate in whole percent
+per pattern (empty where not met lately) and the two Ógreint counts, separated
+by `;`, UTF-8 with a byte-order mark, and a nickname a spreadsheet would run as
+a formula is prefixed with `'`.
+
+A **target** (`core/assignment.js`) is one of
+`{ kind: "skill", id: <category> }`, `{ kind: "pattern", id: <pattern> }` (not
+`ogreint`, nor one in `NOT_AIMABLE`), `{ kind: "node", id: <curriculum node
+with questions> }` or `{ kind: "year", id: "8"|"9"|"10" }`. `n` is one of
+5, 10, 15, 20, 30; `due` a date (`YYYY-MM-DD`) from today to 60 days ahead,
+open until the end of that day (UTC, which is Iceland's time); `note` at most
+80 characters, no `<` or `>`. At most 12 open assignments per group. An
+assignment is erased 30 days after its deadline, results and all, on the next
+read — no job runs.
+
+A `pupilView` is `{ id, target, n, due, note, created, open, mine }`, `mine`
+being `{ i, j, c, done, at }` or null: the pupil sees their own result and
+nobody else's, and not who set it. A `teacherView` is `{ id, target, n, due,
+note, created, open, results: [ { id, name, res } ], columns }`, `res` being
+`{ i, j, c, done }` or null — no time and no count of tries — and `columns`
+the patterns the assignment's material tests, ordered as above.
+
+Which result counts: until the pupil has done the whole assignment, the latest
+attempt that got at least as far; after that, a later complete attempt only if
+it has a higher share right. The browser sends one result when a session on the
+assignment ends, finished or not (`app.js endRun`). Like a duel's result it is
+the browser's word: the server checks the numbers are possible, not that they
+are true (item 62 is about duels; homework is not a contest).
+
+Setting and deleting an assignment is written to the audit trail; looking at
+the table is not. Erasing a user removes their results; an assignment a
+guardian set stays with the group, its `by` cleared. Deleting a group deletes
+its assignments. All of it is in the backup.
+
 ## Error reports (v6.8)
 
 ```
@@ -270,8 +345,9 @@ A learner cannot be set `active` until consent is recorded; `consent` and
 `status` may be sent in the same request.
 
 **A guardian** (`canEditCurriculum` without `canAdminUsers`) may set the ceiling
-of a learner **in their own group** and nothing else — not the default, not
+of a learner **in their own group** and nothing else here — not the default, not
 another group. Until v6.3 a guardian could change the default for everybody.
+(Since v6.13 a guardian also has the teacher's routes, for the same group only.)
 
 Taking a user off the leaderboard touches the display only, and works in one
 direction: the administrator can hide somebody, and cannot show somebody who

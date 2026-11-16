@@ -12,15 +12,22 @@ export const ROLES = {
     canSeeOtherAnswers: false,    // never, whatever the role
     canEditCurriculum: false, canAdminUsers: false,
     canUploadData: false, canEditLeaderboard: false,
+    canTeach: false,
   },
+  /* The group's own adult: a parent for a family, a teacher for a class.
+     `canTeach` (v6.13, items 37 and 65): sees the error patterns of the
+     learners in their OWN group and sets them assignments. The server holds
+     it to the group (server/server.mjs `needTeacher`). */
   guardian: {
     canSeeOthers: true, canSeeOtherAnswers: false, canEditCurriculum: true,
     canAdminUsers: false, canUploadData: false, canEditLeaderboard: false,
+    canTeach: true,
   },
   /* One account. The server enforces that only one exists. */
   admin: {
     canSeeOthers: true, canSeeOtherAnswers: false, canEditCurriculum: true,
     canAdminUsers: true, canUploadData: true, canEditLeaderboard: true,
+    canTeach: true,             // any group: the administrator runs them all
   },
 };
 

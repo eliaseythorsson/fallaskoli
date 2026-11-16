@@ -108,6 +108,17 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     duels: () => call("GET", "/duels"),
     challenge: (opponent, topic, n) => call("POST", "/duels", { opponent, topic, n }),
     duelResult: (id, c, n, sig) => call("POST", `/duels/${enc(id)}/result`, { c, n, sig }),
+    /* --- assignments and the class's patterns (v6.13, items 37 and 65) ---
+       The pupil's side first; the rest is the teacher's (guardian or
+       administrator), and the server holds it to their own group. */
+    assignments: () => call("GET", "/assignments"),
+    assignmentResult: (id, r) => call("POST", `/assignments/${enc(id)}/result`, r),
+    teacherGroups: () => call("GET", "/teacher/groups"),
+    classPatterns: (group) => call("GET", `/teacher/patterns?group=${enc(group)}`),
+    classPatternsCsvUrl: (group) => url(`/teacher/patterns.csv?group=${enc(group)}`),
+    teacherAssignments: (group) => call("GET", `/teacher/assignments?group=${enc(group)}`),
+    setAssignment: (form) => call("POST", "/teacher/assignments", form),
+    removeAssignment: (id) => call("DELETE", `/teacher/assignments/${enc(id)}`),
     /* error reports (v6.8) */
     sendReport: (report) => call("POST", "/reports", report),
     reports: () => call("GET", "/admin/reports"),

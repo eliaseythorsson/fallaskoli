@@ -240,6 +240,11 @@ export async function renderAccount(app) {
     <p class="sub">Innskráð(ur) sem <b>${esc(p.username)}</b>${p.groupName ? ` · hópur: ${esc(p.groupName)}` : ""}.
       ${consent ? consent + ". " : ""}<a href="${esc(app.server.privacyUrl())}" data-privacy target="_blank"
       rel="noopener">Persónuvernd: hvað er geymt og hver sér það</a></p>
+    ${info && info.teachers && info.teachers.length ? `<p class="sub">${info.teachers.length === 1
+      ? `<b>${esc(info.teachers[0])}</b> er kennari eða forsjáraðili hópsins þíns og sér`
+      : `<b>${info.teachers.map(esc).join(", ")}</b> eru kennarar eða forsjáraðilar hópsins þíns og sjá`}
+      hvernig þér gengur í villumynstrum og verkefnum, til að geta hjálpað þér. Ekkert sem þú skrifar
+      í svörin sést, því það er aldrei geymt.</p>` : ""}
 
     <div class="setrow">
       <label for="ac-name">Gælunafn — það sem aðrir sjá. Ekki nota fullt nafn.</label>
@@ -629,7 +634,7 @@ async function usersPanel(app) {
           <select id="nu-group">${groupOptions("default")}</select>
           <label class="lbl" for="nu-role">Hlutverk</label>
           <select id="nu-role"><option value="learner">nemandi</option>
-            <option value="guardian">forsjáraðili (má stilla námsefni barna í sínum hópi)</option></select>
+            <option value="guardian">forsjáraðili eða kennari (stillir námsefni, sér villumynstur og setur verkefni í sínum hópi)</option></select>
           <div class="consentbox" id="nu-consent">
             <label><input type="checkbox" id="nu-over"> Notandinn er 16 ára eða eldri og samþykkir sjálfur</label>
             <label class="lbl" for="nu-guardian">Annars: nafn foreldris eða forsjáraðila sem samþykkti</label>

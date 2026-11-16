@@ -459,6 +459,33 @@ It is at the bottom of the **Gögn** tab and **only you can see it**. It holds:
 You cannot lock yourself out or remove your own administrator rights — the server
 refuses. Otherwise nobody could get in to undo it.
 
+### 4.2 A teacher for a class (v6.13)
+
+Make a group for the class, and an account for the teacher with the role
+**forsjáraðili eða kennari** in that group (*Nýr notandi*, or *Meira → Hlutverk*).
+That account then has a part of its own at the top of **Skólastofan**:
+
+- **Verkefni** — homework for the group: a category, an error pattern, a node
+  of the curriculum map or all of a year's material; 5–30 questions; a
+  deadline up to 60 days ahead; a short note. The pupils see it at the top of
+  *Æfa* and start it with one tap. The teacher sees who finished, their
+  scores, and the class's patterns on that material. At most 12 open at once
+  per group; each is erased 30 days after its deadline, results and all.
+- **Villumynstur hópsins** — every pupil of the group down the side, the error
+  patterns across the top (the class's worst first), the share of recent
+  answers that went wrong in each cell, and a *CSV* download for a
+  spreadsheet.
+
+A guardian sees **only their own group**. You, the administrator, see the same
+part for every group (a group picker appears). What a teacher sees, and what
+they do not, is in `docs/PRIVACY.md` §1 and in the notice; the pupils' own
+account page names their group's teacher.
+
+**Before you upgrade:** look at who has the guardian role in each group. A
+parent you made guardian of a group of several families will, from v6.13, see
+the patterns of every child in it. If that is not what the families agreed to,
+give each family its own group, or change the role.
+
 ---
 
 ## Part 5 — upgrading to a new version
@@ -479,6 +506,10 @@ The data is in `/var/lib/fallaskoli` and is not touched. (Coming from an older
 setup where it was in `server/data` inside the program folder: copy that
 folder's contents to `/var/lib/fallaskoli` once, before the `rm`, and run
 `chown -R fallaskoli: /var/lib/fallaskoli`.)
+
+**Coming to v6.13:** a guardian now sees the error patterns and assignment
+results of the learners in their own group (§4.2). The privacy notice has a new
+version; read §3 of `docs/PRIVACY.md` and tell the families.
 
 **Coming from v6.2:** everybody logs in again once (sessions are stored
 differently); nobody is on the leaderboard until they switch themselves on; and

@@ -55,10 +55,18 @@ import { weekKey, prevWeekKey, weekXp, newThisWeek, firstFinders, weekResult }
   from "../src/js/core/social.js";
 import { sanitisePolicy, createPolicy } from "../src/js/core/policy.js";
 import { chosenPolicy } from "../src/js/core/state.js";
+import { pupilStandings, classColumns, patternCSV, byName } from "../src/js/core/classview.js";
+import { ASSIGN, cleanTarget, patternsOf, dueProblem, isOpen, prune as pruneAssignments,
+         openCount as openAssignments, cleanResult, recordResult, viewForPupil }
+  from "../src/js/core/assignment.js";
+import { TASKS } from "../src/js/tasks/registry.js";
 import { DUEL, validTopic, validSize, duelSkills, duelLevel, dataPrint, sideOf, duelStatus, openCount,
          prune as pruneDuels, viewFor } from "../src/js/core/duel.js";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+/** The question types of a category, from the registry — for the patterns an
+    assignment on a whole category tests (core/assignment.js `patternsOf`). */
+const typesOfSkill = (id) => new Set(TASKS.filter((t) => t.skill === id || (t.anyOf || []).includes(id)).map((t) => t.id));
 import { htmlPath, VERSION } from "../tools/version.mjs";
 
 export const DEFAULT_GROUP = "default";
@@ -555,6 +563,10 @@ export function createApp({
       duels: (await store.duels()).filter((d) => d.a === u.id || d.b === u.id),
       errorReports: (await store.reports()).filter((r) => r.by === u.id)
         .map(({ reviewedBy, ...r }) => r),
+      /* v6.13: the result of each assignment they have sent one for. */
+      assignments: (await store.assignments()).filter((a) => a.res && a.res[u.id])
+        .map((a) => ({ id: a.id, target: a.target, n: a.n, due: a.due, created: a.created,
+          result: a.res[u.id] })),
       progressSavedAt: rec ? rec.at : null,
       progress: rec ? rec.state : null,
     };
@@ -571,6 +583,13 @@ export function createApp({
       consent: u.consent ? { by: u.consent.by, over16: !!u.consent.over16, at: u.consent.at } : null,
       retention: { inactiveMonths: privacy.inactiveMonths, backupDays: privacy.backupDays },
       canDelete: !(u.role === "admin"),
+      /* v6.13 (items 37, 65): who can see this learner's error patterns and
+         assignment results — the guardians of their group, by nickname. The
+         page says so in the pupil's own words. */
+      teachers: u.role === "learner"
+        ? (await store.users()).filter((x) => x.role === "guardian" && x.status === "active" &&
+            groupOf(x) === groupOf(u)).map((x) => x.name || x.username)
+        : [],
     });
   });
 
@@ -1018,6 +1037,232 @@ export function createApp({
     return json(res, 200, { ok: true, duel: viewFor(view, u.id, await duelNames(u), now) });
   });
 
+  /* --- the teacher: the class's patterns and assignments (v6.13) ----------
+   *
+   * Items 37 and 65 of the critique. Two things a teacher needs and the
+   * program did not have: the error patterns of the whole class on one
+   * screen, and homework they can set and check.
+   *
+   * WHO: a guardian of the group (`canTeach`, the group's own adult — the
+   * teacher of a class, the parent of a family), and the administrator, for
+   * any group. `needTeacher` is the one check, and the group a guardian asks
+   * about must be their own: another group's guardian gets 403, a pupil 403,
+   * nobody logged in 401.
+   *
+   * WHAT the teacher sees of a pupil: the nickname, the figures of each error
+   * pattern (`pupilStandings`, core/classview.js — the very numbers the pupil
+   * sees under Framvinda, by the same function), and the result of each
+   * assignment as numbers. Only learners who are active and in the group.
+   * Not the examples a pattern keeps, not a date, not whether they are on the
+   * board, and nothing they typed: the state does not hold it. The privacy
+   * notice says so (server/privacy.mjs), and the pupil's own account page
+   * names the group's teachers.
+   *
+   * Views are not written to the audit trail — a teacher looks every day, and
+   * 2,000 lines of "looked" would bury what the trail is for. Setting and
+   * removing an assignment is written there. */
+
+  /** May this request act as teacher of `groupId` (default: their own)?
+      Answers the request itself if not, and returns `{ me, group, name }`. */
+  async function needTeacher(req, res, groupId = null) {
+    const me = await currentUser(req);
+    if (!me) { json(res, 401, { error: "Ekki innskráð(ur)." }); return null; }
+    if (!can(me, "canTeach")) { json(res, 403, { error: "Þú hefur ekki þessi réttindi." }); return null; }
+    const group = groupId ? String(groupId) : groupOf(me);
+    /* Membership before existence, so a guardian cannot learn which groups
+       exist by asking for them. */
+    if (!can(me, "canAdminUsers") && group !== groupOf(me)) {
+      json(res, 403, { error: "Þetta er ekki hópurinn þinn." }); return null;
+    }
+    const groups = await groupsNow();
+    if (!groups[group]) { json(res, 404, { error: "Hópurinn er ekki til." }); return null; }
+    return { me, group, name: groups[group].name };
+  }
+
+  /** The learners of a group, each with the figures of their patterns. */
+  async function pupilsOf(group) {
+    const users = (await store.users()).filter((u) =>
+      u.role === "learner" && u.status === "active" && groupOf(u) === group);
+    const out = [];
+    for (const u of users) {
+      const rec = await store.stateRec(u.id);
+      out.push({ id: u.id, name: u.name || u.username, practised: !!rec,
+        diag: rec ? pupilStandings(rec.state) : {} });
+    }
+    return out.sort(byName);
+  }
+
+  /* The list of assignments, tidied: a closed one is erased `keepDays` after
+     its deadline, the next time anybody looks (as duels are). */
+  async function assignmentsNow(now = Date.now()) {
+    let list = await store.assignments();
+    const kept = pruneAssignments(list, now);
+    if (kept.length !== list.length) {
+      list = (await store.updateAssignments((cur) => {
+        const k = pruneAssignments(cur, now);
+        return k.length !== cur.length ? k : null;
+      })) || kept;
+    }
+    return list;
+  }
+
+  /** Which groups this user teaches: their own, or every group for the
+      administrator. For the group picker in Skólastofan. */
+  on("GET", "/teacher/groups", async (req, res) => {
+    const t = await needTeacher(req, res);
+    if (!t) return;
+    const users = await store.users();
+    const groups = await groupsNow();
+    const ids = can(t.me, "canAdminUsers") ? Object.keys(groups) : [t.group];
+    return json(res, 200, {
+      mine: groupOf(t.me),
+      groups: ids.map((id) => ({ id, name: groups[id].name,
+        pupils: users.filter((u) => u.role === "learner" && u.status === "active" && groupOf(u) === id).length })),
+    });
+  });
+
+  /* Item 37: the class's error patterns. `columns` is the class's worst
+     first (core/classview.js `classColumns`); "Ógreint" rides in each
+     pupil's `diag` under its own id and is drawn last. */
+  on("GET", "/teacher/patterns", async (req, res, { url }) => {
+    const t = await needTeacher(req, res, url.searchParams.get("group"));
+    if (!t) return;
+    const pupils = await pupilsOf(t.group);
+    return json(res, 200, { group: { id: t.group, name: t.name }, pupils,
+      columns: classColumns(pupils).map((c) => c.id) });
+  });
+
+  /* The same table as a file, for a spreadsheet. */
+  on("GET", "/teacher/patterns.csv", async (req, res, { url }) => {
+    const t = await needTeacher(req, res, url.searchParams.get("group"));
+    if (!t) return;
+    const buf = Buffer.from(patternCSV(await pupilsOf(t.group)), "utf8");
+    res.writeHead(200, {
+      "Content-Type": "text/csv; charset=utf-8", "Content-Length": buf.length,
+      "Cache-Control": "no-store",
+      "Content-Disposition": `attachment; filename="villumynstur-${dayOf()}.csv"`,
+      ...securityHeaders(req),
+    });
+    res.end(buf);
+  });
+
+  /* Item 65: the assignments of a group, with who has done them, their
+     scores, and the class's patterns on each one's material. */
+  on("GET", "/teacher/assignments", async (req, res, { url }) => {
+    const t = await needTeacher(req, res, url.searchParams.get("group"));
+    if (!t) return;
+    const now = Date.now();
+    const pupils = await pupilsOf(t.group);
+    const list = (await assignmentsNow(now)).filter((a) => a.group === t.group)
+      .sort((x, y) => y.created - x.created)
+      .map((a) => {
+        const only = patternsOf(a.target, typesOfSkill);
+        return {
+          id: a.id, target: a.target, n: a.n, due: a.due, note: a.note || "",
+          created: a.created, open: isOpen(a, now),
+          results: pupils.map((p) => {
+            const r = (a.res || {})[p.id];
+            return { id: p.id, name: p.name,
+              /* Numbers only: not when it was done, nor how many tries —
+                 the notice promises the teacher does not see when or how
+                 long a pupil practises. */
+              res: r ? { i: r.i, j: r.j, c: r.c, done: !!r.done } : null };
+          }),
+          columns: classColumns(pupils, only).map((c) => c.id),
+        };
+      });
+    return json(res, 200, { group: { id: t.group, name: t.name }, limits: ASSIGN,
+      assignments: list,
+      /* The figures behind `columns`, once for all the assignments. */
+      pupils: pupils.map((p) => ({ id: p.id, name: p.name, diag: p.diag })) });
+  });
+
+  on("POST", "/teacher/assignments", async (req, res) => {
+    const body = await readBody(req, 4096);
+    const t = await needTeacher(req, res, body?.group);
+    if (!t) return;
+    const target = cleanTarget(body?.target);
+    if (!target) return json(res, 400, { error: "Veldu efni verkefnisins." });
+    const n = Number(body?.n);
+    if (!ASSIGN.sizes.includes(n))
+      return json(res, 400, { error: `Fjöldi spurninga: ${ASSIGN.sizes.join(", ")}.` });
+    const now = Date.now();
+    const bad = dueProblem(body?.due, now);
+    if (bad) return json(res, 400, { error: bad });
+    const note = tidyName(body?.note).slice(0, ASSIGN.noteMax);
+    if (/[<>]/.test(note)) return json(res, 400, { error: "Athugasemdin má ekki innihalda < eða >." });
+    let problem = null, made = null;
+    await store.updateAssignments((cur) => {
+      const list = pruneAssignments(cur, now);
+      if (openAssignments(list, t.group, now) >= ASSIGN.maxOpen) {
+        problem = `Hópurinn er með ${ASSIGN.maxOpen} opin verkefni. Eyddu einhverju þeirra fyrst.`;
+        return null;
+      }
+      made = { id: crypto.randomBytes(9).toString("base64url"), group: t.group, by: t.me.id,
+        target, n, due: body.due, note, created: now, res: {} };
+      return [...list, made];
+    });
+    if (problem) return json(res, 409, { error: problem });
+    await audit(t.me.id, "setti verkefni", null, `${t.group}: ${target.kind} ${target.id}`);
+    return json(res, 200, { ok: true, assignment: viewForPupil(made, null, now) });
+  });
+
+  on("DELETE", /^\/teacher\/assignments\/([A-Za-z0-9_-]{6,40})$/, async (req, res, { params }) => {
+    const a = (await store.assignments()).find((x) => x.id === params[0]);
+    /* The group is the assignment's own: a teacher of another group gets the
+       same 403 as for asking about that group, and learns nothing more. */
+    const t = await needTeacher(req, res, a ? a.group : null);
+    if (!t) return;
+    if (!a) return json(res, 404, { error: "Verkefnið er ekki til." });
+    await store.updateAssignments((list) => {
+      const rest = list.filter((x) => x.id !== a.id);
+      return rest.length !== list.length ? rest : null;
+    });
+    await audit(t.me.id, "eyddi verkefni", null, t.group);
+    res.writeHead(204, securityHeaders(req)); res.end();
+  });
+
+  /* The pupil's side. Only a learner has assignments; an open one is listed
+     until its deadline has passed. */
+  on("GET", "/assignments", async (req, res) => {
+    const u = await needUser(req, res);
+    if (!u) return;
+    if (u.role !== "learner") return json(res, 200, { assignments: [] });
+    const now = Date.now();
+    const list = (await assignmentsNow(now))
+      .filter((a) => a.group === groupOf(u) && isOpen(a, now))
+      .sort((x, y) => x.due.localeCompare(y.due) || x.created - y.created)
+      .map((a) => viewForPupil(a, u.id, now));
+    return json(res, 200, { assignments: list });
+  });
+
+  on("POST", /^\/assignments\/([A-Za-z0-9_-]{6,40})\/result$/, async (req, res, { params }) => {
+    const u = await needUser(req, res);
+    if (!u) return;
+    const body = await readBody(req, 4096);
+    const now = Date.now();
+    let problem = null, view = null;
+    await store.updateAssignments((cur) => {
+      const list = pruneAssignments(cur, now);
+      const a = list.find((x) => x.id === params[0]);
+      if (!a || a.group !== groupOf(u) || u.role !== "learner") {
+        problem = [404, "Verkefnið er ekki til."]; return null;
+      }
+      if (!isOpen(a, now)) { problem = [409, "Skiladagurinn er liðinn."]; return null; }
+      const r = cleanResult(body, a.n);
+      if (!r) { problem = [400, "Ógild niðurstaða."]; return null; }
+      const prev = (a.res ||= {})[u.id] || null;
+      if (prev && (prev.tries || 0) >= ASSIGN.maxTries) {
+        problem = [429, "Þú hefur sent þetta verkefni mjög oft. Niðurstaðan þín er geymd."]; return null;
+      }
+      a.res[u.id] = recordResult(prev, r, a.n, now);
+      view = viewForPupil(a, u.id, now);
+      return list;
+    });
+    if (problem) return json(res, problem[0], { error: problem[1] });
+    return json(res, 200, { ok: true, assignment: view });
+  });
+
   /* --- the curriculum ceiling ------------------------------------------
    *
    * The owner: *"The admin and local admin decide what is possible, within what
@@ -1444,6 +1689,10 @@ export function createApp({
       return json(res, 400, { error: "Færðu notendurna í annan hóp fyrst." });
     await store.updateGroups((g) => { delete g[id]; return g; });
     await store.updateInvites((list) => list.filter((i) => i.group !== id));
+    await store.updateAssignments((list) => {
+      const rest = list.filter((a) => a.group !== id);
+      return rest.length !== list.length ? rest : null;
+    });
     await audit(me.id, "eyddi hópi");
     res.writeHead(204, securityHeaders(req)); res.end();
   });

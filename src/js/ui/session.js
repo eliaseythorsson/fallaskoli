@@ -21,6 +21,7 @@ import { dueNow } from "./progress.js";
 import { dueLine } from "../core/review.js";
 import { todayLine } from "../core/today.js";
 import { STREAK_N } from "../core/streak.js";
+import { targetName, KIND_NAME, dueText, assignmentPolicy } from "../core/assignment.js";
 
 export const RUN_SIZES = [10, 15, 20];
 
@@ -31,15 +32,18 @@ export const MINE = { id: "villur", nm: "Villurnar mínar", ico: "🎯",
 /* v6.13 (item 21): today's session — not a card among the others but the
    button above them (core/today.js plans it). */
 export const TODAY = { id: "dagsins", nm: "Dagsins lota", ico: "☀️" };
+/* v6.13 (item 65): a session that answers an assignment the teacher set. */
+export const ASSIGNED = { id: "verkefni", nm: "Verkefni", ico: "📌" };
 
 export function topicName(id) {
   if (id === MIXED.id) return MIXED.nm;
   if (id === MINE.id) return MINE.nm;
   if (id === TODAY.id) return TODAY.nm;
+  if (id === ASSIGNED.id) return ASSIGNED.nm;
   return skillName(id);
 }
 const topicIco = (id) => (id === MIXED.id ? MIXED.ico : id === MINE.id ? MINE.ico
-  : id === TODAY.id ? TODAY.ico : (skillById(id) || {}).ico || "");
+  : id === TODAY.id ? TODAY.ico : id === ASSIGNED.id ? ASSIGNED.ico : (skillById(id) || {}).ico || "");
 
 const typeName = (id) => (QUESTION_TYPES.find((q) => q.id === id) || {}).nm || id;
 const pct = (a, b) => (b ? Math.round((100 * a) / b) : 0);
@@ -63,6 +67,56 @@ export function usable(app, ids) {
   const want = focusTypes(ids);
   return TASKS.some((t) => want.has(t.id) && P.type(t.id) &&
     (t.anyOf ? t.anyOf.some((x) => P.skill(x)) : P.skill(t.skill)));
+}
+
+/* ---------- assignments (item 65) ------------------------------------------
+
+   The homework the group's teacher set, at the very top of Æfa: above today's
+   session, because it is the one thing somebody else asked for. One tap
+   starts it (app.js `startAssignment`). Only on a server; a pupil with no
+   server has no teacher, and `app.assignments` is empty. */
+
+/** Can this pupil be asked anything on the assignment's material? The
+    teacher's choice overrides the pupil's own switches, never the ceiling
+    the administrator or guardian set (core/assignment.js). */
+export function assignmentUsable(app, a) {
+  const P = assignmentPolicy(app.S, a.target);
+  return TASKS.some((t) => P.type(t.id) && (t.anyOf ? t.anyOf.some((x) => P.skill(x)) : P.skill(t.skill)));
+}
+
+/** How the pupil stands with one assignment, in a short line. */
+export function assignmentState(a) {
+  const m = a.mine;
+  if (!m) return "";
+  if (m.done) return m.j ? `✓ Lokið: ${m.c} af ${m.j} rétt. Þú mátt gera það aftur til að bæta þig.`
+    : "✓ Lokið. Þú mátt gera það aftur ef þú vilt.";
+  return `Byrjað: ${m.i} af ${a.n} spurningum. Byrjaðu aftur til að klára.`;
+}
+
+/**
+ * The cards, as HTML (pure, so tests/assignment.test.js can read it).
+ * `usable(a)` says whether the material can be asked; `now` is the clock.
+ */
+export function assignmentsHTML(list, { usable = () => true, now = Date.now() } = {}) {
+  const open = (list || []).filter((a) => a.open !== false);
+  if (!open.length) return "";
+  const row = (a) => {
+    const ok = usable(a), done = !!(a.mine && a.mine.done);
+    return `<div class="assignrow${done ? " done" : ""}">
+      <div class="assignwhat">
+        <b>${esc(targetName(a.target))}</b>
+        <span class="faint">${esc(KIND_NAME[a.target.kind] || "")} · ${a.n} spurningar · skil ${esc(dueText(a.due, now))}</span>
+        ${a.note ? `<span class="assignnote">${esc(a.note)}</span>` : ""}
+        ${assignmentState(a) ? `<span class="assignstate">${esc(assignmentState(a))}</span>` : ""}
+        ${ok ? "" : `<span class="assignstate warn">Ekki er hægt að spyrja um þetta efni með þeim stillingum sem umsjónarmaður hefur sett. Láttu kennarann vita.</span>`}
+      </div>
+      ${ok ? `<button type="button" class="${done ? "ghost" : "go"} assigngo" data-assign="${esc(a.id)}">${done ? "Gera aftur" : "Byrja →"}</button>` : ""}
+    </div>`;
+  };
+  return `<div class="assignbox">
+    <p class="eyebrow"><span>📌 ${open.length === 1 ? "Verkefni" : `Verkefni · ${open.length}`}</span><b>sett fyrir hópinn þinn</b></p>
+    ${open.map(row).join("")}
+  </div>`;
 }
 
 /* ---------- the picker ----------------------------------------------------- */
@@ -106,7 +160,9 @@ export function renderPicker(app) {
       <div class="answer"><button type="button" class="go todaygo" id="todaystart">${TODAY.ico} ${esc(TODAY.nm)} →</button></div>
       <p class="todayline">${esc(todayLine(plan))}</p>
     </div>` : "";
+  const assigned = assignmentsHTML(app.assignments, { usable: (a) => assignmentUsable(app, a) });
   el.innerHTML = `<div class="card runpick">
+    ${assigned}
     ${today}
     <div class="ownpick${today ? " second" : ""}">
     <p class="eyebrow">${today ? "<span>Eða veldu efni og fjölda spurninga</span>"
@@ -144,7 +200,10 @@ export function renderPicker(app) {
     topic === MINE.id ? act.map((p) => p.id) : null);
   const go = $("todaystart");
   if (go) go.onclick = () => app.startRun(TODAY.id, plan.n);
-  (go || $("runstart")).focus();
+  el.querySelectorAll("[data-assign]").forEach((b) => {
+    b.onclick = () => app.startAssignment(b.dataset.assign);
+  });
+  (el.querySelector(".assigngo.go") || go || $("runstart")).focus();
 }
 
 /* ---------- the line above a session --------------------------------------
@@ -197,7 +256,8 @@ export function renderRunBar(app) {
     dots.push(`<i class="${cls}"></i>`);
   }
   const shown = Math.min(r.n, r.i + (app.cur && app.cur.inRun && !app.cur.closed ? 1 : 0)) || 1;
-  const name = `${topicName(r.topic)}${r.focus && r.focus.length === 1 ? `: ${patternById(r.focus[0]).nm}` : ""}`;
+  const name = r.assignment ? `${ASSIGNED.nm}: ${targetName(r.assignment.target)}`
+    : `${topicName(r.topic)}${r.focus && r.focus.length === 1 ? `: ${patternById(r.focus[0]).nm}` : ""}`;
   const said = `${name}. Spurning ${shown} af ${r.n}${r.j ? `, ${r.c} rétt` : ""}.`;
   /* The dots say which were right; on a phone there is no room for twenty of
      them, so a thin bar along the bottom of the line says how far instead
@@ -300,6 +360,19 @@ export function confirmQuit(app, onYes) {
 
 /* ---------- the summary ----------------------------------------------------- */
 
+/** The line under the score after an assignment: what happened to the
+    result. `d.assignment.sent` is "ok", "retry", "refused" or null while the
+    server has not answered yet. */
+export function assignmentSummary(d) {
+  const a = d.assignment, nm = targetName(a.target);
+  const whole = d.i >= d.n && !d.early;
+  if (a.sent === "refused") return `📌 ${nm}: skiladagurinn var liðinn, svo niðurstaðan var ekki skráð.`;
+  if (a.sent === "retry") return `📌 ${nm}: ekki náðist samband til að skrá niðurstöðuna. Það verður reynt aftur sjálfkrafa.`;
+  const head = a.sent === "ok" ? "Niðurstaðan er skráð" : "Niðurstaðan er á leiðinni";
+  return whole ? `📌 Verkefninu „${nm}“ er lokið. ${head}.`
+    : `📌 ${nm}: þú svaraðir ${d.i} af ${d.n} spurningum. ${head}, og þú getur klárað verkefnið seinna.`;
+}
+
 /* v6.11: no line at all when there is nothing to show — an example with an
    empty right answer printed a bare "Rétt:". */
 const exLine = (ex) => !ex || !String(ex.right || "").trim() ? "" : String(ex.said || "").trim()
@@ -360,7 +433,11 @@ export function renderSummary(app) {
   if (page) next.push(`<button type="button" class="ghost lessonlink" data-lesson="${esc(page.id)}">📖 Lesa: ${esc(page.nm)}</button>`);
   const weak = weakWords(app.S, app.lex).find((w) => w.drillable);
   if (weak) next.push(`<button type="button" class="ghost" data-next="drill" data-key="${esc(weak.key)}">🛟 Bjarga orðinu <em>${esc(weak.lemma)}</em></button>`);
-  next.push(`<button type="button" class="${next.length ? "ghost" : "go"}" data-next="again">↻ Önnur lota: ${esc(topicName(d.topic))} · ${d.n}</button>`);
+  const again = d.assignment
+    ? ((app.assignments || []).some((a) => a.id === d.assignment.id && a.open !== false)
+      ? `<button type="button" class="${next.length ? "ghost" : "go"}" data-next="assign">↻ Gera verkefnið aftur</button>` : "")
+    : `<button type="button" class="${next.length ? "ghost" : "go"}" data-next="again">↻ Önnur lota: ${esc(topicName(d.topic))} · ${d.n}</button>`;
+  if (again) next.push(again);
   next.push(`<button type="button" class="ghost" data-next="pick">Velja annað efni</button>`);
 
   /* The diagnosis */
@@ -380,6 +457,7 @@ export function renderSummary(app) {
       <div class="sumscore xp"><b>+${d.xp}</b><span>XP</span></div>
       <div class="sumscore"><b>${d.badges.length}</b><span>${d.badges.length === 1 ? "nýtt merki" : "ný merki"}</span></div>
     </div>
+    ${d.assignment ? `<p class="assignsent">${esc(assignmentSummary(d))}</p>` : ""}
     <div class="sumdots" aria-hidden="true">${d.items.map((it) => `<i class="${it.ok === true ? "ok" : it.ok === false ? "no" : "opt"}"></i>`).join("")}</div>
     ${d.badges.length ? `<div class="sumbadges">${d.badges.map((b) => `<span class="runchip">${b.ico} ${esc(b.nm)}</span>`).join("")}</div>` : ""}
     <section class="sumsec"><h3>✓ Það sem gekk vel</h3><ul>${good.join("")}</ul></section>
@@ -395,6 +473,7 @@ export function renderSummary(app) {
       const what = b.dataset.next;
       if (what === "focus") app.startRun(MINE.id, 10, [f.id]);
       else if (what === "again") app.startRun(d.topic, d.n, d.focus);
+      else if (what === "assign") app.startAssignment(d.assignment.id);
       else if (what === "drill") { app.runDone = null; app.startDrill(b.dataset.key); }
       else { app.runDone = null; app.next(); }
     };
