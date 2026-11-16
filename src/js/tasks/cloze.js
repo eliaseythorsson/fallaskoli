@@ -10,15 +10,24 @@ import { readMark } from "../core/marks.js";
 import { wordKey } from "../core/state.js";
 import { explainSlot } from "./explain.js";
 import { substitutable, acceptsNoun, candidateNouns, settled, repeatsNoun } from "./frames.js";
-import { pick, wpick, askable, sentPool, drilling, wordWeight, isTimeNoun } from "./shared.js";
+import { pick, wpick, askable, sentPool, drilling, wordWeight, isTimeNoun, bandFor } from "./shared.js";
+
+/* How often a slot of each case is let through when the cloze is `balanced`
+   (critique item 15). The bank is full of subjects, so left alone 37% of the
+   clozes asked for the nominative, which a child hardly ever gets wrong, and
+   the dative and genitive, which are the hard cases, came to 18% and 15%.
+   These are acceptance odds for a randomly drawn sentence, not shares. */
+const CASE_ODDS = { NF: 0.12, "ÞF": 0.45, "ÞG": 0.9, EF: 1 };
 
 /**
  * The bare cloze task, or null.
  * @param noun  ask about this noun (the same word again after a wrong answer,
  *              or the word of a drill) — in a sentence that accepts it
  * @param only  (s, i) => boolean: use only slots this accepts
+ * @param balanced  ask for the hard cases more and the nominative less, and
+ *              (above þyngd 1) never where the answer is the word on the card
  */
-export function nounCloze(lex, view, rng, { noun = null, only = null } = {}) {
+export function nounCloze(lex, view, rng, { noun = null, only = null, balanced = false } = {}) {
   const P = view.policy;
   let s = null, n = null, a = null;
   const pool0 = sentPool(lex, view, "nafnord");
@@ -39,6 +48,9 @@ export function nounCloze(lex, view, rng, { noun = null, only = null } = {}) {
     a = readMark(t.m);
     if (!a.fall) continue;
     if (!askable(P, t.m)) continue;
+    /* Not in a drill: that asks about one word and takes the sentence it can get. */
+    const weigh = balanced && !drilling(view);
+    if (weigh && rng() >= CASE_ODDS[a.fall]) continue;
     const open = substitutable(s);
     /* A drill wants its own word, so a sentence with its noun fixed is no use. */
     if (drilling(view) && !open) continue;
@@ -58,6 +70,10 @@ export function nounCloze(lex, view, rng, { noun = null, only = null } = {}) {
       n = wpick(pool, (x) => wordWeight(lex, view, x, "nafnord"), rng);
     }
     if (!n || !n.forms[t.m]) continue;
+    /* The card prints the dictionary form; a slot whose answer is that very
+       form asks for nothing. At þyngd 1 it stays: the child is still learning
+       what the question is. */
+    if (weigh && bandFor(view, "nafnord") > 1 && n.forms[t.m].some((f) => f === n.o)) continue;
     break;
   }
   if (!n) return null;

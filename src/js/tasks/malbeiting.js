@@ -926,9 +926,16 @@ export function taskHunt(lex, view, rng) {
   return null;
 }
 
+const WORKSHOP_TOP_BAND = 3;
+
 export function taskWorkshop(lex, view, rng) {
   const P = view.policy;
-  const pool = sentPool(lex, view, PROD).filter((s) => !s.nf);
+  /* From þyngd 4 the sentences are nine words and more, mostly with a clause
+     or a two-case preposition that cannot be put on a card, and only three
+     were buildable (critique item 3). Grouping the unchanging words on one
+     card was tried and gave four. So the higher bands draw from the pool of
+     þyngd 2–3, which has about eighty. */
+  const pool = sentPool(lex, view, PROD, Math.min(bandFor(view, PROD), WORKSHOP_TOP_BAND)).filter((s) => !s.nf);
   for (const s of shuffle(pool, rng).slice(0, 120)) {
     const w = workshop(lex, s);
     if (!w) continue;
@@ -976,7 +983,7 @@ export const TYPES = [
   { id: "smidja", skill: "malbeiting", weight: 8, renderer: "smidja",
     tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun",
       "num", "verb:agree", "verb:mm", "verb:tense", "verb:vh"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
+    bands: [1, 2, 3],
     build: taskWorkshop },
   { id: "villur", skill: "malbeiting", weight: 8, renderer: "villur",
     tags: ["agree:kyn", "case:EF", "case:ÞF", "case:ÞGF", "gov:fs", "gov:so", "hunt",
