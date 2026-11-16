@@ -63,6 +63,40 @@
             "cal" (a calibration: items 40/84, `setSkillLevel`)
    A skill with no record is at level 1 with no history.
 
+   ---- the second axis: how hard the word and the cell are (item 16) ---------
+
+   The level above was, until v6.13, only the length of the sentence. But
+   *maður*, *kýr* and *bók* are harder than *hestur* in a sentence of any
+   length, and the genitive plural is harder than the accusative singular.
+   The build now scores both on a scale of 1–5 (irregularity.py: `irr` on
+   every noun, adjective and verb of the lexicon, and a table of cells), and
+   the SAME level chooses on that axis too — `hardnessWeight` below, used by
+   tasks/shared.js for the choice of word (`wordWeight`) and of cell
+   (`cellEase`).
+
+   The rule: a word or cell whose score is within the level's reach
+   (`hardReach`: 1 at level 1, one more per level, everything from level 5)
+   has full weight. Above the reach the weight falls by HARD_DECAY per point,
+   and never below HARD_FLOOR — in effect: one point above the reach a little
+   under half, anything further a fifth. So at level 1 a regular word is
+   five times as likely as *maður* — but *maður* still comes, and comes
+   more often than a fifth suggests because it is the commonest noun there
+   is (frequency is a separate factor in `wordWeight`). Nothing is ever
+   excluded: a pupil at a low level still meets hard words now and then, and
+   a word answered wrong comes back whatever its score.
+
+   What that does, measured on the v6.13 vocabulary (share of the weight of
+   all nouns / verbs that falls on words scored 4–5):
+       level 1   nouns  under 2%   verbs about 18%
+       level 5   nouns  6–7%       verbs about 38%
+   (verbs: the commonest verbs are nearly all strong, and stay common).
+
+   At high levels hard words are mixed in at their natural rate, not
+   favoured: the irregular words are also the common ones, so they are met
+   often enough without a push.
+
+   A word or cell without a score (the closed classes) is neutral: weight 1.
+
    Pure apart from the default clock argument (`now = Date.now()`), which a
    test or a simulation passes. */
 
@@ -322,3 +356,28 @@ export function bumpDiff(sess, S, skill, ok, now = Date.now()) {
 
 export const diffOf = (sess, skill) => sess.diff[skill] ?? 1;
 export const bandOf = (sess, skill) => clamp(Math.round(diffOf(sess, skill)), MIN, MAX);
+
+/* ---------- the second axis: word and cell hardness (item 16) ---------------- */
+
+/** The scale of the build's scores: `irr` of a word, the hardness of a cell. */
+export const HARD_MIN = 1, HARD_MAX = 5;
+/** What one point of hardness above the level's reach costs in weight. */
+export const HARD_DECAY = 0.45;
+/** The least weight a word or cell ever has, however far above the reach. */
+export const HARD_FLOOR = 0.2;
+
+/** The hardest score that has full weight at this level: 1 at level 1, one
+    more per level (in fractions, as the level moves in halves), all from 5. */
+export const hardReach = (level) =>
+  clamp(HARD_MIN + ((Number(level) || MIN) - MIN), HARD_MIN, HARD_MAX);
+
+/**
+ * The weight of a word or a cell of hardness `score` (1–5) for a pupil at
+ * `level` (1–7): 1 within reach, falling above it, never under HARD_FLOOR.
+ * A missing score is neutral. Pure.
+ */
+export function hardnessWeight(level, score) {
+  if (typeof score !== "number" || !Number.isFinite(score)) return 1;
+  const over = clamp(score, HARD_MIN, HARD_MAX) - hardReach(level);
+  return over <= 0 ? 1 : Math.max(HARD_FLOOR, Math.pow(HARD_DECAY, over));
+}

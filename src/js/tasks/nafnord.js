@@ -18,7 +18,7 @@ import { built } from "./effects.js";
 import { withView } from "./view.js";
 import { nounCloze } from "./cloze.js";
 import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, wordWeight,
-         cellWeight, cap1 } from "./shared.js";
+         cellWeight, cellEase, cap1 } from "./shared.js";
 
 /* ================= Cloze — noun (± adjective) =========================== */
 
@@ -141,7 +141,10 @@ export function tableNoun(lex, view, rng) {
   const mine = fc ? cols.filter(hasCell) : cols;
   if (!mine.length) return null;
   const col = fc ? mine[0]
-    : wpick(cols, (c) => CASES.reduce((a, cs) => a + cellWeight(S, mark(cs.k, c.k)), 0), rng);
+    /* What this pupil gets wrong (`cellWeight`), and at a low level the
+       plain singular before the plural with the article (`cellEase`). */
+    : wpick(cols, (c) => CASES.reduce((a, cs) => a + cellWeight(S, mark(cs.k, c.k))
+      * cellEase(lex, view, "nafnord", mark(cs.k, c.k)), 0), rng);
   return built({
     type: "table", kind: "no", skill: "nafnord", w: n,
     cells: CASES.map((cs) => ({ m: mark(cs.k, col.k), label: cs.name })),
@@ -157,7 +160,7 @@ export const TYPES = [
     build: taskFill, drill: fillWord },
   { id: "tbl_no", skill: "nafnord", weight: 5, renderer: "table",
     tags: ["case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun", "num"],
-    bands: [1],
+    bands: [1, 2, 3, 4, 5],
     build: tableNoun },
   { id: "no_val", skill: "nafnord", weight: 8, renderer: "choice",
     tags: ["case:EF", "case:NF", "case:ÞF", "case:ÞGF", "noun", "num"],

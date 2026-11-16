@@ -18,7 +18,7 @@ import { explainDegree } from "./explain.js";
 import { nounSentence, adjectiveSentence, showable } from "./frames.js";
 import { built } from "./effects.js";
 import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, cellWanted,
-         topByRank, wordWeight, cap1, caseWord } from "./shared.js";
+         topByRank, wordWeight, cellEase, cap1, caseWord } from "./shared.js";
 
 /* ================= Beygingartafla ======================================== */
 
@@ -138,11 +138,14 @@ export function taskReverse(lex, view, rng) {
     if (["kk", "kvk", "hk"].includes(p.cls)) marks = marks.filter((m) => showable(w, m));
     if (!marks.length) continue;
 
+    /* Cells this pupil gets wrong come more often; at a low level the
+       easier cells do (`cellEase`, item 16). */
+    const ease = (mm) => cellEase(lex, view, p.skill, mm);
     const m = wpick(marks, (mm) => {
       const rec = S.cells[mm];
-      if (!rec) return 2;
+      if (!rec) return 2 * ease(mm);
       const n = rec.c + rec.w;
-      return n < 3 ? 2 : 0.5 + 2.5 * (rec.w / n);
+      return (n < 3 ? 2 : 0.5 + 2.5 * (rec.w / n)) * ease(mm);
     }, rng);
     const form = w.forms[m].find((f) => counts.get(f) === 1);
     if (!form) continue;
@@ -325,7 +328,7 @@ export const TYPES = [
     build: taskReverse },
   { id: "tbl_lo", skill: "lysingarord", weight: 6, renderer: "table",
     tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 3, 4],
+    bands: [1, 2, 3, 4, 5],
     build: tableAdj },
   /* The three below read the band in one place only: the rank cap on the
      adjectives tried in a FRAME (`adjSlot`), which lets in a few more words at
