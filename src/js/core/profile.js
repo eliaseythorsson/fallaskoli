@@ -63,3 +63,43 @@ export function passwordProblem(pw) {
   if (/^(.)\1+$/.test(s)) return "Lykilorðið má ekki vera sami stafurinn aftur og aftur.";
   return null;
 }
+
+/* ---------- Icelandic as a second language (v6.13, critique item 45) -------
+ *
+ * Many pupils in years 8–10 learn Icelandic as a second language, and both
+ * what they get wrong and what helps them differ from a native teenager.
+ * One switch, two ways to throw it:
+ *
+ *   settings.secondLanguage   the pupil's own, under Stillingar. Saved with
+ *                             the progress, so it follows them between devices.
+ *   settings.l2Teacher        the group's teacher turned it on for this pupil
+ *                             (server: POST /teacher/secondlanguage, kept on
+ *                             the account as `l2`). The app copies it in from
+ *                             /auth/me at every start, so it is always the
+ *                             server's current answer; on a file or a plain
+ *                             host there is no teacher and it is never set.
+ *
+ * Either one turns the mode on; the pupil cannot switch off what the teacher
+ * switched on (the box is shown ticked and greyed, with the reason).
+ *
+ * What the mode changes, and where:
+ *   - Villuveiðar keeps the GENERATED error hunts at every þyngd rather than
+ *     the bank of native teenagers' slips (tasks/malbeiting.js `huntSource`,
+ *     the hook item 26 left);
+ *   - every content word of a question's sentence can be tapped for its
+ *     dictionary entry (ui/secondlang.js `glossToken`);
+ *   - the level rises in quarter steps instead of half (core/difficulty.js
+ *     `riseStep`);
+ *   - a "Lesa upphátt" button reads the sentence aloud, with an Icelandic
+ *     voice the device itself has (ui/secondlang.js `icelandicVoice`).
+ *
+ * Pure: reads the state and nothing else. */
+export function secondLanguageSource(S) {
+  const s = (S && S.settings) || {};
+  if (s.l2Teacher === true) return "teacher";
+  if (s.secondLanguage === true) return "pupil";
+  return null;
+}
+
+/** Is the second-language mode on for this pupil? */
+export const secondLanguage = (S) => secondLanguageSource(S) !== null;

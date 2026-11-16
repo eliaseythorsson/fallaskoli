@@ -103,6 +103,7 @@
 
 import { SKILL_IDS } from "./skills.js";
 import { skillLevel } from "./progress.js";
+import { secondLanguage } from "./profile.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Session} Session */
@@ -120,6 +121,23 @@ export const clamp = (v, a = MIN, b = MAX) => Math.max(a, Math.min(b, v));
 
 /** The step up after two right in a row, and down after one wrong (item 12). */
 export const STEP = 0.5;
+
+/* The second-language mode (item 45, core/profile.js) climbs more gently: a
+   QUARTER step up after two right in a row; a wrong answer still costs the
+   full half step. Two things follow, and both are meant:
+     * the climb is half as fast — an all-right run of twenty answers goes
+       from 1 to 3.5 rather than to 6;
+     * the level settles where more is answered right. With up u and down d
+       the staircase balances where u·p²/(1+p) = d·(1−p), i.e. p² = d/(u+d):
+       71% right with u = d, 82% with u = d/2 (and the UP_GATE of 80% sits
+       just under that, so it seldom has anything left to hold back).
+   A pupil still learning the language meets the next þyngd later, and
+   meets more of the one they are at; the warm-up and its give-back are the
+   same as everybody's. */
+export const STEP_L2 = 0.25;
+
+/** The step up for this pupil: STEP, or STEP_L2 in the second-language mode. */
+export const riseStep = (S) => (secondLanguage(S) ? STEP_L2 : STEP);
 /** How far below its last level a skill starts a new visit (item 11). */
 export const WARMUP = 0.5;
 /** Right answers in a row that earn a step up. */
@@ -329,11 +347,12 @@ export function applyRanges(sess, ranges) {
 /**
  * The rule, on numbers alone. Pure.
  *
- * @param {{live:number, r?:number, h?:string, warm?:?number, lo?:number, hi?:number}} at
+ * @param {{live:number, r?:number, h?:string, warm?:?number, lo?:number, hi?:number,
+ *          rise?:number}} at   `rise`: the step up (STEP, or STEP_L2 — `riseStep`)
  * @param {boolean} ok
  * @returns {{live:number, r:number, h:string}}
  */
-export function nextLevel({ live, r = 0, h = "", warm = null, lo = MIN, hi = MAX }, ok) {
+export function nextLevel({ live, r = 0, h = "", warm = null, lo = MIN, hi = MAX, rise = STEP }, ok) {
   const hist = (String(h) + (ok ? "1" : "0")).slice(-WINDOW);
   const acc = recentAccuracy(hist);
   const mayRise = acc === null || acc >= UP_GATE;
@@ -350,7 +369,7 @@ export function nextLevel({ live, r = 0, h = "", warm = null, lo = MIN, hi = MAX
     run = r + 1;
     if (run >= RUN_UP) {
       run = 0;
-      if (mayRise) next = up(live + STEP);
+      if (mayRise) next = up(live + rise);
     }
   }
   return { live: round2(next), r: run, h: hist };
@@ -381,7 +400,7 @@ export function bumpDiff(sess, S, skill, ok, now = Date.now()) {
   }
   const [lo, hi] = (sess.range && sess.range[skill]) || [MIN, MAX];
   const n = nextLevel({ live: sess.diff[skill] ?? rec.d, r: rec.r, h: rec.h,
-    warm: sess.warm[skill], lo, hi }, ok);
+    warm: sess.warm[skill], lo, hi, rise: riseStep(S) }, ok);
   delete sess.warm[skill];
   sess.diff[skill] = n.live;
   (S.difficulty ||= {})[skill] = { d: n.live, r: n.r, h: n.h, at: now, src: "play" };

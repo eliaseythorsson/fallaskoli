@@ -46,6 +46,8 @@ It is not legal advice. For a real question, Persónuvernd answers them:
 | Statistics without people (v6.13) | Right and wrong answers are counted per question type, level, inflection cell and irregularity score, with no account, group or time, to set the difficulty automatically. A learner can switch their own contribution off. See §1b. |
 | A class goal shows totals only (v6.13) | When a guardian sets a weekly goal, the group sees one total its learners' answers feed into — never who put in what, and nothing in a group of fewer than five. See §1c. |
 | A live round keeps nothing; a team duel keeps numbers (v6.13) | A round on the projector lives in memory for the lesson; the wall names only pupils who are on the leaderboard, everyone else is a numbered player. A team duel keeps numbers only; the teacher sees their own pupils' results, the pupils only the teams' means. See §1d. |
+| A second-language flag that nobody else sees (v6.13) | One yes/no, set by the pupil or by their group's guardian; it changes what the app shows and nothing else. Reading aloud uses an on-device voice only. See §1e. |
+| A pupil's own sentences are checked and forgotten (v6.13) | Ritun vikunnar: off for every group until its guardian switches the check on; the text is read over by GreynirCorrect on this server and kept only if the guardian also switches keeping on (at most 12 per pupil, 60 days). See §1f. |
 | A teacher sees only what helps them teach (v6.13) | The guardian of a group sees, for the learners of that group only, the error-pattern figures the child sees themselves, and the scores of assignments — never anything typed, never a date. The child's account page names who that is. See §1a. |
 
 What it does **not** do, and you should know:
@@ -258,6 +260,67 @@ backup.
 
 ---
 
+## 1e. Icelandic as a second language (v6.13, item 45) — a separate paragraph
+
+*In the notice from version `2026-11-21` (§3).*
+
+A pupil can switch on the **second-language mode** under Stillingar, or the
+group's guardian can switch it on for a pupil in Skólastofan. It changes what
+the program shows (word glosses, a slower climb in difficulty, the kind of error
+hunt, reading aloud) and nothing else.
+
+- **What is stored:** one yes/no. The pupil's own switch is a setting in the
+  progress (`settings.secondLanguage`), like every other setting. The guardian's
+  is one flag on the account (`l2` in `users.json`), returned to the pupil's
+  app as `profile.secondLanguage` and copied into the settings at start-up. It
+  is in the pupil's own export and goes with the account. Turning it on or
+  off is written to the audit trail, by id.
+- **Why it is worth a paragraph:** "learns Icelandic as a second language" can
+  hint at a child's background. It is not a special category (Art. 9) by
+  itself, but it is the kind of fact a family may not want recorded without
+  being asked. So: it is never shown to other pupils, never on the board,
+  never in the class table or the skill map; the guardian sees it only for
+  their own group's pupils; and **agree with the pupil (and the family) before
+  switching it on** — the pupil can always do it themselves, which is the
+  better route.
+- **Reading aloud** uses only a voice that runs on the device itself
+  (`localService`); a browser's network voice, which would send the sentence
+  to a company to be spoken, is not used, and with no on-device Icelandic
+  voice the button is not shown. Nothing is sent anywhere.
+- **The glosses** come from the dictionary bundled in the program (or the
+  server's `/definitions`, which already exists); looking a word up sends
+  nothing new.
+
+## 1f. Ritun vikunnar: what a pupil writes (v6.13, item 46) — a separate paragraph
+
+*In the notice from version `2026-11-21` (§3). The summary's sentence
+"Það sem þú skrifar í svörin er ekki geymt" stays true for answers; the short
+version says in its own sentence that the Ritun vikunnar text is sent only with
+the check on and kept only with keeping on, and the notice's own paragraph on
+Ritun vikunnar gives the details.*
+
+Once a week the pupil writes three sentences of their own on an everyday topic.
+This is the first place the server can receive **free text a child wrote**, so
+the defaults are the strictest available:
+
+| | |
+|---|---|
+| **Default** | **Off for every group.** The task is still offered; the pupil reads their text against a short checklist, and nothing is sent. |
+| **The check** (`groups.json`: `writing.check`) | Switched on per group by its guardian (or the administrator). Then "Lesa yfir" sends the text to **this server**, where GreynirCorrect (Miðeind's open-source checker, run as a local process: `server/greynir_worker.py`) reads it and the remarks come back. **No third party** receives it; it is not a new processor. The text is held in memory for one request, passed to the worker over a pipe, and **not written to any file or log** (errors are logged by kind only; the worker's stderr is discarded). |
+| **Keeping** (`writing.keep`) | A second, separate switch, only possible with the check on. Then each checked text is stored in `writing.json` with the pupil's id, the group, the week and the topic, for the group's guardian (and the administrator) to read in Skólastofan. At most **12 per pupil**, none older than **60 days** (`WRITING.keepPerPupil`, `WRITING.keepDays` in `src/js/core/writing.js`; pruned on every read and write and by the daily sweep). Switching keeping (or the check) **off deletes every kept text of the group at once.** |
+| **What the pupil is told** | Before sending, the card says whether the text will be kept, in so many words. The notice (`/personuvernd`) has its own paragraph. |
+| **Rights** | Kept texts are in the pupil's own export (`keptTexts`) and are erased with the account (`eraseUser`); a pupil moved to another group is no longer shown to the old group's guardian. They are in backups for as long as a backup lives (§6). |
+| **The progress** | Records only the Monday of the week the task was finished (`settings.writingDone`), never the text or the topic. |
+
+**Before switching keeping on**, tell the families: it is the one place where
+a pupil's own words, rather than numbers, are stored. Advise pupils (the card
+does) to write about everyday things and nothing private; the topics are
+chosen so that nothing private is needed. Abuse limits: 30 checks an hour per
+account, 600 characters per text, 8 seconds per check, after which the worker
+is killed and restarted.
+
+---
+
 ## 2. Record of processing (Art. 30) — *vinnsluskrá*
 
 Fill in the bracketed parts and keep it with your papers. If Persónuvernd ever
@@ -266,14 +329,14 @@ asks for it they may want it in Icelandic; the content is what matters.
 | | |
 |---|---|
 | **Controller** | [your name], [address], [the contact address in the notice] |
-| **Purpose** | Running an Icelandic grammar trainer for invited children and their families: logging in, keeping progress across devices, an optional leaderboard within a group, (v6.13) letting the group's teacher or guardian see the group's error patterns and a pupil's skill map, set and check assignments and set a weekly class goal, (v6.13) live rounds in class and team duels set by the teacher, and (v6.13) setting the difficulty of the questions from anonymous counts of right and wrong answers and checking the error diagnosis against an anonymous sample of wrong word forms. |
+| **Purpose** | Running an Icelandic grammar trainer for invited children and their families: logging in, keeping progress across devices, an optional leaderboard within a group, (v6.13) letting the group's teacher or guardian see the group's error patterns and a pupil's skill map, set and check assignments and set a weekly class goal, (v6.13) live rounds in class and team duels set by the teacher, (v6.13) setting the difficulty of the questions from anonymous counts of right and wrong answers and checking the error diagnosis against an anonymous sample of wrong word forms, (v6.13) adapting the practice for a learner of Icelandic as a second language, and (v6.13) reading over a few sentences a pupil writes, where the group's guardian switches it on. |
 | **Legal basis** | Consent, Art. 6(1)(a) — the user's own from 16, a parent's or guardian's below. Recorded per account. |
 | **Data subjects** | Invited learners (mostly teenagers); their parents or guardians (name only, as the consent record); administrators. |
-| **Data** | Username; nickname; password hash; role, group, status; date created; day last seen; consent record (who, when, how, notice version); visibility choices; progress (XP, levels, badges with dates, which words and inflection cells were practised and how often right or wrong, answers and minutes per day, settings); results of assignments set by the group's guardian (answered, right, finished); team duels (team, right answers); during a live round only, in memory, right answers and points; the learner's own choice about being counted in the statistics. For one day: how many of the account's answers have been counted that day (§1b). Transiently: IP address, for rate-limiting, in memory only. **Anonymous, not personal data:** the counts of right and wrong answers; and, only for groups whose teacher switched it on, the sample of wrong word forms (§1b). |
-| **Not collected** | Email, real name, date of birth, kennitala, phone, photos, free text (the sample of §1b keeps single word forms that resemble the word asked about, and nothing else a pupil types). No special categories. |
-| **Recipients** | Other users of the same group, only what the user switches on. The guardian(s) of the user's own group: the error-pattern figures, the skill map, assignment and team-duel results (§1a, §1d). The whole group, only when its guardian sets a weekly goal: one total for the week that the user's right answers or sessions are part of (§1c). The group, on the projector in a live round: the nickname of a pupil on the leaderboard among the top five, otherwise an alias (§1d). Processor: Fly.io, Inc. (hosting). Nobody else. |
+| **Data** | Username; nickname; password hash; role, group, status; date created; day last seen; consent record (who, when, how, notice version); visibility choices; progress (XP, levels, badges with dates, which words and inflection cells were practised and how often right or wrong, answers and minutes per day, settings); results of assignments set by the group's guardian (answered, right, finished); team duels (team, right answers); during a live round only, in memory, right answers and points; the learner's own choice about being counted in the statistics; whether Icelandic is the learner's second language (one yes/no, §1e); the Monday of the week the learner finished Ritun vikunnar, and — only where the group's guardian switched keeping on — the text the learner wrote there, with week and topic (§1f). For one day: how many of the account's answers have been counted that day (§1b). Transiently: IP address, for rate-limiting, in memory only. **Anonymous, not personal data:** the counts of right and wrong answers; and, only for groups whose teacher switched it on, the sample of wrong word forms (§1b). |
+| **Not collected** | Email, real name, date of birth, kennitala, phone, photos, free text (the sample of §1b keeps single word forms that resemble the word asked about; the one exception is Ritun vikunnar, and only where keeping is switched on, §1f). No special categories (the second-language flag is not one, but is treated with care, §1e). |
+| **Recipients** | Other users of the same group, only what the user switches on. The guardian(s) of the user's own group: the error-pattern figures, the skill map, assignment and team-duel results (§1a, §1d), the second-language flag (§1e), and kept Ritun vikunnar texts where keeping is on (§1f). The whole group, only when its guardian sets a weekly goal: one total for the week that the user's right answers or sessions are part of (§1c). The group, on the projector in a live round: the nickname of a pupil on the leaderboard among the top five, otherwise an alias (§1d). Processor: Fly.io, Inc. (hosting). Nobody else. |
 | **Transfers outside the EEA** | Data is stored in Amsterdam. The processor is a US company certified under the EU–US Data Privacy Framework and bound by its data processing agreement (check the signed copy for the transfer terms). |
-| **Retention** | While the account exists; erased after 18 months without a login; unanswered access requests after 30 days; backups at most 30 days. The one-day tally: until the next day. Anonymous counts fade by 15 % a week; a sampled answer is kept at most 12 months. |
+| **Retention** | While the account exists; erased after 18 months without a login; unanswered access requests after 30 days; backups at most 30 days. The one-day tally: until the next day. Anonymous counts fade by 15 % a week; a sampled answer is kept at most 12 months. A text written in Ritun vikunnar: not at all, or — with keeping on — at most 12 per pupil and 60 days, and all of a group's at once when keeping goes off. |
 | **Security** | See §1. |
 | **Last reviewed** | [date] |
 
@@ -316,12 +379,14 @@ kept). `2026-11-18`: the class goal's weekly total, which every learner of the
 group feeds and the group sees (§1c). `2026-11-19`: the teacher can open one
 pupil's skill map (§1a). `2026-11-20`: live rounds in class (nothing stored; on
 the wall a pupil is named only if on the leaderboard) and team duels (the
-teacher sees each pupil's result) (§1d). All arrive with v6.13, so one message
+teacher sees each pupil's result) (§1d). `2026-11-21`: the second-language
+flag (§1e) and Ritun vikunnar, the first free text a pupil writes that the
+server may receive, and — with keeping on — store for the teacher (§1f). All arrive with v6.13, so one message
 to the families covers them, and a family is told once, of the last version.
 The date is the notice's version, not the day
 you deploy; set it to your release date if you prefer, and then give
 `CALIBRATION_NOTICE` in the same file that date too. Until then the two
-differ (`2026-11-17` and `2026-11-20`) on purpose: `CALIBRATION_NOTICE` names
+differ (`2026-11-17` and `2026-11-21`) on purpose: `CALIBRATION_NOTICE` names
 the first version that describes the anonymous count, and must never be
 later than the notice that is live (a test holds it).
 
@@ -386,6 +451,7 @@ Note each request and what you did; a line in a notebook is enough.
 | The anonymous counts of right and wrong answers | They fade: ×0.85 every week, and a count that has faded to nothing is dropped | Automatic |
 | The log of what calibration changed | The last 60 weekly runs; no people in it | Automatic |
 | A sampled wrong answer (only if a teacher switched it on) | 12 months (`SAMPLE.months`, printed in the notice), at most 500 at a time | Automatic; *Eyða sýninu* erases all at once |
+| A text written in Ritun vikunnar | Not kept, unless the group's guardian switched keeping on: then at most 12 per pupil and 60 days (`WRITING.keepPerPupil`, `WRITING.keepDays`, printed in the notice) | Automatic; switching keeping or the check off erases the group's texts at once |
 
 ---
 

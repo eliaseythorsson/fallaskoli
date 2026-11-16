@@ -477,7 +477,7 @@ test("the privacy notice says what the teacher sees, and the version moved", asy
   const r = await C.anon("GET", "/personuvernd");
   assert.match(r.text, /Kennari eða forsjáraðili hópsins þíns/);
   assert.match(r.text, /villumynstrin þín/);
-  assert.match(r.text, /aldrei það sem þú skrifar/);
+  assert.match(r.text, /aldrei það sem þú skrifar í svörin/);
   assert.match(r.text, new RegExp(`eyðist ${ASSIGN.keepDays} dögum eftir skiladag`));
   assert.doesNotMatch(r.text, /Síðast breytt 2026-11-11/);
   /* Item 83: the teacher can open the skill map, and the version moved again. */

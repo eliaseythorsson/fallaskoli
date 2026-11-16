@@ -29,6 +29,8 @@ import { drawLiveTeacher } from "./live.js";
 import { drawTeamTeacher } from "./teamduel.js";
 import { CLASS_GOAL, GOAL_OPTIONS, goalText, progressText } from "../core/classgoal.js";
 import { renderClassGoal } from "./classgoal.js";
+import { drawTeacherL2 } from "./secondlang.js";
+import { drawTeacherWriting } from "./writing.js";
 
 const verdict = (text, kind = "bad") =>
   (text ? `<div class="verdict ${kind}"><p>${esc(text)}</p></div>` : "");
@@ -311,7 +313,9 @@ export async function renderTeacher(app) {
     <div class="polactions"><label class="lbl" for="tc-pupil">Nemandi</label>
       <select id="tc-pupil"><option value="">Veldu nemanda…</option></select></div>
     <div id="tc-map" aria-live="polite"></div>
-    <div id="tc-samples"></div>`;
+    <div id="tc-samples"></div>
+    <div id="tc-l2"></div>
+    <div id="tc-writing"></div>`;
 
   const sel = $("tc-group");
   if (sel) sel.onchange = () => { chosenGroup = sel.value; renderTeacher(app); };
@@ -384,5 +388,7 @@ export async function renderTeacher(app) {
   };
 
   $("tc-what").innerHTML = targetOptionsHTML();
-  await Promise.all([drawTable(), drawList(), drawSamples(app, group), drawGoal(app, group)]);
+  await Promise.all([drawTable(), drawList(), drawSamples(app, group), drawGoal(app, group),
+    drawTeacherL2(app, group),                      // item 45, ui/secondlang.js
+    drawTeacherWriting(app, group)]);               // item 46, ui/writing.js
 }

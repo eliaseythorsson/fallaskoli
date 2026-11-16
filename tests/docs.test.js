@@ -35,7 +35,8 @@ test("every file a document names in backticks exists", () => {
   const exists = (p) => BASES.some((b) => fs.existsSync(path.join(ROOT, b, p)));
   /* Files the server or the build writes while it runs; they are in no checkout. */
   const RUNTIME = new Set(["index.html", "groups.json", "teamduels.json", "samples.json",
-    "calibration.json", "calibration-quota.json"]);
+    "calibration.json", "calibration-quota.json",
+    "users.json", "writing.json"]);                       // items 45, 46
   const missing = [];
   for (const f of DOCS) {
     const seen = new Set();

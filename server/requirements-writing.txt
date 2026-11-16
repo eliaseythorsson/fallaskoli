@@ -1,0 +1,16 @@
+# The server's writing check (item 46): GreynirCorrect, run by
+# server/greynir_worker.py. Only needed on a server whose teachers switch the
+# check on; the build (./build.sh) does not use it. Installed on top of the
+# build's own pins (requirements.txt: islenska, reynir, tokenizer), which it
+# must not move and which are therefore NOT repeated here:
+#   pip install -r requirements.txt -r server/requirements-writing.txt
+# (from the repository root). reynir-correct 4.2.0 needs reynir>=3.7.0 and
+# accepts the pinned 3.8.0; icegrams 2.3.0 needs icegrams-data 2026.11.*.
+#
+# The container (Dockerfile, target `greynir`) installs the same versions by
+# hash from server/requirements-writing-build.txt, next to
+# requirements-build.txt; tests/writing.test.js holds the two files together.
+reynir-correct==4.2.0
+icegrams==2.3.0
+icegrams-data==2026.11.0
+certifi==2026.10.18

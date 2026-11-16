@@ -22,6 +22,7 @@ import { dueLine } from "../core/review.js";
 import { todayLine } from "../core/today.js";
 import { STREAK_N } from "../core/streak.js";
 import { targetName, KIND_NAME, dueText, assignmentPolicy } from "../core/assignment.js";
+import { writingOfferHTML, wireWritingOffer } from "./writing.js";
 
 export const RUN_SIZES = [10, 15, 20];
 
@@ -122,6 +123,9 @@ export function assignmentsHTML(list, { usable = () => true, now = Date.now() } 
 /* ---------- the picker ----------------------------------------------------- */
 
 export function renderPicker(app) {
+  /* Item 46: not over a text the pupil is writing (an assignment arriving
+     redraws the picker). Only while the box is really on the board. */
+  if (app.writing && document.getElementById("wr-text")) return;
   const list = topics(app);
   const el = $("task");
   if (!list.length) {
@@ -164,6 +168,7 @@ export function renderPicker(app) {
   el.innerHTML = `<div class="card runpick">
     ${assigned}
     ${today}
+    ${writingOfferHTML(app.S)}
     <div class="ownpick${today ? " second" : ""}">
     <p class="eyebrow">${today ? "<span>Eða veldu efni og fjölda spurninga</span>"
       : "<span>Ný æfingalota</span><b>veldu efni og fjölda spurninga</b>"}</p>
@@ -203,6 +208,7 @@ export function renderPicker(app) {
   el.querySelectorAll("[data-assign]").forEach((b) => {
     b.onclick = () => app.startAssignment(b.dataset.assign);
   });
+  wireWritingOffer(app, () => renderPicker(app));        // item 46, ui/writing.js
   (el.querySelector(".assigngo.go") || go || $("runstart")).focus();
 }
 

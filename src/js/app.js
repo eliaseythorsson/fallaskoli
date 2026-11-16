@@ -27,6 +27,7 @@ import { measurable, badgeWindows, windowsFor } from "./core/rarity.js";
 import { socialContext } from "./core/social.js";
 import { DEFAULT_METRIC } from "./core/leaderboard.js";
 import { renderTask, revealTopic } from "./ui/render.js";
+import { l2On, wireSecondLanguage } from "./ui/secondlang.js";
 import "./ui/render-more.js";
 import { wireReports, captureCard, renderReportsPanel } from "./ui/reports.js";
 import { renderHeader, renderStats } from "./ui/progress.js";
@@ -1678,7 +1679,10 @@ async function init() {
   else if (app.S.lastSessionSkills != null) app.S.multiSessionRun = 0;
   app.S.lastSessionSkills = 0;
 
-  wireGlossary(() => app.S.settings.glossary !== false);
+  /* Item 45: the glosses of the second-language mode open in the same
+     window, whatever the box for grammatical terms says. */
+  wireGlossary(() => app.S.settings.glossary !== false || l2On(app));
+  wireSecondLanguage(app);
   setKeypadPref(() => keypadOn(app.S.settings, keypadEnv()));
   wirePrivacyLinks();
   wireReports(app);

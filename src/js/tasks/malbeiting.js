@@ -31,6 +31,7 @@ import { readMark, caseName, GENDERS } from "../core/marks.js";
 import { patternById } from "../core/diagnosis.js";
 import { normalise } from "../core/grading.js";
 import { wordKey } from "../core/state.js";
+import { secondLanguage as pupilIsL2 } from "../core/profile.js";
 import { explainVerbForm } from "./explain.js";
 import { built, FX } from "./effects.js";
 import { pick, shuffle, askable, bandFor, sentPool, levelFor, fresh, forced, drilling, forcedCell } from "./shared.js";
@@ -1457,16 +1458,14 @@ const PROD = "malbeiting";
  * the sentences are long enough that its errors read as nonsense, and the
  * pupil is ready for the slips heard in every school corridor.
  *
- * THE HOOK FOR A SECOND-LANGUAGE PROFILE (critique item 45). A pupil learning
+ * THE SECOND-LANGUAGE PROFILE (critique items 26 and 45). A pupil learning
  * Icelandic as a second language makes the generator's errors, not the
- * bank's, at every þyngd. Nothing sets this yet: item 45 adds the profile
- * switch, and all it has to do for Villuveiðar is make `secondLanguage`
- * true — by saving `settings.secondLanguage` or by changing this one
- * function to read wherever the profile is kept. Nothing else in this file
- * asks who the pupil is. */
+ * bank's, at every þyngd. Whether the mode is on — the pupil's own switch or
+ * the teacher's — is decided in one place, core/profile.js
+ * `secondLanguage`; this is the only line in this file that asks who the
+ * pupil is. */
 export const BANK_FROM_BAND = 3;
-export const secondLanguage = (view) =>
-  !!(view && view.S && view.S.settings && view.S.settings.secondLanguage);
+export const secondLanguage = (view) => !!(view && pupilIsL2(view.S));
 
 /** "bank" or "generated": the kind of error hunt this pupil gets at this þyngd. */
 export function huntSource(view, band) {

@@ -24,6 +24,7 @@ import { SAMPLE } from "../src/js/core/classifiercheck.js";
 import { TEAM } from "../src/js/core/teamduel.js";
 import { LIVE } from "../src/js/core/live.js";
 import { CLASS_GOAL } from "../src/js/core/classgoal.js";
+import { WRITING } from "../src/js/core/writing.js";
 
 export const RETENTION = {
   pendingDays: 30,      // an unanswered request for access
@@ -94,8 +95,16 @@ export const CALIBRATION_NOTICE = "2026-11-17";
    ends; in a team duel the group's teacher sees each pupil's result, the
    other pupils and the other class only the teams' means. A new thing the
    teacher sees, so the version moves (docs/PRIVACY.md §1d, §3). The notes for
-   2026-11-17, -18 and -19 stand above; this is the latest. */
-export const PRIVACY_VERSION = "2026-11-20";
+   2026-11-17, -18 and -19 stand above. */
+
+/* 2026-11-21 (v6.13, items 45 and 46): two paragraphs of their own. Item 45
+   stores one yes/no — Icelandic as a second language — which can hint at a
+   child's background (docs/PRIVACY.md §1e). Item 46 is the first place the
+   server receives free text a child wrote: read over by GreynirCorrect on
+   this server and forgotten, unless the group's teacher also switches on
+   keeping, and then the teacher can read it (§1f). New data and a new thing
+   the teacher sees, so the version moves; this is the latest. */
+export const PRIVACY_VERSION = "2026-11-21";
 
 export function privacyPage(cfg) {
   const missing = (what) => `<mark>[vantar: ${what}]</mark>`;
@@ -146,14 +155,19 @@ export function privacyPage(cfg) {
   <p>Ef kennarinn setur hópnum sameiginlegt markmið sjá allir í hópnum eina samtölu fyrir
      vikuna, og þín svör teljast með. Enginn sér hvað þú lagðir til.</p>
   <p>Kennari eða forsjáraðili hópsins þíns sér hvernig þér gengur í villumynstrum,
-     verkefnum og bekkjareinvígjum, svo hann geti hjálpað þér — en aldrei það sem þú skrifar.
+     verkefnum og bekkjareinvígjum, svo hann geti hjálpað þér — en aldrei það sem þú skrifar í svörin.
      Hann getur líka skoðað færnikortið þitt.</p>
+  <p>Textinn sem þú skrifar í Ritun vikunnar er aðeins sendur ef kennarinn hefur kveikt á
+     yfirlestri, og aðeins geymdur ef kennarinn hefur líka kveikt á því að geyma hann.
+     Það stendur á skjánum áður en þú sendir (sjá næsta kafla).</p>
   <p>Í lifandi umferð í kennslustund svarar allur hópurinn sömu spurningum á sama tíma.
      Á skjávarpanum sést gælunafnið þitt aðeins ef þú ert á stigatöflunni — annars heitir
      þú þar „Leikmaður“ og númer. Ekkert af umferðinni er geymt eftir að henni lýkur.</p>
   <p>Engar auglýsingar, engin rakning, ekkert selt. Þú getur sótt gögnin þín eða
      eytt aðganginum hvenær sem er.</p>
 </div>
+
+${WRITING_NOTICE}
 
 <h2>Hver ber ábyrgð?</h2>
 <p>${who} rekur þennan Fallaskóla og ber ábyrgð á gögnunum (er „ábyrgðaraðili“).
@@ -277,6 +291,8 @@ export function privacyPage(cfg) {
       greiningartól né samfélagsmiðlahnappa.</li>
 </ul>
 
+${SECOND_LANGUAGE_NOTICE}
+
 <h2>Hve lengi?</h2>
 <ul>
   <li>Á meðan aðgangurinn þinn er til.</li>
@@ -315,3 +331,35 @@ export function privacyPage(cfg) {
    ef það gæti skipt þig máli.</p>
 </main></body></html>`;
 }
+
+/* ---------- item 45: Icelandic as a second language — a paragraph of its own ----
+ * In force from notice version 2026-11-21. docs/PRIVACY.md §1e says the same
+ * for the person who runs the server. */
+const SECOND_LANGUAGE_NOTICE = `<h2>Íslenska sem annað mál</h2>
+<p>Ef íslenska er annað tungumálið þitt getur þú kveikt á því undir <i>Stillingar</i>, eða
+   kennari hópsins þíns kveikt á því fyrir þig. Þá er geymt eitt já eða nei: með stillingunum
+   þínum ef þú kveiktir á því, eða með aðganginum þínum ef kennarinn gerði það. Það er aðeins
+   notað til að sýna skýringar á orðum, láta þyngdina hækka hægar og velja villuveiðar við hæfi.
+   Aðrir nemendur sjá það aldrei. Kennarinn sér það aðeins fyrir nemendur í sínum hópi.
+   Það fylgir með þegar þú sækir gögnin þín og eyðist með aðganginum.</p>
+<p>Þegar setning er lesin upphátt gerir tækið þitt það sjálft. Setningin er ekki send neitt,
+   og ef tækið á enga íslenska rödd er hnappurinn ekki sýndur.</p>`;
+
+/* ---------- item 46: Ritun vikunnar — what a pupil writes, a paragraph of its own ----
+ * In force from notice version 2026-11-21. Placed straight after the short
+ * version, because it is the one exception to "what you write is not kept",
+ * and a pupil should meet it early. The numbers are the ones
+ * server/writing.mjs acts on. docs/PRIVACY.md §1f. */
+const WRITING_NOTICE = `<h2>Ritun vikunnar: textinn sem þú skrifar</h2>
+<p>Einu sinni í viku getur þú skrifað þrjár setningar um efni vikunnar. Sjálfgefið er slökkt á
+   yfirlestri. Þá er textinn ekki sendur neitt og ekki geymdur.</p>
+<p>Ef kennari hópsins þíns kveikir á yfirlestri er textinn sendur á þennan netþjón þegar þú ýtir á
+   <i>Lesa yfir</i>. Þar les forritið GreynirCorrect hann yfir og sendir athugasemdirnar til baka.
+   Enginn annar fær textann. Hann er hvorki skrifaður í skrá né annál og gleymist um leið og
+   yfirlestrinum er lokið, nema kennarinn hafi líka kveikt á því að geyma textana.</p>
+<p>Ef kennarinn geymir textana stendur það á skjánum áður en þú sendir. Þá er textinn geymdur með
+   aðganginum þínum, ásamt viku og efni, svo að kennarinn geti lesið hann. Aðeins kennari hópsins og
+   umsjónarmaður sjá hann. Mest ${WRITING.keepPerPupil} textar frá þér eru geymdir og enginn lengur en
+   ${WRITING.keepDays} daga. Textarnir fylgja með þegar þú sækir gögnin þín, þeir eyðast með aðganginum,
+   og öllum textum hópsins er eytt um leið og kennarinn slekkur á því að geyma þá.
+   Skrifaðu um hversdagslega hluti, ekki um neitt sem er einkamál.</p>`;
