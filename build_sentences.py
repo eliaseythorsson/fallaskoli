@@ -1063,8 +1063,23 @@ def main():
                 % (_text, _seen_text[_text], _slot))
         _seen_text[_text] = _slot
 
+    # Needs that were too wide (noun_classes.NEED_FIX, v6.13): narrowed here.
+    # A fix for a sentence that is gone, or whose written need is no longer
+    # the one the fix was made for, stops the build: somebody has edited the
+    # sentence since, and should decide again.
+    written = {t: n for _l, t, _s, n, *_ in sentences.S}
+    for text, (was, _now) in noun_classes.NEED_FIX.items():
+        if written.get(text, None) != was:
+            raise SystemExit(
+                'noun_classes.NEED_FIX: %r — setningin er ekki í sentences.py með need=%r '
+                '(þar stendur %r). Lagaðu töfluna eða fjarlægðu færsluna.'
+                % (text, was, written.get(text)))
+    print('needs narrowed by noun_classes.NEED_FIX:', len(noun_classes.NEED_FIX))
+
     out, failed = [], []
     for lvl, text, slot, need, *rest in sentences.S:
+        if text in noun_classes.NEED_FIX:
+            need = noun_classes.NEED_FIX[text][1]
         rec = annotate(lvl, text, slot, need, rest[0] if rest else None)
         if rec is None:
             failed.append(text)

@@ -41,7 +41,12 @@ CLASSES
   weather    weather and light: not an object but a condition (rigning, frost, myrkur)
   time       dagur, vika, sumar, morgunn …
   event      something that happens or is held (afmæli, veisla, próf, ferð)
-  abstract   everything else — ideas, feelings, states, qualities
+  abstract   ideas, feelings, states, qualities — the ones that have been
+             READ and can be talked about, remembered or matter (`ABSTRACT`)
+
+A noun that is in no list at all has not been read by anyone. It keeps its
+paradigm and can be declined in a table, and it is never put into a frame
+(see REVIEWED, below).
 
 PREPOSITION CONVENTION (places and events only)
 -----------------------------------------------
@@ -60,6 +65,43 @@ every abstract, weather, drink and music noun that is not listed in
 `PLURAL_OK`, and the mass and collective nouns of the other classes listed in
 `NO_PLURAL`. The paradigm is untouched; the word is simply shown in the
 singular.
+
+REVIEWED, AND NOT USED IN FRAMES
+--------------------------------
+Until v6.13 a noun in no list was `abstract`, and the frames that take
+anything took it: "Ferðin tafðist vegna ævinnar", "Þetta gengur ekki án
+bils", "Toppurinn skiptir mestu máli". There were 1,275 of them. They have
+now been read, one by one (critique item 30), and each is in one of three
+places:
+
+  - a class above, where it plainly belongs (*safn*, *blokk*, *útskrift*);
+  - `ABSTRACT`: some 790 abstract nouns that stand on their own and read
+    naturally after *um*, *frá*, *eftir* and *án* and before *skiptir máli*
+    (*hugmynd*, *vinátta*, *leyfi*, *svefn*, *misskilningur*);
+  - nowhere, which now means *not used in a frame*. That is where a noun
+    goes when in doubt: measure and part words (*hluti*, *fjöldi*, *tegund*,
+    *helmingur*), nouns that live in a fixed phrase (*gaman*, *alvara*,
+    *raun*, *tillit*), nouns said in the plural only (*áhrif*, *viðskipti*,
+    *áhyggja*), words with two unrelated meanings (*mál*, *gat*, *réttur*,
+    *gos*), and the vocabulary of the courtroom and the ministry.
+
+`NO_FRAME` does the same for nouns that DO have a class and are still odd in
+a sentence about school, home and the weekend: the film's cast (*lávarður*,
+*uppvakningur*, *sjóræningi*), its buildings (*kastali*, *musteri*), parts of
+a car as things one forgets at home (*aftursæti*). Nothing is wrong with the
+words; `EXCLUDE` is for the ones that are unfit, `NO_FRAME` for the ones that
+are merely out of place. `excluded()` is true for all three kinds, and the
+bundle marks them `nx`.
+
+`python3 noun_classes.py` prints how many nouns of the vocabulary are in no
+list; tests/semantic.test.js fails if a noun nobody has read is used.
+
+NEEDS THAT WERE TOO WIDE
+------------------------
+`NEED_FIX` narrows the `need` of a few sentences of the bank whose `any` was
+wider than the sentence: time and abstract nouns after *vegna* and *án*
+("Ferðin tafðist vegna sumarsins"), body parts and furniture before *skiptir
+mestu máli*. See the table itself.
 
 EXCLUDED
 --------
@@ -475,6 +517,147 @@ konungsríki heimsveldi lýðveldi fylki sýsla umdæmi meginland útland ættj�
 vesturland austurströnd
 """)
 
+# ---------------------------------------------------------------------------
+# v6.13 (item 30). The nouns that were in no list, read one at a time.
+#
+# Those with a plain class go into it here rather than into the long lists
+# above, so that what this pass decided can be seen in one place.
+BUILDING |= _s("safn blokk")
+# *heimur* and *veröld* were places and settlements ("Systir mín býr í
+# heiminum", "saga heimanna"); *orð* was a text one reads through ("Ég las
+# orðið áður en ég fór að sofa"). All three are things one talks about.
+for _w in "heimur veröld".split():
+    PLACE.discard(_w); SETTLEMENT.discard(_w)
+TEXT.discard("orð")
+# Read, but not read through or lent: "Þótt kvittunin væri löng las ég hana
+# til enda". They are things one holds.
+for _w in "kvittun boðskort eyðublað".split():
+    BOOK.discard(_w); OBJECT.add(_w)
+EVENT |= _s("mót útskrift")
+PLACE |= _s("vegur")
+STRUCT |= _s("húsþak")
+SUBSTANCE |= _s("eldsneyti")
+TEXT |= _s("frásögn stórfrétt gleðifrétt aðalfrétt")
+FOOD |= _s("beygla")
+
+# What is seen in the sky is `sky`, not `weather`. The weather is why one
+# stays in ("Við fórum ekki út vegna ___"), and a shadow or a rainbow is not:
+# "vegna skugga", "vegna regnbogans". They are looked at and photographed.
+_SEEN_IN_SKY = _s("skuggi geisli regnbogi sólarlag sólsetur sólarupprás dögun tunglskin")
+WEATHER -= _SEEN_IN_SKY
+SKY |= _SEEN_IN_SKY
+
+# Wild animals are `critter`, not `animal`. What an `animal` does in the bank
+# is what a pet or a farm animal does: it waits outside, sleeps on the sofa,
+# is given water, is owned ("Ég á ___ heima"). "Selurinn sofnaði í bílnum",
+# "Þrjú ljón biðu úti" and "Ég á tvo fíla" were the result. As critters they
+# are seen, pictured, talked about and feared, which is what one does with
+# a lion.
+_WILD = _s("""
+api björn dádýr dúfa eðla elgur fálki fíll froskur gíraffi górilla haukur
+hjörtur hlébarði hrafn hreindýr héri íkorni ísbjörn kráka leðurblaka ljón
+moldvarpa mörgæs mús refur rostungur rotta selur skjaldbaka snákur svanur
+tígrisdýr tígur ugla úlfaldi úlfur þvottabjörn örn
+""")
+ANIMAL -= _WILD
+CRITTER |= _WILD
+
+# Abstract nouns that stand on their own. Each was read against the frames
+# that take an abstract noun: "Við töluðum um ___", "Ég man vel eftir ___",
+# "Þetta gengur ekki án ___", "___ skiptir mestu máli", "Þetta er bara ___".
+ABSTRACT = _s("""
+heimur veröld orð
+afgreiðsla afl afleiðing afrakstur afrek afsláttur afstaða afsökun
+afsökunarbeiðni afþreying agi akstur aldur andardráttur andrúmsloft andstaða
+arfur asmi atburður athugasemd athugun athygli atkvæði atriði atvik atvinna
+augnaráð aukaverkun auðlind auður aðalatriði aðalhlutverk aðdráttarafl aðferð
+aðgangsorð aðgangur aðgerð aðskilnaður aðstaða aðstoð bakgrunnur bakstur
+bankareikningur bann barátta bati beiðni bilun bið björgun blanda blaðamennska
+blekking blessun blístur blóðprufa borgun boðskapur bragð brella breyting bros
+brottflutningur brottför bull byggingarleyfi byrjun byrði bæn bílnúmer bókhald
+bónorð bónus bölvun búnaður dagdraumur dagsetning dagskrá deila dirfska
+draumaland draumur dulmál dvöl dyggð dæmi dómgreind dómur dónaskapur dýrð
+efnahagslíf efnahagur eftirlit eftirnafn eftirsjá eiginleiki eign eilífð
+einbeiting einkalíf einkamál einkenni einkunn einsemd eiður eldmóður elli
+endamark endir endurhæfing endurkoma endurtekning erfiðisvinna erfiðleiki
+erindi eyðilegging eðli eðlishvöt eðlisávísun fag fagnaður fargjald faðmlag
+fegurð ferill fjarlægð fjarvera fjarvist fjárfesting fjárhagur fjölmiðill
+fjölskyldufyrirtæki fjör flensa flugfélag flugtak flutningur flækja fnykur
+forgangur forskot fortíð forvitni forysta framburður framhald framhaldslíf
+framhaldsnám framkoma framkvæmd framlag framleiðsla framlenging frammistaða
+framtíð freisting frekja frelsi frelsun frestur friður frumkvæði frægð
+fréttastofa fullkomnun fyrirboði fyrirgefning fyrirlitning fyrirmynd
+fyrirskipun fyrirtæki fæðing fæðingarvottorð félagsskapur fórn fótspor
+fögnuður fýla gagnrýni galdur galli gasleki gestalisti gestrisni gjald
+glaðningur gleði glundroði glæsibragur glötun greindarvísitala greiði greiðsla
+grikkur grimmd grundvallaratriði grunur græðgi grín gróði gáfa gæfa gælunafn
+gæska gæsla góðvild göngulag hagnaður hamingja handaband harka harmleikur
+harmur hasar hatur hausverkur hefnd hefð heilahristingur heildarmynd heilræði
+heilsa heimalærdómur heimanám heimavinna heimild heimilisfang heimkoma
+heimsmeistaratitill heiðarleiki heiður heppni hetjudáð heyrn hindrun
+hjartsláttur hjálp hjónaband hjúkrun hljóð hljóðmerki hlutastarf hlutkesti
+hlutverk hlátur hlé hollusta hraði hreimur hreinskilni hreyfing hrifning
+hringing hrun hryllingur hráefni hræðsla hróp hugarfar hugdetta huggun hugmynd
+hugrekki hugsjón hugsun hugsunarháttur hugtak hungur hvatning hvíld hvísl
+hámark hárgreiðsla háski háskólanám háttalag hávaði hæfileiki hætta hótun
+höfuðverkur högg hönnun hörmung húsnæði illska ilmur innihald innsæi iðrun
+jafnvægi játning kaldhæðni karlmennska kenning kennitala kennsla kerfi keyrsla
+kjarkur kjánaskapur klapp klipping kláði klæðnaður klúður knús kosningabarátta
+koss kostnaður krafa kraftaverk kraftur kreppa kurteisi kvöl kvörtun kynning
+kærleikur kímnigáfa kóði könnun lagfæring landslag lausn leiga leiklist leit
+leið leiðrétting leiðsögn leki lending lestur lexía leyfi leyndardómur
+leyndarmál leynimakk leyninúmer list litur loforð loftræsting lokaatriði lokun
+lukka lygi lykilorð lykt lágmark læknanám lækning líf lífsmáti lífsreynsla
+lífsstíll lífvera líking lögmál lögun löngun lýsing lýðræði mannkynssaga
+marblettur mark markmið martröð matarlyst meining meirihluti menning menntun
+merking met metnaður meðaleinkunn meðferð meðvitund millifærsla minni minning
+miskunn missir misskilningur munaður myndataka myndefni mynstur málamiðlun
+málefni málstaður máttur mælikvarði mæting módel móttaka móðgun möguleiki nafn
+nauðsyn neyð neyðartilfelli neyðartilvik neyðarástand niðurlæging niðurstaða
+niðurtalning notkun nudd nám náttúra náttúrulögmál næring nærvera næturvakt
+næði númer nútími nútíð nýjung ofskynjun opnun orka orsök orðalag orðbragð
+orðrómur orðspor pappírsvinna persónuleiki plan plat plága pláss prufa pólitík
+pöntun púls raflost rakstur ranghugmynd rannsókn raunveruleiki refsing regla
+reikningsnúmer reynsla rifrildi ringulreið rispa rithönd rugl ruðningur ráð
+ráðagerð ráðgjöf ráðlegging réttlæti rómantík rödd rökræða sakleysi sala
+samanburður samband samhengi samhljómur samkennd samkeppni samkomulag
+samningur samstarf samsæri samtal samvinna samviska samúð samþykki sannfæring
+sannleikur sekt sektarkennd sena sigur siðferði siðmenning siður sjálfstraust
+sjálfstýring sjálfsálit sjón sjónarhorn sjónarmið sjónhverfing sjónvarpsstöð
+sjúkdómur skap skattur skaði skelfing skemmtun skilgreining skilningarvit
+skilningur skilyrði skipulag skipun skjálfti skjól skopskyn skortur
+skoðanakönnun skoðun skriffinnska skrift skráma skráning skuld skuldbinding
+skynsemi skáldskapur skírnarnafn skömm skýring slúður smekkur smit smáatriði
+snerting snilld sorg spenna spilling spjall sprunga spuni spurning spá starf
+starfsemi starfsferill starfsleyfi staða staðfesting staðhæfing staðreynd
+staðsetning stefna stelling stig stilling stjórnun stofnun stolt streita
+stuðningur styrkur stærð stærðfræði stíll stórfyrirtæki stökk stöðugleiki
+stöðuhækkun stöðumælasekt svar svefn synd sál sársauki símanúmer símhringing
+símtal sólbað sóðaskapur söfnun sönnun sýking takmark takmörkun taktur tala
+talhólf talnaröð talning tap tenging tilboð tilbreyting tilefni tilfinning
+tilgangur tilgáta tilhugsun tillaga tilraun tilvera tilviljun titill titringur
+tjón tollur traust truflun trygging trú trúnaður tungumál tákn tækifæri tækni
+tímasetning tíska tómarúm töf töfrabragð umbreyting umburðarlyndi umferð
+umheimur umhugsun umhverfi umhyggja umræða umræðuefni umstang unaður undankoma
+undantekning undirbúningur undirmeðvitund undrun uppbygging uppeldi uppfinning
+uppfærsla uppgötvun upphaf upphafsstafur upphæð upprisa uppruni uppskera
+uppsögn upptaka uppákoma uppástunga vafi vakt val vald valkostur vandamál
+vandi vanræksla vanvirðing varaáætlun vefur vegabréfsáritun veikleiki venja
+verk verkur vernd veruleiki verð vilji villa vinna vinningur vinskapur vinátta
+virðing viska vitleysa vitneskja vitnisburður vitund viðburður viðfangsefni
+viðgerð viðhorf viðureign viðurkenning viðurnefni viðvörun von vægð vísbending
+vörn vörumerki vöxtur yfirlit yfirvinna ábending ábyrgð áfall áfangi ágiskun
+ágreiningur ágóði áhersla áhorf áhugi áhyggjuefni áhætta ákvörðun álag álit
+ályktun áminning ánægja árangur árekstur árgangur árstími árátta ásetningur
+áskorun ást ástand ástarsamband ástríða ástæða ásökun ávani ávarp áætlun
+æsingur ætlun ætlunarverk ættarnafn ævistarf ímynd ímyndunarafl íþrótt ógn
+ógæfa óhapp óheppni ólán ónæði óreiða ósk ósvífni ótti óvirðing óvissa öfund
+öndun örvænting öryggi öryggisgæsla öskur úrval útgáfa útgöngubann útkoma
+útlit útreikningur útskýring útsýni þakklæti þekking þema þjálfun þjáning
+þjónusta þolinmæði þorsti þraut þreyta þrá þráhyggja þróun þrýstingur þvæla
+þyngd þyngdarafl þátttaka þóknun þögn þörf þýðing
+""")
+
 CLASSES = ("person", "job", "group", "animal", "critter", "plant", "body", "food", "drink",
            "clothing", "vehicle", "furniture", "object", "struct", "substance",
            "nature", "sky", "weather", "place", "building", "room", "settlement",
@@ -519,6 +702,10 @@ stræti strönd stöð stúka svæði sýning tindur torg tún uppboð vakt vatn
 veitingahús veitingastaður verksmiðja verkstæði verönd vitnastúka völlur
 æfing útsala þak þilfar
 """)
+
+# v6.13: the places and events classified in the pass over the unlisted nouns.
+PREP_I |= _s("blokk útskrift")
+PREP_A |= _s("safn mót")
 
 PREP = {}
 for _w in PREP_I:
@@ -610,8 +797,158 @@ himnaríki paradís hrísgrjón aðili
 # (*viður*), "Þetta gengur ekki án ár" (*á*). Fine in a table, a riddle in a
 # generated sentence.
 EXCLUDE |= _s("""
-viður á
+viður á hani
 """)
+
+# ---------------------------------------------------------------------------
+# Out of place, not unfit (v6.13, item 30). See "REVIEWED, AND NOT USED IN
+# FRAMES" at the top. From reading every class list against the frames it
+# meets: the bank is about school, home, friends and the weekend, and these
+# are words from somewhere else.
+NO_FRAME = _s("""
+aðalfulltrúi aðalsmaður afkomandi arftaki bandamaður barón barþjónn biskup
+bítill bjargvættur bjálfi blóraböggull bogaskytta borgari boðflenna bryti
+busi dama demókrati dís draugur draumaprins draumóramaður drottning dúlla
+dvergur dánardómstjóri eftirherma eftirlifandi einfari einkasonur
+einstaklingur ekill ekkja engill erfingi erkibiskup fangelsisstjóri fangi
+fiskimaður fjárfestir fjárhaldsmaður fjölskyldumaður flakkari flækingur
+foringi forfaðir framleiðandi fuglaáhugamaður fulltrúi fursti furðufugl
+fylgdarmaður fylgjandi fylkisstjóri fógeti föðurlandsvinur fúskari
+galdrakarl galdramaður gamlingi geimvera gengilbeina gerandi goð greifi
+greifynja guðfaðir gyðja gáfnaljós gæi hafmær handhafi harðjaxl heiðingi
+heiðursmaður heimildarmaður herramaður hertogi hetja hippi hluthafi
+hræsnari hugsuður hæstráðandi höfðingi hörkutól húsbóndi jafnoki jarl
+jarðarbúi jógi jólasveinn kappi kapteinn keisari klappstýra klaufi klerkur
+konungur krossfari krútt kínverji kóngur kúnni kúreki lafði landstjóri
+ljúfur loddari lávarður lærimeistari lífvörður löggæslumaður mannvera
+manneskja meistari meðeigandi miðill miðlari munaðarleysingi munkur mær
+neytandi norn norðanmaður notandi nunna næstráðandi ofurhetja ofurmenni
+patti persóna predikari prins prinsessa páfi pápi pílagrímur púki rabbíni
+riddari risi ráðskona ráðsmaður ræðismaður ríkisborgari ríkisstjóri
+saksóknari samlandi samningamaður sendiboði sendiherra sjeik sjóari
+sjóræningi skapari skipherra skjólstæðingur skrímsli skytta skúrkur
+slátrari smástelpa soldán staðgengill stjórnarformaður stofnandi stráklingur
+stráksi stórlax stöðvarstjóri svaramaður sveinki syndari systa sálufélagi
+sæfari sökudólgur tengiliður tröll töfralæknir umbjóðandi umboðsmaður
+umrenningur undirmaður uppreisnarmaður uppvakningur varðmaður varðstjóri
+varúlfur veitandi verjandi verndari vesalingur veslingur vina vinnukona
+vitni vitorðsmaður viðskiptafélagi viðvaningur vofa vottur vélmenni víkingur
+vörður áhangandi álfkona álfur áskrifandi ófreskja ökuþór öldungur öskubuska
+útgefandi útlagi þegn þerna þjónustustúlka þorpari
+
+andspyrnuhreyfing bandalag bræðralag draumalið floti flugher fylgdarlið
+fylking fótgöngulið herforingjaráð hirð hjörð klíka kviðdómur landgöngulið
+leynilögregla liðsauki múgur riddaralið ríkislögregla samsteypa sjóher
+stórskotalið varalið ættbálkur öryggissveit
+
+apaköttur bambi dreki einhyrningur hreinn hvutti hvítingi jarfi jór kalkúni
+kisulóra klár kvikindi lukkudýr múlasni múldýr mörður nautgripur naðra
+prímati rakki risaeðla rándýr skarfur skepna skolli skröltormur sléttuúlfur
+turtildúfa ungi valur vísundur
+
+bústaður byrgi fasteign flugskýli hof hæli höll kapella kastali klaustur
+munaðarleysingjahæli musteri mótel sendiráð snjóhús virki
+káeta klefi réttarsalur skurðstofa svíta vistarvera vélarrúm
+altari gátt hvelfing hásæti legsteinn loka
+
+austurströnd bás bækistöð föðurland fylki gettó gullnáma heimsveldi herbúð
+hestbak hlið hola horn hvíla höfuðstöð konungsríki kró kví nýlenda plantekra
+rúst síki skutur stafn stjórnstöð stúka svínastía umdæmi undankomuleið
+vesturland vitnastúka víti ættjörð
+
+eldflaug flaug fleki geimfar geimflaug geimskip hestvagn loftfar
+
+hafnabolti hnefaleikur kjötkveðjuhátíð sendiför
+erfðaskrá spádómur stjórnarskrá ástarkveðja
+
+aftursæti agn akkeri alur app askur aspirín aur baggi bali belgur bensíngjöf
+bóluefni bremsa brynja bútur dekk djásn dýrgripur dæla eftirlíking eftirmynd
+eiginhandaráritun eintak ermi fallhlíf feldur flak framsæti frumgerð
+fuglahræða gámur gervihnöttur geymir gildra gír gírkassi gripur gæra
+hanskahólf hemill hermir hnútur hólf hreiður hreyfill húsgagn húðflúr hönk
+innsigli kaggi kar kastari ker kjölur kragi krani kúbein kyndill ljár ljós
+loftnet lykkja lína líkan lóð merki móðurtölva net nærmynd peningaskápur
+pilla piparúði pund póstkassi póstur rafall ratsjá rimill rokkur
+röntgenmynd saumur segl sending sendir sjálfsali skiptiborð skildingur
+skilti skjaldarmerki skrá skúffa skynjari smáaur snara snælda spjót sprauta
+spöng stika stjórnborð strokkur stubbur stykki stýri svefntafla sverð svipa
+sviðsljós sætisbelti sírena sönnunargagn sýnishorn tankur teinn tálbeita
+tímavél umbúð undirfat undirskrift verkjatafla viðvörunarkerfi vél áritun
+öngull örk öryggisbelti öryggishólf öryggiskerfi öryggismyndavél öxi öxull
+þilja þríforkur
+""")
+
+
+# ---------------------------------------------------------------------------
+# Needs that were too wide. Keyed by the sentence as it stands in
+# sentences.py; the value is (the need written there, the need used). The
+# build (build_sentences.py) applies it and stops if a sentence named here is
+# gone or its written need has changed — so this table cannot quietly go
+# stale. It lives here, and not as an edit to sentences.py, only because the
+# level 6-7 sentences were being written in that file at the same time
+# (v6.13); fold it into sentences.py when that has landed.
+#
+#   vegna   what holds up a trip: the weather, a match, the bus, the
+#           teacher, the river, the bridge, the airport, the petrol, the
+#           money. Not a time ("vegna sumarsins", "vegna ævinnar"), not a
+#           part of the body or a room ("vegna nefsins", "vegna
+#           herbergisins"), not a small thing or a text ("vegna glassins",
+#           "vegna síðunnar"), and not an idea ("vegna hamingjunnar") — a
+#           few good causes go with the bad there (*umferð*, *bilun*), which
+#           is the price of having one class for all abstract nouns.
+#   segja frá: one tells about people, places, events, stories and ideas —
+#           the need the bank itself gives "Ég sagði frá hugmynd." Not about
+#           a sausage, a glass or one's ears ("Ég sagði frá eyrunum í gær").
+#   án      "Þetta gengur ekki án ___": somebody or something one has, uses
+#           or needs — a friend, a key, a kitchen, a window, sleep. Not a
+#           time ("án morguns", "án kvölda"), not a place or a piece of the
+#           landscape ("án hverfa", "án lands", "án grass"), not weather or
+#           an event ("án jarðskjálfta", "án stefnumóts").
+#   skiptir MESTU máli: a claim about what matters most — people, ideas,
+#           events, money, the weather, food, nature. Not a piece of
+#           furniture, a wall or a body part ("Skápurinn skiptir mestu
+#           máli", "Tungan skiptir mestu máli"). The plural frames without
+#           *mestu* ("Hugmyndirnar skipta máli") are left as they were:
+#           that anything matters is easy to believe.
+#   breytist aldrei: what one notices staying the same — people, places,
+#           nature, the weather, a face. Not a thing one owns or eats
+#           ("Lykillinn breytist aldrei", "Osturinn breytist aldrei"), and
+#           not a one-off ("Bónorðið breytist aldrei").
+#   koma og fara: what arrives and leaves — people, days, buses, storms,
+#           ideas. Not buildings, rooms or walls.
+#
+#   líða hratt á sumrin: days, nights and weeks do; "Haust líða hratt á
+#           sumrin" does not. The sentence keeps its own noun.
+#
+# What this costs: these were the frames that gave some classes their only
+# sentence in a cell or two — the genitive of a time word, the genitive with
+# the article of an abstract noun or a body part, the bare genitive of a
+# place. Those cells are now analysed as a bare form; tests/frames.test.js
+# lists them, class by class, as left out on purpose.
+_CAUSE = ("weather|event|vehicle|being|critter|=place|building|settlement|nature|struct|"
+          "substance|money|drink|music")
+# the bank's own judgement of what one tells about ("Ég sagði frá hugmynd.")
+_TOLD = "abstract|event|place|being|weather|film|music|text"
+_HAD = ("being|critter|body|food|drink|clothing|vehicle|furniture|object|=text|book|film|"
+        "music|building|room|struct|substance|sky|money|abstract")
+_MATTERS = ("abstract|event|being|money|weather|text|film|music|time|nature|settlement|"
+            "food|drink|plant|substance|sky")
+NEED_FIX = {
+    "Ferðin tafðist vegna bílsins.": ("any", _CAUSE),
+    "Ferðin tafðist vegna bílanna.": ("any", _CAUSE),
+    "Þetta gengur ekki án bíls.": ("any", _HAD),
+    "Þetta gengur ekki án bíla.": ("any", _HAD),
+    "Ég sagði frá ferðinni.": ("any", _TOLD),
+    "Mamma sagði mér frá ferðinni í gærkvöldi.": ("any", _TOLD),
+    "Ég sagði frá bókunum í gær.": ("any", _TOLD),
+    "Ég sagði frá kennurunum í gær.": ("any", _TOLD),
+    "Hamingjan skiptir mestu máli.": ("any", _MATTERS),
+    "Kennarinn breytist aldrei.":
+        ("any", "being|critter|plant|body|place|struct|nature|sky|weather|time|text|film|music"),
+    "Dagar líða hratt á sumrin.": ("time", "none"),
+    "Hugmyndir koma og fara.":
+        ("any", "abstract|being|time|event|vehicle|weather|film|text|music|money"),
+}
 
 # ---------------------------------------------------------------------------
 # Plural. See "NO PLURAL" at the top.
@@ -619,7 +956,7 @@ MASS_CLASSES = ("substance", "abstract", "weather", "drink", "music")
 
 # Nouns of the mass classes that are counted in everyday speech.
 PLURAL_OK = _s("""
-skuggi geisli neisti logi
+skuggi geisli neisti logi orð heimur
 afleiðing afrek afsökun alda athugasemd atburður atkvæði atriði atvik aðferð
 bros brot bylgja bæn beiðni breyting brella dómur draumur drykkur dæmi einkunn
 elding erfiðleiki faðmlag fellibylur fjölmiðill flóð flóðbylgja fórn frásögn
@@ -651,6 +988,7 @@ sund sviti sykur sælgæti síðdegi tómatsósa undirheimur vanilla verðlaunaf
 veröld yfirvinna æska útbúnaður útland þjónustufólk
 farangur
 gras greni kex
+sólarlag sólsetur sólarupprás dögun tunglskin
 """)
 
 
@@ -689,8 +1027,17 @@ def prep(lemma):
     return PREP.get(lemma)
 
 
+def reviewed(lemma):
+    """Has somebody read this noun and put it in a list? A noun in no list is
+    `abstract` to `klass()` (so it is never shown in the plural) and is not
+    used in a frame."""
+    return lemma in _TABLE or lemma in ABSTRACT
+
+
 def excluded(lemma):
-    return lemma in EXCLUDE
+    """Not put into a generated sentence: unfit (`EXCLUDE`), out of place
+    (`NO_FRAME`), or never read (in no list at all)."""
+    return lemma in EXCLUDE or lemma in NO_FRAME or not reviewed(lemma)
 
 
 if __name__ == "__main__":
@@ -698,9 +1045,16 @@ if __name__ == "__main__":
     L = json.load(open("lexicon.json"))
     nouns = [w["o"] for w in L["w"] if w["c"] in ("kk", "kvk", "hk")]
     print(dict(collections.Counter(klass(n) for n in nouns)))
+    print("in no list (not used in frames):", sum(1 for n in nouns if not reviewed(n)),
+          "| abstract, reviewed:", sum(1 for n in nouns if n in ABSTRACT),
+          "| out of place:", sum(1 for n in nouns if n in NO_FRAME))
     print("excluded:", sum(1 for n in nouns if excluded(n)),
           "| with í/á:", sum(1 for n in nouns if prep(n)))
     print("not shown in the plural:", sum(1 for n in nouns if no_plural(n)))
     unknown = sorted(w for w in list(_TABLE) + list(PREP) + list(EXCLUDE)
-                     + list(PLURAL_OK) + list(NO_PLURAL) if w not in set(nouns))
+                     + list(PLURAL_OK) + list(NO_PLURAL) + list(ABSTRACT)
+                     + list(NO_FRAME) if w not in set(nouns))
+    both = sorted(w for w in ABSTRACT if w in _TABLE)
+    if both:
+        print("in ABSTRACT and in a class:", both)
     print("listed but not in the vocabulary:", len(unknown), unknown[:40])

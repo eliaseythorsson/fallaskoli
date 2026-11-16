@@ -162,6 +162,84 @@ function submitChoice(app) {
   });
 }
 
+/* ================= kenni: sterkt eða veikt nafnorð (item 27) ============
+ *
+ * The word's singular forms as the lesson writes them (hér er … til …), or
+ * only the nominative; from þyngd 5 a box for the genitive (`askGen`). Then
+ * sterk / veik. */
+
+RENDER.kenni = function (app) {
+  const t = app.cur;
+  t.picked = null;
+  const forms = t.show.map((x) => `${esc(x.h)} <b>${esc(x.f)}</b>`).join(" · ");
+  $("task").innerHTML = `
+  <div class="card">
+    ${eyebrow(t)}
+    <p class="sentence">${forms}${t.askGen ? ` · til <span class="blank">?</span>` : ""}</p>
+    <p class="gloss">${fmt(t.question)}</p>
+    ${t.askGen ? `<div class="answer">
+      <input type="text" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="til …">
+    </div><div class="keys" id="keys"></div>` : ""}
+    <div class="qrow"><div class="opts" data-q="val">
+      ${t.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>
+    <div class="answer"><button class="go" id="check">Athuga</button></div>
+    <div id="verdict"></div>
+  </div>`;
+  const box = document.querySelector(".opts");
+  box.onclick = (e) => {
+    const b = e.target.closest("button");
+    if (!b || b.disabled) return;
+    box.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    t.picked = t.options[+b.dataset.v];
+  };
+  box.addEventListener("keydown", (e) => {
+    const k = +e.key;
+    if (k >= 1 && k <= t.options.length) box.querySelectorAll("button")[k - 1].click();
+  });
+  if (t.askGen) {
+    wireKeys();
+    const inp = $("ans");
+    inp.focus();
+    enterToSubmit(inp, () => submitKenni(app));
+  }
+  $("check").onclick = () => submitKenni(app);
+};
+
+function submitKenni(app) {
+  const t = app.cur;
+  const typed = t.askGen ? $("ans").value : "";
+  const j = judge(t, { picked: t.picked, text: typed }, app);
+  if (j.pending) {
+    $("verdict").innerHTML = j.verdict === "hedged"
+      ? `<div class="verdict neutral"><h3>Veldu eina mynd</h3>
+      <p>Þú skrifaðir fleiri en eina mynd (${j.detail.g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.</p></div>`
+      : `<div class="verdict neutral"><p>${j.verdict === "empty"
+        ? "Skrifaðu eignarfall eintölu og veldu svo sterk eða veik."
+        : "Veldu sterk eða veik."}</p></div>`;
+    return;
+  }
+  const ok = j.ok, xp = j.xp;
+  const { v, kindOk, formOk, xpFull } = j.detail;
+  document.querySelectorAll(".opts button").forEach((b) => {
+    b.disabled = true;
+    const val = t.options[+b.dataset.v];
+    if (val === t.answer) b.classList.add("right");
+    else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
+    b.removeAttribute("aria-pressed");
+  });
+  if (t.askGen) $("ans").disabled = true;
+  const gen = t.gen.map(esc).join(" / ");
+  const said = t.askGen && !formOk
+    ? `<p>Þú skrifaðir <span class="forms">til ${esc(j.detail.typed)}</span>. Rétt er <span class="forms">til ${gen}</span>.</p>` : "";
+  conclude(app, t, j, () => {
+    $("verdict").innerHTML = `<div class="verdict ${ok ? (v && v.slip ? v.klass : "ok") : "no"}"><span class="xpop">+${xp} XP</span>
+    <h3>${ok ? cheer(CHEERS_OK) : !kindOk ? "Ekki alveg" : "Beygingin rétt, eignarfallið ekki"}</h3>
+    <p><span class="forms">til ${gen}</span> · beygingin er <b>${esc(t.answer)}</b>.</p>
+    ${said}${ok ? slipNote(v && v.slip, xp, xpFull) : nearNote(v)}${whyBox(t.why)}
+    <p class="streakline">Enter fyrir næstu.</p></div>`;
+  });
+}
+
 /* ================= tap ================================================== */
 
 RENDER.tap = function (app) {

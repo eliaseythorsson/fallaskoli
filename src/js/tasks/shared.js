@@ -6,7 +6,7 @@
    category asks for are in files of their own (cloze.js, tap.js). */
 
 import { readMark, isStyfdur } from "../core/marks.js";
-import { bandOf } from "../core/difficulty.js";
+import { bandOf, diffOf, hardnessWeight } from "../core/difficulty.js";
 import { skillLevel } from "../core/progress.js";
 import { wordKey } from "../core/state.js";
 import { chooseWord } from "../core/spacing.js";
@@ -142,7 +142,30 @@ function rankCut(lex, cls) {
   return (m[cls] ??= size());
 }
 
-/** Word choice: common words first, rarer as the skill level grows, and
+/* ---------- the second axis: hard words, hard cells (item 16) -------------
+ *
+ * The level a skill runs at chooses the sentence (`sentPool`) and, since
+ * v6.13, also how irregular the word may be and how hard the cell: see "the
+ * second axis" at the top of core/difficulty.js. Both helpers return a
+ * factor in [HARD_FLOOR, 1] to multiply into a weight (or to use as the odds
+ * of keeping a draw); neither ever returns 0, so nothing is starved. */
+
+/** The level the second axis reads: the skill's live level, in halves, never
+    above what the policy permits (as `bandFor`, but not rounded). */
+export const axisLevel = (view, skill) =>
+  Math.min(diffOf(view.sess, skill), view.policy.maxLevel ?? Infinity);
+
+/** The factor for a word of this irregularity (`x.irr`, set by the build). */
+export const wordEase = (view, x, skill) => hardnessWeight(axisLevel(view, skill), x.irr);
+
+/** The factor for the cell with BÍN mark `m`. During a review the cell is
+    given, not chosen, so every cell counts the same. */
+export const cellEase = (lex, view, skill, m) =>
+  (forcedCell(view) || !lex.cellHardness ? 1
+    : hardnessWeight(axisLevel(view, skill), lex.cellHardness(m)));
+
+/** Word choice: common words first, rarer as the skill level grows, regular
+    words first and irregular ones as the level of the session grows, and
     words this child gets wrong come back sooner. */
 export function wordWeight(lex, view, x, skill) {
   const { S, sess } = view;
@@ -159,6 +182,9 @@ export function wordWeight(lex, view, x, skill) {
   if (seen >= 4 && rec.w === 0) base *= 0.35;
   if (seen > 0) base *= 1 + 2.2 * (rec.w / seen);
   if (sess.seen.slice(-6).includes(x.o)) base *= 0.2;
+  /* Applied last and to everything above: a hard word a child got wrong
+     still comes back sooner than a hard word they have not met. */
+  base *= wordEase(view, x, skill);
   return base;
 }
 

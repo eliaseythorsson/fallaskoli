@@ -123,10 +123,20 @@ export function nounDescribedBy(lex, s, i) {
   return null;
 }
 
-/** Is this noun already in the sentence, somewhere other than the slot?
-    "Gatan liggur milli kirkju og kirkju", "Hundurinn fylgir hundinum". */
+/* A compound repeats the word it is made of: "Ferðin féll niður vegna
+   gönguferðarinnar", "Krakkarnir fóru í ferðina án ferðamannanna". Only
+   stems of four letters or more, so *ár* is not found in *árbók*. */
+const sharesStem = (a, b) => {
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  return short.length >= 4 && long.includes(short);
+};
+
+/** Is this noun already in the sentence, somewhere other than the slot — as
+    itself or inside a compound? "Gatan liggur milli kirkju og kirkju",
+    "Hundurinn fylgir hundinum", "Ferðin féll niður vegna ferðalagsins". */
 export const repeatsNoun = (s, slot, word) =>
-  s.tok.some((t, j) => j !== slot && t.c === "nafnorð" && t.l === word.o);
+  s.tok.some((t, j) => j !== slot && t.c === "nafnorð" && t.l
+    && (t.l === word.o || sharesStem(t.l, word.o)));
 
 /** Every noun that may stand in this sentence's slot. */
 export function candidateNouns(lex, s) {

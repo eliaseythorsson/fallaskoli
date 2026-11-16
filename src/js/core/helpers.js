@@ -1,4 +1,4 @@
-/* Helper nouns alongside pronouns.
+/* Helper nouns alongside pronouns — and, further down, alongside adjectives.
  *
  * *sá* on its own is not Icelandic a child has heard; *sá maður* is. One helper
  * noun per gender — maður / kona / barn — inflected from BÍN like everything
@@ -55,6 +55,48 @@ export function wantsHelper(entry, num = null) {
  */
 export function helperForm(lex, kyn, mark) {
   const lemma = HELPER_NOUNS[String(kyn).toLowerCase()];
+  if (!lemma || !mark) return null;
+  const w = lex.lookup(lemma, String(kyn).toLowerCase());
+  if (!w) return null;
+  const f = w.forms[mark];
+  return f && f[0] ? { lemma, form: f[0], entry: w, mark } : null;
+}
+
+/* ---------- adjectives -----------------------------------------------------
+ *
+ * An adjective is not said of everything. Until v6.13 the adjective table put
+ * *maður / kona / barn* beside every adjective there is — "ferskustu börnin",
+ * "augljós kona", "hálf börn". Now every adjective carries the nouns it is
+ * shown with (`h`, written by adj_classes.py: "ávöxtur/appelsína/epli", one
+ * per gender, "-" for a gender it is not said of), and an adjective that
+ * carries none is shown on its own. Nothing is guessed here: no `h`, no
+ * helper. */
+
+const GENDER_INDEX = { kk: 0, kvk: 1, hk: 2 };
+
+/** The helper noun's lemma for this adjective in this gender, or null. */
+export function adjectiveHelperLemma(adj, kyn) {
+  if (!adj || !adj.h) return null;
+  const lemma = String(adj.h).split("/")[GENDER_INDEX[String(kyn).toLowerCase()]];
+  return lemma && lemma !== "-" ? lemma : null;
+}
+
+/** The genders an adjective table may be asked in: those it has a helper
+    noun for (*ólétt kona* only), or all three when it is shown without one. */
+export function adjectiveGenders(adj) {
+  const all = ["KK", "KVK", "HK"];
+  if (!adj || !adj.h) return all;
+  const have = all.filter((k) => adjectiveHelperLemma(adj, k));
+  return have.length ? have : all;
+}
+
+/**
+ * The helper noun of an adjective in a given gender and noun mark, inflected
+ * by BÍN: `{ lemma, form, entry, mark }`, or null when the adjective has no
+ * helper in that gender or the noun lacks the form.
+ */
+export function adjectiveHelperForm(lex, adj, kyn, mark) {
+  const lemma = adjectiveHelperLemma(adj, kyn);
   if (!lemma || !mark) return null;
   const w = lex.lookup(lemma, String(kyn).toLowerCase());
   if (!w) return null;

@@ -1,6 +1,8 @@
 /* Lýsingarorð: sterk og veik beyging, stigbreyting, samræmi.
 
-     tbl_lo      beygingartafla with a helper noun beside every cell
+     tbl_lo      beygingartafla with a helper noun beside every cell — a
+                 noun the adjective is said of (*ferskt epli*, *augljóst
+                 svar*; adj_classes.py), or none where no noun suits
      revform     "Greindu beygðu myndina": a form straight out of BÍN, analysed.
                  It lives here because Lýsingarorð is the skill it is filed
                  under, but it serves three (`anyOf`): it asks about
@@ -13,12 +15,12 @@
 import { CASES, GENDERS, readMark } from "../core/marks.js";
 import { diffOf } from "../core/difficulty.js";
 import { wordKey } from "../core/state.js";
-import { helperForm } from "../core/helpers.js";
+import { adjectiveHelperForm, adjectiveGenders } from "../core/helpers.js";
 import { explainDegree } from "./explain.js";
 import { nounSentence, adjectiveSentence, showable } from "./frames.js";
 import { built } from "./effects.js";
 import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, cellWanted,
-         topByRank, wordWeight, cap1, caseWord } from "./shared.js";
+         topByRank, wordWeight, cellEase, cap1, caseWord } from "./shared.js";
 
 /* ================= Beygingartafla ======================================== */
 
@@ -36,12 +38,14 @@ const ADJ_DEGREES = {
 };
 
 /** The helper noun's form for an adjective cell: the article follows the
-    declension (weak = with, strong = without; the comparative takes none). */
-function helperNounFor(lex, deg, kyn, caseKey, num) {
+    declension (weak = with, strong = without; the comparative takes none).
+    The noun is the adjective's own (core/helpers.js): null for an adjective
+    that is shown without one. */
+function helperNounFor(lex, adj, deg, kyn, caseKey, num) {
   const a = ADJ_DEGREES[deg];
   if (!a) return null;
   const mark = `${caseKey}${num}${a.article ? "gr" : ""}`;
-  return helperForm(lex, kyn, mark);
+  return adjectiveHelperForm(lex, adj, kyn, mark);
 }
 
 export function tableAdj(lex, view, rng) {
@@ -54,7 +58,10 @@ export function tableAdj(lex, view, rng) {
      degree, gender and number, whatever the difficulty is now. */
   const fc = /^(FSB|FVB|MST|ESB|EVB)-(KK|KVK|HK)-(?:NF|ÞF|ÞGF|EF)(ET|FT)$/.exec(forcedCell(view) || "");
   if (forcedCell(view) && !fc) return null;
-  const kyn = fc ? fc[2] : pick(["KK", "KVK", "HK"], rng);
+  /* Only in a gender the adjective is said of: *óléttur* has a helper noun in
+     the feminine alone, and "óléttur maður" is not asked. (A review asks for
+     the cell that was missed, whatever it is.) */
+  const kyn = fc ? fc[2] : pick(adjectiveGenders(adj), rng);
   const num = fc ? fc[3] : pick(["ET", "FT"], rng);
   /* comparison arrives as difficulty rises */
   let degrees = ["FSB", "FVB"];
@@ -66,7 +73,7 @@ export function tableAdj(lex, view, rng) {
     const cells = CASES
       .map((cs) => {
         const caseKey = cs.k === "ÞG" ? "ÞGF" : cs.k;
-        const h = helperNounFor(lex, deg, kyn, caseKey, num);
+        const h = helperNounFor(lex, adj, deg, kyn, caseKey, num);
         return { m: `${deg}-${kyn}-${caseKey}${num}`, label: cs.name, helper: h ? h.form : null };
       })
       .filter((c) => adj.forms[c.m]);
@@ -138,11 +145,14 @@ export function taskReverse(lex, view, rng) {
     if (["kk", "kvk", "hk"].includes(p.cls)) marks = marks.filter((m) => showable(w, m));
     if (!marks.length) continue;
 
+    /* Cells this pupil gets wrong come more often; at a low level the
+       easier cells do (`cellEase`, item 16). */
+    const ease = (mm) => cellEase(lex, view, p.skill, mm);
     const m = wpick(marks, (mm) => {
       const rec = S.cells[mm];
-      if (!rec) return 2;
+      if (!rec) return 2 * ease(mm);
       const n = rec.c + rec.w;
-      return n < 3 ? 2 : 0.5 + 2.5 * (rec.w / n);
+      return (n < 3 ? 2 : 0.5 + 2.5 * (rec.w / n)) * ease(mm);
     }, rng);
     const form = w.forms[m].find((f) => counts.get(f) === 1);
     if (!form) continue;
@@ -325,7 +335,7 @@ export const TYPES = [
     build: taskReverse },
   { id: "tbl_lo", skill: "lysingarord", weight: 6, renderer: "table",
     tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 3, 4],
+    bands: [1, 2, 3, 4, 5],
     build: tableAdj },
   /* The three below read the band in one place only: the rank cap on the
      adjectives tried in a FRAME (`adjSlot`), which lets in a few more words at
