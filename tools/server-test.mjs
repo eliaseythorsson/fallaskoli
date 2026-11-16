@@ -268,11 +268,13 @@ async function openTab(page, view) {
   await openTab(page, "class");
   await page.waitForSelector("#board table.board tr", { timeout: 10000 });
 
-  /* v6.1: the board opens on the week. Both seeds earned their XP in March,
-     so this week is level at nought — press XP to get the all-time order. */
-  ok(await page.$eval('[data-metric="week"]', (b) => b.getAttribute("aria-pressed")) === "true",
-    "the board does not open on the week");
-  ok(await page.$(".weekline") !== null, "the weekly board says nothing about the week");
+  /* v6.13 (item 58): the board opens on Framfarir, and says what it counts.
+     Both seeds earned their XP in March and mended nothing, so this week is
+     level at nought — press XP to get the all-time order. */
+  ok(await page.$eval('[data-metric="framfarir"]', (b) => b.getAttribute("aria-pressed")) === "true",
+    "the board does not open on Framfarir");
+  ok((await page.$eval(".weekline", (p) => p.textContent)).includes("villumynstur"),
+    "the Framfarir board does not say what it counts");
   await page.evaluate(() => document.querySelector('[data-metric="xp"]').click());
   await page.waitForFunction(
     () => document.querySelector('[data-metric="xp"]')?.getAttribute("aria-pressed") === "true",

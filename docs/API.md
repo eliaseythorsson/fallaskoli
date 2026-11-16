@@ -132,7 +132,8 @@ server does not need to know about versions.
 ## Leaderboard, roster and rarity
 
 ```
-GET /leaderboard?metric=week|level|xp|badges|words|vocab|minutes  -> [ scorecard, ... ]
+GET /leaderboard?metric=framfarir|week|level|xp|badges|words|vocab|duels|minutes
+                                                      -> [ scorecard, ... ]
 GET /leaderboard?include=badges                       -> the same, with the badge lists
 GET /roster                                           -> [ { profile, name, level,
                                                              crest, crown, badgeIds,
@@ -145,15 +146,22 @@ GET /badges/stats                                     -> { users, qualified, bad
                                                            minUsers, minDays }
 ```
 
-The default metric is `week`: XP earned since Monday, from the day records. A
-scorecard row carries `week`, `title` and `showcase` on every metric; `level`
-is the best level the user has ever reached.
+The default metric is `framfarir` (v6.13, item 58): what got better this week
+— `3 ×` the different error patterns mended since Monday, plus the reviews
+passed since Monday, at most 6 counted per day (`core/mending.js`
+`weekGains`, which explains the rule). Every other metric grows with time
+spent; this one does not: right answers alone mend nothing and pass no review,
+and the daily cap bounds what missing on purpose and passing the queue the
+next day can bring. `week` is XP earned since Monday, from the day records. A
+scorecard row carries `framfarir`, `week`, `title` and `showcase` on every
+metric; `level` is the best level the user has ever reached.
 
 What users see of each other (v6.1) is all ids and numbers, and
 `src/js/core/social.js` is the one module that defines it:
 
 | field | shape | meaning |
 |---|---|---|
+| `framfarir` | number | v6.13: patterns mended and reviews passed this week, as above — which patterns and which days stay in the state |
 | `week` | number | XP earned this week (Monday–Sunday) |
 | `title` | `rank:<n>` or `badge:<id>` | the title the user chose; never text |
 | `showcase` | up to 3 badge ids | pinned badges — only ones the state holds |

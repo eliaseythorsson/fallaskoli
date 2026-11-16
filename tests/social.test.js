@@ -44,15 +44,16 @@ test("the week's XP counts that week and nothing else", () => {
   assert.equal(weekXp(blankState(), "2026-11-09"), 0);
 });
 
-test("the board opens on the week, and the week is a metric like the others", () => {
-  assert.equal(METRICS[0].id, "week");
+test("the week is a metric like the others (the board opens on Framfarir since item 58)", () => {
+  assert.equal(METRICS[0].id, "framfarir");
+  assert.equal(METRICS[1].id, "week");
   const S = blankState();
   S.days = { "2026-11-10": { xp: 75 } };
   const card = scorecard(S, lex, new Date(2026, 10, 12));
   assert.equal(card.week, 75);
   assert.equal(scorecard(S, lex, new Date(2026, 10, 17)).week, 0, "a new week starts from nothing");
-  const r = rank([{ profile: "a", week: 5 }, { profile: "b", week: 50 }]);
-  assert.equal(r[0].profile, "b", "rank() defaults to the week");
+  const r = rank([{ profile: "a", week: 5 }, { profile: "b", week: 50 }], "week");
+  assert.equal(r[0].profile, "b", "rank() by the week");
 });
 
 test("the level on the board is the best ever reached, so a break never demotes", () => {

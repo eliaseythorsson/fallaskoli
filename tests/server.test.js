@@ -176,8 +176,9 @@ test("the weekly board, the roster's shelf and last week's result", async () => 
   const c = client();
   await c("POST", "/auth/login", { username: "vika-a", password: "lykilordid-mitt" });
 
-  /* The default metric is the week, and it ranks by this week alone. */
-  const board = (await c("GET", "/leaderboard")).data.filter((r) => r.name.startsWith("vika-"));
+  /* The week ranks by this week alone. (Since item 58 the default is
+     "Framfarir"; the week is asked for by name.) */
+  const board = (await c("GET", "/leaderboard?metric=week")).data.filter((r) => r.name.startsWith("vika-"));
   assert.deepEqual(board.map((r) => r.name), ["vika-b", "vika-c", "vika-a"]);
   assert.equal(board[0].metric, "week");
   assert.equal(board[0].value, 80);

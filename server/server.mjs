@@ -47,7 +47,7 @@ import { dropPrivileges } from "./privs.mjs";
 
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
-import { scorecard, rank, METRICS } from "../src/js/core/leaderboard.js";
+import { scorecard, rank, METRICS, DEFAULT_METRIC } from "../src/js/core/leaderboard.js";
 import { aggregate, contribution, MIN_USERS, MIN_DAYS, measurable, monthKey, nextRefresh }
   from "../src/js/core/rarity.js";
 import { ROLES, can } from "../src/js/core/profile.js";
@@ -823,7 +823,8 @@ export function createApp({
   on("GET", "/leaderboard", async (req, res, { url }) => {
     const u = await needUser(req, res);
     if (!u) return;
-    const metric = url.searchParams.get("metric") || "week";
+    /* Item 58: a board opens on "Framfarir", not on volume. */
+    const metric = url.searchParams.get("metric") || DEFAULT_METRIC;
     let list = await cards(u);
     if (metric === "minutes") list = list.filter((c) => c.minutes != null);
     list = rank(list, metric);

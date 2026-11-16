@@ -100,7 +100,7 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     exportUrl: () => url("/account/export"),
 
     /* --- what only a server can answer --- */
-    leaderboard: (metric = "week") => call("GET", `/leaderboard?metric=${encodeURIComponent(metric)}`),
+    leaderboard: (metric = "framfarir") => call("GET", `/leaderboard?metric=${encodeURIComponent(metric)}`),
     badgeStats: () => call("GET", "/badges/stats"),
     roster: () => call("GET", "/roster"),
     social: () => call("GET", "/social"),

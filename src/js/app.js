@@ -23,6 +23,7 @@ import { $, esc, wireGlossary, queueBadges, hideTip, freshEnter, wirePrivacyLink
   setKeypadPref, keypadOn, keypadEnv, wireKeys, applyComfort } from "./ui/dom.js";
 import { measurable, badgeWindows } from "./core/rarity.js";
 import { socialContext } from "./core/social.js";
+import { DEFAULT_METRIC } from "./core/leaderboard.js";
 import { renderTask, revealTopic } from "./ui/render.js";
 import "./ui/render-more.js";
 import { wireReports, captureCard, renderReportsPanel } from "./ui/reports.js";
@@ -70,7 +71,8 @@ const app = {
   rights: null,
   roster: [],
   board: [],
-  boardMetric: "week",
+  /* Item 58: the class board opens on "Framfarir" (core/leaderboard.js). */
+  boardMetric: DEFAULT_METRIC,
   social: null,
   badgeStats: null,
 

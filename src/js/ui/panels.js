@@ -6,7 +6,8 @@ import { rarityOf, wordRarity, shareText, measurable, tierMove, TIERS,
 import { METRICS } from "../core/leaderboard.js";
 import { overallLevel, overallRank, levelBand } from "../core/progress.js";
 import { showcaseOf, togglePin, titleOf, titlesOf, titleText, medalOf, medalByTier,
-         holders, windowed, compare, feed, weekXp, SHOWCASE_MAX } from "../core/social.js";
+         holders, windowed, compare, feed, weekXp, weekKey, SHOWCASE_MAX } from "../core/social.js";
+import { weekGains, MEND_POINTS, MEND_RUN, REVIEWS_PER_DAY } from "../core/mending.js";
 import { crestOf } from "../core/profile.js";
 import { ALL_CLASSES } from "../core/marks.js";
 import { collectionByClass } from "../core/collection.js";
@@ -580,6 +581,7 @@ export function renderLeaderboard(app) {
     const cut = shown.length !== rows.length;
     box.innerHTML = `<div class="boardpick" id="boardpick"></div>
       ${metric.id === "week" ? weekLine(app, rows, me) : ""}
+      ${metric.id === "framfarir" ? gainsLine(app) : ""}
       ${metric.id === "vocab" ? `<p class="weekline">Orðaforði: 1 stig fyrir hvert orð í safninu (2 fyrir
         sjaldgæft orð), 2 í viðbót fyrir orð á valdi þínu og 1 fyrir orð sem þú hefur bjargað. Orð í
         hættu telur ekkert fyrr en því er bjargað — svo það borgar sig að halda öllu safninu við.</p>` : ""}
@@ -617,6 +619,23 @@ export function renderLeaderboard(app) {
     await app.loadBoard();
     renderLeaderboard(app);
   };
+}
+
+/* The sentence above "Framfarir" (item 58): what it counts, and this pupil's
+   own week in words — so a zero says where the points are, not that the
+   pupil is last. Read from the pupil's own state, the same function the
+   board's number comes from (core/mending.js `weekGains`). */
+function gainsLine(app) {
+  const g = weekGains(app.S, weekKey(new Date()));
+  const mine = g.mended || g.reviews
+    ? `Þín vika: ${g.mended ? `${g.mended} ${g.mended === 1 ? "villumynstur lagað" : "villumynstur löguð"}` : ""}${
+      g.mended && g.reviews ? " og " : ""}${g.reviews ? `${g.reviews} ${
+        g.reviews % 10 === 1 && g.reviews % 100 !== 11 ? "upprifjun tókst" : "upprifjanir tókust"}` : ""}.`
+    : "Ekkert komið enn í þessari viku — upprifjanirnar fremst í Dagsins lotu eru fljótlegasta leiðin.";
+  return `<p class="weekline">Framfarir telja það sem lagast í vikunni, ekki hve mikið er æft:
+    ${MEND_POINTS} stig fyrir hvert villumynstur sem þú lagar (${MEND_RUN} rétt í röð eftir að það var
+    algengt hjá þér) og 1 fyrir hverja upprifjun sem tekst, mest ${REVIEWS_PER_DAY} á dag. Talan byrjar
+    á núlli hjá öllum á mánudegi. ${esc(mine)}</p>`;
 }
 
 /* The sentence above the weekly board: how far it is to the next person, and
