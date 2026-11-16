@@ -83,6 +83,21 @@ import { skillSummary } from "./progress.js";
 import { statusOf } from "./wordhealth.js";
 import { lessonById } from "./lessons.js";
 
+/** @typedef {import("../types").State} State */
+/** @typedef {import("../types").Node} Node */
+/** @typedef {import("../types").Task} Task */
+/** @typedef {import("../types").Judgement} Judgement */
+/** @typedef {import("../types").ReviewEntry} ReviewEntry */
+/** @typedef {import("../types").Policy} Policy */
+/** @typedef {import("../types").When} When */
+/** @typedef {import("./mastery.js").Mark} Mark */
+/**
+ * How one node stands (`standingOfNode`): see there.
+ * @typedef {{id: string, locked: boolean, mastery: ?(Mark & {band?: ?number}),
+ *   answers: number, last: ?number, lastDays: ?number, due: number,
+ *   waiting: number, active: string[], needsWork: boolean}} Standing
+ */
+
 const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
 
 /* ---------- patterns on nodes ----------------------------------------------- */
@@ -128,6 +143,7 @@ export const NODE_PATTERNS = {
 export const LOOSE_PATTERNS = ["hljodvarp", "ending", "broddar", "stafsetning", "y_i", "n_nn", "dh_d",
   "ogreint"];
 
+/** @type {(node: ?Node) => string[]} */
 export const patternsOfNode = (node) => (node && NODE_PATTERNS[node.id]) || [];
 
 /* ---------- the nodes that are not their types ------------------------------ */
@@ -138,7 +154,8 @@ export const ATTR_NODE_IDS = ATTR_NODES.map((n) => n.id);
 
 /** Does this cell (a BÍN mark) carry the features the node is about? A node
     without `attrs` takes every cell; a cell that is not a mark ("setn:frumlag")
-    carries no features and belongs to no node with `attrs`. */
+    carries no features and belongs to no node with `attrs`.
+    @param {?Node} node @param {?string} cell @returns {boolean} */
 export function cellOfNode(node, cell) {
   const want = node && node.attrs ? Object.entries(node.attrs) : [];
   if (!want.length) return true;
@@ -151,6 +168,11 @@ export function cellOfNode(node, cell) {
  * it belongs to. `parts` is what the answer was about: [{ cell, ok }] — one
  * for most questions, one per cell for a table. `band` is the step of
  * difficulty it was asked at, as for `noteTypeAnswer`. Returns the ids written.
+ *
+ * @param {State} S @param {string} typeId
+ * @param {{cell: ?string, ok: boolean}[]} parts @param {number} band
+ * @param {number} [now]  ms
+ * @returns {string[]}
  */
 export function noteNodeAnswer(S, typeId, parts, band, now = Date.now()) {
   if (!S || !Array.isArray(parts)) return [];
@@ -176,11 +198,15 @@ export function noteNodeAnswer(S, typeId, parts, band, now = Date.now()) {
  * each with its own right or wrong, anything else its one cell with the
  * question's. Reads the task and the judgement (core/answer.js `judge`), as
  * core/review.js `readAnswer` does.
+ *
+ * @param {Task} task @param {Pick<Judgement, "ok"|"effects">} j
+ * @returns {{cell: string, ok: boolean}[]}
  */
 export function partsOf(task, j) {
   if (!task || !j) return [];
   if (task.type === "table")
-    return (j.effects || []).filter((e) => e.do === "record" && e.counts !== false && e.cell)
+    return (j.effects || []).filter(/** @returns {e is import("../types").RecordEffect} */
+      (e) => e.do === "record" && e.counts !== false && !!e.cell)
       .map((e) => ({ cell: e.cell, ok: !!e.ok }));
   return task.cell && typeof j.ok === "boolean" ? [{ cell: task.cell, ok: j.ok }] : [];
 }
@@ -192,7 +218,8 @@ export const mergeByNode = (base, local, remote) => mergeByType(base, local, rem
 
 /* ---------- the review queue, by node --------------------------------------- */
 
-/** The entries of the queue that are this node's, stale ones left out. */
+/** The entries of the queue that are this node's, stale ones left out.
+    @param {?Node} node @param {State} S @param {When} [now] @returns {ReviewEntry[]} */
 export function entriesOfNode(node, S, now = Date.now()) {
   if (!node || !node.types.length) return [];
   const today = dayOf(now);
@@ -204,6 +231,7 @@ export function entriesOfNode(node, S, now = Date.now()) {
 
 /* ---------- the standing of one node ---------------------------------------- */
 
+/** @type {(S: State, skill: string) => number} */
 const bandNow = (S, skill) => Math.min(MAX, Math.max(MIN, Math.round(storedLevel(S, skill))));
 
 /* The mark of a node with a record of its own: the same reading as a type's
@@ -235,13 +263,15 @@ function markOfTypes(S, node, now) {
 /**
  * How one node stands. Pure.
  *
- * @param {object} node  an entry of core/curriculum.js NODES
- * @param {object} S     the saved state
- * @param {number} now   ms
- * @returns {{
+ * @param {?Node} node  an entry of core/curriculum.js NODES
+ * @param {State} S     the saved state
+ * @param {number} [now]   ms
+ * @returns {?Standing}  null for no node. The fields:
+ *
  *   id: string,
  *   locked: boolean,          no question asks this yet — nothing below is set
- *   mastery: { level: 0..4, label, accuracy, n, right, band, reviewsOnTime, overdue, … },
+ *   mastery: { level: 0–4, label, accuracy, n, right, band, reviewsOnTime, overdue, … }
+ *                             (core/mastery.js Mark), null when locked
  *   answers: number,          answers ever given to the node
  *   last: ?number,            ms of the last answer, null if never
  *   lastDays: ?number,        whole days since, by the calendar (0 = today)
@@ -249,7 +279,6 @@ function markOfTypes(S, node, now) {
  *   waiting: number,          entries of the node in the queue at all
  *   active: string[],         ids of the node's error patterns that are active
  *   needsWork: boolean        due > 0 or an active pattern
- * }}
  */
 export function standingOfNode(node, S, now = Date.now()) {
   if (!node) return null;
@@ -281,7 +310,8 @@ export function standingOfNode(node, S, now = Date.now()) {
 /* ---------- words for the three facts --------------------------------------- */
 
 /** "í dag", "í gær", "fyrir 4 dögum", "fyrir 3 vikum", "fyrir 2 mánuðum" —
-    how long ago, in whole days by the calendar. null: never. */
+    how long ago, in whole days by the calendar. null: never.
+    @param {?number} days @returns {string} */
 export function lastText(days) {
   if (days == null) return "ekki æft enn";
   const d = Math.max(0, Math.floor(days));
@@ -299,7 +329,8 @@ export function lastText(days) {
 const one = (k) => k % 10 === 1 && k % 100 !== 11;
 
 /** What needs work, in words: "2 atriði bíða upprifjunar · 1 villumynstur
-    algengt núna". "" when nothing does. */
+    algengt núna". "" when nothing does.
+    @param {?Standing} st @returns {string} */
 export function needsText(st) {
   if (!st || st.locked) return "";
   const bits = [];
@@ -308,7 +339,9 @@ export function needsText(st) {
   return bits.join(" · ");
 }
 
-/** The whole node in one sentence, for a screen reader and a title. */
+/** The whole node in one sentence, for a screen reader and a title.
+    @param {Node} node @param {Standing} st @param {{teacher?: boolean}} [opts]
+    @returns {string} */
 export function nodeSentence(node, st, { teacher = false } = {}) {
   if (st.locked) return `${node.nm}. Læst: engar spurningar eru um þetta enn.`;
   const bits = [`${node.nm}. Vald: ${st.mastery.label}.`];
@@ -330,6 +363,8 @@ const LIDIR = { nl: "nafnliður", sl: "sagnliður", fl: "forsetningarliður", al
  * mark, "stjórn:á", "setn:frumlag" …); only the shapes this function is sure
  * of get a label, and a cell without one is not listed — a wrong label on a
  * child's mistake is worse than none.
+ *
+ * @param {?string} cell @returns {?string}
  */
 export function cellLabel(cell) {
   if (!cell || typeof cell !== "string") return null;
@@ -373,6 +408,8 @@ const figuresOf = (id, rec) => {
  *             right, wrong, weak } — `weak`: in danger (core/wordhealth.js)
  *   grid      for the node of the four cases, the noun table's sixteen cells:
  *             { [mark]: { c, w } }; null elsewhere
+ *
+ * @param {?Node} node @param {State} S @param {number} [now]  ms
  */
 export function nodeDetail(node, S, now = Date.now()) {
   const st = standingOfNode(node, S, now);
@@ -409,11 +446,13 @@ export function nodeDetail(node, S, now = Date.now()) {
   }
   const worst = (a, b) => b.missed - a.missed || b.due - a.due;
   out.cells = [...cells.values()].sort(worst).slice(0, 6).map((c) => {
+    /** @type {Partial<import("../types").RightWrong>} */
     const t = (S.cells || {})[c.cell] || {};
     return { ...c, right: t.c || 0, wrong: t.w || 0 };
   });
   out.words = [...words.values()].sort(worst).slice(0, 10).map((w) => {
     const [lemma, cls = ""] = w.key.split("|");
+    /** @type {Partial<import("../types").RightWrong>} */
     const t = (S.words || {})[w.key] || {};
     return { ...w, lemma, cls, right: t.c || 0, wrong: t.w || 0, weak: statusOf(t) === "weak" };
   });
@@ -435,12 +474,11 @@ export function nodeDetail(node, S, now = Date.now()) {
  * standing. Plain data — it is drawn from this and nothing else, and it is
  * what a teacher is sent (`teacherMap`).
  *
- * @param {object} S
- * @param {number} now
- * @param {?object} policy  the pupil's effective policy (core/state.js
- *        effectivePolicy), to say which nodes are switched on; null = by
- *        `S.enabled` alone
- * @returns {{ at, cats: Array, totals: object, loose: Array, next: string[] }}
+ * @param {State} S
+ * @param {number} [now]  ms
+ * @param {?Pick<Policy, "skill"|"type">} [policy]  the pupil's effective
+ *        policy (core/state.js effectivePolicy), to say which nodes are
+ *        switched on; null = by `S.enabled` alone
  */
 export function mapOf(S, now = Date.now(), policy = null) {
   const summary = new Map(skillSummary(S).map((r) => [r.id, r]));
@@ -515,7 +553,10 @@ export function mapOf(S, now = Date.now(), policy = null) {
  *              pattern keeps, the raw histories, XP and stig, and nothing a
  *              pupil typed (the state does not hold it)
  *
- * @returns {{ teacher: true, cats, totals, loose, next, details: { [nodeId]: object } }}
+ * @param {State} S @param {number} [now]  ms
+ * @param {?Pick<Policy, "skill"|"type">} [policy]
+ * Returns `{ teacher: true, cats, totals, loose, next, details }`, `details`
+ * keyed by node id.
  */
 export function teacherMap(S, now = Date.now(), policy = null) {
   const m = mapOf(S, now, policy);
@@ -548,6 +589,8 @@ export const NODE_RUN = 10;
  * What the node's session is: exactly its question types, narrowed to its
  * features, opening with the node's own reviews that are due (most urgent
  * first, as every session's opening — core/review.js). null for a locked node.
+ *
+ * @param {?Node} node @param {State} S @param {When} [now] @param {number} [n]
  */
 export function nodeSession(node, S, now = Date.now(), n = NODE_RUN) {
   if (!node || !node.types.length) return null;
