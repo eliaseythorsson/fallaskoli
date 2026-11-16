@@ -42,6 +42,7 @@ import {
 } from "./auth.mjs";
 import { cleanState, suspicion, MAX_STATE_BYTES } from "./guard.mjs";
 import { privacyConfig, privacyPage, CONSENT_AGE, PRIVACY_VERSION } from "./privacy.mjs";
+import { createCalibration } from "./calibrate.mjs";
 import { seal, passphraseProblem } from "./backup.mjs";
 import { dropPrivileges } from "./privs.mjs";
 
@@ -562,6 +563,9 @@ export function createApp({
         consent: u.consent || null,
         share: shareOf(u),
         hiddenFromBoardByAdmin: hidden.includes(u.id),
+        /* v6.13 (item 17): their own switch for the anonymous counting;
+           null when they never touched it. */
+        countedInStatistics: typeof u.stats === "boolean" ? u.stats : null,
         heldForReview: u.review || null,
       },
       curriculumCeiling: policies[u.id] || null,
@@ -1924,6 +1928,19 @@ export function createApp({
     return json(res, 200, status);
   });
 
+  /* --- calibration from real answers, and the answer sample (v6.13) ------
+   * Critique items 17 and 38. Everything is in server/calibrate.mjs — who is
+   * counted, the caps, the weekly run, the routes — so that this file only
+   * lends it the helpers that decide who is logged in and who teaches whom.
+   * Routes: GET /calibration, POST /calibration/answers, POST /account/stats,
+   * GET+POST /teacher/samples, GET /admin/calibration,
+   * GET /admin/classifier/samples.json, DELETE /admin/classifier/samples. */
+  const calibration = createCalibration({
+    store, env, lex, cellMarks: Object.values(DATA.lex.orders || {}).flat(),
+    audit, groupOf, consentOk,
+  });
+  calibration.routes({ on, json, readBody, needUser, needAdmin, needTeacher, sendFile });
+
   /* --- retention (v6.3) ---------------------------------------------------
    *
    * Nothing is kept for ever. Two rules, and the privacy notice states both
@@ -2116,7 +2133,7 @@ export function createApp({
   server.requestTimeout = 60000;
   server.headersTimeout = 20000;
 
-  return { server, store, handler, lex, google, privacy, sweep };
+  return { server, store, handler, lex, google, privacy, sweep, calibration };
 }
 
 /* ---------- start-up when this file is run directly ---------- */
@@ -2154,8 +2171,15 @@ if (isMain) {
   const tidy = () => app.sweep().then((r) => {
     if (r.erased.length) console.log(`  varðveisla: ${r.erased.length} aðgangi/aðgöngum eytt`);
   }).catch((e) => console.error("varðveisla:", e.message));
-  tidy();
-  setInterval(tidy, 12 * 3600000).unref();
+  /* The calibration table is worked out again when a week has passed
+     (server/calibrate.mjs `run` — it does nothing when it is not due). It
+     also runs when a browser asks for the table; this is for a server
+     nobody visits for a while. */
+  const calibrate = () => app.calibration.run().then((r) => {
+    if (r && r.changes.length) console.log(`  kvörðun: ${r.changes.length} gildi breyttust`);
+  }).catch((e) => console.error("kvörðun:", e.message));
+  tidy(); calibrate();
+  setInterval(() => { tidy(); calibrate(); }, 12 * 3600000).unref();
 
   /* Asked to stop (a deploy, a machine going to sleep): finish what is being
      answered, then go. Every write is already atomic, so this is courtesy. */

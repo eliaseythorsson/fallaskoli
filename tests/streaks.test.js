@@ -111,49 +111,60 @@ test("noteLogin marks today and says whether it was the first visit", () => {
 });
 
 /* ================= the badges =========================================== */
+/* The three ladders are counted in weeks since v6.13 (item 57); the day
+   ladders are retired and covered in tests/weeks.test.js. What stays true here
+   is the separation: each counter has its own badge, and the login ones are
+   judged at start-up only. */
+
+/** Four days of every week for `weeks` weeks back from this Wednesday in term. */
+const TERM = new Date(2026, 9, 14);                   // Wed 14 Oct 2026
+function termWeeks(S, weeks, { a = 0, lg = 1, perWeek = 4 } = {}) {
+  const mon = new Date(TERM); mon.setDate(mon.getDate() - 2);
+  for (let w = 0; w < weeks; w++) {
+    for (let i = 0; i < perWeek; i++) {
+      const d = new Date(mon); d.setDate(mon.getDate() - 7 * w + i);
+      if (d > TERM) continue;
+      day(S, dkey(d), { a, lg });
+    }
+  }
+}
 
 test("the login badges exist and are only tested at start-up", () => {
   const ids = LOGIN_BADGES.map((b) => b.id);
-  assert.ok(ids.includes("login7"), ids.join(" "));
-  assert.ok(ids.includes("login30"), ids.join(" "));
+  assert.deepEqual(ids, ["wklogin2", "wklogin4", "wklogin8", "wklogin12", "wklogin20", "wklogin30"]);
   /* Not on an answer. If they were, `checkBadges` would hand them out again on
      every question of the day. */
   const S = blankState();
-  backwards(TODAY, 40).forEach((k) => day(S, k, { a: 20, lg: 1 }));
-  const ctx = badgeContext(S, newSession(S), {}, TODAY);
+  termWeeks(S, 6, { a: 20 });
+  const ctx = badgeContext(S, newSession(S), {}, TERM);
   const onAnswer = checkBadges(ctx, S.badges, {}, BADGES, {});
   assert.deepEqual(onAnswer.filter((b) => b.when === "login"), []);
 });
 
-test("a week of visits wins the week badge, at start-up", () => {
+test("weeks of visits win the visit badge, at start-up, and nothing about answering", () => {
   const S = blankState();
-  backwards(TODAY, 7).forEach((k) => day(S, k, { a: 0, lg: 1 }));
-  const won = checkLogin(badgeContext(S, newSession(S), {}, TODAY), S.badges, {}, BADGES, {});
+  termWeeks(S, 5, { a: 0, lg: 1 });     // this week is still short; four whole ones before it
+  const won = checkLogin(badgeContext(S, newSession(S), {}, TERM), S.badges, {}, BADGES, {});
   const ids = won.map((b) => b.id);
-  assert.ok(ids.includes("login7"), ids.join(" "));
-  assert.ok(!ids.includes("login30"), ids.join(" "));
-  /* Nothing about answering: nothing was answered. */
-  assert.ok(!ids.some((x) => x.startsWith("ansday")), ids.join(" "));
+  assert.deepEqual(ids, ["wklogin2", "wklogin4"]);
 });
 
-test("a month of answers wins the answer badges, on an answer", () => {
+test("weeks of answers win the answer badges, on an answer; the goal ladder stays locked", () => {
   const S = blankState();
-  backwards(TODAY, 30).forEach((k) => day(S, k, { a: 1, lg: 1 }));
-  const won = checkBadges(badgeContext(S, newSession(S), {}, TODAY), S.badges, {}, BADGES, {});
-  const ids = won.map((b) => b.id);
-  assert.ok(ids.includes("ansday30"), ids.join(" "));
-  assert.ok(ids.includes("ansday7"), ids.join(" "));
-  /* The goal was never met, so the goal ladder stays locked. */
-  assert.ok(!ids.some((x) => /^day\d+$/.test(x)), ids.join(" "));
+  S.goal = 10;
+  termWeeks(S, 5, { a: 1, lg: 1 });                    // answered, goal never met
+  const ids = checkBadges(badgeContext(S, newSession(S), {}, TERM), S.badges, {}, BADGES, {})
+    .map((b) => b.id);
+  assert.ok(ids.includes("wkans2") && ids.includes("wkans4"), ids.join(" "));
+  assert.ok(!ids.some((x) => /^wk\d+$/.test(x)), ids.join(" "));
 });
 
 test("a streak badge is not handed out twice", () => {
   const S = blankState();
-  backwards(TODAY, 10).forEach((k) => day(S, k, { a: 0, lg: 1 }));
-  const awards = {};
-  const first = checkLogin(badgeContext(S, newSession(S), {}, TODAY), S.badges, awards, BADGES, {});
+  termWeeks(S, 5);
+  const first = checkLogin(badgeContext(S, newSession(S), {}, TERM), S.badges, {}, BADGES, {});
   first.forEach((b) => { S.badges[b.id] = { n: 1, dates: ["x"], first: "x", last: "x" }; });
-  const second = checkLogin(badgeContext(S, newSession(S), {}, TODAY), S.badges, {}, BADGES, {});
+  const second = checkLogin(badgeContext(S, newSession(S), {}, TERM), S.badges, {}, BADGES, {});
   assert.deepEqual(second.map((b) => b.id), []);
 });
 
@@ -162,8 +173,8 @@ test("crossing several steps in one load wins all of them", () => {
      existed arrives with a long streak already in it, and equality would give
      the child nothing at all. */
   const S = blankState();
-  backwards(TODAY, 20).forEach((k) => day(S, k, { a: 0, lg: 1 }));
-  const ids = checkLogin(badgeContext(S, newSession(S), {}, TODAY), S.badges, {}, BADGES, {})
+  termWeeks(S, 9);
+  const ids = checkLogin(badgeContext(S, newSession(S), {}, TERM), S.badges, {}, BADGES, {})
     .map((b) => b.id).sort();
-  assert.deepEqual(ids, ["login7"]);   // v6.9: 3 and 14 are retired
+  assert.deepEqual(ids, ["wklogin2", "wklogin4", "wklogin8"]);
 });

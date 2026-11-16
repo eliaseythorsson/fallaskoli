@@ -12,7 +12,10 @@ Two rules hold throughout:
 * **Nothing a child wrote ever leaves its own state.** The leaderboard, the
   roster and the badge statistics carry sortable numbers and identifiers only.
   `tests/guarded.test.js` pins that with an allowlist, so adding a field to the
-  scorecard fails a test until somebody decides it belongs there.
+  scorecard fails a test until somebody decides it belongs there. Two
+  exceptions, both the sender's own act or opt-in: an error report (🚩), and —
+  only in a group whose teacher has switched it on — an anonymous wrong word
+  form in `POST /calibration/answers` (below).
 
 Error bodies are always `{ "error": "<message in Icelandic>" }`. The messages are
 shown to the user, which is why they are the one part of this document that is
@@ -363,6 +366,116 @@ Setting and deleting an assignment is written to the audit trail; looking at
 the table is not. Erasing a user removes their results; an assignment a
 guardian set stays with the group, its `by` cleared. Deleting a group deletes
 its assignments. All of it is in the backup.
+
+## Calibration from real answers, and the answer sample (v6.13)
+
+Items 17 and 38. `server/calibrate.mjs` holds the routes; the arithmetic is
+`src/js/core/calibration.js` and the classifier check
+`src/js/core/classifiercheck.js`.
+
+```
+GET    /calibration            -> { on, table, collect, samples, canCount, choice, byDefault }
+POST   /calibration/answers    { events: [event], samples?: [sample] }
+                               -> { ok, counted, records, samples, collect }   429 over 150 requests today
+POST   /account/stats          { on: boolean } -> { ok, choice, collect }
+
+GET    /teacher/samples        ?group= -> { group: { id, name }, on, available }
+POST   /teacher/samples        { group?, on: boolean } -> { ok, on }   409 FALLASKOLI_SAMPLES=0 · audited
+
+GET    /admin/calibration             -> report                     canAdminUsers
+GET    /admin/classifier/samples.json -> { v: 1, about, samples: [sample] }   (attachment)
+DELETE /admin/classifier/samples      -> { ok }                     audited
+```
+
+**`GET /calibration`** is asked once per load. `on` is false when the server
+runs with `FALLASKOLI_CALIBRATION=0`; `table` is then null. `collect`: this
+account's answers are counted, so the browser sends them (it sends nothing
+otherwise). `samples`: the teacher of this account's group has switched the
+answer sample on, and the account is counted. `canCount`, `choice` (the
+account's own switch: true, false, or null when never touched) and `byDefault`
+(what applies while it is null) are for *Aðgangurinn minn*. The request also
+runs the weekly estimate if it is due.
+
+The **table** is `{ v: 1, at, types, cells, irr }` or null:
+
+| Field | Meaning | Bounds |
+|---|---|---|
+| `types` | `{ "<typeId>": { "<level 1–7>": shift } }` — a pupil whose skill stands at that level gets this type built as if the level were `level + shift` (held inside the skill's range) | −1 … +1, in quarters |
+| `cells` | `{ "<BÍN mark>": score }` — replaces the build's hardness of that cell (`lexicon.cellHardness`) | 1–5, within ±1 of the build's |
+| `irr` | `{ "<1–5>": score }` — what a word's built-in irregularity score counts as | 1–5, within ±1, never out of order |
+
+Only entries that differ from the built-in values are present; an empty table
+changes nothing. The browser rebuilds it field by field (`cleanTable`) and
+anything else — a 404 from an older server, a damaged body, `v` it does not
+know — is treated as no table: built-in values throughout. Duels never apply
+it.
+
+An **event** is one judged answer to a fresh question of ordinary practice:
+
+```
+{ t: "<typeId>", l: <level 1–7>, ok: <boolean>, recs: [ [ "<BÍN mark or ''>", <irr 0–5>, 0|1 ] ] }
+```
+
+`l` is the level the question's skill stood at; `recs` has one entry per
+record the answer made (a table: one per cell) with the cell, the word's
+built-in irregularity score, and right or wrong. The server keeps only what
+passes `cleanEvents`: a type the registry has, a whole level, a mark the
+bundle has, a score 0–5. No other field is read, so there is nothing an answer
+could travel in. At most 40 events per request and 30 records per event.
+
+What is counted, and what stops a flood: an account must be `counted` (a
+learner, active, with a consent record, not switched off, not held for review;
+with `strict`, consent to notice ≥ 2026-11-17 or the account's own yes). Per
+account per day: 150 requests, 400 questions, 2,500 records — and towards one
+type-and-level 12, one cell 8, one irregularity bucket 150. The per-account
+tally lives in `calibration-quota.json` for that day only and is not in the
+backup; the counts themselves (`calibration.json`) hold no account, group or
+time: `types["fill|3"] = [right, total]`, `cells["fill|3|EFFT|4"] = [right,
+total]`, and per number the largest count of different accounts seen on one
+day. At most 8,000 cell keys.
+
+**The run** happens when a week has passed since the last (checked on `GET
+/calibration`, at start-up and every 12 hours). It needs ≥ 3 counted learners
+active in the last two periods; then per number ≥ 40 answers (types) or ≥ 60
+(cells, irregularity), ≥ 3 different accounts on one day, a reference of ≥ 3
+other types at that level (or cells of the same built-in score), and a
+difference larger than 3 points of share right and than 1.645 posterior
+standard deviations of a beta-binomial estimate whose prior weighs 40 (types)
+or 60 answers. A value then moves 0.25, never beyond ±1 of the built-in. After
+the run every count is multiplied by 0.85, and a type-and-level whose shift
+changed starts counting afresh.
+
+The **report** (`GET /admin/calibration`):
+`{ on, strict, samplesOn, periodDays, minPupils, lastRun, nextRun, due, runs,
+table, totals: { questions, records, keys, maxKeys }, log: [run], classifier }`.
+A `run` is `{ at, run, pupils, questions, records, changes: [change], slope?,
+note? }`; a `change` is `{ k: "type", id, band, from, to, n, p, base }` or
+`{ k: "cell"|"irr", id, from, to, builtIn, n, p, dev }`. The last 60 runs are
+kept. `classifier` is `{ kept, cap, offered, groupsOn, n, disagree, rate,
+ambiguous, byPattern: [ { p, name, n, disagree, ambiguous, rate } ], byKind }`.
+
+A **sample** (item 38) is `{ t, w, m, typed, right, p, conj? }`: the question
+type, the word as `lemma|class`, the cell asked for, the wrong form typed, the
+form expected, the pattern ids the classifier gave, and for a verb its
+conjugation. It is kept only if the account's group has `samples: true`
+(`POST /teacher/samples`, by the group's guardian or the administrator;
+default false), and only if it passes `cleanSample`: `w` is a word of the
+lexicon, `m` one of its cells, `right` one of that cell's forms, and `typed`
+one word of Icelandic letters, at most 32, that is not the right answer and
+resembles a form of the word (it begins as one of them does — three letters,
+two for a short form — or is within two letters of one). At most 6 per request and 20 per account per day; the server
+keeps 500 as a reservoir sample in random order, each with the month it was
+taken and nothing else, for 12 months. `samples.json` is in the backup.
+
+The classifier check compares each sample with every form of its word
+(`ruleReading`) and reports where that reading and the classifier's patterns
+cannot both be right (`agreement`); `classifiercheck.js` says what the measure
+can and cannot show. The downloaded file is the format of
+`tests/fixtures/wrong-answers.json`.
+
+`/account/export` carries the account's own switch as
+`account.countedInStatistics`. Erasing an account removes it from today's
+tally; the anonymous counts and samples cannot be traced to it and stay.
 
 ## Error reports (v6.8)
 

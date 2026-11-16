@@ -13,15 +13,17 @@ import { reviewLine, queuePattern } from "./core/review.js";
 import { planToday } from "./core/today.js";
 import { STREAK_N, streakPattern, startStreak, stepStreak, streakEntry, streakLine } from "./core/streak.js";
 import { statusOf, weakWords, drillable, startDrill, drillStep, settleDrill } from "./core/wordhealth.js";
-import { grantXp } from "./core/state.js";
+import { grantXp, cleanWeekGoal } from "./core/state.js";
 import { renderDrillBar } from "./ui/drill.js";
 import { createStore } from "./storage/index.js";
 import { createClock } from "./core/timing.js";
 import { createDefinitions, bundledSource, remoteSource } from "./core/definitions.js";
 import { serverMode, createServer, serverDriver, liftLocalState } from "./core/server.js";
+import { CAL, eventOf, cleanTable, tableIsEmpty, lexHardness } from "./core/calibration.js";
+import { SAMPLE, samplesOf } from "./core/classifiercheck.js";
 import { $, esc, wireGlossary, queueBadges, hideTip, freshEnter, wirePrivacyLinks, openSheet,
   setKeypadPref, keypadOn, keypadEnv, wireKeys, applyComfort } from "./ui/dom.js";
-import { measurable, badgeWindows } from "./core/rarity.js";
+import { measurable, badgeWindows, windowsFor } from "./core/rarity.js";
 import { socialContext } from "./core/social.js";
 import { DEFAULT_METRIC } from "./core/leaderboard.js";
 import { renderTask, revealTopic } from "./ui/render.js";
@@ -54,6 +56,8 @@ import { LESSONS, readCount, lessonById, lessonPractice, practiceSkills, PRACTIC
    for a duel (core/duel.js). Looked up at each call, not captured, so that the
    browser test's fixed seed — which replaces Math.random — still takes. */
 const rng = () => Math.random();
+/* A calibration table that changes nothing (see `app.viewCal`). */
+const EMPTY_TABLE = Object.freeze({ v: CAL.v, types: {}, cells: {}, irr: {} });
 
 let store = createStore();
 /* Browser storage itself, kept separately so that older progress can be lifted
@@ -113,9 +117,13 @@ const app = {
   /** The lexicon duels are built from: the filtered vocabulary, for everyone,
       so both players' browsers build the same questions. */
   lexForDuels() {
-    if (!(DATA.blocked || []).length) return this.lex;
-    if (effectivePolicy(this.S).safeVocab) return this.lex;
-    return (this.duelLex ||= buildLexicon(DATA, { hide: new Set(DATA.blocked) }));
+    /* v6.13 (item 17): …and never with calibrated scores. This browser's
+       table may be a week older than the opponent's, and the server builds
+       from none; `this.lex` is only shared when it carries no table. */
+    const plain = !lexHardness(this.cal);
+    const blocked = (DATA.blocked || []).length;
+    if (plain && (!blocked || effectivePolicy(this.S).safeVocab)) return this.lex;
+    return (this.duelLex ||= buildLexicon(DATA, { hide: blocked ? new Set(DATA.blocked) : null }));
   },
 
   /** Fetch the duels, settle any that have finished, redraw. */
@@ -148,8 +156,9 @@ const app = {
       this.save();
       this.refresh();
       if (won.length) {
-        const { show, quiet } = badgeWindows(won, this.badgeStats);
-        queueBadges(show, () => {}, quiet);
+        /* Not over a question: a session in progress holds them for its summary. */
+        const { show, quiet } = windowsFor(won, this.badgeStats, { inSession: !!this.run });
+        if (show.length) queueBadges(show, () => {}, quiet);
       }
     }
     if (!this.duelRun) renderDuelBar(this);
@@ -306,6 +315,57 @@ const app = {
      a result that could not be sent, retried on the next load. */
   assignments: [],
   assignmentPending: null,
+
+  /* ---- calibration (item 17, core/calibration.js) ----
+     `cal` is the table the server published, cleaned — or null: no server,
+     no table yet, the switch is off, or the answer was not a table. With
+     null everything runs on the values the program was built with.
+     `calInfo` is the server's whole answer: whether this account's answers
+     are counted (`collect`) and whether its group's teacher has switched on
+     the sample of wrong answers (`samples`). The two queues hold what has
+     not been sent yet; nothing in them is saved, and what cannot be sent is
+     dropped — a lost count costs nothing. */
+  cal: null,
+  calInfo: null,
+  calQueue: [],
+  calSamples: [],
+
+  /** The table a view of ordinary practice carries (tasks/view.js `cal`):
+      the published one, or an empty one when there is none but this
+      account's answers are counted, so that its questions are still marked. */
+  viewCal() {
+    return this.cal || (this.calInfo && this.calInfo.collect ? EMPTY_TABLE : null);
+  },
+
+  /** One judged answer, offered to the count. Only a fresh question of
+      ordinary practice carries `calBand` (tasks/next.js), and only once. */
+  noteAnswer(task, j) {
+    const info = this.calInfo;
+    if (!this.server || !info || !info.collect || !task || task.calCounted) return;
+    const e = eventOf(task, j, this.lex);
+    if (!e) return;
+    task.calCounted = true;
+    this.calQueue.push(e);
+    if (info.samples) {
+      const room = SAMPLE.perPost - this.calSamples.length;
+      if (room > 0) this.calSamples.push(...samplesOf(task, j, this.lex).slice(0, room));
+    }
+    if (this.calQueue.length >= 8) this.flushAnswers();
+  },
+
+  /** Send what has been collected. Best effort: a failure is not retried. */
+  flushAnswers() {
+    if (!this.server || !this.calQueue.length) return;
+    const events = this.calQueue.splice(0, CAL.perPost);
+    const samples = this.calSamples.splice(0, SAMPLE.perPost);
+    this.server.sendAnswers({ events, ...(samples.length ? { samples } : {}) })
+      .then((r) => { if (r && r.collect === false && this.calInfo) this.calInfo.collect = false; })
+      .catch((err) => {
+        /* Refused (today's allowance is used up, or the account is no
+           longer counted): nothing more is sent this visit. */
+        if (err && err.status && err.status < 500 && this.calInfo) this.calInfo.collect = false;
+      });
+  },
 
   /** Fetch the open assignments; redraw the picker if it is on the screen. */
   async loadAssignments() {
@@ -498,6 +558,7 @@ const app = {
     const view = makeView({
       S: this.S, sess: this.sess, policy: this.policy, forcedNoun: this.forcedNoun,
       mix: { n: r.n, counts }, inRun: true, huntPrefer: huntPreferFor(ids),
+      cal: this.viewCal(),
     });
     const effects = new Map();
     const buildIn = (v) => () => {
@@ -558,6 +619,7 @@ const app = {
     this.policy = null;
     this.streak = null; this.streakOffer = null;
     if (!r) return;
+    this.flushAnswers();
     if (!r.i) {
       this.runDone = null;
       if (empty) this.runNotice = "Engin spurning fannst í þessu efni með þeim stillingum sem eru á. " +
@@ -603,6 +665,20 @@ const app = {
       if (this.runDone === done && !this.run && !this.cur) renderSummary(this);
     });
     this.next();
+    /* Item 61: the one celebration of the session. The summary is on the
+       screen and lists every badge the session won; the windows come now, over
+       it, within the usual ceiling (`badgeWindows`: the rare ones all, then two
+       more) and the rest are named on the last. Badges still held from a
+       rescue drill outside any session go with them, once. */
+    const held = this.sess.heldBadges || [];
+    this.sess.heldBadges = [];
+    const all = [...r.badges, ...held.filter((h) => !r.badges.some((b) => b.id === h.id))];
+    if (all.length) {
+      const { show, quiet } = badgeWindows(all, this.badgeStats);
+      queueBadges(show, () => {
+        document.querySelector("#task .summary .nextrow button")?.focus();
+      }, quiet);
+    }
   },
 
   quitRun() {
@@ -706,8 +782,8 @@ const app = {
     this.save();
     if (!won.length) return;
     this.refresh();
-    const { show, quiet } = badgeWindows(won, this.badgeStats);
-    queueBadges(show, () => {}, quiet);
+    const { show, quiet } = windowsFor(won, this.badgeStats, { inSession: !!this.run });
+    if (show.length) queueBadges(show, () => {}, quiet);
   },
 
   /** Begin a rescue drill on one word, from the offer or from the collection. */
@@ -1007,6 +1083,12 @@ const app = {
        word just missed) is already in the cabinet above, but its window and
        its confetti wait for the next answer that is right. Two pop-ups on a
        child's first two answers, both wrong, read as a reward for missing. */
+    /* Item 61: inside a session NO window opens between questions. Everything
+       won is already in the cabinet and in `run.badges` (`awardBadge`); the
+       summary lists it and celebrates it once (`endRun`). That covers "Þrjár í
+       röð" and the worked example too, which are parts of a session. The
+       v6.9 rule above still governs a rescue drill, which has no summary. */
+    if (this.run) return;
     const c = celebrate(this.sess.heldBadges, won, extra.correct ?? null);
     this.sess.heldBadges = c.held;
     if (!c.show.length) return;
@@ -1235,6 +1317,11 @@ function wireSettings() {
     const v = parseInt($("goalin").value, 10);
     if (v > 0 && v < 500) { app.S.goal = v; app.save(true); renderStats(app); app.refresh(); }
   };
+  /* Item 57: the weekly goal, 2-7 days; the week streak is read from it at once. */
+  $("weekin").onchange = (e) => {
+    app.S.weekGoal = cleanWeekGoal(e.target.value);
+    app.save(true); renderStats(app); app.refresh();
+  };
   $("set-decay").onchange = (e) => { app.S.settings.decay = e.target.checked; app.save(true); };
   $("set-gloss").onchange = (e) => { app.S.settings.glossary = e.target.checked; app.save(true); };
   /* Item 53: the letter pad. Once switched either way it is the child's
@@ -1416,8 +1503,8 @@ function judgeSocial() {
   app.save();
   if (!won.length) return;
   app.refresh();
-  const { show, quiet } = badgeWindows(won, app.badgeStats);
-  queueBadges(show, () => {
+  const { show, quiet } = windowsFor(won, app.badgeStats, { inSession: !!app.run });
+  if (show.length) queueBadges(show, () => {
     document.querySelector(
       "#task input[type=text]:not([disabled]), #task textarea:not([disabled]), #check")?.focus();
   }, quiet);
@@ -1455,16 +1542,30 @@ async function init() {
      program still obeys it offline; the server never trusts the cached copy
      on the way back up (PUT /state/:id). */
   if (app.server) {
-    const ceiling = await app.server.myPolicy().catch(() => null);
+    /* …and with it the calibration table (item 17): one small request, and
+       anything but a table — an older server, a refusal, no answer — leaves
+       the program on the values it was built with. */
+    const [ceiling, cal] = await Promise.all([
+      app.server.myPolicy().catch(() => null),
+      app.server.calibration().catch(() => null),
+    ]);
     if (ceiling) app.S.allowed = ceiling.policy || null;
+    app.calInfo = cal && typeof cal === "object" && cal.on === true ? cal : null;
+    const table = app.calInfo ? cleanTable(app.calInfo.table) : null;
+    app.cal = tableIsEmpty(table) ? null : table;
   }
 
   /* The optional vocabulary filter, applied once, before anything indexes the
      corpus. `safeVocab` is the administrator's switch alone — a child cannot
      turn it off, which is the entire point of it. */
-  if (effectivePolicy(app.S).safeVocab && (DATA.blocked || []).length) {
-    app.lex = buildLexicon(DATA, { hide: new Set(DATA.blocked) });
-  }
+  const hide = effectivePolicy(app.S).safeVocab && (DATA.blocked || []).length
+    ? new Set(DATA.blocked) : null;
+  /* The calibrated scores of cells and of irregularity go in here and
+     nowhere else (core/lexicon.js `hardness`). The duel's lexicon
+     (`duelLex`) is built without them: both sides must build the same
+     questions from one seed. */
+  const hardness = lexHardness(app.cal);
+  if (hide || hardness) app.lex = buildLexicon(DATA, { hide, hardness });
 
   app.defs = createDefinitions([
     ...(app.server ? [remoteSource("")] : []),
@@ -1503,7 +1604,7 @@ async function init() {
   addEventListener("visibilitychange", () => {
     /* Time does not count while the tab is not visible, so a night with a
        forgotten tab does not become eight hours of "practice". */
-    if (document.visibilityState === "hidden") { clock.pause(); store.flush(); }
+    if (document.visibilityState === "hidden") { clock.pause(); store.flush(); app.flushAnswers(); }
     else {
       clock.resume();
       /* Duels: a challenge may have arrived while the tab was away. */

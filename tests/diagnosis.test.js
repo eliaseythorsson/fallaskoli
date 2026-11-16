@@ -562,3 +562,146 @@ test("v6.12 saved diagnosis still loads, and the new keys travel like the old", 
   assert.equal(M.diag.ogreint.n, S.diag.ogreint.n + 2);
   assert.equal(M.diag.ogreint.w, S.diag.ogreint.w + 2);
 });
+
+/* ---------- item 38: the classifier against a second opinion ----------------
+   core/classifiercheck.js. The critique asked for real wrong answers labelled
+   by a teacher; the owner asked that nobody label anything by hand. So the
+   check is the classifier against a rule that looks the typed form up in
+   every cell of the word. The cases just below are constructed (they test the
+   CHECK); the real ones come from tests/fixtures/wrong-answers.json, which is
+   what the administrator's page downloads. */
+import fsSync from "node:fs";
+import { judge as judgeAnswer, askedCells } from "../src/js/core/answer.js";
+import { cleanSample, samplesOf, classify, ruleReading, agrees, agreement, SPELLING_PATTERNS }
+  from "../src/js/core/classifiercheck.js";
+
+const sample = (w, m, typed, extra = {}) => {
+  const e = lex.lookup(...w.split("|"));
+  return { t: "fill", w, m, typed, right: e.forms[m][0], p: [], ...extra };
+};
+
+test("the rule reads a typed form in EVERY cell of the word it stands in", () => {
+  /* *hest* for *hesti*: only the accusative singular */
+  const a = ruleReading(lex, sample("hestur|kk", "ÞGFET", "hest"));
+  assert.deepEqual([a.kind, a.cells], ["cell", ["ÞFET"]]);
+  assert.deepEqual([...a.implied], ["thf_thgf"]);
+  /* *barn* for *barni*: nominative AND accusative — both readings are kept */
+  const b = ruleReading(lex, sample("barn|hk", "ÞGFET", "barn"));
+  assert.deepEqual(b.cells.sort(), ["NFET", "ÞFET"].sort());
+  assert.deepEqual([...b.implied].sort(), ["nf_aukafall", "thf_thgf"]);
+  /* the infinitive for a finite form */
+  const c = ruleReading(lex, sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlaupa"));
+  assert.ok(c.implied.has("sogn_obeygd"));
+  /* not a form of the word at all */
+  const d = ruleReading(lex, sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlaupaði"));
+  assert.deepEqual([d.kind, d.cells, d.implied.size], ["nonform", [], 0]);
+  /* no form — but one letter from the accusative *hestinn* and from the bare
+     dative *hesti*, and two from the *hestinum* that was asked for */
+  const n = ruleReading(lex, sample("hestur|kk", "ÞGFETgr", "hestin"));
+  assert.deepEqual([n.kind, [...n.cells].sort(), [...n.implied].sort()],
+    ["nearcell", ["ÞFETgr", "ÞGFET"].sort(), ["greinir", "thf_thgf"]]);
+  /* one letter from the form asked for as well: just a misspelling of it */
+  assert.equal(ruleReading(lex, sample("hestur|kk", "ÞGFETgr", "hestinu")).kind, "nonform");
+  assert.equal(ruleReading(lex, sample("bók|kvk", "NFFT", "bókur")).kind, "nonform");
+  /* another cell, but for an accent */
+  const g = word("góður", "lo");
+  const acc = ruleReading(lex, { t: "tbl_lo", w: "góður|lo", m: "FSB-KK-NFET", typed: "goðan", right: g.forms["FSB-KK-NFET"][0], p: [] });
+  assert.equal(acc.kind, "accent");
+  assert.ok(acc.implied.has("broddar") && acc.cells.includes("FSB-KK-ÞFET"));
+});
+
+test("agreement: what the classifier names must be something the rule allows", () => {
+  const cell = ruleReading(lex, sample("barn|hk", "ÞGFET", "barn"));
+  assert.equal(agrees(cell, ["thf_thgf"]), true, "one of the two readings");
+  assert.equal(agrees(cell, ["nf_aukafall"]), true, "the other");
+  assert.equal(agrees(cell, ["tala"]), false, "neither");
+  assert.equal(agrees(cell, ["thf_thgf", "tala"]), false, "one right is not enough");
+  assert.equal(agrees(cell, []), false, "a form that IS a cell, left unread");
+  assert.equal(agrees(cell, ["ending"]), false, "a cell called a misspelling");
+  const non = ruleReading(lex, sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlaupaði"));
+  assert.equal(agrees(non, ["sterk_veik_sogn"]), true);
+  assert.equal(agrees(non, []), true, "Ógreint: the rule cannot better it");
+  assert.equal(agrees(non, ["tid"]), false, "a cell pattern for something that is no cell");
+  /* nearly another cell: the classifier must have seen the cell, not only the spelling */
+  const near = ruleReading(lex, sample("hestur|kk", "ÞGFETgr", "hestin"));
+  assert.equal(agrees(near, ["ending"]), false, "a wrong case read as a wrong ending");
+  assert.equal(agrees(near, []), false);
+  assert.equal(agrees(near, ["thf_thgf"]), true);
+  assert.equal(agrees(near, ["thf_thgf", "n_nn"]), true, "the cell, and how it was misspelt");
+  assert.equal(agrees(near, ["thf_thgf", "tala"]), false);
+  for (const p of SPELLING_PATTERNS) assert.ok(patternById(p), p);
+});
+
+test("on textbook errors the classifier of this version and the rule agree", () => {
+  const cases = [
+    sample("hestur|kk", "ÞGFET", "hest"), sample("hestur|kk", "EFET", "hestur"),
+    sample("hestur|kk", "NFET", "hestar"), sample("hestur|kk", "ÞGFETgr", "hesti"),
+    sample("barn|hk", "ÞGFET", "barn"), sample("bók|kvk", "NFFT", "bókur"),
+    sample("hestur|kk", "ÞGFETgr", "hestinu"),
+    sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlupum"), sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlaupa"),
+    sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlaupaði", { conj: "sterk" }),
+    sample("gamall|lo", "FSB-KVK-ÞGFET", "gömlum"),
+  ];
+  for (const c of cases) assert.deepEqual(cleanSample(lex, c), c, `${c.typed}: a clean sample`);
+  const r = agreement(lex, cases, { rerun: true });
+  const off = cases.filter((c) => !agrees(ruleReading(lex, c), classify(lex, c)))
+    .map((c) => `${c.typed} for ${c.right}: ${classify(lex, c).join("+") || "—"}`);
+  assert.deepEqual(off, []);
+  assert.deepEqual([r.n, r.disagree, r.rate], [cases.length, 0, 0]);
+  assert.equal(r.byKind.cell + r.byKind.accent + r.byKind.nearcell + r.byKind.nonform, cases.length);
+  assert.ok(r.ambiguous >= 1, "barn for barni could be two cells");
+  const dat = r.byPattern.find((x) => x.p === "thf_thgf");
+  assert.ok(dat.ambiguous >= 1 && dat.ambiguous <= dat.n, "counted under the pattern that was named");
+  /* The blind spot the check exists to count: *hestin* for *hestinum* is the
+     accusative *hestinn* misspelt, and this classifier reads a wrong ending. */
+  const blind = sample("hestur|kk", "ÞGFETgr", "hestin");
+  assert.ok(!classify(lex, blind).includes("thf_thgf"));
+  assert.deepEqual([agreement(lex, [blind], { rerun: true }).disagree], [1]);
+  assert.deepEqual(classify(lex, cases[0]), ["thf_thgf"]);
+  assert.deepEqual(classify(lex, cases[9]), ["sterk_veik_sogn"]);
+  /* …and a deliberately wrong label is found, under the pattern it names */
+  const bad = agreement(lex, [{ ...cases[0], p: ["tala"] }, { ...cases[0], p: ["thf_thgf"] }, { ...cases[6], p: [] }]);
+  assert.deepEqual([bad.n, bad.disagree], [3, 1]);
+  assert.deepEqual(bad.byPattern[0], { p: "tala", n: 1, disagree: 1, ambiguous: 0, name: "Eintala og fleirtala", rate: 1 });
+  assert.ok(bad.byPattern.some((x) => x.p === "ogreint" && x.n === 1 && x.disagree === 0));
+});
+
+test("a judged answer gives samples: one per wrong cell, with what the classifier said of that cell", () => {
+  const h = word("hestur", "kk");
+  const task = { type: "fill", typeId: "fill", skill: "nafnord", m: "ÞGFET", cell: "ÞGFET", word: "hestur|kk",
+    answers: h.forms["ÞGFET"], paradigm: h.forms, base: 10, lvl: 1 };
+  const wrong = judgeAnswer(task, { text: "hest" });
+  assert.deepEqual(samplesOf(task, wrong, lex),
+    [{ t: "fill", w: "hestur|kk", m: "ÞGFET", typed: "hest", right: "hesti", p: ["thf_thgf"] }]);
+  /* nothing from a right answer, an unfinished one, or free text */
+  assert.deepEqual(samplesOf(task, judgeAnswer(task, { text: "hesti" }), lex), []);
+  assert.deepEqual(samplesOf(task, judgeAnswer(task, { text: "" }), lex), []);
+  assert.deepEqual(samplesOf(task, judgeAnswer(task, { text: "ég heiti Jón og veit þetta ekki" }), lex), []);
+  assert.deepEqual(samplesOf({ ...task, word: null }, wrong, lex), []);
+  /* a table: only the cells that were wrong */
+  const tbl = { type: "table", typeId: "tbl_no", skill: "nafnord", w: h, word: "hestur|kk", base: 6, lvl: 1,
+    cells: ["NFET", "ÞFET", "ÞGFET", "EFET"].map((m) => ({ m, given: false })) };
+  const cells = askedCells(tbl);
+  const j = judgeAnswer(tbl, { cells: cells.map((c) => (c.m === "ÞGFET" ? "hest" : c.m === "EFET" ? "hestar" : h.forms[c.m][0])) });
+  const got = samplesOf(tbl, j, lex);
+  assert.deepEqual(got.map((x) => [x.m, x.typed]), [["ÞGFET", "hest"], ["EFET", "hestar"]]);
+  assert.deepEqual(got[0].p, ["thf_thgf"]);
+});
+
+test("real wrong answers (tests/fixtures/wrong-answers.json): clean, and checked against the rule", (t) => {
+  const file = JSON.parse(fsSync.readFileSync(new URL("./fixtures/wrong-answers.json", import.meta.url), "utf8"));
+  assert.equal(file.v, 1);
+  assert.ok(Array.isArray(file.samples));
+  /* Whatever is put in this file must be what the server would have kept:
+     one word that is an attempt at a word of the lexicon, and no other field. */
+  for (const s of file.samples) assert.deepEqual(cleanSample(lex, s), s, JSON.stringify(s));
+  const now = agreement(lex, file.samples, { rerun: true });
+  const then = agreement(lex, file.samples);
+  assert.equal(now.n, file.samples.length);
+  /* A measure, reported — not a bar: where rule and classifier disagree, one
+     of them is wrong, and which one is what the numbers are for. */
+  t.diagnostic(`${now.n} real wrong answers; this classifier and the rule disagree on ${now.disagree}`
+    + ` (${(now.rate * 100).toFixed(1)} %); as diagnosed when given: ${then.disagree}`);
+  now.byPattern.filter((r) => r.disagree).forEach((r) =>
+    t.diagnostic(`  ${r.name}: ${r.disagree} of ${r.n}`));
+});

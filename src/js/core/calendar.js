@@ -77,6 +77,40 @@ export function isSchoolBreak(d = new Date()) {
   return false;
 }
 
+/* ---- weeks (critique item 57) ----------------------------------------
+   The streak is counted in WEEKS met, not in calendar days in a row: a school
+   week has weekends, holidays and sick days in it. A week runs Monday to
+   Sunday, as the Icelandic calendar does. */
+
+/** The Monday (local midnight) of the week `d` falls in. */
+export function mondayOf(d = new Date()) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+  return x;
+}
+
+/** The seven date keys of the week starting on `monday`, Monday first. */
+export function weekKeys(monday) {
+  return Array.from({ length: 7 }, (_, i) => keyOf(shift(monday, i)));
+}
+
+/** Does the week starting on `monday` lie wholly in a holiday? Every weekday
+    of it is a school break or a red-letter day. Such a week is neither met nor
+    missed: a streak is not broken by the summer, nor by Christmas. */
+export function isBreakWeek(monday) {
+  for (let i = 0; i < 5; i++) {
+    const d = shift(monday, i);
+    if (!isSchoolBreak(d) && !holidayName(d)) return false;
+  }
+  return true;
+}
+
+/** "vika" or "vikur" for a count: 1 vika, 2 vikur, 21 vika, 22 vikur, 11 vikur. */
+export const weeksWord = (n) => (n % 10 === 1 && n % 100 !== 11 ? "vika" : "vikur");
+
+/** "1 vika í röð", "3 vikur í röð". */
+export const weeksInARow = (n) => `${n} ${weeksWord(n)} í röð`;
+
 /** The slice of "now" the badges read. */
 export function timeContext(d = new Date()) {
   return {

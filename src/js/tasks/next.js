@@ -10,6 +10,47 @@ import { built, FX } from "./effects.js";
 import { withView } from "./view.js";
 import { wpick } from "./shared.js";
 import { TASKS, typeById, enabled, weightOf } from "./registry.js";
+import { bandOf, diffOf, clamp, MIN, MAX } from "../core/difficulty.js";
+import { typeShift } from "../core/calibration.js";
+
+/* ---------- calibration (critique item 17, core/calibration.js) -----------
+ *
+ * The table says of some types that pupils at a certain level find them
+ * harder, or easier, than the other questions asked at that level. Such a
+ * type is built from a view in which the level stands a step lower or higher
+ * — a COPY of the session with the levels changed, so the builder stays what
+ * it is and the pupil's real level is untouched. Every skill is looked up at
+ * its own level: a type is filed under one skill and may build for another
+ * (the cloze is a noun type and also asks adjectives and pronouns), and the
+ * count is kept by the level of the skill the question was built for
+ * (`markForCount`). The shifted level stays inside the skill's range
+ * (core/difficulty.js `levelRanges`), so a skill that may not move does not,
+ * and a level the policy forbids is not reached.
+ *
+ * Without a table on the view (a duel, a drill, a review, a program with no
+ * server) nothing here does anything. */
+function viewForType(view, t) {
+  if (!view.cal) return view;
+  const diff = { ...view.sess.diff };
+  let moved = false;
+  if (!view.cal.types || !view.cal.types[t.id]) return view;
+  for (const skill of Object.keys(view.sess.diff)) {
+    const s = typeShift(view.cal, t.id, bandOf(view.sess, skill));
+    if (!s) continue;
+    const [lo, hi] = (view.sess.range && view.sess.range[skill]) || [MIN, MAX];
+    const to = clamp(diffOf(view.sess, skill) + s, lo, Math.max(lo, hi));
+    if (to !== diff[skill]) { diff[skill] = to; moved = true; }
+  }
+  return moved ? withView(view, { sess: { ...view.sess, diff } }) : view;
+}
+
+/** Mark a task of ordinary practice as one whose answer may be counted, with
+    the level its skill REALLY stood at (not the shifted one): the table is
+    keyed by where the pupil is, and says what to build for them there. */
+function markForCount(view, task) {
+  if (view.cal && !view.force && !view.drillWord && task.skill)
+    task.calBand = bandOf(view.sess, task.skill);
+}
 
 /**
  * A built question as the session will show it: its type written on it, and
@@ -98,15 +139,15 @@ export function nextTask(lex, view, rng) {
     }, rng);
     if (tried.has(choice.id) && tried.size < avail.length) continue;
     tried.add(choice.id);
-    const b = shown(choice, choice.build(lex, view, rng), after);
-    if (b) return b;
+    const b = shown(choice, choice.build(lex, viewForType(view, choice), rng), after);
+    if (b) { markForCount(view, b.task); return b; }
   }
 
   /* The last resort walks only the builders that ARE available and returns
      null if nothing is possible. No material beats material switched off. */
   for (const t of [...avail, ...all.filter((x) => !avail.includes(x))]) {
-    const b = t.build(lex, view, rng);
-    if (b) { b.task.typeId = t.id; return built(b.task, [...b.effects, ...after]); }
+    const b = t.build(lex, viewForType(view, t), rng);
+    if (b) { b.task.typeId = t.id; markForCount(view, b.task); return built(b.task, [...b.effects, ...after]); }
   }
   return null;
 }

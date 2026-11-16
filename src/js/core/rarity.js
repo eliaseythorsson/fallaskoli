@@ -61,6 +61,11 @@ export const FAMILIES = {
      answering is easier than hitting the target. `CONSISTENCY` pins this. */
   loginstreak:  { at: 3, share: 0.88, half: 9 },    // consecutive days opened
   answerstreak: { at: 3, share: 0.78, half: 8 },    // consecutive days answered
+  /* Item 57: the same three ladders in weeks (rungs 2, 4, 8, 12, 20, 30), with
+     the same order at every step: opened > answered > met the goal. */
+  weekstreak:  { at: 2,  share: 0.45, half: 7 },    // consecutive weeks at the weekly goal
+  weekanswer:  { at: 2,  share: 0.53, half: 8 },    // consecutive weeks of answering
+  weeklogin:   { at: 2,  share: 0.62, half: 9 },    // consecutive weeks of opening
   dayans:      { at: 10, share: 0.92, half: 38 },   // answers in one day
   total:       { at: 50, share: 0.88, half: 750 },  // correct answers overall
   skilltotal:  { at: 25, share: 0.72, half: 105 },  // correct answers within a skill
@@ -142,6 +147,13 @@ export const CONSISTENCY = [
   ["ansday7", "day7"],
   ["ansday30", "day30"],
   ["ansday3", "day3"],
+  /* The same ladders in weeks (item 57). */
+  ["wklogin2", "wkans2"], ["wkans2", "wk2"],
+  ["wklogin4", "wkans4"], ["wkans4", "wk4"],
+  ["wklogin8", "wkans8"], ["wkans8", "wk8"],
+  ["wklogin12", "wkans12"], ["wkans12", "wk12"],
+  ["wklogin20", "wkans20"], ["wkans20", "wk20"],
+  ["wklogin30", "wkans30"], ["wkans30", "wk30"],
   /* Answering beats being right, and one day beats one sitting. */
   ["d10", "sess25"],
   ["d50", "sess50"],
@@ -307,6 +319,26 @@ export function badgeWindows(won, stats = null) {
     quiet: ranked.filter((x) => !keep.has(x.index))
       .sort((x, y) => x.index - y.index).map((x) => x.b),
   };
+}
+
+/**
+ * Where the windows of a batch of won badges go (critique item 61).
+ *
+ * Every badge is in the cabinet the moment it is won; this decides only WHEN
+ * its window opens. A window between two questions breaks the thought the
+ * session is made of, so while a session is open (`inSession`: a run, which
+ * also covers "Þrjár í röð" and the worked example, both of which live inside
+ * one) nothing opens: the badges are `held` and the summary, which lists every
+ * one of them, is where they are celebrated, once (`badgeWindows` on what the
+ * run collected). Outside a session — a rescue drill, a duel, the start of the
+ * program — the ceiling above applies as before.
+ *
+ * @returns {{show: object[], quiet: object[], held: object[]}}
+ */
+export function windowsFor(won, stats = null, { inSession = false } = {}) {
+  const list = [].concat(won || []).filter(Boolean);
+  if (inSession) return { show: [], quiet: [], held: list };
+  return { ...badgeWindows(list, stats), held: [] };
 }
 
 /* Word rarity.

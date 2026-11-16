@@ -59,6 +59,10 @@ function mergeDay(b, l, r) {
     out.sk[k] = add(obj(obj(b).sk)[k], obj(obj(l).sk)[k], obj(obj(r).sk)[k]);
   out.g = obj(l).g ?? obj(r).g ?? null;
   out.lg = obj(l).lg || obj(r).lg ? 1 : 0;
+  /* The weekly goal in force that day (item 57): the lower, as `weekGoalFor`
+     judges a week by the lowest stamped on it. */
+  const wl = obj(l).wg, wr = obj(r).wg;
+  if (wl || wr) out.wg = wl && wr ? Math.min(wl, wr) : (wl || wr);
   return out;
 }
 
@@ -210,7 +214,7 @@ export function mergeStates(base, local, remote) {
   out.settled = later(L.settled, R.settled);
 
   /* The child's own switches: whichever device changed them. */
-  for (const k of ["goal", "enabled", "policy", "settings", "showcase", "title"])
+  for (const k of ["goal", "weekGoal", "enabled", "policy", "settings", "showcase", "title"])
     out[k] = choice(B[k], L[k], R[k]);
 
   /* The ceiling is the administrator's and always comes from the server. */

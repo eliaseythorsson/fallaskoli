@@ -4,17 +4,43 @@ import { SKILL_IDS, skillById } from "./skills.js";
 
 /* ---------- 1. Level curves ---------------------------------------------
    The first levels come quickly, so a new child levels up several times in
-   the first fortnight; after that each level is a longer event. Assuming
-   150-250 XP on an active day:
-     level 2  on day 1               level 3  after ~3 more days
-     level 4  after ~8 days          level 5  after ~16 days
-     level 10 after ~3 months        level 20 after ~1.5 years
-   The curve was 250·(L-1)^2.5 until v6.1. Every threshold here is LOWER than
-   the one it replaced, so no stored progress can lose a level by the change.
-   Skill levels are gentler, so a strength can be seen early.            */
+   the first weeks; after that each level is a longer event.
 
-export const overallNeed = (L) => Math.round(150 * Math.pow(L - 1, 2.2));
-export const skillNeed = (L) => Math.round(90 * Math.pow(L - 1, 2.1));
+   What the curve is measured against (critique item 60, tools/sim/levels.mjs,
+   v6.13, with everything the app pays: retries, the day multiplier, a perfect
+   table's bonus). A "session" is ten questions, which is what Dagsins lota is:
+
+     one session earns about  60 XP (weak, 50% right)
+                              77 XP (typical, 72% right)
+                              95 XP (strong, 90% right)
+
+   v6.1 to v6.12 promised "level 5 after about 16 days at 150-250 XP a day".
+   That holds for a child doing TWO sessions every day (180-280 XP a day, level
+   5 on day 7-10 of the old curve's 14-20), which is not the child this is made
+   for. One session a day on four days a week took level 5 after 10 weeks
+   (typical), 13 (weak) and 8 (strong): most of a school term at the same
+   level. The curve was cut to 70/150 of what it was. Now, for one session on
+   each of four days a week (median of 8 simulated pupils, calendar weeks):
+
+     level 2  after the first session
+     level 3  after ~3 sessions             (the first week)
+     level 4  after ~9 sessions             (2-3 weeks)
+     level 5  after ~18 sessions            (typical 4.6 weeks, strong 3.7,
+                                             weak 6.1)
+     level 10 after ~110 sessions           (7 months)
+     level 20 after ~530 sessions           (2.5 years: grades 8-10 and beyond)
+
+   Earlier curves: 250*(L-1)^2.5 until v6.1, then 150*(L-1)^2.2. Every
+   threshold is LOWER than the one it replaced (tests/progress.test.js pins
+   both), so no stored progress can lose a level by the change: a child's level
+   can only rise when they open the new version. Skill levels are gentler, so
+   a strength can be seen early.            */
+
+export const overallNeed = (L) => Math.round(70 * Math.pow(L - 1, 2.2));
+/* Cut in the same proportion as the overall curve (90 -> 42, as 150 -> 70), so a
+   skill level is still reached sooner than the same overall level and still
+   never costs more than before. */
+export const skillNeed = (L) => Math.round(42 * Math.pow(L - 1, 2.1));
 
 /* One title per level up to 20. The first thirteen are unchanged since v5;
    "Þjóðskáld" stays the last word. Titles are what other users see beside a

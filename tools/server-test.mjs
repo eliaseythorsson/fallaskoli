@@ -885,6 +885,121 @@ async function openTab(page, view) {
   await T.ctx.close(); await P.ctx.close();
 }
 
+/* ---------- Calibration, end to end (items 17 and 38) -------------------
+ * A table published by the server reaches the browser and the lexicon; real
+ * answers, typed and checked on the screen, reach the server's counts with
+ * nobody's name on them; the pupil's own switch stops it; the teacher's
+ * switch for the sample of wrong answers is off until clicked and is then
+ * said on the pupil's page; and the administrator's record draws. */
+{
+  await app.store.updateGroups((g) => { g.hkv = { name: "Kvörðunarhópur" }; return g; });
+  const setGroup = (u, group) => app.store.updateUsers((users) => {
+    Object.assign(users.find((x) => x.id === u.id), { group, lastSeen: new Date().toISOString().slice(0, 10) });
+    return users;
+  });
+  const telja = await mkUser("telja", "learner");
+  const kvkenn = await mkUser("kvkennari", "guardian");
+  await setGroup(telja, "hkv"); await setGroup(kvkenn, "hkv");
+  const built = app.lex.cellHardness("EFFT");
+  const moved = built >= 4.5 ? built - 0.5 : built + 0.5;
+  /* A table as a weekly run would have left it, and not due again for a week. */
+  await app.store.updateCalibration(() => ({ v: 1, lastRun: new Date().toISOString(), runs: 1,
+    counts: { types: {}, cells: {}, distinct: {} }, since: { questions: 0, records: 0 }, log: [],
+    table: { v: 1, at: new Date().toISOString(), types: { fill: { 1: -0.25 } }, cells: { EFFT: moved }, irr: {} } }));
+
+  const P = await fresh();
+  await login(P.page, "telja");
+  const got = await P.page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    return { shift: A.cal && A.cal.types.fill && A.cal.types.fill[1], cell: A.lex.cellHardness("EFFT"),
+      duelCell: A.lexForDuels().cellHardness("EFFT"), collect: A.calInfo && A.calInfo.collect,
+      samples: A.calInfo && A.calInfo.samples };
+  });
+  ok(got.shift === -0.25, "the table's type shift did not reach the browser: " + JSON.stringify(got));
+  ok(got.cell === moved, `the lexicon scores EFFT ${got.cell}, not the table's ${moved}`);
+  ok(got.duelCell === built, `a duel would be built with EFFT at ${got.duelCell}: duels must use the built-in ${built}`);
+  ok(got.collect === true && got.samples === false, "a consenting learner is not counted, or is sampled by default");
+
+  /* Clozes answered on the screen: the right form typed, Athuga clicked. */
+  const answered = await P.page.evaluate(async () => {
+    const A = window.FALLASKOLI;
+    let n = 0;
+    for (let k = 0; k < 400 && n < 9; k++) {
+      document.querySelector(".scrim .modal button")?.click();
+      const t = A.cur;
+      if (!t) break;
+      const box = document.getElementById("ans"), go = document.getElementById("check");
+      if (t.typeId === "fill" && t.calBand && box && go && !box.disabled) {
+        box.value = t.answers[0];
+        go.click();
+        n++;
+      } else A.finish({ correct: true });
+      A.next();
+    }
+    A.flushAnswers();
+    return n;
+  });
+  ok(answered === 9, `only ${answered} clozes could be answered on the screen`);
+  let counts = null;
+  for (let k = 0; k < 40; k++) {
+    counts = (await app.store.calibration()).counts;
+    if (Object.keys(counts.types).length) break;
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  const fills = Object.entries(counts.types).filter(([key]) => key.startsWith("fill|"));
+  const total = fills.reduce((n, [, v]) => n + v[1], 0), right = fills.reduce((n, [, v]) => n + v[0], 0);
+  ok(total >= 8 && right === total, `the server counted ${right} right of ${total} clozes, after ${answered} right answers`);
+  ok(Object.keys(counts.cells).length > 0 && Object.keys(counts.cells).every((key) => /^fill\|[1-7]\|[^|]*\|[0-5]$/.test(key)),
+    "the cell counts are not keyed by type, level, cell and score: " + Object.keys(counts.cells).slice(0, 3));
+  const stored = JSON.stringify(await app.store.calibration());
+  ok(!stored.includes(telja.id) && !stored.includes("telja") && !stored.includes("hkv"),
+    "the counts name the pupil or the group");
+
+  /* The teacher switches the sample on; the pupil's page then says so. */
+  const T = await fresh();
+  await login(T.page, "kvkennari");
+  await openTab(T.page, "class");
+  await T.page.waitForSelector("#tc-samples-on", { timeout: 10000 });
+  ok(await T.page.$eval("#tc-samples-on", (e) => e.checked) === false, "the sample of wrong answers is on by default");
+  ok(!(await app.store.groups()).hkv.samples, "the group has the sample on before anybody chose it");
+  await T.page.click("#tc-samples-on");
+  await T.page.waitForFunction(() => /Kveikt/.test(document.getElementById("tc-samples-note")?.innerText || ""), { timeout: 8000 });
+  ok((await app.store.groups()).hkv.samples === true, "the teacher's switch did not reach the server");
+  ok((await app.store.audit()).some((a) => a.by === kvkenn.id && a.act === "kveikti á svarasýni"),
+    "switching the sample on is not in the audit trail");
+  await T.ctx.close();
+
+  await openTab(P.page, "settings");
+  await P.page.waitForSelector("#ac-stats", { timeout: 8000 });
+  ok(await P.page.$eval("#ac-stats", (e) => e.checked) === true, "the pupil's switch does not show that they are counted");
+  ok(/kveikt á sýni af röngum\s+svörum/.test(await P.page.$eval("#account", (e) => e.innerText)),
+    "the pupil's page does not say that the teacher switched the sample on");
+  /* …and their own switch takes them out of both. */
+  await P.page.click("#ac-stats");
+  await P.page.waitForFunction(() => /ekki lengur talin/.test(document.getElementById("ac-note")?.innerText || ""), { timeout: 8000 });
+  const after = (await app.store.users()).find((u) => u.id === telja.id);
+  ok(after.stats === false, "the pupil's switch did not reach the server");
+  ok(await P.page.evaluate(() => window.FALLASKOLI.calInfo.collect) === false, "the browser still sends answers after the switch");
+  const refusedStats = await P.page.evaluate(() => fetch("/calibration/answers", { method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ events: [{ t: "fill", l: 1, ok: true, recs: [] }] }) }).then((r) => r.json()));
+  ok(refusedStats.counted === 0, "an answer was counted after the pupil switched it off");
+  await P.ctx.close();
+
+  /* The administrator's record. */
+  const A = await fresh();
+  await login(A.page, "umsjon");
+  await openTab(A.page, "settings");
+  await A.page.waitForSelector("#ad-cal", { timeout: 10000 });
+  await A.page.evaluate(() => { document.getElementById("ad-cal").open = true; });
+  await A.page.waitForFunction(() => /Síðasta keyrsla/.test(document.getElementById("ad-cal-body")?.innerText || ""), { timeout: 8000 });
+  const rec = await A.page.$eval("#ad-cal-body", (e) => e.innerText);
+  ok(/Hér þarf ekkert að gera/.test(rec), "the record does not say that nothing needs doing");
+  ok(/1 spurningagerð/.test(rec) && /1 reit/.test(rec), "the record does not describe the table in force: " + rec.slice(0, 300));
+  ok(/kveikt í 1 hóp/.test(rec), "the record does not say how many groups sample answers");
+  await A.ctx.close();
+}
+
 await browser.close();
 await new Promise((r) => app.server.close(r));
 await fs.rm(dir, { recursive: true, force: true });
