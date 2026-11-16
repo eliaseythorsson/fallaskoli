@@ -1917,6 +1917,70 @@ await page.setViewport({ width: 1100, height: 900 });
   await p2.close();
 }
 
+/* ---------- v6.13 (item 29): the new kinds of Umritun ------------------
+ * A Málbeiting session with only Umritun on, at þyngd 4. A join shows its
+ * two sentences on two lines, indirect speech its quotation, and a right
+ * answer that could be better — a question without its question mark,
+ * indirect speech without *að* — gets its note under the verdict. The
+ * types switched off are switched on again at the end. */
+{
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.S.enabled.malbeiting = true;
+    A.S.policy = A.S.policy || {};
+    A.S.policy.types = { ...(A.S.policy.types || {}), smidja: false, villur: false };
+    A.reloadPolicy(); A.save();
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+    Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = 4; });
+    A.startRun("malbeiting", 40, null, { review: false });
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  const seenKinds = new Set();
+  for (let i = 0; i < 40; i++) {
+    const t = await page.evaluate(() => {
+      const c = window.FALLASKOLI.cur;
+      return c && { type: c.type, kind: c.kind, lines: c.lines || null, from: c.from || null,
+        answers: c.answers || null, model: c.model || null };
+    });
+    if (!t) break;
+    if (t.type === "umritun" && ["question", "join", "indirect"].includes(t.kind)) {
+      seenKinds.add(t.kind);
+      const shown = await page.$eval("#task .sentence", (el) => ({ html: el.innerHTML, text: el.textContent }));
+      let typed = t.answers[0], note = null;
+      if (t.kind === "join") {
+        ok(/<br>/.test(shown.html) && t.lines.every((l) => shown.text.includes(l)),
+          `a join does not show its two sentences on two lines: ${shown.html}`);
+      } else if (t.kind === "indirect") {
+        ok(shown.text === t.from && /„.+“/.test(shown.text), `indirect speech does not show its quotation: ${shown.text}`);
+        typed = t.model.replace(/ að /, " ");
+        note = /má sleppa/;
+      } else {
+        typed = t.answers[0].replace(/\?$/, "");
+        note = /spurningarmerki/;
+      }
+      await page.type("#ans", typed);
+      await tap("#check");
+      await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
+      const v = await page.$eval("#verdict .verdict", (el) => ({ cls: el.className, text: el.textContent }));
+      ok(/\bok\b/.test(v.cls), `umritun/${t.kind}: "${typed}" was not taken as right: ${v.text.slice(0, 160)}`);
+      if (note) ok(note.test(v.text), `umritun/${t.kind}: no note under the verdict: ${v.text.slice(0, 200)}`);
+      await dismissModals();
+    } else {
+      await answerOneNoNext(true);
+    }
+    await page.evaluate(() => window.FALLASKOLI.next());
+    await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4000 });
+    if (seenKinds.size === 3) break;
+  }
+  ok(seenKinds.size === 3, `the new kinds of Umritun did not all come up in 40 questions: ${[...seenKinds]}`);
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    delete A.S.policy.types.smidja; delete A.S.policy.types.villur;
+    A.run = null; A.runDone = null;
+    A.reloadPolicy(); A.save();
+  });
+}
+
 /* ---------- v6.11: every category mixes its questions ------------------
  * A ten-question session on each category the request was about: at least
  * three kinds of question, none over its share, every question drawn and

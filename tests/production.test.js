@@ -42,7 +42,9 @@ test("every rewrite of every sentence is made only of BÍN forms, and grades as 
       assert.ok(r.answers.length > 0, `${kind}: no answer for "${s.t}"`);
       for (const a of r.answers) {
         assert.ok(!a.includes("undefined"), `${kind}: "${a}"`);
-        assert.notEqual(normalise(a), normalise(s.t), `${kind}: the rewrite of "${s.t}" is the sentence itself`);
+        /* For `active` and `join` the bank sentence is the answer; what must
+           differ is what the pupil was shown. */
+        assert.notEqual(normalise(a), normalise(r.from || s.t), `${kind}: the rewrite of "${s.t}" is what was shown`);
         assert.equal(judge(a, r.answers), "correct");
         /* Every word is a word: either it stood in the sentence or BÍN has it. */
         const orig = new Set(normalise(s.t).split(" "));
@@ -51,10 +53,13 @@ test("every rewrite of every sentence is made only of BÍN forms, and grades as 
             `${kind}: "${w}" in "${a}" is neither in "${s.t}" nor in BÍN`);
         }
       }
-      assert.equal(gradeTransform(s.t, r), "wrong", `${kind}: copying "${s.t}" must not pass`);
+      assert.equal(gradeTransform(r.from || s.t, r), "wrong", `${kind}: copying "${r.from || s.t}" must not pass`);
       assert.equal(gradeTransform(r.answers[0], r), "correct");
     }
-    assert.ok(n >= (kind === "passive" ? 20 : 150), `${kind}: only ${n} sentences`);
+    /* How many sentences each kind can use (v6.13: counted, and every one
+       of the new kinds read by hand). */
+    const least = { passive: 20, active: 10, join: 20, indirect: 80 }[kind] ?? 150;
+    assert.ok(n >= least, `${kind}: only ${n} sentences`);
   }
 });
 

@@ -218,7 +218,10 @@ function wrongResponse(t) {
   switch (t.type) {
     case "fill": case "verb": case "verbslot": case "gap":
       return { response: { text: t.answers[0] + "xq" } };
-    case "umritun": return { response: { text: t.s.t } };              // the sentence, unchanged
+    /* What was shown, unchanged: the sentence — or the passive, the two
+       sentences, the quotation (for `active` and `join` the bank sentence
+       is the right answer). */
+    case "umritun": return { response: { text: t.from || t.s.t } };
     case "smidja": return { response: { text: "xq zz yy" } };                // no card at all
     case "table": {
       const cells = askedCells(t).map((c) => t.w.forms[c.m][0]);
@@ -545,7 +548,7 @@ test("production: shares, slips and the other end of an agreement error", () => 
       const hinted = judge(t, { ...rightResponse(t), hinted: true }, pupil);
       assert.equal(hinted.xp, oldXp(S, t, { hinted: true }));
       const plain = stripAccents(t.answers[0]);
-      if (plain !== normalise(t.answers[0]) && plain !== stripAccents(t.s.t)) {
+      if (plain !== normalise(t.answers[0]) && plain !== stripAccents(t.from || t.s.t)) {
         umritunSlip++;
         const s = judge(t, { text: plain }, pupil);
         assert.equal(s.ok, true); assert.equal(s.verdict, "near");

@@ -393,11 +393,82 @@ export function gradeHunt(task, edits) {
 export function gradeTransform(input, task) {
   const v = judgeText(input, task.answers);
   if (v === "empty") return "empty";
-  const orig = task.s && task.s.t;
+  /* What the pupil was shown: the bank sentence, or — for the kinds that
+     show something else (a passive, two sentences, a quotation) — `from`.
+     For *active* and *join* the bank sentence IS the answer. */
+  const orig = task.from || (task.s && task.s.t);
   if (orig && normalise(input) === normalise(orig)) return "wrong";
   if (v === "accents" && orig && stripAccents(input) === stripAccents(orig)) return "wrong";
-  if (v === "wrong") return tailLeftOut(input, task) || "wrong";
+  if (v === "wrong") return (SHORT_OK.has(task.kind || "past") && tailLeftOut(input, task)) || "wrong";
   return v === "accents" ? "slip" : v;
+}
+
+/* The kinds where an unchanged end may be left out (`tailLeftOut`). Not the
+   kinds of v6.13: a join without its second half, a question without its
+   object, an indirect speech without the rest of what was said are not
+   finished — and for *active* and *join* the bank sentence is the answer,
+   so "the end as it stood" would be any end at all. */
+const SHORT_OK = new Set(["past", "plural", "passive", "igaer", "amorgun", "opener"]);
+
+/* The kinds of v6.13 (critique item 29), and how each is graded. The
+   builder (tasks/malbeiting.js) lists every right answer in `answers`, read
+   out of the bank and BÍN — every form of a cell BÍN gives, the optional
+   *að* of indirect speech, the second subject a join with *og*, *en* or
+   *eða* may leave out; `normalise` takes care of capitals, commas and the
+   end mark. What the grader adds is the WHY of a wrong answer: each task
+   carries `checks`, the mistakes its kind invites, and the first one that
+   fits the answer is the note shown under it.
+
+     active    *var bökuð* left in; *af* left in; the old subject not put
+               into the accusative
+     question  the subject still first; *hvort*; the subject not straight
+               after the verb
+     join      the subject before the verb after a clause that opens the
+               sentence (*Þegar ég kom heim maturinn var …*); the verb
+               before the subject after a subordinating conjunction; the
+               halves in the wrong order
+     indirect  the indicative kept (*er*); the wrong tense of the
+               subjunctive after *sagði* or *segir*; *ég* kept
+
+   A check is { note, and any of: starts / notStarts (a run of words the
+   answer does / does not begin with), has (a run of words somewhere in
+   it), hasAny (any one of these words), lacks (none of these words) }; it
+   fits when every condition it names holds. */
+const words_ = (list) => [].concat(list || []).flatMap((w) => normalise(w).split(" ")).filter(Boolean);
+const startsWith = (got, run) => run.length > 0 && run.every((w, k) => got[k] === w);
+
+/** The note for a wrong rewrite, from the checks its builder attached; null
+    if none fits. */
+export function transformNote(input, task) {
+  const got = normalise(input).split(" ").filter(Boolean);
+  for (const c of task.checks || []) {
+    if (c.starts && !startsWith(got, words_(c.starts))) continue;
+    if (c.notStarts && startsWith(got, words_(c.notStarts))) continue;
+    if (c.has && indexOfRun(got, words_(c.has)) < 0) continue;
+    if (c.hasAny && !words_(c.hasAny).some((w) => got.includes(w))) continue;
+    if (c.lacks && words_(c.lacks).some((w) => got.includes(w))) continue;
+    return c.note;
+  }
+  return null;
+}
+
+/**
+ * What to say under a graded rewrite, beyond right or wrong: for a wrong
+ * one, the note of `transformNote`; for a right one, what was right but
+ * could be better — a question without its question mark, indirect speech
+ * without *að*. null when there is nothing to add.
+ */
+export function transformFeedback(input, task, grade) {
+  const ok = ["correct", "slip", "short", "shortslip"].includes(grade);
+  if (!ok) return grade === "empty" ? null : transformNote(input, task);
+  const text = String(input || "").trim();
+  if (task.endMark && !text.endsWith(task.endMark))
+    return "Rétt — en spurning endar á spurningarmerki (?).";
+  /* The frame is two words (*Hann sagði*), so *að* is the third — an *að*
+     further on (*… að leita að lykli*) is not the one asked about. */
+  if (task.kind === "indirect" && normalise(text).split(" ")[2] !== "að")
+    return "Rétt — *að* má sleppa, en í rituðu máli er það oftast haft með.";
+  return null;
 }
 
 /**
@@ -827,6 +898,7 @@ JUDGES.umritun = (t, response, hist) => {
   if (!text.trim()) return pending("empty");
   const grade = gradeTransform(text, t);
   if (grade === "empty") return pending("empty");
+  const note = transformFeedback(text, t, grade);
   const ok = ["correct", "slip", "short", "shortslip"].includes(grade);
   const slip = grade === "slip" || grade === "shortslip";
   const short = grade === "short" || grade === "shortslip";
@@ -842,7 +914,7 @@ JUDGES.umritun = (t, response, hist) => {
     ok, verdict: VERDICT(ok, slip), effects,
     resp: { kind: "transform", typed: text, ok },
     finish: { slip },
-    detail: { grade, slip, short },
+    detail: { grade, slip, short, note },
   });
 };
 

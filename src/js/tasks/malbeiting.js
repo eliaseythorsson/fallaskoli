@@ -10,7 +10,10 @@
                  ("ég – gefa – vinur – bók"); build the sentence, inflecting
                  every word
      umritun     Umritun — put this sentence in the past tense, in the
-                 plural, in the passive, or start it with *Í gær* / *Á morgun*
+                 plural, in the passive, or start it with *Í gær* / *Á morgun*;
+                 from v6.13 also: a passive back to the active, a statement
+                 to a yes/no question, two sentences joined with a given
+                 conjunction, and direct speech to indirect
 
    The rule behind every builder here is the program's rule: a wrong question
    is worse than no question. Every form these builders produce is read out of
@@ -123,19 +126,60 @@ function block(s, role) {
   return { from: idx[0], to: idx[idx.length - 1] };
 }
 
-/* Time words. A sentence that already says when (*í gær*, *á morgun*,
-   *í dag*) cannot be moved to another time without contradicting itself. */
-const TIME_WORDS = new Set(["í gær", "í morgun", "í kvöld", "á morgun", "í gærkvöldi",
-  "á morgnana", "á kvöldin", "í ár", "núna", "nú", "áðan", "bráðum", "brátt", "seinna",
-  "næst", "þá", "síðan", "loksins", "lengi", "enn", "ennþá", "aldrei", "strax"]);
-const saysWhen = (lex, s) => s.tok.some((t, j) => {
-  if (TIME_WORDS.has(String(t.w).toLowerCase())) return true;
-  if (t.c === "nafnorð") {
-    const e = lex.entryForToken(t);
-    return !!e && e.s === "time";
-  }
-  return false;
-});
+/* Time adverbials. A sentence that already says when (*í gær*, *á morgun*,
+   *í dag*) or how often (*alltaf*, *á hverjum degi*) cannot be moved to
+   another time without contradicting itself: v6.12 turned *Ég man vel eftir
+   ferðinni í fyrra* into *Í gær mundi ég vel eftir ferðinni í fyrra* (critique
+   item 29), because *í fyrra* was not on a list of strings.
+
+   The test reads the parsed tokens, not the text. Greynir gives a time
+   adverb of two words as ONE token (*í gær*, *á morgun*, *á kvöldin*, lemma
+   and all), so TIME_ADVERBS is matched against the lemma; a time NOUN is
+   caught wherever it stands — after a preposition (*í dag*, *um helgina*,
+   *á hverjum degi*, *í síðustu viku*) or alone in the accusative (*allan
+   daginn*, *næsta sumar*) — by its semantic class `time` (noun_classes.py)
+   or, for the nouns that have no class (the weekdays, the months, the
+   holidays), by TIME_NOUNS. *Í fyrra* is the one phrase Greynir leaves
+   unanalysed (*fyrra* comes out without a mark), so it is matched as the two
+   tokens it is. Over-matching costs a sentence; under-matching costs a
+   nonsense question. */
+const TIME_ADVERBS = new Set(["í gær", "í morgun", "í kvöld", "á morgun", "í gærkvöldi",
+  "í fyrradag", "í fyrramálið", "í dag", "í nótt", "í ár", "í fyrra", "í vetur", "í sumar",
+  "í vor", "í haust", "á morgnana", "á kvöldin", "á daginn", "á nóttunni", "á sumrin",
+  "á veturna", "á vorin", "á haustin", "um helgina", "um helgar",
+  "núna", "nú", "áðan", "bráðum", "brátt", "seinna", "síðar", "næst", "þá", "síðan",
+  "loksins", "lengi", "enn", "ennþá", "aldrei", "strax", "nýlega", "nýverið"]);
+/* How often: wrong beside *Í gær* (*Í gær borðaði ég epli daglega*), right
+   in any tense (*Ég borðaði epli daglega*). So the past tense keeps them. */
+const HABITUAL = new Set(["alltaf", "oft", "oftast", "stundum", "sjaldan", "sjaldnast",
+  "daglega", "vikulega", "árlega", "yfirleitt", "venjulega", "þrisvar", "tvisvar",
+  "einu sinni", "aftur og aftur", "áður", "fyrr"]);
+const TIME_NOUNS = new Set(["mánudagur", "þriðjudagur", "miðvikudagur", "fimmtudagur",
+  "föstudagur", "laugardagur", "sunnudagur", "janúar", "febrúar", "mars", "apríl", "maí",
+  "júní", "júlí", "ágúst", "september", "október", "nóvember", "desember",
+  "gamlárskvöld", "nýársdagur", "aðfangadagur", "hvítasunna", "morgundagur", "helgi",
+  "dagur", "kvöld", "morgunn", "nótt", "vika", "mánuður", "ár", "sumar", "vetur", "vor",
+  "haust", "hádegi"]);
+export function timeAdverbial(lex, s, { habitual = true } = {}) {
+  const isTime = (w) => TIME_ADVERBS.has(w) || (habitual && HABITUAL.has(w));
+  return s.tok.some((t, j) => {
+    const l = String(t.l || t.w).toLowerCase();
+    /* The lemma, or the word itself where the parse gave no class: *þá* the
+       pronoun ("them", lemma *hann*) is not *þá* the adverb ("then"). */
+    if (isTime(l)) return true;
+    if (!INFLECTED.has(t.c) && isTime(String(t.w).toLowerCase())) return true;
+    if (t.c === "forsetning" && l === "í" && s.tok[j + 1] &&
+        ["fyrra", "fyrri", "hitteðfyrra"].includes(String(s.tok[j + 1].w).toLowerCase())) return true;
+    if (t.c === "nafnorð" || t.x === "no") {
+      if (TIME_NOUNS.has(l)) return true;
+      const e = lex.entryForToken(t);
+      return !!e && (e.s === "time" || TIME_NOUNS.has(e.o));
+    }
+    return false;
+  });
+}
+const INFLECTED = new Set(["nafnorð", "fornafn", "sagnorð", "lýsingarorð", "töluorð", "greinir"]);
+const saysWhen = timeAdverbial;
 
 /* ============================================================ UMRITUN === */
 
@@ -181,7 +225,7 @@ function pastVerbs(lex, s, { toTense = "ÞT", fromTense = null } = {}) {
 
 /** Settu í þátíð. Every finite verb goes to the past, nothing else moves. */
 export function transformPast(lex, s) {
-  if (!endsPlain(s) || hasParticiple(s) || saysWhen(lex, s)) return null;
+  if (!endsPlain(s) || hasParticiple(s) || saysWhen(lex, s, { habitual: false })) return null;
   const verbs = pastVerbs(lex, s, { fromTense: "NT" });
   if (!verbs) return null;
   const slots = s.tok.map((t, j) => (verbs.has(j) ? verbs.get(j).forms : [t.w]));
@@ -406,10 +450,22 @@ export function transformPassive(lex, s) {
   const shown = capFirst(joinTokens([...object.map((o) => o[0]), veraForm[0], ...adv, part[0],
     ...restWords]));
   const dat = objCase === "ÞGF";
+  /* The same passive WITH its agent, at the end — what `transformActive`
+     shows and asks to turn back (*Bíllinn er keyrður heim af pabba*; the
+     agent before *heim* or *upphátt* reads stiffly). Only where nothing else
+     could move on the way back: no sentence adverb (*Amma bakaði ekki
+     kökuna* / *… kökuna ekki*) and no particle (*skildi töskuna eftir* /
+     *skildi eftir töskuna*). */
+  const withAgent = adv.length || particle ? null
+    : capFirst(joinTokens([...object.map((o) => o[0]), veraForm[0], part[0],
+      ...restWords.slice(0, -1), "af", ...agent.map((a) => a[0]), "."]));
   return {
     kind: "passive", s,
     instruction: "Settu setninguna í **þolmynd**: láttu andlagið byrja setninguna.",
-    answers, model: shown,
+    answers, model: shown, withAgent, objCase,
+    /* For the notes of the way back: the words the passive is made of. */
+    pieces: { subject: object.map((o) => o[0]), vera: veraForm[0], participle: part[0],
+      agent: agent.map((a) => a[0]) },
     why: dat
       ? `Sögnin *${ve.o}* stýrir þágufalli, og andlag í þágufalli *heldur fallinu* í þolmynd: ` +
         `*${object.map((o) => o[0]).join(" ")}*. Þolmyndin er mynduð með *vera* og lýsingarhætti þátíðar, ` +
@@ -472,12 +528,434 @@ export function transformOpener(lex, s, opener = "Í gær") {
 
 const OPENER_SKIP_VERB = new Set(["vera", "heita", "standa", "liggja", "kosta", "búa", "eiga"]);
 
+/* ----------------------------------------- v6.13: four more kinds (item 29)
+
+   Each of these is built from a sentence of the bank, which Greynir parsed
+   and the build checked; what changes is read out of BÍN. Where the answer
+   cannot be pinned down — another word order would be as right, a pronoun
+   could point two ways, a meaning would shift — the sentence is skipped.
+   Each task carries `checks`: the mistakes a pupil is likely to make with
+   it, each with the sentence that explains it (core/answer.js
+   `transformNote` reads them). */
+
+/** A small, stable number from the text: which speaker and which tense a
+    direct-speech item uses. Not a random draw, so that the same sentence
+    always makes the same question — a reader can check it once. */
+function stableHash(text) {
+  let h = 0;
+  for (const ch of String(text)) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  return h;
+}
+
+const lower = (w) => String(w || "").toLowerCase();
+const hasConjunction = (s) => s.tok.some((t) => t.c === "samtenging");
+/** Main clauses only — an infinitive (*að fara*) is part of one. */
+const mainOnly = (s) => s.tok.every((t) => isPunct(t) || t.k === "aðalsetning" || t.k === "nafnháttarsetning");
+
+/** The contiguous run of subject tokens that starts at `from` and ends
+    before `to`, or null. */
+function subjectRun(lex, s, from, to = s.tok.length) {
+  let j = from;
+  while (j < to && s.tok[j].r === "frumlag") j++;
+  if (j === from) return null;
+  /* A genitive right after the subject belongs to it (*nöfn allra
+     barnanna*); the parse leaves it without a role. */
+  while (j < to && NOMINAL.has(s.tok[j].c) && caseOf(s.tok[j].m || "") === "EF") j++;
+  for (let k = from; k < j; k++) {
+    const t = s.tok[k];
+    if (!NOMINAL.has(t.c)) return null;
+    if (!confirmedWord(lex, t)) return null;
+  }
+  return { from, to: j - 1 };
+}
+/** `confirmed`, and for a personal pronoun the same test without the
+    gender: the parse marks *hann* "KK-NFET", BÍN's paradigm of *hann* has
+    it as "NFET". Only for words that stand as they stood. */
+function confirmedWord(lex, t) {
+  if (confirmed(lex, t)) return true;
+  if (!(t.c === "fornafn" && t.x === "pfn") || !t.m || t.rj) return false;
+  const e = lex.entryForToken(t);
+  const m = t.m.replace(/^(KK|KVK|HK)-/, "");
+  return !!e && formsOf(e, m).some((f) => normalise(f) === normalise(t.w));
+}
+
+const isFinite = (t) => !!t && t.c === "sagnorð" && FINITE.test(t.m || "");
+const pfnLemma = (lex, t) => (t && t.c === "fornafn" && t.x === "pfn" ? (lex.entryForToken(t) || {}).o || t.l : null);
+
+/* ---- germynd: the passive, with its agent, back to the active ---------- */
+
+/** Settu í germynd. *Kakan var bökuð af ömmu* → *Amma bakaði kökuna*.
+    The passive is the one transformPassive makes from a bank sentence, and
+    the answer is that bank sentence: nothing here is guessed. */
+export function transformActive(lex, s) {
+  const p = transformPassive(lex, s);
+  if (!p || !p.withAgent) return null;
+  const F = block(s, "frumlag");
+  const subj = s.tok.slice(F.from, F.to + 1);
+  /* *af þeim* is *þeir*, *þær* or *þau*, and *af því* would make *það* a
+     subject: the way back is not one sentence. */
+  /* A pronoun as the agent is how no one speaks (*Glugginn er opnaður af
+     mér*), and *af þeim* would be *þeir*, *þær* or *þau* on the way back.
+     A time adverbial would leave the agent after it (*… í dag af ömmu*). */
+  if (subj.some((t) => t.c === "fornafn" && t.x === "pfn")) return null;
+  if (saysWhen(lex, s)) return null;
+  const vi = F.to + 1, v = s.tok[vi];
+  const ve = confirmed(lex, v);
+  if (!ve) return null;
+  /* Every form BÍN gives for the verb's cell is right (*mundi/myndi*); the
+     rest of the sentence stands as it stood. */
+  const slots = s.tok.map((t, j) => (j === vi ? formsOf(ve, v.m) : [t.w]));
+  const answers = combinations(slots);
+  if (!answers.length) return null;
+  const O = block(s, "andlag");
+  const objWords = s.tok.slice(O.from, O.to + 1).map((t) => t.w);
+  const subjText = lower(joinTokens(subj.map((t) => t.w)));
+  const past = /-ÞT-/.test(v.m);
+  const { pieces } = p;
+  const dat = p.objCase === "ÞGF";
+  const checks = [
+    { has: [pieces.vera, pieces.participle],
+      note: `Í germynd er hvorki *${pieces.vera}* né lýsingarháttur: sögnin sjálf beygist — *${lower(v.w)}*.` },
+    { has: ["af", pieces.agent[0]],
+      note: `Gerandinn verður frumlag og stendur fremst í nefnifalli: *${subjText}*. Orðið *af* fellur burt.` },
+  ];
+  if (!dat && normalise(pieces.subject.join(" ")) !== normalise(objWords.join(" ")))
+    checks.push({ has: pieces.subject, lacks: objWords,
+      note: `Frumlag þolmyndarinnar verður andlag og fer í þolfall: *${objWords.join(" ")}*, ekki *${pieces.subject.join(" ")}*.` });
+  return {
+    kind: "active", s, from: p.withAgent, model: s.t,
+    instruction: "Settu setninguna í **germynd**: gerandinn (sá sem kemur á eftir *af*) verður frumlag og byrjar setninguna.",
+    answers,
+    why: `Í germynd er gerandinn frumlag og stendur í nefnifalli: *${subjText}*. ` +
+      `Sögnin fær tíðina frá *${pieces.vera}* (${past ? "þátíð" : "nútíð"}) og lagar sig að nýja frumlaginu: *${lower(v.w)}*. ` +
+      (dat
+        ? `Sögnin *${ve.o}* stýrir þágufalli, svo það sem var frumlag í þolmynd heldur fallinu sem andlag: *${objWords.join(" ")}*.`
+        : `Það sem var frumlag í þolmynd verður andlag og fer í þolfall: *${objWords.join(" ")}*.`),
+    checks,
+    marks: [{ m: v.m, word: wordKey(ve.o, "so") }],
+  };
+}
+
+/* ---- spurning: a statement to a yes/no question ------------------------ */
+
+/** Breyttu í já/nei-spurningu: the finite verb goes first, the subject
+    straight after it, and nothing else moves. Only a sentence that begins
+    with its subject — a sentence that begins with something else would
+    leave that something nowhere certain to go. */
+export function transformQuestion(lex, s) {
+  if (!endsPlain(s) || hasConjunction(s) || !mainOnly(s)) return null;
+  const F = subjectRun(lex, s, 0);
+  if (!F) return null;
+  const vi = F.to + 1, v = s.tok[vi];
+  if (!isFinite(v) || !confirmed(lex, v)) return null;
+  const subj = s.tok.slice(0, vi);
+  /* *Það er kalt* → *Er kalt?*: an empty *það* drops out of a question, and
+     the parse does not say which *það* is empty. *Ég*: a question to
+     oneself (*Fer ég heim?*) is not what anyone asks. */
+  const l0 = pfnLemma(lex, subj[0]);
+  if (subj.length === 1 && (l0 === "það" || l0 === "ég")) return null;
+  /* *Mátt þú koma?* is how no one asks: it is *Máttu koma?*, and BÍN does
+     not list the verb with *-tu* grown onto it. *Gat sjálfur kennarinn …?*
+     wants *kennarinn sjálfur*. */
+  if (subj.some((t) => ["þú", "sjálfur"].includes(pfnLemma(lex, t) || lower(t.l)))) return null;
+  if (subj.some((t) => ["þetta", "það"].includes(lower(t.w)))) return null;
+  const subjWords = subj.map((t, j) => (j === 0 ? lowerFirst(t.w, lex.entryForToken(t)) : t.w));
+  const rest = s.tok.slice(vi + 1, -1).map((t) => t.w);
+  const answer = capFirst(joinTokens([v.w, ...subjWords, ...rest, "?"]));
+  const verb = lower(v.w), subjText = subjWords.join(" ");
+  return {
+    kind: "question", s, endMark: "?",
+    instruction: "Breyttu fullyrðingunni í **já/nei-spurningu**.",
+    answers: [answer],
+    why: "Í já/nei-spurningu skipta sögnin sem beygist og frumlagið um sæti: sögnin fer **fremst** og " +
+      `frumlagið kemur strax á eftir henni — *${capFirst(verb)} ${subjText} …?* ` +
+      "Annað í setningunni stendur óbreytt, og spurningin endar á spurningarmerki.",
+    checks: [
+      { starts: [subjWords[0]],
+        note: `Í já/nei-spurningu stendur sögnin **fremst**, á undan frumlaginu: *${capFirst(verb)} ${subjText} …?*` },
+      { starts: ["hvort"],
+        note: "*Hvort* byrjar óbeina spurningu (*Ég veit ekki hvort …*). Bein já/nei-spurning byrjar á sögninni." },
+      { starts: [verb], notStarts: [verb, ...subjWords],
+        note: `Frumlagið kemur strax á eftir sögninni: *${capFirst(verb)} ${subjText} …?*` },
+    ],
+  };
+}
+
+/* ---- tenging: two sentences joined with a given conjunction ------------ */
+
+/* The joins asked for. Subordinating: an adverbial clause whose verb stays
+   in the indicative, so each half is a sentence of its own. Left out on
+   purpose: *að*, *sem*, *hvort* (the clause is part of the other one and
+   cannot stand alone), *þótt*, *svo að*, *til þess að* and mostly *áður en*
+   with the subjunctive (the verb changes mood when the clause stands
+   alone), *eins og* (*Ég lofaði.* is not a sentence). */
+const JOIN_SUB = new Set(["þegar", "ef", "áður en", "þangað til", "fyrr en", "eftir að",
+  "af því að", "um leið og", "meðan", "á meðan"]);
+const JOIN_CO = new Set(["og", "en", "eða"]);
+
+/** A clause that stands as a sentence: subject first (or the empty *það*
+    of *Það rigndi*), then the finite verb in the indicative. The subject
+    run and the verb, or null. */
+function plainClause(lex, s, from, to) {
+  let F = subjectRun(lex, s, from, to + 1);
+  if (!F && pfnLemma(lex, s.tok[from]) === "það") F = { from, to: from };
+  if (!F) return null;
+  const vi = F.to + 1;
+  if (vi > to || !isFinite(s.tok[vi])) return null;
+  return { F, vi };
+}
+/* Verbs that do not make a sentence without what they are about: *Ég man.*,
+   *Ég veit.* The parse gives *muna* no government, so the list says it. */
+const NEEDS_COMPLEMENT = new Set(["muna", "vita", "halda", "segja", "telja", "vona", "finnast",
+  "gleyma", "lofa", "ákveða", "spyrja", "skilja", "þekkja", "sjá", "heyra", "finna", "langa",
+  "vilja", "ætla", "þurfa", "mega", "geta", "kunna", "eiga", "hafa", "verða", "vera", "fá"]);
+/** Every finite verb in [from, to] is in the indicative, and a verb that
+    needs an object or a complement is not the last word (*Ég man.* is not
+    a sentence).
+    In a main clause the parse may leave the mood open — a past form is
+    often the same in both moods (*ætlaði*) and a main clause says what is
+    — but in a subordinate clause the mood must be certain: on its own the
+    clause would be read in the indicative, and a subjunctive there
+    (*þótt hann væri*, *ef ég keypti*) means something else. */
+function indicative(lex, s, from, to) {
+  for (let j = from; j <= to; j++) {
+    const t = s.tok[j];
+    if (t.c !== "sagnorð") continue;
+    if (!FINITE.test(t.m || "")) continue;
+    const x = FINITE.exec(t.m);
+    const e = confirmed(lex, t);
+    if (!e || x[2] !== "FH" || !firm(t, t.k === "aðalsetning" ? ["háttur"] : [])) return false;
+    /* Something must follow such a verb in its clause: *Ég man.*, *… en
+       ég hélt.* are not sentences. */
+    if (((t.g && t.g.length) || NEEDS_COMPLEMENT.has(e.o)) && j === to) return false;
+  }
+  return true;
+}
+
+/** Tengdu saman með *þegar* …: the bank's own sentence, split in two. */
+export function transformJoin(lex, s) {
+  if (!endsPlain(s)) return null;
+  const n = s.tok.length - 1;                       // the tokens before the full stop
+  const conj = s.tok.map((t, j) => (t.c === "samtenging" ? j : -1)).filter((j) => j >= 0);
+  if (conj.length !== 1) return null;
+  const c = conj[0];
+  const sub = s.tok.slice(0, n).map((t, j) => (t.k === "aukasetning" ? j : -1)).filter((j) => j >= 0);
+  let A, B, cFrom, first;            // A main clause, B the joined clause: [from, to]
+  if (s.tok[c].k === "aðalsetning") {
+    if (sub.length || !JOIN_CO.has(lower(s.tok[c].l))) return null;
+    cFrom = c; A = [0, c - 1]; B = [c + 1, n - 1]; first = "main";
+  } else {
+    const from = sub[0], to = sub[sub.length - 1];
+    if (to - from + 1 !== sub.length) return null;           // one unbroken clause
+    for (let j = from; j < c; j++) if (isPunct(s.tok[j]) || s.tok[j].r) return null;
+    cFrom = from;
+    B = [c + 1, to];
+    if (from === 0) { A = [to + 1, n - 1]; first = "sub"; }
+    else if (to === n - 1) { A = [0, from - 1]; first = "main"; }
+    else return null;
+  }
+  const conjText = lower(joinTokens(s.tok.slice(cFrom, c + 1).map((t) => t.w)));
+  if (!(JOIN_SUB.has(conjText) || (first === "main" && cFrom === c && JOIN_CO.has(conjText)))) return null;
+  if (A[1] < A[0] || B[1] < B[0]) return null;
+  /* *Ég man vel eftir deginum þegar …*, *frá því þegar …*: the clause
+     belongs to the word before it, not to the sentence. A comparative
+     before *en* (*stærri en …*) is a comparison, not two sentences. */
+  if (first === "main") {
+    const before = s.tok[cFrom - 1];
+    if (before && (before.c === "fornafn" || (before.c === "nafnorð" && saysWhen(lex, { tok: [before] })))) return null;
+  }
+  if (s.tok.slice(A[0], A[1] + 1).some((t) => /MST/.test(t.m || ""))) return null;
+
+  const b = plainClause(lex, s, B[0], B[1]);
+  if (!b || !indicative(lex, s, B[0], B[1])) return null;
+  if (!indicative(lex, s, A[0], A[1])) return null;
+  const word = (t, j, at) => (j === at ? lowerFirst(t.w, lex.entryForToken(t)) : t.w);
+  const wordsOf = (from, to) => s.tok.slice(from, to + 1).map((t, j) => word(t, from + j, from));
+  const bWords = wordsOf(B[0], B[1]);
+  const bSentence = capFirst(joinTokens([...bWords, "."]));
+  let aSentence, aSubj, aVerb, aInv;
+  if (first === "main") {
+    const a = plainClause(lex, s, A[0], A[1]);
+    if (!a) return null;
+    aSentence = capFirst(joinTokens([...wordsOf(A[0], A[1]), "."]));
+    aSubj = wordsOf(a.F.from, a.F.to);
+    aVerb = lower(s.tok[a.vi].w);
+  } else {
+    /* *… var maturinn tilbúinn*: the verb, then the subject — on its own
+       the clause is *Maturinn var tilbúinn.* */
+    const vi = A[0];
+    if (!isFinite(s.tok[vi])) return null;
+    const F = subjectRun(lex, s, vi + 1, A[1] + 1);
+    if (!F) return null;
+    aSubj = s.tok.slice(F.from, F.to + 1).map((t, k) => (k === 0 ? lowerFirst(t.w, lex.entryForToken(t)) : t.w));
+    aVerb = lower(s.tok[vi].w);
+    aSentence = capFirst(joinTokens([...aSubj, aVerb, ...s.tok.slice(F.to + 1, A[1] + 1).map((t) => t.w), "."]));
+    aInv = true;
+  }
+  const answers = [s.t];
+  const bSubj = wordsOf(b.F.from, b.F.to);
+  const bVerb = lower(s.tok[b.vi].w);
+  /* *… en ég gleymdi því* or *… en gleymdi því*: with the same subject in
+     both, an *og*, *en* or *eða* may leave the second one out. */
+  if (JOIN_CO.has(conjText) && normalise(aSubj.join(" ")) === normalise(bSubj.join(" ")))
+    answers.push(capFirst(joinTokens([...wordsOf(A[0], A[1]), conjText,
+      ...s.tok.slice(b.vi, B[1] + 1).map((t) => t.w), "."])));
+  const coord = JOIN_CO.has(conjText);
+  const Conj = capFirst(conjText);
+  /* The order first: halves the wrong way round are the plainer mistake. */
+  const checks = [aInv
+    ? { notStarts: [conjText], note: `Byrjaðu á *${Conj}* og fyrri setningunni; aðalsetningin kemur á eftir.` }
+    : { starts: [conjText], note: `Byrjaðu á fyrri setningunni og settu *${conjText}* á milli setninganna.` }];
+  if (aInv) checks.push({ has: [...aSubj, aVerb],
+    note: `Þegar aukasetningin stendur fremst er hún fyrsti liðurinn, og sögnin í aðalsetningunni kemur strax á eftir henni — á undan frumlaginu: *${aVerb} ${aSubj.join(" ")}*.` });
+  if (!coord && b.F.from !== b.vi) checks.push({ has: [conjText, bVerb, ...bSubj],
+    note: `Í aukasetningu á eftir *${conjText}* stendur frumlagið á undan sögninni, eins og í venjulegri fullyrðingu: *${conjText} ${bSubj.join(" ")} ${bVerb}*.` });
+  return {
+    kind: "join", s, conj: conjText,
+    lines: aInv ? [bSentence, aSentence] : [aSentence, bSentence],
+    from: aInv ? `${bSentence} ${aSentence}` : `${aSentence} ${bSentence}`,
+    instruction: aInv
+      ? `Tengdu setningarnar saman með **${conjText}**. Byrjaðu á *${Conj}* og fyrri setningunni.`
+      : `Tengdu setningarnar saman með **${conjText}**: fyrri setningin fyrst, svo *${conjText}* og seinni setningin.`,
+    answers, model: s.t,
+    why: coord
+      ? `*${capFirst(conjText)}* er aðaltenging: hún tengir tvær aðalsetningar og breytir engu í orðaröð þeirra.` +
+        (answers.length > 1 ? " Þegar frumlagið er það sama í báðum má sleppa því í seinni setningunni." : "")
+      : aInv
+        ? `*${Conj}* er aukatenging. Aukasetningin *${conjText} ${bWords.join(" ")}* er einn liður. Standi hún fremst ` +
+          `kemur sögnin í aðalsetningunni strax á eftir henni, á undan frumlaginu: *${aVerb} ${aSubj.join(" ")}*. ` +
+          `Inni í aukasetningunni stendur frumlagið á undan sögninni: *${conjText} ${bSubj.join(" ")} ${bVerb}*.`
+        : `*${Conj}* er aukatenging. Á eftir henni er orðaröðin sú sama og í venjulegri fullyrðingu, frumlagið fyrst og svo sögnin: ` +
+          `*${conjText} ${bSubj.join(" ")} ${bVerb}*. Aðalsetningin stendur óbreytt.`,
+    checks,
+  };
+}
+
+/* ---- óbein ræða: direct to indirect speech ----------------------------- */
+
+/* Words that point at the speaker, the listener, here or now. Turned into
+   indirect speech they change to something the sentence does not settle
+   (*hér* → *þar*? *þetta* → *það*?), so a sentence with one is left out.
+   *Ég* as the subject is the one that is changed: to *hann* or *hún*. */
+const SPEAKER_WORDS = new Set(["ég", "þú", "við", "þið", "minn", "þinn", "okkar", "ykkar", "vor"]);
+const DEIXIS = new Set(["hér", "hérna", "hingað", "héðan", "þessi", "þetta"]);
+const PERSON_3 = new Set(["hann", "hún", "það", "sig", "sinn"]);
+const GENDER_OF = (m) => { const x = /(?:^|-)(KK|KVK|HK)-/.exec(m || ""); return x ? x[1] : null; };
+
+/** Settu í óbeina ræðu. *Hann sagði: „Ég er þreyttur.“* → *Hann sagði að
+    hann væri þreyttur.* The quoted sentence is a bank sentence in the
+    present tense; its finite verbs go to the subjunctive — of the past
+    after *sagði*, of the present after *segir* — and *ég* becomes the
+    speaker. */
+export function transformIndirect(lex, s) {
+  if (!endsPlain(s) || hasConjunction(s) || !mainOnly(s) || saysWhen(lex, s)) return null;
+  if (s.tok.some((t) => DEIXIS.has(lower(t.l)) || DEIXIS.has(lower(t.w)))) return null;
+  const F = subjectRun(lex, s, 0);
+  if (!F) return null;
+  const subj = s.tok.slice(F.from, F.to + 1);
+  const eg = subj.length === 1 && pfnLemma(lex, subj[0]) === "ég" && subj[0].m === "NFET";
+  const genders = new Set();
+  const others = new Set();          // the genders of *hann* and *hún* in the quote
+  for (let j = 0; j < s.tok.length; j++) {
+    const t = s.tok[j];
+    if (isPunct(t)) continue;
+    if (!t.c || t.rj) return null;                     // a word the parse left open
+    const l = t.c === "fornafn" ? (lex.entryForToken(t) || {}).o || t.l : t.l;
+    if (!(eg && j === 0) && (SPEAKER_WORDS.has(lower(l)) || SPEAKER_WORDS.has(lower(t.l)))) return null;
+    /* With *ég* turned into *hann*, another *hann* would leave the reader
+       guessing who is who. */
+    if (eg && j > 0 && t.c === "fornafn" && PERSON_3.has(lower(l))) return null;
+    if (t.c === "fornafn" && t.x === "pfn" && lower(l) === "hann") others.add("KK");
+    if (t.c === "fornafn" && t.x === "pfn" && lower(l) === "hún") others.add("KVK");
+    if (eg && j > 0 && caseOf(t.m) === "NF") {
+      /* What agrees with *ég* says whether the speaker is a man or a woman
+         (*Ég er þreyttur*); a noun (*Ég er kennari*) does not, safely. */
+      if (t.c === "nafnorð") return null;
+      const g = GENDER_OF(t.m);
+      if (g) genders.add(g);
+    }
+  }
+  if (genders.has("HK") || genders.size > 1) return null;
+  /* *Hann sagði: „Hann er sterkastur.“* leaves the reader guessing who is
+     who: the speaker is of the other gender than a *hann* or *hún* in the
+     quote, and a quote with both is left out. */
+  if (others.size > 1) return null;
+  const h = stableHash(s.t);
+  const gender = genders.size ? [...genders][0]
+    : others.size ? (others.has("KK") ? "KVK" : "KK")
+      : (h % 2 ? "KVK" : "KK");
+  const pastFrame = h % 3 !== 0;          // two in three after *sagði*, one after *segir*
+  const speaker = lex.lookup(gender === "KK" ? "hann" : "hún", "pfn");
+  const segja = lex.lookup("segja", "so");
+  const sp = formsOf(speaker, "NFET")[0];
+  const say = formsOf(segja, `GM-FH-${pastFrame ? "ÞT" : "NT"}-3P-ET`)[0];
+  if (!sp || !say) return null;
+
+  const slots = [];
+  const changes = [];
+  const checks = [];
+  let finite = 0;
+  for (let j = 0; j < s.tok.length - 1; j++) {
+    const t = s.tok[j];
+    if (eg && j === 0) { slots.push([sp]); continue; }
+    if (t.c === "sagnorð" && FINITE.test(t.m || "")) {
+      const x = FINITE.exec(t.m);
+      const e = confirmed(lex, t);
+      if (!e || x[2] !== "FH" || x[3] !== "NT" || !firm(t, ["háttur"])) return null;
+      if (["skulu", "munu"].includes(e.o)) return null;   // *skal* is a promise; *mun* already looks ahead
+      let p = x[4];
+      if (p === "1P") { if (!eg || x[5] !== "ET") return null; p = "3P"; }
+      if (p === "2P") return null;
+      const cell = (tense) => `${x[1]}-VH-${tense}-${p}-${x[5]}`;
+      const want = formsOf(e, cell(pastFrame ? "ÞT" : "NT"));
+      const other = formsOf(e, cell(pastFrame ? "NT" : "ÞT"));
+      if (!want.length || !other.length) return null;
+      slots.push(want);
+      finite++;
+      changes.push({ i: j, from: lower(t.w), to: want[0], m: cell(pastFrame ? "ÞT" : "NT"), e });
+      const fh = formsOf(e, `${x[1]}-FH-NT-${p}-${x[5]}`);
+      checks.push({ hasAny: [lower(t.w), ...fh].filter((w) => !want.includes(w)), lacks: want,
+        note: `Í óbeinni ræðu fer sögnin í **viðtengingarhátt**: *${want[0]}*, ekki *${lower(t.w)}*.` });
+      checks.push({ hasAny: other.filter((w) => !want.includes(w)), lacks: want,
+        note: pastFrame
+          ? `Á eftir *${say}* (þátíð) fer sögnin í viðtengingarhátt **þátíðar**: *${want[0]}*, ekki *${other[0]}*.`
+          : `Á eftir *${say}* (nútíð) fer sögnin í viðtengingarhátt **nútíðar**: *${want[0]}*, ekki *${other[0]}*.` });
+      continue;
+    }
+    slots.push([j === 0 ? lowerFirst(t.w, lex.entryForToken(t)) : t.w]);
+  }
+  if (!finite) return null;
+  if (eg) checks.unshift({ hasAny: ["ég"],
+    note: `Í óbeinni ræðu er sagt frá því sem ${sp} ${say}, svo *ég* verður *${sp}*.` });
+  const Sp = capFirst(sp);
+  const withAd = combinations([[Sp], [say], ["að"], ...slots, ["."]]);
+  const without = combinations([[Sp], [say], ...slots, ["."]]);
+  const tenseWord = pastFrame ? "þátíðar, af því að *" + say + "* er í þátíð" : "nútíðar, af því að *" + say + "* er í nútíð";
+  return {
+    kind: "indirect", s,
+    from: `${Sp} ${say}: „${s.t}“`,
+    instruction: "Settu orðin í **óbeina ræðu**: án gæsalappa, í aukasetningu sem byrjar á *að*.",
+    answers: [...withAd, ...without], model: withAd[0], speaker: sp,
+    why: "Í óbeinni ræðu segjum við frá orðum annarra án gæsalappa, í aukasetningu sem hefst á *að*. " +
+      `Sögnin fer í **viðtengingarhátt** ${tenseWord}: ${changes.map((c) => `*${c.from}* → *${c.to}*`).join(", ")}.` +
+      (eg ? ` Persónan breytist líka: sá sem sagði *ég* er nú *${sp}*, og sögnin fer í 3. persónu.` : "") +
+      " *Að* má sleppa, en í rituðu máli er það oftast haft með.",
+    checks,
+    marks: changes.map((c) => ({ m: c.m, word: wordKey(c.e.o, "so") })),
+  };
+}
+
 export const TRANSFORMS = {
   past: { nm: "þátíð", build: transformPast },
   plural: { nm: "fleirtala", build: transformPlural },
   passive: { nm: "þolmynd", build: transformPassive, minLevel: 2 },
   igaer: { nm: "Í gær …", build: (lex, s) => transformOpener(lex, s, "Í gær") },
   amorgun: { nm: "Á morgun …", build: (lex, s) => transformOpener(lex, s, "Á morgun") },
+  /* v6.13 (item 29) */
+  active: { nm: "germynd", build: transformActive, minLevel: 2 },
+  question: { nm: "spurning", build: transformQuestion },
+  join: { nm: "tenging", build: transformJoin, minLevel: 2 },
+  indirect: { nm: "óbein ræða", build: transformIndirect, minLevel: 3 },
 };
 
 /* ======================================================= SETNINGASMIÐJA === */
@@ -1078,6 +1556,10 @@ export function taskWorkshop(lex, view, rng) {
 const transformKinds = (band) => Object.entries(TRANSFORMS)
   .filter(([, t]) => !t.minLevel || band >= t.minLevel).map(([k]) => k);
 
+/* What a rewrite is worth: the passive and the two kinds that rebuild a
+   whole sentence more than a verb swapped or moved. */
+const BASE = { passive: 16, active: 14, join: 15, indirect: 16, question: 11 };
+
 export function taskTransform(lex, view, rng) {
   const P = view.policy;
   const band = bandFor(view, PROD);
@@ -1092,7 +1574,7 @@ export function taskTransform(lex, view, rng) {
       if (!(r.marks || []).every((c) => askable(P, c.m))) continue;
       return built({
         type: "umritun", skill: PROD, ...r, kind,
-        base: kind === "passive" ? 16 : 13, lvl: s.lvl, cell: "umritun:" + kind, word: null,
+        base: BASE[kind] || 13, lvl: s.lvl, cell: "umritun:" + kind, word: null,
       });
     }
   }
@@ -1103,7 +1585,7 @@ export const TYPES = [
   /* v6.9: production. Writing the Icelandic tests understanding rather than
      recall, so these three together weigh about as much as the cloze. */
   { id: "umritun", skill: "malbeiting", weight: 10, renderer: "umritun",
-    tags: ["num", "passive", "v2", "verb:agree", "verb:tense"],
+    tags: ["num", "passive", "v2", "verb:agree", "verb:tense", "verb:vh"],
     bands: [1, 2, 3, 4, 5, 6, 7],
     build: taskTransform },
   { id: "smidja", skill: "malbeiting", weight: 8, renderer: "smidja",
