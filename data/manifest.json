@@ -23,7 +23,7 @@
   "pipeline/build_bundle.py": "656e4622ec1426e7f9a3bb8a0c41661dc799c9191fa5620a4dededf695e7e25a",
   "pipeline/irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
   "pipeline/exercises.py": "ee98b066081cf898ea7115102ccefe73d18e84fcf42c4e76c7968d95876eeb93",
-  "pipeline/build_exercises.py": "87cd85b8943cc780e2ec1b4f8fc1aca33f527ff9036436a439c4745f71b413ce",
+  "pipeline/build_exercises.py": "03dfac32a19c3c06d9dfa81e92140eb16b639ac68d08f7fc60fef4fedee1e0cb",
   "pipeline/adj_classes.py": "30dcdd1a715ac73c9325bcc327a043a78cd452cd9aa9164d934b25b565255b10",
   "pipeline/content_io.py": "8ea1e1036ba436e094e67d4f0bf2d188e5c567fa8ef3bb7207a7b0594874f61f",
   "content/fallstjorn/hreyfing-sett.tsv": "076a6ee92e32eecfe13cc27dccaedab43be938a6d65ad1549a9cdc1fe7bb481f",
