@@ -8,9 +8,12 @@ sentences from dictionary forms, and rewriting sentences — with XP, levels, ba
 Everything grammatical in the program is read out of two sources and never
 written by hand: **BÍN** (Beygingarlýsing íslensks nútímamáls, via the
 `islenska` package) for every inflected form, and **Greynir** for the
-analysis of every sentence. The one hand-built table is `noun_classes.py`,
-which says what nouns *mean* (a person, a place, a drink …) so that sentences
-can be generated without nonsense.
+analysis of every sentence. Two tables are built by hand, and both are only
+ever used to leave something out: `noun_classes.py` says what nouns *mean* (a
+person, a place, a drink …) so that sentences can be generated without
+nonsense, and `adj_classes.py` says what an adjective is said of (*ferskt
+epli*, not *ferskt barn*) and which adjectives are not compared (*dauður*,
+*velkominn*, *breskur*).
 
 ## Running it
 
@@ -62,6 +65,7 @@ What the build does, in order:
 2. `build_lexicon.py` — every attested lemma's paradigm out of BÍN → `lexicon.json`
    (and, by `irregularity.py`, how irregular each paradigm is, `irr` 1–5, and
    how hard each cell is, `cellh` — the second axis of difficulty)
+   (minus the comparison forms of the adjectives `adj_classes.py` lists as not compared)
 3. `build_sentences.py` — every sentence in `sentences.py` parsed by Greynir
    and checked by `parse_guard.py` → `sentences.json`
 4. `build_bundle.py` — lexicon + sentences + semantic classes + definitions
@@ -87,6 +91,11 @@ irregularity.py       how irregular a paradigm is (stems counted on BÍN's forms
                       umlaut, syncope, -j-/-v-, consonant change, strong verbs)
                       and the table of how hard each cell is; the app lets the
                       level choose on both (core/difficulty.js hardnessWeight)
+noun_classes.py       semantic class of every noun; í/á convention; exclusions;
+                      which nouns nobody has read (not used in a frame); the
+                      needs of a few frames narrowed (NEED_FIX)
+adj_classes.py        the helper nouns an adjective is shown with in its
+                      table, and the adjectives that are not compared
 government.py         which cases prepositions and verbs govern — used only to
                       REJECT a parse that contradicts it, never to assert one
 parse_guard.py        the checks every token passes: the lemma is plausible, the

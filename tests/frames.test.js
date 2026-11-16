@@ -52,6 +52,26 @@ test("bílstjórana can be shown inside a sentence", () => {
 
 /* ================= 2. coverage, measured ================================ */
 
+/* Cells that stay on the bare-form route on purpose: [class, mark]. A frame
+   that would cover them exists or existed, and what it produced was not
+   Icelandic anyone says. Each line is a decision; none of them is "no one
+   got round to it" — the test below fails for any other gap. */
+const BARE_ON_PURPOSE = [
+  /* v6.4: the indefinite dative of a time word ("fyrir mánuði" / "fyrir
+     kvöld": no frame is right for all of them) and of a sum of money */
+  [/^(time|money)$/, /^ÞGF(ET|FT)$/],
+  /* v6.13 (item 30), from narrowing the frames that took any noun
+     (noun_classes.py NEED_FIX):
+     "Þetta gengur ekki án ___" was the bare genitive of everything, and gave
+     "án morguns", "án kvölda", "án hverfa", "án lands", "án grass" … */
+  [/^time$/, /^EF(ET|FT)$/],
+  [/^(place|settlement)$/, /^EF(ET|FT)$/],
+  [/^(nature|plant)$/, /^EFET$/],
+  /* … and "Ferðin tafðist vegna ___" the genitive with the article: "vegna
+     nefsins", "vegna herbergisins", "vegna tunglsins", "vegna síðunnar" */
+  [/^(body|room|sky|text)$/, /^EFETgr$/],
+];
+
 test("every concrete noun form the analysis can ask about has a sentence", () => {
   /* Abstract nouns are only taken by the frames that accept anything, and a
      handful of their genitive cells have no natural frame; everything that
@@ -60,21 +80,37 @@ test("every concrete noun form the analysis can ask about has a sentence", () =>
   for (const w of lex.nouns) {
     if (w.nx || w.s === "abstract") continue;
     for (const m of askableMarks(w)) {
-      /* v6.4: a cell nobody is shown (no plural, no article) needs no frame,
-         and two small groups stay on the bare-form route on purpose — the
-         indefinite dative of a time word ("fyrir mánuði" / "fyrir kvöld": no
-         frame is right for all of them) and of a sum of money. */
+      /* v6.4: a cell nobody is shown (no plural, no article) needs no frame;
+         nor do the cells listed above. */
       if (!showable(w, m)) continue;
-      if ((w.s === "time" || w.s === "money") && /^ÞGF(ET|FT)$/.test(m)) continue;
+      if (BARE_ON_PURPOSE.some(([cls, mark]) => cls.test(w.s) && mark.test(m))) continue;
+      /* its only frames are "Litur ___ er fallegur / breyttist", and a
+         compound of a noun the sentence already has is a repeat (v6.13) */
+      if (w.o === "varalitur" && m === "EFETgr") continue;
       if (!nounSentence(lex, w, m, w.forms[m][0], { rng })) missing.push(`${w.o}|${w.c}|${w.s} ${m}`);
     }
   }
   assert.deepEqual(missing.slice(0, 30), [], `${missing.length} uncovered`);
 });
 
-test("abstract nouns are covered in nearly every form too", () => {
+test("abstract nouns are covered in every form but one", () => {
+  /* v6.13 (item 30): the genitive with the article had one frame, "Ferðin
+     tafðist vegna ___", and an idea is seldom what holds up a trip ("vegna
+     hamingjunnar", "vegna framtíðarinnar"). The frame takes no abstract noun
+     now, and that cell is analysed as a bare form until the bank has a
+     sentence for it ("Við ræddum mikilvægi ___" would be one). Every other
+     cell of every abstract noun that is used in frames has a sentence. */
+  const missing = new Map();
+  for (const w of lex.nouns) {
+    if (w.nx || w.s !== "abstract") continue;
+    for (const m of askableMarks(w)) {
+      if (!showable(w, m)) continue;
+      if (!nounSentence(lex, w, m, w.forms[m][0], { rng })) missing.set(m, (missing.get(m) || 0) + 1);
+    }
+  }
+  assert.deepEqual([...missing.keys()], ["EFETgr"], JSON.stringify([...missing]));
   const cov = frameCoverage(lex).noun.byClass.abstract;
-  assert.ok(cov.have / cov.want > 0.9, `${(100 * cov.have / cov.want).toFixed(1)}%`);
+  assert.ok(cov.have / cov.want > 0.88, `${(100 * cov.have / cov.want).toFixed(1)}%`);
 });
 
 test("an adjective is only put into a sentence beside a noun it suits", () => {

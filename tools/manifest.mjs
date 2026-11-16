@@ -42,6 +42,8 @@ const INPUTS = [
   "irregularity.py",
   /* v6.11: the hand-written exercise items and the build that resolves them in BÍN */
   "exercises.py", "build_exercises.py",
+  /* v6.13: what an adjective is shown with, and which adjectives are not compared */
+  "adj_classes.py",
 ];
 
 /* Artefacts: what the build *writes*. A change here is a consequence. */

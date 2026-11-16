@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Fold lexicon + sentences + semantics + definitions into one JS payload."""
-import json, os, re, collections, noun_classes, definitions, vocab_filter
+import json, os, re, collections, noun_classes, adj_classes, definitions, vocab_filter
 
 lex = json.load(open('lexicon.json'))
 sents = json.load(open('sentences.json'))
@@ -56,6 +56,16 @@ if os.path.exists('data/ino.json'):
         print('  WARNING: that is far fewer than expected. Is data/ino.json the '
               'file tools/ino.mjs wrote? See docs/DEFINITIONS.md.')
 
+# Helper nouns for the adjective table (adj_classes.py). Every one of them
+# has to be a noun of the vocabulary with all sixteen forms, or a table would
+# show a helper in some cells and none in others.
+_noun_cells = {(w['o'], w['c']): sum(1 for c in str(w['f']).split(';') if c)
+               for w in lex['w'] if w['c'] in ('kk', 'kvk', 'hk')}
+_bad = sorted('%s (%s)' % h for h in adj_classes.helper_nouns() if _noun_cells.get(h, 0) < 16)
+if _bad:
+    raise SystemExit('adj_classes.py: hjálparorð vantar í orðaforðann eða hefur ekki '
+                     'allar 16 myndirnar: ' + ', '.join(_bad))
+
 hom = collections.Counter(w['o'] for w in lex['w'])
 ino_rejected = collections.Counter()
 for w in lex['w']:
@@ -73,6 +83,12 @@ for w in lex['w']:
             w['np'] = 1
         if noun_classes.no_article(w['o']):
             w['na'] = 1
+    if w['c'] == 'lo':
+        # the nouns the adjective table shows it with, "kk/kvk/hk" with "-"
+        # for a gender it has none in; absent = shown without one
+        three = adj_classes.helpers(w['o'])
+        if three:
+            w['h'] = '/'.join(n or '-' for n in three)
     ino = INO.get(str(w.get('i')))
     if ino and ino.get('def'):
         cls = ino.get('cls')
@@ -221,5 +237,7 @@ print('word rarity:', ' | '.join('%s %d (%.1f%%)' % (nm, counts[nm], 100 * count
 print('inherited scores (%d):' % len(inherited), ' '.join(inherited))
 print('bundle %.0f KB' % (os.path.getsize('data/data_bundle.js') / 1024))
 print('sem:', dict(collections.Counter(w.get('s') for w in lex['w'] if w.get('s'))))
+print('adjectives with a helper noun:', sum(1 for w in lex['w'] if w.get('h')),
+      'of', sum(1 for w in lex['w'] if w['c'] == 'lo'))
 print('excluded from frames:', sum(1 for w in lex['w'] if w.get('nx')), '| with í/á convention:', sum(1 for w in lex['w'] if w.get('p')),
       '| no plural:', sum(1 for w in lex['w'] if w.get('np')), '| no article:', sum(1 for w in lex['w'] if w.get('na')))
