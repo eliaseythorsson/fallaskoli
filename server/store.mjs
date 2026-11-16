@@ -61,6 +61,7 @@ export function createStore(root) {
     audit: path.join(root, "audit.json"),
     duels: path.join(root, "duels.json"),
     reports: path.join(root, "reports.json"),
+    assignments: path.join(root, "assignments.json"),
   };
 
   /* One queue for every write. Node is single-threaded, but `await` gives other
@@ -133,6 +134,7 @@ export function createStore(root) {
   const auditFile = smallFile(file.audit, []);
   const duelsFile = smallFile(file.duels, []);
   const reportsFile = smallFile(file.reports, []);
+  const assignmentsFile = smallFile(file.assignments, []);
 
   const safeId = (id) => /^[a-zA-Z0-9_-]{1,64}$/.test(String(id));
   const statePath = (id) => path.join(dir.states, id + ".json");
@@ -270,6 +272,13 @@ export function createStore(root) {
     reports: () => reportsFile.read(),
     updateReports: (fn) => reportsFile.update(fn),
 
+    /* ---------- assignments (v6.13, core/assignment.js) ----------
+     * Homework a teacher set for a group, with each pupil's result in it as
+     * numbers. Pruned on every read and write (`prune`), so an assignment
+     * is gone 30 days after its deadline without a job to run. */
+    assignments: () => assignmentsFile.read(),
+    updateAssignments: (fn) => assignmentsFile.update(fn),
+
     /* ---------- the monthly rarity snapshot ---------- */
     rarityHistory: () => readJSON(file.rarity, []),
     appendRarity(entry, keep = 24) {
@@ -309,6 +318,16 @@ export function createStore(root) {
         const rest = list.filter((r) => r.by !== uid);
         return rest.length !== list.length ? rest : null;
       });
+      /* Their results go; an assignment they set stays with the group (the
+         class is still doing it), without the name of who set it. */
+      await this.updateAssignments((list) => {
+        let hit = false;
+        for (const a of list) {
+          if (a.res && uid in a.res) { delete a.res[uid]; hit = true; }
+          if (a.by === uid) { a.by = null; hit = true; }
+        }
+        return hit ? list : null;
+      });
       const hidden = await this.hidden();
       if (hidden.includes(uid)) await this.setHidden(hidden.filter((x) => x !== uid));
       await this.updateInvites((list) => {
@@ -333,7 +352,7 @@ export function createStore(root) {
         hidden: await this.hidden(), invites: await this.invites(),
         groups: await this.groups(), audit: await this.audit(),
         rarity: await this.rarityHistory(), duels: await this.duels(),
-        reports: await this.reports(),
+        reports: await this.reports(), assignments: await this.assignments(),
         dataset: await this.dataset(), datasetStatus: await this.datasetStatus(),
         states: st,
       };
@@ -354,6 +373,7 @@ export function createStore(root) {
         await writeJSON(file.rarity, all.rarity || []);
         await writeJSON(file.duels, all.duels || []);
         await writeJSON(file.reports, all.reports || []);
+        await writeJSON(file.assignments, all.assignments || []);
         if (all.dataset) await writeJSON(file.dataset, all.dataset);
         if (all.datasetStatus) await writeJSON(file.datasetStatus, all.datasetStatus);
         for (const n of await fs.readdir(dir.states).catch(() => []))

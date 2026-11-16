@@ -29,6 +29,7 @@ import { wireReports, captureCard, renderReportsPanel } from "./ui/reports.js";
 import { renderHeader, renderStats } from "./ui/progress.js";
 import { renderBadges, renderClass, renderSettings, renderData } from "./ui/panels.js";
 import { renderLogin, renderAdmin, renderAccount, renderShareCard } from "./ui/account.js";
+import { renderTeacher } from "./ui/teacher.js";
 import { mergeStates } from "./core/merge.js";
 import { renderLessons, suggestLesson, wireLessons } from "./ui/lessons.js";
 import { renderDuelBar, renderDuelRoom } from "./ui/duel.js";
@@ -42,7 +43,8 @@ import { diagnose, noteDiagnosis, activePatterns, huntPreferFor, focusTypes, pic
   patternById, runReport } from "./core/diagnosis.js";
 import { SKILL_IDS } from "./core/skills.js";
 import { renderPicker, renderRunBar, renderSummary, renderDiagnosisPanel, confirmQuit,
-  topics, usable, MINE, MIXED, TODAY, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
+  topics, usable, MINE, MIXED, TODAY, ASSIGNED, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
+import { scopeOf, assignmentPolicy } from "./core/assignment.js";
 import { LESSONS, readCount } from "./core/lessons.js";
 
 /* The random source of the question builders (tasks/view.js). They never call
@@ -246,6 +248,54 @@ const app = {
   streak: null,
   streakOffer: null,
 
+  /* ---- assignments (item 65, core/assignment.js) ----
+     `assignments` is the server's last answer to GET /assignments: the open
+     homework of this pupil's group, each with the pupil's own result. Only on
+     a server — a pupil with no server has no teacher. `assignmentPending` is
+     a result that could not be sent, retried on the next load. */
+  assignments: [],
+  assignmentPending: null,
+
+  /** Fetch the open assignments; redraw the picker if it is on the screen. */
+  async loadAssignments() {
+    if (!this.server) return;
+    if (this.assignmentPending) await this.sendAssignment(this.assignmentPending);
+    let list;
+    try { list = (await this.server.assignments()).assignments || []; }
+    catch { return; }
+    const changed = JSON.stringify(list) !== JSON.stringify(this.assignments);
+    this.assignments = list;
+    /* The picker is on the board when nothing else is; drawn again only if
+       something changed, so a look every five minutes moves nothing. */
+    if (changed && !this.run && !this.drill && !this.duelRun && !this.runDone && !this.cur) renderPicker(this);
+  },
+
+  /** One tap on an assignment: a session of its size, narrowed to its material. */
+  startAssignment(id) {
+    const a = (this.assignments || []).find((x) => x.id === id);
+    const scope = a && scopeOf(a.target);
+    if (!scope) return;
+    /* No opening reviews: the teacher's questions are all about the material. */
+    this.startRun(ASSIGNED.id, a.n, scope.focus, { review: false, assignment: { id: a.id, target: a.target, scope } });
+  },
+
+  /** Send a finished (or abandoned) assignment's numbers; kept and retried if
+      the network fails. A refusal (deadline passed) is not retried.
+      @returns "ok", "retry" or "refused" — the summary says which. */
+  async sendAssignment(p) {
+    try {
+      const r = await this.server.assignmentResult(p.id, { i: p.i, j: p.j, c: p.c });
+      this.assignmentPending = null;
+      const k = (this.assignments || []).findIndex((x) => x.id === p.id);
+      if (k >= 0 && r && r.assignment) this.assignments[k] = r.assignment;
+      return "ok";
+    } catch (err) {
+      const refused = !!(err && err.status && err.status < 500);
+      this.assignmentPending = refused ? null : p;
+      return refused ? "refused" : "retry";
+    }
+  },
+
   /**
    * Today's session, planned (core/today.js): the due reviews, the active
    * error patterns, then new material, about 3 / 4 / 3 of ten — under the
@@ -283,6 +333,8 @@ const app = {
     if (today) { n = today.n; focus = null; }
     this.run = {
       topic, n, focus: focus && focus.length ? focus : null,
+      /* item 65: the assignment this session answers, with its scope. */
+      assignment: opts.assignment || null,
       i: 0, c: 0, j: 0, xp0: this.S.xp, badges: [], items: [],
       chances: {}, misses: {}, found: [],
       before: activePatterns(this.S, 6).map((p) => p.id),
@@ -303,8 +355,8 @@ const app = {
       this.run.review = planOpening(this.S, todayKey(), n, this.reviewPolicy(), this.run.focus);
     /* The picker remembers the CATEGORY last chosen; neither today's session
        nor "Villurnar mínar" is one. Nor is today's ten the size it offers. */
-    if (topic !== MINE.id && topic !== TODAY.id) this.S.settings.runTopic = topic;
-    if (topic !== TODAY.id) this.S.settings.runSize = n;
+    if (topic !== MINE.id && topic !== TODAY.id && topic !== ASSIGNED.id) this.S.settings.runTopic = topic;
+    if (topic !== TODAY.id && topic !== ASSIGNED.id) this.S.settings.runSize = n;
     this.save();
     this.openView("practice");
     this.next();
@@ -312,8 +364,12 @@ const app = {
 
   /** The curriculum policy, narrowed to what this session is about. */
   runPolicy() {
-    const P = effectivePolicy(this.S);
     const r = this.run;
+    /* item 65: an assignment's material, whatever the pupil has switched off
+       (the teacher chose it), within the ceiling (core/assignment.js). */
+    if (r && r.assignment) return narrowPolicy(assignmentPolicy(this.S, r.assignment.target),
+      { types: r.focus ? [...focusTypes(r.focus)] : null });
+    const P = effectivePolicy(this.S);
     if (!r) return P;
     return narrowPolicy(P, {
       skills: SKILL_IDS.includes(r.topic) ? [r.topic] : null,
@@ -446,7 +502,10 @@ const app = {
     }
     /* Which question types this session could ask: a pattern none of them
        tests is not "the one thing to remember" (v6.11). */
-    const topicTypes = SKILL_IDS.includes(r.topic) ? typesOfSkill(r.topic) : null;
+    const topicTypes = r.assignment
+      ? (r.assignment.scope.types ? new Set(r.assignment.scope.types)
+        : r.assignment.scope.skills ? new Set(r.assignment.scope.skills.flatMap((x) => [...typesOfSkill(x)])) : null)
+      : SKILL_IDS.includes(r.topic) ? typesOfSkill(r.topic) : null;
     const report = runReport(r, this.S, topicTypes ? (p) => p.types.some((x) => topicTypes.has(x)) : null);
     const xp = Math.max(0, this.S.xp - r.xp0);
     (this.S.runs ||= []).push({
@@ -455,11 +514,24 @@ const app = {
     });
     this.S.runs = this.S.runs.slice(-40);
     this.save();
+    /* item 65: the teacher gets the numbers — answered, graded, right — and
+       nothing else. Sent whether or not the pupil finished: how far they
+       got is worth knowing too (core/assignment.js `better`). */
+    const sending = r.assignment && this.server
+      ? this.sendAssignment({ id: r.assignment.id, i: r.i, j: r.j, c: r.c }) : null;
     this.runDone = {
+      assignment: r.assignment ? { id: r.assignment.id, target: r.assignment.target, sent: null } : null,
       topic: r.topic, n: r.n, i: r.i, c: r.c, j: r.j, xp, focus: r.focus,
       badges: r.badges, items: r.items, report, early: early || empty,
       ms: Date.now() - r.startedAt, streaks: r.streaks || [],
     };
+    const done = this.runDone;
+    /* The summary says whether the teacher has the result; drawn again when
+       the server has answered, if it is still on the board. */
+    if (sending) sending.then((sent) => {
+      done.assignment.sent = sent;
+      if (this.runDone === done && !this.run && !this.cur) renderSummary(this);
+    });
     this.next();
   },
 
@@ -994,7 +1066,7 @@ const DRAW = {
   lessons: (id) => renderLessons(app, id),
   progress: () => { renderBadges(app); renderStats(app); renderDiagnosisPanel(app); },
   class: () => {
-    renderShareCard(app); renderClass(app); renderDuelRoom(app);
+    renderTeacher(app); renderShareCard(app); renderClass(app); renderDuelRoom(app);
     /* Fresh duel info also carries whether the account is held for review. */
     if (app.server && Date.now() - (app.duelLoadedAt || 0) > 15000) app.loadDuels();
   },
@@ -1215,6 +1287,7 @@ async function loadSocial() {
   app.social = social || null;
   judgeSocial();
   app.loadDuels();
+  app.loadAssignments();
   redrawOpenView();
 }
 
@@ -1335,7 +1408,7 @@ async function init() {
   });
   /* …and while it is open, a look every five minutes. One small request. */
   if (app.server) setInterval(() => {
-    if (document.visibilityState === "visible" && !app.duelRun) app.loadDuels();
+    if (document.visibilityState === "visible" && !app.duelRun) { app.loadDuels(); app.loadAssignments(); }
   }, 5 * 60000);
 
   decayNotice(report);

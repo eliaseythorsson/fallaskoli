@@ -1292,5 +1292,51 @@ body.insession .blackboard{padding-top:8px}
 .ratebar i{display:block;height:6px;background:var(--rust)}
 .small{font-size:12.5px}
 button.ghost.small{padding:5px 10px;font-size:13px}
+
+/* ---- v6.13 (atriði 65): verkefni efst í Æfa ----
+   Það sem kennarinn setti hópnum, fyrir ofan dagsins lotu: eitt kort á
+   verkefni, og hnappurinn byrjar það strax. */
+.assignbox{margin:0 0 18px;padding:0 0 14px;border-bottom:1px dashed var(--line)}
+.assignrow{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  padding:8px 0}
+.assignrow + .assignrow{border-top:1px dotted var(--line)}
+.assignwhat{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 260px}
+.assignwhat b{font-family:var(--display);font-size:18px;font-weight:600}
+.assignnote{font-style:italic;font-size:14px}
+.assignstate{font-size:13.5px}
+.assignstate.warn{color:var(--rust)}
+.assignrow.done .assignwhat b{opacity:.85}
+.assignsent{font-size:14.5px;margin:0 0 10px}
+@media (max-width:600px){ .assignrow .assigngo{width:100%} }
+
+/* ---- v6.13 (atriði 37 og 65): kennarahlutinn í Skólastofunni ---- */
+#teacher:not(:empty) + h2.sec.first{margin-top:34px}
+.assignform{background:var(--sheet);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;max-width:640px}
+.assignform select,.assignform input[type=date],#tc-group{font:inherit;font-size:16px;padding:9px 10px;min-height:40px;
+  max-width:100%;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper-2);color:var(--ink)}
+.assignform input[type=text]{font-size:16px;max-width:100%}
+.assignform #tc-what{width:100%}
+.assignform #tc-note{width:100%}
+.assignformrow{display:flex;gap:18px;flex-wrap:wrap;margin:8px 0}
+.assignformrow .lbl{display:flex;flex-direction:column;gap:2px}
+.assigncard{border:1px solid var(--line);border-radius:var(--radius);background:var(--sheet);padding:10px 12px;margin:10px 0}
+.assigncard.closed{opacity:.8;background:var(--paper-2)}
+.assignhead{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.assignhead > div:first-child{display:flex;flex-direction:column;gap:2px;flex:1 1 240px}
+.assigncount{font-size:14px;white-space:nowrap}
+.assigncard details{margin-top:8px}
+.assigncard summary{cursor:pointer;font-size:14px;color:var(--slate)}
+.cpwrap{overflow-x:auto;max-width:100%;margin:6px 0 10px}
+table.classpat{border-collapse:collapse;font-size:13px}
+table.classpat th,table.classpat td{border:1px solid var(--line);padding:4px 6px;text-align:center;vertical-align:middle}
+table.classpat th.cpname{text-align:left;white-space:nowrap;position:sticky;left:0;background:var(--sheet);z-index:1}
+table.classpat th.cphead{font-weight:500;font-size:12px;max-width:7.5em;min-width:5em;line-height:1.25;vertical-align:bottom}
+table.classpat td.cpcell{white-space:nowrap;background:rgba(196,55,44,calc(var(--r,0)*.32))}
+table.classpat td.cpcell.none{color:var(--slate);background:none}
+table.classpat td.cpcell.active{font-weight:600;outline:2px solid var(--rust);outline-offset:-2px}
+table.classpat td.cpcell.unread{background:var(--paper-2);color:var(--slate)}
+.cpflag{color:var(--rust);margin-right:3px}
+.cptrend{font-size:10.5px}
+.cptrend.betra{color:var(--moss)} .cptrend.verra{color:var(--rust)}
 </style>
 </head>

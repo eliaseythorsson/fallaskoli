@@ -19,6 +19,8 @@
  * The page is self-contained: no script, no font, no request to anybody.
  */
 
+import { ASSIGN } from "../src/js/core/assignment.js";
+
 export const RETENTION = {
   pendingDays: 30,      // an unanswered request for access
   inactiveMonths: 18,   // an account nobody has logged in to
@@ -31,6 +33,10 @@ export const RETENTION = {
     server asks for a guardian below 16, which satisfies both and GDPR's own
     default. Change it here and the form and the notice follow. */
 export const CONSENT_AGE = 16;
+
+/** How long an assignment and its results are kept after its deadline: the
+    same number core/assignment.js prunes by, so the notice cannot drift. */
+const ASSIGN_KEEP_DAYS = ASSIGN.keepDays;
 
 export function privacyConfig(env = process.env) {
   const controller = String(env.FALLASKOLI_CONTROLLER || "").trim();
@@ -49,7 +55,10 @@ export function privacyConfig(env = process.env) {
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-export const PRIVACY_VERSION = "2026-11-11";
+/* 2026-11-16 (v6.13, items 37 and 65): the group's teacher or guardian sees
+   the error patterns and assignment results of the learners in the group. A
+   new recipient, so the version moves (docs/PRIVACY.md §3). */
+export const PRIVACY_VERSION = "2026-11-16";
 
 export function privacyPage(cfg) {
   const missing = (what) => `<mark>[vantar: ${what}]</mark>`;
@@ -91,7 +100,9 @@ export function privacyPage(cfg) {
      lykilorð (sem enginn getur lesið) og hvernig þér gengur að æfa þig.</p>
   <p>Það sem þú skrifar í svörin er <b>ekki</b> geymt — bara hvort svarið var rétt —
      nema þú sendir sjálf(ur) villutilkynningu með 🚩.</p>
-  <p>Enginn annar notandi sér neitt um þig nema þú kveikir sjálf(ur) á stigatöflunni.</p>
+  <p>Enginn annar nemandi sér neitt um þig nema þú kveikir sjálf(ur) á stigatöflunni.</p>
+  <p>Kennari eða forsjáraðili hópsins þíns sér hvernig þér gengur í villumynstrum og
+     verkefnum, svo hann geti hjálpað þér — en aldrei það sem þú skrifar.</p>
   <p>Engar auglýsingar, engin rakning, ekkert selt. Þú getur sótt gögnin þín eða
      eytt aðganginum hvenær sem er.</p>
 </div>
@@ -115,6 +126,11 @@ export function privacyPage(cfg) {
     <td>Til að forritið muni hvar þú ert stödd/staddur, velji spurningar við hæfi
         og framvindan fylgi þér milli tækja.</td></tr>
 <tr><td>Stillingarnar þínar</td><td>Til að þær haldist.</td></tr>
+<tr><td>Verkefni sem kennari eða forsjáraðili hópsins setur, og niðurstaðan þín í
+        hverju þeirra: hve mörgum spurningum þú svaraðir, hve mörg svör voru rétt og hvort
+        þú laukst verkefninu</td>
+    <td>Svo sá sem setti verkefnið sjái hver hefur lokið því og hvernig gekk. Verkefni
+        eyðist ${ASSIGN_KEEP_DAYS} dögum eftir skiladag, með niðurstöðunum.</td></tr>
 <tr><td>Dagurinn sem þú skráðir þig og dagurinn sem þú varst síðast inni</td>
     <td>Til að hægt sé að eyða aðgangi sem enginn notar lengur.</td></tr>
 <tr><td>Villutilkynningar sem þú sendir með 🚩: það sem þú skrifar, spurningin
@@ -143,11 +159,19 @@ export function privacyPage(cfg) {
 <h2>Hver sér hvað?</h2>
 <ul>
   <li><b>Þú</b> sérð allt sem er geymt um þig.</li>
-  <li><b>Aðrir í hópnum þínum</b> sjá ekkert um þig nema þú kveikir á
+  <li><b>Aðrir nemendur í hópnum þínum</b> sjá ekkert um þig nema þú kveikir á
       stigatöflunni undir <i>Stillingar og námsefni → Aðgangurinn minn</i>. Þá sjá þeir
       gælunafnið, stig, XP, merkin þín og titilinn sem þú velur. Mínútur sjást
       aðeins ef þú kveikir sérstaklega á þeim. Þú getur slökkt aftur hvenær sem er.
       Notendur í öðrum hópum sjá þig aldrei.</li>
+  <li><b>Kennari eða forsjáraðili hópsins þíns</b> — sá sem umsjónarmaður hefur gert
+      að forsjáraðila í hópnum — sér gælunafnið þitt, villumynstrin þín (hve oft svar
+      var rangt af síðustu svörum sem prófa hvert mynstur, eins og þú sérð sjálf(ur)
+      undir <i>Framvinda</i>) og niðurstöður verkefna sem hann setur. Þetta er til
+      þess að hann geti séð hvað hópurinn þarf að æfa og hjálpað þér. Hann sér
+      <b>ekki</b> það sem þú skrifar í svörin, því það er aldrei geymt, og ekki hvenær
+      eða hve lengi þú æfir þig. Undir <i>Aðgangurinn minn</i> stendur hver það er.
+      Forsjáraðilar í öðrum hópum sjá ekkert um þig.</li>
   <li><b>Umsjónarmaður</b> sér notendalistann og getur skoðað framvinduna þína ef
       þess þarf, til dæmis til að laga villu. Hann sér aldrei lykilorðið.</li>
   <li><b>Hýsingaraðili</b> geymir gögnin fyrir okkur og má ekki nota þau í neitt

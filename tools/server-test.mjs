@@ -661,6 +661,139 @@ async function openTab(page, view) {
   await A.ctx.close(); await B.ctx.close();
 }
 
+/* ---------- 10. The teacher: an assignment and the class's patterns ------
+ * Items 37 and 65, through the screen. A guardian sets an assignment in
+ * Skólastofan; a pupil of the group finds it at the top of Æfa, above
+ * today's session, and does it with one tap; the result reaches the server
+ * and the teacher's screen, beside the class's pattern table and its CSV.
+ * A pupil gets none of the teacher's part, on the screen or from the routes. */
+{
+  await app.store.updateGroups((g) => ({ ...g, h8a: { name: "8. A" } }));
+  const inGroup = async (u) => {
+    await app.store.updateUsers((list) => { list.find((x) => x.id === u.id).group = "h8a"; return list; });
+    return u;
+  };
+  const kenn = await inGroup(await mkUser("kennari", "guardian"));
+  const nemi = await inGroup(await mkUser("nemi", "learner"));
+  const onnur = await inGroup(await mkUser("onnur", "learner"));
+  /* onnur has practised before: þolfall and þágufall often wrong lately */
+  const { blankState: blank } = await import("../src/js/core/state.js");
+  await app.store.putState(onnur.id, { ...blank(), diag: {
+    thf_thgf: { n: 14, w: 7, h: "0101100110", last: "2026-11-10", ex: [{ w: "hestur|kk", m: "ÞGFET", o: "ÞFET" }] },
+    ef: { n: 6, w: 1, h: "111011", last: null, ex: [] },
+  } });
+
+  /* The teacher sets five questions on nouns, with a note. */
+  const T = await fresh();
+  await login(T.page, "kennari");
+  await openTab(T.page, "class");
+  await T.page.waitForSelector('#teacher #tc-what option[value="skill:nafnord"]', { timeout: 15000 });
+  await T.page.waitForSelector("#tc-table table.classpat", { timeout: 15000 });
+  const table = await T.page.evaluate(() => ({
+    heads: [...document.querySelectorAll("#tc-table th.cphead")].map((h) => h.textContent.trim()),
+    rows: [...document.querySelectorAll("#tc-table th.cpname")].map((h) => h.textContent.trim()),
+    active: document.querySelectorAll("#tc-table td.cpcell.active").length,
+    csv: document.getElementById("tc-csv")?.getAttribute("href") || "",
+  }));
+  ok(table.heads[0] === "Þolfall og þágufall ruglast",
+    "the class's worst pattern is not the first column: " + table.heads.join(" | "));
+  ok(table.heads[table.heads.length - 1] === "Ógreint", "Ógreint is not the last column");
+  ok(table.rows.includes("onnur") && table.rows.includes("nemi") && !table.rows.includes("barn"),
+    "the table does not hold exactly the group's pupils: " + table.rows.join(", "));
+  ok(table.active === 1, `${table.active} cells marked "algengt núna", not 1`);
+  const csv = await T.page.evaluate((href) => fetch(href).then((r) => r.text()), table.csv);
+  /* (fetch drops the byte-order mark; tests/teacher.test.js checks it) */
+  ok(/^\uFEFF?Nemandi;Þolfall og þágufall ruglast/.test(csv) && /\r\nonnur;50;/.test(csv),
+    "the CSV download is not the table: " + csv.slice(0, 120));
+
+  await T.page.select("#tc-what", "skill:nafnord");
+  await T.page.select("#tc-n", "5");
+  await T.page.type("#tc-note", "Fyrir föstudag");
+  await T.page.click("#tc-set");
+  await T.page.waitForFunction(() => /komið til nemendanna/.test(document.getElementById("tc-list")?.innerText || ""),
+    { timeout: 10000 });
+  const set = (await app.store.assignments()).filter((a) => a.group === "h8a");
+  ok(set.length === 1 && set[0].n === 5 && set[0].target.id === "nafnord" && set[0].by === kenn.id,
+    "the assignment did not reach the server as set: " + JSON.stringify(set));
+
+  /* The pupil: at the top of Æfa, above today's session; one tap starts it. */
+  const P = await fresh();
+  await P.page.goto(BASE + "/", { waitUntil: "domcontentloaded" });
+  await P.page.waitForSelector("#lg-user", { timeout: 15000 });
+  await P.page.type("#lg-user", "nemi");
+  await P.page.type("#lg-pass", "lykilordid-mitt");
+  await P.page.click("#lg-in");
+  await P.page.waitForSelector("#task .assignbox [data-assign]", { timeout: 20000 });
+  const card = await P.page.evaluate(() => {
+    const box = document.querySelector("#task .assignbox");
+    const today = document.querySelector("#task .todaybox");
+    return { text: box.innerText,
+      first: !today || !!(box.compareDocumentPosition(today) & Node.DOCUMENT_POSITION_FOLLOWING),
+      focused: document.activeElement?.dataset?.assign || null };
+  });
+  ok(/Nafnorð/.test(card.text) && /5 spurningar/.test(card.text) && /Fyrir föstudag/.test(card.text),
+    "the assignment card does not say what it is: " + card.text);
+  ok(card.first, "the assignment is not above today's session");
+  ok(card.focused === set[0].id, "the assignment's button does not have the focus");
+  await P.page.click("#task .assignbox [data-assign]");
+  await P.page.waitForFunction("window.FALLASKOLI.run && window.FALLASKOLI.cur", { timeout: 10000 });
+  const run = await P.page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    return { n: A.run.n, topic: A.run.topic, line: document.querySelector("#runbar .runtopic")?.textContent || "",
+      skill: A.cur.skill };
+  });
+  ok(run.n === 5 && run.topic === "verkefni", `the session is ${run.topic}/${run.n}, not the assignment's 5`);
+  ok(/Verkefni: Nafnorð/.test(run.line), "the session line does not name the assignment: " + run.line);
+  /* Four right and one wrong, through the session's own path; every
+     question must be about nouns. */
+  const skills = await P.page.evaluate(async () => {
+    const A = window.FALLASKOLI;
+    const seen = [];
+    for (let i = 0; i < 5 && A.run; i++) {
+      seen.push(A.cur.skill);
+      A.finish({ correct: i !== 2 });
+      A.next();
+    }
+    return seen;
+  });
+  ok(skills.length === 5 && skills.every((s) => s === "nafnord"),
+    "the assignment asked about something other than nouns: " + skills.join(","));
+  await P.page.waitForFunction(() => /Niðurstaðan er skráð/.test(document.querySelector("#task .summary")?.innerText || ""),
+    { timeout: 10000 });
+  const res = (await app.store.assignments()).find((a) => a.id === set[0].id).res[nemi.id];
+  /* A first session wins badges, and their windows cover the tabs: close them. */
+  for (let k = 0; k < 10 && await P.page.$(".scrim .modal button"); k++) {
+    await P.page.evaluate(() => document.querySelector(".scrim .modal button")?.click());
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  ok(res && res.done && res.i === 5 && res.c === 4, "the result on the server is " + JSON.stringify(res));
+
+  /* The pupil sees nothing of the teacher's part, and the routes refuse. */
+  await openTab(P.page, "class");
+  await new Promise((r) => setTimeout(r, 500));
+  ok(await P.page.$eval("#teacher", (e) => e.innerText.trim().length) === 0, "a pupil can see the teacher's part");
+  const refused = await P.page.evaluate(() => Promise.all(["/teacher/patterns", "/teacher/assignments",
+    "/teacher/patterns.csv"].map((p) => fetch(p).then((r) => r.status))));
+  ok(refused.every((s) => s === 403), "a pupil got " + refused.join(",") + " from the teacher's routes");
+  /* …and the page names who can see their patterns. */
+  await openTab(P.page, "settings");
+  await P.page.waitForSelector("#ac-del", { timeout: 8000 });
+  ok(/kennari er kennari eða forsjáraðili hópsins þíns/.test(await P.page.$eval("#account", (e) => e.innerText)),
+    "the pupil's account page does not say who sees their patterns");
+
+  /* The teacher: who finished, the score, and the patterns on nouns. */
+  await openTab(T.page, "practice");
+  await openTab(T.page, "class");
+  await T.page.waitForSelector("#tc-list .assigncard", { timeout: 10000 });
+  await T.page.evaluate(() => { document.querySelector("#tc-list .assigncard details").open = true; });
+  const seen = await T.page.$eval("#tc-list .assigncard", (e) => e.innerText);
+  ok(/1 af 2/.test(seen) && /hafa lokið/.test(seen), "the teacher does not see who finished: " + seen);
+  ok(/4 af 5 \(80%\)/.test(seen), "the teacher does not see the score");
+  ok(/ekki byrjað/.test(seen), "the pupil who has not started is not shown as such");
+  ok(/Þolfall og þágufall ruglast/.test(seen), "the class's patterns on the material are missing");
+  await T.ctx.close(); await P.ctx.close();
+}
+
 await browser.close();
 await new Promise((r) => app.server.close(r));
 await fs.rm(dir, { recursive: true, force: true });
