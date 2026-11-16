@@ -88,7 +88,7 @@ export const NODES = [
   { id: "no-kyn-tala", nm: "Kyn og tala nafnorða", cat: "nafnord", year: 8, hv: "ordflokkar",
     types: ["parse"], lesson: "kyn-tala", cover: "part", item: 27 },
   { id: "no-beyging", nm: "Sterk og veik beyging nafnorða og kenniföll", cat: "nafnord",
-    year: 8, hv: "ordflokkar", types: [], lesson: "nafnord-beyging", cover: "none", item: 27 },
+    year: 8, hv: "ordflokkar", types: ["no_beyging"], lesson: "nafnord-beyging", cover: "full" },
 
   /* ---- Lýsingarorð ---- */
   { id: "lo-beyging", nm: "Sterk og veik beyging lýsingarorða", cat: "lysingarord", year: 8,
@@ -105,7 +105,7 @@ export const NODES = [
   { id: "fn-greinir", nm: "Laus og viðskeyttur greinir", cat: "fornofn", year: 8,
     hv: "ordflokkar", types: ["tbl_fn"], lesson: "greinir", cover: "part", item: 27 },
   { id: "fn-flokkar", nm: "Flokkar fornafna", cat: "fornofn", year: 8, hv: "ordflokkar",
-    types: [], lesson: "fornofn", cover: "none", item: 27 },
+    types: ["fn_flokkar"], lesson: "fornofn", cover: "full" },
   { id: "fn-afturbeygt", nm: "Afturbeygt fornafn: sér eða honum, sinn eða hans", cat: "fornofn",
     year: 9, hv: "ordflokkar", types: ["fn_aftur"], lesson: "fornofn", cover: "full" },
 

@@ -127,6 +127,11 @@ export const QUESTION_TYPES = [
     ds: "Smelltu á öll orð aukasetningar eða nafnháttarsetningar" },
   { id: "gerd_upphaf", nm: "Hvar hefst setningin?",     skill: "setningagerd",
     ds: "Fyrsta orð aukasetningar" },
+  /* item 27 */
+  { id: "fn_flokkar", nm: "Hvers konar fornafn?",       skill: "fornofn",
+    ds: "Persónu-, afturbeygt, eignar-, ábendingar-, spurnar- eða óákveðið fornafn í setningu" },
+  { id: "no_beyging", nm: "Sterkt eða veikt nafnorð",   skill: "nafnord",
+    ds: "Sterk eða veik beyging af eignarfalli eintölu: til hests, til pabba. Frá þyngd 5 er eignarfallið skrifað" },
 ];
 
 export const TYPE_IDS = QUESTION_TYPES.map((t) => t.id);

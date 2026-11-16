@@ -41,6 +41,8 @@
  *   syntax                      { picked: tokenIndex }
  *   govern, indecl, clause,
  *   choice                      { picked: value }
+ *   kenni                       { picked: "sterk" | "veik", text? } — the
+ *                               genitive singular when the task `askGen`
  *   tap                         { sel: [tokenIndex, …] }
  *   villur                      { edits: { "line:token": text } }
  *
@@ -781,7 +783,9 @@ JUDGES.clause = (t, r, h) => onePick(t, r, h, { answer: t.answer, word: false,
 JUDGES.choice = (t, r, h) => onePick(t, r, h, { answer: t.answer,
   respFor: (picked, ok) => {
     const ex = { said: picked, right: t.answer };
-    const also = ok ? [] : (t.miss || []);
+    /* `missFor`: a wrong option that is itself a known mistake (item 27:
+       *hans* taken for an eignarfornafn) names its own patterns. */
+    const also = ok ? [] : (t.missFor && t.missFor[picked]) || t.miss || [];
     if (!(t.m && t.paradigm)) return { kind: "patterns", ids: also, ex };
     const g = gradeForm(picked, { accepted: [t.answer], paradigm: t.paradigm, allowHelpers: false });
     /* The options say which cell was meant: *borðið* offered against
@@ -792,6 +796,46 @@ JUDGES.choice = (t, r, h) => onePick(t, r, h, { answer: t.answer,
     }
     return { kind: "form", items: [{ m: t.m, typed: picked, accepted: [t.answer], g }], also, ex };
   } });
+
+/* ---- kenni: strong or weak noun (item 27) --------------------------------
+ *
+ * One pick (sterk / veik) and, from þyngd 5 (`askGen`), the genitive
+ * singular written first. Right only when both are; the written form is
+ * graded like any other (core/grading.js, core/leniency.js: a missing
+ * accent is forgiven at a cost). The pupil may write "til hests", as the
+ * lesson says it. */
+JUDGES.kenni = (t, response, hist) => {
+  const picked = response.picked;
+  let g = null, v = null, text = "";
+  if (t.askGen) {
+    text = String(response.text ?? "").trim().replace(/^til\s+/i, "");
+    g = gradeForm(text, { accepted: t.gen, paradigm: t.paradigm, allowHelpers: false });
+    if (g.verdict === "empty") return pending("empty", { g });
+    if (g.verdict === "hedged") return pending("hedged", { g });
+    v = verdictOf(g, t.m);
+  }
+  if (picked == null || picked === "") return pending("incomplete", { g, v });
+  const formOk = !v || v.ok;
+  const kindOk = picked === t.answer;
+  const ok = formOk && kindOk;
+  const xpFull = xpFor(hist, t, { ok });
+  const xp = xpFor(hist, t, { ok, factor: v ? v.factor : 1 });
+  const also = kindOk ? [] : (t.missFor && t.missFor[picked]) || t.miss || [];
+  const ex = { said: picked, right: t.answer };
+  const resp = v && !v.ok
+    ? { kind: "form", items: [{ m: t.m, typed: text, g, accepted: t.gen }], also, ex }
+    : { kind: "patterns", ids: also, ex };
+  return result(t, {
+    ok, verdict: VERDICT(ok, ok && !!(v && v.slip)),
+    effects: [
+      rec({ skill: t.skill, cell: t.cell, word: t.word, ok, xp, timed: true }),
+      bump(t.skill, ok),
+    ],
+    resp,
+    finish: { slip: ok && !!(v && v.slip) },
+    detail: { picked, answer: t.answer, kindOk, formOk, g, v, xpFull, typed: text },
+  });
+};
 
 /* ---- tap and sort ---------------------------------------------------------- */
 

@@ -4,6 +4,7 @@
      fn_eyda   a personal pronoun written in the right case ("Ég gaf ___ (hún) bókina")
      fn_stad   a noun in a bank sentence replaced by a personal pronoun
      fn_aftur  sér or honum, sína or hans — the reflexive or not
+     fn_flokkar  which kind of pronoun a word of a bank sentence is (item 27)
 
    fn_eyda and fn_aftur are hand-written items (data/exercises.js: every
    answer, option and cue a BÍN form, checked by build_exercises.py). */
@@ -169,6 +170,195 @@ export function fnReflex(lex, view, rng) {
   }, [FX.exSeen(x.t + x.gloss)]);
 }
 
+/* ================= Hvers konar fornafn? (item 27) ======================== */
+
+/* The six kinds Lesefni teaches (content/lessons.js, "Fornöfn"), with the
+   words it names for each. A pronoun the lesson does not name (*sjálfur*,
+   *sami*, *hvorugur*, *slíkur*, *einn*, *vor*) is not asked: grammars file
+   some of them differently, and a pupil who learnt the page could not know.
+   The order is the lesson's, and the options are always shown in it. */
+export const PRONOUN_KINDS = [
+  { k: "persónu", nm: "persónufornafn", lemmas: ["ég", "þú", "hann", "hún", "það"],
+    why: "Persónufornöfnin sýna hver talar, við hvern er talað og um hvern er talað: *ég, þú, hann, hún, það*, í fleirtölu *við, þið, þeir, þær, þau*." },
+  { k: "afturbeygt", nm: "afturbeygt fornafn", lemmas: ["sig"],
+    why: "Afturbeygða fornafnið er bara eitt: *sig, sér, sín*. Það vísar aftur til frumlagsins og er ekki til í nefnifalli." },
+  { k: "eignar", nm: "eignarfornafn", lemmas: ["minn", "þinn", "sinn"],
+    why: "Eignarfornöfnin sýna hver á eitthvað: *minn, þinn, sinn*. Þau samræmast nafnorðinu: *bíllinn minn, bókin mín, húsið mitt*." },
+  { k: "ábendingar", nm: "ábendingarfornafn", lemmas: ["sá", "þessi", "hinn"],
+    why: "Ábendingarfornöfnin benda á eitthvað: *sá, þessi, hinn*." },
+  { k: "spurnar", nm: "spurnarfornafn", lemmas: ["hver", "hvor", "hvaða", "hvílíkur"],
+    why: "Með spurnarfornöfnum er spurt: *hver, hvor, hvaða, hvílíkur*." },
+  { k: "óákveðið", nm: "óákveðið fornafn",
+    lemmas: ["einhver", "enginn", "allur", "sumur", "annar", "báðir", "nokkur", "neinn", "sérhver"],
+    why: "Óákveðin fornöfn segja ekki nákvæmlega hver eða hvað á í hlut: *einhver, enginn, allur, sumur, annar, báðir, nokkur, neinn, sérhver*." },
+];
+const KIND_OF = new Map(PRONOUN_KINDS.flatMap((x) => x.lemmas.map((l) => [l, x])));
+/* The three kinds of the lesson's first half, and the only options at þyngd 1–2. */
+const FIRST_KINDS = ["persónu", "eignar", "ábendingar"];
+/* The genitive of a personal pronoun after a noun: *bókin hans*. The lesson's
+   own warning — it is not an eignarfornafn. Asked from þyngd 5. */
+const GEN_PERSONAL = new Set(["hans", "hennar", "okkar", "ykkar"]);
+
+const lower = (w) => String(w || "").toLowerCase();
+
+/* Which kinds of pronoun a written form can be. From two sources: every
+   pronoun paradigm in the lexicon (BÍN), and every pronoun token of the
+   parsed bank under its parsed lemma — the reflexive *sig* is not in the
+   lexicon, and its forms must still count (*sín* is also a form of *sinn*).
+   A lemma outside the six lists counts as a kind of its own ("?"), so that a
+   form shared with *sjálfur* or *vor* is never taken as certain either. */
+function kindsByForm(lex) {
+  const by = new Map();
+  const add = (f, k) => {
+    const key = lower(f);
+    if (!by.has(key)) by.set(key, new Set());
+    by.get(key).add(k);
+  };
+  for (const w of [...(lex.byClass.fn || []), ...(lex.byClass.pfn || [])]) {
+    const k = KIND_OF.get(w.o)?.k || "?";
+    Object.values(w.forms).flat().forEach((f) => add(f, k));
+  }
+  /* *hinn* the article has the forms of *hinn* the pronoun: see `certainKind`. */
+  for (const w of lex.byClass.gr || []) Object.values(w.forms).flat().forEach((f) => add(f, "greinir"));
+  lex.sentences.forEach((s) => s.tok.forEach((t) => {
+    if (t.c === "fornafn" && t.l) add(t.w, KIND_OF.get(t.l)?.k || "?");
+  }));
+  return by;
+}
+
+const agrees = (pron, noun, nounEntry) => {
+  const a = readMark(pron.m || ""), b = readMark(noun.m || "");
+  return !!(nounEntry && a.kyn && a.fall && a.tala
+    && nounEntry.c === a.kyn && a.fall === b.fall && a.tala === b.tala);
+};
+
+/**
+ * The kind of the pronoun at `s.tok[i]`, when it is certain — or null.
+ *
+ * Certain means: the parser calls it a pronoun, its lemma is one the lesson
+ * names, and no other kind of pronoun has this form. Measured on the bank,
+ * the parser is not to be trusted where two kinds share a form: it read
+ * *Það eru fjögur börn* as the demonstrative *sá*. So *það, því, þess, þeir,
+ * þær, þau, þá, þeim, þeirra* are never asked. Three shared forms are let
+ * through where the sentence itself decides:
+ *   - *mín, þín, sín* right after a noun they agree with: *bókin mín* is the
+ *     eignarfornafn; after a preposition that takes the genitive (*heim til
+ *     sín*) it is the genitive of *ég, þú, sig*;
+ *   - *hinn* standing alone (*stærri en hinn*), not before an adjective,
+ *     where it would be the article (*hinn góði maður*);
+ *   - *hver, hvor, hvaða, hvílíkur* only in a direct question that opens
+ *     with them (or with a preposition and them). *Á hverjum degi* is "each
+ *     day", which the lesson does not teach, and an indirect question
+ *     (*af hverju litur himinsins breytist*) is left out.
+ */
+function certainKind(lex, s, i, byForm) {
+  const t = s.tok[i];
+  if (!t || t.c !== "fornafn" || t.rj || !t.l) return null;
+  const kind = KIND_OF.get(t.l);
+  if (!kind) return null;
+  const prev = s.tok[i - 1], next = s.tok[i + 1];
+  const kinds = byForm.get(lower(t.w)) || new Set();
+  if (kind.k === "spurnar") {
+    const opens = i === 0 || (i === 1 && prev.c === "forsetning");
+    if (!opens || !/\?$/.test(s.t)) return null;
+  }
+  if (t.l === "hinn" && next && ["lýsingarorð", "töluorð"].includes(next.c)) return null;
+  const others = [...kinds].filter((k) => k !== kind.k && !(t.l === "hinn" && k === "greinir"));
+  if (!others.length) return kind;
+  const w = lower(t.w);
+  if (/^(mín|þín|sín)$/.test(w)) {
+    if (kind.k === "eignar" && prev && prev.c === "nafnorð" && agrees(t, prev, lex.entryForToken(prev))) return kind;
+    if (kind.k !== "eignar" && prev && prev.c === "forsetning" && prev.pg === "ef") return kind;
+  }
+  return null;
+}
+
+/* Every pronoun of the bank whose kind is certain, once per lexicon. */
+const KIND_SLOTS = new WeakMap();
+function kindSlots(lex) {
+  if (KIND_SLOTS.has(lex)) return KIND_SLOTS.get(lex);
+  const byForm = kindsByForm(lex);
+  const list = [];
+  lex.sentences.forEach((s) => s.tok.forEach((t, i) => {
+    const kind = certainKind(lex, s, i, byForm);
+    if (!kind) return;
+    const prev = s.tok[i - 1];
+    const gen = kind.k === "persónu" && GEN_PERSONAL.has(lower(t.w)) && prev && prev.c === "nafnorð";
+    list.push({ s, i, t, kind, gen, key: `${s.t}#${i}` });
+  }));
+  KIND_SLOTS.set(lex, list);
+  return list;
+}
+
+/** The explanation under the answer, in the words of the lesson. */
+/* BÍN files *við, okkur, okkar* under *ég* and *þið, ykkur, ykkar* under
+   *þú*; the lesson, and the pupil, call them by the plural. */
+const PLURAL_NAME = { ég: "við", þú: "þið" };
+const nameOf = (t) =>
+  (PLURAL_NAME[t.l] && readMark(t.m || "").tala === "fleirtala" ? PLURAL_NAME[t.l] : t.l);
+
+function kindWhy(x) {
+  const { t, kind, gen } = x;
+  const w = lower(t.w);
+  const l = nameOf(t);
+  const of = w === l ? "" : ` (mynd af *${l}*)`;
+  if (gen) {
+    return `*${w}* er eignarfall af persónufornafninu *${l}* — ekki eignarfornafn. `
+      + `Það breytist ekki með nafnorðinu: *bíllinn ${w}, bókin ${w}, húsið ${w}*. `
+      + `Eignarfornöfnin eru aðeins *minn, þinn, sinn* (og *vor*).`;
+  }
+  return `*${w}* er **${kind.nm}**${of}. ${kind.why}`;
+}
+
+/** "Hvers konar fornafn er *sína*?" — a pronoun of a bank sentence, its kind. */
+export function fnKind(lex, view, rng) {
+  const P = view.policy;
+  const b = bandFor(view, "fornofn");
+  if (drilling(view) && !forced(view, ["fn", "pfn"])) return null;
+  const fw = forced(view, ["fn", "pfn"]);
+  const fc = forcedCell(view);
+  const avoid = view.force && view.force.avoid;
+  const six = b >= 3;
+  let pool = kindSlots(lex).filter((x) => P.level(x.s.lvl)
+    && (six || FIRST_KINDS.includes(x.kind.k))
+    /* The genitive of a personal pronoun is the lesson's warning: from 5. */
+    && (b >= 5 || !x.gen)
+    && (!fc || fc === "fnflokkur:" + x.kind.k)
+    && (!fw || x.t.l === fw.o)
+    && x.s.t !== avoid);
+  if (!pool.length) return null;
+  const near = pool.filter((x) => x.s.lvl <= b + 1);
+  if (near.length) pool = near;
+  /* A kind first, then a pronoun of that kind: *ég* is half the bank, and
+     a pupil asked "persónufornafn" ten times running learns nothing. The
+     square root keeps the big kinds commoner without drowning the rest; at
+     þyngd 5 and above the genitive trap is a kind of its own. */
+  const groups = new Map();
+  for (const x of pool) {
+    const g = x.gen ? "gen" : x.kind.k;
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(x);
+  }
+  const g = wpick([...groups.keys()], (k) => Math.sqrt(groups.get(k).length) * (k === "gen" ? 3 : 1), rng);
+  const x = pick(fresh(view, (y) => y.key, groups.get(g)), rng);
+  const kinds = six ? PRONOUN_KINDS : PRONOUN_KINDS.filter((k) => FIRST_KINDS.includes(k.k));
+  const w = lower(x.t.w);
+  const e = lex.entryForToken(x.t);
+  return built({
+    type: "choice", skill: "fornofn", s: x.s, i: x.i, mark: true,
+    title: "Hvers konar fornafn?",
+    question: `Hvers konar fornafn er *${w}*?`,
+    options: kinds.map((k) => k.nm), answer: x.kind.nm,
+    why: kindWhy(x),
+    base: six ? 9 : 7, lvl: x.s.lvl, cell: "fnflokkur:" + x.kind.k,
+    word: e ? wordKey(e.o, e.c) : null,
+    tags: x.gen ? ["fnkind", "fnkind:gen"] : ["fnkind"],
+    miss: ["fn_flokkar"],
+    /* Taking *hans* for an eignarfornafn is the mistake the lesson warns of. */
+    missFor: x.gen ? { eignarfornafn: ["fn_flokkar", "eignarfall_pfn"] } : null,
+  }, [FX.exSeen(x.key)]);
+}
+
 export const TYPES = [
   { id: "tbl_fn", skill: "fornofn", weight: 4, renderer: "table",
     tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun", "num"],
@@ -186,4 +376,9 @@ export const TYPES = [
     tags: ["reflex"],
     bands: [1],
     build: fnReflex },
+  /* item 27 */
+  { id: "fn_flokkar", skill: "fornofn", weight: 5, renderer: "choice",
+    tags: ["fnkind", "fnkind:gen"],
+    bands: [1, 2, 3, 4, 5],
+    build: fnKind },
 ];

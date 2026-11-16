@@ -170,6 +170,21 @@ export const PATTERNS = [
   { id: "ordmyndun", ok: "orðmyndun", nm: "Orðmyndun",
     rule: "Forskeyti og viðskeyti breyta orðum: *ó-* snýr merkingunni við (*heppinn – óheppinn*), *-ari* er sá sem gerir (*kenna – kennari*), *-ing/-un* gera nafnorð úr sögn (*æfa – æfing*).",
     lesson: "ordafordi", tags: ["wordform"], types: ["or_myndun"] },
+  /* item 27: two question types the lessons taught and practice never asked.
+     Each has its general pattern and the one mistake its Lesefni page warns
+     about by name. */
+  { id: "fn_flokkar", ok: "flokka fornafna", nm: "Flokkar fornafna",
+    rule: "**Persónufornöfn**: *ég, þú, hann, hún, það*. **Afturbeygt**: *sig, sér, sín*. **Eignarfornöfn**: *minn, þinn, sinn*. **Ábendingarfornöfn**: *sá, þessi, hinn*. **Spurnarfornöfn**: *hver, hvor, hvaða*. **Óákveðin**: *einhver, enginn, allur, sumur, annar, báðir, nokkur*. Finndu orðabókarmyndina fyrst: *mér* → *ég*, *sína* → *sinn*.",
+    lesson: "fornofn", tags: ["fnkind"], types: ["fn_flokkar"] },
+  { id: "eignarfall_pfn", ok: "eignarfall persónufornafna", nm: "Eignarfall persónufornafns tekið fyrir eignarfornafn",
+    rule: "*Hans, hennar, okkar, ykkar* og *þeirra* eru **eignarfall af persónufornöfnum**, ekki eignarfornöfn. Þau breytast ekki: *bíllinn hans, bókin hans, húsið hans*. Eignarfornöfnin *minn, þinn, sinn* lagast að nafnorðinu: *bíllinn minn, bókin mín*.",
+    lesson: "fornofn", tags: ["fnkind:gen"], types: ["fn_flokkar"] },
+  { id: "beyging_no", ok: "sterka og veika beygingu nafnorða", nm: "Sterk og veik beyging nafnorða",
+    rule: "Skoðaðu **eignarfall eintölu** (*til …*). Endar það á samhljóði, oftast *-s* eða *-ar*, er beygingin **sterk**: *til hests, til bókar*. Endar orðið á sérhljóði í öllum föllum eintölu er hún **veik**: *pabbi, pabba, pabba, pabba*.",
+    lesson: "nafnord-beyging", tags: ["nobeyg"], types: ["no_beyging"] },
+  { id: "beyging_no_nf", ok: "að láta eignarfallið ráða", nm: "Nefnifallið látið ráða beygingunni",
+    rule: "Ekki horfa bara á nefnifallið. *Herbergi* endar á sérhljóði, en eignarfallið er *herbergis*: það endar á *-s* og þess vegna er beygingin **sterk**.",
+    lesson: "nafnord-beyging", tags: ["nobeyg:nf"], types: ["no_beyging"] },
   /* v6.13 (critique 26): two patterns that only the hand-written error hunt
      (exercises.py HUNT) exercises. Both are among the best-known slips of
      Icelandic teenagers and nothing above describes them: neither is a wrong
@@ -283,6 +298,9 @@ export function tagsOf(t) {
       (t.tags || []).forEach((x) => tags.add(x));
       break;
     case "tap": case "sort":
+    /* item 27: the builder says what it tests (the typed genitive only from
+       þyngd 5). */
+    case "kenni":
       (t.tags || []).forEach((x) => tags.add(x));
       break;
     case "clause": tags.add("clause"); break;
