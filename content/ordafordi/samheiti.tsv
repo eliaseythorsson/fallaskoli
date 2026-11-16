@@ -1,0 +1,184 @@
+# Orðaforði: samheiti
+#
+# Hópar, ekki pör: öll orð í hópi merkja það sama. Rangur kostur er aldrei tekinn úr
+# sama hópi.
+#
+# Dálkar:
+#   orðflokkur  lo, no, so eða ao
+#   orð         orð sem merkja það sama, aðskilin með kommu
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Synonyms and antonyms. Groups, not pairs: every word in a group means the
+# same. A distractor is never taken from the same group or from a group
+# marked as an antonym of it.
+#
+
+orðflokkur	orð
+lo	stór, mikill
+lo	lítill, smár
+lo	glaður, kátur, hamingjusamur
+lo	dapur, hryggur, sorgmæddur
+lo	fljótur, hraður, snöggur, skjótur
+lo	fallegur, fagur, fríður
+lo	hræddur, smeykur, óttasleginn
+lo	duglegur, iðinn, röskur
+lo	þögull, hljóður
+lo	ríkur, efnaður, auðugur
+lo	skrýtinn, undarlegur, furðulegur, einkennilegur
+lo	frægur, þekktur, kunnur
+lo	hugrakkur, djarfur, kjarkaður
+lo	þreyttur, lúinn, uppgefinn
+lo	svangur, soltinn, hungraður
+lo	reiður, gramur
+lo	veikur, lasinn, sjúkur
+lo	auðveldur, léttur
+lo	gáfaður, greindur
+lo	öruggur, óhultur
+lo	hræðilegur, skelfilegur
+lo	frábær, æðislegur, stórkostlegur
+lo	gómsætur, ljúffengur
+lo	stoltur, hreykinn
+lo	tryggur, trúr, dyggur
+lo	eigingjarn, sjálfselskur
+lo	sjaldgæfur, fágætur
+lo	augljós, greinilegur
+lo	mögulegur, hugsanlegur
+lo	líklegur, sennilegur
+lo	áhugaverður, athyglisverður
+lo	heimskulegur, bjánalegur, kjánalegur
+lo	dimmur, myrkur
+lo	tómur, auður
+lo	ógeðslegur, viðbjóðslegur
+lo	notalegur, huggulegur
+lo	vingjarnlegur, vinsamlegur
+lo	dýrmætur, verðmætur
+lo	hentugur, heppilegur
+lo	sanngjarn, réttlátur
+lo	varkár, gætinn
+lo	heppinn, lánsamur
+lo	fimur, liðugur
+lo	mátulegur, hæfilegur
+lo	þrjóskur, þrár
+lo	örlátur, gjafmildur
+lo	hrokafullur, drambsamur
+lo	dónalegur, ókurteis, ruddalegur
+lo	huglaus, ragur
+lo	blautur, votur
+lo	fátækur, snauður
+lo	skítugur, óhreinn
+lo	mikilvægur, þýðingarmikill
+lo	algengur, almennur
+lo	fjörugur, líflegur
+lo	rangur, vitlaus
+lo	blíður, ljúfur
+lo	mjúkur, linur
+lo	stuttur, skammur
+lo	hættulegur, háskalegur
+lo	frekur, ágengur, ýtinn
+lo	tilbúinn, reiðubúinn
+lo	ráðvilltur, ringlaður
+lo	eilífur, endalaus, óendanlegur
+lo	fljótfær, hvatvís
+lo	hreinskilinn, einlægur
+lo	ánægður, sáttur
+lo	vitur, spakur
+lo	hávær, hávaðasamur
+lo	montinn, grobbinn
+lo	kvíðinn, áhyggjufullur
+lo	rólegur, friðsæll
+lo	nauðsynlegur, ómissandi
+lo	vondur, illur, slæmur
+lo	risastór, gríðarstór
+lo	skynsamlegur, viturlegur
+lo	hlægilegur, fáránlegur
+lo	fyndinn, skondinn
+lo	sterkur, öflugur, kraftmikill
+# nouns: the gender of each comes from BÍN
+no	vinur, félagi
+no	bíll, bifreið
+no	ótti, hræðsla
+no	strákur, drengur, piltur
+no	verkur, sársauki
+no	stelpa, stúlka, telpa
+no	gleði, kæti
+no	barn, krakki
+no	starf, vinna
+no	draugur, vofa
+no	skrímsli, ófreskja
+no	augnablik, andartak
+no	regn, rigning
+no	skoðun, álit
+no	merki, tákn
+no	veisla, samkvæmi
+no	sorp, rusl
+no	ferð, ferðalag
+no	kjarkur, hugrekki:hk
+no	hætta, háski
+no	þakklæti, þökk
+no	matur, fæða
+no	saga, frásögn
+no	bardagi, orrusta
+no	stríð, styrjöld
+no	vandi, vandamál
+no	markmið, takmark
+no	ástæða, orsök
+no	hjálp, aðstoð
+no	rifrildi, deila
+no	sorg, hryggð
+no	ljóð, kvæði
+no	tónlist, hljómlist
+no	köttur, kisa
+no	heimska, fávísi
+no	fjársjóður, gersemi
+no	hrós, lof
+no	mistök, villa
+no	kraftur, afl:hk
+no	heppni, lán
+so	byrja, hefja
+so	reyna, prófa
+so	hjálpa, aðstoða
+so	öskra, æpa, hrópa
+so	henda, fleygja, kasta
+so	gráta, skæla
+so	ljúka, klára
+so	hugsa, íhuga
+so	ganga, labba
+so	borða, snæða
+so	flýta, hraða
+so	eyðileggja, skemma
+so	byggja, reisa
+so	meiða, særa
+so	velja, kjósa
+so	týna, glata
+so	geyma, varðveita
+so	fela, hylja
+so	stoppa, stöðva
+so	skjálfa, titra
+so	hræða, skelfa
+so	útskýra, skýra
+so	kvarta, kveina
+so	mótmæla, andmæla
+so	tala, mæla
+so	laga, lagfæra
+so	ráðleggja, leiðbeina
+so	flakka, ráfa
+so	stríða, hrekkja
+ao	oft, iðulega
+ao	alltaf, ávallt
+ao	strax, umsvifalaust
+ao	sennilega, líklega
+ao	örugglega, áreiðanlega
+ao	einnig, líka, sömuleiðis
+ao	mjög, afar, ákaflega
+ao	bráðum, senn
+ao	skyndilega, snögglega
+ao	loksins, loks
+ao	vissulega, sannarlega
+ao	undarlega, einkennilega
+ao	kannski, máski
+ao	hratt, fljótt

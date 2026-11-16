@@ -1,0 +1,66 @@
+# Orðaforði: orð í samhengi, rammar
+#
+# Hvert nafnorð sem passar verður að spurningu, með þremur sem passa ekki sem röngum
+# kostum. Prófið á röngu orði er „ómögulegt“, ekki „óvenjulegt“.
+#
+# Dálkar:
+#   bónus        0 eða 1: einu stigi þyngra (vísbending sem er ekki hversdagslegt orð)
+#   setning      setningin; ___ er nafnorðið
+#   mark         BÍN-mark nafnorðanna
+#   passar       nafnorð sem passa, aðskilin með kommu
+#   passar ekki  nafnorð sem geta ALDREI passað, aðskilin með kommu
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Word in context, generated (critique item 23): a sentence that asks for
+# one kind of thing, the nouns that are that kind, and nouns that cannot be
+# it in any reading. Each noun that fits makes an item, with three of the
+# nouns that do not as its wrong options (the builder draws them), all in
+# the sentence's BÍN mark. The test of a wrong noun is not "unusual" but
+# "impossible": *Ég þvoði eplin í þvottavélinni* is nonsense; *sápa* is not
+# a wrong option for a car (it is washed), nor *eldavél* for a zoo.
+# (bonus, sentence, mark, [fits], [cannot])
+# Level = length (sentences.py's table); +1 (bonus) for a clue that is not
+# an everyday word; +1 for an answer the frequency list ranks below 3,000.
+#
+
+bónus	setning	mark	passar	passar ekki
+0	Ég keypti ___ í bakaríinu.	ÞFET	brauð, kaka, snúður, kleina, rúnstykki, vínarbrauð	hamar, sokkur, stóll, hestur, bíll, skrúfjárn
+0	Við borðuðum ___ í kvöldmat.	ÞFET	fiskur, súpa, kjúklingur, hamborgari, lambakjöt	stóll, sófi, hamar, sokkur, gluggi, blýantur
+0	Það var kalt svo ég fór í ___.	ÞFET	úlpa, peysa, jakki, kápa	kaka, eldavél, gaffall, sófi, súpa, kartafla
+0	Kötturinn elti ___ úti í garði.	ÞFET	mús, fugl, fiðrildi, fluga	sófi, ísskápur, klukka, eldavél, þvottavél, kirkja
+1	Ég hengdi úlpuna á ___ í forstofunni.	ÞFETgr	snagi, krókur	himinn, snjór, sandur, súpa, mjólk, regnbogi
+0	Hundurinn nagaði ___ úti í garði.	ÞFET	bein, spýta, skór	ský, tungl, himinn, regnbogi, vindur, rigning
+0	Ég skrifaði nafnið mitt með ___.	ÞGFET	penni, blýantur, krít, tússpenni	ostur, sokkur, kartafla, koddi, teppi
+0	Ég fékk mér ___ úr ísskápnum.	ÞFET	mjólk, jógúrt:hk, skyr, ostur, epli, safi	sófi, gluggi, rúm, klukka, teppi, hurð
+0	Mamma vökvaði ___ í garðinum.	ÞFFTgr	blóm, tré, rós, planta	bók, bíll, skór, stóll, klukka, sími
+0	Ég fór með ___ í viðgerð.	ÞFETgr	bíll, hjól, sími, tölva, úr:hk	mjólk, súpa, ský, brauð, epli, snjór
+0	Ég las ___ fyrir litlu systur mína.	ÞFET	saga, ævintýri, bók, ljóð	gaffall, sokkur, stóll, mjólk, steinn, hamar
+0	Í dýragarðinum gáfum við ___ að borða.	ÞGFETgr	ljón, fíll, gíraffi, api, selur	eldavél, ísskápur, sófi, gaffall, stóll, klukka
+0	Ég fer í ___ til að synda.	ÞFETgr	sundlaug, sjór, vatn	bókasafn, bakarí, ísskápur, kirkja, skápur
+0	Pabbi lagaði ___ með skrúfjárni.	ÞFETgr	hurð, hjól, stóll, skápur, leikfang	mjólk, súpa, ský, snjór, rigning, hunang
+0	Mamma eldaði ___ handa okkur.	ÞFET	súpa, grautur, fiskur, kjúklingur, pasta	sófi, gluggi, skór, hamar, blýantur, bíll
+0	Ég tók ___ með í skólann.	ÞFETgr	taska, nesti, bók, blýantur, reiknivél	eldhús, hús, fjall, ský, sjór, kirkja
+0	Við horfðum á ___ í sjónvarpinu.	ÞFETgr	mynd, þáttur, leikur	ísskápur, eldavél, sófi, stóll, gluggi, teppi
+0	Ég hlustaði á ___ í útvarpinu.	ÞFETgr	lag, þáttur, viðtal	ísskápur, eldavél, sófi, steinn, skór, gaffall
+0	Ég sendi ___ til ömmu.	ÞFET	bréf, kort, pakki, mynd	hús, fjall, sjór, ský, vegur, tungl
+0	Ég keypti ___ í blómabúðinni.	ÞFFT	rós, túlípani, blóm, planta	hamar, sokkur, bíll, hjól, fiskur, sími
+0	Ég þvoði ___ í þvottavélinni.	ÞFFTgr	sokkur, handklæði, buxur, peysa, bolur	bók, sími, kaka, egg:hk, epli, stóll
+1	Ég þvoði ___ í uppþvottavélinni.	ÞFFTgr	diskur, glas, gaffall, pottur, skál, bolli	peysa, sokkur, bók, sími, buxur, skór
+0	Á veturna rennum við okkur á ___.	ÞGFFT	sleði, skíði, snjóbretti	sófi, gluggi, súpa, rúm, klukka, eldavél
+0	Ég setti ___ í frystinn.	ÞFET	ís, fiskur, kjöt, brauð	sófi, hús, fjall, sjónvarp, rúm, bíll
+0	Hún spilaði á ___ á tónleikunum.	ÞFET	gítar, píanó, fiðla, flauta, selló	eldavél, ísskápur, sófi, kartafla, skór, brauð
+0	Ég fékk ___ í afmælisgjöf.	ÞFET	hjól, bók, sími, úr:hk, peysa, bolti, leikfang	ský, tungl, himinn, haf, rigning, eldfjall
+0	Ég stakk ___ í samband.	ÞGFETgr	sími, hleðslutæki, tölva, lampi, brauðrist	epli, ostur, sokkur, kaka, hestur, steinn
+0	Við fórum yfir ___ á brúnni.	ÞFETgr	á:kvk, fljót, lækur	stóll, ísskápur, súpa, sófi, koddi, gaffall
+0	Ég fór í ___ til að kaupa mjólk.	ÞFETgr	búð, verslun, matvöruverslun	sundlaug, kirkja, bókasafn, sjór, fjall
+0	Ég sá ___ á himninum í nótt.	ÞFFT	stjarna, norðurljós	stóll, sokkur, gaffall, skór, diskur, koddi
+0	Við settum ___ á bílinn á bensínstöðinni.	ÞFET	bensín, olía	mjólk, hunang, sykur:kk, súpa, kakó
+0	Ég drakk ___ úr glasi.	ÞFET	vatn, mjólk, safi, gos	sandur, stóll, steinn, brauð, hamar, sokkur
+0	Við fórum með hundinn í ___ í skóginum.	ÞFET	gönguferð, göngutúr	sundlaug, ísskápur, bakarí, þvottavél, eldhús
+0	Smiðurinn negldi ___ saman.	ÞFFTgr	fjöl, spýta, planki	súpa, ský, epli, egg:hk, kaka, bolli
+1	Bóndinn rak ___ af fjallinu.	ÞFFTgr	kind, kýr, hestur, geit	bók, stóll, sími, skeið:kvk, klukka, diskur
