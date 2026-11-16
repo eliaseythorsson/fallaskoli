@@ -64,47 +64,35 @@ export function privacyConfig(env = process.env) {
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-/* 2026-11-16 (v6.13, items 37 and 65): the group's teacher or guardian sees
-   the error patterns and assignment results of the learners in the group. A
-   new recipient, so the version moves (docs/PRIVACY.md §3). */
-/* 2026-11-17 (v6.13, items 17 and 38): right and wrong answers are counted
-   anonymously to set the difficulty of the questions, and a group's teacher
-   may switch on an anonymous sample of wrong word forms. New processing, so
-   the version moves again. The same version says that a duel's answers are
-   sent to the server to be graded and are not stored (items 62, 63, 66). This is the first version that describes the
-   counting: with FALLASKOLI_CALIBRATION=strict only consent given to this
-   version or a later one counts (server/calibrate.mjs). */
-export const CALIBRATION_NOTICE = "2026-11-17";
+/* The version of the notice. v6.12 shipped "2026-11-11"; v6.13 changes it
+   ONCE, to "2026-11-16", for everything v6.13 adds that a family must be told
+   (docs/PRIVACY.md §3 lists it):
+     - the group's teacher or guardian sees the error patterns, assignment and
+       team-duel results and one pupil's skill map (items 37, 65, 67, 83; §1a,
+       §1d) — never when or how long a pupil practises;
+     - right and wrong answers are counted anonymously to set the difficulty,
+       and a teacher may switch on an anonymous sample of wrong word forms
+       (items 17, 38; §1b); a duel's answers are graded on the server and not
+       stored (items 62, 63, 66);
+     - a weekly class goal: one total the whole group sees (item 59; §1c);
+     - a live round on the projector, which keeps nothing (item 64; §1d);
+     - Icelandic as a second language, one yes/no (item 45; §1e), and Ritun
+       vikunnar, the first free text a child writes that the server may
+       receive and, if the teacher keeps it, store (item 46; §1f).
+   While v6.13 was being built the date was moved for each of these on the
+   branch; none of those versions was ever published, so they are one version.
+   Change it again only for a change the families must be told of, and to the
+   day of that change — never a day in the future. */
+export const PRIVACY_VERSION = "2026-11-16";
 
-/* 2026-11-18 (v6.13, item 59): a group's teacher may set a weekly goal the
-   group reaches together, and EVERY learner of the group then sees one total
-   that their own answers are part of — those not on the board too. A new
-   recipient of something derived from a child's progress (the group, as a
-   sum), so the version moves (docs/PRIVACY.md §1c). CALIBRATION_NOTICE stays:
-   it names the first version that describes the counting, and this one still
-   does. */
-
-/* 2026-11-19 (v6.13, item 83): the group's teacher or guardian can open one
-   pupil's skill map. The recipient is the one of 2026-11-16, but what they
-   see is more — the mastery mark of every curriculum node, the reviews
-   waiting there and the cells missed — so the version moves and the notice
-   says it (docs/PRIVACY.md §1a). */
-
-/* 2026-11-20 (v6.13, items 64 and 67): a live class round on the projector
-   names only pupils who are on the leaderboard and keeps nothing after it
-   ends; in a team duel the group's teacher sees each pupil's result, the
-   other pupils and the other class only the teams' means. A new thing the
-   teacher sees, so the version moves (docs/PRIVACY.md §1d, §3). The notes for
-   2026-11-17, -18 and -19 stand above. */
-
-/* 2026-11-21 (v6.13, items 45 and 46): two paragraphs of their own. Item 45
-   stores one yes/no — Icelandic as a second language — which can hint at a
-   child's background (docs/PRIVACY.md §1e). Item 46 is the first place the
-   server receives free text a child wrote: read over by GreynirCorrect on
-   this server and forgotten, unless the group's teacher also switches on
-   keeping, and then the teacher can read it (§1f). New data and a new thing
-   the teacher sees, so the version moves; this is the latest. */
-export const PRIVACY_VERSION = "2026-11-21";
+/* The first version of the notice that describes the anonymous counting
+   (§1b). With FALLASKOLI_CALIBRATION=strict only consent given to this
+   version or a later one counts (server/calibrate.mjs). It is the same day as
+   PRIVACY_VERSION today, but it is a separate constant on purpose: when the
+   notice changes again for something else, this one must NOT move, or every
+   pupil who consented to the counting would stop being counted. It may never
+   be later than PRIVACY_VERSION (a test holds it). */
+export const CALIBRATION_NOTICE = "2026-11-16";
 
 export function privacyPage(cfg) {
   const missing = (what) => `<mark>[vantar: ${what}]</mark>`;
@@ -333,7 +321,7 @@ ${SECOND_LANGUAGE_NOTICE}
 }
 
 /* ---------- item 45: Icelandic as a second language — a paragraph of its own ----
- * In force from notice version 2026-11-21. docs/PRIVACY.md §1e says the same
+ * In force from notice version PRIVACY_VERSION (2026-11-16). docs/PRIVACY.md §1e says the same
  * for the person who runs the server. */
 const SECOND_LANGUAGE_NOTICE = `<h2>Íslenska sem annað mál</h2>
 <p>Ef íslenska er annað tungumálið þitt getur þú kveikt á því undir <i>Stillingar</i>, eða
@@ -346,7 +334,7 @@ const SECOND_LANGUAGE_NOTICE = `<h2>Íslenska sem annað mál</h2>
    og ef tækið á enga íslenska rödd er hnappurinn ekki sýndur.</p>`;
 
 /* ---------- item 46: Ritun vikunnar — what a pupil writes, a paragraph of its own ----
- * In force from notice version 2026-11-21. Placed straight after the short
+ * In force from notice version PRIVACY_VERSION (2026-11-16). Placed straight after the short
  * version, because it is the one exception to "what you write is not kept",
  * and a pupil should meet it early. The numbers are the ones
  * server/writing.mjs acts on. docs/PRIVACY.md §1f. */

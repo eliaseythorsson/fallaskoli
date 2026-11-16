@@ -568,7 +568,7 @@ list.
 | Setting | Effect |
 |---|---|
 | `FALLASKOLI_CALIBRATION=0` | Nothing is counted, no table is handed out — every browser is back on the built-in values at its next load — and no answers are sampled. What is already stored stays in `calibration.json`; delete that file if you want it gone. |
-| `FALLASKOLI_CALIBRATION=strict` | As normal, but only pupils whose consent was recorded for the privacy notice of 2026-11-17 or later (or who ticked the box themselves under *Aðgangurinn minn*) are counted. See `docs/PRIVACY.md` §1b. |
+| `FALLASKOLI_CALIBRATION=strict` | As normal, but only pupils whose consent was recorded for the privacy notice of 2026-11-16 or later (or who ticked the box themselves under *Aðgangurinn minn*) are counted. See `docs/PRIVACY.md` §1b. |
 | `FALLASKOLI_SAMPLES=0` | The sample of wrong answers (below) cannot be switched on by anybody. |
 
 **Whose answers are counted.** Learners with a consent record, unless they

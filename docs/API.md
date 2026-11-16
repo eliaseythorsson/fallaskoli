@@ -460,7 +460,7 @@ A `status` is `{ week, goal, progress, last }`:
 teacher's included (the teacher has the per-pupil picture in the routes
 above). Every active learner of the group is counted, on the board or not
 (but not one held for review, as for the board) —
-`docs/PRIVACY.md` §1c explains why, and the notice of `2026-11-18` says so.
+`docs/PRIVACY.md` §1c explains why, and the notice of `2026-11-16` says so.
 
 A goal holds every week from the Monday it was set until it is changed or
 removed; setting it twice in one week replaces the first. It is kept on the
@@ -714,7 +714,7 @@ could travel in. At most 40 events per request and 30 records per event.
 
 What is counted, and what stops a flood: an account must be `counted` (a
 learner, active, with a consent record, not switched off, not held for review;
-with `strict`, consent to notice ≥ 2026-11-17 or the account's own yes). Per
+with `strict`, consent to notice ≥ 2026-11-16 or the account's own yes). Per
 account per day: 150 requests, 400 questions, 2,500 records — and towards one
 type-and-level 12, one cell 8, one irregularity bucket 150. The per-account
 tally lives in `calibration-quota.json` for that day only and is not in the

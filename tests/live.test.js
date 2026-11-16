@@ -217,12 +217,12 @@ test("answerText: the written form, the right option, or nothing", () => {
 });
 
 /* The merge of items 59, 83, 64 and 67: one notice describes the class goal,
-   the teacher's view of a skill map, the live round and team duels, under a
-   version later than all of them, and docs/PRIVACY.md numbers them apart. */
+   the teacher's view of a skill map, the live round and team duels, under
+   v6.13's one version, and docs/PRIVACY.md numbers them apart. */
 test("one privacy notice, one version, for the class goal, the skill map, the live round and team duels", async () => {
   const { PRIVACY_VERSION, CALIBRATION_NOTICE, privacyPage } = await import("../server/privacy.mjs");
   const { readFileSync } = await import("node:fs");
-  assert.ok(PRIVACY_VERSION >= "2026-11-20", "the live round and team duels came after 2026-11-19");
+  assert.ok(PRIVACY_VERSION > "2026-11-11", "newer than v6.12's notice");
   assert.ok(CALIBRATION_NOTICE <= PRIVACY_VERSION);
   const html = privacyPage({ controller: "X", contact: "x@y.is" });
   assert.ok(html.includes(`Síðast breytt ${PRIVACY_VERSION}`));

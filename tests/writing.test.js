@@ -389,6 +389,10 @@ test("server: keeping on — the text is kept for the group's teacher only, in t
   assert.equal(t.status, 200);
   assert.deepEqual(t.data.texts.map((x) => [x.name, x.text]), [["Anna", TEXT]]);
   assert.equal(t.data.texts[0].user, undefined, "no id handed out");
+  /* The week, never the time: the notice says the teacher does not see when
+     a pupil practises (review M3). */
+  assert.deepEqual(Object.keys(t.data.texts[0]).sort(), ["id", "n", "name", "text", "topic", "week"]);
+  assert.doesNotMatch(JSON.stringify(t.data), /\d{4}-\d\d-\d\dT\d\d:/, "no timestamp reaches the teacher");
   assert.deepEqual((await C.admin("GET", "/teacher/writing?group=gb")).data.texts, [], "group B has none");
   const ex = await C.anna("GET", "/account/export");
   const data = typeof ex.data === "string" ? JSON.parse(ex.data) : ex.data;
@@ -494,9 +498,9 @@ test("the image: the `greynir` target is pinned like the build container, and it
   assert.match(await read("server/greynir_worker.py"), /requirements-writing\.txt/);
 });
 
-test("the notice: version 2026-11-21 names both paragraphs (items 45 and 46), and the short version no longer says the teacher never sees what is written", async () => {
+test("the notice: the v6.13 version names both paragraphs (items 45 and 46), and the short version no longer says the teacher never sees what is written", async () => {
   const { PRIVACY_VERSION, privacyPage, privacyConfig } = await import("../server/privacy.mjs");
-  assert.ok(PRIVACY_VERSION >= "2026-11-21", "free text a child writes, and a second-language flag: a new version");
+  assert.ok(PRIVACY_VERSION > "2026-11-11", "free text a child writes, and a second-language flag: newer than v6.12's notice");
   const html = privacyPage(privacyConfig({}));
   assert.ok(html.includes(`Síðast breytt ${PRIVACY_VERSION}`));
   assert.match(html, /<h2>Ritun vikunnar: textinn sem þú skrifar<\/h2>/);
@@ -506,6 +510,6 @@ test("the notice: version 2026-11-21 names both paragraphs (items 45 and 46), an
   const doc = await fs.readFile(path.join(HERE, "..", "docs", "PRIVACY.md"), "utf8");
   assert.match(doc, /## 1e\. Icelandic as a second language/);
   assert.match(doc, /## 1f\. Ritun vikunnar/);
-  assert.ok(doc.includes(`\`${PRIVACY_VERSION}\`: the second-language`), "§3 lists the version and what it added");
+  assert.match(doc, new RegExp("version, `" + PRIVACY_VERSION + "`, which covers everything[^]*the second-language"), "§3 lists the version and what it added");
   assert.doesNotMatch(doc, /has not moved `PRIVACY_VERSION`|has not been moved by this\s+branch/);
 });

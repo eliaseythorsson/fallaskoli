@@ -378,7 +378,7 @@ test("the privacy notice says the group sees one total, and the version moved", 
   assert.match(r.text, /sameiginlegt markmið/);
   assert.match(r.text, /Enginn sér hvað þú lagðir til/);
   assert.match(r.text, new RegExp(`færri en\\s+${CLASS_GOAL.minPupils} nemendum`));
-  assert.ok(PRIVACY_VERSION >= "2026-11-18", "a new recipient: a new version");
+  assert.ok(PRIVACY_VERSION > "2026-11-11", "a new recipient: newer than v6.12's notice");
   assert.ok(CALIBRATION_NOTICE <= PRIVACY_VERSION);
   assert.ok(r.text.includes(`Síðast breytt ${PRIVACY_VERSION}`));
 });

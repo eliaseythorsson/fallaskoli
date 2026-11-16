@@ -143,11 +143,11 @@ test("the kill switch: nothing counted, no table published, whatever is stored",
 
 test("strict: only consent given to the notice that describes the counting, or the account's own yes", async () => {
   const { app } = await serve({ FALLASKOLI_CALIBRATION: "strict" });
-  const old = await addUser(app, "eldri", { consent: { by: "Jóna", at: "x", how: "invite", notice: "2026-11-16" } });
+  const old = await addUser(app, "eldri", { consent: { by: "Jóna", at: "x", how: "invite", notice: "2026-11-11" } });   // v6.12's notice
   const none = await addUser(app, "elstur", { consent: { by: "self", over16: true, at: "x", how: "admin" } });
   const cur = await addUser(app, "nyr");
   const said = await addUser(app, "sagdi-ja", { stats: true,
-    consent: { by: "self", over16: true, at: "x", how: "admin", notice: "2026-11-16" } });
+    consent: { by: "self", over16: true, at: "x", how: "admin", notice: "2026-11-11" } });
   assert.equal(CALIBRATION_NOTICE <= PRIVACY_VERSION, true);
   assert.deepEqual([old, none, cur, said].map(app.calibration.counted), [false, false, true, true]);
   /* without `strict` the notice covers all of them */
@@ -581,7 +581,7 @@ test("the automatic check: agreement between classifier and rule, by pattern, on
 
 test("the privacy notice describes the counting and the sample, with the server's own numbers", () => {
   const html = privacyPage(privacyConfig({ FALLASKOLI_CONTROLLER: "X", FALLASKOLI_CONTACT: "x@x.is" }));
-  assert.ok(PRIVACY_VERSION >= "2026-11-17", "a new version for new processing");
+  assert.ok(PRIVACY_VERSION > "2026-11-11", "new processing: newer than v6.12's notice");
   assert.ok(html.includes(`Síðast breytt ${PRIVACY_VERSION}`));
   assert.ok(html.includes("Nafnlaus talning"));
   assert.ok(html.includes("Aðeins ef kennari hópsins þíns kveikir á því"));
