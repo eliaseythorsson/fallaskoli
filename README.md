@@ -129,6 +129,14 @@ src/js/core/review.js the review queue: every wrong answer goes in with a
                       forced). Also what is one entry, the cap, the expiry
                       and the merge between devices — each choice explained
                       at the top of the file
+src/js/core/today.js  "Dagsins lota", the picker's main button: plans ten
+                      questions — the due reviews, then the active error
+                      patterns, then new material from the least-practised
+                      skills, about 3 / 4 / 3 — inside the curriculum policy
+src/js/core/streak.js "Þrjár í röð": after a diagnosed miss, three questions
+                      on its pattern with the rule first (tasks/drill.js
+                      builds them), outside the session's count; the
+                      pattern then goes into the review queue
 src/js/core/mix.js    the mix rule for a session: ≥3 kinds of question, none
                       over ~40%, tables ≤30%, analysis ≤35%
 src/js/core/curriculum.js  the curriculum map as data: the official

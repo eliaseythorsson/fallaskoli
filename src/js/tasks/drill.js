@@ -12,6 +12,9 @@ import { built, FX } from "./effects.js";
 import { withView } from "./view.js";
 import { typeById, enabled } from "./registry.js";
 import { drillMeaning } from "./ordaford.js";
+import { nextTask } from "./next.js";
+import { narrowPolicy } from "../core/policy.js";
+import { focusTypes, huntPreferFor, targets } from "../core/diagnosis.js";
 
 /** What a drill may ask, by word class, in the order it rotates through. */
 const NOUN_PLAN = ["fill", "tbl_no", "revform", "parse"];
@@ -67,4 +70,82 @@ export function drillTask(lex, view, rng, entry, turn = 0) {
     return built(task, [...b.effects, FX.clearForcedNoun()]);
   }
   return null;
+}
+
+/* ---------- "Þrjár í röð": three questions on one error pattern ------------
+ *
+ * The rescue drill above is about one WORD; this is about one error pattern
+ * (critique item 36, core/streak.js). It asks what a session aimed at the
+ * pattern asks — the pattern's question types, and the Villuveiðar items
+ * that exercise it — but keeps only a question that really tests the
+ * pattern: a candidate that does not is built again, and if none comes the
+ * answer is null and the three end early. Never some unrelated question
+ * under the pattern's name. */
+
+/** How many candidates are built before giving up on one question. */
+const PATTERN_TRIES = 24;
+
+/**
+ * One question on the error pattern `p`: { task, effects } or null.
+ * @param avoid  word keys already asked in this run of three (and the one
+ *               just missed): another word is preferred while one can be had
+ * @param prefer the question type the miss was made in. Some patterns are
+ *               tested by one type in fifty draws of the mix (the gender of a
+ *               noun, by the analysis question; the subjunctive, by the verb
+ *               question at a high þyngd), and the miss has just shown that
+ *               this type can test it at this pupil's level — so every other
+ *               candidate is built by it.
+ */
+export function patternTask(lex, view, rng, p, avoid = [], prefer = null) {
+  const types = [...focusTypes([p])];
+  if (!types.length) return null;
+  const pv = withView(view, {
+    policy: narrowPolicy(view.policy, { types }),
+    huntPrefer: huntPreferFor([p]), forcedNoun: null, drillWord: null, mix: null, force: null,
+  });
+  const own = prefer && types.includes(prefer) ? typeById(prefer) : null;
+  const ownOk = !!own && enabled(pv.policy, own);
+  const skip = new Set(avoid.filter(Boolean));
+  let fallback = null;
+  for (let k = 0; k < PATTERN_TRIES; k++) {
+    let b;
+    if (ownOk && k % 2 === 0) {
+      b = own.build(lex, pv, rng);
+      if (b) {
+        /* What the session knows once it is shown — as tasks/next.js adds. */
+        b.task.typeId = own.id;
+        const words = [b.task.n, b.task.w, b.task.v].filter(Boolean).map((x) => x.o);
+        b = built(b.task, [...b.effects, FX.since(own.id.startsWith("tbl"), false),
+          ...(words.length ? [FX.seen(words)] : [])]);
+      }
+    } else b = nextTask(lex, pv, rng);
+    if (!b) { if (ownOk) continue; return fallback; }
+    const { task } = b;
+    if (task.type === "meaning" || !targets(task, [p])) continue;
+    task.targeted = true;
+    task.streak = p;
+    if (task.word && skip.has(task.word)) { fallback ||= b; continue; }
+    return b;
+  }
+  return fallback;
+}
+
+/**
+ * All of "Þrjár í röð" at once: `n` questions on the pattern `p`, each on
+ * another word where one can be had, or null if not all `n` can be built —
+ * the offer is made only when the three are there (app.js `offerStreak`).
+ * Pure like the rest: nothing is applied until a question is shown.
+ * @param from  the question the miss was made in: its word is not asked
+ *              again at once, and its type is tried first
+ */
+export function streakTasks(lex, view, rng, p, from = {}, n = 3) {
+  const out = [], avoid = [from.word || null];
+  const type = from.typeId || from.type || null;
+  for (let k = 0; k < n; k++) {
+    const b = patternTask(lex, view, rng, p, avoid, type);
+    if (!b) return null;
+    out.push(b);
+    avoid.push(b.task.word || null);
+  }
+  return out;
 }

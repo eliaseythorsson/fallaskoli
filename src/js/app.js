@@ -8,8 +8,10 @@ import { applyDecay } from "./core/progress.js";
 import { checkBadges, checkLogin, celebrate } from "./core/badges.js";
 import { collectionSummary } from "./core/collection.js";
 import { nextTask, drillTask, makeView, withView, applyEffects, planOpening, nextOpening,
-  scheduleReask, nextReask } from "./tasks/index.js";
-import { reviewLine } from "./core/review.js";
+  scheduleReask, nextReask, streakTasks, typeById, enabled } from "./tasks/index.js";
+import { reviewLine, queuePattern } from "./core/review.js";
+import { planToday } from "./core/today.js";
+import { STREAK_N, streakPattern, startStreak, stepStreak, streakEntry, streakLine } from "./core/streak.js";
 import { statusOf, weakWords, drillable, startDrill, drillStep, settleDrill } from "./core/wordhealth.js";
 import { grantXp } from "./core/state.js";
 import { renderDrillBar } from "./ui/drill.js";
@@ -40,7 +42,7 @@ import { diagnose, noteDiagnosis, activePatterns, huntPreferFor, focusTypes, pic
   patternById, runReport } from "./core/diagnosis.js";
 import { SKILL_IDS } from "./core/skills.js";
 import { renderPicker, renderRunBar, renderSummary, renderDiagnosisPanel, confirmQuit,
-  topics, MINE, MIXED, syncSessionLayout } from "./ui/session.js";
+  topics, usable, MINE, MIXED, TODAY, syncSessionLayout, showStreakOffer, renderStreakIntro } from "./ui/session.js";
 import { LESSONS, readCount } from "./core/lessons.js";
 
 /* The random source of the question builders (tasks/view.js). They never call
@@ -235,6 +237,28 @@ const app = {
   runDone: null,
   runNotice: null,
 
+  /* ---- "Þrjár í röð" (item 36, core/streak.js) ----
+     `streakOffer` is the offer under the verdict just shown, with its three
+     questions already built (it is only made when all three can be);
+     `streak` the three in progress. Neither is saved: what is answered is in
+     the state like any answer, and the pattern goes into the review queue
+     when the three end. */
+  streak: null,
+  streakOffer: null,
+
+  /**
+   * Today's session, planned (core/today.js): the due reviews, the active
+   * error patterns, then new material, about 3 / 4 / 3 of ten — under the
+   * whole curriculum policy, with the registry saying which question types
+   * may be asked.
+   */
+  todayPlan(n = 10) {
+    const P = effectivePolicy(this.S);
+    return planToday(this.S, P, todayKey(), {
+      n, canType: (id) => { const t = typeById(id); return !!t && enabled(P, t); },
+    });
+  },
+
   /**
    * Begin a session. `focus`: pattern ids, for a session aimed at them.
    * `opts.review: false` starts it without the reviews a session otherwise
@@ -252,6 +276,11 @@ const app = {
       Object.assign(this.sess, visitLevels(this.S, todayKey()));
     if (topic === MINE.id && !(focus && focus.length))
       focus = activePatterns(this.S, 3).map((p) => p.id);
+    this.streak = null; this.streakOffer = null;
+    /* Today's session (item 21) is planned slot by slot: its reviews are the
+       opening, and `plan` is what each question after them is about. */
+    const today = topic === TODAY.id ? this.todayPlan(n) : null;
+    if (today) { n = today.n; focus = null; }
     this.run = {
       topic, n, focus: focus && focus.length ? focus : null,
       i: 0, c: 0, j: 0, xp0: this.S.xp, badges: [], items: [],
@@ -262,11 +291,20 @@ const app = {
          keys of the due entries this session opens with, `reask` the nouns of
          missed clozes waiting for their turn three to five questions on. */
       review: [], reask: [],
+      /* item 21: the slots after the opening ({kind: "pattern", p} or
+         {kind: "new", skill}), taken one per question; null outside today's
+         session. item 36: the patterns offered "Þrjár í röð" in this session
+         (once each), and how each run of three went. */
+      plan: today ? today.slots.filter((x) => x.kind !== "review") : null,
+      streaked: [], streaks: [],
     };
-    if (opts.review !== false)
+    if (today) this.run.review = today.reviews.slice();
+    else if (opts.review !== false)
       this.run.review = planOpening(this.S, todayKey(), n, this.reviewPolicy(), this.run.focus);
-    this.S.settings.runTopic = topic === MINE.id ? this.S.settings.runTopic : topic;
-    this.S.settings.runSize = n;
+    /* The picker remembers the CATEGORY last chosen; neither today's session
+       nor "Villurnar mínar" is one. Nor is today's ten the size it offers. */
+    if (topic !== MINE.id && topic !== TODAY.id) this.S.settings.runTopic = topic;
+    if (topic !== TODAY.id) this.S.settings.runSize = n;
     this.save();
     this.openView("practice");
     this.next();
@@ -333,12 +371,13 @@ const app = {
       mix: { n: r.n, counts }, inRun: true, huntPrefer: huntPreferFor(ids),
     });
     const effects = new Map();
-    const build = () => {
-      const b = nextTask(this.lex, view, rng);
+    const buildIn = (v) => () => {
+      const b = nextTask(this.lex, v, rng);
       if (!b) return null;
       effects.set(b.task, b.effects);
       return b.task;
     };
+    const build = buildIn(view);
     /* v6.13, the review queue. A session opens with up to three entries that
        are due; and the noun of a cloze missed earlier in the session comes
        back when its turn has come. Both are ordinary questions built by the
@@ -350,7 +389,32 @@ const app = {
       || nextReask(this.lex, rv, rng, r, (counts.fill || 0) + 1 <= maxOf("fill", r.n));
     if (due) {
       applyEffects(this, due.effects);
+      if (r.plan) due.task.today = "review";
       return due.task;
+    }
+    /* Today's session (item 21): the next slot of the plan. A pattern slot
+       is drawn from the pattern's own question types and must test it; a
+       slot of new material comes from one of the least-practised skills and
+       is not aimed at anything. Either falls back to the plain mix of what
+       is switched on, so the session is always its ten questions long. A
+       missed cloze's noun coming back (above) takes a turn without using a
+       slot; the plan's last slot is then the one not reached. */
+    if (r.plan && !this.forcedNoun) {
+      const slot = r.plan.shift() || { kind: "new", skill: null };
+      let t = null;
+      if (slot.kind === "pattern") {
+        const pv = withView(view, {
+          policy: narrowPolicy(this.policy, { types: [...focusTypes([slot.p])] }),
+          huntPrefer: huntPreferFor([slot.p]),
+        });
+        t = pickTargeted(buildIn(pv), [slot.p], { p: 1, tries: 8, rnd: rng });
+        if (t && !t.targeted) t = null;
+      } else if (slot.skill) {
+        t = buildIn(withView(view, { policy: narrowPolicy(this.policy, { skills: [slot.skill] }) }))();
+      }
+      t ||= build();
+      if (t) { applyEffects(this, effects.get(t)); t.today = t.targeted && slot.kind === "pattern" ? "pattern" : "new"; }
+      return t;
     }
     const t = this.forcedNoun ? build()
       : pickTargeted(build, ids, { p: r.focus ? 0.85 : 0.4, tries: r.focus ? 8 : 5, rnd: rng });
@@ -363,6 +427,7 @@ const app = {
     const r = this.run;
     this.run = null;
     this.policy = null;
+    this.streak = null; this.streakOffer = null;
     if (!r) return;
     if (!r.i) {
       this.runDone = null;
@@ -385,7 +450,7 @@ const app = {
     this.runDone = {
       topic: r.topic, n: r.n, i: r.i, c: r.c, j: r.j, xp, focus: r.focus,
       badges: r.badges, items: r.items, report, early: early || empty,
-      ms: Date.now() - r.startedAt,
+      ms: Date.now() - r.startedAt, streaks: r.streaks || [],
     };
     this.next();
   },
@@ -393,6 +458,75 @@ const app = {
   quitRun() {
     if (!this.run) return;
     confirmQuit(this, () => { if (this.run) this.endRun(true); });
+  },
+
+  /* ---- "Þrjár í röð" (critique item 36, core/streak.js) ---------------- */
+
+  /**
+   * After a diagnosed wrong answer in a session: offer three questions on its
+   * pattern, under the verdict. Made only when all three can be built now —
+   * under the session's own topic if it can, else under the whole policy —
+   * so the offer never turns into two questions, or none.
+   */
+  offerStreak(findings) {
+    const r = this.run, from = this.cur;
+    if (!r || !from || this.streak || this.drill || this.duelRun) return;
+    const p = streakPattern(findings, false,
+      { done: r.streaked, canPractise: (id) => usable(this, [id]) });
+    if (!p) return;
+    const three = (policy) => streakTasks(this.lex,
+      makeView({ S: this.S, sess: this.sess, policy }), rng, p, from, STREAK_N);
+    const tasks = three(this.reviewPolicy()) || three(effectivePolicy(this.S));
+    if (!tasks) return;
+    this.streakOffer = { p, tasks, t: from.typeId || from.type, sk: from.skill || null };
+    showStreakOffer(this, p);
+  },
+
+  /** The offer taken: the rule first (`next` draws it), then the three. */
+  startStreak() {
+    const o = this.streakOffer;
+    if (!o || !this.run || this.streak) return;
+    this.streakOffer = null;
+    this.run.streaked.push(o.p);
+    this.streak = { ...startStreak(o.p, { t: o.t, sk: o.sk }), queue: o.tasks };
+    this.next();
+  },
+
+  /** From the rule to the first question. */
+  beginStreak() {
+    if (!this.streak) return;
+    this.streak.intro = false;
+    this.next();
+  },
+
+  /**
+   * The three are over — done, stopped with the ×, or skipped at the rule.
+   * Whatever was answered sends the pattern to the review queue for
+   * tomorrow, and is noted for the session's summary. Safe to call twice.
+   */
+  endStreak() {
+    const st = this.streak;
+    if (!st) return;
+    if (!st.queued) {
+      st.queued = true;
+      const e = streakEntry(st);
+      if (e) {
+        queuePattern(this.S, e, todayKey());
+        if (this.run) this.run.streaks.push({ p: st.p, c: st.c, n: st.i });
+        this.save();
+      }
+    }
+    if (st.done) return;          // the last verdict is still on the screen
+    this.streak = null;
+  },
+
+  /** The × on the line of the three: back to the session, nothing lost. */
+  stopStreak() {
+    if (!this.streak) return;
+    this.streak.done = false;
+    this.endStreak();
+    this.streak = null;
+    this.next();
   },
 
   /** A Lesefni page was opened for the first time (ui/lessons.js). */
@@ -518,6 +652,33 @@ const app = {
          drill ends without counting for or against anybody. */
       this.drill = null;
     }
+    /* An offer under the last verdict lapses when the child goes on. */
+    this.streakOffer = null;
+    /* Item 36: "Þrjár í röð" — the rule, then three questions on one error
+       pattern, inside the session but outside its count (core/streak.js). */
+    if (this.streak && this.run) {
+      const st = this.streak;
+      if (st.intro) {
+        this.cur = null;
+        renderDrillBar(this);
+        renderRunBar(this);
+        renderStreakIntro(this);
+        return;
+      }
+      const b = !st.done && st.queue.shift();
+      if (b) {
+        applyEffects(this, b.effects);
+        this.cur = b.task;
+        renderDrillBar(this);
+        renderTask(this);
+        renderRunBar(this);
+        clock.mark();
+        return;
+      }
+      st.done = false;
+      this.endStreak();
+      this.streak = null;
+    } else this.streak = null;
     renderDrillBar(this);
     renderRunBar(this);
     /* v6.10: practice comes in sessions. With none running, the board shows
@@ -584,6 +745,7 @@ const app = {
     showFindings(findings, extra.correct);
     showReview(review);
     const r = this.run;
+    const runQuestion = !!(r && this.cur && this.cur.inRun && !this.cur.closed);
     if (r && this.cur && this.cur.inRun && !this.cur.closed) {
       this.cur.closed = true;
       r.i++;
@@ -601,6 +763,19 @@ const app = {
         if (b) queueMicrotask(() => { if (b.textContent.startsWith("Áfram")) b.textContent = "Sjá samantekt →"; });
       }
     }
+    /* Item 36: one of "Þrjár í röð" answered — or a diagnosed miss in the
+       session, which may offer them. */
+    const st = this.streak;
+    if (st && this.cur && this.cur.streak && !this.cur.closed &&
+        (extra.correct === true || extra.correct === false)) {
+      this.cur.closed = true;
+      stepStreak(st, extra.correct);
+      renderRunBar(this);
+      if (st.done) {
+        this.endStreak();
+        showStreakEnd(streakLine(st), r && r.i >= r.n);
+      }
+    } else if (runQuestion && extra.correct === false) this.offerStreak(findings);
     const comeback = noteQuestion(this.sess, extra.correct ?? null);
     const accidents = noteAccidents(this.S, this.sess, this.cur, extra);
 
@@ -693,6 +868,21 @@ function showReview(review) {
   if (!v || !review || v.querySelector(".reviewline")) return;
   const line = reviewLine(review);
   if (line) v.insertAdjacentHTML("beforeend", `<p class="streakline reviewline">🔁 ${esc(line)}</p>`);
+}
+
+/**
+ * The line under the last of "Þrjár í röð" (item 36), and the button that
+ * goes on says where it goes: back to the session, or to its summary if the
+ * miss that started the three was the session's last question.
+ */
+function showStreakEnd(line, last) {
+  const v = document.querySelector("#verdict .verdict");
+  if (v && line && !v.querySelector(".streakend"))
+    v.insertAdjacentHTML("beforeend", `<p class="streakline streakend">💪 ${esc(line)}</p>`);
+  const b = $("check");
+  if (b) queueMicrotask(() => {
+    if (b.textContent.startsWith("Áfram")) b.textContent = last ? "Sjá samantekt →" : "Aftur í lotuna →";
+  });
 }
 
 /**
