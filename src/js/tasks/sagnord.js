@@ -110,17 +110,21 @@ export function taskVerb(lex, view, rng) {
   if (forcedCell(view)) return forcedVerb(lex, view, rng, pool);
   const v = forced(view, ["so"]) || wpick(pool, (x) => wordWeight(lex, view, x, "sagnord"), rng);
 
+  const P = view.policy;
+  /* A session asked for by name (the skill map, a Lesefni page) gets its
+     mood or voice at any þyngd (owner feedback, 6.13). */
+  const vh = P.focus("hattur", "VH"), mm = P.focus("mynd", "MM");
   const specs = [
     ["GM-FH-NT", "nútíð, framsöguháttur, germynd"],
     ["GM-FH-ÞT", "þátíð, framsöguháttur, germynd"],
   ];
-  if (d >= 2.5) specs.push(["GM-VH-NT", "nútíð, viðtengingarháttur"]);
-  if (d >= 3) specs.push(["GM-VH-ÞT", "þátíð, viðtengingarháttur"]);
+  if (d >= 2.5 || vh) specs.push(["GM-VH-NT", "nútíð, viðtengingarháttur"]);
+  if (d >= 3 || vh) specs.push(["GM-VH-ÞT", "þátíð, viðtengingarháttur"]);
   /* The middle voice only of a verb whose miðmynd is said of a person
      (`personalMM`): BÍN lists *hlakkast* and *pissast* too, and *mér líst*
      has no *ég líst*. */
-  if (personalMM(v) && d >= 3.5) specs.push(["MM-FH-NT", "nútíð, miðmynd"]);
-  if (personalMM(v) && d >= 4) specs.push(["MM-FH-ÞT", "þátíð, miðmynd"]);
+  if (personalMM(v) && (d >= 3.5 || mm)) specs.push(["MM-FH-NT", "nútíð, miðmynd"]);
+  if (personalMM(v) && (d >= 4 || mm)) specs.push(["MM-FH-ÞT", "þátíð, miðmynd"]);
 
   /* A weather verb or one with no nominative subject (`t3`) is asked in the
      third person singular with *það*: "það snjóar", never "ég snjóa". */
@@ -130,7 +134,6 @@ export function taskVerb(lex, view, rng) {
      come more often at a low level (`cellEase`, item 16): the present before
      the subjunctive, *ég* before *þið*. A tense is weighed by its third
      person singular. */
-  const P = view.policy;
   const ease = (m) => cellEase(lex, view, "sagnord", m);
   for (let k = 0; k < 12; k++) {
     const [pref, label] = wpick(specs, ([p]) => ease(p + "-3P-ET"), rng);
@@ -159,8 +162,9 @@ export function taskVerbSlot(lex, view, rng) {
   const P = view.policy;
   const allowed = (m) => {
     if (!FINITE.test(m)) return false;                 // finite forms only
-    if (d < 2.5 && !/^GM-FH/.test(m)) return false;    // subjunctive later
-    if (d < 3.5 && /^MM/.test(m)) return false;        // middle voice last
+    /* subjunctive later, middle voice last — unless asked for by name */
+    if (d < 2.5 && /^GM-VH/.test(m) && !P.focus("hattur", "VH")) return false;
+    if (d < 3.5 && /^MM/.test(m) && !P.focus("mynd", "MM")) return false;
     return askable(P, m);                              // and the policy allows it
   };
 
@@ -275,8 +279,8 @@ export function tableVerb(lex, view, rng) {
   const v = forced(view, ["so"]) || wpick(topByRank(lex.verbs, 0.36).filter((x) => !x.t3),
     (x) => wordWeight(lex, view, x, "sagnord"), rng);
   let prefs = ["GM-FH-NT", "GM-FH-ÞT"];
-  if (d >= 3) prefs.push("GM-VH-ÞT");
-  if (personalMM(v) && d >= 4) prefs.push("MM-FH-NT");
+  if (d >= 3 || view.policy.focus("hattur", "VH")) prefs.push("GM-VH-ÞT");
+  if (personalMM(v) && (d >= 4 || view.policy.focus("mynd", "MM"))) prefs.push("MM-FH-NT");
   const NAME = { "GM-FH-NT": "nútíð · framsöguháttur", "GM-FH-ÞT": "þátíð · framsöguháttur",
                  "GM-VH-ÞT": "þátíð · viðtengingarháttur", "MM-FH-NT": "nútíð · miðmynd" };
   /* A review asks for the tense its cell is in (of the four a table has). */

@@ -83,6 +83,10 @@ export const PLANNED_CATEGORIES = [
  *           inside its types, in the keys of policy.js ATTRIBUTES. A session
  *           on the node narrows to these (item 83).
  *   item    for backlog nodes: the improvement item that would close the gap
+ *   classes optional: the word classes a question on the node may be about,
+ *           for a node asked inside a broader type (Kyn og tala nafnorða is
+ *           "Greindu orðið" on nouns only). A session on the node narrows to
+ *           these (`attrs.ofl` of the session, core/policy.js narrowPolicy).
  */
 /** @type {Node[]} */
 export const NODES = [
@@ -90,7 +94,7 @@ export const NODES = [
   { id: "no-foll", nm: "Föllin fjögur", cat: "nafnord", year: 8, hv: "ordflokkar",
     types: ["fill", "no_val", "tbl_no"], lesson: "foll", cover: "full" },
   { id: "no-kyn-tala", nm: "Kyn og tala nafnorða", cat: "nafnord", year: 8, hv: "ordflokkar",
-    types: ["parse"], lesson: "kyn-tala", cover: "part", item: 27 },
+    types: ["parse"], lesson: "kyn-tala", cover: "part", item: 27, classes: ["nafnorð"] },
   { id: "no-beyging", nm: "Sterk og veik beyging nafnorða og kenniföll", cat: "nafnord",
     year: 8, hv: "ordflokkar", types: ["no_beyging"], lesson: "nafnord-beyging", cover: "full" },
 
@@ -140,8 +144,12 @@ export const NODES = [
     types: ["revform", "so_bodhattur"], lesson: "hattur", cover: "full",
     attrs: { hattur: ["BH"] } },
   { id: "so-fallhaettir", nm: "Fallhættir: nafnháttur, lýsingarhættir og sagnbót",
-    cat: "sagnord", year: 9, hv: "ordflokkar", types: ["revform"], lesson: "hattur",
-    cover: "part", item: 27, attrs: { hattur: ["NH", "LHNT", "LHÞT", "SAGNB"] } },
+    cat: "sagnord", year: 9, hv: "ordflokkar", types: ["revform", "parse"], lesson: "hattur",
+    cover: "part", item: 27, attrs: { hattur: ["NH", "LHNT", "LHÞT", "SAGNB"] },
+    /* "Greindu orðið" on verbs in a sentence too: a nafnháttur is the same
+       form as the 3rd person plural (*koma*), so the bare-form question can
+       hardly ever ask it; in *Ég ætla að koma* it is plain (owner feedback, 6.13). */
+    classes: ["sagnorð"] },
   { id: "so-midmynd", nm: "Germynd og miðmynd", cat: "sagnord", year: 9, hv: "ordflokkar",
     types: ["verb", "verbslot", "tbl_so"], lesson: "mynd", cover: "full",
     attrs: { mynd: ["MM"] } },

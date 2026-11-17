@@ -641,7 +641,7 @@ test("the welcome declines \"þú\" as BÍN does", () => {
 test("there is a pointer text for each of the four parts, and each names its part", () => {
   assert.deepEqual(TOUR_STEPS, ["today", "lessons", "map", "line"]);
   assert.deepEqual(Object.keys(TEXT.steps), TOUR_STEPS);
-  assert.match(TEXT.steps.today.title, /Dagsins lota/);
+  assert.match(TEXT.steps.today.title, /Lota dagsins/);
   assert.match(TEXT.steps.lessons.title, /Lesefni/);
   assert.match(TEXT.steps.map.title, /Færnikort/);
   assert.match(TEXT.steps.map.body, /Merki → Framvinda/);
@@ -653,7 +653,7 @@ test("what the pointers name is what the page calls it", () => {
   const body = readFileSync(new URL("../src/body.html", import.meta.url), "utf8");
   const session = readFileSync(new URL("../src/js/ui/session.js", import.meta.url), "utf8");
   const lessons = readFileSync(new URL("../src/js/ui/lessons.js", import.meta.url), "utf8");
-  assert.match(session, /nm: "Dagsins lota"/);
+  assert.match(session, /nm: "Lota dagsins"/);
   assert.match(body, /data-view="lessons">Lesefni</);
   assert.match(body, /data-pane="stats"[^>]*>Framvinda</);
   assert.match(body, />Færnikort</);

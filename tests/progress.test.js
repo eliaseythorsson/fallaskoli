@@ -6,7 +6,7 @@ import {
 } from "../src/js/core/progress.js";
 import { blankState } from "../src/js/core/state.js";
 
-/* One session of ten questions (Dagsins lota), what a pupil earns by it, measured by
+/* One session of ten questions (Lota dagsins), what a pupil earns by it, measured by
    tools/sim/levels.mjs with every reward on (item 60): weak 60, typical 77, strong 95. */
 const SESSION_XP = { weak: 60, typical: 77, strong: 95 };
 const WEEK = 4;                                       // sessions a week

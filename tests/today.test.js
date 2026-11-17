@@ -1,4 +1,4 @@
-/* "Dagsins lota" — today's session (critique item 21), core/today.js.
+/* "Lota dagsins" — today's session (critique item 21), core/today.js.
 
    The planner says what each of the ten questions is about: the due reviews
    first, then the active error patterns, then new material, about 3 / 4 / 3,

@@ -1,6 +1,9 @@
 # Changes
 
-## v6.13 — November 2026
+## v6.14 — November 2026 (the 84-item critique of v6.12)
+
+Developed under the working name 6.13 (the integration branch, the project notes and the
+code comments still say "v6.13"); released as 6.14. There is no v6.13 release.
 
 Everything below implements the v6.12 critique ("Fallaskóli v6.12 — critique
 and improvement list", 84 items); the item numbers refer to it. Item 10 (the
@@ -8,11 +11,29 @@ duel data fingerprint) was left out by the owner's decision; item 40 is part
 of item 84. A v6.12 state opens and is migrated; nothing a pupil earned is
 taken away.
 
+### The owner's first pass over the 6.13 test build
+- „Dagsins lota“ heitir nú **„Lota dagsins“**.
+- **Færnikortið** er grind: hver flokkur í kassa, kassarnir í hverri röð jafnháir
+  og slóðirnar byrja í sömu hæð; einn dálkur á síma, tveir á spjaldtölvu, þrír á borðtölvu.
+- **Ritun vikunnar**: reiturinn var hvítur með hvítu letri á töflunni; nú krít á töflu.
+- **Lotur úr færnikortinu og af Lesefnissíðu halda sig við efnið.** „Kyn og tala
+  nafnorða“ greinir nú aðeins nafnorð (var öll orð). Viðtengingarháttur, miðmynd og
+  fallhættir koma á hvaða þyngd sem er þegar beðið er um þá með nafni — áður gaf
+  lota á þyngd 1–2 engar spurningar og endaði strax.
+- **Fallhættirnir í „Greindu orðið“.** Nafnháttur, sagnbót og lýsingarháttur þátíðar
+  voru aldrei spurðir (orðmyndin er eins og mynd með tölu, *koma*, *komið*); setningin
+  sker úr og þeir eru nú spurðir. Fallhættir á færnikortinu fá „Greindu orðið“ á sagnir.
+- **Þyngd:** „Greindu orðið“ á lýsingarorð og „Forsetning eða atviksorð?“ sóttu
+  stundum setningar á þyngd 6–7 handa nemanda á þyngd 1; nú fyrst setningar nærri þyngdinni.
+- **Prófun á eigin tölvu:** `./test-together.sh` opnar nú fjóra prufunemendur hlið við
+  hlið á einni síðu, hvern innskráðan, á stigatöflunni og tilbúna í einvígi
+  (`tools/quad.mjs`). Prófun með öðrum: `./test-together.sh --lan` / `--internet`.
+
 ### Learning
 - **Review queue (18–20).** Every wrong answer comes back the next day, then
   after 3, 7 and 21 days; a session opens with up to three due reviews; a
   missed cloze noun returns 3–5 questions later in the same session.
-- **Dagsins lota (21) and Þrjár í röð (36).** One main button: due reviews,
+- **Lota dagsins (21) and Þrjár í röð (36).** One main button: due reviews,
   then the pupil's error patterns, then new material. A diagnosed miss can be
   followed at once by three questions on its pattern, rule first.
 - **Difficulty follows the pupil (11, 12, 13, 16, 17).** Each skill's level is

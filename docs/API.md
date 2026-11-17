@@ -60,7 +60,7 @@ that record cannot be made `active` by anybody. See `docs/PRIVACY.md` §3.
 groupName, share: { board, minutes }, review }`. `rights` is the row from
 `ROLES` in `src/js/core/profile.js`; roles are `learner`, `guardian` and
 `admin`, and rights are enumerated rather than derived from the role's name.
-`canTeach` (v6.13) is the guardian's and the administrator's: the teacher's
+`canTeach` (v6.14) is the guardian's and the administrator's: the teacher's
 routes below.
 
 A wrong password and an unknown username produce the same 401, after the same
@@ -85,7 +85,7 @@ POST /account/share      { board, minutes }       -> { ok, share }
 POST /account/delete     { password } | { username }  -> 204 + cookie cleared
 ```
 
-`teachers` (v6.13) is the nicknames of the guardians of a learner's group —
+`teachers` (v6.14) is the nicknames of the guardians of a learner's group —
 the people who see their error patterns and assignment results (below); empty
 for anybody else. The export includes `assignments`: each assignment the user
 has sent a result for, with that result.
@@ -149,7 +149,7 @@ GET /badges/stats                                     -> { users, qualified, bad
                                                            minUsers, minDays }
 ```
 
-The default metric is `framfarir` (v6.13, item 58): what got better this week
+The default metric is `framfarir` (v6.14, item 58): what got better this week
 — `3 ×` the different error patterns mended since Monday, plus the reviews
 passed since Monday, at most 6 counted per day (`core/mending.js`
 `weekGains`, which explains the rule). Every other metric grows with time
@@ -164,7 +164,7 @@ What users see of each other (v6.1) is all ids and numbers, and
 
 | field | shape | meaning |
 |---|---|---|
-| `framfarir` | number | v6.13: patterns mended and reviews passed this week, as above — which patterns and which days stay in the state |
+| `framfarir` | number | v6.14: patterns mended and reviews passed this week, as above — which patterns and which days stay in the state |
 | `week` | number | XP earned this week (Monday–Sunday) |
 | `title` | `rank:<n>` or `badge:<id>` | the title the user chose; never text |
 | `showcase` | up to 3 badge ids | pinned badges — only ones the state holds |
@@ -202,7 +202,7 @@ that threshold the app falls back to the base rarity computed in
 `src/js/core/rarity.js`, and says so. The aggregation itself is
 `aggregate()` in that module, imported by the server, so the two cannot drift.
 
-## Duels (v6.7; graded by the server since v6.13)
+## Duels (v6.7; graded by the server since v6.14)
 
 Only between users in the same group who are both on the leaderboard
 (`share.board`), the same rule as `/leaderboard`. See `src/js/core/duel.js`.
@@ -249,7 +249,7 @@ the same seeds: a reload in the middle of a duel continues with the same questio
 the seeds and judges every response with the same `judge` the browser used (`gradeDuel`). Only a
 right answer counts; a missing, unfinished or malformed one is wrong; `n` is always the number of
 questions. Nothing else in the body is read — a `c` or `n` beside the answers is ignored, and a
-body without `answers` (what browsers posted before v6.13) is refused. The answers are graded and
+body without `answers` (what browsers posted before v6.14) is refused. The answers are graded and
 dropped: the duel keeps `{ c, n, at }` per player, never anything a pupil typed.
 
 Limits: a response may only have the keys `text, hinted, cells, texts, picked, picked2, picks,
@@ -285,7 +285,7 @@ the moment the duel is made. The 5% is a judgement, not a measurement.
   from `/start` on the browser holds both, and they can be read out of memory and typed in.
   Closing that would mean the server judging each answer as it is given and the browser never
   holding one, which is a different program (and no duel on a poor connection). This is the same
-  as before v6.13; what is new is that it takes a programmer rather than one line.
+  as before v6.14; what is new is that it takes a programmer rather than one line.
 - *Not stopped:* looking, then answering later. A pupil can press play, read the questions,
   reload, and take the 24 hours to find the answers — or ask somebody. `started` records when
   play was first pressed, and nothing acts on it yet: a limit ("answer within an hour of
@@ -296,10 +296,10 @@ the moment the duel is made. The 5% is a judgement, not a measurement.
 
 Void duels (nobody answered within 24 hours) are deleted on the next read; finished ones after
 30 days. Erasing a user erases their duels; `/account/export` includes them, without the seeds.
-A duel made before v6.13 has no keys and no levels: it gets keys when first started, and no
+A duel made before v6.14 has no keys and no levels: it gets keys when first started, and no
 handicap.
 
-## The teacher: the class's patterns and assignments (v6.13)
+## The teacher: the class's patterns and assignments (v6.14)
 
 Items 37 and 65. A **teacher** is a user with the `canTeach` right: a
 `guardian` for **their own group only**, the `admin` for any group. Every
@@ -383,7 +383,7 @@ the table is not. Erasing a user removes their results; an assignment a
 guardian set stays with the group, its `by` cleared. Deleting a group deletes
 its assignments. All of it is in the backup.
 
-## The second-language mode, set by the teacher (v6.13)
+## The second-language mode, set by the teacher (v6.14)
 
 Item 45. The mode itself is `src/js/core/profile.js` (`secondLanguage`): word
 glosses, a gentler level ramp, the generated error hunts, reading aloud. A pupil
@@ -402,7 +402,7 @@ Kept as `l2: true` on the account (absent when off) and sent to the pupil in
 `settings.l2Teacher` at start-up. In the export as
 `account.secondLanguageByTeacher`. Setting it is in the audit trail.
 
-## Ritun vikunnar: the pupil's own sentences (v6.13)
+## Ritun vikunnar: the pupil's own sentences (v6.14)
 
 Item 46. Once a week, "Skrifaðu þrjár setningar um …" on the week's topic
 (`src/js/core/writing.js`: `topicFor`, the limits `WRITING`). Where the group's
@@ -430,7 +430,7 @@ start, or `FALLASKOLI_WRITING=off`) or null (not started yet; GET starts it).
 `{ id, name, week, topic, text, n, at }`. Kept texts live in `writing.json`
 and are in the export as `keptTexts`; `docs/PRIVACY.md` §1f.
 
-## The class goal (v6.13)
+## The class goal (v6.14)
 
 Item 59. A weekly target the whole group reaches together, set by its teacher
 (the same `needTeacher` rule as above), with one shared bar in Skólastofan
@@ -476,7 +476,7 @@ this week's if the bar is full, otherwise last week's if that was met, so a
 pupil away when the class got there has it on Monday. Like every badge it is
 the browser's word.
 
-## A live class round (v6.13)
+## A live class round (v6.14)
 
 Item 64. A teacher (`needTeacher`, as above) starts a round on the projector;
 the learners of the group join on their own devices and answer the same
@@ -594,7 +594,7 @@ with the developer tools within its 20–90 seconds (the question comes with its
 answer, as a duel's does, so that the ordinary card can judge and draw it), and
 a whisper across the table.
 
-## Team duels (v6.13)
+## Team duels (v6.14)
 
 Item 67. Half a class against the other half, or one class against another,
 built on the duel (above): one plan from the duel's seed, each pupil's own
@@ -656,7 +656,7 @@ written to the audit trail. Erasing a user takes them out of every team, with
 their key and result; `/account/export` lists their team duels with their own
 result; the backup holds the file.
 
-## Calibration from real answers, and the answer sample (v6.13)
+## Calibration from real answers, and the answer sample (v6.14)
 
 Items 17 and 38. `server/calibrate.mjs` holds the routes; the arithmetic is
 `src/js/core/calibration.js` and the classifier check
@@ -834,7 +834,7 @@ A learner cannot be set `active` until consent is recorded; `consent` and
 **A guardian** (`canEditCurriculum` without `canAdminUsers`) may set the ceiling
 of a learner **in their own group** and nothing else here — not the default, not
 another group. Until v6.3 a guardian could change the default for everybody.
-(Since v6.13 a guardian also has the teacher's routes, for the same group only.)
+(Since v6.14 a guardian also has the teacher's routes, for the same group only.)
 
 Taking a user off the leaderboard touches the display only, and works in one
 direction: the administrator can hide somebody, and cannot show somebody who
@@ -857,7 +857,7 @@ GET /personuvernd   -> the notice, in Icelandic (a self-contained page)
 GET /privacy        -> 302 to it
 ```
 
-## Installing the program (v6.13, item 54)
+## Installing the program (v6.14, item 54)
 
 ```
 GET /manifest.webmanifest    -> the web app manifest

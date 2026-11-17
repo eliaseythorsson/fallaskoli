@@ -133,6 +133,8 @@ export function taskReverse(lex, view, rng) {
   if (!pools.length) return null;
   const used = new Set(only ? [] : sess.frames || []);
   const weight = frameWeight(S);
+  /** @type {any} */
+  let late = null;
 
   for (let k = 0; k < 60; k++) {
     const p = pick(pools, rng);
@@ -151,10 +153,15 @@ export function taskReverse(lex, view, rng) {
 
     /* Harder forms as the difficulty rises. */
     const d = diffOf(sess, p.skill);
-    if (p.cls === "lo" && d < 2.5) marks = marks.filter((m) => /^FSB|^FVB/.test(m));
-    else if (p.cls === "lo" && d < 3.5) marks = marks.filter((m) => !/^E(SB|VB)/.test(m));
-    if (p.cls === "so" && d < 2.5) marks = marks.filter((m) => /^GM-FH/.test(m));
-    else if (p.cls === "so" && d < 3.5) marks = marks.filter((m) => /^GM/.test(m));
+    /* …unless the session was asked for that feature by name (a node of the
+       skill map, a Lesefni page): then it comes at any þyngd (owner feedback, 6.13). */
+    const named = (g) => P.focus(g);
+    if (p.cls === "lo" && d < 2.5 && !named("stig")) marks = marks.filter((m) => /^FSB|^FVB/.test(m));
+    else if (p.cls === "lo" && d < 3.5 && !named("stig")) marks = marks.filter((m) => !/^E(SB|VB)/.test(m));
+    if (p.cls === "so" && d < 2.5 && !named("hattur") && !named("mynd")) marks = marks.filter((m) => /^GM-FH/.test(m));
+    else if (p.cls === "so" && d < 3.5 && !named("mynd"))
+      /* The lýsingarhættir carry no GM/MM prefix: a session on them by name keeps them. */
+      marks = marks.filter((m) => (named("hattur") ? !/^MM/.test(m) : /^GM/.test(m)));
     /* Forms BÍN lists and nobody says are not shown as words to analyse: the
        middle voice of a verb that has none in use, and the first and second
        person of a weather verb (*snjóum*). */
@@ -195,7 +202,11 @@ export function taskReverse(lex, view, rng) {
     /* Cells this pupil gets wrong come more often; at a low level the
        easier cells do (`cellEase`, item 16); and a form whose sentences are
        fresh more than one whose sentences are worn (item 24). */
-    const ease = (mm) => cellEase(lex, view, p.skill, mm);
+    /* A session on one feature by name ("Fallhættir") takes its cells evenly:
+       the hardness axis would otherwise starve the lýsingarhættir in favour
+       of the sagnbót (owner feedback, 6.13). */
+    const evenly = named("hattur") || named("mynd") || named("stig");
+    const ease = (mm) => (evenly ? 1 : cellEase(lex, view, p.skill, mm));
     const m = wpick(marks, (mm) => {
       const rec = S.cells[mm];
       const n = rec ? rec.c + rec.w : 0;
@@ -209,7 +220,14 @@ export function taskReverse(lex, view, rng) {
        with this exact word in it; a frame with this word substituted in
        (tasks/frames.js); the bare form out of BÍN — still needed for verbs,
        which are never substituted. */
-    const occ = inBank.filter((r) => r.t.m === m && !used.has(frameKey(r.s)));
+    /* An adjective: a bank sentence near the band; one far above it (þyngd 7
+       for a pupil at 1, tools/sim 6.13) only after a frame has been tried and
+       no other word has one near the band. A noun or a verb keeps any bank
+       sentence, as before: the other way for it is a bare form, and context
+       matters more there (tests/frames.test.js). */
+    const maxLvl = bandFor(view, p.skill);
+    const occAll = inBank.filter((r) => r.t.m === m && !used.has(frameKey(r.s)));
+    const occ = p.cls === "lo" ? occAll.filter((r) => r.s.lvl <= maxLvl + 1) : occAll;
     if (occ.length) {
       const r = wpick(occ, (x) => weight(frameKey(x.s)), rng);
       return built({
@@ -221,7 +239,6 @@ export function taskReverse(lex, view, rng) {
       }, [FX.frame(frameKey(r.s))]);
     }
 
-    const maxLvl = bandFor(view, p.skill);
     const opts = { maxLvl, levelOk, rng, avoid: used, weight };
     const made = p.cls === "lo" ? adjectiveSentence(lex, w, m, form, opts)
       : isNoun ? nounSentence(lex, w, m, form, opts)
@@ -234,6 +251,22 @@ export function taskReverse(lex, view, rng) {
         lemmaWord: w, framed: true,
         homograph: lex.homographClasses(w.o).length > 1 ? lex.homographClasses(w.o) : null,
       }, [FX.frame(made.key)]);
+    }
+
+    /* An adjective with no sentence near the band: the bank sentence nearest
+       it, however far above, is kept for the end (`late`, after the loop). */
+    if (occAll.length) {
+      if (late) continue;
+      const low = Math.min(...occAll.map((r) => r.s.lvl));
+      const r = pick(occAll.filter((x) => x.s.lvl === low), rng);
+      late = built({
+        type: "parse", skill: p.skill, base: 4, picks: {},
+        s: r.s, i: r.i, t: r.t, a: readMark(r.t.m),
+        cell: r.t.m, word: wordKey(w.o, w.c), lvl: r.s.lvl,
+        lemmaWord: w,
+        homograph: lex.homographClasses(w.o).length > 1 ? lex.homographClasses(w.o) : null,
+      }, [FX.frame(frameKey(r.s))]);
+      continue;
     }
 
     /* v6.11: an adjective is never analysed as a bare word — the sentence
@@ -250,7 +283,7 @@ export function taskReverse(lex, view, rng) {
       homograph: lex.homographClasses(w.o).length > 1 ? lex.homographClasses(w.o) : null,
     });
   }
-  return null;
+  return late;
 }
 
 /* ================= In a sentence (v6.11) ================================= */

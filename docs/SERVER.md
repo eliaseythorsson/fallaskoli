@@ -461,7 +461,7 @@ It is the **Umsjón** section of **Stillingar og námsefni** and **only you can 
 You cannot lock yourself out or remove your own administrator rights — the server
 refuses. Otherwise nobody could get in to undo it.
 
-### 4.2 A teacher for a class (v6.13)
+### 4.2 A teacher for a class (v6.14)
 
 Make a group for the class, and an account for the teacher with the role
 **forsjáraðili eða kennari** in that group (*Nýr notandi*, or *Meira → Hlutverk*).
@@ -507,11 +507,11 @@ they do not, is in `docs/PRIVACY.md` §1 and in the notice; the pupils' own
 account page names their group's teacher.
 
 **Before you upgrade:** look at who has the guardian role in each group. A
-parent you made guardian of a group of several families will, from v6.13, see
+parent you made guardian of a group of several families will, from v6.14, see
 the patterns of every child in it. If that is not what the families agreed to,
 give each family its own group, or change the role.
 
-### 4.3 Difficulty that sets itself (v6.13)
+### 4.3 Difficulty that sets itself (v6.14)
 
 **You do not have to do anything in this section, ever.** It is here so that
 you know what the server is doing on its own, and where the off switch is.
@@ -603,7 +603,7 @@ as `tests/fixtures/wrong-answers.json` it becomes part of the test suite.
 **Before a teacher switches it on, the families of that group should be told**
 (`docs/PRIVACY.md` §1b).
 
-### 4.4 How many pupils one server carries (v6.13)
+### 4.4 How many pupils one server carries (v6.14)
 
 **In one sentence:** one server carries **about 300 pupils practising in the
 same few minutes** with every answer saved in well under a second; around 500
@@ -630,7 +630,7 @@ node tools/load-test.mjs --pupils 30,300 --seconds 150 --arrive 60
 node tools/load-test.mjs --pupils 1000 --profile      # where the CPU goes
 ```
 
-**What it measured** (November 2026, v6.13 before release; a container with
+**What it measured** (November 2026, v6.14 before release; a container with
 2 CPUs, Node 22.23.4, which other jobs were sharing — two runs of the same size
 differed by a factor of ten at the slow end, so read the table as sizes):
 
@@ -702,7 +702,7 @@ is enough for a family or two classes (≈ 150 at once). For more, set
    - Then `tools/load-test.mjs` again, with 1,000 at once on 1 GB as the
      target, and this section rewritten with what it measures.
 
-### 4.5 Íslenska sem annað mál (v6.13, item 45)
+### 4.5 Íslenska sem annað mál (v6.14, item 45)
 
 Nothing to set up. A pupil can switch the second-language mode on under
 *Stillingar*; a teacher can switch it on for a pupil in *Skólastofan →
@@ -714,7 +714,7 @@ sentence aloud **if the pupil's device has an Icelandic voice of its own**
 a voice that would send the text to a company to be spoken is not used). Nothing is sent anywhere to be spoken. Agree with the
 pupil and the family before switching it on for them (`docs/PRIVACY.md` §1e).
 
-### 4.6 Ritun vikunnar — the writing check (v6.13, item 46)
+### 4.6 Ritun vikunnar — the writing check (v6.14, item 46)
 
 Once a week every pupil is offered "Skrifaðu þrjár setningar um …" on an
 everyday topic. Without anything set up it works offline: the pupil writes,
@@ -806,7 +806,7 @@ setup where it was in `server/data` inside the program folder: copy that
 folder's contents to `/var/lib/fallaskoli` once, before the `rm`, and run
 `chown -R fallaskoli: /var/lib/fallaskoli`.)
 
-**Coming to v6.13:** a guardian now sees the error patterns and assignment
+**Coming to v6.14:** a guardian now sees the error patterns and assignment
 results of the learners in their own group (§4.2). The privacy notice has a new
 version; read §3 of `docs/PRIVACY.md` and tell the families.
 

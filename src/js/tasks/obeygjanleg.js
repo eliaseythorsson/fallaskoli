@@ -127,7 +127,13 @@ export function obAdvPrep(lex, view, rng) {
   });
   const words = [...byWord.keys()].filter((l) => byWord.get(l).fs.length && byWord.get(l).ao.length);
   if (!words.length) return null;
-  const l = pick(words, rng);
+  /* A word both of whose halves have a sentence near the band first: chosen
+     blindly, a word whose only preposition sentence is at þyngd 6 put a
+     þyngd-6 pair in front of a pupil at þyngd 1 (tools/sim, 6.13). */
+  const band = bandFor(view, "obeygjanleg");
+  const close = (xs) => xs.some((x) => x.s.lvl <= band + 1);
+  const inBand = words.filter((w) => close(byWord.get(w).fs) && close(byWord.get(w).ao));
+  const l = pick(inBand.length ? inBand : words, rng);
   /* Each half by the sentence's level, like the hand-written half by its
      items' (critique item 13); item 43 asks them as a pair. */
   const near = (xs) => pick(nearBand(xs, (x) => x.s.lvl, bandFor(view, "obeygjanleg"), 1), rng);

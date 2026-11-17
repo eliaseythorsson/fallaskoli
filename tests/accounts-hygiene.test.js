@@ -67,3 +67,14 @@ test("test-together.sh writes test accounts outside the project", () => {
   assert.ok(!/\$PWD\/(_prufa|server\/data)/.test(code), "test data must not live under $PWD");
   assert.ok(/inside the project/.test(sh), "the script should refuse a test folder inside the project");
 });
+
+test("the four-pupil test (tools/quad.mjs) keeps its accounts outside the project too", () => {
+  const js = fs.readFileSync(path.join(ROOT, "tools", "quad.mjs"), "utf8");
+  assert.ok(/FALLASKOLI_TEST_DIR/.test(js) && /mkdtempSync\(path\.join\(os\.tmpdir\(\)/.test(js),
+    "the test folder should be test-together.sh's or a new mkdtemp in the temp directory");
+  assert.ok(/inside the project/.test(js), "quad.mjs should refuse a test folder inside the project");
+  assert.ok(!/_prufa|server\/data/.test(js.split("\n").filter((l) => !/^\s*(\*|\/\*|\/\/)/.test(l)).join("\n")),
+    "quad.mjs must not write into the project");
+  /* Every port it opens listens on this computer only. */
+  assert.ok(!/listen\([^)]*0\.0\.0\.0/.test(js) && /FALLASKOLI_HOST: "127\.0\.0\.1"/.test(js));
+});

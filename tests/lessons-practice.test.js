@@ -87,11 +87,15 @@ test("the button's session asks five questions, all of the page's types, for eve
 test("a type that serves several categories stays inside the page's", () => {
   /* The reverse analysis (revform) serves adjectives, verbs and nouns; on the
      mood page it must analyse verbs. */
+  /* …and the word-class analysis comes with it since 6.13 (the fallhættir in a
+     sentence), held to verbs. */
   const skills = practiceSkills(lessonPractice("hattur"), TASKS);
-  assert.deepEqual(skills, ["sagnord"]);
+  assert.deepEqual(skills.sort(), ["greining", "sagnord"]);
+  assert.deepEqual(lessonPractice("hattur").attrs.ofl, ["sagnorð"]);
   for (let seed = 1; seed < 40; seed++) {
     const { tasks } = session("hattur", PRACTICE_SIZE, blankState(), seed);
     for (const t of tasks.filter((x) => x.typeId === "revform")) assert.equal(t.skill, "sagnord", `seed ${seed}`);
+    for (const t of tasks.filter((x) => x.typeId === "parse")) assert.equal(t.t.c, "sagnorð", `seed ${seed}`);
   }
   /* Kyn og tala is asked inside the word-class analysis: its category comes too. */
   assert.deepEqual(practiceSkills(lessonPractice("kyn-tala"), TASKS).sort(), ["greining", "nafnord"]);
@@ -115,4 +119,30 @@ test("asked for by name: the child's own switches give way, the administrator's 
   const C = { skills: { a: false }, types: { b: false } };
   openFor(C, { skills: ["a"], types: ["b"] });
   assert.deepEqual(C, { skills: { a: false }, types: { b: false } });
+});
+
+/* Owner feedback, 6.13: "Færnikort → Kyn og tala nafnorða → 10 spurningar"
+   asked "Greindu orðið" on adjectives, verbs and pronouns. The node is asked
+   inside the word-class analysis, and its session now keeps to nouns. */
+test("Kyn og tala nafnorða asks only about nouns, from the map and from its page", async () => {
+  const { nodeSession } = await import("../src/js/core/skillmap.js");
+  const node = NODES.find((n) => n.id === "no-kyn-tala");
+  const S = blankState();
+  const fromMap = nodeSession(node, S);
+  const fromPage = lessonPractice("kyn-tala");
+  for (const p of [fromMap, fromPage]) {
+    assert.deepEqual(p.attrs.ofl, ["nafnorð"]);
+    const P = policyFor(S, p);
+    const ctx = { lex, S, sess: newSession(S), policy: P, run: true, mix: { n: 40, counts: {} } };
+    const rnd = seeded(7);
+    let seen = 0;
+    for (let k = 0; k < 40; k++) {
+      const t = ask(ctx, rnd);
+      if (!t) break;
+      seen++;
+      assert.equal(t.typeId, "parse");
+      assert.equal(t.t.c, "nafnorð", `asked about ${t.t.w} (${t.t.c})`);
+    }
+    assert.ok(seen >= 30, `only ${seen} questions`);
+  }
 });

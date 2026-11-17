@@ -43,12 +43,12 @@ It is not legal advice. For a real question, Persónuvernd answers them:
 | Security (Art. 32) | Passwords as scrypt hashes; session tokens stored hashed; HTTPS only; login and registration rate-limited per address; strict content-security policy; the server does not run as root; backups encrypted with your passphrase. |
 | No third parties | The page loads nothing from anybody: fonts are inside the file. No analytics, no advertising. One cookie, strictly necessary, so no cookie banner. |
 | Accountability | *Atburðaskrá* records every administrative action, by id. |
-| Statistics without people (v6.13) | Right and wrong answers are counted per question type, level, inflection cell and irregularity score, with no account, group or time, to set the difficulty automatically. A learner can switch their own contribution off. See §1b. |
-| A class goal shows totals only (v6.13) | When a guardian sets a weekly goal, the group sees one total its learners' answers feed into — never who put in what, and nothing in a group of fewer than five. See §1c. |
-| A live round keeps nothing; a team duel keeps numbers (v6.13) | A round on the projector lives in memory for the lesson; the wall names only pupils who are on the leaderboard, everyone else is a numbered player. A team duel keeps numbers only; the teacher sees their own pupils' results, the pupils only the teams' means. See §1d. |
-| A second-language flag that nobody else sees (v6.13) | One yes/no, set by the pupil or by their group's guardian; it changes what the app shows and nothing else. Reading aloud uses an on-device voice only. See §1e. |
-| A pupil's own sentences are checked and forgotten (v6.13) | Ritun vikunnar: off for every group until its guardian switches the check on; the text is read over by GreynirCorrect on this server and kept only if the guardian also switches keeping on (at most 12 per pupil, 60 days). See §1f. |
-| A teacher sees only what helps them teach (v6.13) | The guardian of a group sees, for the learners of that group only, the error-pattern figures the child sees themselves, and the scores of assignments — never anything typed, never a date. The child's account page names who that is. See §1a. |
+| Statistics without people (v6.14) | Right and wrong answers are counted per question type, level, inflection cell and irregularity score, with no account, group or time, to set the difficulty automatically. A learner can switch their own contribution off. See §1b. |
+| A class goal shows totals only (v6.14) | When a guardian sets a weekly goal, the group sees one total its learners' answers feed into — never who put in what, and nothing in a group of fewer than five. See §1c. |
+| A live round keeps nothing; a team duel keeps numbers (v6.14) | A round on the projector lives in memory for the lesson; the wall names only pupils who are on the leaderboard, everyone else is a numbered player. A team duel keeps numbers only; the teacher sees their own pupils' results, the pupils only the teams' means. See §1d. |
+| A second-language flag that nobody else sees (v6.14) | One yes/no, set by the pupil or by their group's guardian; it changes what the app shows and nothing else. Reading aloud uses an on-device voice only. See §1e. |
+| A pupil's own sentences are checked and forgotten (v6.14) | Ritun vikunnar: off for every group until its guardian switches the check on; the text is read over by GreynirCorrect on this server and kept only if the guardian also switches keeping on (at most 12 per pupil, 60 days). See §1f. |
+| A teacher sees only what helps them teach (v6.14) | The guardian of a group sees, for the learners of that group only, the error-pattern figures the child sees themselves, and the scores of assignments — never anything typed, never a date. The child's account page names who that is. See §1a. |
 
 What it does **not** do, and you should know:
 
@@ -65,11 +65,11 @@ What it does **not** do, and you should know:
 
 ---
 
-## 1a. What a teacher sees (v6.13, items 37 and 65)
+## 1a. What a teacher sees (v6.14, items 37 and 65)
 
 A **guardian** (role `guardian`, shown as *forsjáraðili eða kennari*) is the
 adult of one group: the teacher of a class, or a parent for a family. Since
-v6.13 that account has a part of its own in Skólastofan, and it is the first
+v6.14 that account has a part of its own in Skólastofan, and it is the first
 time anybody but the child and you can see anything of a child's progress
 without the child switching it on. So, precisely:
 
@@ -78,12 +78,12 @@ without the child switching it on. So, precisely:
 | The nickname of each **learner** in **their own group** who is active | To know whose row is whose | Learners in other groups; anybody pending or blocked; usernames, consent records, last-seen days |
 | For each error pattern: how many of the child's recent answers that test it went wrong, the totals, whether it is getting better, and whether it is "algengt núna" — **the same figures the child sees** under *Framvinda*, computed by the same function (`core/classview.js`) | To see what the class needs to practise, and who needs help with what | The example words and marks the diagnosis keeps, the date of the last miss, the raw history — and nothing the child typed, which is never stored |
 | How many wrong answers the diagnosis could not classify (*Ógreint*) | So the teacher can judge how far the table can be trusted | — |
-| **One pupil's skill map** (v6.13, item 83; `GET /teacher/skillmap`): for every node of the curriculum map the mastery mark and what it rests on (how many recent answers at the child's level, how many right, the step of difficulty), how many reviews are due and waiting there, which error patterns are active; opened, the patterns' figures and the grammatical cells missed ("þágufall, fleirtala") with their counts — **the map the child sees** under *Framvinda*, drawn by the same code from `teacherMap` (`core/skillmap.js`) | To see where one child stands in the curriculum, not only which mistakes they make | When anything was last practised (no date, no "days ago"), the **words** the child missed, XP and stig, the raw histories — and nothing the child typed |
+| **One pupil's skill map** (v6.14, item 83; `GET /teacher/skillmap`): for every node of the curriculum map the mastery mark and what it rests on (how many recent answers at the child's level, how many right, the step of difficulty), how many reviews are due and waiting there, which error patterns are active; opened, the patterns' figures and the grammatical cells missed ("þágufall, fleirtala") with their counts — **the map the child sees** under *Framvinda*, drawn by the same code from `teacherMap` (`core/skillmap.js`) | To see where one child stands in the curriculum, not only which mistakes they make | When anything was last practised (no date, no "days ago"), the **words** the child missed, XP and stig, the raw histories — and nothing the child typed |
 | For an assignment the teacher set: questions answered, how many right, finished or not | So homework can be set and checked | When it was done, how many tries, how long it took |
 
 **Lawful basis.** It is still consent, the same consent the account was made
 with — but showing a child's results to a teacher is a new recipient, so
-the notice of v6.13 (`PRIVACY_VERSION` `2026-11-16`, §3) says it in the child's
+the notice of v6.14 (`PRIVACY_VERSION` `2026-11-16`, §3) says it in the child's
 own words. **Tell the families** before the upgrade goes live. If a family does
 not want it, either give them a group of their own, or erase the account; there
 is deliberately no per-child switch to hide from the teacher, because a teacher
@@ -119,7 +119,7 @@ assignments; nothing changes for them.
 
 ---
 
-## 1b. Counting answers, and the sample of wrong answers (v6.13, items 17 and 38)
+## 1b. Counting answers, and the sample of wrong answers (v6.14, items 17 and 38)
 
 Two new things the server does with what happens in practice. Neither needs
 anything from you once you have decided the two questions marked **Decide**.
@@ -138,7 +138,7 @@ anything from you once you have decided the two questions marked **Decide**.
 | **Erasure** | The counts carry no identity, so an erased account's past answers stay in the sums and cannot be taken out — the notice says so. They fade by themselves: every week each count is multiplied by 0.85. |
 
 **Lawful basis, and the decision.** The account's consent, as for everything
-else: the notice of v6.13 (`2026-11-16`) describes the
+else: the notice of v6.14 (`2026-11-16`) describes the
 counting, in the short version too. What is stored is anonymous; the only
 personal processing is receiving the answer and the one-day tally.
 
@@ -184,7 +184,7 @@ downloaded file is ever put in the public repository, look through it first
 
 ---
 
-## 1c. The class goal: one total the whole group sees (v6.13, item 59)
+## 1c. The class goal: one total the whole group sees (v6.14, item 59)
 
 A group's guardian can set a **weekly goal the group reaches together** — "2.000
 right answers together", or "everyone finishes three sessions" — and every
@@ -213,16 +213,16 @@ board as much as for those on it. So, precisely:
   the limit of what a total hides, and it is no more than a teacher saying
   "everybody did it" to the class.
 - **Lawful basis:** the same consent. It is a new recipient (the group) of
-  something derived from a child's progress, so the notice of v6.13
+  something derived from a child's progress, so the notice of v6.14
   (`2026-11-16`) says it in the child's words, in the summary and
-  under *Hver sér hvað?*. **Tell the families** with the rest of v6.13. As with
+  under *Hver sér hvað?*. **Tell the families** with the rest of v6.14. As with
   §1a there is no per-child switch: a class total that leaves out whoever
   opted out would be one more board the weakest pupils keep off.
 - **Offline and hosted-page pupils** have no group and no goal.
 
 ---
 
-## 1d. A live round in class, and team duels (v6.13, items 64 and 67)
+## 1d. A live round in class, and team duels (v6.14, items 64 and 67)
 
 **A live round** is a game on the projector: the teacher starts it, the pupils
 of the group join on their own devices and answer the same questions at the
@@ -248,7 +248,7 @@ another. It is stored (`teamduels.json`): the teams as user ids, each pupil's
 key to their own questions and their result as numbers (`c` right of `n`), never
 the answers. **The group's teacher sees each of their own pupils' result by
 name** — a new thing a teacher sees, like an assignment's result, so the notice
-of v6.13 (`2026-11-16`) says it. The pupils see their own
+of v6.14 (`2026-11-16`) says it. The pupils see their own
 result and the two teams' means and how many have played, never a classmate's
 or an opponent's score or name. Against another class, that class's teacher
 sees only the teams' figures, and must accept before their pupils are put in
@@ -259,7 +259,7 @@ backup.
 
 ---
 
-## 1e. Icelandic as a second language (v6.13, item 45) — a separate paragraph
+## 1e. Icelandic as a second language (v6.14, item 45) — a separate paragraph
 
 *In the notice from version `2026-11-16` (§3).*
 
@@ -290,7 +290,7 @@ hunt, reading aloud) and nothing else.
   server's `/definitions`, which already exists); looking a word up sends
   nothing new.
 
-## 1f. Ritun vikunnar: what a pupil writes (v6.13, item 46) — a separate paragraph
+## 1f. Ritun vikunnar: what a pupil writes (v6.14, item 46) — a separate paragraph
 
 *In the notice from version `2026-11-16` (§3). The summary's sentence
 "Það sem þú skrifar í svörin er ekki geymt" stays true for answers; the short
@@ -328,7 +328,7 @@ asks for it they may want it in Icelandic; the content is what matters.
 | | |
 |---|---|
 | **Controller** | [your name], [address], [the contact address in the notice] |
-| **Purpose** | Running an Icelandic grammar trainer for invited children and their families: logging in, keeping progress across devices, an optional leaderboard within a group, (v6.13) letting the group's teacher or guardian see the group's error patterns and a pupil's skill map, set and check assignments and set a weekly class goal, (v6.13) live rounds in class and team duels set by the teacher, (v6.13) setting the difficulty of the questions from anonymous counts of right and wrong answers and checking the error diagnosis against an anonymous sample of wrong word forms, (v6.13) adapting the practice for a learner of Icelandic as a second language, and (v6.13) reading over a few sentences a pupil writes, where the group's guardian switches it on. |
+| **Purpose** | Running an Icelandic grammar trainer for invited children and their families: logging in, keeping progress across devices, an optional leaderboard within a group, (v6.14) letting the group's teacher or guardian see the group's error patterns and a pupil's skill map, set and check assignments and set a weekly class goal, (v6.14) live rounds in class and team duels set by the teacher, (v6.14) setting the difficulty of the questions from anonymous counts of right and wrong answers and checking the error diagnosis against an anonymous sample of wrong word forms, (v6.14) adapting the practice for a learner of Icelandic as a second language, and (v6.14) reading over a few sentences a pupil writes, where the group's guardian switches it on. |
 | **Legal basis** | Consent, Art. 6(1)(a) — the user's own from 16, a parent's or guardian's below. Recorded per account. |
 | **Data subjects** | Invited learners (mostly teenagers); their parents or guardians (name only, as the consent record); administrators. |
 | **Data** | Username; nickname; password hash; role, group, status; date created; day last seen; consent record (who, when, how, notice version); visibility choices; progress (XP, levels, badges with dates, which words and inflection cells were practised and how often right or wrong, answers and minutes per day, settings); results of assignments set by the group's guardian (answered, right, finished); team duels (team, right answers); during a live round only, in memory, right answers and points; the learner's own choice about being counted in the statistics; whether Icelandic is the learner's second language (one yes/no, §1e); the Monday of the week the learner finished Ritun vikunnar, and — only where the group's guardian switched keeping on — the text the learner wrote there, with week and topic (§1f). For one day: how many of the account's answers have been counted that day (§1b). Transiently: IP address, for rate-limiting, in memory only. **Anonymous, not personal data:** the counts of right and wrong answers; and, only for groups whose teacher switched it on, the sample of wrong word forms (§1b). |
@@ -370,7 +370,7 @@ takes effect immediately; backups follow within 30 days.
 bump `PRIVACY_VERSION` in `server/privacy.mjs`, tell the families, and decide
 whether the change needs fresh consent.
 
-**Versions.** v6.12 and earlier published `2026-11-11`. v6.13 publishes one
+**Versions.** v6.12 and earlier published `2026-11-11`. v6.14 publishes one
 new version, `2026-11-16`, which covers everything it adds: the group's teacher
 sees error patterns, assignment and team-duel results and one pupil's skill map
 (§1a, §1d); the anonymous count of answers, the optional sample of wrong
@@ -378,7 +378,7 @@ answers, and the sentence that a duel's answers are graded on the server and
 not stored (§1b); the class goal's weekly total (§1c); live rounds in class
 (§1d); the second-language flag (§1e) and Ritun vikunnar, the first free text a
 pupil writes that the server may receive and, with keeping on, store for the
-teacher (§1f). One message to the families covers all of it. (While v6.13 was
+teacher (§1f). One message to the families covers all of it. (While v6.14 was
 being built the date was moved for each of these on the branch; none of those
 dates was ever published, so they are folded into this one.)
 

@@ -635,7 +635,7 @@ function gainsLine(app) {
     ? `Þín vika: ${g.mended ? `${g.mended} ${g.mended === 1 ? "villumynstur lagað" : "villumynstur löguð"}` : ""}${
       g.mended && g.reviews ? " og " : ""}${g.reviews ? `${g.reviews} ${
         g.reviews % 10 === 1 && g.reviews % 100 !== 11 ? "upprifjun tókst" : "upprifjanir tókust"}` : ""}.`
-    : "Ekkert komið enn í þessari viku — upprifjanirnar fremst í Dagsins lotu eru fljótlegasta leiðin.";
+    : "Ekkert komið enn í þessari viku — upprifjanirnar fremst í Lotu dagsins eru fljótlegasta leiðin.";
   return `<p class="weekline">Framfarir telja það sem lagast í vikunni, ekki hve mikið er æft:
     ${MEND_POINTS} stig fyrir hvert villumynstur sem þú lagar (${MEND_RUN} rétt í röð eftir að það var
     algengt hjá þér) og 1 fyrir hverja upprifjun sem tekst, mest ${REVIEWS_PER_DAY} á dag. Talan byrjar
