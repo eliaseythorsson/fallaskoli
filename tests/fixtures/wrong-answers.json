@@ -1,0 +1,5 @@
+{
+  "v": 1,
+  "about": "Real wrong answers for checking the error classifier (critique item 38). Empty until a server has collected some: download 'Sækja sýnið' from the administrator's page (GET /admin/classifier/samples.json) and save it over this file. Format: src/js/core/classifiercheck.js. Anonymous by construction - one word form per sample, no account, no group, no date.",
+  "samples": []
+}

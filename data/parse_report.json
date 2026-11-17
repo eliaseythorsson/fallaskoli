@@ -1,13 +1,13 @@
 {
- "sentences": 733,
- "uncertain_tokens": 649,
+ "sentences": 1131,
+ "uncertain_tokens": 1534,
  "guard": {
   "hard": 0,
   "soft": {
-   "ekki-í-BÍN": 8
+   "ekki-í-BÍN": 20
   },
   "rejected": 0
  },
- "prep_slots": 57,
+ "prep_slots": 121,
  "clause_unsure": 0
 }

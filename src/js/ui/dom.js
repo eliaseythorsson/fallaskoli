@@ -268,10 +268,54 @@ if (typeof document !== "undefined") {
   });
 }
 
+/* Item 53: the pad only where it helps. A phone or tablet set to Icelandic
+   almost always has an Icelandic keyboard with every one of these letters on
+   it, and there the pad only pushes the rest of the question down. So the
+   guess is: off on a touch device whose language is Icelandic, on everywhere
+   else (a laptop, or a tablet set to English, where á and þ are hard to
+   reach). The child can switch it either way under Stillingar, and from then
+   on the switch decides. */
+
+/** The guess, before anybody has chosen. Pure, so it can be tested. */
+export function keypadDefault({ coarse = false, lang = "" } = {}) {
+  return !(coarse && /^is(?:[-_]|$)/i.test(String(lang)));
+}
+
+/** The pad is shown when the setting says so, or — with no setting — when
+    the guess does. `settings.keypad` is only ever true, false or absent. */
+export function keypadOn(settings, env) {
+  const v = settings && settings.keypad;
+  return typeof v === "boolean" ? v : keypadDefault(env);
+}
+
+/** What this device is: a finger or a mouse, and the language it is set to. */
+export function keypadEnv() {
+  if (typeof window === "undefined") return {};
+  return {
+    coarse: !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches),
+    lang: (typeof navigator !== "undefined" && navigator.language) || "",
+  };
+}
+
+/* Item 52: reading comfort. One class on <body>; head.html does the rest
+   (larger type, wider spacing, the proportional face where mono was used). */
+export function applyComfort(settings) {
+  if (typeof document === "undefined") return;
+  document.body.classList.toggle("comfort", !!(settings && settings.comfort === true));
+}
+
+/* Who decides is app.js (it holds the state); until it says, the pad shows. */
+let keypadWanted = () => true;
+export function setKeypadPref(fn) { keypadWanted = fn; }
+
 export function wireKeys() {
   const box = $("keys");
   if (!box) return;
-  box.innerHTML = ["á", "ð", "é", "í", "ó", "ú", "ý", "þ", "æ", "ö"]
+  /* `hidden` rather than removing the box: the renderers lay the question out
+     around it, and the switch in Stillingar redraws it in place. */
+  if (!keypadWanted()) { box.hidden = true; box.innerHTML = ""; return; }
+  box.hidden = false;
+  box.innerHTML =["á", "ð", "é", "í", "ó", "ú", "ý", "þ", "æ", "ö"]
     .map((c) => `<button type="button" data-c="${c}">${c}</button>`).join("");
   box.onclick = (e) => {
     const b = e.target.closest("button");
@@ -349,7 +393,7 @@ export function freshEnter(e, notBefore = 0) {
  * One window at a time, each dismissed on purpose: `freshEnter` rejects key
  * repeats and each window ignores anything older than itself. Whoever opened
  * the queue is told when it drains — that callback hands the keyboard back to
- * the Áfram button (`armNext` in app.js). */
+ * the Áfram button (`armNext` in ui/verdict.js). */
 let badgeQueue = [];
 let queueDone = null;
 
@@ -365,6 +409,11 @@ function whenLine(key) {
     hægt var að dæma hann. Dagsetningin á merkinu er dagurinn sjálfur.</p>`;
 }
 
+/* Somebody who wants the badge windows held for now (ui/tour.js): a function
+   (badges, onClose) → true when it has taken them. One holder at a time. */
+let badgeGate = null;
+export function setBadgeGate(fn) { badgeGate = typeof fn === "function" ? fn : null; }
+
 /**
  * Show these badges, one window at a time.
  * @param {Array}     list     badges to show
@@ -373,6 +422,9 @@ function whenLine(key) {
  *                             kept out of the queue; the LAST window names them
  */
 export function queueBadges(list, onClose, quiet = []) {
+  /* Item 84: while the guided first run is on the screen no window opens
+     over it; the tour keeps the badges and shows them when it ends. */
+  if (badgeGate && badgeGate([...list, ...quiet], onClose)) return;
   const wasIdle = badgeQueue.length === 0;
   const items = [...list];
   if (quiet.length && items.length) {

@@ -9,8 +9,11 @@ import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
-import { taskVerb, taskReverse, tableVerb, tablePronoun, tableNumeral,
-         subjectLabel } from "../src/js/tasks/index.js";
+import { taskVerb, tableVerb, subjectLabel } from "../src/js/tasks/sagnord.js";
+import { taskReverse } from "../src/js/tasks/lysingarord.js";
+import { tablePronoun } from "../src/js/tasks/fornofn.js";
+import { tableNumeral } from "../src/js/tasks/toluord.js";
+import { show } from "./helpers.js";
 import { candidateNouns, frameIndex, substitutable, repeatsNoun } from "../src/js/tasks/frames.js";
 import { phrase, wantsHelper } from "../src/js/core/helpers.js";
 import { parseRows } from "../src/js/ui/render.js";
@@ -79,7 +82,7 @@ test("the middle voice is asked only of a verb that has one in use", () => {
   assert.ok(!lex.lookup("pissa", "so").mm, "pissast");
   const ctx = ctxAt(7);
   for (let k = 0; k < 4000; k++) {
-    for (const t of [taskVerb(ctx), tableVerb(ctx), taskReverse(ctx)]) {
+    for (const t of [show(ctx, taskVerb), show(ctx, tableVerb), show(ctx, taskReverse)]) {
       if (!t) continue;
       const w = t.v || t.lemmaWord || t.w;
       if (!w || w.c !== "so") continue;
@@ -98,17 +101,17 @@ test("a weather verb is asked with *það*, in the third person singular, and ha
   only.byClass = { ...lex.byClass, so: only.verbs };
   const c2 = { ...ctx, lex: only };
   for (let k = 0; k < 300; k++) {
-    const t = taskVerb(c2);
+    const t = show(c2, taskVerb);
     if (t) {
       assert.match(t.m, /-3P-ET$/, `${t.v.o}: ${t.m}`);
       assert.match(t.pron, /það$/);
     }
-    const r = taskReverse(c2);
+    const r = show(c2, taskReverse);
     if (r && r.lemmaWord && r.lemmaWord.c === "so")
       assert.ok(!/-(1P|2P)-|-3P-FT$/.test(r.t.m), `${r.lemmaWord.o}: ${r.t.w} (${r.t.m})`);
   }
   for (let k = 0; k < 600; k++) {
-    const t = tableVerb(ctx);
+    const t = show(ctx, tableVerb);
     if (t) assert.ok(!t.w.t3, `a six-cell table of ${t.w.o}`);
   }
 });
@@ -144,7 +147,7 @@ test("no table of four identical cells; numerals in the number they have", () =>
   const ctx = ctxAt(4);
   const seen = new Set();
   for (let k = 0; k < 3000; k++) {
-    for (const t of [tablePronoun(ctx), tableNumeral(ctx)]) {
+    for (const t of [show(ctx, tablePronoun), show(ctx, tableNumeral)]) {
       if (!t) continue;
       const forms = t.cells.map((c) => t.w.forms[c.m].join("|"));
       assert.ok(new Set(forms).size > 1, `${t.title}: ${forms.join(", ")}`);

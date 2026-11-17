@@ -29,7 +29,7 @@ agreement — it takes five minutes).
    ./build.sh
    ```
 
-   **You should see** `built fallaskoli-v6.3.html` at the end. Nothing is built
+   **You should see** `built dist/fallaskoli-v<version>.html` at the end (the version is in `package.json`). Nothing is built
    on Fly: the container only carries this file and the server.
 
 2. Decide two things you will be asked for:
@@ -145,6 +145,7 @@ sign Fly's data processing agreement.
 | Restart | `fly apps restart fallaskoli-jonsson` |
 | A new version | `./build.sh`, then `fly deploy --ha=false` |
 | Take it offline at once | `fly scale count 0` (and `fly scale count 1` to bring it back) |
+| More than ~150 pupils practising at the same time | `memory = "1gb"` under `[[vm]]` in `fly.toml`, then deploy (`docs/SERVER.md` §4.4) |
 
 **A new version does not touch the data.** The disk is separate from the
 program; `fly deploy` replaces the program only. (This is the step that needed
@@ -215,6 +216,8 @@ All optional except the first two. Set them under `[env]` in `fly.toml`.
 | `FALLASKOLI_PENDING_DAYS` | An unanswered request for access is erased | 30 |
 | `FALLASKOLI_BACKUP_DAYS` | What the notice says about backups; keep equal to `snapshot_retention` | 30 |
 | `FALLASKOLI_OPEN_REGISTRATION` | `1` lets anybody ask for an account without an invitation; they wait for you | off |
+| `FALLASKOLI_CALIBRATION` | `0` switches off the anonymous counting of answers and the weekly adjustment of difficulty; `strict` counts only consent given to the notice that describes it (`docs/SERVER.md` §4.3) | on |
+| `FALLASKOLI_SAMPLES` | `0` forbids the sample of wrong answers a teacher can otherwise switch on for their group | allowed |
 | `FALLASKOLI_DATA` | Where the data lives | `/data` in the container |
 | `FALLASKOLI_TRUST_PROXY` | Believe the proxy about the visitor's address | `1` in the container |
 | `FALLASKOLI_UID` | The user the server becomes after starting | `1000` in the container |

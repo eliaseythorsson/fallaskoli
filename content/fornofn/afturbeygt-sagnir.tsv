@@ -1,0 +1,37 @@
+# Fornöfn: afturbeygt andlag (sig, sér)
+#
+# {frumlag} {sögn} ___ {framhald}. Annað spjaldið segir að átt sé við frumlagið sjálft,
+# hitt að átt sé við einhvern annan.
+#
+# Dálkar:
+#   sögn       sögnin (nafnháttur)
+#   fall       fall andlagsins: ÞF eða ÞGF
+#   framhald   það sem kemur á eftir eyðunni
+#   fleirtala  já: ramminn er líka sagður með frumlagi í fleirtölu
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# (verb, case of the object, what follows the blank, plural subjects too?)
+#
+
+sögn	fall	framhald	fleirtala
+sjá	ÞF	í speglinum	já
+sjá	ÞF	á myndinni	já
+sjá	ÞF	í sjónvarpinu	já
+þekkja	ÞF	á myndinni	já
+finna	ÞF	á myndinni	nei
+klæða	ÞF	í úlpuna	nei
+fela	ÞF	í skápnum	já
+læsa	ÞF	inni	já
+kynna	ÞF	fyrir bekknum	já
+teikna	ÞF	á blaðið	nei
+mynda	ÞF	með símanum	já
+meiða	ÞF	á fætinum	nei
+kaupa	ÞGF	nýja peysu	nei
+þvo	ÞGF	um hendurnar	já
+klóra	ÞGF	á bakinu	nei
+velja	ÞGF	nýja húfu	nei

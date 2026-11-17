@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
-import { nextTask } from "../src/js/tasks/index.js";
+import { ask } from "./helpers.js";
 import { SKILLS, SKILL_IDS } from "../src/js/core/skills.js";
 
 const lex = buildLexicon(DATA);
@@ -26,7 +26,7 @@ for (const s of SKILLS) {
     const seen = new Set();
     let produced = 0;
     for (let i = 0; i < 300; i++) {
-      const t = nextTask(ctx);
+      const t = ask(ctx);
       if (!t) continue;
       produced++;
       seen.add(t.skill);
@@ -46,7 +46,7 @@ test("every skill can produce a task when it is switched on", () => {
   for (const s of SKILLS) {
     const ctx = onlyContext(s.id);
     let got = false;
-    for (let i = 0; i < 200 && !got; i++) got = !!nextTask(ctx);
+    for (let i = 0; i < 200 && !got; i++) got = !!ask(ctx);
     if (!got) empty.push(s.id);
   }
   assert.deepEqual(empty, [], "these skills produce no task: " + empty.join(", "));

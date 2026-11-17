@@ -4,9 +4,12 @@
    The rules — which page belongs to which question, how a table is filled —
    live in core/lessons.js; this file only draws. */
 
-import { LESSONS, lessonById, lessonFor, buildTable, markRead, readCount } from "../core/lessons.js";
+import { LESSONS, lessonById, lessonFor, buildTable, markRead, readCount, lessonPractice,
+  PRACTICE_SIZE } from "../core/lessons.js";
+import { QUESTION_TYPES } from "../core/policy.js";
 import { SKILLS, skillName } from "../core/skills.js";
 import { $, esc, fmt, hideTip } from "./dom.js";
+import { setGlossContext } from "../core/glossary.js";
 
 function tableHTML(t) {
   return `<figure class="lsntable">
@@ -28,18 +31,35 @@ function blockHTML(app, b) {
   return "";
 }
 
+/* "Æfa þetta" (item 41): five questions on exactly what the page teaches,
+   with the kinds of question named, so a child knows what is coming. The
+   types come from the curriculum nodes (core/lessons.js lessonPractice). */
+const typeNm = (id) => (QUESTION_TYPES.find((q) => q.id === id) || {}).nm || id;
+
+function practiceHTML(l, where) {
+  const p = lessonPractice(l.id);
+  if (!p) return where === "end" ? `<p class="lsnpractice faint">Á þessari síðu er ekkert að æfa enn.</p>` : "";
+  const btn = `<button type="button" class="${where === "end" ? "go" : "ghost"}" data-practice="${esc(l.id)}">✎ Æfa þetta · ${PRACTICE_SIZE} spurningar</button>`;
+  if (where !== "end") return `<div class="answer lsnpractice">${btn}</div>`;
+  return `<section class="lsnpractice"><h3 class="lsnh">Æfa þetta</h3>
+    <p class="faint small">${PRACTICE_SIZE} spurningar um efni síðunnar: ${p.types.map((t) => esc(typeNm(t))).join(" · ")}.</p>
+    <div class="answer">${btn}</div></section>`;
+}
+
 function pageHTML(app, l) {
   const related = (l.related || []).map(lessonById).filter(Boolean);
   return `<article class="lsnpage" aria-labelledby="lsn-title">
     <p class="eyebrow"><span>Lesefni</span><b>${esc(skillName(l.skill))}</b></p>
     <h2 id="lsn-title" class="lsntitle">${esc(l.nm)}</h2>
     ${l.lead ? `<p class="lsnlead">${fmt(l.lead)}</p>` : ""}
+    ${practiceHTML(l, "top")}
     ${(l.blocks || []).map((b) => blockHTML(app, b)).join("")}
     ${(l.check || []).length ? `<section class="lsncheck"><h3 class="lsnh">Prófaðu þig</h3>
       ${l.check.map((c, i) => `<details><summary>${i + 1}. ${fmt(c.q, { gloss: false })}</summary>
         <p>${fmt(c.a, { gloss: false })}</p></details>`).join("")}</section>` : ""}
     ${related.length ? `<p class="lsnrel">Sjá líka: ${related.map((r) =>
       `<button type="button" class="lessonlink" data-lesson="${esc(r.id)}">${esc(r.nm)}</button>`).join(" ")}</p>` : ""}
+    ${practiceHTML(l, "end")}
     <p class="lsnstatus">Lestu síðuna til enda — þá telst hún lesin.</p>
     <div class="answer"><button type="button" class="ghost" data-backtopractice="1">Aftur að æfa</button></div>
     <div class="lsnend" aria-hidden="true"></div>
@@ -64,7 +84,10 @@ export function renderLessons(app, id) {
   if (!l) { $("lsnindex").innerHTML = ""; $("lsnbody").innerHTML = ""; return; }
   app.lessonOpen = l.id;
   $("lsnindex").innerHTML = indexHTML(app, l.id);
+  /* *sterk* on the page about nouns is the noun's (core/glossary.js) */
+  setGlossContext(l.skill);
   $("lsnbody").innerHTML = pageHTML(app, l);
+  setGlossContext(null);
   watchReading(app, l.id);
 }
 
@@ -164,6 +187,9 @@ export function wireLessons(app) {
   document.addEventListener("click", (e) => {
     const back = e.target.closest("[data-backtopractice]");
     if (back) { app.openView("practice"); return; }
+    /* Item 41: "Æfa þetta" starts the page's session (app.practiceLesson). */
+    const pr = e.target.closest("[data-practice]");
+    if (pr) { e.preventDefault(); hideTip(); if (app.practiceLesson) app.practiceLesson(pr.dataset.practice); return; }
     const b = e.target.closest("[data-lesson]");
     if (!b) return;
     e.preventDefault();

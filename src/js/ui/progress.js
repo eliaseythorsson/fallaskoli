@@ -1,17 +1,25 @@
-/* Progress: the header, the per-skill scoreboard, the charts and the heat map. */
+/* Progress: the header, the tiles and the charts. The per-skill scoreboard,
+   the error patterns, the heat map and the words to practise are the skill
+   map since v6.13 (item 83, ui/skillmap.js). */
 
-import { CASES, COLS, mark } from "../core/marks.js";
-import {
-  overallLevel, overallRank, skillSummary, dayMult,
-} from "../core/progress.js";
-import { dayStreak, dkey, todayKey } from "../core/state.js";
+import { overallLevel, overallRank, dayMult } from "../core/progress.js";
+import { dayStreak, weekStreak, weekProgress, dkey, todayKey, effectivePolicy } from "../core/state.js";
+import { weeksInARow } from "../core/calendar.js";
 import { fmtDuration } from "../core/timing.js";
 import { bandOf } from "../core/difficulty.js";
 import { $, esc } from "./dom.js";
 import { crestOf } from "../core/profile.js";
-import { abbr } from "../core/glossary.js";
 import { holidayName } from "../core/calendar.js";
-import { statusOf } from "../core/wordhealth.js";
+import { dueEntries, dueLine } from "../core/review.js";
+import { typeById, enabled } from "../tasks/index.js";
+
+/** The entries waiting for review that this pupil may be asked now: the same
+    test a session's opening applies (tasks/review.js planOpening), so the
+    figure does not promise reviews of material that is switched off. */
+export function dueNow(S, now = todayKey()) {
+  const P = effectivePolicy(S);
+  return dueEntries(S, now, (e) => { const t = typeById(e.t); return !!t && enabled(P, t); }).length;
+}
 
 /* ---------- the top of the board -----------------------------------------
  *
@@ -60,13 +68,25 @@ export function tallyHTML(done, goal) {
     <span class="tallytext">${text}</span>`;
 }
 
+/* "2 af 4 dögum í þessari viku", and when the goal is met "Vikumarkmiði náð,
+   5 dagar í þessari viku". Digits and "af … dögum" (dative plural, whatever
+   the number) so no numeral has to be declined. */
+export function weekLine({ done, goal, met }) {
+  return met
+    ? `Vikumarkmiði náð, ${done} dagar í þessari viku`
+    : `${done} af ${goal} dögum í þessari viku`;
+}
+
 export function renderHeader(app) {
   const S = app.S;
   const d = S.days[todayKey()] || { a: 0, c: 0 };
   $("s-xp").textContent = S.xp.toLocaleString("is-IS");
   $("s-acc").textContent = d.a ? Math.round(100 * d.c / d.a) + "%" : "—";
   $("s-run").textContent = S.run;
-  $("s-days").textContent = dayStreak(S);
+  /* Item 57: the streak is weeks in which the weekly goal was met. */
+  $("s-days").textContent = weekStreak(S);
+  const wp = weekProgress(S);
+  $("s-weeks").title = `${weeksInARow(weekStreak(S))} · ${weekLine(wp)}`;
   const L = overallLevel(S.xp);
   $("lvlbar").style.width = Math.round(100 * L.into / L.need) + "%";
   $("lvlname").textContent = "Stig " + L.level + " · " + overallRank(L.level);
@@ -86,6 +106,9 @@ export function renderHeader(app) {
       : cr.legendary ? "Öll önnur merki unnin." : "";
   }
   $("lvlnext").textContent = (L.need - L.into).toLocaleString("is-IS") + " XP í stig " + (L.level + 1);
+  /* Item 22: what the XP decay used to say, said with the queue instead. */
+  const due = $("duenow");
+  if (due) due.textContent = dueLine(dueNow(S));
   const skill = app.cur?.skill;
   const bd = $("boarddate");
   if (bd) bd.innerHTML = boardDate();
@@ -94,31 +117,6 @@ export function renderHeader(app) {
   $("diffmeter").innerHTML = "<span>þyngd</span>" +
     [1, 2, 3, 4, 5].map((i) =>
       `<i class="${skill && i <= bandOf(app.sess, skill) ? "on" : ""}"></i>`).join("");
-}
-
-/* ---------- stig eftir flokkum ---------------------------------------- */
-
-export function skillGridHTML(S) {
-  const rows = skillSummary(S);
-  const best = Math.max(...rows.map((r) => r.level));
-  return `<div class="skillgrid">` + rows.map((r) => {
-    const pct = Math.round(100 * r.into / r.need);
-    const strong = r.level === best && r.answers >= 10;
-    const weak = r.acc != null && r.acc < 0.6 && r.answers >= 10;
-    return `<div class="skillcard${r.enabled ? "" : " off"}">
-      <div class="skhead"><span class="skico">${r.meta.ico}</span>
-        <span class="sknm">${esc(r.meta.nm)}</span>
-        <span class="skcur">${esc(r.meta.cur)}</span></div>
-      <div class="sklvl">Stig ${r.level} · ${esc(r.rank)}
-        ${strong ? '<i class="tagstrong">sterkasta</i>' : ""}
-        ${weak ? '<i class="tagweak">þarf æfingu</i>' : ""}</div>
-      <div class="skbar"><i style="width:${pct}%"></i></div>
-      <div class="skmeta">${r.xp.toLocaleString("is-IS")} XP ·
-        ${r.answers ? Math.round(100 * r.acc) + "% rétt af " + r.answers : "ekkert svarað enn"}
-        ${r.enabled ? "" : " · slökkt"}</div>
-      <div class="skmeta faint">${(r.need - r.into).toLocaleString("is-IS")} XP í stig ${r.level + 1}</div>
-    </div>`;
-  }).join("") + `</div>`;
 }
 
 /* ---------- charts ------------------------------------------------------ */
@@ -224,40 +222,6 @@ function xpChart(rows) {
     <text x="${PL - 6}" y="${PT + 8}" font-size="9" fill="var(--slate)" text-anchor="end" font-family="IBM Plex Mono">${max}</text></svg>`;
 }
 
-function heatHTML(S) {
-  let h = '<table class="heat"><tr><th></th>' +
-    COLS.map((c) => `<th>${abbr(c.label)}</th>`).join("") + "</tr>";
-  CASES.forEach((cs) => {
-    h += `<tr><th class="row">${abbr(cs.name, cs.term)}</th>`;
-    COLS.forEach((c) => {
-      const m = mark(cs.k, c.k), s = S.cells[m], n = s ? s.c + s.w : 0;
-      if (!n) { h += `<td style="background:#fff;color:var(--line)">–</td>`; return; }
-      const p = s.c / n;
-      const bg = p >= 0.9 ? "var(--moss-soft)" : p >= 0.7 ? "#EAF2ED" : p >= 0.5 ? "#FBEFE9" : "var(--rust-soft)";
-      h += `<td style="background:${bg};color:${p >= 0.7 ? "var(--moss)" : "var(--rust)"}"><b>${Math.round(p * 100)}%</b><br><span style="color:var(--slate);font-size:9px">${n}</span></td>`;
-    });
-    h += "</tr>";
-  });
-  return h + "</table>";
-}
-
-function wordListHTML(S) {
-  const rows = Object.entries(S.words)
-    .map(([k, v]) => {
-      const [lemma, cls] = k.split("|");
-      return { lemma, cls, ...v, n: v.c + v.w, p: v.c / (v.c + v.w) };
-    })
-    .filter((r) => r.n >= 2)
-    .sort((a, b) => a.p - b.p)
-    .slice(0, 18);
-  if (!rows.length) return `<p class="note" style="margin:4px">Ekkert komið enn.</p>`;
-  /* v6.6: a word in trouble is a button that starts its rescue drill. */
-  return `<div class="chips">` + rows.map((r) => statusOf(r) === "weak"
-    ? `<button type="button" class="chip drillme" data-drill="${esc(r.lemma + "|" + r.cls)}" title="Orð í hættu — smelltu til að taka björgunaræfingu">⚠ ${esc(r.lemma)}${r.cls ? `<em class="cls">${esc(r.cls)}</em>` : ""}<i>${Math.round(r.p * 100)}% · ${r.n}</i></button>`
-    : `<span class="chip" style="border-color:${r.p < 0.6 ? "var(--rust)" : "var(--line)"}">${esc(r.lemma)}${r.cls ? `<em class="cls">${esc(r.cls)}</em>` : ""}<i>${Math.round(r.p * 100)}% · ${r.n}</i></span>`
-  ).join("") + `</div>`;
-}
-
 export function renderStats(app) {
   const S = app.S;
   const d = S.days[todayKey()] || { a: 0, c: 0, xp: 0 };
@@ -267,9 +231,8 @@ export function renderStats(app) {
   $("tiles").innerHTML = `
     <div class="tile"><span>Í dag</span><b>${d.c} / ${d.a}</b><small>${d.a ? Math.round(100 * d.c / d.a) : 0}% rétt · ${d.xp} XP · markmið ${S.goal}</small></div>
     <div class="tile"><span>Alls</span><b>${acc}%</b><small>${S.totalCorrect} rétt af ${S.totalAnswers} · ${active} virkir dagar</small></div>
-    <div class="tile"><span>Dagaröð</span><b>${dayStreak(S)}</b><small>margfaldari ×${dayMult(dayStreak(S)).toFixed(2)}</small></div>
+    <div class="tile"><span>Vikur í röð</span><b>${weekStreak(S)}</b><small>${weekLine(weekProgress(S))} · margfaldari ×${dayMult(dayStreak(S)).toFixed(2)}</small></div>
     <div class="tile"><span>Heildarstig</span><b>${L.level}</b><small>${overallRank(L.level)} · ${(L.need - L.into).toLocaleString("is-IS")} XP í næsta</small></div>`;
-  $("skillgrid").innerHTML = skillGridHTML(S);
   const rows = lastDays(S, 30);
   $("chart1").innerHTML = activityChart(S, rows);
   $("chart2").innerHTML = xpChart(rows);
@@ -293,10 +256,4 @@ export function renderStats(app) {
     `Alls ${fmtDuration(totMs)} við skjáinn. Tíminn telur aðeins á milli svara, ` +
     `stöðvast þegar flipinn fer úr sýn og telur mest tvær mínútur á hvert svar — ` +
     `svo opinn flipi yfir nótt verði ekki að æfingu.`;
-  $("heat").innerHTML = heatHTML(S);
-  $("wordlist").innerHTML = wordListHTML(S);
-  $("wordlist").onclick = (e) => {
-    const b = e.target.closest("button[data-drill]");
-    if (b && app.startDrill) app.startDrill(b.dataset.drill);
-  };
 }

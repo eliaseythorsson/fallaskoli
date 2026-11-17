@@ -1,12 +1,17 @@
 # Runs on every push and every pull request. A branch is merged into main only
 # when this is green (turn on branch protection: Settings → Branches → main →
-# "Require status checks to pass" → `test`).
+# "Require status checks to pass" → `test` and `reproducible`).
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
+
+# A newer push to the same branch makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -15,7 +20,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # The exact Node of Dockerfile.build: the icons in dist/web/ go
+          # through Node's zlib (tools/pwa.mjs).
+          node-version: 22.23.4
           cache: npm
       - run: npm ci --no-audit --no-fund
 
@@ -24,9 +31,10 @@ jobs:
           bad=$(git ls-files | grep -E '^(server/data/|_prufa/|dist/|_backup/|_to_delete/)|(^|/)fallaskoli-v[0-9.]+\.html$|\.env$' || true)
           if [ -n "$bad" ]; then echo "These must not be committed:"; echo "$bad"; exit 1; fi
 
-      # The generated data (data/*.js, lexicon.json, sentences.json …) is
-      # committed. The Python half of ./build.sh regenerates it; this checks
-      # that what is committed is what was last accepted.
+      # The generated data (data/*.js, data/lexicon.json, data/sentences.json …) is
+      # committed. The Python half of ./build.sh regenerates it (the
+      # `reproducible` job below does exactly that); this checks that what is
+      # committed is what was last accepted.
       - name: Data manifest
         run: node tools/manifest.mjs
 
@@ -41,6 +49,9 @@ jobs:
       - name: Browser test (Chromium)
         continue-on-error: true
         run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/browser-test.mjs
+      - name: Guided first run (Chromium)
+        continue-on-error: true
+        run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/tour-test.mjs
       - name: Server + app test (Chromium)
         continue-on-error: true
         run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/server-test.mjs
@@ -48,5 +59,35 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: fallaskoli-html
-          path: dist/*.html
+          # The single file, and dist/web/ — the folder for a web host (item 54).
+          path: |
+            dist/*.html
+            dist/web/
           retention-days: 14
+
+  # Item 80: the whole ./build.sh — the data out of BÍN and Greynir included —
+  # inside the build container (Dockerfile.build: platform, Python, Node and
+  # the grammar libraries pinned), and then the proof that it is
+  # reproducible: the rebuilt data must be byte for byte what is committed.
+  # A difference here means either the data was committed from an
+  # environment other than the pinned one, or a change to the data was not
+  # rebuilt and accepted (CLAUDE.md: ./build.sh --accept, with the diff
+  # explained). The browser checks are left to the `test` job above.
+  reproducible:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: ./build.sh in the build container
+        run: CHROME_PATH=none ./build-in-container.sh
+      - name: The rebuilt data is what is committed, byte for byte
+        run: |
+          changed="$(git status --porcelain --untracked-files=no)"
+          if [ -n "$changed" ]; then
+            echo "The build in the pinned container does not reproduce the committed files:"
+            echo "$changed"
+            git diff --stat
+            git diff -- data/manifest.json data/licenses.js | head -80
+            exit 1
+          fi
+          echo "byte-identical: $(git ls-files data | wc -l) generated files"

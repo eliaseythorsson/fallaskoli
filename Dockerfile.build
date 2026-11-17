@@ -1,0 +1,81 @@
+# Fallaskóli — the BUILD, as a container (item 80).
+#
+# Not the server (that is `Dockerfile`, which only carries a finished build).
+# This one runs ./build.sh end to end — the data out of BÍN and Greynir, the
+# manifest, the tests, the HTML, the browser checks — in the same environment
+# on any computer, so the data comes out byte for byte the same on the owner's
+# Mac, on another Linux machine and in CI. Use it through the script:
+#
+#   ./build-in-container.sh            # = ./build.sh, inside this container
+#   ./build-in-container.sh --accept   # = ./build.sh --accept
+#
+# What is pinned, and why each one:
+#
+#   - The PLATFORM, linux/amd64. The grammar libraries ship ready-made x86_64
+#     Linux wheels; anywhere else pip compiles reynir's parser from source, and
+#     a different compiler parsed one token differently with the very same
+#     versions (commit "chore: accept the Linux-container parse baseline": the
+#     committed data is the x86_64 one). On an Apple-silicon Mac Docker runs
+#     this under emulation — slower, and identical.
+#   - PYTHON 3.13.18 and NODE 22.23.4, exact versions: the ones the committed
+#     data and the CI were last built with. Node's zlib writes the icons
+#     (tools/pwa.mjs); Python's dict and set order is fixed by
+#     PYTHONHASHSEED=0 (also set in build.sh).
+#   - The PYTHON PACKAGES by hash (requirements-build.txt: islenska, reynir,
+#     tokenizer and everything they pull in), wheels only — nothing compiled.
+#   - The NODE PACKAGES by package-lock.json (`npm ci`, which build.sh runs).
+#
+# Not pinned, on purpose: Debian's Chromium, used only by the browser checks
+# (tools/browser-test.mjs, tools/server-test.mjs). It tests the HTML; it
+# writes none of it.
+#
+# One more step makes the pin complete: the image tags below can in principle
+# be re-pushed. To fix them for good, add the digest after the tag
+# (`docker buildx imagetools inspect python:3.13.18-slim-bookworm` prints it),
+# e.g. `python:3.13.18-slim-bookworm@sha256:…`. That was not possible where
+# this file was written (no access to Docker Hub); README.md ("Building") says so.
+
+ARG PYTHON_IMAGE=python:3.13.18-slim-bookworm
+ARG NODE_IMAGE=node:22.23.4-bookworm-slim
+
+# The platform is the point of the pin (see above), so it is on FROM.
+# hadolint ignore=DL3029
+FROM --platform=linux/amd64 ${NODE_IMAGE} AS node
+
+# hadolint ignore=DL3029
+FROM --platform=linux/amd64 ${PYTHON_IMAGE}
+
+# Node: the official binary and its npm, taken whole from the official image
+# (it needs only glibc and libstdc++, which Debian slim has).
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+ && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+ && node --version && npm --version
+
+# The browser checks. Debian's current version on purpose: it writes nothing
+# into the build (see "Not pinned" above).
+# hadolint ignore=DL3008
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends chromium ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+# The grammar libraries: exactly these files or nothing.
+COPY requirements-build.txt /tmp/requirements-build.txt
+RUN pip install --no-cache-dir --disable-pip-version-check \
+      --require-hashes --only-binary=:all: -r /tmp/requirements-build.txt \
+ && rm /tmp/requirements-build.txt
+
+# HOME and the npm cache in /tmp: nothing of the build's own is written into
+# the source.
+ENV PYTHONHASHSEED=0 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    CHROME_PATH=/usr/bin/chromium \
+    HOME=/tmp \
+    npm_config_cache=/tmp/.npm
+
+# The source is NOT copied in: build-in-container.sh mounts the working copy
+# at /src, so what is built is what is on disk, and the results land there.
+WORKDIR /src
+ENTRYPOINT ["./build.sh"]

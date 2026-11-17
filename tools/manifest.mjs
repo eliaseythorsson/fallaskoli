@@ -1,6 +1,6 @@
 /* The build's fingerprint file.
  *
- * The guard in parse_guard.py rejects a parse that is *provably* wrong. This
+ * The guard in pipeline/parse_guard.py rejects a parse that is *provably* wrong. This
  * tool addresses the other problem: a parse that is merely *different* from last
  * time. A newer Greynir changed two analyses in v5 and nothing noticed, because
  * all 87 tests passed in both cases — they test structure, not content.
@@ -22,7 +22,7 @@
 
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -35,16 +35,42 @@ const sha12 = (s) => sha(s).slice(0, 12);
 
 /* Inputs: what the build *reads*. A change here is an intention. */
 const INPUTS = [
-  "freq_raw.txt", "sentences.py", "noun_classes.py", "definitions.py",
-  "vocab_filter.py", "government.py", "parse_guard.py", "parse_overrides.py",
-  "build_freq.py", "build_lexicon.py", "build_sentences.py", "build_bundle.py",
+  /* Item 79: the Python half of the build is in pipeline/ and its two fixed
+     sources in sources/. The names below are those paths, so a moved file is
+     a changed key here once, and a changed file is a changed hash as before. */
+  "sources/freq_raw.txt", "pipeline/sentences.py", "pipeline/noun_classes.py", "pipeline/definitions.py",
+  "pipeline/vocab_filter.py", "pipeline/government.py", "pipeline/parse_guard.py", "pipeline/parse_overrides.py",
+  "pipeline/build_freq.py", "pipeline/build_lexicon.py", "pipeline/build_sentences.py", "pipeline/build_bundle.py",
+  /* v6.13: the irregularity and cell scores written into the lexicon (item 16) */
+  "pipeline/irregularity.py",
   /* v6.11: the hand-written exercise items and the build that resolves them in BÍN */
-  "exercises.py", "build_exercises.py",
+  "pipeline/exercises.py", "pipeline/build_exercises.py",
+  /* v6.13: what an adjective is shown with, and which adjectives are not compared */
+  "pipeline/adj_classes.py",
+  /* v6.13 (item 82): the hand-written content left Python for content/*.tsv;
+     pipeline/sentences.py and pipeline/exercises.py read it through pipeline/content_io.py */
+  "pipeline/content_io.py",
+  ...contentFiles(),
 ];
+
+/** Every file under content/ that the build reads, sorted so the manifest's
+    order does not depend on the file system. */
+function contentFiles() {
+  const out = [];
+  const walk = (rel) => {
+    for (const e of readdirSync(p(rel), { withFileTypes: true })) {
+      const r = rel + "/" + e.name;
+      if (e.isDirectory()) walk(r);
+      else if (e.name.endsWith(".tsv")) out.push(r);
+    }
+  };
+  if (existsSync(p("content"))) walk("content");
+  return out.sort();
+}
 
 /* Artefacts: what the build *writes*. A change here is a consequence. */
 const ARTIFACTS = [
-  "freq_lemmas.json", "lexicon.json", "sentences.json", "data/data_bundle.js",
+  "data/freq_lemmas.json", "data/lexicon.json", "data/sentences.json", "data/data_bundle.js",
   "data/exercises.js",
 ];
 
@@ -83,10 +109,10 @@ export async function compute() {
   for (const f of INPUTS) inputs[f] = await hashFile(f);
   for (const f of ARTIFACTS) artifacts[f] = await hashFile(f);
 
-  const sents = JSON.parse(await readFile(p("sentences.json"), "utf8"));
-  /* The bundle rather than lexicon.json: definitions and the corpus frequency
-     score are attached on the way out by build_bundle.py and never written back,
-     so `definitions` counted from lexicon.json was always 0. */
+  const sents = JSON.parse(await readFile(p("data/sentences.json"), "utf8"));
+  /* The bundle rather than data/lexicon.json: definitions and the corpus frequency
+     score are attached on the way out by pipeline/build_bundle.py and never written back,
+     so `definitions` counted from data/lexicon.json was always 0. */
   const lex = await (async () => {
     const js = await readFile(p("data/data_bundle.js"), "utf8");
     const a = js.indexOf("{"), b = js.lastIndexOf("};");
@@ -165,7 +191,7 @@ export async function compare() {
 /** A token-by-token diff of a sentence that changed, so it is clear what the
     parser did differently. */
 async function showSentence(text) {
-  const sents = JSON.parse(await readFile(p("sentences.json"), "utf8"));
+  const sents = JSON.parse(await readFile(p("data/sentences.json"), "utf8"));
   const s = sents.find((x) => x.t === text);
   if (!s) return;
   console.log(`\n    ${text}`);
@@ -223,7 +249,7 @@ the list above and accept it with:
     ./build.sh --accept
 
 If the change is *not* intended, the parser has changed its mind. Pin the package
-version in requirements.txt again, or record a decision in parse_overrides.py. Do
+version in requirements.txt again, or record a decision in pipeline/parse_overrides.py. Do
 not accept the manifest just to make this stop.
 `);
 process.exit(1);

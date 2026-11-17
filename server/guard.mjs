@@ -21,9 +21,17 @@
  * program.
  */
 
-import { migrate } from "../src/js/core/state.js";
+import { migrate, FRAMES_MAX } from "../src/js/core/state.js";
 import { BADGES } from "../src/js/core/badges.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
+import { sanitiseReview, REVIEW_MAX, STATS_MAX } from "../src/js/core/review.js";
+import { cleanLevels } from "../src/js/core/difficulty.js";
+import { cleanByType } from "../src/js/core/mastery.js";
+import { cleanByNode } from "../src/js/core/skillmap.js";
+import { cleanSeenTypes } from "../src/js/core/examples.js";
+import { sanitiseMend } from "../src/js/core/mending.js";
+import { cleanTour } from "../src/js/core/placement.js";
+import { TYPE_IDS } from "../src/js/core/policy.js";
 
 export const MAX_STATE_BYTES = 2 * 1024 * 1024;
 
@@ -44,6 +52,7 @@ export const LIMITS = {
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const BADGE_IDS = new Set(BADGES.map((b) => b.id));
 const SKILLS = new Set(SKILL_IDS);
+const TYPES = new Set(TYPE_IDS);
 
 const n = (x, max = 1e9) =>
   (typeof x === "number" && Number.isFinite(x) ? Math.min(Math.max(0, Math.round(x)), max) : 0);
@@ -92,7 +101,8 @@ export function cleanState(raw, { today = new Date() } = {}) {
     const sk = {};
     for (const [id, v] of pairs(d.sk, 40)) if (SKILLS.has(id)) sk[id] = n(v);
     days[k] = { a: n(d.a), c: n(d.c), xp: n(d.xp), ms: n(d.ms, 86400000), nw: n(d.nw),
-      sk, g: d.g == null ? null : n(d.g, 499), lg: d.lg ? 1 : 0 };
+      sk, g: d.g == null ? null : n(d.g, 499), lg: d.lg ? 1 : 0,
+      wg: d.wg == null ? null : Math.min(Math.max(n(d.wg, 7), 2), 7) };
   }
   S.days = days;
 
@@ -171,6 +181,65 @@ export function cleanState(raw, { today = new Date() } = {}) {
     j: n(r.j, 100), xp: n(r.xp, 100000),
     top: (Array.isArray(r.top) ? r.top : []).filter((x) => typeof x === "string" && x.length <= 40).slice(0, 5),
   }));
+
+  /* The review queue (v6.13, core/review.js): at most REVIEW_MAX entries of
+     short strings, dates and small numbers, and a tally per error pattern and
+     per category. `sanitiseReview` rebuilds it field by field — the same
+     function the browser loads a state with, so the two cannot drift apart —
+     and here the dates are held to the calendar as well: an entry cannot be
+     due further ahead than the longest interval allows, and one whose
+     category the program does not have is dropped. */
+  const review = sanitiseReview(raw.review);
+  const ahead = new Date(today.getTime() + 60 * 86400000).toISOString().slice(0, 10);
+  review.items = review.items
+    .filter((e) => e.due <= ahead && e.last <= limit && e.add <= limit && (!e.sk || SKILLS.has(e.sk)))
+    .slice(0, REVIEW_MAX);
+  /* Tallies per pattern, per category and (item 44) per question type: a
+     category or a type the program does not have is dropped. */
+  review.stats = Object.fromEntries(Object.entries(review.stats)
+    .filter(([k]) => (!k.startsWith("s:") || SKILLS.has(k.slice(2))) &&
+      (!k.startsWith("t:") || TYPES.has(k.slice(2)))).slice(0, STATS_MAX));
+  S.review = review;
+
+  /* Saved levels (v6.13, core/difficulty.js): known skills only, the level
+     inside 1–7, the run 0–1, a dozen 1s and 0s, a time and one of three
+     sources. `migrate` already did this; it is said again here because this
+     file is where the server's trust is decided. */
+  S.difficulty = cleanLevels(S.difficulty);
+
+  /* Sentences seen as frames (v6.13): `migrate` has already kept only short
+     keys and whole counts (core/state.js `cleanFrames`); here the counts are
+     held to the same ceiling as every other counter. */
+  S.frames = Object.fromEntries(pairs(S.frames, FRAMES_MAX, 8).map(([k, v]) => [k, n(v, 100000)]));
+  /* Per question type (v6.13, item 44): known types only, two counts, twenty
+     letters and a time. Types met (item 41): known types only, one day each,
+     not after tomorrow. Both bounded by the number of question types. */
+  S.byType = cleanByType(S.byType);
+  /* The same record for the curriculum nodes that keep one (item 83,
+     core/skillmap.js): known nodes only — seven of them. */
+  S.byNode = cleanByNode(S.byNode);
+  S.seenTypes = Object.fromEntries(Object.entries(cleanSeenTypes(S.seenTypes))
+    .filter(([, d]) => d <= limit));
+
+  /* Getting better (items 56 and 58, core/mending.js): pattern ids, days
+     and counts, rebuilt by the same function the browser loads with — and
+     here no day after tomorrow, because "Framfarir" is read off these days
+     and a day in the future would sit in next week's board. */
+  const mend = sanitiseMend(raw.mend);
+  for (const k of Object.keys(mend.open)) if (mend.open[k] > limit) delete mend.open[k];
+  mend.log = mend.log.filter((x) => x.d <= limit);
+  for (const k of Object.keys(mend.rv)) if (k > limit) delete mend.rv[k];
+  S.mend = mend;
+
+  /* The guided first run (item 84, core/placement.js): one of three states,
+     a time, a day, a flag and a year. `migrate` has rebuilt it with the
+     function the browser loads with; here the day and the time are held to
+     the calendar like every other date in the state. */
+  S.tour = cleanTour(S.tour);
+  if (S.tour) {
+    if (S.tour.d && S.tour.d > limit) S.tour.d = null;
+    S.tour.at = Math.min(S.tour.at, today.getTime() + 2 * 86400000);
+  }
 
   S.counters = Object.fromEntries(pairs(S.counters, 20, 40).map(([k, v]) => [k, n(v)]));
   S.periods = smallJSON(S.periods, 60000) || {};

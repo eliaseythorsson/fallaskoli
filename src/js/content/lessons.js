@@ -1,4 +1,4 @@
-/* Lesefni — 20 one-page lessons for Fallaskóli.
+/* Lesefni — one-page lessons for Fallaskóli (24 since item 28).
    Paradigms are never typed by hand: `table` blocks name a word and the app
    fills in the forms from BÍN. */
 
@@ -327,7 +327,7 @@ export const LESSONS = [
       { q: "Hvort er rétt: „Stelpurnar eru glaðir“ eða „Stelpurnar eru glaðar“?", a: "Stelpurnar eru glaðar (kvenkyn, fleirtala)." },
       { q: "Settu rétta mynd af tveir: „Ég á ___ bækur.“", a: "Tvær (kvenkyn, þolfall)." },
     ],
-    related: ["lo-beyging", "kyn-tala", "setningalidir"],
+    related: ["lo-beyging", "kyn-tala", "setningarhlutar"],
   },
 
   /* ------------------------------------------------------------------ 8 */
@@ -367,7 +367,7 @@ export const LESSONS = [
       { q: "Hvort er rétt: „Krakkarnir fór út“ eða „Krakkarnir fóru út“?", a: "Krakkarnir fóru út. Frumlagið er í fleirtölu." },
       { q: "Settu rétta mynd af fara: „Þú og Sara ___ saman.“", a: "Farið (þú og Sara = þið)." },
     ],
-    related: ["tid", "setningalidir", "fallstjorn"],
+    related: ["tid", "setningarhlutar", "fallstjorn"],
   },
 
   /* ------------------------------------------------------------------ 9 */
@@ -853,7 +853,7 @@ export const LESSONS = [
       { q: "Hvaða falli stýrir sögnin sakna?", a: "Eignarfalli (sakna einhvers)." },
       { q: "Hvort er rétt: „mig langar“ eða „mér langar“?", a: "Mig langar." },
     ],
-    related: ["foll", "obeygjanleg", "setningalidir"],
+    related: ["foll", "obeygjanleg", "setningarhlutar"],
   },
 
   /* ----------------------------------------------------------------- 18 */
@@ -908,14 +908,19 @@ export const LESSONS = [
       { q: "Nefndu andheiti orðsins stór.", a: "Lítill (eða smár)." },
       { q: "Hvað er að skýringunni „Kennari er sá sem kennir“?", a: "Hún notar orð af sömu rót (kenna). Betra: Kennari er manneskja sem vinnur við að fræða nemendur í skóla." },
     ],
-    related: ["ordflokkar", "setningalidir"],
+    related: ["ordflokkar", "setningarhlutar"],
   },
 
   /* ----------------------------------------------------------------- 19 */
   {
-    id: "setningalidir",
+    /* "Setningarliðir" until the v6.13 review (S12): Málvísir's
+       setningarliðir are the phrases of the page after this one (nafnliður,
+       sagnliður …), and two pages with names that close were confusing.
+       Frumlag, umsögn, andlag and sagnfylling are setningarhlutar. The old
+       id is still understood (core/lessons.js `lessonById`, core/state.js). */
+    id: "setningarhlutar",
     skill: "setningafraedi",
-    nm: "Setningarliðir",
+    nm: "Setningarhlutar",
     lead: "Hver setning er sett saman úr hlutum sem hafa hver sitt hlutverk. Helstu hlutarnir eru frumlag, umsögn, andlag og sagnfylling. Þú finnur þá með því að spyrja spurninga.",
     blocks: [
       { h: "Umsögn — finndu hana fyrst" },
@@ -962,13 +967,79 @@ export const LESSONS = [
       { tip: "Röðin er alltaf sú sama: finndu fyrst umsögnina, svo frumlagið og síðast andlag eða sagnfyllingu." },
     ],
     check: [
-      { q: "Hvaða setningarlið er best að finna fyrst?", a: "Umsögnina (sögnina)." },
+      { q: "Hvaða setningarhluta er best að finna fyrst?", a: "Umsögnina (sögnina)." },
       { q: "Hvert er frumlagið í „Hundurinn elti köttinn“?", a: "Hundurinn (hver elti?)." },
       { q: "Hvert er andlagið í „Hundurinn elti köttinn“?", a: "Köttinn (elti hvern?)." },
       { q: "Hvað kallast orðið þreytt í „Stelpan er þreytt“?", a: "Sagnfylling." },
       { q: "Hvert er óbeina andlagið í „Pabbi sendi mér skilaboð“?", a: "Mér (sendi hverjum?)." },
     ],
-    related: ["setningagerdir", "fallstjorn", "foll"],
+    related: ["lidir", "setningagerdir", "fallstjorn", "foll"],
+  },
+
+  /* --------------------------------------------------- (item 28, year 10) */
+  {
+    id: "lidir",
+    skill: "setningafraedi",
+    nm: "Nafnliður, sagnliður og forsetningarliður",
+    lead: "Orð í setningu standa ekki hvert fyrir sig. Þau mynda hópa sem kallast liðir. Í hverjum lið er eitt aðalorð og liðurinn dregur nafn sitt af orðflokki þess.",
+    blocks: [
+      { h: "Hvað er liður?" },
+      { p: "**Liður** er orð eða hópur orða sem heyra saman í setningu. Í hverjum lið er eitt **aðalorð**. Hin orðin standa með því og segja nánar frá því. Liðurinn heitir eftir orðflokki aðalorðsins: nafnorð er aðalorð í nafnlið, sögn í sagnlið." },
+      { h: "Nafnliður" },
+      { p: "Í **nafnlið** er aðalorðið nafnorð eða fornafn. Með nafnorðinu geta staðið lýsingarorð, fornöfn, töluorð og nafnorð í eignarfalli." },
+      { ex: [
+        "**Hundurinn** geltir.",
+        "**Litli hundurinn okkar** geltir.",
+        "**Þak hússins** lekur.",
+        "**Hann** geltir.",
+      ] },
+      { tip: "Settu persónufornafn í staðinn fyrir allan liðinn: *Litli hundurinn okkar geltir* verður *Hann geltir*. Það sem fornafnið kemur í staðinn fyrir er nafnliður." },
+      { h: "Forsetningarliður" },
+      { p: "**Forsetningarliður** er forsetning ásamt fallorðinu sem hún stýrir. Hann byrjar á forsetningunni." },
+      { ex: [
+        "Bókin liggur **á borðinu**.",
+        "Ég skrifaði bréf **til frænku minnar**.",
+        "Taskan er **undir stóra borðinu**.",
+      ] },
+      { p: "Inni í forsetningarliðnum er nafnliður: *á* + *borðinu*, *undir* + *stóra borðinu*. Forsetningin ræður fallinu á honum." },
+      { warn: "Ef forsetningin er ekki með er þetta ekki forsetningarliður. *Stóra borðinu* er nafnliður. *Undir stóra borðinu* er forsetningarliður." },
+      { h: "Sagnliður" },
+      { p: "Í **sagnlið** er aðalorðið sögn. Sagnliður er sögnin ásamt andlagi sínu eða sagnfyllingu. Hann segir hvað frumlagið gerir eða er." },
+      { ex: [
+        "Stelpan **las bókina**.",
+        "Mamma **gaf barninu mjólk**.",
+        "Húsið **er stórt**.",
+      ] },
+      { p: "Kennslubækur draga mörk sagnliðarins ekki alltaf eins þegar fleira fylgir sögninni, til dæmis *í gær* eða *í skólanum*. Í æfingunum hér er því aðeins spurt um sagnliði þar sem sögninni fylgir andlag eða sagnfylling og ekkert annað." },
+      { h: "Atviksliður" },
+      { p: "**Atviksliður** er atviksorð sem stendur sjálfstætt í setningunni. Oftast er hann bara eitt orð og segir hvar, hvenær eða hvernig." },
+      { ex: [
+        "Hestarnir standa **þarna**.",
+        "Síminn hringir **aftur**.",
+        "Ég hef **alltaf** haft áhuga á bílum.",
+      ] },
+      { h: "Liður eða hlutverk?" },
+      { p: "Ekki rugla saman liðum og hlutverkum. *Frumlag* og *andlag* segja hvaða **hlutverk** orðin hafa í setningunni. *Nafnliður* segir hvernig liðurinn er **byggður**. Sami nafnliður getur verið frumlag í einni setningu og andlag í annarri." },
+      { ex: [
+        "**Litli hundurinn** geltir. (nafnliður, hér frumlag)",
+        "Ég sá **litla hundinn**. (nafnliður, hér andlag)",
+      ] },
+      { h: "Svona ferðu að" },
+      { list: [
+        "Byrjar liðurinn á forsetningu? Þá er hann forsetningarliður.",
+        "Er sögnin sem beygist í persónu í honum? Þá er hann sagnliður.",
+        "Er aðalorðið nafnorð eða fornafn? Þá er hann nafnliður.",
+        "Er hann eitt atviksorð? Þá er hann atviksliður.",
+      ] },
+    ],
+    check: [
+      { q: "Hvað ræður því hvað liður heitir?", a: "Orðflokkur aðalorðsins." },
+      { q: "Hvers konar liður er „gamla konan“ í „Gamla konan brosti“?", a: "Nafnliður. Aðalorðið er nafnorðið konan." },
+      { q: "Hvers konar liður er „í garðinum“?", a: "Forsetningarliður: forsetningin í og nafnorðið sem hún stýrir." },
+      { q: "Finndu sagnliðinn í „Pabbi lagaði hjólið mitt“.", a: "Lagaði hjólið mitt: sögnin og andlag hennar." },
+      { q: "Hvers konar liður er „hjólið mitt“ í „Pabbi lagaði hjólið mitt“?", a: "Nafnliður. Hann er andlag sagnarinnar." },
+    ],
+    related: ["setningarhlutar", "fallstjorn", "obeygjanleg"],
   },
 
   /* ----------------------------------------------------------------- 20 */
@@ -1027,7 +1098,70 @@ export const LESSONS = [
       { q: "Hvaða setningagerð er „að spila fótbolta“ í „Mér finnst gaman að spila fótbolta“?", a: "Nafnháttarsetning." },
       { q: "Nefndu þrjár samtengingar sem tengja saman aðalsetningar.", a: "Og, en, eða." },
     ],
-    related: ["setningalidir", "hattur", "obeygjanleg"],
+    related: ["aukasetningar", "setningarhlutar", "hattur", "obeygjanleg"],
+  },
+  /* --------------------------------------------------- (item 28, year 10) */
+  {
+    id: "aukasetningar",
+    skill: "setningagerd",
+    nm: "Tegundir aukasetninga",
+    lead: "Aukasetningar eru ekki allar eins. Sumar eru andlag sagnar, sumar lýsa nafnorði og sumar segja hvenær eða hvers vegna eitthvað gerist. Tengingin sem aukasetningin hefst á segir oftast hvaða tegund hún er.",
+    blocks: [
+      { h: "Þrír meginflokkar" },
+      { p: "Aukasetningum er skipt í þrjá flokka eftir því hvaða hlutverk þær hafa." },
+      { list: [
+        "**Fallsetning** gegnir sama hlutverki og fallorð. Hún er oftast andlag: „Ég veit **að þú kemur**.“ (Ég veit hvað?)",
+        "**Tilvísunarsetning** stendur með nafnorði eða fornafni og segir nánar frá því: „Stelpan **sem býr hér** er vinkona mín.“",
+        "**Atvikssetning** gegnir sama hlutverki og atviksorð. Hún segir til dæmis hvenær eða hvers vegna: „Við förum heim **þegar æfingin er búin**.“",
+      ] },
+      { tip: "Prófaðu að setja eitt orð í staðinn fyrir aukasetninguna. *Ég veit **það**.* Fornafn passar: fallsetning. *Við förum heim **þá**.* Atviksorð passar: atvikssetning. Tilvísunarsetningu má sleppa og setningin stendur samt: *Stelpan er vinkona mín.*" },
+      { h: "Fallsetningar" },
+      { p: "Fallsetningar eru tvenns konar." },
+      { list: [
+        "**Skýringarsetning** hefst á samtengingunni *að*: „Mamma heldur **að ég sé svangur**.“ Hún stendur oft á eftir sögnum eins og *segja, halda, vita, vona* og *finnast*.",
+        "**Spurnarsetning** er spurning sem er orðin hluti af annarri setningu. Hún hefst á *hvort* eða spurnarorði (*hver, hvað, hvar, hvenær, hvernig, af hverju*): „Pabbi spurði **hvort ég væri búinn að læra**.“ „Ég veit ekki **hvenær rútan kemur**.“",
+      ] },
+      { h: "Tilvísunarsetningar" },
+      { p: "Tilvísunarsetning hefst á tilvísunartengingunni *sem*. Hún vísar til orðs sem stendur rétt á undan henni." },
+      { ex: [
+        "Kakan **sem amma bakaði** var mjög góð.",
+        "Ég þekki stelpuna **sem situr við gluggann**.",
+      ] },
+      { h: "Atvikssetningar" },
+      { p: "Atvikssetningar skiptast í tegundir eftir því hvað þær segja um aðalsetninguna. Tengingin kemur upp um tegundina." },
+      { list: [
+        "**Tíðarsetning** segir *hvenær*. Tengingar: *þegar, áður en, eftir að, á meðan, þangað til, um leið og, fyrr en*. „Við biðum **þangað til rútan kom**.“",
+        "**Skilyrðissetning** segir *með hvaða skilyrði*. Tengingar: *ef, nema*. „**Ef þú flýtir þér** nærð þú strætó.“",
+        "**Orsakarsetning** segir *af hverju*. Tengingar: *af því að, vegna þess að, þar sem*. „Ég fór snemma heim **af því að ég var veikur**.“",
+        "**Viðurkenningarsetning** segir frá einhverju sem hefði getað komið í veg fyrir hitt, en gerði það ekki. Tengingar: *þótt, þó að, enda þótt*. „Ég fór út **þótt það væri kalt**.“",
+        "**Tilgangssetning** segir *til hvers*. Tengingar: *svo að, til þess að*. „Við töluðum lágt **til þess að barnið gæti sofið**.“",
+        "**Afleiðingarsetning** segir *hvað leiddi af* því sem á undan fór. Tenging: *svo að*. „Ég gleymdi lyklunum **svo að ég komst ekki inn**.“",
+      ] },
+      { p: "Sjöunda tegundin er **samanburðarsetning** (*eins og, en*): „Þetta var erfiðara **en ég hélt**.“ Um hana er ekki spurt í æfingunum." },
+      { h: "Svo að: tilgangur eða afleiðing?" },
+      { p: "Tengingin *svo að* getur byrjað tvær tegundir aukasetninga. **Háttur sagnarinnar** sker úr." },
+      { ex: [
+        "Ég vaknaði snemma svo að ég **kæmi** ekki of seint. (viðtengingarháttur: tilgangur, þetta ætlaði ég mér)",
+        "Ég gleymdi lyklunum svo að ég **komst** ekki inn. (framsöguháttur: afleiðing, þetta gerðist)",
+      ] },
+      { tip: "Ef þú getur sett *til þess að* í staðinn fyrir *svo að* er þetta tilgangssetning." },
+      { warn: "Á eftir *þótt* og *þó að* er sögnin í viðtengingarhætti: *þótt það **væri** kalt*, ekki *þótt það var kalt*." },
+      { h: "Svona ferðu að" },
+      { list: [
+        "Finndu aukasetninguna. Hún getur ekki staðið ein.",
+        "Horfðu á fyrsta orðið eða fyrstu orðin. Það er tengingin.",
+        "*Að*: skýringarsetning. *Hvort* eða spurnarorð: spurnarsetning. *Sem*: tilvísunarsetning.",
+        "Annars er þetta atvikssetning. Spyrðu hvað hún segir: hvenær, með hvaða skilyrði, af hverju, þrátt fyrir hvað, til hvers eða hvað leiddi af.",
+      ] },
+    ],
+    check: [
+      { q: "Í hvaða þrjá meginflokka skiptast aukasetningar?", a: "Fallsetningar, tilvísunarsetningar og atvikssetningar." },
+      { q: "Hvers konar aukasetning er „að þú segir satt“ í „Ég veit að þú segir satt“?", a: "Skýringarsetning (fallsetning). Hún hefst á að." },
+      { q: "Hvers konar aukasetning er í „Hundurinn bítur ekki nema einhver stríði honum“?", a: "Skilyrðissetning. Hún hefst á nema." },
+      { q: "Tilgangur eða afleiðing: „Snjórinn var djúpur svo að bíllinn sat fastur“?", a: "Afleiðing. Sögnin sat er í framsöguhætti." },
+      { q: "Á hvaða tengingu hefjast tilvísunarsetningar?", a: "Á sem." },
+    ],
+    related: ["setningagerdir", "hattur", "obeygjanleg"],
   },
   /* ------------------------------------------------------------------ 21 (v6.9) */
   {
@@ -1046,6 +1180,7 @@ export const LESSONS = [
         "**Lýsingarorð og nafnorð**: lýsingarorðið fylgir nafnorðinu í kyni, tölu og falli. „Ég hef **mikinn** áhuga“ (karlkyn), ekki *mikið áhuga*.",
       ] },
       { tip: "Lestu hverja setningu upphátt. Ef eitthvað hljómar skrítið, spyrðu: Hvað stýrir fallinu hér? Við hvaða orð á þetta orð að laga sig?" },
+      { p: "Frá **þyngd 3** eru villurnar þær sem heyrast oft í daglegu tali: *mér langar* (rétt: *mig langar*), *ég vill* (*ég vil*), *til drottningu* (*til drottningar*), *tvær buxur* (*tvennar buxur*). Sumt af þessu er ekki beinlínis rangt heldur á það ekki við í vönduðu ritmáli; þá stendur „í vönduðu máli“ í skýringunni. Stundum þarf að laga tvö orð sem standa saman, og þá smellir þú á þau bæði í einu." },
       { h: "Setningasmiðja" },
       { p: "Þú færð orðin í **orðabókarmynd**, til dæmis *ég – gefa – vinur – bók*. Þú býrð til setninguna og beygir hvert orð: „Ég gaf vini bók.“ Á spjöldunum stendur það sem ekki sést annars staðar: tíð sagnarinnar, og hvort nafnorðið er í fleirtölu eða með greini. Fallið finnur þú sjálf(ur) út frá hlutverki orðsins." },
       { h: "Umritun" },
@@ -1054,7 +1189,7 @@ export const LESSONS = [
         "**Þátíð**: aðeins sagnirnar sem beygjast í persónu breytast. *Strákurinn hlær* → *Strákurinn hló*.",
         "**Fleirtala**: frumlagið fer í fleirtölu og allt sem lagar sig að því fylgir: sögnin, lýsingarorð og fornöfn. *Hönd mín er köld* → *Hendur mínar eru kaldar*.",
         "**Þolmynd**: andlagið verður frumlag og fer í nefnifall. Sögnin verður *vera* + lýsingarháttur þátíðar. *Amma bakaði köku* → *Kaka var bökuð (af ömmu)*. Andlag í þágufalli heldur fallinu: *Ég hjálpaði kennaranum* → *Kennaranum var hjálpað*.",
-        "**Orðaröð**: sögnin sem beygist er alltaf **í öðru sæti** í aðalsetningu. Ef annað en frumlagið stendur fremst fer frumlagið aftur fyrir sögnina. *Ég sá hest* → *Í gær sá ég hest*.",
+        "**Orðaröð**: í fullyrðingarsetningu er sögnin sem beygist **í öðru sæti**. Ef annað en frumlagið stendur fremst fer frumlagið aftur fyrir sögnina. *Ég sá hest* → *Í gær sá ég hest*.",
       ] },
       { ex: [
         "Ég **fer** í sund. → Á morgun **fer ég** í sund.",
@@ -1068,6 +1203,66 @@ export const LESSONS = [
       { q: "Byrjaðu „Ég opna gluggann“ á „Í gær“.", a: "Í gær opnaði ég gluggann." },
       { q: "Settu „Bíllinn er rauður“ í fleirtölu.", a: "Bílarnir eru rauðir." },
     ],
-    related: ["fallstjorn", "samraemi", "tid", "mynd"],
+    related: ["raeda", "fallstjorn", "samraemi", "tid", "mynd"],
+  },
+  /* --------------------------------------------------- (item 28, year 10) */
+  {
+    id: "raeda",
+    skill: "malbeiting",
+    nm: "Bein og óbein ræða",
+    lead: "Það er hægt að segja frá orðum annarra á tvo vegu: hafa þau orðrétt eftir eða endursegja þau. Þegar þú endursegir breytast fornöfnin og háttur sagnarinnar.",
+    blocks: [
+      { h: "Bein ræða" },
+      { p: "Í **beinni ræðu** eru orðin höfð eftir nákvæmlega eins og þau voru sögð. Þau standa innan **gæsalappa** og á undan þeim er tvípunktur." },
+      { ex: [
+        "Anna sagði: „Ég er þreytt.“",
+        "Jón segir: „Ég á hund.“",
+      ] },
+      { tip: "Íslenskar gæsalappir eru niðri í byrjun og uppi í lokin: „ … “." },
+      { h: "Óbein ræða" },
+      { p: "Í **óbeinni ræðu** segir þú frá því sem var sagt, án þess að hafa það orðrétt eftir. Gæsalappirnar hverfa og orðin verða að aukasetningu sem hefst á *að*." },
+      { ex: [
+        "Anna sagði **að hún væri þreytt**.",
+      ] },
+      { p: "Þrennt breytist:" },
+      { list: [
+        "**Gæsalappirnar og tvípunkturinn hverfa** og *að* kemur í staðinn.",
+        "**Fornöfnin breytast.** Sá sem sagði *ég* er nú *hann* eða *hún*: „**Ég** er þreytt“ verður *að **hún** væri þreytt*.",
+        "**Sögnin fer í viðtengingarhátt**: *er* verður *væri*.",
+      ] },
+      { h: "Nútíð eða þátíð viðtengingarháttar?" },
+      { p: "Það fer eftir sögninni sem segir frá, *segir* eða *sagði*." },
+      { list: [
+        "Á eftir **nútíð** (*segir*) kemur viðtengingarháttur **nútíðar**: Anna segir að hún **sé** þreytt.",
+        "Á eftir **þátíð** (*sagði*) kemur viðtengingarháttur **þátíðar**: Anna sagði að hún **væri** þreytt.",
+      ] },
+      { ex: [
+        "Jón segir: „Ég á hund.“ → Jón segir að hann **eigi** hund.",
+        "Jón sagði: „Ég á hund.“ → Jón sagði að hann **ætti** hund.",
+      ] },
+      { h: "Þegar orðin sjálf voru í þátíð" },
+      { p: "Ef beina ræðan er í þátíð er það sem hún lýsir liðið þegar sagt er frá því. Þá er notuð sögnin *hafa* í viðtengingarhætti og **sagnbót** aðalsagnarinnar." },
+      { ex: [
+        "Anna sagði: „Ég **fór** heim.“ → Anna sagði að hún **hefði farið** heim.",
+        "Anna segir: „Ég **fór** heim.“ → Anna segir að hún **hafi farið** heim.",
+      ] },
+      { warn: "Í vönduðu máli er sögnin í óbeinni ræðu í viðtengingarhætti: *Anna sagði að hún **væri** þreytt*, ekki *að hún var þreytt*." },
+      { h: "Spurningar í óbeinni ræðu" },
+      { p: "Spurning verður að spurnarsetningu. Já- eða nei-spurning fær *hvort* en spurnarorð heldur sér. Sögnin fer í viðtengingarhátt eins og áður." },
+      { ex: [
+        "Pabbi spurði: „Ertu búinn að læra?“ → Pabbi spurði **hvort** ég **væri** búinn að læra.",
+        "Mamma spurði: „Hvar varstu?“ → Mamma spurði **hvar** ég **hefði verið**.",
+      ] },
+      { p: "Í æfingunum eru aðeins fullyrðingar settar í óbeina ræðu." },
+      { tip: "*Að* er stundum sleppt í tali (*Hún sagði hún væri þreytt*), en í rituðu máli er það haft með." },
+    ],
+    check: [
+      { q: "Hvað einkennir beina ræðu?", a: "Orðin eru höfð orðrétt eftir, innan gæsalappa." },
+      { q: "Settu í óbeina ræðu: Jón sagði: „Ég er svangur.“", a: "Jón sagði að hann væri svangur." },
+      { q: "Settu í óbeina ræðu: Sara segir: „Ég á tvo bræður.“", a: "Sara segir að hún eigi tvo bræður." },
+      { q: "Settu í óbeina ræðu: Hann sagði: „Ég keypti brauð.“", a: "Hann sagði að hann hefði keypt brauð." },
+      { q: "Í hvaða hætti er sögnin í óbeinni ræðu?", a: "Í viðtengingarhætti." },
+    ],
+    related: ["hattur", "malbeiting", "aukasetningar"],
   },
 ];

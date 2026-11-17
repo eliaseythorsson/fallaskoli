@@ -1,5 +1,5 @@
 export const LICENSES={
- "built": "2026-11-11",
+ "built": "2026-11-16",
  "app": {
   "nm": "Fallaskóli",
   "lic": "engin markaðssetning, engin gjaldtaka"
@@ -43,6 +43,16 @@ export const LICENSES={
    "what": "Þýðing ES-eininga í eina skrá.",
    "id": "esbuild",
    "ver": "0.28.2",
+   "kind": "node"
+  },
+  {
+   "nm": "TypeScript",
+   "who": "Microsoft Corp.",
+   "lic": "Apache-2.0",
+   "url": "https://github.com/microsoft/TypeScript",
+   "what": "Villuleit í kóðanum við smíði. Fylgir ekki afurðinni.",
+   "id": "typescript",
+   "ver": "7.0.2",
    "kind": "node"
   },
   {

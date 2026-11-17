@@ -1,0 +1,93 @@
+# Fallstjórn: ópersónulegar sagnir
+#
+# Hver rammi er spurður með hverju frumlagi í opersonulegar-frumlog.tsv, í hverri tíð
+# sem hann er skrifaður fyrir. Ramminn verður að vera réttur með HVAÐA frumlagi sem er.
+#
+# Dálkar:
+#   bónus  0 eða 1: einu stigi þyngra
+#   sögn   sögnin (nafnháttur)
+#   fall   op: fallið sem BÍN gefur; ÞGF: skrifað hér (mér er kalt); NF: gildra, sögnin er persónuleg
+#   nútíð  setningin í nútíð; ___ er frumlagið og {V} sögnin; autt ef nútíð er ekki eðlileg
+#   þátíð  sama í þátíð; autt ef þátíð er ekki eðlileg
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Impersonal verbs (fs_operson, critique item 23): generated, not listed.
+# Every frame below is asked with every subject of IMPERSONAL_SUBJECTS, in
+# each tense it is written for: about forty frames make over a thousand
+# questions, and build_exercises.py takes every form from BÍN — the verb
+# (BÍN's impersonal forms, OP-ÞF / OP-ÞGF, whose mark also says the case of
+# the subject: the build stops if the case written here is not that one),
+# and the subject in each case. Two traps take the nominative and agree with
+# it (hlakka, kvíða): BÍN must have no impersonal form of them.
+#
+#   (bonus, verb, case, present, past)
+#     case     "op" — the case BÍN gives the impersonal verb's subject;
+#              "ÞGF" — written by hand where BÍN has no impersonal form
+#              (*mér er kalt*: the verb is the ordinary 3rd person);
+#              "NF" — a trap: the verb is personal, in the subject's person
+#     present  the sentence in the present tense, ___ the subject and {V}
+#     past     the same in the past; None where one tense is not natural
+#
+# Every frame must be right with ANY subject of the list, and with the
+# nominative cue it must be wrong: "___ gengur vel" alone is not (*hann
+# gengur vel* is walking), so it is "gengur vel í stærðfræði". No person
+# or pronoun in the frame, so no subject clashes with it.
+#
+# Level = length + 1 (sentences.py's table); +1 for a verb that is not
+# everyday (syfja, klæja, verkja, batna, sárna) or a trap (hlakka, kvíða);
+# and by the subject: +1 for a plural pronoun or a noun, +2 for a plural
+# noun (IMPERSONAL_SUBJECTS). Capped at 5.
+#
+
+bónus	sögn	fall	nútíð	þátíð
+# þolfall
+0	langa	op	___ {V} í ís.	___ {V} í ís.
+0	langa	op	___ {V} að fara heim.	___ {V} að fara heim.
+0	langa	op	___ {V} að læra á gítar.	___ {V} að læra á gítar.
+0	vanta	op	___ {V} nýja skó.	___ {V} nýja skó.
+0	vanta	op	___ {V} blýant.	___ {V} blýant.
+0	vanta	op	___ {V} hjálp við heimanámið.	___ {V} hjálp við heimanámið.
+0	dreyma	op	___ {V} oft skrýtna drauma.	___ {V} illa í nótt.
+0	minna	op	___ {V} að búðin sé lokuð.	___ {V} að búðin væri lokuð.
+0	gruna	op	___ {V} að eitthvað sé að.	___ {V} að eitthvað væri að.
+1	syfja	op	___ {V} á kvöldin.	___ {V} eftir matinn.
+1	klæja	op	___ {V} í nefið.	___ {V} í nefið.
+1	verkja	op	___ {V} í fótinn.	___ {V} í fótinn.
+# þágufall
+0	finnast	op	___ {V} gaman að synda.	___ {V} gaman að synda.
+0	finnast	op	___ {V} skemmtilegt í skólanum.	___ {V} skemmtilegt í skólanum.
+0	finnast	op	___ {V} pítsa góð.	___ {V} pítsan góð.
+0	finnast	op	___ {V} myndin skemmtileg.	___ {V} myndin skemmtileg.
+0	þykja	op	___ {V} vænt um hundinn.	___ {V} vænt um hundinn.
+0	þykja	op	___ {V} gott að sofa lengi.	___ {V} gott að sofa lengi.
+0	líða	op	___ {V} vel.	___ {V} vel.
+0	líða	op	___ {V} illa í maganum.	___ {V} illa í maganum.
+0	leiðast	op	___ {V} í rigningunni.	___ {V} í rigningunni.
+0	leiðast	op	___ {V} heima.	___ {V} heima.
+0	líka	op	___ {V} vel í skólanum.	___ {V} vel í skólanum.
+0	líka	op	___ {V} maturinn.	___ {V} maturinn.
+0	ganga	op	___ {V} vel í stærðfræði.	___ {V} vel í stærðfræði.
+0	ganga	op		___ {V} vel í prófinu.
+0	takast	op	___ {V} alltaf að vinna.	___ {V} að laga hjólið.
+0	bregða	op		___ {V} svo mikið.
+0	detta	op	___ {V} ekkert í hug.	___ {V} ekkert í hug.
+0	heyrast	op		___ {V} einhver banka.
+0	sýnast	op	___ {V} vera að rigna.	___ {V} vera að rigna.
+0	lítast	op	___ {V} vel á þetta.	___ {V} vel á þetta.
+1	batna	op	___ {V} vonandi fljótt.	___ {V} kvefið fljótt.
+1	sárna	op		___ {V} þetta.
+0	vera	ÞGF	___ {V} kalt.	___ {V} kalt.
+0	vera	ÞGF	___ {V} heitt.	___ {V} heitt.
+0	vera	ÞGF	___ {V} illt í maganum.	___ {V} illt í maganum.
+0	vera	ÞGF	___ {V} sama.	___ {V} sama.
+0	verða	ÞGF	___ {V} kalt úti.	___ {V} kalt úti.
+# the traps: nominative, and the verb agrees with it
+1	hlakka	NF	___ {V} til jólanna.	___ {V} til jólanna.
+1	hlakka	NF	___ {V} til sumarfrísins.	___ {V} til sumarfrísins.
+1	kvíða	NF	___ {V} fyrir prófinu.	___ {V} fyrir prófinu.
+1	kvíða	NF	___ {V} fyrir keppninni.	___ {V} fyrir keppninni.

@@ -1,8 +1,16 @@
 /* The leaderboard — a pure transformation from state into sortable numbers,
    with no DOM and no web requests, so the server and the browser produce the
-   same ordering. Seven metrics: this week's XP, level, XP, badges, words
-   found, the vocabulary score (v6.6) and time. The week comes first because it is the one race everybody can
-   still win: it starts again from nothing every Monday. */
+   same ordering. Nine metrics: this week's progress (v6.13), this week's XP,
+   level, XP, badges, words found, the vocabulary score (v6.6), duels and
+   time.
+
+   v6.13 (critique item 58): every metric until then grew with time spent, so
+   the board rewarded whoever practised most. "Framfarir" comes first and is
+   the default: error patterns mended and reviews passed THIS WEEK
+   (core/mending.js says how, and why more answers cannot raise it). Like the
+   week's XP it starts again from nothing every Monday, so it is a race
+   everybody can still win — and the one a pupil near the bottom wins by
+   fixing what goes wrong, not by staying longer. */
 
 import { overallLevel } from "./progress.js";
 import { collectionSummary } from "./collection.js";
@@ -10,8 +18,10 @@ import { vocabScore, rescueCount } from "./wordhealth.js";
 import { duelTotals } from "./duel.js";
 import { crestOf } from "./profile.js";
 import { weekXp, weekKey, showcaseOf, titleOf, tiersOf } from "./social.js";
+import { framfarir } from "./mending.js";
 
 export const METRICS = [
+  { id: "framfarir", nm: "Framfarir", fmt: (v) => v.toLocaleString("is-IS") },
   { id: "week",    nm: "Vikan",       fmt: (v) => v.toLocaleString("is-IS") + " XP" },
   { id: "level",   nm: "Stig",        fmt: (v) => String(v) },
   { id: "xp",      nm: "XP",          fmt: (v) => v.toLocaleString("is-IS") },
@@ -43,6 +53,9 @@ export function scorecard(S, lex, now = new Date()) {
     level: Math.max(S.bestLevel || 1, overallLevel(S.xp).level),
     /* XP earned since Monday. A number about a week, never about a day. */
     week: weekXp(S, weekKey(now)),
+    /* Patterns mended and reviews passed since Monday (item 58), one
+       number: never which patterns, never which day. */
+    framfarir: framfarir(S, weekKey(now)),
     xp: S.xp || 0,
     badges: Object.keys(S.badges || {}).length,
     words: coll.total,
@@ -80,9 +93,12 @@ export function scorecard(S, lex, now = new Date()) {
   };
 }
 
+/** The metric a board opens on (item 58). */
+export const DEFAULT_METRIC = "framfarir";
+
 /** Ordering by one metric, highest first, with equal placings on a tie. */
-export function rank(cards, metric = "week") {
-  const key = METRICS.some((m) => m.id === metric) ? metric : "week";
+export function rank(cards, metric = DEFAULT_METRIC) {
+  const key = METRICS.some((m) => m.id === metric) ? metric : DEFAULT_METRIC;
   const sorted = [...cards].sort((a, b) =>
     (b[key] ?? 0) - (a[key] ?? 0) ||
     String(a.name || a.profile).localeCompare(String(b.name || b.profile), "is"));

@@ -11,6 +11,10 @@ import { htmlPath } from "./version.mjs";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 import { QUESTION_TYPES } from "../src/js/core/policy.js";
+import { lessonPractice } from "../src/js/core/lessons.js";
+import { EXAMPLES } from "../src/js/content/examples.js";
+import { NODES } from "../src/js/core/curriculum.js";
+const EXAMPLE_TYPES = new Set(Object.keys(EXAMPLES));
 const QT_COUNT = QUESTION_TYPES.length;
 
 /* v6.10: practice comes in sessions picked on the Æfa tab. The program now
@@ -55,6 +59,18 @@ const browser = await puppeteer.launch({
   protocolTimeout: Number(process.env.BT_PROTOCOL_MS || 180000),
   args: ["--no-sandbox", "--disable-dev-shm-usage", "--allow-file-access-from-files"],
 });
+/* Item 84: a pupil with nothing answered is met by the guided first run, and
+   nearly every section below starts from such a pupil to check something
+   else. Every page of this file says so before the program loads; the first
+   run has a test of its own (tools/tour-test.mjs), which does not. */
+{
+  const newPage = browser.newPage.bind(browser);
+  browser.newPage = async (...a) => {
+    const p = await newPage(...a);
+    await p.evaluateOnNewDocument(() => { window.FALLASKOLI_NO_TOUR = true; });
+    return p;
+  };
+}
 const page = await browser.newPage();
 await page.setViewport({ width: 1100, height: 900 });
 
@@ -75,6 +91,16 @@ await page.setViewport({ width: 1100, height: 900 });
  * real coordinates. It is the same trusted `Input.dispatchMouseEvent` the
  * helper would have sent; what is gone is the wait that could not finish. */
 async function tap(selector) {
+  /* v6.13: during a session the tabs are hidden (body.insession, items 2 and
+     47) and the only way off the board is the × and its summary. Most of the
+     sections below visit a tab with the long test session still running; for
+     them, a hidden tab is opened the way the program itself opens one. The
+     session layout has its own section, which taps nothing of the sort. */
+  const tab = /^nav\.tabs button\[data-view="(\w+)"\]$/.exec(selector);
+  if (tab && await page.evaluate(() => document.body.classList.contains("insession"))) {
+    await page.evaluate((v) => window.FALLASKOLI.openView(v), tab[1]);
+    return;
+  }
   const at = await page.evaluate((sel) => {
     const el = document.querySelector(sel);
     if (!el) return null;
@@ -180,6 +206,13 @@ try {
 
 /* ---------- 1. Start-up ---------- */
 ok(await page.$("#task .card") !== null, "no task appeared at start-up");
+/* Item 54: installing is for a served program only. Opened by a double
+   click, the file links no manifest and registers no worker — it is the
+   same single file as before (tools/server-test.mjs checks the served case). */
+ok(await page.evaluate(async () => !document.querySelector('link[rel="manifest"], link[rel="apple-touch-icon"]')
+    && !(navigator.serviceWorker && navigator.serviceWorker.controller)
+    && !(navigator.serviceWorker && (await navigator.serviceWorker.getRegistrations().catch(() => [])).length)),
+  "opened from a file, the program linked a manifest or registered a service worker");
 ok((await page.$eval("#lvlname", (e) => e.textContent)).includes("Stig"), "the level label is missing");
 /* The Safari-16.3 shim really was installed — otherwise the check above proves
    nothing about old iPads. Any lookbehind built during start-up would have
@@ -224,11 +257,35 @@ async function dismissModals() {
 
 /* v6.11: answer, and stay on the verdict (to try the bonus box). */
 let stayAfter = false;
+/* Item 42: answer wrong and stay in the second try, not revealing. */
+let keepRetry = false;
 async function answerOneNoNext(correct) {
   stayAfter = true;
   try { await answerOne(correct); } finally { stayAfter = false; }
 }
 
+/* v6.13 (items 1, 49): Greindu orðið is answered in turns. The class first,
+   committed with the button; then the rows of the right class, one open at
+   a time, each answered by a tap; then the button again. A wrong answer is
+   a wrong class, with every row after it right. */
+async function answerParse(correct) {
+  await page.evaluate((correct) => {
+    const c = window.FALLASKOLI.cur;
+    const fl = [...document.querySelectorAll('.opts[data-q="fl"] button')];
+    (correct ? fl.find((b) => b.dataset.v === c.rows[0].answer) : fl.find((b) => b.dataset.v !== c.rows[0].answer)).click();
+    document.getElementById("check").click();
+  }, correct);
+  const n = await page.evaluate(() => window.FALLASKOLI.cur.rows.length);
+  for (let k = 1; k < n; k++) {
+    await page.evaluate((k) => {
+      const r = window.FALLASKOLI.cur.rows[k];
+      const box = document.querySelector(`.opts[data-q="${r.key}"]`);
+      if (!box) throw new Error("Greining: row " + r.key + " did not open in its turn");
+      [...box.querySelectorAll("button")].find((b) => b.dataset.v === r.answer).click();
+    }, k);
+  }
+  if (await page.evaluate(() => !window.FALLASKOLI.cur.parseDone)) await tap("#check");
+}
 async function answerOne(correct) {
   await dismissModals();
   const t = await page.evaluate(() => {
@@ -245,6 +302,7 @@ async function answerOne(correct) {
       askRole: c.askRole || null,
       /* v6.11 shapes */
       options: c.options || null, targets: c.targets || null,
+      second: c.second ? { options: c.second.options, answer: c.second.answer } : null,
       items: c.items ? c.items.map((x) => x.cls) : null,
       good: c.s ? c.s.tok.map((x, j) => (x.r === c.askRole ? j : -1)).filter((j) => j >= 0) : [],
     };
@@ -268,15 +326,7 @@ async function answerOne(correct) {
     }
     await tap("#check");
   } else if (t.type === "parse") {
-    for (const r of t.rows) {
-      const val = correct ? r.answer : "__engin__";
-      await page.evaluate((key, v) => {
-        const box = document.querySelector(`.opts[data-q="${key}"]`);
-        const btns = [...box.querySelectorAll("button")];
-        (btns.find((b) => b.dataset.v === v) || btns[0]).click();
-      }, r.key, val);
-    }
-    await tap("#check");
+    await answerParse(correct);
   } else if (t.type === "govern" || t.type === "indecl") {
     const want = t.type === "govern" ? t.fall : t.answer;
     await page.evaluate((v, correct) => {
@@ -300,11 +350,41 @@ async function answerOne(correct) {
     await page.type("#ans", correct ? t.answers[0] : "xxrangt");
     await tap("#check");
   } else if (t.type === "choice") {
+    /* A pair (item 43) has two `.opts` boxes, one per sentence; a wrong answer
+       gets the first half wrong and the second right. */
+    await page.evaluate((halves, correct) => {
+      const boxes = [...document.querySelectorAll(".opts")];
+      halves.forEach((h, n) => {
+        const btns = [...boxes[n].querySelectorAll("button")];
+        const k = h.options.indexOf(h.answer);
+        (correct || n ? btns[k] : btns.find((_, j) => j !== k)).click();
+      });
+    }, (t.second ? [t, t.second] : [t]).map((h) => ({ options: h.options, answer: h.answer })), correct);
+    await tap("#check");
+  } else if (t.type === "kenni") {
+    /* item 27: sterk / veik, and from þyngd 5 the genitive written first. */
     await page.evaluate((opts, ans, correct) => {
+      const c = window.FALLASKOLI.cur;
+      if (c.askGen) document.getElementById("ans").value = correct ? c.gen[0] : "xxrangt";
       const btns = [...document.querySelectorAll(".opts button")];
       const k = opts.indexOf(ans);
       (correct ? btns[k] : btns.find((_, j) => j !== k)).click();
     }, t.options, t.answer, correct);
+    await tap("#check");
+  } else if (t.type === "slots") {
+    /* item 27: the boxes typed into for real, then sterk / veik if asked.
+       Wrong: the pick when there is one, else the first box. */
+    const forms = await page.evaluate(() => window.FALLASKOLI.cur.slots.map((s) => s.accepted[0]));
+    const boxes = await page.$$("table.slotbox input");
+    for (let k = 0; k < boxes.length; k++)
+      await boxes[k].type(correct || t.options || k ? forms[k] : "xxrangt");
+    if (t.options) {
+      await page.evaluate((opts, ans, correct) => {
+        const btns = [...document.querySelectorAll("#task .opts button")];
+        const k = opts.indexOf(ans);
+        (correct ? btns[k] : btns.find((_, j) => j !== k)).click();
+      }, t.options, t.answer, correct);
+    }
     await tap("#check");
   } else if (t.type === "tap") {
     await page.evaluate((targets, correct) => {
@@ -346,12 +426,20 @@ async function answerOne(correct) {
   /* the verdict should appear, and "Áfram" should be armed */
   await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
 
-  /* v6.9: celebration follows success. A wrong answer never opens a badge
-     window, whatever it earned; the windows wait for the next right answer. */
-  if (!correct && ["fill", "verb", "verbslot", "smidja", "umritun", "govern", "indecl", "syntax", "gap", "choice", "tap", "sort"].includes(t.type)) {
-    await new Promise((r) => setTimeout(r, 60));
-    if (await page.$(".scrim")) problems.push(`a badge window opened on a wrong answer (${t.type})`);
+  /* Item 42: a wrong written answer is offered a second try first. These
+     checks want the answer: give up, which reveals it (the retry itself is
+     tested in its own section below). */
+  if (!correct && !keepRetry && await page.$("#reveal")) {
+    await tap("#reveal");
+    await page.waitForFunction("!document.querySelector('#reveal') && !document.querySelector('#verdict .retry')", { timeout: 4000 });
   }
+
+  /* Item 61: NO badge window opens between questions, right answer or wrong.
+     Whatever was won waits in the cabinet and on the summary (section 2d). */
+  await new Promise((r) => setTimeout(r, 40));
+  if (await page.$(".scrim #badgeok") && await page.evaluate(() => !!window.FALLASKOLI.run))
+    problems.push(`a badge window opened between questions (${t.type}, ${correct ? "right" : "wrong"}): ${
+      await page.evaluate(() => document.querySelector(".scrim h3")?.textContent + " | run.i=" + (window.FALLASKOLI.run && window.FALLASKOLI.run.i) + " " + (window.FALLASKOLI.run && window.FALLASKOLI.run.label))}`);
 
   await dismissModals();
   if (stayAfter) return;
@@ -399,7 +487,7 @@ ok(after.badges < 52, `${after.badges} badges in 100 answers — too many`);
    NOTE what this does NOT say: nothing is lost. `after.badges` above counts the
    badges in the CABINET, and it is unchanged by the ceiling — which is the
    whole design. */
-ok(worstQueue <= 6, `${worstQueue} badge windows opened for one answer`);
+ok(worstQueue <= 6, `${worstQueue} badge windows opened for one answer`);   // always 0 here since v6.13 (item 61)
 
 /* ---------- 2a2. Answers that are right enough (v5.9) -------------------
  *
@@ -429,7 +517,14 @@ async function forceNounCloze() {
     const hit = await page.evaluate((lemma) => {
       const app = window.FALLASKOLI;
       app.forcedNoun = app.lex.lookup(lemma, "kk");
-      app.next();
+      /* At the top noun level the cloze draws from the rarer words and never
+         takes *bíll* (0 in 30 at level 6, 18 in 30 at level 2). Where the
+         long session above leaves that level depends on the seed — it moved
+         when Greining began to be answered in turns (v6.13) — so the word
+         is drawn at a moderate level, and the level is put back. */
+      const was = app.sess.diff.nafnord;
+      app.sess.diff.nafnord = Math.min(was, 2);
+      try { app.next(); } finally { app.sess.diff.nafnord = was; }
       const c = app.cur;
       return !!(c && c.type === "fill" && c.n && c.n.o === lemma && !c.extra);
     }, TEST_NOUN);
@@ -594,7 +689,26 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
     ok(after.verdict, "Enter produced no verdict — the answer was not graded");
     ok(after.answers === before + 1,
       `Enter recorded ${after.answers - before} answers instead of one — it skipped the verdict`);
-    ok(after.locked, "the input is still open after Enter — the verdict was not binding");
+    /* Item 42: a wrong written answer may be tried once more. The box is
+       open for it; a second wrong try, also by Enter, ends the question —
+       and is not a second answer. */
+    if (await page.$("#verdict .retry")) {
+      ok(!after.locked, "a second try was offered but the input is closed");
+      await page.$eval("#ans", (el) => { el.value = ""; });
+      await page.type("#ans", "þettaerheldurekkirétt");
+      await page.keyboard.press("Enter");
+      await new Promise((r) => setTimeout(r, 250));
+      const second = await page.evaluate(() => ({
+        answers: window.FALLASKOLI.S.totalAnswers,
+        retry: !!document.querySelector("#verdict .retry"),
+        locked: !!document.querySelector("#ans")?.disabled,
+      }));
+      ok(!second.retry, "Enter on the second try did not end the question");
+      ok(second.answers === before + 1, `the second try was recorded as another answer (${second.answers - before})`);
+      ok(second.locked, "the input is still open after the second try — the verdict was not binding");
+    } else {
+      ok(after.locked, "the input is still open after Enter — the verdict was not binding");
+    }
     /* And a *second* Enter, once the verdict has had time to stand, should
        move on — the button holds the focus, so it is one keystroke. */
     await new Promise((r) => setTimeout(r, 500));
@@ -646,77 +760,299 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
       "a held Enter skipped the verdict — the child never saw what was right");
     ok(held.answers === before + 1,
       `a held Enter recorded ${held.answers - before} answers instead of one`);
+    /* Item 42: the held Enter's repeats must not have used up the second try. */
+    if (await page.$("#verdict .retry")) {
+      ok(!(await page.$eval("#ans", (el) => el.disabled)), "a held Enter used up the second try");
+      await tap("#reveal");
+    }
     await cdp.detach();
   } else {
     problems.push("found no task with a text input to test a held Enter against");
   }
 }
 
-/* ---------- 2d. Enter after a badge window ------------------------------
+/* ---------- 2e. A second try, then the answer (critique item 42) ---------
  *
- * The owner, on v5.5: *"Enter does correctly work as 'Athuga' but if a badge is
- * won, enter will cycle through and acknowledge the badges but will not trigger
- * 'Áfram', so the user is forced to use the mouse."*
- *
- * The cause was focus, not keys. The only Enter listener lives on the Áfram
- * button; the badge window took the focus, and closing it handed the focus back
- * to `<body>`, where nothing was listening. Every keystroke after that went
- * nowhere.
- *
- * This check fails on v5.5 and passes on v5.6, which is design rule 4: it
- * exercises the whole path with real keystrokes — answer, win a badge, dismiss
- * it with Enter, then press Enter once more and require a new question.      */
+ * A noun cloze answered with another form of the word, on a 390 px phone:
+ * the verdict says "reyndu aftur" without the right form, keeps the box open
+ * and in view with the focus in it, names the error pattern, and has
+ * recorded ONE answer. The right form typed and Enter: right in the second
+ * try, half XP, still one answer; the pupil's form and the right one side by
+ * side, both cells highlighted on the filled-in beygingarkort; Áfram armed. */
 {
   await dismissModals();
-
-  /* Work forward until an answer both used the keyboard and won a badge. Early
-     sessions win badges constantly, so this normally takes one or two goes. */
-  let staged = false;
-  for (let i = 0; i < 60 && !staged; i++) {
-    if (!(await page.$("#ans"))) { await answerOne(true); continue; }
-    const t = await page.evaluate(() => window.FALLASKOLI.cur.answers?.[0] ?? null);
-    if (t == null) { await answerOne(true); continue; }
-    await tap("#ans");
-    await page.type("#ans", t);
-    await page.keyboard.press("Enter");
-    await new Promise((r) => setTimeout(r, 350));
-    if (await page.$(".scrim")) staged = true;
-    else { await dismissModals(); await page.evaluate(() => window.FALLASKOLI.next()); }
-  }
-
-  if (!staged) {
-    problems.push("could not win a badge from a typed answer — 2d never ran");
+  /* A change of `isMobile` reloads the page: a new session is started. */
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess", { timeout: 20000 });
+  await dismissModals();
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+    A.openView("practice");
+    A.startRun("blandad", 40);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  if (!(await forceNounCloze())) {
+    problems.push(`could not draw a noun cloze on ${TEST_NOUN} — the second try is untested`);
   } else {
-    await page.evaluate(() => { window.__q = window.FALLASKOLI.cur; });
+    const plan = await page.evaluate(() => {
+      const A = window.FALLASKOLI, c = A.cur;
+      /* Another case and number entirely, so the miss is not a near one. */
+      const cn = (m) => m.replace(/gr$/, "");
+      const wrongM = Object.keys(c.n.forms).find((m) => {
+        const f = (c.n.forms[m] || [])[0];
+        return f && !c.answers.includes(f) && cn(m) !== cn(c.m) &&
+          Object.keys(c.n.forms).filter((k) => c.n.forms[k].includes(f)).every((k) => cn(k) !== cn(c.m));
+      });
+      return { right: c.answers[0], wrong: c.n.forms[wrongM][0], wrongM, m: c.m,
+        xp: A.S.xp, answers: A.S.totalAnswers, correct: A.S.totalCorrect,
+        review: A.S.review.items.length, fixed: A.S.counters.retryFixed || 0 };
+    });
+    await tap("#ans");
+    await page.type("#ans", plan.wrong);
+    await tap("#check");
+    await page.waitForSelector("#verdict .verdict.retry", { timeout: 4000 });
+    const first = await page.evaluate((right) => {
+      const A = window.FALLASKOLI;
+      const v = document.querySelector("#verdict .verdict");
+      const inp = document.getElementById("ans");
+      const r = inp.getBoundingClientRect();
+      const words = v.textContent.toLowerCase().split(/[^\p{L}]+/u);
+      return {
+        head: v.querySelector("h3").textContent,
+        role: document.getElementById("verdict").getAttribute("role"),
+        live: document.getElementById("verdict").getAttribute("aria-live"),
+        open: !inp.disabled, focused: document.activeElement === inp,
+        described: inp.getAttribute("aria-describedby"),
+        noteText: (document.getElementById("retrynote") || {}).textContent || "",
+        tellsAnswer: words.includes(right.toLowerCase()),
+        why: !!v.querySelector(".why"), diag: !!v.querySelector(".diagline"),
+        reveal: !!document.getElementById("reveal"),
+        check: document.getElementById("check").textContent,
+        answers: A.S.totalAnswers, review: A.S.review.items.length,
+        inView: r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight,
+        /* the prompt's first lines, under the box, are on the screen too */
+        promptInView: (() => { const p = document.getElementById("retrynote").getBoundingClientRect();
+          return p.top >= 0 && p.bottom <= innerHeight; })(),
+        overflow: document.documentElement.scrollWidth - innerWidth,
+      };
+    }, plan.right);
+    await page.screenshot({ path: "/tmp/fallaskoli-retry-390.png" }).catch(() => {});
+    ok(/reyndu aftur/.test(first.head), `the first miss did not ask for a second try: "${first.head}"`);
+    ok(first.role === "status" && first.live === "polite", "the verdict holding the retry prompt is not a live region");
+    ok(first.described === "retrynote" && /skrifaðu svarið aftur/.test(first.noteText),
+      "the open box does not point the screen reader at the retry prompt");
+    ok(first.open && first.focused, "the box is not open with the focus in it for the second try");
+    ok(first.inView, "at 390 px the retry input is not in view");
+    ok(first.promptInView, "at 390 px the retry prompt is below the screen");
+    ok(first.overflow <= 0, `at 390 px the retry prompt is ${first.overflow}px wider than the screen`);
+    ok(!first.tellsAnswer, `the retry prompt gives the answer (${plan.right}) away`);
+    ok(first.why, "no af hverju line under the first miss");
+    ok(first.diag, "the error pattern is not named under the first miss");
+    ok(first.reveal && first.check === "Athuga", `the buttons during the second try: reveal ${first.reveal}, "${first.check}"`);
+    ok(first.answers === plan.answers + 1, `the first miss recorded ${first.answers - plan.answers} answers`);
+    ok(first.review === plan.review + 1, "the first miss is not in the review queue");
 
-    /* Dismiss every badge window with real Enter presses, exactly as a child
-       would. `freshEnter` rejects anything older than the window itself, so the
-       pauses matter. */
-    let windows = 0;
-    for (let i = 0; i < 80 && (await page.$(".scrim")); i++) {
-      await page.keyboard.press("Enter");
-      await new Promise((r) => setTimeout(r, 140));
-      windows++;
-    }
-    ok(!(await page.$(".scrim")), "Enter did not close the badge windows");
-    ok(windows > 0, "no badge window was open, so nothing was proved");
-
-    /* The keyboard must be back on the Áfram button the moment the last window
-       goes. This is the assertion that fails on v5.5. */
-    const focused = await page.evaluate(() => document.activeElement?.id || "");
-    ok(focused === "check",
-      `focus went to "${focused || "<body>"}" after the badge window, not to Áfram`);
-
-    /* And the next Enter must actually draw a new question. Wait past the
-       400 ms read-grace first — the same press must not do both jobs. */
-    await new Promise((r) => setTimeout(r, 600));
+    await page.$eval("#ans", (el) => { el.value = ""; });
+    await page.type("#ans", plan.right);
     await page.keyboard.press("Enter");
-    await new Promise((r) => setTimeout(r, 400));
-    await dismissModals();
-    const advanced = await page.evaluate(() => window.FALLASKOLI.cur !== window.__q);
-    ok(advanced, "Enter after a badge window did not trigger Áfram — the mouse was still required");
-    ok(await page.$("#task .card") !== null, "no task on screen after Áfram");
+    await page.waitForFunction("!document.querySelector('#verdict .retry')", { timeout: 4000 });
+    await new Promise((r) => setTimeout(r, 450));
+    const done = await page.evaluate((plan) => {
+      const A = window.FALLASKOLI;
+      const v = document.querySelector("#verdict .verdict");
+      const td = (cls) => [...document.querySelectorAll(`#verdict table.map.filled td.${cls}`)].map((x) => x.textContent);
+      return {
+        cls: v.className, head: v.querySelector("h3").textContent,
+        xp: +((v.querySelector(".xpop") || {}).textContent || "").replace(/[^0-9]/g, ""),
+        gained: A.S.xp - plan.xp, answers: A.S.totalAnswers, correct: A.S.totalCorrect,
+        fixed: A.S.counters.retryFixed,
+        yours: (v.querySelector(".compare .yours .forms") || {}).textContent || "",
+        right: (v.querySelector(".compare .right .forms") || {}).textContent || "",
+        on: td("on"), mine: td("yours"),
+        mapShown: (() => { const m = document.querySelector("#verdict table.map.filled");
+          return !!m && m.getBoundingClientRect().width > 0; })(),
+        locked: document.getElementById("ans").disabled,
+        reveal: !!document.getElementById("reveal"),
+        check: document.getElementById("check").textContent,
+        focus: document.activeElement && document.activeElement.id,
+        diag: !!v.querySelector(".diagline"),
+        overflow: document.documentElement.scrollWidth - innerWidth,
+      };
+    }, plan);
+    await page.screenshot({ path: "/tmp/fallaskoli-retry-390-done.png", fullPage: true }).catch(() => {});
+    ok(/\bok\b/.test(done.cls) && /annarri tilraun/.test(done.head), `a right second try drew "${done.cls}" / "${done.head}"`);
+    ok(done.xp > 0 && done.gained === done.xp, `a right second try showed +${done.xp} XP and gave ${done.gained}`);
+    ok(done.answers === plan.answers + 1 && done.correct === plan.correct,
+      "the second try was counted as an answer of its own, or as a right one");
+    ok(done.fixed === plan.fixed + 1, "the right second try was not counted");
+    ok(done.yours === plan.wrong && done.right.split(" / ").includes(plan.right),
+      `the two forms are not side by side: "${done.yours}" | "${done.right}"`);
+    ok(done.mapShown, "at 390 px the filled-in paradigm is not shown");
+    ok(done.on.length === 1 && done.on[0] === plan.right, `the right cell is not highlighted in the paradigm: ${done.on}`);
+    ok(done.mine.includes(plan.wrong), `the pupil's cell is not highlighted in the paradigm: ${done.mine}`);
+    ok(done.locked && !done.reveal, "the box is still open after the second try");
+    ok(/^(Áfram|Sjá samantekt)/.test(done.check) && done.focus === "check", `Áfram is not armed: "${done.check}", focus ${done.focus}`);
+    ok(done.diag, "the error pattern of the miss is gone from the final verdict");
+    ok(done.overflow <= 0, `at 390 px the filled-in paradigm is ${done.overflow}px wider than the screen`);
+    await page.keyboard.press("Enter");
+    await page.waitForFunction((was) => window.FALLASKOLI.cur && !window.FALLASKOLI.cur.retried, { timeout: 4000 }).catch(() => {});
+    ok(await page.evaluate(() => !!window.FALLASKOLI.cur && !window.FALLASKOLI.cur.retried),
+      "Enter after the second try did not go on");
   }
+  await page.setViewport({ width: 1100, height: 900 });
+  await page.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess", { timeout: 20000 });
+  await dismissModals();
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null;
+    A.openView("practice");
+    A.startRun("blandad", 100000);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+}
+
+/* ---------- 2e'. Setningasmiðja's second try (review of v6.13, S7) -------
+ *
+ * One card's word left in its dictionary form: the retry marks that card red
+ * and no other, says how many were right, keeps the box open with the focus
+ * in it — and gives neither the model sentence nor the right form away.
+ * "Sýna svarið" then shows them. */
+{
+  await dismissModals();
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    A.openView("practice");
+    A.startRun("malbeiting", 5, null, { types: ["smidja"], skills: ["malbeiting"], label: "Setningasmiðja" });
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  const plan = await page.evaluate(() => {
+    const t = window.FALLASKOLI.cur;
+    if (!t || t.type !== "smidja") return null;
+    const words = t.answers[0].split(" ");
+    const k = t.cards.findIndex((c) => !c.fixed && c.answers[0] !== c.text && words.includes(c.answers[0]));
+    if (k < 0) return null;
+    const c = t.cards[k];
+    return { k, form: c.answers[0], model: t.answers[0],
+      first: words.map((w) => (w === c.answers[0] ? c.text : w)).join(" ") };
+  });
+  if (!plan) problems.push("could not draw a Setningasmiðja with a card to get wrong — its second try is untested");
+  else {
+    await page.type("#ans", plan.first);
+    await tap("#check");
+    await page.waitForSelector("#verdict .verdict.retry", { timeout: 4000 });
+    const got = await page.evaluate((plan) => {
+      const v = document.querySelector("#verdict .verdict");
+      const cards = [...document.querySelectorAll("#task .wcards .wcard")];
+      const inp = document.getElementById("ans");
+      return { text: v.textContent, red: cards.map((c, k) => c.classList.contains("wrongpick") ? k : -1).filter((k) => k >= 0),
+        green: cards.filter((c) => c.classList.contains("right")).length,
+        open: !inp.disabled, focused: document.activeElement === inp, reveal: !!document.getElementById("reveal"),
+        note: (document.getElementById("retrynote") || {}).textContent || "" };
+    }, plan);
+    ok(got.red.length === 1 && got.red[0] === plan.k && got.green === 0,
+      `the retry should mark card ${plan.k} red and nothing green: red ${got.red}, green ${got.green}`);
+    ok(got.open && got.focused && got.reveal, "the Setningasmiðja retry: box not open and focused, or no Sýna svarið");
+    ok(/rauðu spjöldunum/.test(got.note) && /orðum rétt beygð/.test(got.text), `the retry prompt: "${got.note}"`);
+    ok(!got.text.includes(plan.model) && !got.text.toLowerCase().split(/[^\p{L}]+/u).includes(plan.form.toLowerCase()),
+      "the Setningasmiðja retry gives the answer away");
+    await tap("#reveal");
+    await page.waitForFunction("!document.querySelector('#reveal') && !document.querySelector('#verdict .retry')", { timeout: 4000 });
+    const end = await page.evaluate(() => ({ text: document.querySelector("#verdict .verdict").textContent,
+      locked: document.getElementById("ans").disabled }));
+    ok(end.text.includes(plan.model) && end.locked, "Sýna svarið did not show the model sentence and close the box");
+  }
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    A.openView("practice");
+    A.startRun("blandad", 100000);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+}
+
+/* ---------- 2d. The one celebration, at the summary (item 61) -----------
+ *
+ * Badge windows used to open between questions. They now wait: the hundred
+ * answers above won badges (the cabinet has them, and no window opened while
+ * the session ran, checked in `answerOne`), and ending the session opens them
+ * once, over the summary, which lists every one.
+ *
+ * This is also where the v5.6 keyboard rule lives now. The owner, on v5.5:
+ * *"Enter does correctly work as 'Athuga' but if a badge is won, enter will
+ * cycle through and acknowledge the badges but will not trigger 'Áfram', so
+ * the user is forced to use the mouse."* The cause was focus: closing a window
+ * drops it on <body>, where nothing listens. The windows are dismissed here with
+ * real Enter presses, and then the focus must be on the summary's first button
+ * and one more Enter must do what that button says.                         */
+{
+  await dismissModals();
+  /* A fresh session, and one badge to win in it: the cheap `once` badge for
+     fifty right answers is taken off the shelf, so the next right answer wins
+     it again. It must come with NO window, and wait for the summary. */
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    delete A.S.badges.tot50;
+    A.openView("practice");
+    A.startRun("blandad", 100000);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  for (let i = 0; i < 6; i++) await answerOne(true);
+  const before = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    return { won: A.run.badges.length, run: !!A.run, shelf: !!A.S.badges.tot50 };
+  });
+  ok(before.run && before.shelf && before.won > 0,
+    `the session won ${before.won} badges (tot50 on the shelf: ${before.shelf}), no window opened`);
+  await page.evaluate(() => window.FALLASKOLI.endRun(true));
+  await new Promise((r) => setTimeout(r, 300));
+  const sum = await page.evaluate(() => ({
+    summary: !!document.querySelector("#task .summary"),
+    listed: document.querySelectorAll("#task .summary .sumbadges .runchip").length,
+    windows: !!document.querySelector(".scrim #badgeok"),
+    run: !!window.FALLASKOLI.run,
+  }));
+  ok(sum.summary && !sum.run, "ending the session did not draw the summary");
+  ok(sum.listed === before.won, `the summary lists ${sum.listed} badges, the session won ${before.won}`);
+  ok(sum.windows, "the session's badges were not celebrated at the summary");
+
+  /* One celebration: the ceiling of core/rarity.js holds for the whole session. */
+  let windows = 0;
+  for (let i = 0; i < 80 && (await page.$(".scrim")); i++) {
+    await page.keyboard.press("Enter");
+    await new Promise((r) => setTimeout(r, 140));
+    windows++;
+  }
+  ok(!(await page.$(".scrim")), "Enter did not close the badge windows");
+  ok(windows > 0, "no badge window was open, so nothing was proved");
+  worstQueue = Math.max(worstQueue, windows);
+  ok(worstQueue <= 6, `${worstQueue} badge windows opened at the summary`);
+
+  const focused = await page.evaluate(() => {
+    const e = document.activeElement;
+    return e && e.closest && e.closest(".nextrow") ? "nextrow" : (e && (e.id || e.tagName));
+  });
+  ok(focused === "nextrow", `focus went to "${focused}" after the last badge window, not to the summary's buttons`);
+
+  /* The next Enter does what the focused button says: a new session begins. */
+  await new Promise((r) => setTimeout(r, 600));
+  await page.keyboard.press("Enter");
+  await new Promise((r) => setTimeout(r, 600));
+  await dismissModals();
+  ok(await page.evaluate(() => !!window.FALLASKOLI.run || !!window.FALLASKOLI.cur),
+    "Enter on the summary's first button did nothing — the mouse was still required");
+
+  /* Back to one long session for what follows. */
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    A.openView("practice");
+    A.startRun("blandad", 100000);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  ok(await page.$("#task .card") !== null, "no task on screen after the new session");
 }
 
 /* ---------- 3. The glossary tooltip ---------- */
@@ -769,7 +1105,48 @@ if (glossCount > 0) {
  * Three things are asserted, and the third is the one that would be forgotten:
  * the trigger is gone, hovering really does open nothing, and the definition
  * comes BACK once the answer is in.                                        */
-for (const want of ["parse", "indecl"]) {
+/* v6.13 (item 1): Greindu orðið goes further. Even the short text gave the
+   class away ("vera í láréttri stellingu" is a verb), so until the class is
+   answered there is no definition on the page at all — and no feature row,
+   since Mynd, Háttur and Tíð name a verb as surely. Once the class is
+   committed the definition comes back, open. Drawn until a word with a
+   definition comes up, so the last check cannot pass by having nothing to
+   look at. */
+{
+  await dismissModals();
+  await tap(`nav.tabs button[data-view="practice"]`);
+  let seen = 0, before = null, after = null;
+  for (let draw = 0; draw < 40 && !after; draw++) {
+    const found = await page.evaluate(() => {
+      for (let i = 0; i < 400; i++) { window.FALLASKOLI.next(); if (window.FALLASKOLI.cur.type === "parse") return true; }
+      return false;
+    });
+    if (!found) break;
+    seen++;
+    before = await page.evaluate(() => ({
+      def: !!document.querySelector("#task .defline, #task #defbox"),
+      rows: [...document.querySelectorAll("#task .opts")].map((b) => b.dataset.q),
+    }));
+    ok(!before.def, "parse: a definition is on the page before the class is answered");
+    ok(before.rows.length === 1 && before.rows[0] === "fl",
+      `parse: rows on the page before the class is answered: ${before.rows.join(", ")}`);
+    await page.evaluate(() => {
+      const c = window.FALLASKOLI.cur;
+      [...document.querySelectorAll('.opts[data-q="fl"] button')].find((b) => b.dataset.v === c.rows[0].answer).click();
+      document.getElementById("check").click();
+    });
+    after = await page.evaluate(() => {
+      const b = document.querySelector("#task .defline");
+      return b ? { open: !!b.querySelector(".dfn"), locked: !!b.querySelector(".dfnlocked") } : null;
+    });
+  }
+  ok(seen > 0, "parse: no Greindu orðið question could be drawn");
+  ok(after !== null, "parse: no word in 40 draws had a definition after its class — nothing was proved");
+  if (after) ok(after.open && !after.locked, "parse: the definition did not come back open after the class");
+  await dismissModals();
+}
+
+for (const want of ["indecl"]) {
   await dismissModals();
   await tap(`nav.tabs button[data-view="practice"]`);
   /* Draw this type until one of them actually has a definition box. Not every
@@ -837,19 +1214,12 @@ for (const want of ["parse", "indecl"]) {
     }, want);
   }
   if (!again) continue;
-  await page.evaluate((w) => {
+  await page.evaluate(() => {
     const c = window.FALLASKOLI.cur;
-    if (w === "parse") {
-      c.rows.forEach((r) => {
-        const b = document.querySelector(`.opts[data-q="${r.key}"]`);
-        [...b.querySelectorAll("button")].find((x) => x.dataset.v === r.answer)?.click();
-      });
-    } else {
-      [...document.querySelectorAll(".opts button")]
-        .find((x) => x.dataset.v === c.answer)?.click();
-    }
+    [...document.querySelectorAll(".opts button")]
+      .find((x) => x.dataset.v === c.answer)?.click();
     document.getElementById("check").click();
-  }, want);
+  });
   await new Promise((r) => setTimeout(r, 250));
   const afterAnswer = await page.evaluate(() => {
     const b = document.querySelector("#task .defline");
@@ -891,8 +1261,9 @@ for (const view of ["progress", "class", "settings"]) {
   ok(filled > 120, `tab ${view} is empty (${filled} characters)`);
 }
 
-/* The skill cards are on Merki og framvinda and the switches on Stillingar og
-   námsefni; both are drawn when their tab is opened. */
+/* The skill cards are on Merki og framvinda (the heads of the skill map's
+   trails) and the switches on Stillingar og námsefni; both are drawn when
+   their tab is opened. */
 await openTab("progress");
 await openTab("settings");
 /* The count is read from SKILLS, not written here. A new skill should appear
@@ -901,7 +1272,8 @@ await openTab("settings");
    time, and then the claim would be false. */
 const skillCount = await page.evaluate(
   () => document.querySelectorAll('#policyeditor input[data-dim="skills"]').length);
-const skillCards = await page.$$eval(".skillcard", (e) => e.length);
+/* Since item 83 a skill's card is the head of its trail on the skill map. */
+const skillCards = await page.$$eval("#skillmap .smlane:not(.planned)", (e) => e.length);
 ok(skillCards === skillCount, `${skillCards} skill cards but ${skillCount} skills`);
 ok(skillCount === 12, `${skillCount} skills — 11 before Málbeiting (v6.9)`);
 
@@ -918,6 +1290,59 @@ const switchCounts = await page.evaluate(() => ({
 ok(switchCounts.types === QT_COUNT, `${switchCounts.types} question-type switches, expected ${QT_COUNT} (v6.11: one per entry in QUESTION_TYPES)`);
 ok(switchCounts.levels === 7, `${switchCounts.levels} difficulty switches, expected 7`);
 ok(switchCounts.attrs === 30, `${switchCounts.attrs} attribute switches, expected 30`);
+
+/* v6.13 (item 39): three year presets above the switches. A press sets the
+   switches to what the curriculum map says the year covers, the editor says
+   which year is chosen, and one switch changed by hand unchooses it. The
+   state is put back afterwards so the checks below start where they did. */
+{
+  const before = await page.evaluate(() => JSON.stringify({
+    enabled: window.FALLASKOLI.S.enabled, policy: window.FALLASKOLI.S.policy }));
+  const read = () => page.evaluate(() => ({
+    buttons: [...document.querySelectorAll("#policyeditor button[data-preset]")]
+      .map((b) => b.textContent.trim()),
+    pressed: [...document.querySelectorAll('#policyeditor button[aria-pressed="true"]')]
+      .map((b) => b.dataset.preset),
+    setn: document.querySelector('#policyeditor input[data-dim="skills"][data-key="setningafraedi"]').checked,
+    obst: document.querySelector('#policyeditor input[data-dim="types"][data-key="ob_st"]').checked,
+    lvl6: document.querySelector('#policyeditor input[data-dim="levels"][data-key="6"]').checked,
+    saved: window.FALLASKOLI.S.enabled.setningafraedi,
+    line: document.querySelector("#polpresetnow").textContent,
+  }));
+  const press = (y) => page.evaluate((year) =>
+    document.querySelector(`#policyeditor button[data-preset="${year}"]`).click(), y);
+
+  let v = await read();
+  ok(v.buttons.join("|") === "8. bekkur|9. bekkur|10. bekkur", `preset buttons: ${v.buttons.join("|")}`);
+  ok(v.pressed.length === 0, `a new pupil is on no preset, but ${v.pressed} is pressed`);
+
+  await press(10);
+  v = await read();
+  ok(v.pressed.join() === "10" && v.setn && v.obst && v.lvl6 && v.saved === true,
+    `10. bekkur: ${JSON.stringify(v)}`);
+
+  await press(8);
+  v = await read();
+  ok(v.pressed.join() === "8" && !v.setn && !v.obst && !v.lvl6 && v.saved === false,
+    `8. bekkur: ${JSON.stringify(v)}`);
+  ok(v.line.startsWith("8. bekkur"), `the line under the buttons says "${v.line}"`);
+
+  await page.evaluate(() =>
+    document.querySelector('#policyeditor input[data-dim="types"][data-key="ob_st"]').click());
+  v = await read();
+  ok(v.pressed.length === 0 && v.line.startsWith("Enginn bekkur"),
+    `one switch changed by hand should unchoose the year: ${JSON.stringify(v)}`);
+
+  await page.evaluate((raw) => {
+    const A = window.FALLASKOLI, was = JSON.parse(raw);
+    for (const k of Object.keys(A.S.enabled)) delete A.S.enabled[k];
+    Object.assign(A.S.enabled, was.enabled);
+    A.S.policy = was.policy;
+    A.reloadPolicy(); A.save();
+  }, before);
+  await openTab("progress");
+  await openTab("settings");
+}
 
 /* ---------- 4b. The collection and hidden badges ---------- */
 await openTab("progress");
@@ -1501,7 +1926,7 @@ await page.setViewport({ width: 1100, height: 900 });
   await tap('.sizeb[data-size="10"]');
   await tap("#runstart");
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
-  ok(await page.$("#runbar .runstrip") !== null, "no strip above a session in progress");
+  ok(await page.$("#runbar .runline") !== null, "no line above a session in progress");
   const skills = new Set();
   for (let i = 0; i < 10; i++) {
     skills.add(await page.evaluate(() => window.FALLASKOLI.cur && window.FALLASKOLI.cur.skill));
@@ -1519,9 +1944,353 @@ await page.setViewport({ width: 1100, height: 900 });
   ok(sum.run === null && sum.last && sum.last.topic === pickTopic && sum.last.n === 10,
     "the session was not written down: " + JSON.stringify(sum.last));
   ok(sum.diag > 0, "the error diagnosis kept nothing");
+  await dismissModals();      // item 61: the session's badges are celebrated over its summary
   await tap('#task [data-next="pick"]');
   ok(await page.$("#task .runpick") !== null, "„Velja annað efni“ does not go back to the picker");
   await startPractice(page, 5000);
+}
+
+/* ---------- v6.13: the question gets the screen (items 2, 47, 48, 53) ----
+ * On a 390 × 844 phone the question used to start 590 px down, under the
+ * title, four stat tiles, the level bar, the tabs, the date and the session
+ * strip, and the á ð é í … pad was stuck to the bottom of the screen — on top
+ * of the answer box and of a table's first row. Now, during a session:
+ * nothing of the header shows, the question starts near the top, the pad is
+ * in the flow below the input, and Hætta is a small × that still asks. Checked
+ * on a phone and a laptop, for a typed question, a table and a choice. The
+ * device keyboard is not there in headless Chrome; on a phone it takes about
+ * the lower 40 % of the screen, so the answer box must end above that line. */
+{
+  const KEYBOARD = 0.4;
+  const drawOf = async (types) => page.evaluate((types) => {
+    const A = window.FALLASKOLI;
+    for (let i = 0; i < 600; i++) { A.next(); if (types.includes(A.cur && A.cur.type)) return A.cur.type; }
+    return null;
+  }, types);
+  for (const vp of [{ nm: "phone 390", w: 390, h: 844, touch: true }, { nm: "laptop 1280", w: 1280, h: 800, touch: false }]) {
+    await page.setViewport({ width: vp.w, height: vp.h, isMobile: vp.touch, hasTouch: vp.touch,
+                             deviceScaleFactor: 1 });
+    await dismissModals();
+    await page.evaluate(() => {
+      const A = window.FALLASKOLI;
+      A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+      A.S.enabled.toluord = true; A.S.enabled.greining = true;
+      /* A settled pad setting from elsewhere would hide what is measured. */
+      A.S.settings.keypad = true;
+      A.reloadPolicy();
+      A.openView("practice");
+      A.startRun("blandad", 10);
+    });
+    await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+    const chrome = await page.evaluate(() => {
+      const shown = (sel) => { const e = document.querySelector(sel); return !!e && e.getClientRects().length > 0; };
+      const x = document.getElementById("runstop");
+      const r = x ? x.getBoundingClientRect() : null;
+      return {
+        insession: document.body.classList.contains("insession"),
+        visible: [".topbar", ".stats", ".levelbar", ".levelmeta", "nav.tabs", ".boardhead"].filter(shown),
+        line: shown("#runbar .runline"), count: document.querySelector("#runbar .runcount")?.textContent || "",
+        x: r && { w: Math.round(r.width), h: Math.round(r.height), text: x.textContent.trim(),
+                  label: x.getAttribute("aria-label") || "" },
+        lineH: Math.round(document.querySelector("#runbar .runline")?.getBoundingClientRect().height || 0),
+      };
+    });
+    ok(chrome.insession, `${vp.nm}: the session layout is not on during a session`);
+    ok(chrome.visible.length === 0, `${vp.nm}: still shown during a session: ${chrome.visible.join(", ")}`);
+    ok(chrome.line && /^1\/10/.test(chrome.count), `${vp.nm}: the session line does not say 1/10: "${chrome.count}"`);
+    ok(chrome.lineH > 0 && chrome.lineH <= 52, `${vp.nm}: the session line is ${chrome.lineH}px tall — it should be one slim line`);
+    ok(chrome.x && chrome.x.text === "×" && chrome.x.w <= 48 && chrome.x.h <= 48 && /Hætta/.test(chrome.x.label),
+      `${vp.nm}: Hætta is not a small × in the line: ${JSON.stringify(chrome.x)}`);
+
+    for (const [kind, types] of [["typed", ["fill", "verb", "verbslot"]], ["table", ["table"]],
+                                 ["choice", ["choice", "parse", "govern", "clause", "indecl"]]]) {
+      const got = await drawOf(types);
+      ok(!!got, `${vp.nm}: could not draw a ${kind} question in a mixed session`);
+      if (!got) continue;
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await new Promise((r) => setTimeout(r, 60));
+      const m = await page.evaluate(() => {
+        const box = (e) => { if (!e) return null; const r = e.getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, h: r.height }; };
+        const keys = document.getElementById("keys");
+        const inp = document.querySelector("#ans, table.decl input:not([disabled]), #task textarea");
+        const row = document.querySelector("table.decl tr");
+        /* What is drawn on top of the middle of each cell of the first row:
+           it must be the row itself, not the pad or anything else. */
+        const cover = row ? [...row.cells].map((c) => {
+          const r = c.getBoundingClientRect();
+          const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return el && row.contains(el) ? null : (el ? el.tagName + "." + el.className : "nothing");
+        }).filter(Boolean) : [];
+        return {
+          q: box(document.querySelector("#task .card")), input: box(inp),
+          keys: keys && keys.getClientRects().length ? box(keys) : null,
+          keysPos: keys ? getComputedStyle(keys).position : null,
+          cover, vh: window.innerHeight,
+        };
+      });
+      ok(m.q && m.q.top <= 120, `${vp.nm} / ${kind} (${got}): the question starts ${m.q && Math.round(m.q.top)}px down`);
+      if (m.input) {
+        ok(m.keys && m.keys.h > 0, `${vp.nm} / ${kind}: no letter pad under a typed answer with the pad switched on`);
+        if (m.keys) {
+          const meet = m.input.left < m.keys.right && m.keys.left < m.input.right &&
+                       m.input.top < m.keys.bottom && m.keys.top < m.input.bottom;
+          ok(!meet, `${vp.nm} / ${kind}: the answer box and the letter pad overlap`);
+          ok(m.keys.top >= m.input.bottom, `${vp.nm} / ${kind}: the letter pad is not below the answer box`);
+          ok(m.keysPos === "static", `${vp.nm} / ${kind}: the letter pad is ${m.keysPos}, not in the flow`);
+        }
+        if (vp.touch && kind === "typed")
+          ok(m.input.bottom <= m.vh * (1 - KEYBOARD),
+            `${vp.nm} / ${kind}: the answer box ends at ${Math.round(m.input.bottom)}px, under the device keyboard`);
+      }
+      if (kind === "table") ok(m.cover.length === 0, `${vp.nm}: the first table row is covered by ${m.cover.join(", ")}`);
+      if (vp.touch) await page.screenshot({ path: `/tmp/fallaskoli-session-${vp.w}-${kind}.png` }).catch(() => {});
+    }
+
+    /* The × asks; "Halda áfram" keeps the session; "Já, hætta" ends it, and
+       the summary shows the header again. */
+    await tap("#runstop");
+    ok(await page.$("#runquit-no") !== null, `${vp.nm}: the × did not ask before stopping the session`);
+    if (await page.$("#runquit-no")) await tap("#runquit-no");
+    ok(await page.evaluate(() => !!window.FALLASKOLI.run), `${vp.nm}: "Halda áfram" ended the session`);
+    await answerOneNoNext(true);
+    await tap("#runstop");
+    if (await page.$("#runquit-yes")) await tap("#runquit-yes");
+    await dismissModals();
+    const after = await page.evaluate(() => ({
+      run: !!window.FALLASKOLI.run, summary: !!document.querySelector("#task .summary"),
+      insession: document.body.classList.contains("insession"),
+      header: document.querySelector(".topbar").getClientRects().length > 0,
+      tabs: document.querySelector("nav.tabs").getClientRects().length > 0,
+    }));
+    ok(!after.run && after.summary, `${vp.nm}: "Já, hætta" did not end in a summary`);
+    ok(!after.insession && after.header && after.tabs, `${vp.nm}: the header and tabs did not come back for the summary`);
+    /* The regression that server-test.mjs hit after item 47: no session runs
+       now, so every tab must take a real mouse click (not just be "visible"),
+       and the class must not linger on any other view. */
+    for (const v of ["settings", "progress", "practice"]) {
+      await tap(`nav.tabs button[data-view="${v}"]`);
+      ok(await page.evaluate((v) => !document.body.classList.contains("insession") &&
+        document.querySelector(`nav.tabs button[data-view="${v}"]`).getAttribute("aria-selected") === "true" &&
+        !document.getElementById("view-" + v).hidden, v),
+        `${vp.nm}: with no session running, a click on the ${v} tab did not open it`);
+    }
+
+    /* A 📖 link mid-session opens Lesefni with the tabs back (the way out);
+       Æfa returns to the slim line. */
+    await page.evaluate(() => { const A = window.FALLASKOLI; A.runDone = null; A.startRun("blandad", 10); });
+    await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+    await page.evaluate(() => window.FALLASKOLI.openView("lessons", "foll"));
+    ok(await page.evaluate(() => !document.body.classList.contains("insession") &&
+      document.querySelector("nav.tabs").getClientRects().length > 0),
+      `${vp.nm}: Lesefni opened mid-session has no tabs to come back by`);
+    await page.evaluate(() => document.querySelector('nav.tabs button[data-view="practice"]').click());
+    ok(await page.evaluate(() => document.body.classList.contains("insession")),
+      `${vp.nm}: back on Æfa mid-session, the slim line did not return`);
+    await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+  }
+  await page.setViewport({ width: 1100, height: 900 });
+}
+
+/* ---------- v6.13: Greindu orðið on a phone, in turns (items 1, 49) -------
+ * The analysis question used to show every row at once — and only the rows
+ * of the right class, so a verb arrived with Mynd, Háttur, Tíð and Persóna
+ * above the class chips — and on a 390 × 844 phone the eleven class chips
+ * and up to six rows took more than two screens, with Athuga at the bottom.
+ * Now: before the class is answered, no feature row and no definition is in
+ * the page; after it, one row is open at a time, and that row and the button
+ * are on the screen at every step. Three questions: a right class, a wrong
+ * class, and a verb with four rows or more. Screenshots in /tmp. */
+{
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await dismissModals();
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+    A.S.enabled.greining = true;
+    A.reloadPolicy();
+    A.openView("practice");
+    A.startRun("blandad", 10);
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  const where = () => page.evaluate(() => {
+    const box = (e) => { if (!e || !e.getClientRects().length) return null;
+      const r = e.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; };
+    const row = document.querySelector("#parserows .qopen");
+    return {
+      vh: window.innerHeight, row: box(row), key: row ? row.dataset.row : null,
+      go: box(document.getElementById("check")),
+      opts: [...document.querySelectorAll("#task .opts")].map((b) => b.dataset.q),
+      def: !!document.querySelector("#task .defline, #task #defbox"),
+    };
+  });
+  const seen = (b, vh) => !!b && b.top >= 0 && b.bottom <= vh;
+  for (const kind of ["right", "wrong", "verb"]) {
+    const got = await page.evaluate((kind) => {
+      const A = window.FALLASKOLI;
+      for (let i = 0; i < 3000; i++) {
+        A.next();
+        const c = A.cur;
+        if (!c || c.type !== "parse") continue;
+        if (kind === "verb" ? c.t.c === "sagnorð" && c.rows.length >= 4 : c.rows.length >= 3)
+          return { cls: c.rows[0].answer, rows: c.rows.map((r) => ({ key: r.key, answer: r.answer })) };
+      }
+      return null;
+    }, kind);
+    ok(!!got, `phone / Greining (${kind}): no such question could be drawn`);
+    if (!got) continue;
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await new Promise((r) => setTimeout(r, 60));
+    let m = await where();
+    ok(!m.def, `phone / Greining (${kind}): a definition is on the page before the class`);
+    ok(m.opts.length === 1 && m.opts[0] === "fl",
+      `phone / Greining (${kind}): rows on the page before the class: ${m.opts.join(", ")}`);
+    ok(seen(m.row, m.vh) && seen(m.go, m.vh),
+      `phone / Greining (${kind}): the class row or its button is off the screen: ${JSON.stringify(m)}`);
+    await page.screenshot({ path: `/tmp/fallaskoli-parse-390-${kind}-0.png` }).catch(() => {});
+    const said = kind === "wrong"
+      ? await page.evaluate((cls) => [...document.querySelectorAll('.opts[data-q="fl"] button')]
+          .map((b) => b.dataset.v).find((v) => v !== cls), got.cls)
+      : got.cls;
+    await tap(`.opts[data-q="fl"] button[data-v="${said}"]`);
+    m = await where();
+    ok(m.opts.length === 1, `phone / Greining (${kind}): a tap on a class chip opened rows without the button`);
+    await tap("#check");
+    for (let k = 1; k < got.rows.length; k++) {
+      m = await where();
+      const r = got.rows[k];
+      ok(m.key === r.key, `phone / Greining (${kind}): row ${k} should be ${r.key}, is ${m.key}`);
+      ok(m.opts.length === 1, `phone / Greining (${kind}): ${m.opts.length} rows open at once: ${m.opts.join(", ")}`);
+      ok(seen(m.row, m.vh), `phone / Greining (${kind}): the open row ${r.key} is off the screen: ${JSON.stringify(m.row)}`);
+      ok(seen(m.go, m.vh), `phone / Greining (${kind}): the button is off the screen at row ${r.key}: ${JSON.stringify(m.go)}`);
+      if (k === 1) {
+        const mark = await page.evaluate(() => ({
+          wrong: !!document.querySelector("#parserows .qcls .qpick.wrongpick"),
+          right: document.querySelector("#parserows .qcls .qpick.right")?.textContent.trim() || null,
+        }));
+        ok(mark.right === got.cls, `phone / Greining (${kind}): the right class is not shown after the class step`);
+        ok(mark.wrong === (kind === "wrong"), `phone / Greining (${kind}): the class mark is wrong: ${JSON.stringify(mark)}`);
+        await page.screenshot({ path: `/tmp/fallaskoli-parse-390-${kind}-1.png` }).catch(() => {});
+      }
+      if (k === got.rows.length - 1)
+        await page.screenshot({ path: `/tmp/fallaskoli-parse-390-${kind}-last.png` }).catch(() => {});
+      await tap(`.opts[data-q="${r.key}"] button[data-v="${r.answer}"]`);
+    }
+    m = await where();
+    ok(m.opts.length === 0 && seen(m.go, m.vh),
+      `phone / Greining (${kind}): after the last row the button is not on the screen: ${JSON.stringify(m)}`);
+    await tap("#check");
+    const v = await page.evaluate(() => ({
+      verdict: !!document.querySelector("#verdict .verdict.ok, #verdict .verdict.no"),
+      ok: !!document.querySelector("#verdict .verdict.ok"),
+    }));
+    ok(v.verdict, `phone / Greining (${kind}): no verdict after the last button`);
+    ok(v.ok === (kind !== "wrong"), `phone / Greining (${kind}): the verdict is ${v.ok ? "right" : "wrong"}`);
+    await page.screenshot({ path: `/tmp/fallaskoli-parse-390-${kind}-verdict.png`, fullPage: true }).catch(() => {});
+    await dismissModals();
+  }
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+  await page.setViewport({ width: 1100, height: 900 });
+}
+
+/* Item 53: on a touch device set to Icelandic the pad is off until the child
+   switches it on; the switch in Stillingar shows what is in force and brings
+   the pad back at once. A page of its own, so the language stays there. */
+{
+  const p2 = await browser.newPage();
+  await p2.evaluateOnNewDocument(() => {
+    Object.defineProperty(Navigator.prototype, "language", { get: () => "is-IS" });
+  });
+  await p2.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await p2.goto(FILE, { waitUntil: "domcontentloaded" });
+  await p2.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess && document.querySelector('#task .card')", { timeout: 20000 });
+  const pad = await p2.evaluate(() => {
+    const A = window.FALLASKOLI;
+    document.querySelectorAll(".scrim").forEach((s) => s.remove());
+    delete A.S.settings.keypad;
+    A.startRun("blandad", 10);
+    for (let i = 0; i < 600 && !(A.cur && ["fill", "verb", "verbslot"].includes(A.cur.type)); i++) A.next();
+    const k = () => { const e = document.getElementById("keys"); return !!e && e.getClientRects().length > 0; };
+    const before = { lang: navigator.language, coarse: matchMedia("(pointer: coarse)").matches, shown: k() };
+    A.openView("settings");
+    const box = document.getElementById("set-keys").checked;
+    document.getElementById("set-keys").click();
+    A.openView("practice");
+    return { ...before, box, saved: A.S.settings.keypad, after: k() };
+  });
+  ok(pad.lang === "is-IS" && pad.coarse, "could not pose as a touch device set to Icelandic: " + JSON.stringify(pad));
+  ok(!pad.shown, "the letter pad shows on a touch device set to Icelandic, where the keyboard has the letters");
+  ok(pad.box === false, "the pad setting does not show that the pad is off");
+  ok(pad.saved === true && pad.after, "switching the pad on in Stillingar did not bring it back: " + JSON.stringify(pad));
+  await p2.close();
+}
+
+/* ---------- v6.13 (item 29): the new kinds of Umritun ------------------
+ * A Málbeiting session with only Umritun on, at þyngd 4. A join shows its
+ * two sentences on two lines, indirect speech its quotation, and a right
+ * answer that could be better — a question without its question mark,
+ * indirect speech without *að* — gets its note under the verdict. The
+ * types switched off are switched on again at the end. */
+{
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.S.enabled.malbeiting = true;
+    A.S.policy = A.S.policy || {};
+    A.S.policy.types = { ...(A.S.policy.types || {}), smidja: false, villur: false };
+    A.reloadPolicy(); A.save();
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+    Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = 4; });
+    /* Pinning the level must also drop the warm-up the visit owes: the
+       first right answer would give it back (core/difficulty.js nextLevel)
+       and the case's second question come from a higher þyngd. */
+    A.sess.warm = {};
+    A.startRun("malbeiting", 40, null, { review: false });
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  const seenKinds = new Set();
+  for (let i = 0; i < 40; i++) {
+    const t = await page.evaluate(() => {
+      const c = window.FALLASKOLI.cur;
+      return c && { type: c.type, kind: c.kind, lines: c.lines || null, from: c.from || null,
+        answers: c.answers || null, model: c.model || null };
+    });
+    if (!t) break;
+    if (t.type === "umritun" && ["question", "join", "indirect"].includes(t.kind)) {
+      seenKinds.add(t.kind);
+      const shown = await page.$eval("#task .sentence", (el) => ({ html: el.innerHTML, text: el.textContent }));
+      let typed = t.answers[0], note = null;
+      if (t.kind === "join") {
+        ok(/<br>/.test(shown.html) && t.lines.every((l) => shown.text.includes(l)),
+          `a join does not show its two sentences on two lines: ${shown.html}`);
+      } else if (t.kind === "indirect") {
+        ok(shown.text === t.from && /„.+“/.test(shown.text), `indirect speech does not show its quotation: ${shown.text}`);
+        typed = t.model.replace(/ að /, " ");
+        note = /má sleppa/;
+      } else {
+        typed = t.answers[0].replace(/\?$/, "");
+        note = /spurningarmerki/;
+      }
+      await page.type("#ans", typed);
+      await tap("#check");
+      await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
+      const v = await page.$eval("#verdict .verdict", (el) => ({ cls: el.className, text: el.textContent }));
+      ok(/\bok\b/.test(v.cls), `umritun/${t.kind}: "${typed}" was not taken as right: ${v.text.slice(0, 160)}`);
+      if (note) ok(note.test(v.text), `umritun/${t.kind}: no note under the verdict: ${v.text.slice(0, 200)}`);
+      await dismissModals();
+    } else {
+      await answerOneNoNext(true);
+    }
+    await page.evaluate(() => window.FALLASKOLI.next());
+    await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4000 });
+    if (seenKinds.size === 3) break;
+  }
+  ok(seenKinds.size === 3, `the new kinds of Umritun did not all come up in 40 questions: ${[...seenKinds]}`);
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    delete A.S.policy.types.smidja; delete A.S.policy.types.villur;
+    A.run = null; A.runDone = null;
+    A.reloadPolicy(); A.save();
+  });
 }
 
 /* ---------- v6.11: every category mixes its questions ------------------
@@ -1573,7 +2342,11 @@ await page.setViewport({ width: 1100, height: 900 });
     ok(!sum.bare, `${topic}: an empty "Rétt:" line in the summary`);
     if (topic === "ordaford") {
       ok(bonus, "Orðaforði: no bonus sentence offered under a graded question");
-      ok(!/sögn|Sögnin|þátíð|nútíð/.test(sum.text), "Orðaforði: a verb tip in the summary: " + sum.text.slice(0, 120));
+      /* The word-formation rule (Orðmyndun, core/diagnosis.js) is Orðaforði's
+         own and says "-ing/-un gera nafnorð úr sögn"; that phrase is not a
+         verb tip. */
+      ok(!/sögn|Sögnin|þátíð|nútíð/.test(sum.text.replace(/nafnorð úr sögn/g, "")),
+        "Orðaforði: a verb tip in the summary: " + sum.text.slice(0, 120));
     }
   }
   /* The bonus pays only when the word is in the sentence. */
@@ -1600,6 +2373,395 @@ await page.setViewport({ width: 1100, height: 900 });
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
 }
 
+/* v6.13 — the review queue, on the screen (core/review.js, critique items 18
+   and 19). The unit tests (tests/review.test.js) prove the schedule; these
+   prove that a pupil SEES it: a session opens with what is due and says so, a
+   passed review says when it comes next, and a missed cloze noun is not the
+   next question but comes back a few questions on. */
+{
+  await dismissModals();
+  const first = await page.evaluate((lemma) => {
+    const A = window.FALLASKOLI;
+    const key = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const today = key(new Date());
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    A.run = null; A.runDone = null;
+    /* yesterday's miss: the dative plural of the test noun, in a cloze */
+    A.S.review = { items: [{ k: `f:mynd|ÞGFFT|${lemma}|kk`, t: "fill", sk: "nafnord", p: null,
+      c: "ÞGFFT", w: `${lemma}|kk`, i: null, s: 0, due: today, add: key(y), last: key(y), l: 1, ok: 0 }], stats: {} };
+    A.startRun("blandad", 20);
+    const c = A.cur;
+    return { review: c.review || null, type: c.type, word: c.word, cell: c.cell, extra: !!c.extra,
+      tag: (document.querySelector("#task .eyebrow .reviewtag") || {}).textContent || "" };
+  }, TEST_NOUN);
+  ok(first.review === `f:mynd|ÞGFFT|${TEST_NOUN}|kk` && first.type === "fill" && first.word === `${TEST_NOUN}|kk`
+    && first.cell === "ÞGFFT" && !first.extra,
+    "the session did not open with the due review: " + JSON.stringify(first));
+  ok(first.tag === "upprifjun", `a review question is not marked as one ("${first.tag}")`);
+  await answerOneNoNext(true);
+  const passed = await page.evaluate(() => ({
+    line: (document.querySelector("#verdict .reviewline") || {}).textContent || "",
+    e: window.FALLASKOLI.S.review.items[0] || null,
+  }));
+  ok(/Upprifjun tókst\. Þetta kemur aftur eftir 3 daga\./.test(passed.line), `no line under a passed review: "${passed.line}"`);
+  ok(passed.e && passed.e.s === 1, "a passed review did not move out: " + JSON.stringify(passed.e));
+  await page.evaluate(() => window.FALLASKOLI.next());
+  const second = await page.evaluate(() => ({ review: window.FALLASKOLI.cur.review || null,
+    tag: !!document.querySelector("#task .eyebrow .reviewtag") }));
+  ok(!second.review && !second.tag, "a question that is not a review is marked as one");
+
+  /* item 19: miss a cloze — the noun is not the next question, and it is back
+     three to five questions on, in the cell that was missed */
+  if (!(await forceNounCloze())) problems.push(`could not draw a noun cloze on ${TEST_NOUN} — cannot test the repeat`);
+  else {
+    const missed = await page.evaluate(() => { const A = window.FALLASKOLI; return { i: A.run.i, cell: A.cur.cell, s: A.cur.s.t }; });
+    await answerOneNoNext(false);
+    const said = await page.evaluate(() => ({
+      text: document.querySelector("#verdict .verdict").textContent,
+      reask: window.FALLASKOLI.run.reask.map((x) => ({ at: x.at, w: x.w })),
+      forced: !!window.FALLASKOLI.forcedNoun,
+      queued: window.FALLASKOLI.S.review.items.some((e) => e.w === "bíll|kk" && e.s === 0),
+    }));
+    ok(!/Næst kemur sama orð/.test(said.text), "the verdict still promises the same word next");
+    ok(/Orðið kemur aftur seinna í lotunni\./.test(said.text), "the verdict does not say the word comes back later");
+    ok(!said.forced, "the missed noun is still set to be the very next question");
+    ok(said.reask.length === 1 && said.reask[0].at - missed.i >= 3 && said.reask[0].at - missed.i <= 5,
+      "the missed noun is not planned 3–5 questions on: " + JSON.stringify(said.reask) + " after " + missed.i);
+    ok(said.queued, "the missed cloze is not in the review queue");
+    await page.evaluate(() => window.FALLASKOLI.next());
+    let back = null;
+    for (let k = 1; k <= 5 && !back; k++) {
+      const c = await page.evaluate(() => { const A = window.FALLASKOLI; const c = A.cur;
+        return { i: A.run.i, reask: !!c.reask, word: c.word, type: c.type, cell: c.cell, s: c.s ? c.s.t : null }; });
+      if (k === 1) ok(!(c.type === "fill" && c.word === `${TEST_NOUN}|kk`), "the missed noun was the very next question");
+      if (c.reask) back = c;
+      else await answerOne(true);
+    }
+    ok(back && back.word === `${TEST_NOUN}|kk` && back.i - missed.i >= 3 && back.i - missed.i <= 5,
+      "the missed noun did not come back 3–5 questions on: " + JSON.stringify(back));
+    ok(back && back.cell === missed.cell && back.s !== missed.s,
+      "it did not come back in the missed cell and another sentence: " + JSON.stringify([missed, back]));
+  }
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.S.review = { items: [], stats: {} }; A.next(); });
+}
+
+/* v6.13 — "Dagsins lota" (critique item 21, core/today.js). The picker has
+   one primary button above the categories; it starts a session of ten that
+   opens with the due reviews, goes on to the pupil's active error pattern and
+   ends with new material, and is written down as today's session. */
+{
+  await dismissModals();
+  const setup = await page.evaluate((lemma) => {
+    const A = window.FALLASKOLI;
+    const key = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const today = key(new Date());
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+    /* three of yesterday's misses on the test noun, and one active pattern */
+    A.S.review = { items: ["ÞGFFT", "EFET", "ÞGFETgr"].map((c) => ({ k: `f:mynd|${c}|${lemma}|kk`, t: "fill",
+      sk: "nafnord", p: "thf_thgf", c, w: `${lemma}|kk`, i: null, s: 0, due: today, add: key(y), last: key(y), l: 1, ok: 0 })),
+      stats: {} };
+    A.S.diag = { ...(A.S.diag || {}), thf_thgf: { n: 12, w: 6, h: "010101010101", last: today, ex: [] } };
+    A.S.enabled.nafnord = true;
+    A.reloadPolicy();
+    A.next();
+    const go = document.getElementById("todaystart");
+    const own = document.getElementById("runstart");
+    const topics = document.querySelector("#task .topics");
+    return {
+      go: !!go, goCls: go ? go.className : "", goText: go ? go.textContent : "",
+      ownCls: own ? own.className : "",
+      above: !!(go && topics && (go.compareDocumentPosition(topics) & Node.DOCUMENT_POSITION_FOLLOWING)),
+      focused: document.activeElement === go,
+      line: (document.querySelector("#task .todayline") || {}).textContent || "",
+    };
+  }, TEST_NOUN);
+  ok(setup.go && /\bgo\b/.test(setup.goCls) && /Dagsins lota/.test(setup.goText),
+    "no primary „Dagsins lota“ button on the picker: " + JSON.stringify(setup));
+  ok(setup.above && /\bghost\b/.test(setup.ownCls), "the categories are not below it, or their button is not the secondary one");
+  ok(setup.focused, "„Dagsins lota“ does not have the focus");
+  ok(/^3 upprifjanir, \d spurningar um villurnar þínar og \d nýjar spurningar\.$/.test(setup.line),
+    `the line under the button does not say what the session holds: "${setup.line}"`);
+  const graded0 = await page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {}).reduce((a, x) => a + x.n, 0));
+  await tap("#todaystart");
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  const kinds = [];
+  for (let i = 0; i < 10; i++) {
+    const c = await page.evaluate(() => { const A = window.FALLASKOLI;
+      return { topic: A.run && A.run.topic, n: A.run && A.run.n, review: A.cur.review || null, today: A.cur.today || null,
+        tag: !!document.querySelector("#task .eyebrow .reviewtag"), bar: (document.querySelector("#runbar .runtopic") || {}).textContent || "" }; });
+    if (i === 0) {
+      ok(c.topic === "dagsins" && c.n === 10, "the button did not start a session of ten: " + JSON.stringify(c));
+      ok(/Dagsins lota/.test(c.bar), `the line above the session does not name it: "${c.bar}"`);
+    }
+    if (i < 3) ok(c.review && c.tag, `question ${i + 1} of today's session is not a due review: ` + JSON.stringify(c));
+    kinds.push(c.today);
+    await answerOne(true);
+  }
+  ok(kinds.slice(0, 3).every((k) => k === "review") && kinds.slice(3).filter((k) => k === "pattern").length >= 3
+    && kinds.slice(-2).every((k) => k === "new"),
+    "today's session is not reviews, then the pattern, then new material: " + kinds.join(","));
+  const end = await page.evaluate(() => ({ summary: !!document.querySelector("#task .summary"),
+    last: (window.FALLASKOLI.S.runs || []).slice(-1)[0], runTopic: window.FALLASKOLI.S.settings.runTopic,
+    due: window.FALLASKOLI.S.review.items.filter((e) => e.s === 0).length }));
+  ok(end.summary && end.last && end.last.topic === "dagsins" && end.last.n === 10,
+    "today's session did not end in its summary: " + JSON.stringify(end.last));
+  ok(end.runTopic !== "dagsins", "today's session took the place of the category the picker remembers");
+  /* Item 44: today's answers count toward the mastery mark like any others. */
+  const graded1 = await page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {}).reduce((a, x) => a + x.n, 0));
+  ok(end.last.j > 0 && graded1 - graded0 === end.last.j,
+    `the mastery record counted ${graded1 - graded0} of today's ${end.last.j} graded answers`);
+  ok(end.due === 0, `${end.due} of the reviews it opened with are still at the first step`);
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null;
+    A.S.review = { items: [], stats: {} }; delete A.S.diag.thf_thgf; A.next(); });
+}
+
+/* v6.13 — "Þrjár í röð" (critique item 36, core/streak.js). A diagnosed wrong
+   answer offers three questions on its pattern; the rule comes first, with
+   its Lesefni page; the three are each on the pattern, the session's count
+   does not move, and the pattern is in the review queue afterwards. */
+{
+  await dismissModals();
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null;
+    A.startRun("nafnord", 10, null, { review: false }); });
+  if (!(await forceNounCloze())) problems.push(`could not draw a noun cloze on ${TEST_NOUN} — cannot test "Þrjár í röð"`);
+  else {
+    /* the wrong case: a form of the same noun in another case, same number and article */
+    const miss = await page.evaluate(() => {
+      const A = window.FALLASKOLI, c = A.cur;
+      const m = /^(NF|ÞF|ÞGF|EF)(.*)$/.exec(c.cell);
+      const right = new Set(c.answers.map((x) => x.toLowerCase()));
+      const other = ["ÞF", "ÞGF", "EF", "NF"].filter((f) => f !== m[1])
+        .map((f) => (c.n.forms[f + m[2]] || [])[0]).find((w) => w && !right.has(w.toLowerCase()));
+      return { other, i: A.run.i, cell: c.cell };
+    });
+    await page.type("#ans", miss.other);
+    await tap("#check");
+    await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
+    await dismissModals();
+    const offer = await page.evaluate(() => ({
+      diag: (document.querySelector("#verdict .diagline") || {}).textContent || "",
+      go: !!document.getElementById("streakgo"),
+      text: (document.querySelector("#verdict .streakoffer") || {}).textContent || "",
+      focus: document.activeElement && document.activeElement.id,
+      retrying: !!(window.FALLASKOLI.cur && window.FALLASKOLI.cur.retrying),
+      p: window.FALLASKOLI.streakOffer && window.FALLASKOLI.streakOffer.p,
+    }));
+    ok(/Villugreining/.test(offer.diag) && offer.go && offer.p,
+      `no „Þrjár í röð“ under a diagnosed miss (${miss.other} for ${miss.cell}): ` + JSON.stringify(offer));
+    ok(/teljast ekki með í lotunni/.test(offer.text), "the offer does not say the three are outside the session's count");
+    /* The offer never takes the focus. Where it goes is the verdict's own
+       business: Áfram, or — on a first miss that item 42 lets the pupil try
+       again — the answer box, where Enter sends the second try. */
+    const wantFocus = offer.retrying ? "ans" : "check";
+    ok(offer.focus === wantFocus,
+      `the offer took the focus (on #${offer.focus}, wanted #${wantFocus}) — Enter must still do what the verdict says`);
+    if (offer.go) {
+      await tap("#streakgo");
+      const intro = await page.evaluate(() => ({
+        card: !!document.querySelector("#task .streakintro"),
+        rule: (document.querySelector("#task .streakintro .rule") || {}).textContent || "",
+        lesson: !!document.querySelector("#task .streakintro .lessonlink[data-lesson]"),
+        bar: (document.querySelector("#runbar .streakrun .runtopic") || {}).textContent || "",
+        i: window.FALLASKOLI.run.i,
+      }));
+      ok(intro.card && intro.rule.length > 20, "the rule is not shown before the first of the three");
+      ok(intro.lesson, "the rule has no link to its Lesefni page");
+      ok(/^Þrjár í röð: /.test(intro.bar), `the session's line did not give way to the three's own: "${intro.bar}"`);
+      /* Items 36 + 41: the first of the three may be the first question of
+         its type the pupil meets (the three are drawn from all the
+         pattern's types). It then opens with its worked example, like any
+         first meeting: once, on the streak's own card, and the type is met
+         afterwards. The rule card before it does not count as a meeting. */
+      const exType = await page.evaluate(() => { const A = window.FALLASKOLI;
+        const id = A.streak.queue[0].task.typeId; if (A.S.seenTypes) delete A.S.seenTypes[id]; return id; });
+      await tap("#streakbegin");
+      const ex = await page.evaluate(() => { const A = window.FALLASKOLI;
+        return { n: document.querySelectorAll("#task .workedex").length, streak: !!A.cur.streak,
+          typeId: A.cur.typeId, met: !!(A.S.seenTypes && A.S.seenTypes[A.cur.typeId]),
+          bar: (document.querySelector("#runbar .streakrun .runcount") || {}).textContent || "" }; });
+      ok(ex.typeId === exType && ex.streak && ex.n === (EXAMPLE_TYPES.has(exType) ? 1 : 0) && ex.met === EXAMPLE_TYPES.has(exType)
+        && ex.bar.trim() === "1/3",
+        "the first of the three, of a type not met before, did not open with its one worked example: " + JSON.stringify({ exType, ...ex }));
+      const answered = () => page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {})
+        .reduce((a, x) => a + x.n, 0));
+      const byType0 = await answered();
+      const seen = [];
+      for (let k = 0; k < 3; k++) {
+        const q = await page.evaluate(() => { const A = window.FALLASKOLI;
+          return { streak: A.cur.streak || null, targeted: !!A.cur.targeted, inRun: !!A.cur.inRun, i: A.run.i,
+            count: (document.querySelector("#runbar .runcount") || {}).textContent || "" }; });
+        seen.push(q);
+        await answerOneNoNext(k !== 1);
+        if (k < 2) await page.evaluate(() => window.FALLASKOLI.next());
+      }
+      ok(seen.every((q) => q.streak === offer.p && q.targeted && !q.inRun),
+        "the three are not all questions on the pattern: " + JSON.stringify(seen));
+      ok(seen.map((q) => q.count.trim()).join(",") === "1/3,2/3,3/3", "the three do not count 1/3, 2/3, 3/3: " + seen.map((q) => q.count).join(","));
+      ok(seen.every((q) => q.i === miss.i + 1), "the session's count moved during the three: " + JSON.stringify(seen.map((q) => q.i)));
+      /* Item 44: the three are answers like any other for the mastery mark. */
+      const byType1 = await answered();
+      ok(byType1 - byType0 === 3, `the mastery record counted ${byType1 - byType0} of the three answers`);
+      const done = await page.evaluate((p) => ({
+        line: (document.querySelector("#verdict .streakend") || {}).textContent || "",
+        button: document.getElementById("check").textContent,
+        queued: window.FALLASKOLI.S.review.items.some((e) => e.p === p && e.k.startsWith("p:")),
+      }), offer.p);
+      ok(/2 af 3 rétt\. Þetta kemur aftur í upprifjun á morgun\./.test(done.line), `no line under the last of the three: "${done.line}"`);
+      ok(/Aftur í lotuna/.test(done.button), `the button after the three does not go back to the session: "${done.button}"`);
+      ok(done.queued, "the pattern is not in the review queue after the three");
+      await page.evaluate(() => window.FALLASKOLI.next());
+      const back = await page.evaluate(() => ({ streak: window.FALLASKOLI.streak, i: window.FALLASKOLI.run.i,
+        line: !!document.querySelector("#runbar .runline:not(.streakrun)"), inRun: !!window.FALLASKOLI.cur.inRun }));
+      ok(!back.streak && back.line && back.inRun && back.i === miss.i + 1,
+        "the session did not pick up where it was after the three: " + JSON.stringify(back));
+    }
+  }
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.streak = null;
+    A.S.review = { items: [], stats: {} }; A.next(); });
+}
+
+/* ---------- item 27: the two new types, drawn, shown and answered ---------
+ * A short session aimed at each new type's error pattern (which narrows the
+ * session to that type), at a low and a high þyngd: the question must come,
+ * look like what it is, take a right answer and a wrong one through real
+ * clicks and typing, and explain itself under both. */
+{
+  const CASES = [
+    { focus: "fn_flokkar", topic: "fornofn", band: 1, type: "choice", options: 3 },
+    { focus: "fn_flokkar", topic: "fornofn", band: 5, type: "choice", options: 6 },
+    { focus: "beyging_no", topic: "nafnord", band: 1, type: "kenni", gen: false },
+    { focus: "beyging_no", topic: "nafnord", band: 5, type: "kenni", gen: true },
+  ];
+  for (const c of CASES) {
+    await dismissModals();
+    await page.evaluate((c) => {
+      const A = window.FALLASKOLI;
+      A.S.enabled[c.topic] = true;
+      A.reloadPolicy();
+      A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+      Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+      /* Pinning the level must also drop the warm-up the visit owes: the
+         first right answer would give it back (core/difficulty.js nextLevel)
+         and the case's second question come from a higher þyngd. */
+      A.sess.warm = {};
+      A.startRun(c.topic, 10, [c.focus], { review: false });
+    }, c);
+    await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+    const at = `${c.focus} at þyngd ${c.band}`;
+    for (const correct of [true, false]) {
+      const q = await page.evaluate(() => {
+        const t = window.FALLASKOLI.cur;
+        return { type: t.type, typeId: t.typeId, title: t.title, n: (t.options || []).length,
+          buttons: document.querySelectorAll("#task .opts button").length,
+          target: document.querySelector("#task .sentence .target")?.textContent || null,
+          word: t.s && t.i >= 0 ? t.s.tok[t.i].w : null,
+          input: !!document.querySelector("#task #ans"), askGen: !!t.askGen,
+          gloss: document.querySelector("#task .gloss")?.textContent || "" };
+      });
+      ok(q.type === c.type && q.typeId === (c.focus === "beyging_no" ? "no_beyging" : "fn_flokkar"),
+        `${at}: drew ${q.typeId} (${q.type})`);
+      ok(q.buttons === (c.options || 2) && q.n === q.buttons, `${at}: ${q.buttons} option buttons`);
+      if (c.type === "choice") {
+        ok(q.target && q.target === q.word, `${at}: the pronoun is not marked in the sentence (${q.target})`);
+        ok(/Hvers konar fornafn er/.test(q.gloss), `${at}: no instruction line: ${q.gloss}`);
+      } else {
+        ok(q.input === c.gen && q.askGen === c.gen, `${at}: the genitive box is ${q.input ? "there" : "missing"}`);
+        ok(/sterk eða veik/.test(q.gloss), `${at}: no instruction line: ${q.gloss}`);
+      }
+      await answerOneNoNext(correct);
+      await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
+      const v = await page.$eval("#verdict .verdict", (el) => ({ cls: el.className,
+        why: el.querySelector(".why")?.textContent || "" }));
+      ok(correct ? /\bok\b/.test(v.cls) : /\bno\b/.test(v.cls), `${at}: a ${correct ? "right" : "wrong"} answer drew "${v.cls}"`);
+      ok(v.why.length > 30, `${at}: no explanation under the answer`);
+      await dismissModals();
+      await page.evaluate(() => window.FALLASKOLI.next());
+      await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+    }
+  }
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+}
+
+/* ---------- item 27, second half: three verb types, at two widths ---------
+ * Each drawn by a short session aimed at its error pattern, at a low and a
+ * high þyngd, on a phone (390 px) and a desktop (1280 px): it must come, look
+ * like what it is, fit the screen, take a right answer and a wrong one
+ * through real typing and clicks, and explain itself under both. */
+{
+  const CASES = [
+    { focus: "beyging_so", type: "so_beyging", r: "slots", band: 1, boxes: 0, options: 2 },
+    { focus: "beyging_so", type: "so_beyging", r: "slots", band: 5, boxes: 3, options: 2 },
+    { focus: "mynd_greina", type: "so_mynd", r: "choice", band: 1, boxes: 0, options: 3 },
+    { focus: "mynd_greina", type: "so_mynd", r: "choice", band: 5, boxes: 0, options: 3 },
+    { focus: "bodhattur", type: "so_bodhattur", r: "slots", band: 1, boxes: 1, options: 0 },
+    { focus: "bodhattur", type: "so_bodhattur", r: "slots", band: 5, boxes: 2, options: 0 },
+  ];
+  for (const vp of [{ w: 390, h: 844, touch: true }, { w: 1280, h: 900, touch: false }]) {
+    await page.setViewport({ width: vp.w, height: vp.h, isMobile: vp.touch, hasTouch: vp.touch });
+    for (const c of CASES) {
+      await dismissModals();
+      await page.evaluate((c) => {
+        const A = window.FALLASKOLI;
+        A.S.enabled.sagnord = true;
+        A.reloadPolicy();
+        A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+        Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+        /* Pinning the level must also drop the warm-up the visit owes: the
+           first right answer would give it back (core/difficulty.js nextLevel)
+           and the case's second question come from a higher þyngd. */
+        A.sess.warm = {};
+        A.startRun("sagnord", 10, [c.focus], { review: false });
+      }, c);
+      await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+      const at = `${c.type} at þyngd ${c.band}, ${vp.w} px`;
+      for (const correct of [true, false]) {
+        const q = await page.evaluate(() => {
+          const t = window.FALLASKOLI.cur;
+          const inView = (el) => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth + 1 && r.width > 0; };
+          const boxes = [...document.querySelectorAll("#task table.slotbox input")];
+          const btns = [...document.querySelectorAll("#task .opts button")];
+          return { type: t.type, typeId: t.typeId, boxes: boxes.length, buttons: btns.length,
+            fits: document.documentElement.scrollWidth <= innerWidth + 1,
+            visible: [...boxes, ...btns, document.getElementById("check")].every(inView),
+            /* A box a child can see what they type in (a class name shared
+               with another rule once squeezed these to 18 px on a phone). */
+            narrow: boxes.filter((b) => b.getBoundingClientRect().width < 120).length,
+            targets: [...document.querySelectorAll("#task .sentence .target")].map((x) => x.textContent),
+            marked: t.marks ? t.marks.map((k) => t.s.tok[k].w) : null,
+            gloss: document.querySelector("#task .gloss")?.textContent || "" };
+        });
+        ok(q.type === c.r && q.typeId === c.type, `${at}: drew ${q.typeId} (${q.type})`);
+        ok(q.boxes === c.boxes, `${at}: ${q.boxes} boxes, wanted ${c.boxes}`);
+        ok(q.buttons === c.options, `${at}: ${q.buttons} option buttons, wanted ${c.options}`);
+        ok(q.fits, `${at}: the page scrolls sideways`);
+        ok(q.visible, `${at}: a box or a button is off the screen`);
+        ok(!q.narrow, `${at}: ${q.narrow} answer boxes narrower than 120 px`);
+        /* "Í hvaða mynd er sá?" is 19 characters: the length is the word's, not a sign of a missing line. */
+        ok(q.gloss.length > 12, `${at}: no instruction line: "${q.gloss}"`);
+        if (c.type === "so_mynd") ok(q.marked && q.targets.join(" ") === q.marked.join(" "),
+          `${at}: the verb phrase is not marked (${q.targets.join(" ")})`);
+        await answerOneNoNext(correct);
+        await page.waitForSelector("#verdict .verdict:not(.neutral)", { timeout: 4000 });
+        const v = await page.$eval("#verdict .verdict", (el) => ({ cls: el.className,
+          why: el.querySelector(".why")?.textContent || "",
+          fits: document.documentElement.scrollWidth <= innerWidth + 1,
+          typed: [...document.querySelectorAll("#task table.slotbox input")].map((x) => x.value).join(", "),
+          want: (window.FALLASKOLI.cur.slots || []).map((x) => x.accepted.join("/")).join(", ") }));
+        ok(correct ? /\bok\b/.test(v.cls) : /\bno\b/.test(v.cls),
+          `${at}: a ${correct ? "right" : "wrong"} answer drew "${v.cls}" (typed ${v.typed}; BÍN ${v.want})`);
+        ok(v.why.length > 30, `${at}: no explanation under the answer`);
+        ok(v.fits, `${at}: the verdict makes the page scroll sideways`);
+        await dismissModals();
+        await page.evaluate(() => window.FALLASKOLI.next());
+        await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+      }
+    }
+  }
+  await page.setViewport({ width: 1100, height: 900 });
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+}
+
 /* The tabs must stay reachable at the narrowest width — they scroll sideways
    there, or (since v6.2) wrap their long names onto two lines so that all four
    fit; a tab that has been pushed off the screen is the same as a tab that is
@@ -1617,6 +2779,850 @@ await startPractice(page, 15000);
   ok(tabs.count === 5, `${tabs.count} tabs at 360px`);
   ok(!tabs.scrollable || tabs.overflowX === "auto" || tabs.overflowX === "scroll",
     "the tabs are wider than the screen and cannot be scrolled to");
+}
+
+/* ---------- item 28: years 9 and 10, drawn, shown and answered -------------
+ * The four new types (kinds of subordinate clause, kinds of phrase, find the
+ * forsetningarliður, indirect speech) at a phone's width and a desktop's, at
+ * a low and a high þyngd. As for item 27, a short session aimed at the
+ * type's own error pattern narrows the session to it. Each question must
+ * come, fit the screen without sideways scrolling, underline what it asks
+ * about, take a right answer and a wrong one through real clicks and typing,
+ * and explain itself under both. */
+{
+  const CASES = [
+    { focus: "aukasetn_tegund", topic: "setningagerd", band: 1, types: ["gerd_tegund"], options: 3 },
+    { focus: "aukasetn_tegund", topic: "setningagerd", band: 4, types: ["gerd_tegund"], options: 7 },
+    { focus: "aukasetn_tegund", topic: "setningagerd", band: 6, types: ["gerd_tegund"], options: 9 },
+    { focus: "lidir", topic: "setningafraedi", band: 1, types: ["setn_lidir", "lid_finna"], options: 3 },
+    { focus: "lidir", topic: "setningafraedi", band: 5, types: ["setn_lidir", "lid_finna"], options: 4 },
+    { focus: "obein_raeda", topic: "malbeiting", band: 1, types: ["raeda"] },
+    { focus: "obein_raeda", topic: "malbeiting", band: 5, types: ["raeda", "umritun"] },
+  ];
+  const SCREENS = [
+    { w: 390, h: 844, touch: true },
+    { w: 1280, h: 900, touch: false },
+  ];
+  for (const vp of SCREENS) {
+    await page.setViewport({ width: vp.w, height: vp.h, isMobile: vp.touch, hasTouch: vp.touch, deviceScaleFactor: 1 });
+    for (const c of CASES) {
+      await dismissModals();
+      await page.evaluate((c) => {
+        const A = window.FALLASKOLI;
+        A.S.enabled[c.topic] = true;
+        A.reloadPolicy();
+        A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+        Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = c.band; });
+        /* Pinning the level must also drop the warm-up the visit owes: the
+           first right answer would give it back (core/difficulty.js nextLevel)
+           and the case's second question come from a higher þyngd. */
+        A.sess.warm = {};
+        A.startRun(c.topic, 10, [c.focus], { review: false });
+      }, c);
+      await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+      const at = `${c.focus} at þyngd ${c.band}, ${vp.w} px`;
+      const seen = new Set();
+      /* Two questions for a single type; up to eight where two types share
+         the pattern, until both have come (right and wrong by turns). */
+      const rounds = c.focus === "lidir" ? 8 : 2;
+      for (let k = 0; k < rounds; k++) {
+        const correct = k % 2 === 0;
+        /* A session aimed at a pattern still asks something else now and
+           then (about one question in seven), of the pattern's types: here
+           another kind of Umritun. Those are passed over. */
+        for (let skip = 0; skip < 12; skip++) {
+          const other = await page.evaluate(() => {
+            const t = window.FALLASKOLI.cur;
+            return t.type === "umritun" && t.kind !== "indirect";
+          });
+          if (!other) break;
+          await page.evaluate(() => window.FALLASKOLI.next());
+          await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+        }
+        const q = await page.evaluate(() => {
+          const t = window.FALLASKOLI.cur;
+          const marks = [...document.querySelectorAll("#task .sentence .clausemark")]
+            .map((el) => el.textContent).filter((x) => x.trim());
+          const card = document.querySelector("#task .card").getBoundingClientRect();
+          return { type: t.type, typeId: t.typeId, kind: t.kind || null, n: (t.options || []).length,
+            buttons: document.querySelectorAll("#task .opts button").length,
+            marks, span: t.span ? t.s.tok.slice(t.span.from, t.span.to + 1).map((x) => x.w) : null,
+            picks: document.querySelectorAll("#task .pickw").length,
+            words: t.s ? t.s.tok.filter((x) => !/^[.,!?;:]$/.test(x.w)).length : 0,
+            input: !!document.querySelector("#task #ans"),
+            shown: document.querySelector("#task .sentence")?.textContent || "",
+            from: t.from || null, eyebrow: document.querySelector("#task .eyebrow")?.textContent || "",
+            gloss: [...document.querySelectorAll("#task .gloss")].map((el) => el.textContent).join(" "),
+            wide: document.documentElement.scrollWidth - window.innerWidth,
+            cardRight: Math.round(card.right), inner: window.innerWidth,
+            checkSeen: (() => { const r = document.getElementById("check").getBoundingClientRect(); return r.width > 40 && r.height > 20; })() };
+        });
+        ok(c.types.includes(q.typeId), `${at}: drew ${q.typeId}`);
+        seen.add(q.typeId);
+        ok(q.wide <= 1, `${at}: the page scrolls sideways by ${q.wide} px (${q.typeId})`);
+        ok(q.cardRight <= q.inner + 1, `${at}: the card runs off the screen (${q.cardRight} > ${q.inner})`);
+        ok(q.checkSeen, `${at}: no Athuga button`);
+        if (q.typeId === "gerd_tegund" || q.typeId === "setn_lidir") {
+          ok(q.type === "choice", `${at}: ${q.typeId} is drawn as ${q.type}`);
+          ok(q.buttons === q.n && (q.typeId === "gerd_tegund" ? q.n === c.options : q.n >= 3 && q.n <= 4),
+            `${at}: ${q.buttons} option buttons for ${q.n} options`);
+          ok(q.span && q.marks.join(" ") === q.span.join(" "),
+            `${at}: underlined "${q.marks.join(" ")}", asked about "${(q.span || []).join(" ")}"`);
+          ok(/undirstrikaði/.test(q.gloss), `${at}: no instruction line: ${q.gloss}`);
+        } else if (q.typeId === "lid_finna") {
+          ok(q.type === "tap" && q.picks === q.words, `${at}: ${q.picks} words to click of ${q.words}`);
+          ok(/forsetningarlið/.test(q.gloss), `${at}: no instruction line: ${q.gloss}`);
+        } else {
+          ok(q.type === "umritun" && q.kind === "indirect" && q.input, `${at}: ${q.type}/${q.kind}`);
+          ok(q.from && q.shown === q.from && /: „.+“$/.test(q.shown), `${at}: the quote is not shown: ${q.shown}`);
+          ok(/óbeina ræðu/.test(q.gloss), `${at}: no instruction line: ${q.gloss}`);
+          if (q.typeId === "raeda") ok(/Bein og óbein ræða/.test(q.eyebrow), `${at}: heading "${q.eyebrow}"`);
+        }
+        await answerOneNoNext(correct);
+        await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
+        const v = await page.$eval("#verdict .verdict", (el) => ({ cls: el.className,
+          why: el.querySelector(".why")?.textContent || "",
+          wide: document.documentElement.scrollWidth - window.innerWidth }));
+        ok(correct ? /\bok\b/.test(v.cls) : /\bno\b/.test(v.cls), `${at}: a ${correct ? "right" : "wrong"} answer to ${q.typeId} drew "${v.cls}"`);
+        ok(v.why.length > 30, `${at}: no explanation under the answer (${q.typeId})`);
+        ok(v.wide <= 1, `${at}: the verdict makes the page scroll sideways by ${v.wide} px`);
+        await dismissModals();
+        await page.evaluate(() => window.FALLASKOLI.next());
+        await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+        if (k >= 1 && c.focus === "lidir" && seen.size === 2 && k % 2 === 1) break;
+      }
+      if (c.focus === "lidir") ok(seen.size === 2, `${at}: only ${[...seen]} came in eight questions`);
+    }
+  }
+  await page.setViewport({ width: 1100, height: 900 });
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+}
+
+/* ---------- items 50, 51, 52, 43 (v6.13 small UX) -------------------------- */
+{
+  await page.setViewport({ width: 900, height: 900 });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+
+  /* 51: the verdict is a live region before anything is put in it, and the
+     session line has text a screen reader can read. */
+  const live = await page.evaluate(() => {
+    const v = document.getElementById("verdict");
+    const line = document.querySelector("#runbar .runline");
+    return { verdict: v && v.getAttribute("role"), line: line && line.getAttribute("role"),
+             lineText: line ? [...line.querySelectorAll(".sr-only")].map((e) => e.textContent).join("") : "" };
+  });
+  ok(live.verdict === "status", `#verdict has role=status (got ${live.verdict})`);
+  ok(live.line === "status" && /Spurning \d+ af/.test(live.lineText), `the session line is a status with readable text ("${live.lineText}")`);
+
+  /* 51: the contrast of grey text on the board, as the browser computes it. */
+  const contrast = await page.evaluate(() => {
+    const board = document.querySelector(".blackboard");
+    const p = document.createElement("p");
+    p.className = "gloss"; p.textContent = "gloss"; board.appendChild(p);
+    const f = document.createElement("span");
+    f.className = "faint"; f.textContent = "faint"; board.appendChild(f);
+    const rgb = (c) => c.match(/[\d.]+/g).map(Number);
+    const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+      .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+    const bg = rgb(getComputedStyle(board).backgroundColor);
+    const ratio = (el) => {
+      const cs = getComputedStyle(el), c = rgb(cs.color), o = parseFloat(cs.opacity);
+      const mixed = c.slice(0, 3).map((v, i) => v * o + bg[i] * (1 - o));
+      const [a, b] = [lum(mixed), lum(bg)].sort((x, y) => y - x);
+      return (a + 0.05) / (b + 0.05);
+    };
+    const out = { gloss: ratio(p), faint: ratio(f) };
+    p.remove(); f.remove();
+    return out;
+  });
+  ok(contrast.gloss >= 4.5, `gloss on the board is ${contrast.gloss.toFixed(2)}:1`);
+  ok(contrast.faint >= 4.5, `faint text on the board is ${contrast.faint.toFixed(2)}:1`);
+
+  /* 43: a two-option type is asked as a pair: two sentences, two sets of
+     options, and a click on only one of them does not submit. */
+  const pair = await page.evaluate(async () => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null;
+    A.startRun("fornofn", 10, ["afturbeyging"]);   // the pattern fn_aftur tests: every question is one
+    for (let k = 0; k < 40; k++) {
+      if (A.cur && A.cur.typeId === "fn_aftur") break;
+      A.next();
+    }
+    const t = A.cur;
+    return t && t.typeId === "fn_aftur"
+      ? { boxes: document.querySelectorAll(".opts").length, second: !!t.second } : null;
+  });
+  ok(!!pair && pair.boxes === 2 && pair.second, `a two-option question is a pair on screen: ${JSON.stringify(pair)}`);
+  if (pair) {
+    await page.evaluate(() => document.querySelector(".opts button").click());
+    await tap("#check");
+    const msg = await page.evaluate(() => document.querySelector("#verdict").textContent);
+    ok(/hvorri setningu/.test(msg), `one answer of two does not submit: "${msg}"`);
+  }
+
+  /* 50: types, levels and features are behind "Fyrir kennara og foreldra". */
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  await page.evaluate(() => window.FALLASKOLI.openView("settings"));
+  const fold = await page.evaluate(() => {
+    const ed = document.getElementById("policyeditor");
+    const d = ed.querySelector("details.teacherfold");
+    const vis = (el) => !!el && el.checkVisibility();
+    const presets = ed.querySelectorAll("button[data-preset]");
+    const typeBox = ed.querySelector('input[data-dim="types"]');
+    const skillBox = ed.querySelector('input[data-dim="skills"]');
+    return { hasFold: !!d, summary: d && d.querySelector("summary").textContent,
+             open: d && d.open, presets: presets.length,
+             typeInside: !!(d && typeBox && d.contains(typeBox)), skillOutside: !!(skillBox && !(d && d.contains(skillBox))),
+             typeVisible: vis(typeBox), skillVisible: vis(skillBox),
+             levelInside: !!(d && ed.querySelector('input[data-dim="levels"]') && d.contains(ed.querySelector('input[data-dim="levels"]'))),
+             attrInside: !!(d && ed.querySelector('input[data-dim="attrs"]') && d.contains(ed.querySelector('input[data-dim="attrs"]'))) };
+  });
+  ok(fold.hasFold && /Fyrir kennara og foreldra/.test(fold.summary), "Stillingar has the 'Fyrir kennara og foreldra' disclosure");
+  ok(fold.open === false, "the disclosure starts closed");
+  ok(fold.presets === 3 && fold.skillOutside && fold.skillVisible, "the year buttons and the categories stay in the open");
+  ok(fold.typeInside && fold.levelInside && fold.attrInside && !fold.typeVisible, `types, levels and features are inside it and hidden: ${JSON.stringify(fold)}`);
+  await page.evaluate(() => document.querySelector("details.teacherfold > summary").click());
+  const opened = await page.evaluate(() => {
+    const b = document.querySelector('details.teacherfold input[data-dim="types"]');
+    return !!b && b.checkVisibility();
+  });
+  ok(opened, "opening it shows the question types");
+  /* A year press redraws the editor; it must stay open. */
+  await page.evaluate(() => document.querySelector("button[data-preset]").click());
+  ok(await page.evaluate(() => document.querySelector("details.teacherfold").open), "the disclosure stays open after choosing a year");
+
+  /* 52: reading comfort. */
+  const before = await page.evaluate(() => {
+    const cs = getComputedStyle(document.body);
+    return { ls: cs.letterSpacing, mono: getComputedStyle(document.querySelector(".stat b")).fontFamily };
+  });
+  await page.evaluate(() => document.getElementById("set-comfort").click());
+  const after = await page.evaluate(() => {
+    const cs = getComputedStyle(document.body);
+    const wrap = getComputedStyle(document.querySelector(".wrap"));
+    return { on: document.body.classList.contains("comfort"), ls: cs.letterSpacing,
+             mono: getComputedStyle(document.querySelector(".stat b")).fontFamily,
+             zoom: wrap.zoom, saved: window.FALLASKOLI.S.settings.comfort };
+  });
+  ok(after.on && after.saved === true, "the reading-comfort switch sets body.comfort and is saved");
+  ok(parseFloat(after.ls) > 0 && before.ls !== after.ls, `letter spacing widens (${before.ls} → ${after.ls})`);
+  ok(/Public Sans/.test(after.mono) && /Plex Mono/.test(before.mono), `word forms use the proportional face (${before.mono} → ${after.mono})`);
+  ok(Number(after.zoom) > 1, `type is larger (zoom ${after.zoom})`);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  ok(await page.evaluate(() => document.body.classList.contains("comfort")), "the setting survives a reload");
+  await page.evaluate(() => { document.getElementById("set-comfort").click(); });
+  ok(await page.evaluate(() => !document.body.classList.contains("comfort")), "and switches off again");
+}
+
+/* ---------- items 41 and 44: "Æfa þetta", the worked example, the mastery mark
+ * A Lesefni page's button starts five questions of exactly that page's types;
+ * the first card of a type not met before opens with a worked example, and
+ * that type never shows it again; "Önnur lota" repeats the page's session;
+ * and every category in Framvinda carries a mastery mark beside its stig. */
+await page.setViewport({ width: 1100, height: 900 });
+{
+  await tap('nav.tabs button[data-view="practice"]');
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null;
+    A.S.seenTypes = {};            // a pupil who has met no type yet
+    A.openView("lessons", "foll");
+  });
+  const want = lessonPractice("foll").types;
+  const btns = await page.evaluate(() => [...document.querySelectorAll("#lsnbody [data-practice]")]
+    .map((b) => ({ id: b.dataset.practice, text: b.innerText })));
+  ok(btns.length === 2 && btns.every((b) => b.id === "foll" && /Æfa þetta/.test(b.text)),
+    `the Föll page has no "Æfa þetta" button: ${JSON.stringify(btns)}`);
+  await tap("#lsnbody section.lsnpractice [data-practice]");
+  await page.waitForFunction("window.FALLASKOLI.cur && window.FALLASKOLI.run", { timeout: 5000 });
+  const run = await page.evaluate(() => {
+    const r = window.FALLASKOLI.run;
+    return { n: r.n, types: r.types, label: r.label,
+      practice: !document.getElementById("view-practice").hidden,
+      bar: document.querySelector("#runbar .runtopic")?.textContent || "" };
+  });
+  ok(run.n === 5 && run.practice, `"Æfa þetta" did not start a five-question session: ${JSON.stringify(run)}`);
+  ok(JSON.stringify([...run.types].sort()) === JSON.stringify([...want].sort()), `the session's types are not the page's: ${run.types}`);
+  ok(/Lesefni: Föllin fjögur/.test(run.bar), `the session bar does not name the page: "${run.bar}"`);
+  const cards = [];
+  for (let i = 0; i < 5; i++) {
+    await dismissModals();
+    cards.push(await page.evaluate(() => {
+      const ex = document.querySelector("#task .card .workedex");
+      return { type: window.FALLASKOLI.cur.typeId, example: !!ex,
+        first: !!ex && ex.previousElementSibling && ex.previousElementSibling.classList.contains("eyebrow"),
+        text: ex ? ex.innerText : "" };
+    }));
+    await answerOne(true);
+  }
+  ok(cards.every((c) => want.includes(c.type)), `the page's session asked other types: ${cards.map((c) => c.type)}`);
+  ok(cards[0].example && cards[0].first && /Svar:/.test(cards[0].text),
+    `the first card of a type not met before has no worked example under its heading: ${JSON.stringify(cards[0])}`);
+  const met = new Set();
+  for (const c of cards) {
+    ok(c.example === !met.has(c.type), `${c.type}: worked example ${c.example ? "shown again" : "missing on the first meeting"}`);
+    met.add(c.type);
+  }
+  const seen = await page.evaluate(() => window.FALLASKOLI.S.seenTypes);
+  ok([...met].every((t) => /^\d{4}-\d{2}-\d{2}$/.test(seen[t] || "")), `the types met were not written down: ${JSON.stringify(seen)}`);
+  const sum = await page.evaluate(() => ({
+    head: document.querySelector("#task .summary .eyebrow")?.innerText || "",
+    again: document.querySelector('#task [data-next="again"]')?.innerText || "",
+  }));
+  ok(/Föllin fjögur/.test(sum.head) && /Föllin fjögur · 5/.test(sum.again), `the summary does not name the page: ${JSON.stringify(sum)}`);
+  /* "Önnur lota": the same page, the same five, and no example for a type met. */
+  await dismissModals();      // item 61
+  await tap('#task [data-next="again"]');
+  await page.waitForFunction("window.FALLASKOLI.cur && window.FALLASKOLI.run", { timeout: 5000 });
+  const again = await page.evaluate(() => ({ n: window.FALLASKOLI.run.n, types: window.FALLASKOLI.run.types,
+    type: window.FALLASKOLI.cur.typeId, example: !!document.querySelector("#task .workedex") }));
+  ok(again.n === 5 && JSON.stringify([...again.types].sort()) === JSON.stringify([...want].sort()),
+    `"Önnur lota" did not repeat the page's session: ${JSON.stringify(again)}`);
+  ok(!(met.has(again.type) && again.example), `${again.type}: the worked example came back a second session`);
+  /* The picker remembers what was picked there, not the page's five. */
+  ok(await page.evaluate(() => window.FALLASKOLI.S.settings.runSize !== 5), "the page's session size leaked into the picker");
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+
+  /* 44: the mastery mark beside every category's stig. */
+  await page.evaluate(() => window.FALLASKOLI.openView("progress"));
+  /* Since item 83 the category's card is the head of its trail on the skill map. */
+  await page.evaluate(() => document.querySelector('button[data-pane="stats"]').click());
+  const marks = await page.evaluate(() => [...document.querySelectorAll("#skillmap .smlane:not(.planned)")].map((c) => ({
+    skill: c.dataset.skill, level: Number(c.dataset.mastery),
+    mark: c.querySelector(".smmark .mastery b")?.innerText || "", line: c.querySelector(".mline")?.innerText || "",
+    pips: c.querySelectorAll(".mastery .mpips i").length, stig: c.querySelector(".smstig")?.innerText || "",
+  })));
+  ok(marks.length === 12 && marks.every((m) => m.mark && m.line && m.pips === 4 && m.level >= 0 && m.level <= 4 && /^Stig \d+$/.test(m.stig)),
+    `every category should carry a mastery mark beside its stig: ${JSON.stringify(marks.slice(0, 3))}`);
+  const no = marks.find((m) => m.skill === "nafnord");
+  ok(no && /rétt á þyngd|svör á þyngd|vantar/.test(no.line), `Nafnorð's mark does not say what it rests on: ${JSON.stringify(no)}`);
+  await tap('nav.tabs button[data-view="practice"]');
+}
+
+/* ---------- item 45: the second-language mode ---------------------------------
+ * Off: the sentence is plain text and there is no speak button. On (the box
+ * under Stillingar): every content word of the sentence is a tap target, and a
+ * real tap opens the window with the word's dictionary form; without an
+ * Icelandic voice on the device there is still no button. With a voice that
+ * runs on the device (stubbed in a page of its own) the button is there and
+ * reads the sentence — the blank as a pause — and a network voice is not used. */
+{
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  const realTap = async (sel) => {
+    const at = await page.evaluate((s) => {
+      const el = document.querySelector(s);
+      if (!el) return null;
+      el.scrollIntoView({ block: "center" });
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }, sel);
+    if (!at) { ok(false, "item 45: nothing to tap at " + sel); return; }
+    await page.mouse.click(at.x, at.y);
+  };
+  /* The tokens the question's text is written from, as the card glosses
+     them: a passive or two lines to join (Umritun germynd, tenging) carry
+     their own (`fromTok`, `linesTok`, tasks/malbeiting.js); a quotation shown
+     as plain text carries none; every other card shows the bank sentence
+     without the word it asks about. Item 45 and 29: until v6.13 the first two
+     got no glosses while this check counted the bank sentence's words, which
+     is why it failed on one run in ten. */
+  const SHOWN = `(A) => {
+    const c = A.cur;
+    if (c.type === "umritun" && (c.fromTok || c.linesTok)) return c.fromTok || c.linesTok.flat();
+    if (c.type === "umritun" && (c.from || c.lines)) return [];
+    return c.s ? c.s.tok.filter((t, j) => j !== c.i) : [];
+  }`;
+  /* Answer until a question shows a sentence with a content word in it. */
+  const toSentence = () => page.evaluate((SHOWN) => {
+    const A = window.FALLASKOLI;
+    const shown = eval(SHOWN);
+    for (let k = 0; k < 60; k++) {
+      const s = document.querySelector("#task .card .sentence");
+      if (s && A.cur && A.cur.s && shown(A).some((t) => t.l && ["nafnorð", "sagnorð", "lýsingarorð", "atviksorð"].includes(t.c))
+        && !document.querySelector("#task #picker") && A.cur.type !== "hunt") return A.cur.type;
+      A.finish({ correct: true }); A.next();
+    }
+    return null;
+  }, SHOWN);
+  const off = await page.evaluate(() => ({
+    voices: (window.speechSynthesis ? speechSynthesis.getVoices() : []).filter((v) => /^is/i.test(v.lang)).length,
+    on: window.FALLASKOLI.S.settings.secondLanguage === true,
+  }));
+  ok(!off.on, "item 45: the second-language mode is on before anybody switched it on");
+  const t0 = await toSentence();
+  ok(!!t0, "item 45: no question with a sentence in sixty");
+  const plain = await page.evaluate(() => ({ l2w: document.querySelectorAll("#task .l2w").length, btn: !!document.getElementById("l2speak") }));
+  ok(plain.l2w === 0 && !plain.btn, `item 45: with the mode off the sentence has glosses or a speak button: ${JSON.stringify(plain)}`);
+
+  /* The box under Stillingar, as a pupil ticks it. */
+  await page.evaluate(() => { const b = document.getElementById("set-l2"); b.checked = true; b.dispatchEvent(new Event("change")); });
+  const saved = await page.evaluate(() => window.FALLASKOLI.S.settings.secondLanguage);
+  ok(saved === true, "item 45: ticking the box did not switch the mode on");
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.finish({ correct: true }); A.next(); });
+  const t1 = await toSentence();
+  const on = await page.evaluate((SHOWN) => {
+    const A = window.FALLASKOLI;
+    const words = [...document.querySelectorAll("#task .card .sentence .l2w")];
+    const content = eval(SHOWN)(A).filter((t) => t.l && ["nafnorð", "sagnorð", "lýsingarorð", "atviksorð"].includes(t.c)).length;
+    return { type: A.cur.type, n: words.length, content, texts: words.map((w) => w.textContent),
+      btn: !!document.getElementById("l2speak"),
+      voices: (window.speechSynthesis ? speechSynthesis.getVoices() : []).filter((v) => /^is/i.test(v.lang) && v.localService).length };
+  }, SHOWN);
+  ok(on.n > 0 && on.n === on.content, `item 45: ${on.type}: ${on.n} glossed words, ${on.content} content words in the sentence (${on.texts.join(" ")})`);
+  ok(on.btn === (on.voices > 0), `item 45: the speak button is ${on.btn ? "shown" : "hidden"} with ${on.voices} local Icelandic voices`);
+  if (on.n) {
+    await realTap("#task .card .sentence .l2w");
+    await page.waitForFunction(() => { const t = document.querySelector(".tip"); return t && !t.hidden; }, { timeout: 3000 })
+      .catch(() => ok(false, "item 45: tapping a word did not open its gloss"));
+    const tip = await page.evaluate(() => {
+      const t = document.querySelector(".tip");
+      const w = JSON.parse(document.querySelector("#task .card .sentence .l2w").dataset.dfn);
+      const r = t.getBoundingClientRect();
+      return { head: t.querySelector("h4") && t.querySelector("h4").textContent, nm: w.nm, def: w.def,
+        text: t.innerText, fits: r.left >= 0 && r.right <= innerWidth };
+    });
+    ok(tip.head && tip.head.startsWith(tip.nm), `item 45: the gloss should be headed by the dictionary form ${tip.nm}: ${tip.head}`);
+    ok(tip.def ? tip.text.includes(tip.def.slice(0, 30)) : /Engin skýring/.test(tip.text), `item 45: the gloss does not show the definition: ${tip.text.slice(0, 120)}`);
+    ok(tip.fits, "item 45: the gloss does not fit a 390 px phone");
+    await realTap("#task .card .sentence .l2w");
+    const closed = await page.evaluate(() => { const t = document.querySelector(".tip"); return !t || t.hidden; });
+    ok(closed, "item 45: a second tap on the word did not close its gloss");
+  }
+  /* The two kinds of Umritun that show something other than the bank
+     sentence (item 29): a passive to turn back (germynd) and two sentences
+     to join (tenging). Asked for by name, as the item-29 check above does,
+     until each has come: every content word of what is shown is glossed, a
+     second tap on a gloss opens it, and the words are the ones shown. */
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.S.enabled.malbeiting = true;
+    A.S.policy = A.S.policy || {};
+    A.S.policy.types = { ...(A.S.policy.types || {}), smidja: false, villur: false };
+    A.reloadPolicy(); A.save();
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+    Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = 4; });
+    A.sess.warm = {};
+    A.startRun("malbeiting", 60, null, { review: false });
+  });
+  await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+  const l2kinds = new Set();
+  for (let i = 0; i < 60 && l2kinds.size < 2; i++) {
+    const r = await page.evaluate((SHOWN) => {
+      const A = window.FALLASKOLI;
+      const c = A.cur;
+      if (!c || c.type !== "umritun" || !(c.kind === "active" || c.kind === "join")) return null;
+      const want = eval(SHOWN)(A).filter((t) => t.l && ["nafnorð", "sagnorð", "lýsingarorð", "atviksorð"].includes(t.c)).map((t) => t.w.toLowerCase());
+      const got = [...document.querySelectorAll("#task .card .sentence .l2w")].map((e) => e.textContent.toLowerCase());
+      return { kind: c.kind, want, got, text: document.querySelector("#task .card .sentence").textContent };
+    }, SHOWN);
+    if (r) {
+      l2kinds.add(r.kind);
+      ok(r.want.length > 0 && JSON.stringify(r.want) === JSON.stringify(r.got),
+        `item 45: umritun/${r.kind}: glossed [${r.got.join(" ")}], content words shown [${r.want.join(" ")}] in "${r.text}"`);
+    }
+    await page.evaluate(() => { const A = window.FALLASKOLI; A.finish({ correct: true }); A.next(); });
+    await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4000 });
+  }
+  ok(l2kinds.size === 2, `item 45: germynd and tenging did not both come up in 60 questions: ${[...l2kinds]}`);
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    delete A.S.policy.types.smidja; delete A.S.policy.types.villur;
+    A.run = null; A.runDone = null;
+    A.reloadPolicy(); A.save();
+  });
+  ok(errors.length === 0, `item 45: errors with the mode on: ${errors.join(" | ")}`);
+  await page.close();
+
+  /* A device with an Icelandic voice of its own (stubbed), and a network one. */
+  const p2 = await browser.newPage();
+  const errors2 = [];
+  p2.on("pageerror", (e) => errors2.push(e.message));
+  await p2.evaluateOnNewDocument(() => {
+    const voices = [
+      { name: "Netrödd", lang: "is-IS", localService: false, default: false, voiceURI: "net" },
+      { name: "Guðrún", lang: "is-IS", localService: true, default: false, voiceURI: "local" },
+    ];
+    window.__spoken = [];
+    const fake = {
+      getVoices: () => voices, cancel() {}, speak(u) { window.__spoken.push({ text: u.text, voice: u.voice && u.voice.name, lang: u.lang }); },
+      addEventListener() {}, removeEventListener() {},
+    };
+    Object.defineProperty(window, "speechSynthesis", { value: fake, configurable: true });
+    /* The real utterance accepts only a real voice object. */
+    window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; } };
+  });
+  await p2.goto(FILE, { waitUntil: "domcontentloaded" });
+  await p2.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess", { timeout: 15000 });
+  await p2.evaluate(() => { const A = window.FALLASKOLI; A.S.settings.secondLanguage = true; A.save(true); });
+  await p2.reload({ waitUntil: "domcontentloaded" });
+  await startPractice(p2, 15000);
+  const found = await p2.evaluate(() => {
+    const A = window.FALLASKOLI;
+    for (let k = 0; k < 80; k++) {
+      if (document.querySelector("#task .card .sentence .blank") && document.getElementById("l2speak")) return true;
+      A.finish({ correct: true }); A.next();
+    }
+    return !!document.getElementById("l2speak");
+  });
+  ok(found, "item 45: with a local Icelandic voice the speak button should be there");
+  if (found) {
+    await p2.evaluate(() => document.getElementById("l2speak").click());
+    const said = await p2.evaluate(() => ({ spoken: window.__spoken, shown: document.querySelector("#task .card .sentence").textContent }));
+    const last = said.spoken[said.spoken.length - 1] || {};
+    ok(last.voice === "Guðrún" && /^is/i.test(last.lang || ""), `item 45: read with ${last.voice}, not the device's own Icelandic voice`);
+    ok(last.text && !/\?/.test(last.text.replace(/\?\s*$/, "")) && last.text.length > 5,
+      `item 45: what was read: "${last.text}" for "${said.shown}"`);
+  }
+  ok(errors2.length === 0, `item 45: errors with a voice: ${errors2.join(" | ")}`);
+  await p2.close();
+}
+
+/* ---------- item 46: Ritun vikunnar ----------------------------------------------
+ * Offline (this file has no server): the picker offers the week's three
+ * sentences; the card says the text is sent nowhere and offers no check;
+ * fewer than three sentences cannot be finished; three can, and the picker
+ * then says it is done — with the week, and not a word of the text, in the
+ * saved progress. Then the remarks, with a stand-in for the server's answer:
+ * shown one at a time, marked in their sentence; "Laga í textanum" selects
+ * the stretch; typing the fix moves to the next; "Sleppa" passes one; and a
+ * redraw of the picker (an assignment arriving) does not wipe the text. */
+{
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess && document.querySelector('#task .card')", { timeout: 15000 });
+  const tapIn = async (sel) => {
+    const at = await page.evaluate((s) => {
+      const el = document.querySelector(s);
+      if (!el) return null;
+      el.scrollIntoView({ block: "center" });
+      const r = el.getBoundingClientRect();
+      return r.width && r.height ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null;
+    }, sel);
+    if (!at) { ok(false, "item 46: nothing to tap at " + sel); return false; }
+    await page.mouse.click(at.x, at.y);
+    return true;
+  };
+  await page.evaluate(() => { const A = window.FALLASKOLI; delete A.S.settings.writingDone; A.save(true); A.openView("practice"); A.next(); });
+  const offer = await page.evaluate(() => { const b = document.querySelector(".writebox"); return b ? b.innerText : null; });
+  ok(offer && /Skrifaðu þrjár setningar um/.test(offer) && /Skrifa →/.test(offer), `item 46: the picker should offer the week's writing: ${offer}`);
+  ok(/Hér er enginn yfirlestur\. Þú lest textann sjálf\(ur\) yfir\./.test(offer || ""),
+    `review S14: offline the offer must say nothing reads the text over: ${offer}`);
+  await tapIn("#writego");
+  await page.waitForSelector("#wr-text", { timeout: 3000 }).catch(() => ok(false, "item 46: the writing card did not open"));
+  const card = await page.evaluate(() => ({
+    mode: document.getElementById("wr-mode").innerText,
+    check: !document.getElementById("wr-check").hidden,
+    fits: document.querySelector(".writecard").getBoundingClientRect().right <= innerWidth + 1,
+    wide: document.getElementById("wr-text").getBoundingClientRect().width,
+  }));
+  ok(/ekki sendur neitt og ekki geymdur/.test(card.mode), `item 46: offline the card must say the text goes nowhere: ${card.mode}`);
+  ok(!card.check, "item 46: offline there is no 'Lesa yfir'");
+  ok(card.fits && card.wide > 250, `item 46: the card does not fit a 390 px phone (${card.wide}px box)`);
+  await page.focus("#wr-text");
+  await page.keyboard.type("Ég á hund sem heitir Snati. Hann er brúnn.");
+  await tapIn("#wr-done");
+  const early = await page.evaluate(() => ({ msg: document.getElementById("wr-notes").innerText, open: !!document.getElementById("wr-text"),
+    count: document.getElementById("wr-count").innerText }));
+  ok(early.open && /Tvær setningar eru komnar/.test(early.msg), `item 46: two sentences should not finish the task: ${early.msg}`);
+  ok(/^2 af 3 setningum/.test(early.count), `item 46: the count says ${early.count}`);
+  /* An assignment arriving redraws the picker — not over the text. */
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.assignments = [{ id: "x", open: true, target: { kind: "skill", id: "nafnord" }, n: 5, due: "2099-01-01" }]; });
+  await page.evaluate(() => window.FALLASKOLI.next());      // no run: draws the picker again
+  const kept = await page.evaluate(() => { const b = document.getElementById("wr-text"); return b && b.value; });
+  ok(kept && kept.includes("Snati"), "item 46: the text was wiped");
+  await page.evaluate(() => { const b = document.getElementById("wr-text"); b.focus(); b.setSelectionRange(b.value.length, b.value.length); });
+  await page.keyboard.type(" Hann leikur sér úti.");
+  await tapIn("#wr-done");
+  await page.waitForSelector(".writebox", { timeout: 3000 }).catch(() => ok(false, "item 46: finishing did not go back to the picker"));
+  const done = await page.evaluate(() => ({
+    offer: document.querySelector(".writebox").innerText,
+    week: window.FALLASKOLI.S.settings.writingDone,
+    stored: JSON.stringify(localStorage).includes("Snati") || JSON.stringify(window.FALLASKOLI.S).includes("Snati"),
+  }));
+  ok(/lokið í þessari viku/.test(done.offer) && /^\d{4}-\d{2}-\d{2}$/.test(done.week || ""), `item 46: done is not shown or not saved: ${done.week}`);
+  ok(!done.stored, "item 46: the text the pupil wrote was saved on the device");
+
+  /* The remarks, with a stand-in for the server's answer. */
+  await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    window.__sent = [];
+    A.server = {
+      writingStatus: async () => ({ check: true, keep: false, available: true }),
+      checkWriting: async (text) => {
+        window.__sent.push(text);
+        const at = (w) => text.indexOf(w);
+        const notes = [];
+        if (at("Mér") >= 0) notes.push({ start: at("Mér"), end: at("Mér") + 3, code: "P_WRONG_CASE_þgf_þf", msg: "Á líklega að vera 'Mig'", detail: "Sögnin 'að langa' er ópersónuleg.", suggest: "Mig" });
+        if (at("skólan ") >= 0) notes.push({ start: at("skólan "), end: at("skólan ") + 6, code: "N4NN-END", msg: "Stafsetningarvilla: 'skólan' -> 'skólann'", suggest: "skólann" });
+        if (at("vill") >= 0) notes.push({ start: at("vill"), end: at("vill") + 4, code: "S005", msg: "Rita á 'vill' sem 'vil'", suggest: "vil" });
+        return { sentences: 3, annotations: notes, kept: false };
+      },
+    };
+  });
+  await tapIn("#writego");
+  await page.waitForFunction(() => { const b = document.getElementById("wr-check"); return b && !b.hidden; }, { timeout: 3000 })
+    .catch(() => ok(false, "item 46: with the check on, 'Lesa yfir' did not appear"));
+  const mode2 = await page.evaluate(() => document.getElementById("wr-mode").innerText);
+  ok(/sendur á netþjóninn/.test(mode2) && /ekki geymdur/.test(mode2), `item 46: the card must say where the text goes before sending: ${mode2}`);
+  await page.focus("#wr-text");
+  await page.keyboard.type("Mér langar að fara í sund.\nÉg fór í skólan í gær.\nÉg vill fara heim.");
+  await tapIn("#wr-check");
+  await page.waitForSelector(".wrnote", { timeout: 3000 }).catch(() => ok(false, "item 46: no remark was shown"));
+  const n1 = await page.evaluate(() => ({ head: document.querySelector(".wrnote .eyebrow").innerText,
+    mark: (document.querySelector(".wrnote mark") || {}).textContent, sent: window.__sent[0],
+    box: document.getElementById("wr-text").value }));
+  ok(/Athugasemd 1 af 3/.test(n1.head) && n1.mark === "Mér", `item 46: first remark ${n1.head} / ${n1.mark}`);
+  ok(n1.sent === n1.box && !/\n/.test(n1.sent), "item 46: the text sent is not the tidied text in the box");
+  await tapIn("#wr-fix");
+  const sel = await page.evaluate(() => { const b = document.getElementById("wr-text"); return b.value.slice(b.selectionStart, b.selectionEnd); });
+  ok(sel === "Mér", `item 46: 'Laga í textanum' should select the stretch: "${sel}"`);
+  await page.keyboard.type("Mig");
+  const n2 = await page.evaluate(() => ({ head: document.querySelector(".wrnote .eyebrow").innerText, mark: (document.querySelector(".wrnote mark") || {}).textContent }));
+  ok(/Athugasemd 2 af 3/.test(n2.head) && n2.mark === "skólan", `item 46: after the fix the next remark: ${n2.head} / ${n2.mark}`);
+  await tapIn("#wr-skip");
+  const n3 = await page.evaluate(() => (document.querySelector(".wrnote mark") || {}).textContent);
+  ok(n3 === "vill", `item 46: 'Sleppa' should go to the third: ${n3}`);
+  await tapIn("#wr-fix");
+  await page.keyboard.type("vil");
+  const fin = await page.evaluate(() => ({ notes: document.getElementById("wr-notes").innerText, box: document.getElementById("wr-text").value }));
+  ok(/lagaðir 2 og slepptir 1/.test(fin.notes), `item 46: the summary after the remarks: ${fin.notes}`);
+  ok(fin.box === "Mig langar að fara í sund. Ég fór í skólan í gær. Ég vil fara heim.", `item 46: the text after fixing: ${fin.box}`);
+  await tapIn("#wr-check");
+  await page.waitForFunction(() => /Athugasemd 1 af 1/.test((document.querySelector(".wrnote .eyebrow") || {}).innerText || ""), { timeout: 3000 })
+    .catch(() => ok(false, "item 46: reading over again did not show the one remark left"));
+  ok(errors.length === 0, `item 46: errors: ${errors.join(" | ")}`);
+  await page.close();
+}
+
+/* ---------- item 17: with no server there is no calibration at all ----------
+ * Opened from a file the program must run on exactly what it was built with:
+ * no table, the build's own scores in the lexicon, no question marked for
+ * counting and nothing queued to be sent anywhere. */
+{
+  const page = await browser.newPage();
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  const st = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    const marked = [];
+    for (let k = 0; k < 12 && A.run; k++) { marked.push(A.cur && A.cur.calBand); A.finish({ correct: true }); A.next(); }
+    A.flushAnswers();
+    return { server: !!A.server, cal: A.cal, info: A.calInfo, viewCal: A.viewCal(), marked,
+      queued: A.calQueue.length + A.calSamples.length,
+      adjusted: (A.lex.nouns || []).filter((w) => w.irrBuilt !== undefined).length };
+  });
+  ok(st.server === false && st.cal === null && st.info === null && st.viewCal === null,
+    "a program with no server has a calibration table: " + JSON.stringify({ cal: st.cal, info: st.info }));
+  ok(st.marked.every((b) => b == null), "a question was marked for counting with no server: " + st.marked);
+  ok(st.queued === 0, "answers were queued for a server that does not exist");
+  ok(st.adjusted === 0, `${st.adjusted} words carry a calibrated score with no server`);
+  await page.close();
+}
+
+/* ---------- item 83: the skill map ------------------------------------------
+ * Framvinda is one map: a ring per curriculum node under its category and
+ * year, locked where no question asks the material yet. It must fit a 390 px
+ * phone and a desktop without sideways scrolling; a ring opens the node; and
+ * the node's button starts a session of exactly the node's question types.
+ * The four panels the map replaced are gone. */
+{
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  /* A pupil who starts today: the pages before this one share its storage
+     and left a pupil hundreds of answers in. Nothing after this needs them. */
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess && window.FALLASKOLI.lex", { timeout: 15000 });
+  const fresh = await page.evaluate(() => window.FALLASKOLI.S.totalAnswers);
+  ok(fresh === 0, `the skill map's pupil should start with nothing answered: ${fresh}`);
+  const REVIEW = "c:fill|ÞGFFT|hestur|kk";
+  /* This block has a page of its own, so its own real click (see `tap`). */
+  const tap = async (selector) => {
+    const box = await page.evaluate((sel) => {
+      const el = document.querySelector(sel);
+      if (!el) return null;
+      el.scrollIntoView({ block: "center" });
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }, selector);
+    if (!box) { ok(false, `nothing to click at ${selector}`); return; }
+    await page.mouse.click(box.x, box.y);
+  };
+  const dismissModalsOn = async (pg) => {
+    for (let i = 0; i < 80 && (await pg.$(".scrim")); i++) {
+      await pg.evaluate(() => { const b = document.getElementById("badgeok"); if (b) b.click(); });
+      await new Promise((r) => setTimeout(r, 30));
+    }
+  };
+  /* A pupil with a little history: Föllin fjögur answered three days ago,
+     þolfall/þágufall going wrong, one review due there; and a past-tense
+     record for the node that is one feature of the verb types. */
+  await page.evaluate((key) => {
+    const A = window.FALLASKOLI, S = A.S;
+    const day = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+    const today = day(Date.now()), at = Date.now() - 3 * 86400000;
+    S.byType.fill = { n: 12, c: 7, h: "AAaAaAaAAaAa", at };
+    S.byNode["so-tid"] = { n: 10, c: 10, h: "AAAAAAAAAA", at: Date.now() };
+    S.diag.thf_thgf = { n: 14, w: 10, h: "0000000000", last: today, ex: [] };
+    S.diag.broddar = { n: 9, w: 3, h: "110110111", last: today, ex: [] };
+    S.cells["ÞGFFT"] = { c: 2, w: 5 }; S.cells.NFET = { c: 9, w: 0 };
+    S.review.items.push({ k: key, t: "fill", sk: "nafnord", p: "thf_thgf", c: "ÞGFFT", w: "hestur|kk", i: null,
+      s: 0, due: today, add: today, last: today, l: 2, ok: 0 });
+    A.openView("progress");
+    document.querySelector('button[data-pane="stats"]').click();
+  }, REVIEW);
+  await page.waitForSelector("#skillmap .smnode", { timeout: 5000 });
+
+  const open = NODES.filter((n) => n.types.length), locked = NODES.filter((n) => !n.types.length);
+  const readMap = () => page.evaluate(() => {
+    const board = document.querySelector("#skillmap .skillboard");
+    const nodes = [...document.querySelectorAll("#skillmap .smtrail .smnode")];
+    const box = (el) => { const r = el.getBoundingClientRect(); return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), r: Math.round(r.right) }; };
+    const foll = document.querySelector('#skillmap .smtrail .smnode[data-node="no-foll"]');
+    return {
+      overflow: document.documentElement.scrollWidth - innerWidth,
+      board: box(board), ids: nodes.map((n) => n.dataset.node),
+      locked: nodes.filter((n) => n.classList.contains("locked")).map((n) => n.dataset.node),
+      unlabelled: nodes.filter((n) => !(n.getAttribute("aria-label") || "").includes(n.querySelector("b").innerText.trim())).length,
+      rings: nodes.filter((n) => !n.querySelector("svg.smring")).length,
+      small: nodes.map(box).filter((b) => b.h < 44).length,
+      outside: nodes.map(box).filter((b) => b.x < 0 || b.r > innerWidth + 1).length,
+      lanes: [...document.querySelectorAll("#skillmap .smlane")].map((l) => box(l).x),
+      years: [...document.querySelectorAll("#skillmap .smyear")].map((y) => y.innerText.trim()),
+      foll: foll && { text: foll.innerText.replace(/\s+/g, " ").trim(), label: foll.getAttribute("aria-label"),
+        flag: foll.querySelector(".smflag")?.innerText.trim() || "", level: foll.dataset.level },
+      tid: document.querySelector('#skillmap .smnode[data-node="so-tid"]')?.dataset.level,
+      next: [...document.querySelectorAll("#skillmap .smnextbtn")].map((b) => b.dataset.node),
+      loose: document.querySelector("#loosepatterns")?.innerText || "",
+      old: ["skillgrid", "diaglist", "heat", "wordlist"].filter((id) => document.getElementById(id)),
+      heads: [...document.querySelectorAll("#pane-stats h2")].map((h) => h.innerText.trim()),
+    };
+  });
+  const m = await readMap();
+  ok(m.overflow <= 1, `the skill map scrolls sideways at 390 px by ${m.overflow}px`);
+  ok(m.board.x >= 0 && m.board.r <= 391, `the board does not fit a 390 px phone: ${JSON.stringify(m.board)}`);
+  ok(JSON.stringify([...m.ids].sort()) === JSON.stringify(NODES.map((n) => n.id).sort()),
+    `the map should draw every curriculum node once: ${m.ids.length} of ${NODES.length}`);
+  ok(JSON.stringify([...m.locked].sort()) === JSON.stringify(locked.map((n) => n.id).sort()),
+    `the locked nodes should be exactly those without questions: ${m.locked}`);
+  ok(m.unlabelled === 0 && m.rings === 0, `${m.unlabelled} nodes without a spoken label, ${m.rings} without a ring`);
+  ok(m.small === 0 && m.outside === 0, `${m.small} nodes are smaller than a finger (44 px), ${m.outside} reach outside the screen`);
+  ok(new Set(m.lanes).size === 1, `on a phone the categories should stack in one column: ${[...new Set(m.lanes)]}`);
+  ok(["8. BEKKUR", "9. BEKKUR", "10. BEKKUR"].every((y) => m.years.some((x) => x.toUpperCase() === y)), `the years are not named on the trails: ${[...new Set(m.years)]}`);
+  ok(m.foll && m.foll.level === "1" && m.foll.flag === "1" && /Þarf æfingu · fyrir 3 dögum/.test(m.foll.text),
+    `Föllin fjögur should show its mark, when it was last trained and one review due: ${JSON.stringify(m.foll)}`);
+  ok(m.foll && /Vald: Þarf æfingu\. Síðast æft fyrir 3 dögum\. Bíður þín: 1 atriði bíður upprifjunar · 1 villumynstur algengt núna\./.test(m.foll.label),
+    `the node's label should say the three facts: ${m.foll && m.foll.label}`);
+  ok(m.tid === "4" || m.tid === "3", `Nútíð og þátíð should read its own record: mark ${m.tid}`);
+  ok(m.next[0] === "no-foll", `"Byrjaðu hér" should name the node with a review due: ${m.next}`);
+  ok(/Broddar|brodd/i.test(m.loose) && !/Þolfall og þágufall/.test(m.loose), `the patterns of no node belong under the map, the others on their nodes: ${m.loose.slice(0, 120)}`);
+  ok(m.old.length === 0 && !m.heads.some((h) => /Styrkleikar|Villumynstur|Hvar liggja|Orð sem þarf/.test(h)),
+    `the panels the map replaced are still there: ${m.old} ${m.heads}`);
+
+  /* A ring opens the node. */
+  await tap('#skillmap .smtrail .smnode[data-node="no-foll"]');
+  await page.waitForSelector('.smpanel[data-panel="no-foll"]', { timeout: 4000 });
+  const panel = await page.evaluate(() => {
+    const p = document.querySelector(".smpanel"), r = p.getBoundingClientRect();
+    return { text: p.innerText.replace(/\s+/g, " "), fits: r.left >= 0 && r.right <= innerWidth + 1,
+      overflow: document.documentElement.scrollWidth - innerWidth,
+      facts: p.querySelectorAll(".smfact").length, rule: !!p.querySelector(".smrule"),
+      patterns: [...p.querySelectorAll(".smpatterns li b")].map((b) => b.innerText),
+      cells: [...p.querySelectorAll(".smcells li b")].map((b) => b.innerText),
+      grid: p.querySelectorAll(".smgrid table.heat td").length,
+      words: [...p.querySelectorAll(".smwords .chip")].map((c) => c.innerText.replace(/\s+/g, " ")),
+      lesson: p.querySelector("[data-lesson]")?.dataset.lesson, go: p.querySelector("[data-nodego]")?.innerText || "",
+      title: document.querySelector(".scrim .sheethead h3")?.innerText || "" };
+  });
+  ok(panel.fits && panel.overflow <= 1, "the opened node does not fit a 390 px phone");
+  ok(/Föllin fjögur/.test(panel.title) && panel.facts === 3 && /Hve vel\?.*Síðast æft.*Bíður þín/.test(panel.text),
+    `the opened node should say the three facts: ${panel.title} / ${panel.text.slice(0, 160)}`);
+  ok(panel.rule && panel.patterns.includes("Þolfall og þágufall ruglast"), `the node should show its rule and its error pattern: ${panel.patterns}`);
+  ok(panel.cells[0] === "þágufall, fleirtala, án greinis" && panel.grid === 16, `the worst cells and the noun table: ${panel.cells} / ${panel.grid} cells`);
+  ok(panel.words.length === 1 && /hestur/.test(panel.words[0]), `the words waiting: ${panel.words}`);
+  ok(panel.lesson === "foll" && /Æfa þetta · 10 spurningar/.test(panel.go), `a Lesefni link and the button: ${panel.lesson} / ${panel.go}`);
+
+  /* Its button starts a session of exactly the node's question types,
+     opening with the node's own review. */
+  await tap(".smpanel [data-nodego]");
+  await page.waitForFunction("window.FALLASKOLI.run && window.FALLASKOLI.cur && !document.querySelector('.smpanel')", { timeout: 5000 });
+  const want = NODES.find((n) => n.id === "no-foll").types;
+  const run = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    const out = { n: A.run.n, types: [...A.run.types], label: document.querySelector("#runbar")?.innerText || "",
+      view: !document.getElementById("view-practice").hidden, first: A.cur.review || null, firstWord: A.cur.word, asked: [] };
+    for (let k = 0; k < 10 && A.run; k++) { out.asked.push(A.cur.typeId); A.finish({ correct: true }); A.next(); }
+    out.done = !A.run || !!A.runDone;
+    return out;
+  });
+  ok(run.view && run.n === 10 && JSON.stringify([...run.types].sort()) === JSON.stringify([...want].sort()),
+    `the node's button should start ten questions of its types (${want}): ${JSON.stringify({ n: run.n, types: run.types })}`);
+  ok(run.asked.length === 10 && run.asked.every((t) => want.includes(t)), `a question of another type was asked in the node's session: ${run.asked}`);
+  ok(run.first === REVIEW && run.firstWord === "hestur|kk", `the session should open with the node's own review: ${run.first} ${run.firstWord}`);
+  ok(/Föllin fjögur/.test(run.label), `the bar should name the node: ${run.label}`);
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+  await dismissModalsOn(page);
+
+  /* A node that is one feature of its types asks that feature only. */
+  const tid = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.practiseNode("so-tid");
+    const out = { types: [...A.run.types], asked: [] };
+    for (let k = 0; k < 10 && A.run; k++) { out.asked.push([A.cur.typeId, A.cur.type, A.cur.cell || ""]); A.finish({ correct: true }); A.next(); }
+    A.run = null; A.runDone = null; A.next();
+    return out;
+  });
+  const tidTypes = NODES.find((n) => n.id === "so-tid").types;
+  ok(tid.asked.length === 10 && tid.asked.every(([t]) => tidTypes.includes(t)), `Nútíð og þátíð asked another type: ${JSON.stringify(tid.asked)}`);
+  ok(tid.asked.filter(([, type]) => type !== "table").every(([, , cell]) => /ÞT/.test(cell)), `Nútíð og þátíð asked something that is not the past tense: ${JSON.stringify(tid.asked)}`);
+  await dismissModalsOn(page);
+
+  /* A locked node opens, says so, and starts nothing. */
+  await page.evaluate(() => { window.FALLASKOLI.openView("progress"); document.querySelector('button[data-pane="stats"]').click(); });
+  await tap(`#skillmap .smtrail .smnode[data-node="${locked[0].id}"]`);
+  await page.waitForSelector(".smpanel.locked", { timeout: 4000 });
+  const lock = await page.evaluate(() => ({ text: document.querySelector(".smpanel").innerText, go: !!document.querySelector(".smpanel [data-nodego]") }));
+  ok(/Læst/.test(lock.text) && /Engar spurningar/.test(lock.text) && !lock.go, `a locked node should say so and offer no session: ${lock.text.slice(0, 120)}`);
+  await page.keyboard.press("Escape");
+  await page.waitForFunction("!document.querySelector('.smpanel')", { timeout: 3000 }).catch(() => ok(false, "Escape did not close the node"));
+  const back = await page.evaluate(() => document.activeElement && document.activeElement.dataset.node);
+  ok(back === locked[0].id, `focus should return to the ring the node was opened from: ${back}`);
+
+  /* The Lesefni link of a node opens the page. */
+  await tap('#skillmap .smtrail .smnode[data-node="no-foll"]');
+  await page.waitForSelector(".smpanel [data-lesson]", { timeout: 4000 });
+  await tap(".smpanel [data-lesson]");
+  await page.waitForFunction("!document.getElementById('view-lessons').hidden && !document.querySelector('.smpanel')", { timeout: 4000 })
+    .catch(() => ok(false, "the node's Lesefni link did not open Lesefni"));
+
+  /* A desktop: the same map in columns, and still no sideways scrolling. */
+  await page.setViewport({ width: 1280, height: 900 });
+  await page.evaluate(() => { window.FALLASKOLI.openView("progress"); document.querySelector('button[data-pane="stats"]').click(); });
+  await new Promise((r) => setTimeout(r, 200));
+  const d = await readMap();
+  ok(d.overflow <= 1 && d.outside === 0, `the skill map scrolls sideways at 1280 px by ${d.overflow}px`);
+  ok(new Set(d.lanes).size >= 2, `on a desktop the categories should stand in columns: ${[...new Set(d.lanes)]}`);
+  ok(d.ids.length === NODES.length && d.foll.flag === "1", "the desktop map lost nodes or the flag");
+  await tap('#skillmap .smtrail .smnode[data-node="no-foll"]');
+  await page.waitForSelector('.smpanel[data-panel="no-foll"]', { timeout: 4000 });
+  ok(await page.evaluate(() => { const r = document.querySelector(".smpanel").getBoundingClientRect(); return r.width > 300 && r.right <= innerWidth; }),
+    "the opened node does not fit the desktop");
+  ok(open.length > 30 && errors.length === 0, `errors while the skill map was used: ${errors.join(" | ")}`);
+  await page.close();
 }
 
 await browser.close();

@@ -44,7 +44,7 @@ console.log("\n1. data/ino.json — what tools/ino.mjs wrote");
   }
 }
 
-console.log("\n2. data/data_bundle.js — what build_bundle.py attached");
+console.log("\n2. data/data_bundle.js — what pipeline/build_bundle.py attached");
 if (!stopped) {
   const raw = await read(p("data", "data_bundle.js"));
   if (!raw) { no("no data/data_bundle.js. Run ./build.sh."); stopped = 2; }
@@ -52,7 +52,7 @@ if (!stopped) {
     const n = (raw.match(/"ds":\s*"ino"/g) || []).length;
     if (!n) {
       no("not one word carries an ÍNO definition.");
-      console.log("    build_bundle.py read data/ino.json and matched nothing. If step 3");
+      console.log("    pipeline/build_bundle.py read data/ino.json and matched nothing. If step 3");
       console.log("    of ./build.sh printed a tiny number after `ÍNO found:`, that is this.");
       stopped = 2;
     } else ok(`${n.toLocaleString("is-IS")} words carry an ÍNO definition`);
@@ -65,7 +65,7 @@ if (!stopped) {
   const raw = await read(file);
   if (!raw) { no(`${path.basename(file)} is missing. Run ./build.sh.`); stopped = 3; }
   else {
-    /* Space-tolerant on purpose: build_bundle.py writes JSON with no spaces
+    /* Space-tolerant on purpose: pipeline/build_bundle.py writes JSON with no spaces
        after the colons, esbuild re-prints the same object with them. A pattern
        that matches only one of the two reports a fault that is not there. */
     const MARK = /"ds":\s*"ino"/g;

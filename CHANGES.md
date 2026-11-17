@@ -2,6 +2,95 @@
 
 ## Unreleased
 
+Everything below implements the v6.12 critique ("Fallaskóli v6.12 — critique
+and improvement list", 84 items); the item numbers refer to it. Item 10 (the
+duel data fingerprint) was left out by the owner's decision; item 40 is part
+of item 84. A v6.12 state opens and is migrated; nothing a pupil earned is
+taken away.
+
+### Learning
+- **Review queue (18–20).** Every wrong answer comes back the next day, then
+  after 3, 7 and 21 days; a session opens with up to three due reviews; a
+  missed cloze noun returns 3–5 questions later in the same session.
+- **Dagsins lota (21) and Þrjár í röð (36).** One main button: due reviews,
+  then the pupil's error patterns, then new material. A diagnosed miss can be
+  followed at once by three questions on its pattern, rule first.
+- **Difficulty follows the pupil (11, 12, 13, 16, 17).** Each skill's level is
+  stored and driven by recent accuracy (two right raise half a level, one
+  wrong lowers half); every question type follows the level or says it does
+  not; a second axis for how irregular a word and how hard a form is; the
+  server calibrates difficulty automatically from anonymous counts, in small
+  capped steps, with no manual review.
+- **Guided first run (84, 40).** Year choice, a short placement round that sets
+  each skill's starting level, and a tour of the main parts of the app.
+- **One more try (42).** A wrong typed answer may be tried once more with the
+  rule in view, at half XP, before the answer is shown.
+- **Mastery, lessons and the skill map (44, 41, 83).** A mastery mark per skill;
+  "Æfa þetta" on every Lesefni page; a worked example on the first question of
+  each type; one skill map of every curriculum topic replaces four overviews.
+- **Curriculum (39).** `docs/CURRICULUM.md` maps the aðalnámskrá to skills,
+  question types and lessons; three year presets (8., 9., 10. bekkur).
+- **Second language (45).** Glosses for content words, a gentler ramp, and
+  read-aloud with the device's Icelandic voice.
+
+### Questions
+- **New types (27, 28).** Kind of pronoun; strong or weak noun; strong or weak
+  verb and kennimyndir; germynd, miðmynd or þolmynd; boðháttur; kinds of
+  subordinate clause; phrases; direct and indirect speech — with three new
+  Lesefni pages for year 10.
+- **Variety (23, 24, 3, 15).** At least 150 distinct questions at every level
+  for every type (except two closed-class tables); 40 new frames, and no
+  handful of sentences carries a type; Setningasmiðja works at þyngd 4–5;
+  noun fill-ins ask the dative and genitive more.
+- **Levels 6 and 7 (14).** 139 and 78 new sentences.
+- **Rewrites (29).** No double time phrases; four new kinds: passive to active,
+  statement to question, joining with a conjunction, indirect speech.
+- **Real errors (26).** Villuveiðar uses 134 real teenage errors from þyngd 3.
+- **Analysis (1, 49).** Greindu orðið asks the word class first and gives
+  nothing away; one row at a time, fits a phone.
+- **Content fixes (5, 6, 7, 25, 30, 43).** *hlakka til* explained by the
+  preposition; motion/rest items with one right answer; corrected rule texts;
+  conjunction choices that are all real candidates; a semantic clean-up of
+  generated sentences; two-option questions asked in pairs.
+- **Safe vocabulary (9).** The coarse-word filter is on by default and covers
+  76 words; vocabulary ranked closer to school reading than subtitles.
+
+### Error diagnosis (8, 31–35)
+New patterns (y/ý/ey, n/nn, ð/d, Sögnin ekki beygð, Ógreint); weak plural
+past endings recognised; nominative/accusative ties filed by what was asked;
+a pattern is "active" only with enough evidence.
+
+### Screen and accessibility (2, 47, 48, 50–53, 55)
+During a session one slim line replaces the header; the letter pad sits under
+the input and can be hidden; teacher settings behind "Fyrir kennara og
+foreldra"; verdicts announced to screen readers; a reading-comfort setting.
+
+### Rewards (22, 56–61)
+"N atriði bíða upprifjunar" instead of XP decay; badges and a "Framfarir"
+board for mending, not volume; streaks count weeks (4 days of 7); a weekly
+class goal; the level curve fits one session a day; badges wait for the
+session summary.
+
+### Classroom (37, 62–67, 46)
+Teachers see the group's error patterns (with CSV) and set assignments; duels
+are graded on the server, each side gets its own questions of equal weight,
+and a lower-level player gets a handicap; a live class round on the projector;
+team duels; Ritun vikunnar (three sentences of the pupil's own, read by
+GreynirCorrect; off unless the teacher turns it on). The privacy notice
+(version 2026-11-16) describes every new data flow.
+
+### Code and build (69–80, 82)
+Grading is a pure module (`core/answer.js`); task builders are pure, one file
+per category, with the random source passed in; `app.js` is split into
+controllers; type checking of the pure modules; simulation and property tests
+in CI; installable as an app with offline use; a measured server limit and a
+load test; a pinned build container and CI that checks the data rebuilds byte
+for byte; hand-written content in `content/*.tsv` with a review page
+(`dist/review.html`); the root sorted into `pipeline/`, `sources/`, `data/`;
+test accounts kept outside the project; docs brought up to date.
+
+### Earlier in Unreleased
+
 - **The project is a git repository.** Built files go to `dist/` (ignored);
   every release is a tag (`v6.12.0` onward), and pushing a tag attaches the
   built HTML to a GitHub release. `_backup/`, `_to_delete/` and the row of

@@ -1,0 +1,35 @@
+# Töluorð: dagsetningar
+#
+# Í hvaða falli dagsetningin stendur, og af hverju.
+#
+# Dálkar:
+#   þyngd    1–5
+#   rammi    setningin; ___ er raðtalan, {M} mánuðurinn
+#   fall     fall dagsetningarinnar
+#   skýring  skýringin sem nemandinn les
+#   dagar    hvaða dagar ársins passa við setninguna, ef ekki allir: mánuður og
+#            dagabil, aðskilin með kommu (ágúst 18-31, janúar 3-6). Skólinn byrjar
+#            ekki sextánda júní og sumarfríið hefst ekki í nóvember. Autt: allir.
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# The case the date stands in, and why.
+# Level = length; +1 for a case other than the nominative, +1 for the
+# genitive or a frame where nothing but the date says "when". The builder
+# adds one more for a compound ordinal (21. = tuttugasti og fyrsti).
+# `dagar` (v6.13 review, S2): a frame that names something on the school
+# calendar takes only the days it can be true on; "Skólinn byrjar sextánda
+# júní" came of drawing any month for every frame.
+#
+
+þyngd	rammi	fall	skýring	dagar
+1	Í dag er ___ {M}.	NF	Dagsetningin er frumlag eða sagnfylling: nefnifall (*dagurinn*).
+2	Ég á afmæli ___ {M}.	ÞF	Dagsetning sem svarar *hvenær?* stendur í þolfalli (*þann þriðja maí*).
+2	Skólinn byrjar ___ {M}.	ÞF	Dagsetning sem svarar *hvenær?* stendur í þolfalli.	ágúst 18-31, janúar 3-6
+2	Frá ___ {M} er sumarfrí.	ÞGF	*Frá* stýrir þágufalli.	maí 28-31, júní 1-15
+3	Fríið stendur til ___ {M}.	EF	*Til* stýrir eignarfalli.
+3	Við förum til útlanda ___ {M}.	ÞF	Dagsetning sem svarar *hvenær?* stendur í þolfalli.

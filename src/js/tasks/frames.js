@@ -4,7 +4,7 @@
  * The bank holds ~700 sentences; the vocabulary holds ~3,800 nouns in 16 forms
  * each. A word in a given form can only be *shown* inside a sentence if some
  * sentence has a slot that takes it. The build marks every sentence's slot
- * (`slot`), the classes of noun it accepts (`need`, from noun_classes.py), the
+ * (`slot`), the classes of noun it accepts (`need`, from pipeline/noun_classes.py), the
  * gender it pins (`rk`), the preposition it stands under (`ps`) and whether an
  * adjective or pronoun sits beside it (`fixed`). This module does the swapping
  * and nothing else: the mark stays, the replacement form comes out of BÍN under
@@ -32,6 +32,7 @@
  */
 
 import { CLASSNAME } from "../core/marks.js";
+import { pick, wpick } from "./shared.js";
 
 const CACHE = new WeakMap();
 
@@ -122,10 +123,20 @@ export function nounDescribedBy(lex, s, i) {
   return null;
 }
 
-/** Is this noun already in the sentence, somewhere other than the slot?
-    "Gatan liggur milli kirkju og kirkju", "Hundurinn fylgir hundinum". */
+/* A compound repeats the word it is made of: "Ferðin féll niður vegna
+   gönguferðarinnar", "Krakkarnir fóru í ferðina án ferðamannanna". Only
+   stems of four letters or more, so *ár* is not found in *árbók*. */
+const sharesStem = (a, b) => {
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  return short.length >= 4 && long.includes(short);
+};
+
+/** Is this noun already in the sentence, somewhere other than the slot — as
+    itself or inside a compound? "Gatan liggur milli kirkju og kirkju",
+    "Hundurinn fylgir hundinum", "Ferðin féll niður vegna ferðalagsins". */
 export const repeatsNoun = (s, slot, word) =>
-  s.tok.some((t, j) => j !== slot && t.c === "nafnorð" && t.l === word.o);
+  s.tok.some((t, j) => j !== slot && t.c === "nafnorð" && t.l
+    && (t.l === word.o || sharesStem(t.l, word.o)));
 
 /** Every noun that may stand in this sentence's slot. */
 export function candidateNouns(lex, s) {
@@ -206,36 +217,71 @@ export function fillFrame(frame, word, form) {
 
 /* ---------- choosing a frame --------------------------------------------- */
 
-const pickFrom = (list, rnd) => list[Math.floor(rnd() * list.length)];
+/**
+ * The key a bank sentence is remembered by when it carries a question — as
+ * a frame or as itself (v6.13, critique item 24): a short hash of its text,
+ * so a pupil's tally of sentences seen stays small in the saved state and
+ * survives a rebuild that reorders the bank. "f" and up to seven base-36
+ * digits.
+ */
+export function frameKey(s) {
+  const text = String((s && s.t) || "");
+  let h = 0x811c9dc5;                                   // FNV-1a, 32 bits
+  for (let k = 0; k < text.length; k++) {
+    h ^= text.charCodeAt(k);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return "f" + h.toString(36);
+}
+
+/* `avoid` (a Set of frame keys) and `weight` (frame key -> number) are for
+   the reverse analysis, which uses each sentence at most once a session and
+   prefers the ones this pupil has seen least. Without them a frame is drawn
+   as it always was. */
+function chooseFrame(legal, maxLvl, rng, avoid, weight) {
+  const open = avoid ? legal.filter((f) => !avoid.has(frameKey(f.s))) : legal;
+  if (!open.length) return null;
+  const within = open.filter((f) => f.lvl <= maxLvl);
+  const from = within.length ? within : open;
+  return weight ? wpick(from, (f) => weight(frameKey(f.s)), rng) : pick(from, rng);
+}
+
+/** The frames that could show this noun in this mark, ignoring `avoid`. */
+export function nounFrames(lex, word, mark, levelOk = () => true) {
+  const all = frameIndex(lex).noun.get(mark);
+  if (!all || !all.length) return [];
+  return all.filter((f) => levelOk(f.lvl) && acceptsNoun(f, word, mark) && !repeatsNoun(f.s, f.i, word));
+}
+
+/** The frames that could show this adjective in this mark, ignoring `avoid`. */
+export function adjectiveFrames(lex, word, mark, levelOk = () => true) {
+  const all = frameIndex(lex).adj.get(mark);
+  if (!all || !all.length) return [];
+  return all.filter((f) => levelOk(f.lvl) && f.fits.includes(word.o));
+}
+
 
 /**
  * A sentence showing this noun in exactly this mark, or null.
  * `levelOk` is the curriculum policy and is never relaxed; `maxLvl` is where
  * the child has got to and may be exceeded by a step when nothing else fits.
+ * `rng` is the random source the frame is drawn with; it has no default, so
+ * that no caller falls back on the global generator without meaning to.
  */
 export function nounSentence(lex, word, mark, form,
-  { maxLvl = 7, levelOk = () => true, rnd = Math.random } = {}) {
-  const all = frameIndex(lex).noun.get(mark);
-  if (!all || !all.length) return null;
-  const legal = all.filter((f) => levelOk(f.lvl) && acceptsNoun(f, word, mark)
-    && !repeatsNoun(f.s, f.i, word));
-  if (!legal.length) return null;
-  const within = legal.filter((f) => f.lvl <= maxLvl);
-  const frame = pickFrom(within.length ? within : legal, rnd);
-  return { s: fillFrame(frame, word, form), i: frame.i, lvl: frame.lvl };
+  { maxLvl = 7, levelOk = () => true, rng, avoid = null, weight = null } = {}) {
+  const frame = chooseFrame(nounFrames(lex, word, mark, levelOk), maxLvl, rng, avoid, weight);
+  if (!frame) return null;
+  return { s: fillFrame(frame, word, form), i: frame.i, lvl: frame.lvl, key: frameKey(frame.s) };
 }
 
 /** A sentence showing this adjective in exactly this mark, or null. The noun
     it agrees with stays; only the adjective changes. */
 export function adjectiveSentence(lex, word, mark, form,
-  { maxLvl = 7, levelOk = () => true, rnd = Math.random } = {}) {
-  const all = frameIndex(lex).adj.get(mark);
-  if (!all || !all.length) return null;
-  const legal = all.filter((f) => levelOk(f.lvl) && f.fits.includes(word.o));
-  if (!legal.length) return null;
-  const within = legal.filter((f) => f.lvl <= maxLvl);
-  const frame = pickFrom(within.length ? within : legal, rnd);
-  return { s: fillFrame(frame, word, form), i: frame.i, lvl: frame.lvl };
+  { maxLvl = 7, levelOk = () => true, rng, avoid = null, weight = null } = {}) {
+  const frame = chooseFrame(adjectiveFrames(lex, word, mark, levelOk), maxLvl, rng, avoid, weight);
+  if (!frame) return null;
+  return { s: fillFrame(frame, word, form), i: frame.i, lvl: frame.lvl, key: frameKey(frame.s) };
 }
 
 /**

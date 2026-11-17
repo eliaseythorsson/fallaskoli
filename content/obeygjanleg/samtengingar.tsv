@@ -1,0 +1,61 @@
+# Óbeygjanleg orð: veldu samtenginguna
+#
+# Hver rangur kostur er samtenging sem nemandi gæti í alvöru gripið til, og er rangur
+# af ástæðu sem skýringin getur nefnt. Hver setning hefur EITT rétt svar.
+#
+# Dálkar:
+#   þyngd    1–5
+#   setning  setningin; ___ er samtengingin
+#   svar     rétta samtengingin
+#   rangt    röngu kostirnir þrír, aðskildir með kommu
+#   skýring  skýringin sem nemandinn les
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Choose the conjunction. (level, sentence, right, [wrong, wrong, wrong], why)
+#
+# The options are contrast sets: every wrong option is a conjunction a pupil
+# could really reach for in that place, and is wrong for a reason the
+# explanation can name — the meaning (ef / þegar / þótt / nema), the order
+# of words after it (enda takes the verb first: *enda hafði hún*), what
+# follows it (til þess að takes the infinitive), or the pair it belongs to
+# (hvorki … né, annaðhvort … eða, bæði … og). No distractor may be learned
+# as "always wrong": none stands in more than a third of the items
+# (tests/more.test.js). Each item has exactly one right answer: a word that
+# would also do (*þegar* for *ef* in "Þú mátt fá köku ___ þú klárar") is
+# never offered.
+# Level = length; +1 where the choice is between conjunctions that all fit
+# the grammar and only the meaning decides (hvort sem, þótt, nema, enda), or
+# the clause after it is in the subjunctive.
+#
+
+þyngd	setning	svar	rangt	skýring
+# hvort / hvort sem / ef: the indirect question
+3	Ég veit ekki ___ hún kemur á morgun.	hvort	ef, hvort sem, þegar	Óbein spurning hefst á *hvort*: *Ég veit ekki hvort …* — *ef* táknar skilyrði og *þegar* tíma.
+2	Hún spurði ___ ég vildi koma með.	hvort	ef, að, hvort sem	Óbein já- eða nei-spurning hefst á *hvort*: *Hún spurði hvort …*, ekki *ef*.
+4	Við förum í gönguferð ___ það rignir eða ekki.	hvort sem	hvort, ef, þótt	*Hvort sem … eða ekki*: það skiptir ekki máli hvort það rignir, við förum samt.
+# ef / þegar / þótt / nema: condition, time, concession, exception
+4	___ ég væri fugl myndi ég fljúga til Spánar.	ef	þegar, nema, hvort	*Ef* táknar skilyrði, hér skilyrði sem er ekki satt: *ef ég væri fugl*.
+3	Ég var sex ára ___ ég lærði að synda.	þegar	ef, nema, þótt	*Þegar* segir hvenær eitthvað gerðist.
+5	Hann fór út í stuttbuxum í morgun ___ það væri frost.	þótt	ef, þegar, nema	*Þótt* táknar andstæðu: það var frost en hann fór samt út í stuttbuxum.
+5	Við spilum úti á morgun ___ það rigni, því þá spilum við inni.	nema	ef, þótt, þegar	*Nema* merkir *ef ekki*: við spilum úti ef það rignir ekki.
+# af því að / enda / svo að / til þess að: cause, result, purpose
+4	Ég fór snemma að sofa ___ ég var mjög þreyttur.	af því að	svo að, þótt, til þess að	*Af því að* segir hvers vegna: ég fór að sofa vegna þess að ég var þreyttur.
+5	Hún var svöng, ___ hafði hún ekkert borðað síðan í morgun.	enda	af því að, svo að, til þess að	*Enda* bætir við skýringu, og á eftir því kemur sögnin á undan frumlaginu: *enda hafði hún*. Á eftir *af því að* kæmi frumlagið fyrst: *af því að hún hafði*.
+4	Það var mikil hálka ___ margir duttu á leiðinni í skólann.	svo að	af því að, til þess að, þótt	*Svo að* segir hvað leiddi af: hálkan varð til þess að margir duttu.
+3	Ég vaknaði snemma ___ ná strætó.	til þess að	svo að, af því að, enda	*Til þess að* segir til hvers, og á eftir því kemur nafnháttur: *til þess að ná strætó*.
+# hvorki … né, annaðhvort … eða, bæði … og
+3	Hvorki ég ___ bróðir minn fórum á ballið.	né	eða, og, en	*Hvorki … né*.
+3	Annaðhvort förum við í bíó ___ í sund.	eða	né, og, en	*Annaðhvort … eða*.
+2	Bæði Siggi ___ Gunna komu í veisluna.	og	né, eða, en	*Bæði … og*.
+# sem / að / en
+2	Bókin ___ ég las var spennandi.	sem	að, hvort, þegar	*Sem* tengir tilvísunarsetningu við nafnorð: *bókin sem ég las*.
+2	Hún sagði ___ hún væri svöng.	að	sem, hvort, nema	*Að* tengir það sem sagt er við sögnina: *Hún sagði að …*.
+1	Hún er eldri ___ ég.	en	sem, og, eða	Á eftir miðstigi kemur *en*: *eldri en ég*.
+4	Ég ætlaði að fara út ___ það var of kalt.	en	af því að, svo að, hvort	*En* tengir saman andstæður: ég ætlaði út, en það var of kalt.
+3	Ég burstaði tennurnar ___ ég fór að sofa.	áður en	eftir að, nema, hvort	*Áður en* segir hvað gerðist fyrst: fyrst burstaði ég tennurnar, svo fór ég að sofa.
+3	Hún var svo þreytt ___ hún sofnaði strax.	að	sem, nema, þótt	*Svo … að*: *svo þreytt að hún sofnaði strax*.

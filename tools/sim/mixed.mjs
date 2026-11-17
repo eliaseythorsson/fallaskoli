@@ -14,6 +14,9 @@ for (const [name, ability] of [["weak", 0.5], ["mid", 0.72], ["strong", 0.9]]) {
   console.log("skills:", pct(cnt(log, (x) => x.skill), log.length));
   console.log("types:", pct(cnt(log, (x) => x.type), log.length));
   console.log("levels asked:", pct(cnt(log, (x) => x.lvl), log.length));
+  const mean = (a) => (a.reduce((t, x) => t + x.lvl, 0) / Math.max(1, a.length)).toFixed(2);
+  const sents = log.filter((x) => x.sent);
+  console.log(`mean level: all ${mean(log)} | sentence questions ${mean(sents)} | sentence questions without Setningagerð (always 6, item 14) ${mean(sents.filter((x) => x.skill !== "setningagerd"))}`);
   const byWeek = [0, 1, 2, 3, 4, 5].map((w) => { const a = log.filter((x) => Math.floor(x.d / 7) === w); return a.length ? `w${w}: lvl ${(a.reduce((s, x) => s + x.lvl, 0) / a.length).toFixed(2)} acc ${(a.filter((x) => x.ok).length / a.length).toFixed(2)}` : ""; });
   console.log("by week:", byWeek.join(" | "));
   const d = (k) => (lv.reduce((s, a) => s + a[k], 0) / lv.length).toFixed(1);
@@ -47,6 +50,24 @@ for (const [name, ability] of [["weak", 0.5], ["mid", 0.72], ["strong", 0.9]]) {
   }
   const med = (a) => a.sort((x, y) => x - y)[Math.floor(a.length / 2)];
   console.log(`questions until same cell again: after wrong median ${med(latW)}, after right median ${med(latR)}`);
+  /* The same in days, and for the exact thing that was missed — this word in
+     this cell (critique item 18: a miss should be back the next day). A miss
+     in the last week of the simulation is left out: it has had no time. */
+  const back = { cell: [], fact: [] }; let missed = 0;
+  for (const r of all) {
+    const L = r.log;
+    for (let i = 0; i < L.length; i++) {
+      if (L[i].ok || !L[i].cell || L[i].d > 32) continue;
+      missed++;
+      const find = (same) => { let j = i + 1; while (j < L.length && !same(L[j])) j++; return j < L.length ? L[j].d - L[i].d : Infinity; };
+      back.cell.push(find((x) => x.cell === L[i].cell && x.d > L[i].d));
+      if (L[i].word) back.fact.push(find((x) => x.cell === L[i].cell && x.word === L[i].word && x.d > L[i].d));
+    }
+  }
+  const share = (a, f) => (a.length ? (100 * a.filter(f).length / a.length).toFixed(0) + "%" : "–");
+  const medDays = (a) => { const m = med([...a]); return m === Infinity ? "never" : m; };
+  console.log(`a missed cell on a LATER day (${missed} misses): back the next day ${share(back.cell, (x) => x <= 1)}, within 3 days ${share(back.cell, (x) => x <= 3)}, median ${medDays(back.cell)} days`);
+  console.log(`the same word in the same cell: back the next day ${share(back.fact, (x) => x <= 1)}, within 3 days ${share(back.fact, (x) => x <= 3)}, within 40 days ${share(back.fact, (x) => x < Infinity)}`);
   const S = all[0].S;
   console.log("distinct cells met (learner 0):", Object.keys(S.cells).length, "distinct words:", Object.keys(S.words).length);
 }

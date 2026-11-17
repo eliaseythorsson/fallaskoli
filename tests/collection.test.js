@@ -120,13 +120,14 @@ test("a word that has not been seen is nowhere visible", () => {
 
 test("the collection summary feeds the badges", () => {
   const S = blankState();
-  lex.byClass.kk.slice(0, 30).forEach((w) => { S.words[`${w.o}|kk`] = { c: 3, w: 0 }; });
+  /* 100 words, for `coll100`: `coll25` was retired in v6.13 (item 56). */
+  lex.byClass.kk.slice(0, 100).forEach((w) => { S.words[`${w.o}|kk`] = { c: 3, w: 0 }; });
   const sum = collectionSummary(S, lex);
-  assert.equal(sum.total, 30);
-  assert.equal(sum.byClass.kk, 30);
+  assert.equal(sum.total, 100);
+  assert.equal(sum.byClass.kk, 100);
   assert.ok(sum.coverage.kk > 0 && sum.coverage.kk < 1);
-  assert.equal(sum.mastered, 30);
-  const cat = BADGES.filter((b) => b.id === "coll25");
+  assert.equal(sum.mastered, 100);
+  const cat = BADGES.filter((b) => b.id === "coll100");
   assert.equal(checkBadges(baseCtx({ collection: sum }), {}, {}, cat).length, 1);
 });
 

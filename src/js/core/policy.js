@@ -15,13 +15,14 @@
  * inflectional features — the last read off the BÍN mark itself (`featuresOf`),
  * never from a table of which question types involve which cases.
  *
- * Used by tasks/index.js (which builders, sentences and cells may run),
+ * Used by the builders in tasks/ (which types, sentences and cells may run),
  * ui/panels.js (the child's switches), ui/account.js (the administrator's)
  * and the server (stores `allowed`). */
 
 import { readMark } from "./marks.js";
 import { SKILLS } from "./skills.js";
 import { MIN, MAX } from "./difficulty.js";
+import { YEARS, presetContent } from "./curriculum.js";
 
 /* ---------- the dimensions ---------------------------------------------- */
 
@@ -62,7 +63,7 @@ export const QUESTION_TYPES = [
   { id: "meaning",  nm: "Hvað þýðir orðið?",           skill: "ordaford",
     ds: "Merking orðs með eigin orðum — í lotu sem valfrjáls bónus" },
   { id: "villur",   nm: "Villuveiðar",                 skill: "malbeiting",
-    ds: "Finndu og lagaðu eina eða tvær villur í falli eða samræmi í tveimur setningum" },
+    ds: "Finndu og lagaðu eina eða tvær villur í tveimur setningum: fall og samræmi, og frá þyngd 3 algengar málvillur (mér langar, ég vill)" },
   { id: "smidja",   nm: "Setningasmiðja",              skill: "malbeiting",
     ds: "Búðu til setningu úr orðum í orðabókarmynd og beygðu hvert orð" },
   { id: "umritun",  nm: "Umritun",                     skill: "malbeiting",
@@ -126,6 +127,26 @@ export const QUESTION_TYPES = [
     ds: "Smelltu á öll orð aukasetningar eða nafnháttarsetningar" },
   { id: "gerd_upphaf", nm: "Hvar hefst setningin?",     skill: "setningagerd",
     ds: "Fyrsta orð aukasetningar" },
+  /* item 27 */
+  { id: "fn_flokkar", nm: "Hvers konar fornafn?",       skill: "fornofn",
+    ds: "Persónu-, afturbeygt, eignar-, ábendingar-, spurnar- eða óákveðið fornafn í setningu" },
+  { id: "no_beyging", nm: "Sterkt eða veikt nafnorð",   skill: "nafnord",
+    ds: "Sterk eða veik beyging af eignarfalli eintölu: til hests, til pabba. Frá þyngd 5 er eignarfallið skrifað" },
+  { id: "so_beyging", nm: "Sterk eða veik sögn?",      skill: "sagnord",
+    ds: "Sterk eða veik sögn eftir þátíðinni: í gær kallaði ég, í gær tók ég. Frá þyngd 3 er þátíðin skrifuð, frá þyngd 5 kennimyndirnar" },
+  { id: "so_mynd",   nm: "Germynd, miðmynd eða þolmynd?", skill: "sagnord",
+    ds: "Mynd sagnar í setningu: hittust, var byggt — og þú lest, sem er germynd þótt það endi á -st" },
+  { id: "so_bodhattur", nm: "Boðháttur",               skill: "sagnord",
+    ds: "Boðháttur skrifaður: komdu, lestu, farðu — og frá þyngd 3 fleirtalan: komið" },
+  /* item 28: years 9 and 10 */
+  { id: "gerd_tegund", nm: "Hvers konar aukasetning?", skill: "setningagerd",
+    ds: "Fall-, tilvísunar- eða atvikssetning; frá þyngd 4 skýringar-, spurnar-, tíðar-, skilyrðis-, orsakar- og viðurkenningarsetning; frá þyngd 6 líka tilgangs- og afleiðingarsetning" },
+  { id: "setn_lidir", nm: "Hvers konar liður?",         skill: "setningafraedi",
+    ds: "Nafnliður, sagnliður eða forsetningarliður í setningu; frá þyngd 3 líka atviksliður" },
+  { id: "lid_finna", nm: "Finndu forsetningarliðinn",   skill: "setningafraedi",
+    ds: "Smelltu á öll orð forsetningarliðar; frá þyngd 4 geta þeir verið tveir" },
+  { id: "raeda", nm: "Bein og óbein ræða",              skill: "malbeiting",
+    ds: "Settu orð annarra í óbeina ræðu: Hún sagði að hún væri þreytt. Frá þyngd 4 er beina ræðan í þátíð: hefði farið" },
 ];
 
 export const TYPE_IDS = QUESTION_TYPES.map((t) => t.id);
@@ -301,8 +322,17 @@ export function createPolicy(allowed, chosen) {
 
     /** Whether the coarse vocabulary filter is on for this child. The child
         cannot turn it off: it is the administrator's switch alone, which is
-        the point of it. */
-    safeVocab: A.safeVocab === true,
+        the point of it.
+
+        ON unless an administrator has explicitly written `false` (v6.13,
+        item 9). Before v6.13 it was off unless written `true`, and the
+        subtitle corpus served *píka* and *tík* to a pupil whose teacher had
+        never opened the settings. A saved ceiling carries `safeVocab` only
+        when somebody clicked the box (`sanitisePolicy` keeps booleans and
+        nothing else, and the editor writes it only on a change), so `null`
+        means "never decided" and becomes on, and an administrator who
+        unticked it keeps that choice. */
+    safeVocab: A.safeVocab !== false,
 
     /** For the interface: is this switch the administrator's to explain? */
     allowedBy: {
@@ -324,14 +354,134 @@ export function createPolicy(allowed, chosen) {
  * A policy narrowed for one practice session (v6.10): only `skills` (if
  * given) and only `types` (if given), inside what `P` already allows.
  */
-export function narrowPolicy(P, { skills = null, types = null } = {}) {
+export function narrowPolicy(P, { skills = null, types = null, attrs = null } = {}) {
   const S = skills ? new Set(skills) : null;
   const T = types ? new Set(types) : null;
-  return {
+  const out = {
     ...P,
     skill: (id) => (!S || S.has(id)) && P.skill(id),
     type: (id) => (!T || T.has(id)) && P.type(id),
   };
+  /* `attrs` (item 41, and the nodes of item 83): { group: [keys] } — only
+     these keys of these groups, e.g. { tid: ["ÞT"] } for a session on the
+     past tense. `mark` reads the features itself, as the policy's own does,
+     so a cell is held to both. */
+  const A = attrs && Object.keys(attrs).length
+    ? Object.fromEntries(Object.entries(attrs).map(([g, keys]) => [g, new Set(keys)])) : null;
+  if (A) {
+    out.attr = (group, key) => (!A[group] || A[group].has(key)) && P.attr(group, key);
+    out.mark = (m) => P.mark(m) &&
+      Object.entries(featuresOf(m)).every(([g, k]) => !k || !A[g] || A[g].has(k));
+    out.marks = (list) => (list || []).every((m) => out.mark(m));
+  }
+  return out;
+}
+
+/**
+ * The child's own switches with these categories and question types switched
+ * ON — for a session the child asked for by name ("Æfa þetta" on a Lesefni
+ * page, item 41): reading a page and pressing its button is a clearer choice
+ * than a box left unticked in the settings. Only the child's layer: the
+ * administrator's ceiling still applies (`createPolicy(allowed, …)`). Levels
+ * and attributes stay as the child set them. Pure; returns a new policy.
+ */
+export function openFor(chosen, { skills = [], types = [] } = {}) {
+  const C = chosen || blankPolicy();
+  const out = { ...C, skills: { ...(C.skills || {}) }, types: { ...(C.types || {}) } };
+  for (const k of skills) out.skills[k] = true;
+  for (const k of types) delete out.types[k];
+  return out;
+}
+
+/* ---------- one switch ---------------------------------------------------- */
+
+/**
+ * Write one switch into a layer.
+ *
+ * Types and levels keep the rule of this file: a missing key means yes, so
+ * switching something back on deletes the `false` and a blank policy stays
+ * blank. Skills are written out as `true` or `false`. The child's skills live
+ * in `S.enabled`, which starts from defaults that say `false` for the
+ * categories of later years, and loading a saved state lays the saved keys
+ * over those defaults: a deleted key there does not mean yes, it means
+ * "whatever the default says". Before v6.13 the editor deleted the key, so a
+ * child who switched Setningafræði on found it off again after a reload.
+ */
+export function setPolicyFlag(policy, dim, key, value) {
+  const bag = (policy[dim] ||= {});
+  if (dim === "skills") bag[key] = !!value;
+  else if (value) delete bag[key];
+  else bag[key] = false;
+}
+
+/* ---------- the three year presets (item 39) ------------------------------ */
+
+/* What each year switches on is not written here: it is read off the
+ * curriculum nodes (core/curriculum.js), so the map in docs/CURRICULUM.md and
+ * the buttons cannot drift apart. Only the words are. A test pins what each
+ * year adds, so these sentences are revisited when the nodes change. */
+const PRESET_TEXT = {
+  8: "Fallorð, sagnorð, óbeygjanleg orð, orðflokkagreining, fallstjórn, orðaforði og málbeiting.",
+  9: "Allt úr 8. bekk og að auki afturbeygt fornafn, samtengingar, forsetning eða atviksorð, ópersónulegar sagnir, sterkar og veikar sagnir, þolmynd og boðháttur.",
+  10: "Allt úr 9. bekk og að auki setningafræði (setningarhlutar og liðir), setningagerðir, tegundir aukasetninga og bein og óbein ræða.",
+};
+
+export const PRESETS = YEARS.map((year) => ({
+  year, nm: `${year}. bekkur`, ds: PRESET_TEXT[year],
+}));
+
+/**
+ * The policy a year stands for: every category, question type and level
+ * spelt out as on or off. Features (föll, hættir …) are not part of a preset:
+ * they are the adult's fine adjustment and a preset leaves them alone.
+ *
+ * @returns {{ skills, types, levels }} of booleans, or null for an unknown year
+ */
+export function presetPolicy(year) {
+  const c = presetContent(Number(year));
+  if (!c) return null;
+  const S = new Set(c.skills), T = new Set(c.types);
+  return {
+    skills: Object.fromEntries(SKILLS.map((s) => [s.id, S.has(s.id)])),
+    types: Object.fromEntries(TYPE_IDS.map((t) => [t, T.has(t)])),
+    levels: Object.fromEntries(LEVELS.map((n) => [String(n), n <= c.topLevel])),
+  };
+}
+
+/**
+ * Set a layer to a year, in place. Works on either layer and on the view the
+ * child's settings hand the editor (whose `skills` is `S.enabled`).
+ * `attrs` and `safeVocab` are not touched.
+ *
+ * @returns the same object, or null (and no change) for an unknown year
+ */
+export function applyPreset(policy, year) {
+  const want = presetPolicy(year);
+  if (!want || !policy) return null;
+  for (const dim of ["skills", "types", "levels"]) {
+    /* Emptied rather than replaced: the child's view shares these objects
+       with the saved state, and a new object would be edited and then lost. */
+    const bag = (policy[dim] ||= {});
+    for (const k of Object.keys(bag)) delete bag[k];
+    for (const [k, v] of Object.entries(want[dim])) setPolicyFlag(policy, dim, k, v);
+  }
+  return policy;
+}
+
+/**
+ * Which year a layer is set to, or null when the switches match none. A
+ * blank layer permits everything and so reads as year 10: that is what an
+ * administrator who has restricted nothing has in fact allowed.
+ */
+export function presetOf(policy) {
+  const P = policy || blankPolicy();
+  for (const year of YEARS) {
+    const want = presetPolicy(year);
+    const same = ["skills", "types", "levels"].every((dim) =>
+      Object.entries(want[dim]).every(([k, v]) => on(P[dim], k) === v));
+    if (same) return year;
+  }
+  return null;
 }
 
 /* ---------- validating what arrives from outside ------------------------- */

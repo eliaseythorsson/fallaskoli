@@ -114,7 +114,7 @@ export const MOODS = (() => {
 })();
 
 /* The shortened imperative, BÍN's `GM-BH-ST` (*ræt* beside *rætaðu*): a real
- * cell, archaic outside verse. `isStyfdur` lets tasks/index.js drop it before
+ * cell, archaic outside verse. `isStyfdur` lets tasks/shared.js drop it before
  * a question is built; `describeMark` names it wherever it is still shown. It
  * is not deleted from the data — that would be a claim about Icelandic. */
 export const STYFDUR_BH = "GM-BH-ST";

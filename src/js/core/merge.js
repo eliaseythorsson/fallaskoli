@@ -1,3 +1,4 @@
+// @ts-check
 /* Two devices, one child: putting two copies of the progress back together.
  *
  * Until v6.3 the whole state went up and the last write won, so a phone left
@@ -18,6 +19,16 @@
  *
  * Pure: no DOM, no requests, never mutates its arguments.
  */
+
+import { mergeReview } from "./review.js";
+import { mergeMend } from "./mending.js";
+import { mergeLevels } from "./difficulty.js";
+import { mergeByType } from "./mastery.js";
+import { mergeByNode } from "./skillmap.js";
+import { mergeSeenTypes } from "./examples.js";
+import { mergeTour } from "./placement.js";
+
+/** @typedef {import("../types").State} State */
 
 const num = (x) => (typeof x === "number" && Number.isFinite(x) ? x : 0);
 const obj = (x) => (x && typeof x === "object" && !Array.isArray(x) ? x : {});
@@ -53,6 +64,10 @@ function mergeDay(b, l, r) {
     out.sk[k] = add(obj(obj(b).sk)[k], obj(obj(l).sk)[k], obj(obj(r).sk)[k]);
   out.g = obj(l).g ?? obj(r).g ?? null;
   out.lg = obj(l).lg || obj(r).lg ? 1 : 0;
+  /* The weekly goal in force that day (item 57): the lower, as `weekGoalFor`
+     judges a week by the lowest stamped on it. */
+  const wl = obj(l).wg, wr = obj(r).wg;
+  if (wl || wr) out.wg = wl && wr ? Math.min(wl, wr) : (wl || wr);
   return out;
 }
 
@@ -85,10 +100,14 @@ function mergeBadge(b, l, r, keep = 80) {
 }
 
 /**
- * @param {object|null} base   the last state this device and the server agreed on
- * @param {object} local       this device's state now
- * @param {object} remote      the server's state now
- * @returns {object} a new state holding the work of both
+ * The arguments are typed as the current State, but the code reads every
+ * part of them defensively (`obj`, `num`): a copy may come from an older
+ * build on another device.
+ *
+ * @param {?State} base   the last state this device and the server agreed on
+ * @param {State} local       this device's state now
+ * @param {State} remote      the server's state now
+ * @returns {State} a new state holding the work of both
  */
 export function mergeStates(base, local, remote) {
   if (!remote) return local;
@@ -112,6 +131,12 @@ export function mergeStates(base, local, remote) {
       const l = obj(L[part])[k], r = obj(R[part])[k];
       out[part][k] = !l ? r : !r && !obj(B[part])[k] ? l
         : counters(obj(B[part])[k], l, r, ["c", "w"]);
+      /* A word's last dozen outcomes (`h`) follow whichever device answered it
+         since `base`; a device that did not touch the word must not put its
+         older history over the other's (found by tests/state-property.test.js). */
+      const b = obj(B[part])[k];
+      if (part === "words" && l && r && b && typeof r.h === "string"
+          && num(l.c) + num(l.w) === num(b.c) + num(b.w)) out[part][k].h = r.h;
     }
   }
 
@@ -179,11 +204,38 @@ export function mergeStates(base, local, remote) {
     .forEach((x) => { if (x && x.at) runs.set(x.at, x); });
   out.runs = [...runs.values()].sort((a, b) => a.at - b.at).slice(-40);
 
+  /* The review queue (v6.13): one entry per thing missed, whichever device
+     missed it; the rule for an entry both devices changed is in
+     core/review.js `mergeReview`. */
+  out.review = mergeReview(B.review, L.review, R.review);
+
+  /* Saved levels (v6.13, core/difficulty.js): a position, not a count — per
+     skill the record changed last wins whole. */
+  out.difficulty = mergeLevels(B.difficulty, L.difficulty, R.difficulty);
+
+  /* Sentences seen as frames (v6.13): counts that only ever grow, added like
+     any counter. */
+  out.frames = counters(B.frames, L.frames, R.frames, keys(L.frames, R.frames));
+  /* Per question type (v6.13, item 44, core/mastery.js): the counts add, the
+     recent history is the side answered last. Types met (item 41): met on
+     either device is met, on the earlier day. */
+  out.byType = mergeByType(B.byType, L.byType, R.byType);
+  /* The same record per curriculum node (item 83, core/skillmap.js). */
+  out.byNode = mergeByNode(B.byNode, L.byNode, R.byNode);
+  out.seenTypes = mergeSeenTypes(L.seenTypes, R.seenTypes);
+  /* Getting better (items 56 and 58, core/mending.js): a pattern mended on
+     either device is no longer waiting, and the counts add. */
+  out.mend = mergeMend(B.mend, L.mend, R.mend);
+
+  /* The guided first run (item 84, core/placement.js): ended on either
+     device is ended on both — nobody is walked through it twice. */
+  out.tour = mergeTour(L.tour, R.tour);
+
   out.lastActive = later(L.lastActive, R.lastActive);
   out.settled = later(L.settled, R.settled);
 
   /* The child's own switches: whichever device changed them. */
-  for (const k of ["goal", "enabled", "policy", "settings", "showcase", "title"])
+  for (const k of ["goal", "weekGoal", "enabled", "policy", "settings", "showcase", "title"])
     out[k] = choice(B[k], L[k], R[k]);
 
   /* The ceiling is the administrator's and always comes from the server. */

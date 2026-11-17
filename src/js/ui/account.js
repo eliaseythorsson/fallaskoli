@@ -228,6 +228,12 @@ export async function renderAccount(app) {
 
   let info = null;
   try { info = await app.server.account(); } catch { /* drawn without the extras */ }
+  /* Item 17: is this account's practice counted in the anonymous tally, and
+     has the group's teacher switched on the sample of wrong answers? */
+  let cal = null;
+  try { cal = await app.server.calibration(); } catch { /* an older server: no switch */ }
+  const counting = cal && cal.on && cal.canCount;
+  const counted = counting ? (cal.choice ?? cal.byDefault) : false;
   const share = p.share || { board: false, minutes: false };
   const byPassword = p.provider !== "google";
   const months = info && info.retention ? info.retention.inactiveMonths : 18;
@@ -240,6 +246,11 @@ export async function renderAccount(app) {
     <p class="sub">Innskráð(ur) sem <b>${esc(p.username)}</b>${p.groupName ? ` · hópur: ${esc(p.groupName)}` : ""}.
       ${consent ? consent + ". " : ""}<a href="${esc(app.server.privacyUrl())}" data-privacy target="_blank"
       rel="noopener">Persónuvernd: hvað er geymt og hver sér það</a></p>
+    ${info && info.teachers && info.teachers.length ? `<p class="sub">${info.teachers.length === 1
+      ? `<b>${esc(info.teachers[0])}</b> er kennari eða forsjáraðili hópsins þíns og sér`
+      : `<b>${info.teachers.map(esc).join(", ")}</b> eru kennarar eða forsjáraðilar hópsins þíns og sjá`}
+      hvernig þér gengur í villumynstrum og verkefnum, til að geta hjálpað þér. Ekkert sem þú skrifar
+      í svörin sést, því það er aldrei geymt.</p>` : ""}
 
     <div class="setrow">
       <label for="ac-name">Gælunafn — það sem aðrir sjá. Ekki nota fullt nafn.</label>
@@ -255,6 +266,18 @@ export async function renderAccount(app) {
       <label><input type="checkbox" id="ac-minutes"${share.minutes ? " checked" : ""}${share.board ? "" : " disabled"}>
         Sýna líka hve margar mínútur ég hef æft mig</label>
     </div>
+
+    ${counting ? `<div class="filters">
+      <label><input type="checkbox" id="ac-stats"${counted ? " checked" : ""}> Telja svörin mín með í
+        nafnlausri talningu</label>
+      <p class="helpnote">Fallaskóli telur hve oft hverri gerð spurninga er svarað rétt og rangt og notar
+        tölurnar til að stilla þyngd spurninganna sjálfkrafa. Aðeins er talið hvort svarið var rétt eða
+        rangt — ekki hvað þú skrifaðir og ekki hver svaraði.</p>
+      ${cal.samples ? `<p class="helpnote" id="ac-samples"><b>Kennari hópsins þíns hefur kveikt á sýni af röngum
+        svörum.</b> Þegar þú skrifar ranga beygingarmynd getur orðið sem þú skrifaðir verið geymt — án
+        nafns, svo enginn sér hver skrifaði það. Sýnið er aðeins notað til að prófa hvort villugreiningin
+        flokkar villur rétt. Ef þú tekur hakið af hér að ofan er ekkert geymt frá þér.</p>` : ""}
+    </div>` : ""}
 
     ${byPassword ? `<div class="setrow">
       <label for="ac-pw-old">Skipta um lykilorð</label>
@@ -312,6 +335,17 @@ export async function renderAccount(app) {
   };
   $("ac-board").onchange = saveShare;
   $("ac-minutes").onchange = saveShare;
+
+  const stats = $("ac-stats");
+  if (stats) stats.onchange = async () => {
+    try {
+      const r = await app.server.setStats(stats.checked);
+      /* Takes effect at once: nothing more is sent this visit if it is off. */
+      if (app.calInfo) app.calInfo.collect = !!r.collect;
+      if (!r.collect) { app.calQueue.length = 0; app.calSamples.length = 0; }
+      note(stats.checked ? "Svörin þín eru talin með, án nafns." : "Svörin þín eru ekki lengur talin með.", "good");
+    } catch (e) { stats.checked = !stats.checked; note(e.message); }
+  };
 
   if (byPassword) {
     $("ac-pw-save").onclick = async () => {
@@ -376,6 +410,7 @@ export async function renderAdmin(app) {
     <div id="admin-dataset" class="adminbox"></div>
     <div id="admin-backup" class="adminbox"></div>
     <div id="admin-reports" class="adminbox"></div>
+    <div id="admin-calibration" class="adminbox"></div>
     <div id="admin-audit" class="adminbox"></div>`;
 
   app.server.config().then((c) => {
@@ -388,7 +423,7 @@ export async function renderAdmin(app) {
 
   await Promise.all([usersPanel(app), invitesPanel(app), groupsPanel(app),
     policyPanel(app), datasetPanel(app), backupPanel(app), auditPanel(app),
-    renderReportsPanel(app, $("admin-reports"))]);
+    calibrationPanel(app), renderReportsPanel(app, $("admin-reports"))]);
 }
 
 /* --- what each child is allowed to meet ---------------------------------
@@ -629,7 +664,7 @@ async function usersPanel(app) {
           <select id="nu-group">${groupOptions("default")}</select>
           <label class="lbl" for="nu-role">Hlutverk</label>
           <select id="nu-role"><option value="learner">nemandi</option>
-            <option value="guardian">forsjáraðili (má stilla námsefni barna í sínum hópi)</option></select>
+            <option value="guardian">forsjáraðili eða kennari (stillir námsefni, sér villumynstur og setur verkefni í sínum hópi)</option></select>
           <div class="consentbox" id="nu-consent">
             <label><input type="checkbox" id="nu-over"> Notandinn er 16 ára eða eldri og samþykkir sjálfur</label>
             <label class="lbl" for="nu-guardian">Annars: nafn foreldris eða forsjáraðila sem samþykkti</label>
@@ -825,6 +860,98 @@ async function backupPanel(app) {
     } catch (e) { $("bk-note").innerHTML = verdict(e.message); }
     $("bk-go").disabled = false;
   };
+}
+
+/* --- calibration and the classifier check (items 17 and 38) -------------
+ * A record, not a task: the server counts, adjusts and checks by itself
+ * (server/calibrate.mjs). This panel shows what it did and when, for whoever
+ * wants to know — nothing on it waits for a decision. */
+
+const num = (x) => String(x).replace(".", ",").replace("-", "−");
+const CAL_KIND = { type: "spurningagerð", cell: "reitur", irr: "óreglustig" };
+
+/** One change of a run, as a line: what moved, from what to what. */
+export function calChangeText(c) {
+  const what = c.k === "type" ? `${c.id}, þyngd ${c.band}` : c.id;
+  return `${CAL_KIND[c.k] || c.k} ${what}: ${num(c.from)} → ${num(c.to)}`;
+}
+
+/** The panel's HTML from the server's report (GET /admin/calibration). */
+export function calibrationHTML(r, samplesUrl = "") {
+  if (!r.on) {
+    return `<p class="sub">Slökkt er á sjálfvirkri kvörðun á þessum þjóni (FALLASKOLI_CALIBRATION=0).
+      Ekkert er talið og allir nota innbyggðu gildin.</p>`;
+  }
+  const t = r.table || { types: {}, cells: {}, irr: {} };
+  const moved = Object.values(t.types || {}).reduce((n, b) => n + Object.keys(b).length, 0);
+  const c = r.classifier || { kept: 0, byPattern: [] };
+  const pct = (x) => num(Math.round(x * 1000) / 10) + " %";
+  return `<p class="sub">Þjónninn telur nafnlaust hve oft spurningum er svarað rétt og rangt, reiknar
+      einu sinni á ${r.periodDays} daga fresti hve erfiðar þær reynast og stillir þyngdina eftir því —
+      lítið í einu og aldrei langt frá innbyggðu gildunum. <b>Hér þarf ekkert að gera</b>; þetta er skrá
+      yfir það sem gerðist.</p>
+    <p class="sub">Síðasta keyrsla: <b>${r.lastRun ? esc(day(r.lastRun)) : "engin enn"}</b>${
+      r.nextRun ? ` · næsta: ${esc(day(r.nextRun))}` : ""} · talin svör núna: ${r.totals.questions}
+      spurningar og ${r.totals.records} reitir.<br>
+      Taflan sem er í gildi færir ${moved} spurningagerð(ir), ${Object.keys(t.cells || {}).length} reit(i)
+      og ${Object.keys(t.irr || {}).length} óreglustig frá innbyggðu gildunum.
+      Ekkert breytist fyrr en minnst ${r.minPupils} nemendur hafa lagt til svör.${
+      r.strict ? " Aðeins þeir sem samþykktu nýjustu persónuverndaryfirlýsinguna eru taldir með." : ""}</p>
+    ${r.log.length ? `<div style="overflow-x:auto"><table class="admintable">
+      <tr><th>Keyrsla</th><th>Virkir nemendur</th><th>Ný svör</th><th>Hvað breyttist</th></tr>
+      ${r.log.map((e) => `<tr><td class="mono">${esc(day(e.at))}</td><td>${e.pupils}</td><td>${e.questions}</td>
+        <td>${e.changes.length ? e.changes.map((x) => esc(calChangeText(x))).join("<br>")
+          : `<span class="faint">${e.note ? esc(e.note) : "ekkert"}</span>`}</td></tr>`).join("")}
+      </table></div>` : `<p class="sub faint">Engin keyrsla enn.</p>`}
+
+    <h3 class="sec2">Villugreiningin borin saman við raunveruleg svör</h3>
+    <p class="sub">Kennari hóps getur kveikt á nafnlausu sýni af röngum beygingarmyndum (sjálfgefið slökkt;
+      kveikt í ${c.groupsOn || 0} hóp(um)${r.samplesOn ? "" : " — en slökkt á þjóninum með FALLASKOLI_SAMPLES=0"}).
+      Hvert svar í sýninu er borið saman við allar beygingarmyndir orðsins og kannað hvort flokkun
+      villugreiningarinnar stenst. Í sýninu eru <b>${c.kept}</b> svör (mest ${c.cap}).</p>
+    ${c.kept ? `<div style="overflow-x:auto"><table class="admintable">
+      <tr><th>Villumynstur</th><th>Svör</th><th>Ósammála</th><th>Hlutfall</th><th>Tvíræð</th></tr>
+      ${c.byPattern.map((x) => `<tr><td>${esc(x.name)}</td><td>${x.n}</td><td>${x.disagree}</td>
+        <td>${pct(x.rate)}</td><td>${x.ambiguous}</td></tr>`).join("")}
+      <tr><th>Alls</th><th>${c.n}</th><th>${c.disagree}</th><th>${pct(c.rate)}</th><th>${c.ambiguous}</th></tr>
+      </table></div>
+      <p class="helpnote"><b>Ósammála</b>: villugreiningin nefndi mynstur sem samanburðurinn við
+        beygingarmyndir orðsins styður ekki — oftast af því að svarið er næstum því önnur beygingarmynd
+        orðsins en var lesið sem röng ending. <b>Tvíræð</b>: myndin sem var skrifuð getur átt við fleiri en
+        einn reit, svo flokkunin var ein af fleiri mögulegum. <b>Ógreint</b>: villugreiningin kunni ekki
+        að flokka svarið.</p>
+      <div class="answer">
+        <a class="ghost filelabel" href="${esc(samplesUrl)}" download>Sækja sýnið (fyrir prófanir)</a>
+        <button class="ghost danger" id="cal-clear">Eyða sýninu</button>
+      </div>` : ""}
+    <div id="cal-note"></div>`;
+}
+
+async function calibrationPanel(app) {
+  const el = $("admin-calibration");
+  el.innerHTML = `<details id="ad-cal"><summary>Sjálfvirk kvörðun og villugreining</summary>
+    <div id="ad-cal-body"></div></details>`;
+  const draw = async () => {
+    try {
+      const r = await app.server.calibrationReport();
+      $("ad-cal-body").innerHTML = calibrationHTML(r, app.server.samplesUrl());
+    } catch { $("ad-cal-body").innerHTML = `<p class="sub">Náði ekki í skrána.</p>`; return; }
+    const clear = $("cal-clear");
+    if (!clear) return;
+    /* No `confirm()` (ignored in a frame): the button asks twice. */
+    let armed = null;
+    clear.onclick = async () => {
+      if (!armed) {
+        clear.textContent = "Ertu viss? Smelltu aftur";
+        armed = setTimeout(() => { armed = null; clear.textContent = "Eyða sýninu"; }, 6000);
+        return;
+      }
+      clearTimeout(armed);
+      try { await app.server.clearSamples(); await draw(); }
+      catch (e) { $("cal-note").innerHTML = verdict(e.message); }
+    };
+  };
+  $("ad-cal").addEventListener("toggle", () => { if ($("ad-cal").open) draw(); });
 }
 
 /* --- the trail: who did what --- */

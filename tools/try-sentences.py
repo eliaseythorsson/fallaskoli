@@ -17,7 +17,7 @@ import json
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pipeline'))
 
 import build_sentences  # noqa: E402
 import noun_classes     # noqa: E402
@@ -31,7 +31,7 @@ def load_bank():
     """Noun frames (mark, pinned gender, classes) and adjective marks the bank
     already has."""
     try:
-        bank = json.load(open('sentences.json', encoding='utf-8'))
+        bank = json.load(open('data/sentences.json', encoding='utf-8'))
     except FileNotFoundError:
         return [], set()
     noun, adj = [], set()
@@ -64,6 +64,14 @@ def show(lvl, text, slot, need):
         if t.get('rj'):
             flag += '  [tekið úr umferð]'
         print(f'      {i:>2} {t["w"]:<16} {str(t["c"]):<16} {t.get("m") or "—":<18}{flag}')
+    # Kinds of subordinate clause and phrases (phrases.py): read these too.
+    words = lambda r: ' '.join(t['w'] for t in rec['tok'][r['a']:r['b'] + 1])
+    if rec.get('ku'):
+        print('      setningaskipan ekki staðfest (ku)')
+    for r in rec.get('cl', []):
+        print(f'      {r["t"]}{" (með setningu inni í sér)" if r.get("n") else ""}: {words(r)}')
+    for r in rec.get('ph', []):
+        print(f'      {r["t"]}{" (í fl)" if r.get("i") else ""}: {words(r)}')
     return rec
 
 

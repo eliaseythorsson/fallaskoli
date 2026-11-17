@@ -52,12 +52,14 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     me: () => call("GET", "/auth/me").catch(() => null),
 
     /** Is there a Fallaskóli server at this origin, and who am I to it?
-        `{ server: false }` means "run without one". */
+        `{ server: false }` means "run without one"; `offline: true` with it
+        means nobody answered at all (no network), which is not the same as
+        a host that answered without being a server (ui/pwa.js). */
     async probe() {
       let r;
       try {
         r = await fetchImpl(url("/auth/me"), { credentials: "include" });
-      } catch { return { server: false }; }
+      } catch { return { server: false, offline: true }; }
       const type = r.headers && r.headers.get ? (r.headers.get("content-type") || "") : "";
       if (!type.includes("application/json")) return { server: false };
       const data = await r.json().catch(() => null);
@@ -100,14 +102,75 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
     exportUrl: () => url("/account/export"),
 
     /* --- what only a server can answer --- */
-    leaderboard: (metric = "week") => call("GET", `/leaderboard?metric=${encodeURIComponent(metric)}`),
+    leaderboard: (metric = "framfarir") => call("GET", `/leaderboard?metric=${encodeURIComponent(metric)}`),
     badgeStats: () => call("GET", "/badges/stats"),
     roster: () => call("GET", "/roster"),
     social: () => call("GET", "/social"),
     /* --- duels (v6.7) --- */
     duels: () => call("GET", "/duels"),
     challenge: (opponent, topic, n) => call("POST", "/duels", { opponent, topic, n }),
-    duelResult: (id, c, n, sig) => call("POST", `/duels/${enc(id)}/result`, { c, n, sig }),
+    /* v6.13: the seeds come when the pupil presses play, and what goes back
+       is the answers — the server grades them (core/duel.js). */
+    duelStart: (id) => call("POST", `/duels/${enc(id)}/start`),
+    duelResult: (id, answers, sig) => call("POST", `/duels/${enc(id)}/result`, { answers, sig }),
+    /* --- assignments and the class's patterns (v6.13, items 37 and 65) ---
+       The pupil's side first; the rest is the teacher's (guardian or
+       administrator), and the server holds it to their own group. */
+    assignments: () => call("GET", "/assignments"),
+    assignmentResult: (id, r) => call("POST", `/assignments/${enc(id)}/result`, r),
+    teacherGroups: () => call("GET", "/teacher/groups"),
+    classPatterns: (group) => call("GET", `/teacher/patterns?group=${enc(group)}`),
+    /* Item 83: the skill map of one pupil of the group (core/skillmap.js teacherMap). */
+    pupilSkillMap: (group, pupil) => call("GET", `/teacher/skillmap?group=${enc(group)}&pupil=${enc(pupil)}`),
+    classPatternsCsvUrl: (group) => url(`/teacher/patterns.csv?group=${enc(group)}`),
+    teacherAssignments: (group) => call("GET", `/teacher/assignments?group=${enc(group)}`),
+    setAssignment: (form) => call("POST", "/teacher/assignments", form),
+    removeAssignment: (id) => call("DELETE", `/teacher/assignments/${enc(id)}`),
+    /* --- a live class round (v6.13, item 64; server/live.mjs) ---
+       The teacher's routes, then the pupil's. The two `…Url` are event
+       streams, opened with `new EventSource(url)`. */
+    teacherLive: (group) => call("GET", `/teacher/live?group=${enc(group)}`),
+    startLive: (form) => call("POST", "/teacher/live", form),
+    liveNext: (id) => call("POST", `/teacher/live/${enc(id)}/next`),
+    liveClose: (id) => call("POST", `/teacher/live/${enc(id)}/close`),
+    liveEnd: (id) => call("POST", `/teacher/live/${enc(id)}/end`),
+    liveBoardUrl: (id) => url(`/teacher/live/${enc(id)}/events`),
+    live: () => call("GET", "/live"),
+    joinLive: (id) => call("POST", `/live/${enc(id)}/join`),
+    liveAnswer: (id, q, response) => call("POST", `/live/${enc(id)}/answer`, { q, response }),
+    liveEventsUrl: (id) => url(`/live/${enc(id)}/events`),
+    /* --- team duels (v6.13, item 67; server/teamduel.mjs) --- */
+    teacherTeamDuels: (group) => call("GET", `/teacher/teamduels?group=${enc(group)}`),
+    setTeamDuel: (form) => call("POST", "/teacher/teamduels", form),
+    acceptTeamDuel: (id) => call("POST", `/teacher/teamduels/${enc(id)}/accept`),
+    removeTeamDuel: (id) => call("DELETE", `/teacher/teamduels/${enc(id)}`),
+    teamDuels: () => call("GET", "/teamduels"),
+    teamDuelStart: (id) => call("POST", `/teamduels/${enc(id)}/start`),
+    teamDuelResult: (id, answers, sig) => call("POST", `/teamduels/${enc(id)}/result`, { answers, sig }),
+    /* --- calibration and the answer sample (v6.13, items 17 and 38) ---
+       `calibration()` is asked once per load: the table to apply, and
+       whether this account's answers are counted at all. */
+    calibration: () => call("GET", "/calibration"),
+    sendAnswers: (batch) => call("POST", "/calibration/answers", batch),
+    setStats: (on) => call("POST", "/account/stats", { on }),
+    teacherSamples: (group) => call("GET", `/teacher/samples?group=${enc(group)}`),
+    setTeacherSamples: (group, on) => call("POST", "/teacher/samples", { group, on }),
+    calibrationReport: () => call("GET", "/admin/calibration"),
+    samplesUrl: () => url("/admin/classifier/samples.json"),
+    clearSamples: () => call("DELETE", "/admin/classifier/samples"),
+    /* --- the class goal (v6.13, item 59): totals only, core/classgoal.js --- */
+    classGoal: () => call("GET", "/classgoal"),
+    teacherClassGoal: (group) => call("GET", `/teacher/classgoal?group=${enc(group)}`),
+    /* Item 45: the second-language mode of each pupil, set by the teacher. */
+    teacherSecondLanguage: (group) => call("GET", `/teacher/secondlanguage?group=${enc(group)}`),
+    setSecondLanguage: (group, user, on) => call("POST", "/teacher/secondlanguage", { group, user, on }),
+    /* Item 46: the week's three sentences, read over by GreynirCorrect. */
+    writingStatus: () => call("GET", "/writing"),
+    checkWriting: (text) => call("POST", "/writing/check", { text }),
+    teacherWriting: (group) => call("GET", `/teacher/writing?group=${enc(group)}`),
+    setWriting: (group, check, keep) => call("POST", "/teacher/writing", { group, check, keep }),
+    setClassGoal: (group, kind, n) => call("POST", "/teacher/classgoal", { group, kind, n }),
+    removeClassGoal: (group) => call("DELETE", `/teacher/classgoal?group=${enc(group)}`),
     /* error reports (v6.8) */
     sendReport: (report) => call("POST", "/reports", report),
     reports: () => call("GET", "/admin/reports"),

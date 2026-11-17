@@ -161,6 +161,17 @@ export function explainDegree(stig) {
 }
 
 /** One sentence on how a verb is conjugated, or null. */
+/** `conjugationNote` where it says something about the form asked (v6.13
+    review, S1): the strong/weak note is about how the PAST indicative is
+    made, so it goes under a past-indicative form only; the núþáleg note is
+    about the present. Under *ég fer* (present) "þátíðin er mynduð með
+    hljóðskiptum" answered a question nobody asked, and under *þótt ég
+    tæki* "fær enga endingu" was untrue. */
+export function conjugationNoteFor(lemma, conj, m) {
+  if (conj === "núþáleg") return /^GM-..-NT-/.test(m || "") ? conjugationNote(lemma, conj) : null;
+  return /^GM-FH-ÞT-/.test(m || "") ? conjugationNote(lemma, conj) : null;
+}
+
 export function conjugationNote(lemma, conj) {
   if (conj === "sterk")
     return `Sögnin *${lemma}* er sterk sögn: þátíðin er mynduð með hljóðskiptum (sérhljóðið í stofninum breytist) og fær enga endingu í 1. og 3. persónu eintölu.`;

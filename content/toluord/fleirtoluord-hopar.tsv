@@ -1,0 +1,32 @@
+# Töluorð: hópar fleirtöluorða
+#
+# Hvert orð hér er aðeins til í fleirtölu í BÍN (annars er forritið ekki smíðað).
+#
+# Dálkar:
+#   hópur    nafn hópsins (fleirtoluord-rammar.tsv vísar í það)
+#   nafnorð  fleirtöluorðin, aðskilin með kommu
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# v6.13 (critique item 23): more plural-only nouns, in frames written for
+# what they mean. NUMERAL_PLURAL_ONLY held seven nouns in eleven sentences.
+# Every noun here is checked against BÍN to have no singular at all (the
+# build stops otherwise), so *tvennar* is the only right answer; and *skór*,
+# *sokkar*, *vettlingar* are left out on purpose: they have a singular, and
+# with them *tveir* (two shoes) and *tvennir* (two pairs) are both right.
+# Same levels as above (length + 1; +1 dative; +1 for the people and the
+# feasts, whose plural-only meaning is itself a puzzle).
+#
+
+hópur	nafnorð
+trousers	buxur, stuttbuxur, gallabuxur, náttbuxur, íþróttabuxur, sokkabuxur, regnbuxur, nærbuxur
+glasses	gleraugu, sólgleraugu, sundgleraugu, skíðagleraugu
+tool	skæri, naglaskæri
+door	dyr, útidyr, bakdyr, svaladyr
+people	hjón, feðgar, mæðgur, feðgin, mæðgin
+feast	jól, páskar, áramót
+prize	verðlaun

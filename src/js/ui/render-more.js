@@ -1,18 +1,17 @@
-/* Renderers for the v6.11 question shapes (tasks/more.js): gap, choice,
-   tap and sort — and the optional Orðaforði bonus sentence.
+/* Renderers for the v6.11 question shapes — gap, choice, tap and sort, which
+   every category in tasks/ builds (tasks/registry.js names the renderer of
+   each question type) — and for the optional Orðaforði bonus sentence.
 
-   Same contract as ui/render.js: RENDER.x draws, submitX grades, records
-   once, and ends in app.finish({ correct, resp }). `resp` is what the error
-   diagnosis reads (core/diagnosis.js). */
+   Same contract as ui/render.js: RENDER.x draws; submitX collects the
+   response, has core/answer.js `judge` it, and hands the judgement to
+   `conclude`, which settles it and ends in app.finish. Nothing is graded or
+   recorded here. */
 
-import { RENDER, sentenceHTML, whyBox, spend, xpFor, enterToSubmit, skillTag, slipNote,
-         nearNote, multLine, PUNCT } from "./render.js";
-import { gradeForm, normalise } from "../core/grading.js";
-import { verdictOf } from "../core/leniency.js";
-import { record, answerShape, dayStreak } from "../core/state.js";
-import { dayMult } from "../core/progress.js";
-import { bumpDiff } from "../core/difficulty.js";
-import { $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO } from "./dom.js";
+import { RENDER, sentenceHTML, whyBox, conclude, enterToSubmit, skillTag, slipNote,
+         nearNote, multLine, PUNCT, offerRetry, endRetry, say, SAME_AGAIN, judgeTry, noteTry,
+         compareHTML, retryRightHTML, RETRY_STILL_MISS } from "./render.js";
+import { judge, judgeBonus, settle, bonusVerdict, BONUS_XP } from "../core/answer.js";
+import { $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO, freshEnter } from "./dom.js";
 
 const eyebrow = (t) =>
   `<p class="eyebrow"><span>${esc(t.title)}</span>${skillTag(t)}<b>þyngd ${t.lvl}</b></p>`;
@@ -23,6 +22,20 @@ const blankHTML = (t) =>
 
 function questionSentence(t) {
   if (!t.s) return "";
+  /* Several words marked as one (item 27: the verb phrase *var byggt*). */
+  if (t.marks) return `<p class="sentence">${t.s.tok.map((x, j) => (PUNCT.has(x.w) ? x.w
+    : (j ? " " : "") + (t.marks.includes(j) ? `<span class="target">${esc(x.w)}</span>` : esc(x.w)))).join("")}</p>`;
+  /* item 28: a run of words underlined (a clause, a phrase), as the clause
+     question marks its clause. */
+  if (t.markSpan && t.span) {
+    return `<p class="sentence">${t.s.tok.map((tok, j) => {
+      if (PUNCT.has(tok.w)) return tok.w;
+      const inside = j >= t.span.from && j <= t.span.to;
+      /* the space between two marked words is underlined with them */
+      const sp = j === 0 ? "" : inside && j > t.span.from ? `<span class="clausemark"> </span>` : " ";
+      return sp + (inside ? `<span class="clausemark">${esc(tok.w)}</span>` : esc(tok.w));
+    }).join("")}</p>`;
+  }
   if (t.i == null || t.i < 0) return `<p class="sentence">${sentenceHTML(t.s, -1, "")}</p>`;
   const tok = t.s.tok[t.i];
   const inner = t.mode === "replace" || t.mark
@@ -70,70 +83,158 @@ RENDER.gap = function (app) {
   $("check").onclick = () => submitGap(app);
 };
 
-/** A verdict for a gap without a BÍN mark (word formation): right, an
-    accent forgiven, or wrong. */
-function plainVerdict(g) {
-  if (g.verdict === "correct") return { ok: true, factor: 1, klass: "ok", slip: null, near: null };
-  if (g.verdict === "accents") return { ok: true, factor: 0.95, klass: "near", near: null,
-    slip: { id: "accents", head: "Rétt — en gáðu að broddunum", note: "Svarið er rétt en það vantar brodd (eða einum er ofaukið)." } };
-  return { ok: false, factor: 0, klass: "no", slip: null, near: null };
-}
-
 function submitGap(app) {
   const t = app.cur;
   const val = $("ans").value;
-  const g = gradeForm(val, { accepted: t.answers, paradigm: t.paradigm });
-  if (g.verdict === "empty") return;
-  if (g.verdict === "hedged") {
-    $("verdict").innerHTML = `<div class="verdict neutral"><h3>Veldu eina mynd</h3>
-      <p>Þú skrifaðir fleiri en eina mynd (${g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.</p></div>`;
+  const response = { text: val, hinted: !!t.hinted };
+  const j = judgeTry(app, t, response);
+  if (j.verdict === "empty") return;
+  if (j.verdict === "same") return say(t, SAME_AGAIN);
+  if (j.verdict === "hedged") {
+    say(t, `<b>Veldu eina mynd.</b> Þú skrifaðir fleiri en eina mynd (${j.detail.g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.`);
     return;
   }
-  const v = t.m ? verdictOf(g, t.m) : plainVerdict(g);
-  const ok = v.ok;
-  const xpFull = xpFor(app, t, { ok, hinted: !!t.hinted });
-  const xp = xpFor(app, t, { ok, hinted: !!t.hinted, factor: v.factor });
-  const shape = answerShape(val);
-  const took = spend(app);
-  record(app.S, app.sess, { skill: t.skill, cell: t.cell, word: t.word, ok, xp, ms: took, answer: shape, hinted: !!t.hinted });
-  if (t.tip) $("hint").disabled = true;
-  bumpDiff(app.sess, app.S, t.skill, ok);
+  noteTry(t, j, val);
+  const draw = () => drawGap(app, t, j, val);
+  if (t.retrying) return endRetry(app, t, j, draw);
+  /* Item 42. The tip behind the hint button (word formation: the affix) is
+     opened with the rule: the pupil is trying again with help in view. */
+  if (offerRetry(app, t, j, {
+    response, note: nearNote(j.detail.v), inputs: [$("ans")], lock: [$("hint")], reveal: draw,
+    onMiss: () => { if ($("tip")) $("tip").hidden = false; },
+  })) return;
+  conclude(app, t, j, draw);
+}
 
-  /* Tvær buxur for tvennar buxur: the one mistake this question is about. */
-  const plain = !ok && t.plain && t.plain.some((f) => normalise(f) === normalise(val));
+/* `plain` — tvær buxur for tvennar buxur: the one mistake this question
+   is about. */
+function drawGap(app, t, j, val) {
+  const { v, xpFull, plain } = j.detail;
+  const ok = j.ok, xp = j.xp;
+  if (t.tip) $("hint").disabled = true;
   const right = t.answers.slice(0, 2).map(esc).join(" / ");
   const solved = solvedSentence(t, t.answers[0]);
-  $("verdict").innerHTML = ok
+  /* `plain` of any wrong try: the note is about the mistake, whichever try. */
+  const plainTyped = plain ? val.trim()
+    : ((t.tries || []).find((x) => (t.plain || []).some((f) => f.toLowerCase() === x.typed.trim().toLowerCase())) || {}).typed;
+  $("verdict").innerHTML = ok && !j.retry
     ? `<div class="verdict ${v.klass}"><span class="xpop">+${xp} XP</span>
-      <h3>${v.slip ? esc(v.slip.head) : cheer(CHEERS_OK)}</h3>${solved}
-      ${v.slip ? `<p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>. Rétt er <span class="forms">${right}</span>.</p>` : ""}
-      ${slipNote(v.slip, xp, xpFull)}${whyBox(t.why)}
-      <p class="streakline">${app.S.run} í röð${multLine(app, xp)}. Enter fyrir næstu.</p></div>`
-    : `<div class="verdict no"><h3>${cheer(CHEERS_NO)}</h3>
-      <p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>. Rétt er <span class="forms">${right}</span>.</p>
-      ${plain ? `<div class="why"><b>athugið</b>${fmt(`*${t.answers[0]}* — ekki *${val.trim()}*: orðið á eftir er aðeins til í fleirtölu.`)}</div>` : ""}
-      ${nearNote(v)}${solved}${whyBox(t.why)}
-      <p class="streakline">Enter fyrir næstu.</p></div>`;
+    <h3>${v.slip ? esc(v.slip.head) : cheer(CHEERS_OK)}</h3>${solved}
+    ${v.slip ? `<p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>. Rétt er <span class="forms">${right}</span>.</p>` : ""}
+    ${slipNote(v.slip, xp, xpFull)}${whyBox(t.why)}
+    <p class="streakline">${app.S.run} í röð${multLine(app, xp)}. Enter fyrir næstu.</p></div>`
+    : `<div class="verdict ${ok ? v.klass : "no"}">${ok ? retryRightHTML(xp) : `<h3>${cheer(CHEERS_NO)}</h3>`}
+    ${compareHTML(t, t.tries || [])}
+    ${plainTyped ? `<div class="why"><b>athugið</b>${fmt(`*${t.answers[0]}* — ekki *${plainTyped.trim()}*: orðið á eftir er aðeins til í fleirtölu.`)}</div>` : ""}
+    ${ok ? slipNote(v.slip, xp, xp) : nearNote(v)}${solved}${whyBox(t.why)}
+    ${ok ? RETRY_STILL_MISS : ""}
+    <p class="streakline">Enter fyrir næstu.</p></div>`;
   $("ans").disabled = true;
   bonusBox(app, t);
-  const also = ok ? [] : [...(t.missOther || []), ...(plain ? ["fleirtoluord"] : [])];
-  app.finish({ correct: ok, answer: ok ? shape : null, answerMs: ok ? took : 0, slip: ok && !!v.slip,
-    resp: t.m
-      ? { kind: "form", items: [{ m: t.m, typed: val, g, accepted: t.answers }], also, ex: { said: val.trim(), right: t.answers[0] } }
-      : { kind: "patterns", ids: also, ex: { said: val.trim(), right: t.answers[0] } } });
 }
 
 /* ================= choice =============================================== */
 
+/* One half of a choice card: the sentence, the gloss, the question, the two
+   options. A plain choice has one; a pair (item 43, tasks/shared.js `pairOf`)
+   has two, one under the other, each with its own `.opts`. */
+const choiceHalf = (h, n) => `
+    ${questionSentence(h)}
+    ${h.gloss ? `<p class="gloss choicegloss">💬 ${fmt(h.gloss)}</p>` : ""}
+    <p class="gloss">${fmt(h.question)}</p>
+    <div class="qrow"><div class="opts" data-q="${n}">
+      ${h.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>`;
+
 RENDER.choice = function (app) {
   const t = app.cur;
-  t.picked = null;
+  const halves = t.second ? [t, t.second] : [t];
+  t.picked = null; t.picked2 = null;
   $("task").innerHTML = `
   <div class="card">
     ${eyebrow(t)}
-    ${questionSentence(t)}
-    ${t.gloss ? `<p class="gloss choicegloss">💬 ${fmt(t.gloss)}</p>` : ""}
+    ${t.second && t.lead ? `<p class="gloss">${fmt(t.lead)}</p>` : ""}
+    ${halves.map((h, n) => (n ? '<hr class="pairrule">' : "") + choiceHalf(h, n)).join("")}
+    <div class="answer"><button class="go" id="check">Athuga</button></div>
+    <div id="verdict"></div>
+  </div>`;
+  document.querySelectorAll(".opts").forEach((box) => {
+    const n = +box.dataset.q, h = halves[n], slot = n ? "picked2" : "picked";
+    box.onclick = (e) => {
+      const b = e.target.closest("button");
+      if (!b || b.disabled) return;
+      box.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      const v = h.options[+b.dataset.v];
+      if (t[slot] && t[slot] !== v) t.changes = (t.changes || 0) + 1;
+      t[slot] = v;
+    };
+    /* 1–4 on the keyboard pick an option — on a single question only; with
+       two questions on the card the numbers would be ambiguous. */
+    if (!t.second) box.addEventListener("keydown", (e) => {
+      const k = +e.key;
+      if (k >= 1 && k <= h.options.length) box.querySelectorAll("button")[k - 1].click();
+    });
+  });
+  $("check").onclick = () => submitChoice(app);
+};
+
+function submitChoice(app) {
+  const t = app.cur;
+  const halves = t.second ? [t, t.second] : [t];
+  const j = judge(t, { picked: t.picked, picked2: t.picked2 }, app);
+  if (j.pending) {
+    $("verdict").innerHTML = `<div class="verdict neutral"><p>${t.second ? "Veldu eitt svar í hvorri setningu." : "Veldu eitt svar."}</p></div>`;
+    return;
+  }
+  const ok = j.ok, xp = j.xp;
+  document.querySelectorAll(".opts").forEach((box) => {
+    const h = halves[+box.dataset.q];
+    box.querySelectorAll("button").forEach((b) => {
+      b.disabled = true;
+      const v = h.options[+b.dataset.v];
+      if (v === h.answer) b.classList.add("right");
+      else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
+      b.removeAttribute("aria-pressed");
+    });
+  });
+  const defs = (t.defs || []).map((e) => `<li><b>${esc(e.o)}</b>: ${esc(e.d)}</li>`).join("");
+  /* A pair says, for each sentence, whether it was right and why. */
+  const pairBody = () => halves.map((h, n) => {
+    const got = n ? t.picked2 : t.picked;
+    const line = !h.s ? `<b>${esc(h.answer)}</b>`
+      : h.mark || h.i < 0 ? `${sentenceHTML(h.s, -1, "")} — <b>${esc(h.answer)}</b>`
+      : sentenceHTML(h.s, h.i, `<b>${esc(h.answer)}</b>`);
+    return `<p>${got === h.answer ? "✓" : "✗"} ${line}</p>${whyBox(h.why)}`;
+  }).join("");
+  conclude(app, t, j, () => {
+    $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
+    <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
+    ${t.second ? pairBody()
+      : `${!t.mark && t.s && t.i >= 0 ? solvedSentence(t, t.answer) : `<p>Rétt svar: <span class="forms">${esc(t.answer)}</span>.</p>`}
+    ${whyBox(t.why)}`}
+    ${defs ? `<div class="why"><b>í orðabók</b><ul class="deflist">${defs}</ul></div>` : ""}
+    <p class="streakline">Enter fyrir næstu.</p></div>`;
+    bonusBox(app, t);
+  });
+}
+
+/* ================= kenni: sterkt eða veikt nafnorð (item 27) ============
+ *
+ * The word's singular forms as the lesson writes them (hér er … til …), or
+ * only the nominative; from þyngd 5 a box for the genitive (`askGen`). Then
+ * sterk / veik. */
+
+RENDER.kenni = function (app) {
+  const t = app.cur;
+  t.picked = null;
+  const forms = t.show.map((x) => `${esc(x.h)} <b>${esc(x.f)}</b>`).join(" · ");
+  $("task").innerHTML = `
+  <div class="card">
+    ${eyebrow(t)}
+    <p class="sentence">${forms}${t.askGen ? ` · til <span class="blank">?</span>` : ""}</p>
     <p class="gloss">${fmt(t.question)}</p>
+    ${t.askGen ? `<div class="answer">
+      <input type="text" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="til …">
+    </div><div class="keys" id="keys"></div>` : ""}
     <div class="qrow"><div class="opts" data-q="val">
       ${t.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>
     <div class="answer"><button class="go" id="check">Athuga</button></div>
@@ -144,57 +245,178 @@ RENDER.choice = function (app) {
     const b = e.target.closest("button");
     if (!b || b.disabled) return;
     box.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-    const v = t.options[+b.dataset.v];
-    if (t.picked && t.picked !== v) t.changes = (t.changes || 0) + 1;
-    t.picked = v;
+    t.picked = t.options[+b.dataset.v];
   };
-  /* 1–4 on the keyboard pick an option. */
   box.addEventListener("keydown", (e) => {
     const k = +e.key;
     if (k >= 1 && k <= t.options.length) box.querySelectorAll("button")[k - 1].click();
   });
-  $("check").onclick = () => submitChoice(app);
+  if (t.askGen) {
+    wireKeys();
+    const inp = $("ans");
+    inp.focus();
+    enterToSubmit(inp, () => submitKenni(app));
+  }
+  $("check").onclick = () => submitKenni(app);
 };
 
-function submitChoice(app) {
+function submitKenni(app) {
   const t = app.cur;
-  if (t.picked == null) {
-    $("verdict").innerHTML = `<div class="verdict neutral"><p>Veldu eitt svar.</p></div>`;
+  const typed = t.askGen ? $("ans").value : "";
+  const j = judge(t, { picked: t.picked, text: typed }, app);
+  if (j.pending) {
+    $("verdict").innerHTML = j.verdict === "hedged"
+      ? `<div class="verdict neutral"><h3>Veldu eina mynd</h3>
+      <p>Þú skrifaðir fleiri en eina mynd (${j.detail.g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.</p></div>`
+      : `<div class="verdict neutral"><p>${j.verdict === "empty"
+        ? "Skrifaðu eignarfall eintölu og veldu svo sterk eða veik."
+        : "Veldu sterk eða veik."}</p></div>`;
     return;
   }
-  const ok = t.picked === t.answer;
+  const ok = j.ok, xp = j.xp;
+  const { v, kindOk, formOk, xpFull } = j.detail;
   document.querySelectorAll(".opts button").forEach((b) => {
     b.disabled = true;
-    const v = t.options[+b.dataset.v];
-    if (v === t.answer) b.classList.add("right");
+    const val = t.options[+b.dataset.v];
+    if (val === t.answer) b.classList.add("right");
     else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
     b.removeAttribute("aria-pressed");
   });
-  const xp = xpFor(app, t, { ok });
-  record(app.S, app.sess, { skill: t.skill, cell: t.cell, word: t.word, ok, xp, ms: spend(app) });
-  bumpDiff(app.sess, app.S, t.skill, ok);
-  const defs = (t.defs || []).map((e) => `<li><b>${esc(e.o)}</b>: ${esc(e.d)}</li>`).join("");
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
-    <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
-    ${!t.mark && t.s && t.i >= 0 ? solvedSentence(t, t.answer) : `<p>Rétt svar: <span class="forms">${esc(t.answer)}</span>.</p>`}
-    ${whyBox(t.why)}
-    ${defs ? `<div class="why"><b>í orðabók</b><ul class="deflist">${defs}</ul></div>` : ""}
+  if (t.askGen) $("ans").disabled = true;
+  const gen = t.gen.map(esc).join(" / ");
+  const said = t.askGen && !formOk
+    ? `<p>Þú skrifaðir <span class="forms">til ${esc(j.detail.typed)}</span>. Rétt er <span class="forms">til ${gen}</span>.</p>` : "";
+  conclude(app, t, j, () => {
+    $("verdict").innerHTML = `<div class="verdict ${ok ? (v && v.slip ? v.klass : "ok") : "no"}"><span class="xpop">+${xp} XP</span>
+    <h3>${ok ? cheer(CHEERS_OK) : !kindOk ? "Ekki alveg" : "Beygingin rétt, eignarfallið ekki"}</h3>
+    <p><span class="forms">til ${gen}</span> · beygingin er <b>${esc(t.answer)}</b>.</p>
+    ${said}${ok ? slipNote(v && v.slip, xp, xpFull) : nearNote(v)}${whyBox(t.why)}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
-  bonusBox(app, t);
-  const ex = { said: t.picked, right: t.answer };
-  const also = ok ? [] : (t.miss || []);
-  let resp = { kind: "patterns", ids: also, ex };
-  if (t.m && t.paradigm) {
-    const g = gradeForm(t.picked, { accepted: [t.answer], paradigm: t.paradigm, allowHelpers: false });
-    /* The options say which cell was meant: *borðið* offered against
-       *borðinu* is the accusative, not the nominative it also is. */
-    if (t.optMarks && g.otherMarks) {
-      const only = g.otherMarks.filter((m) => t.optMarks.includes(m));
-      if (only.length) g.otherMarks = only;
-    }
-    resp = { kind: "form", items: [{ m: t.m, typed: t.picked, accepted: [t.answer], g }], also, ex };
+  });
+}
+
+/* ================= slots: forms in boxes, perhaps a pick (item 27) ========
+ *
+ * Sterk eða veik sögn and the boðháttur. What is shown of the word, then one
+ * box per form asked (the words around a box as the lesson says them: *í gær
+ * … ég*), then sterk / veik when the task has options. The boxes are the
+ * paradigm table's (`table.decl`), so they keep its layout on a phone. */
+
+RENDER.slots = function (app) {
+  const t = app.cur;
+  t.picked = null;
+  const shown = t.show.map((x) => `${x.h ? esc(x.h) + " " : ""}<b>${esc(x.f)}</b>`).join(" · ");
+  const rows = (t.slots || []).map((sl, k) => `<tr><th class="rowh">${esc(sl.h)}${
+    sl.hint ? ` <span>(${esc(sl.hint)})</span>` : ""}</th>
+      <td><div class="cellrow"><input type="text" data-k="${k}" aria-label="${esc(sl.h)}" autocomplete="off" autocapitalize="off" spellcheck="false">${
+        sl.after ? `<span class="helpernoun">${esc(sl.after)}</span>` : ""}</div>
+      <span class="fix" data-fix="${k}"></span></td></tr>`).join("");
+  $("task").innerHTML = `
+  <div class="card">
+    ${eyebrow(t)}
+    <p class="sentence">${shown}</p>
+    <p class="gloss">${fmt(t.question)}</p>
+    ${rows ? `<table class="decl slotbox">${rows}</table><div class="keys" id="keys"></div>` : ""}
+    ${t.options ? `<div class="qrow"><div class="opts" data-q="val">
+      ${t.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>` : ""}
+    <div class="answer"><button class="go" id="check">Athuga</button></div>
+    <div id="verdict"></div>
+  </div>`;
+  const box = document.querySelector("#task .opts");
+  if (box) {
+    box.onclick = (e) => {
+      const b = e.target.closest("button");
+      if (!b || b.disabled) return;
+      box.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      t.picked = t.options[+b.dataset.v];
+    };
+    box.addEventListener("keydown", (e) => {
+      const k = +e.key;
+      if (k >= 1 && k <= t.options.length) box.querySelectorAll("button")[k - 1].click();
+    });
   }
-  app.finish({ correct: ok, resp });
+  const ins = [...document.querySelectorAll("table.slotbox input")];
+  if (ins.length) {
+    wireKeys();
+    ins[0].focus();
+    /* Enter goes to the next box, and from the last one checks the answer
+       (or, with options still to pick, waits for the pick). */
+    ins.forEach((el, k) => el.addEventListener("keydown", (e) => {
+      if (!freshEnter(e)) return;
+      e.preventDefault();
+      if (k + 1 < ins.length) ins[k + 1].focus();
+      else submitSlots(app);
+    }));
+  }
+  $("check").onclick = () => submitSlots(app);
+};
+
+function submitSlots(app) {
+  const t = app.cur;
+  if (t.done) return;
+  const ins = [...document.querySelectorAll("table.slotbox input")];
+  const response = { picked: t.picked, texts: ins.map((el) => el.value) };
+  const j = judgeTry(app, t, response);
+  if (j.verdict === "same") return say(t, SAME_AGAIN);
+  if (j.pending) {
+    const at = j.detail && j.detail.at;
+    if (at != null && ins[at]) ins[at].focus();
+    say(t, j.verdict === "hedged"
+      ? `<b>Veldu eina mynd.</b> Þú skrifaðir fleiri en eina mynd (${j.detail.g.hedged.map(esc).join(", ")}). Skrifaðu þá sem þú telur rétta.`
+      : j.verdict === "empty" ? "Skrifaðu í alla reitina."
+      : `Veldu ${t.options.map(esc).join(" eða ")}.`);
+    return;
+  }
+  if (j.ok === false)
+    (t.tries ||= []).push(j.detail.items.filter((x) => !x.ok).map((x) => x.typed).join(" · "));
+  const draw = () => drawSlots(app, t, j, ins);
+  if (t.retrying) return endRetry(app, t, j, draw);
+  /* Item 42 (the boðháttur only: `retryAllowed`). The wrong box takes the
+     focus; which box was wrong is not marked, as no answer is. */
+  const items = j.detail.items;
+  const near = items.map((it) => it.v).find((v) => v && v.near) || null;
+  if (offerRetry(app, t, j, {
+    response, note: nearNote(near), reveal: draw,
+    inputs: [...ins.filter((_, k) => !items[k].ok), ...ins.filter((_, k) => items[k].ok)],
+  })) return;
+  conclude(app, t, j, draw);
+}
+
+function drawSlots(app, t, j, ins) {
+  t.done = true;
+  const ok = j.ok, xp = j.xp;
+  const { items, kindOk, formsOk, xpFull, slip } = j.detail;
+  ins.forEach((el, k) => {
+    const it = items[k];
+    el.classList.add(it.ok ? "ok" : "no");
+    el.disabled = true;
+    if (!it.ok) document.querySelector(`[data-fix="${k}"]`).textContent = it.accepted.join(" / ");
+  });
+  document.querySelectorAll("#task .opts button").forEach((b) => {
+    b.disabled = true;
+    const val = t.options[+b.dataset.v];
+    if (val === t.answer) b.classList.add("right");
+    else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
+    b.removeAttribute("aria-pressed");
+  });
+  const solution = (t.solution || []).map((x) => `${x.h ? esc(x.h) + " " : ""}<span class="forms">${esc(x.f)}</span>`).join(" · ");
+  const head = ok ? cheer(CHEERS_OK)
+    : !t.options || (!kindOk && !formsOk) ? "Ekki alveg"
+    : !kindOk ? `Rétt skrifað, en sögnin er ${esc(t.answer)}`
+    : "Rétt valið, en athugaðu myndirnar";
+  const near = items.map((it) => it.v).find((v) => v && v.near) || null;
+  /* After a second try, what the pupil wrote first, beside the boxes that
+     now show the second try and the right forms. */
+  const first = t.retried && (t.tries || []).length && (ok || t.tries.length > 1)
+    ? `<p>Fyrst skrifaðir þú <span class="forms">${esc(t.tries[0])}</span>.</p>` : "";
+  $("verdict").innerHTML = `<div class="verdict ${ok ? (slip ? slip.klass : "ok") : "no"}">${
+    ok && j.retry ? retryRightHTML(xp) : `<span class="xpop">+${xp} XP</span>
+  <h3>${head}</h3>`}
+  <p>${solution}${t.options ? ` · sögnin er <b>${esc(t.answer)}</b>` : ""}.</p>
+  ${first}
+  ${ok ? slipNote(slip && slip.slip, xp, j.retry ? xp : xpFull) : nearNote(near)}${whyBox(t.why)}
+  ${ok && j.retry ? RETRY_STILL_MISS : ""}
+  <p class="streakline">Enter fyrir næstu.</p></div>`;
 }
 
 /* ================= tap ================================================== */
@@ -227,14 +449,14 @@ RENDER.tap = function (app) {
 
 function submitTap(app) {
   const t = app.cur;
-  if (!t.sel.size) {
+  const jd = judge(t, { sel: [...t.sel] }, app);
+  if (jd.pending) {
     $("verdict").innerHTML = `<div class="verdict neutral"><p>Smelltu á að minnsta kosti eitt orð.</p></div>`;
     return;
   }
   const want = new Set(t.targets);
-  const extra = [...t.sel].filter((j) => !want.has(j));
-  const missed = t.targets.filter((j) => !t.sel.has(j));
-  const ok = !extra.length && !missed.length;
+  const { extra, missed } = jd.detail;
+  const ok = jd.ok, xp = jd.xp;
   t.done = true;
   document.querySelectorAll(".pickw").forEach((el) => {
     const j = +el.dataset.j;
@@ -242,24 +464,20 @@ function submitTap(app) {
     if (want.has(j)) el.classList.add(t.sel.has(j) ? "right" : "missed");
     else if (t.sel.has(j)) el.classList.add("wrongpick");
   });
-  const xp = xpFor(app, t, { ok });
-  record(app.S, app.sess, { skill: t.skill, cell: t.cell, ok, xp, ms: spend(app) });
-  bumpDiff(app.sess, app.S, t.skill, ok);
   const words = (js) => js.map((j) => `<span class="forms">${esc(t.s.tok[j].w)}</span>`).join(", ");
-  const what = t.whole ? `${t.cls}in` : `${t.cls}${t.targets.length > 1 ? "" : ""}`;
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
+  /* `what`: the heading over the right words, where the name of the class
+     does not take the article *-in* (item 28: *forsetningarliðurinn*). */
+  const what = t.what || (t.whole ? `${t.cls}in` : `${t.cls}${t.targets.length > 1 ? "" : ""}`);
+  conclude(app, t, jd, () => {
+    $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
     <p>${t.whole ? `${esc(what.charAt(0).toUpperCase() + what.slice(1))}: ${words(t.targets)}.`
       : `${t.targets.length === 1 ? "Rétt orð" : "Réttu orðin"} (${esc(t.cls)}): ${words(t.targets)}.`}</p>
     ${missed.length ? `<p>Þú misstir af: ${words(missed)}.</p>` : ""}
     ${extra.length ? `<p>Ekki ${esc(t.cls)}: ${words(extra)}${t.whole ? "" : ` — ${extra.map((j) => `*${t.s.tok[j].w}* er ${t.s.tok[j].c || "?"}`).map(fmt).join(", ")}`}.</p>` : ""}
+    ${whyBox(t.why)}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
-  const ids = ok ? [] : t.tags.includes("clause") ? ["setningagerd"]
-    : (["atviksorð", "forsetning"].includes(t.cls) && [...extra, ...missed].some((j) => ["atviksorð", "forsetning"].includes(t.s.tok[j].c))
-      ? ["ao_fs"] : ["ordflokkur"]);
-  app.finish({ correct: ok, resp: { kind: "patterns", ids,
-    ex: { said: [...t.sel].sort((a, b) => a - b).map((j) => t.s.tok[j].w).join(", "),
-          right: t.targets.map((j) => t.s.tok[j].w).join(", ") } } });
+  });
 }
 
 /* ================= sort ================================================= */
@@ -293,63 +511,40 @@ RENDER.sort = function (app) {
 
 function submitSort(app) {
   const t = app.cur;
-  if (t.items.some((_, k) => !t.picks[k])) {
+  const j = judge(t, { picks: t.picks }, app);
+  if (j.pending) {
     $("verdict").innerHTML = `<div class="verdict neutral"><p>Settu hvert orð í flokk fyrst.</p></div>`;
     return;
   }
-  let good = 0;
-  const wrong = [];
+  const { good, wrong } = j.detail;
+  const ok = j.ok, xp = j.xp;
   document.querySelectorAll(".sortrow .opts").forEach((box) => {
-    const k = +box.dataset.q;
-    const it = t.items[k];
+    const it = t.items[+box.dataset.q];
     box.querySelectorAll("button").forEach((b) => {
       b.disabled = true;
       if (b.dataset.v === it.cls) b.classList.add("right");
       else if (b.getAttribute("aria-pressed") === "true") b.classList.add("wrongpick");
       b.removeAttribute("aria-pressed");
     });
-    if (t.picks[k] === it.cls) good++; else wrong.push({ it, said: t.picks[k] });
   });
-  const ok = !wrong.length;
-  const xp = xpFor(app, t, { ok });
-  record(app.S, app.sess, { skill: t.skill, cell: t.cell, ok, xp, ms: spend(app) });
-  bumpDiff(app.sess, app.S, t.skill, ok);
-  $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
+  conclude(app, t, j, () => {
+    $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : `${good} af ${t.items.length} rétt`}</h3>
     ${wrong.length ? `<ul class="exlist">${wrong.map((x) => `<li><span class="forms">${esc(x.it.w)}</span> er <b>${esc(x.it.cls)}</b>, ekki ${esc(x.said)}.</li>`).join("")}</ul>` : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
-  const roles = t.tags.includes("syn");
-  const ids = ok ? [] : roles ? ["setningalidir"]
-    : wrong.some((x) => ["atviksorð", "forsetning"].includes(x.it.cls) && ["atviksorð", "forsetning"].includes(x.said))
-      ? ["ao_fs"] : ["ordflokkur"];
-  app.finish({ correct: ok, resp: { kind: "patterns", ids,
-    ex: wrong[0] ? { said: `${wrong[0].it.w}: ${wrong[0].said}`, right: wrong[0].it.cls } : null } });
+  });
 }
 
 /* ================= Orðaforði: the bonus sentence =========================
  *
  * v6.11: the free-text sentence is no longer a question of its own in a
  * session. After a graded Orðaforði question the child MAY write a sentence
- * with the word; XP only if the word is in it (any of its BÍN forms), the
- * sentence has three words or more, is not one already written this visit
- * and is not the dictionary's own example. Nothing is graded right or
- * wrong, and skipping costs nothing: Enter on Áfram goes on as always. */
+ * with the word. Whether it earns the bonus (`bonusVerdict`) and what the
+ * bonus is are decided in core/answer.js; skipping costs nothing: Enter on
+ * Áfram goes on as always. */
 
-export const BONUS_XP = 6;
-
-/** Does this sentence earn the bonus? `seen`: texts already used. */
-export function bonusVerdict(text, entry, seen = []) {
-  const key = normalise(text);
-  const words = key.split(" ").filter(Boolean);
-  if (words.length < 3) return { ok: false, why: "Skrifaðu heila setningu — að minnsta kosti þrjú orð." };
-  if (seen.includes(key)) return { ok: false, why: "Þessa setningu ertu búin(n) að skrifa — prófaðu nýja." };
-  if (entry.x && normalise(entry.x) === key) return { ok: false, why: "Þetta er dæmið úr orðabókinni — búðu til þína eigin setningu." };
-  const forms = new Set(Object.values(entry.forms || {}).flat().map(normalise).filter((f) => f && !f.includes(" ")));
-  forms.add(normalise(entry.o));
-  if (!words.some((w) => forms.has(w)))
-    return { ok: false, why: `Orðið *${entry.o}* (í einhverri mynd) þarf að vera í setningunni.` };
-  return { ok: true };
-}
+/* Moved to core/answer.js in v6.13; exported from here too for the tests. */
+export { bonusVerdict, BONUS_XP };
 
 function bonusBox(app, t) {
   const e = t.bonus;
@@ -365,16 +560,14 @@ function bonusBox(app, t) {
   const send = () => {
     const ta = $("bonustext");
     if (!ta || ta.disabled || !ta.value.trim()) return;
-    const seen = (app.sess.bonusTexts ||= []);
-    const r = bonusVerdict(ta.value, e, seen);
-    if (!r.ok) {
-      $("bonusverdict").innerHTML = `<p class="streakline">${fmt(r.why)}</p>`;
+    const j = judgeBonus(t, ta.value, app);
+    if (j.pending) {
+      $("bonusverdict").innerHTML = `<p class="streakline">${fmt(j.detail.why)}</p>`;
       return;
     }
-    seen.push(normalise(ta.value));
-    const xp = Math.round(BONUS_XP * dayMult(dayStreak(app.S)));
-    record(app.S, app.sess, { skill: "ordaford", word: t.word, ok: true, xp, counts: false, ms: 0 });
-    app.S.counters.meanings = (app.S.counters.meanings || 0) + 1;
+    /* Not a question, so no `conclude`: the question above has ended. */
+    settle(app.S, app.sess, t, j);
+    const xp = j.xp;
     ta.disabled = true;
     $("bonusgo").disabled = true;
     $("bonusverdict").innerHTML = `<p><span class="xpop">+${xp} XP</span> Flott setning!</p>`;

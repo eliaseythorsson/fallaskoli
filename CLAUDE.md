@@ -24,13 +24,18 @@ a working folder — `git worktree add ../fallaskoli-78 -b fix/78-git-setup`.
 ```
 npm ci                         # once per clone/worktree
 node --test tests/*.test.js    # 500+ tests, ~30 s
+npm run typecheck              # tsc over the // @ts-check modules (docs/TYPES.md)
 node tools/build.mjs           # → dist/fallaskoli-v<version>.html
 ```
 
 The full `./build.sh` also regenerates all data with Python (Greynir/BÍN; needs
 Python 3.10+, and the grammar libraries only ship x86_64 Linux and macOS wheels).
-Run it whenever you touch a `*.py` file, `sentences.py`, `exercises.py` or anything
-under `data/`.
+Run it whenever you touch a `*.py` file, anything under `content/` or anything
+under `data/`. `python3 pipeline/content_io.py` is the one-second check of `content/`
+on its own (every file read, or the file and line that is wrong). On a Mac, or
+anywhere the result must match CI byte for byte, run `./build-in-container.sh`
+instead (same arguments; needs Docker): CI's `reproducible` job rebuilds the
+data in that container and fails on any difference.
 
 ## Do not
 
@@ -45,8 +50,52 @@ under `data/`.
   manifest stopping is the point: a data change must be explained in the PR,
   with the parse-diff it printed.
 - **Do not resolve conflicts in generated files by hand** (`data/*.js`,
-  `data/manifest.json`, `lexicon.json`, `sentences.json`, `freq_lemmas.json`).
+  `data/manifest.json`, `data/lexicon.json`, `data/sentences.json`, `data/freq_lemmas.json`).
   Take main's version and re-run `./build.sh`.
+
+## Question types: one category, one file
+
+`src/js/tasks/<skill>.js` holds a category's builders and its `TYPES` list;
+`tasks/registry.js` is the catalogue and explains every field. To work on a
+category, its file is the only one to open.
+
+- A builder is `build(lex, view, rng)` → `{ task, effects }` or `null`. It does
+  not write to the state (it returns an effect, `tasks/effects.js`), does not
+  read the clock (`view.today`) and never calls `Math.random` (it draws from
+  `rng`). `tests/purity.test.js` holds all three.
+- What a type declares — `renderer`, `tags`, `bands` — is checked against what
+  it builds by `tests/registry.test.js`. When you change a builder on purpose,
+  the failing test names the line of `TYPES` to update.
+- New types go at the END of `ORDER` in `registry.js`: the order is part of
+  what a duel's seed means.
+- To see exactly what a change moved, type by type:
+  `node tools/task-snapshot.mjs take` before and after, then `compare`.
+
+## Content: plain files, not code
+
+Every hand-written sentence, exercise item, frame and Villuveiðar item is in
+`content/<category>/*.tsv` (critique item 82), one item per line, so that a
+teacher or a native reader can read and correct it. README.md, "Efnið",
+describes the format; each file's header describes its columns in Icelandic.
+
+- Add or change content in the `.tsv` file, never as a literal in Python.
+  `pipeline/sentences.py` and `pipeline/exercises.py` only read the files (through
+  `pipeline/content_io.py`) and give the build the lists it has always had, under the
+  same names; a new column or a new list means a line there too.
+- Keep a file's comments: they hold the rules its items were written by.
+  Write Icelandic for anything a teacher reads in a header.
+- Moving content must not change the build: the lists and `data/*.js` stay
+  byte-identical, and the manifest's only difference is the input files.
+- A branch made before the move that edits `pipeline/sentences.py` or `pipeline/exercises.py`:
+  run `tools/content-from-py.py` on that branch's two files to get its content
+  as `.tsv`, then `./build.sh`.
+- Lesefni and the worked examples stay in `src/js/content/` (the app imports
+  them); edit them there.
+- When you are unsure whether an item is natural Icelandic, leave it out; when
+  you keep one that a native reader should still look at, add a note to
+  `content/REVIEW-NOTES.md` with `Leita:` phrases from the item. The review page
+  (`node tools/review.mjs` → `dist/review.html`) shows the note beside the item,
+  and `tests/review-page.test.js` fails if a phrase stops finding one.
 
 ## Files many branches touch
 

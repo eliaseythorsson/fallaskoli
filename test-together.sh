@@ -14,9 +14,14 @@
 # (the *.localhost ones work in Chrome and Firefox; in Safari use a separate
 # private window per account instead). Or just log out ("Skrá út") and in.
 #
-# Everything the testers create lives in the folder `_prufa/`, NOT in
-# server/data. Deleting `_prufa/` wipes the test completely. It is never copied
-# into the Docker image or the zip, so the real server starts clean.
+# Everything the testers create (accounts, password hashes, progress, and the
+# demo passwords) lives in a temporary folder OUTSIDE the project, made with
+# mktemp -d; the script prints where. It is never inside the repository, the
+# Docker image or the zip, so a careless `git add` cannot pick it up and the
+# real server starts clean. Later runs reuse the same folder (its path is
+# remembered in a small file in the temp directory). Choose your own with
+#   FALLASKOLI_TEST_DIR=/some/folder ./test-together.sh
+# Delete the folder to wipe the test completely.
 #
 # Stop with Ctrl + C.
 
@@ -25,7 +30,23 @@ cd "$(dirname "$0")"
 
 # ---- settings you may change -------------------------------------------------
 PORT="${PORT:-8080}"
-DATA_DIR="$PWD/_prufa/data"
+# The test folder: your own choice, else the one a previous run made, else a new
+# mktemp -d. It is always outside the project.
+POINTER="${TMPDIR:-/tmp}/fallaskoli-test-dir-$(id -u)"
+TEST_DIR="${FALLASKOLI_TEST_DIR:-}"
+if [ -z "$TEST_DIR" ] && [ -f "$POINTER" ] && [ -d "$(cat "$POINTER")" ]; then
+  TEST_DIR="$(cat "$POINTER")"
+fi
+if [ -z "$TEST_DIR" ]; then
+  TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/fallaskoli-test.XXXXXX")" || { echo "STOPP: could not make a temp folder." >&2; exit 1; }
+  printf '%s\n' "$TEST_DIR" > "$POINTER"
+fi
+mkdir -p "$TEST_DIR"
+TEST_DIR="$(cd "$TEST_DIR" && pwd -P)"
+case "$TEST_DIR/" in
+  "$PWD"/*) echo "STOPP: the test folder $TEST_DIR is inside the project; choose one outside it." >&2; exit 1 ;;
+esac
+DATA_DIR="$TEST_DIR/data"
 # Shown in the privacy notice while testing. Edit freely.
 CONTROLLER="${FALLASKOLI_CONTROLLER:-Prófunarútgáfa (umsjónarmaður prófunar)}"
 CONTACT="${FALLASKOLI_CONTACT:-hafið samband við umsjónarmann prófunarinnar}"
@@ -49,7 +70,8 @@ HTML="dist/$(node -e 'import("./tools/version.mjs").then(m=>console.log(m.HTML_N
 [ -f data/data_bundle.js ] || fail "data/data_bundle.js is missing. Run ./build.sh first."
 
 mkdir -p "$DATA_DIR"
-chmod 700 "$PWD/_prufa" "$DATA_DIR" 2>/dev/null
+chmod 700 "$TEST_DIR" "$DATA_DIR" 2>/dev/null
+say "Test data (accounts, passwords, progress) is in: $TEST_DIR"
 
 has_users() { [ -s "$DATA_DIR/users.json" ] && [ "$(tr -d '[:space:]' < "$DATA_DIR/users.json")" != "[]" ]; }
 
@@ -64,7 +86,7 @@ fi
 if [ "${1:-}" = "demo" ]; then
   N="${2:-3}"
   case "$N" in ''|*[!0-9]*) fail "Give a number:  ./test-together.sh demo 4" ;; esac
-  LIST="$PWD/_prufa/demo-accounts.txt"
+  LIST="$TEST_DIR/demo-accounts.txt"
   touch "$LIST"; chmod 600 "$LIST"
   i=1
   while [ "$i" -le "$N" ]; do
@@ -80,7 +102,7 @@ if [ "${1:-}" = "demo" ]; then
     i=$((i + 1))
   done
   say ""
-  say "Test accounts (also saved in _prufa/demo-accounts.txt):"
+  say "Test accounts (also saved in $LIST):"
   say ""
   sort -V "$LIST" 2>/dev/null || sort "$LIST"
   say ""
@@ -125,12 +147,12 @@ cleanup() {
   say ""; say "Stopping..."
   for p in $PIDS; do kill "$p" 2>/dev/null; done
   wait 2>/dev/null
-  say "Stopped. The test data is kept in _prufa/ for next time."
+  say "Stopped. The test data is kept in $TEST_DIR for next time."
   exit 0
 }
 trap cleanup INT TERM EXIT
 
-LOG="$PWD/_prufa/tunnel.log"
+LOG="$TEST_DIR/tunnel.log"
 
 if [ "$MODE" = "internet" ]; then
   command -v cloudflared >/dev/null 2>&1 || fail "The tunnel program 'cloudflared' is not installed.
@@ -170,7 +192,7 @@ if [ "$MODE" = "internet" ]; then
     [ -n "$URL" ] && break
     sleep 1
   done
-  [ -n "$URL" ] || fail "The tunnel did not come up. Its log is in _prufa/tunnel.log"
+  [ -n "$URL" ] || fail "The tunnel did not come up. Its log is in $LOG"
   say " Testers open:   $URL"
   say ""
   say " This address is NEW every time you start --internet."

@@ -61,6 +61,12 @@ export function createStore(root) {
     audit: path.join(root, "audit.json"),
     duels: path.join(root, "duels.json"),
     reports: path.join(root, "reports.json"),
+    assignments: path.join(root, "assignments.json"),
+    teamDuels: path.join(root, "teamduels.json"),
+    calibration: path.join(root, "calibration.json"),
+    calibrationQuota: path.join(root, "calibration-quota.json"),
+    samples: path.join(root, "samples.json"),
+    writing: path.join(root, "writing.json"),       // item 46, server/writing.mjs
   };
 
   /* One queue for every write. Node is single-threaded, but `await` gives other
@@ -133,6 +139,12 @@ export function createStore(root) {
   const auditFile = smallFile(file.audit, []);
   const duelsFile = smallFile(file.duels, []);
   const reportsFile = smallFile(file.reports, []);
+  const assignmentsFile = smallFile(file.assignments, []);
+  const teamDuelsFile = smallFile(file.teamDuels, []);
+  const calibrationFile = smallFile(file.calibration, {});
+  const quotaFile = smallFile(file.calibrationQuota, {});
+  const samplesFile = smallFile(file.samples, { list: [], seen: 0 });
+  const writingFile = smallFile(file.writing, []);
 
   const safeId = (id) => /^[a-zA-Z0-9_-]{1,64}$/.test(String(id));
   const statePath = (id) => path.join(dir.states, id + ".json");
@@ -270,6 +282,54 @@ export function createStore(root) {
     reports: () => reportsFile.read(),
     updateReports: (fn) => reportsFile.update(fn),
 
+    /* ---------- assignments (v6.13, core/assignment.js) ----------
+     * Homework a teacher set for a group, with each pupil's result in it as
+     * numbers. Pruned on every read and write (`prune`), so an assignment
+     * is gone 30 days after its deadline without a job to run. */
+    assignments: () => assignmentsFile.read(),
+    updateAssignments: (fn) => assignmentsFile.update(fn),
+
+    /* ---------- team duels (v6.13, item 67; core/teamduel.js) ----------
+     * One class against another, or two halves of one: the teams (user
+     * ids), each pupil's key and each pupil's result as numbers. Pruned on
+     * every read and write, as duels are. */
+    teamDuels: () => teamDuelsFile.read(),
+    updateTeamDuels: (fn) => teamDuelsFile.update(fn),
+
+    /* ---------- calibration and the answer sample (v6.13, server/calibrate.mjs) ----------
+     * Three files, and the difference between them is the point:
+     *
+     *   calibration.json        ANONYMOUS. Counts of right and wrong answers
+     *                           per question type, level, cell and
+     *                           irregularity score; the published table; the
+     *                           log of what each run changed. No user id, no
+     *                           group, no time of an answer. Part of a backup.
+     *   samples.json            ANONYMOUS. A bounded sample of wrong word
+     *                           forms, kept only for groups whose teacher
+     *                           switched it on. No id, no group; the month.
+     *                           Part of a backup.
+     *   calibration-quota.json  PERSONAL, for one day: how much each account
+     *                           has contributed TODAY, so that the caps can
+     *                           be held. It is replaced when the day changes,
+     *                           an erased account is taken out of it at once
+     *                           (`eraseUser`), and it is NOT part of a backup.
+     */
+    calibration: () => calibrationFile.read(),
+    updateCalibration: (fn) => calibrationFile.update(fn),
+    calibrationQuota: () => quotaFile.read(),
+    updateCalibrationQuota: (fn) => quotaFile.update(fn),
+    samples: () => samplesFile.read(),
+    updateSamples: (fn) => samplesFile.update(fn),
+
+    /* ---------- kept texts (v6.13, item 46; server/writing.mjs) ----------
+     * What a pupil WROTE, kept only for a group whose teacher switched
+     * keeping on: the pupil's id, the group, the week, the topic and the
+     * text. Pruned by age and count on every read and write; a group's
+     * texts are deleted when keeping is switched off; a pupil's go with
+     * the account (`eraseUser`) and are in their export. */
+    writing: () => writingFile.read(),
+    updateWriting: (fn) => writingFile.update(fn),
+
     /* ---------- the monthly rarity snapshot ---------- */
     rarityHistory: () => readJSON(file.rarity, []),
     appendRarity(entry, keep = 24) {
@@ -286,7 +346,8 @@ export function createStore(root) {
     /* ---------- erasure ----------
      * Everything that names one person, in every file. What is left afterwards
      * is the anonymous monthly rarity count, the audit line saying an erasure
-     * happened, and whatever backups have not yet expired (docs/PRIVACY.md). */
+     * happened, the anonymous calibration counts and answer sample, and
+     * whatever backups have not yet expired (docs/PRIVACY.md). */
     async eraseUser(id) {
       const uid = String(id);
       let existed = false;
@@ -308,6 +369,40 @@ export function createStore(root) {
       await this.updateReports((list) => {
         const rest = list.filter((r) => r.by !== uid);
         return rest.length !== list.length ? rest : null;
+      });
+      /* Their results go; an assignment they set stays with the group (the
+         class is still doing it), without the name of who set it. */
+      await this.updateAssignments((list) => {
+        let hit = false;
+        for (const a of list) {
+          if (a.res && uid in a.res) { delete a.res[uid]; hit = true; }
+          if (a.by === uid) { a.by = null; hit = true; }
+        }
+        return hit ? list : null;
+      });
+      /* Team duels: off their team, with their key and result. A team that
+         is left empty simply has nobody who played. */
+      await this.updateTeamDuels((list) => {
+        let hit = false;
+        for (const d of list) {
+          for (const s of ["a", "b"]) {
+            if (d.teams && d.teams[s].includes(uid)) { d.teams[s] = d.teams[s].filter((x) => x !== uid); hit = true; }
+          }
+          for (const k of ["keys", "res", "started"]) if (d[k] && uid in d[k]) { delete d[k][uid]; hit = true; }
+          if (d.by === uid) { d.by = null; hit = true; }
+        }
+        return hit ? list : null;
+      });
+      /* Today's contribution count (calibration). The counts themselves and
+         the answer sample carry no id and cannot be traced back: they stay. */
+      await this.updateCalibrationQuota((q) => {
+        if (!q.by || !(uid in q.by)) return null;
+        delete q.by[uid]; return q;
+      });
+      /* Kept texts (item 46): everything they wrote goes. */
+      await this.updateWriting((list) => {
+        const rest = (list || []).filter((x) => x.user !== uid);
+        return rest.length !== (list || []).length ? rest : null;
       });
       const hidden = await this.hidden();
       if (hidden.includes(uid)) await this.setHidden(hidden.filter((x) => x !== uid));
@@ -333,7 +428,10 @@ export function createStore(root) {
         hidden: await this.hidden(), invites: await this.invites(),
         groups: await this.groups(), audit: await this.audit(),
         rarity: await this.rarityHistory(), duels: await this.duels(),
-        reports: await this.reports(),
+        reports: await this.reports(), assignments: await this.assignments(),
+        teamDuels: await this.teamDuels(),
+        calibration: await this.calibration(), samples: await this.samples(),
+        writing: await this.writing(),
         dataset: await this.dataset(), datasetStatus: await this.datasetStatus(),
         states: st,
       };
@@ -354,6 +452,12 @@ export function createStore(root) {
         await writeJSON(file.rarity, all.rarity || []);
         await writeJSON(file.duels, all.duels || []);
         await writeJSON(file.reports, all.reports || []);
+        await writeJSON(file.assignments, all.assignments || []);
+        await writeJSON(file.teamDuels, all.teamDuels || []);
+        await writeJSON(file.calibration, all.calibration || {});
+        await writeJSON(file.samples, all.samples || { list: [], seen: 0 });
+        await writeJSON(file.writing, all.writing || []);
+        await fs.rm(file.calibrationQuota, { force: true });
         if (all.dataset) await writeJSON(file.dataset, all.dataset);
         if (all.datasetStatus) await writeJSON(file.datasetStatus, all.datasetStatus);
         for (const n of await fs.readdir(dir.states).catch(() => []))

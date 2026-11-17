@@ -6,6 +6,7 @@ import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { TASKS } from "../src/js/tasks/index.js";
+import { show } from "./helpers.js";
 import { SKILLS } from "../src/js/core/skills.js";
 import { TERMS } from "../src/js/core/glossary.js";
 import { LESSONS, lessonById, lessonFor, buildTable, brokenTables, TERM_LESSON,
@@ -49,7 +50,7 @@ test("every kind of question links to a page", () => {
   const ctx = { lex, S, sess };
   for (const spec of TASKS) {
     let task = null;
-    for (let k = 0; k < 20 && !task; k++) task = spec.gen(ctx);
+    for (let k = 0; k < 20 && !task; k++) task = show(ctx, spec.build);
     if (!task) continue;
     const id = lessonFor(task);
     assert.ok(id && lessonById(id), `${spec.id} (${task.skill}) has no page`);

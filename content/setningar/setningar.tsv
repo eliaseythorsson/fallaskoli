@@ -1,0 +1,1256 @@
+# Setningabankinn
+#
+# Hver lína er ein setning. Greynir greinir hana þegar forritið er smíðað (./build.sh)
+# og allar spurningar um setninguna eru lesnar úr þeirri greiningu. Ekkert málfræðilegt
+# er skrifað hér í höndunum. Setningu sem greinist ekki, eða er of stutt fyrir þyngdina,
+# er hafnað þegar forritið er smíðað. Reglurnar um þyngd og „þörf“ eru í sentences.py
+# (á ensku).
+#
+# Dálkar:
+#   þyngd       1–7. Þyngd 1–5 eru 8. bekkur og ráðast af lengd setningarinnar; 6 og 7 eru 9. og 10. bekkur
+#   setning     setningin sjálf, heil og eðlileg
+#   orð         nafnorðið (uppflettimynd) sem má skipta út fyrir annað nafnorð; autt ef ekkert
+#   þörf        hvaða nafnorð mega koma í staðinn: merkingarflokkar (noun_classes.py) aðskildir með |, eða „none“
+#   ekki eyða   já: setningin er aldrei notuð sem eyðuverkefni (fallið fer eftir merkingu); annars autt
+#   athugasemd  frjáls athugasemd, forritið les hana ekki
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+
+þyngd	setning	orð	þörf	ekki eyða	athugasemd
+# =============================================================================
+# LEVEL 1 — 3-5 words
+# =============================================================================
+# ---- nominative singular, no article ----------------------------------------
+1	Á túninu stendur hestur.	hestur	living
+1	Í horninu liggur bolti.	bolti	object|clothing|book
+1	Uppi á hillunni er steinn.	steinn	object|clothing|book
+1	Hér við hliðina er skóli.	skóli	building
+1	Á morgun kemur nýr dagur.	dagur	time		pinned by nýr
+1	Eftir nóttina kemur dagur.	dagur	none
+1	Pabbi minn er kennari.	kennari	job
+1	Ég ætla að verða kennari.	kennari	job
+1	Þarna úti stendur kona.	kona	living
+1	Þetta er bara hugmynd.	hugmynd	any
+1	Þarna er gamalt hús.	hús	spot		pinned by gamalt
+1	Hér er alltaf gaman.
+1	Kaldur vindur blés í gær.	vindur	weather		pinned by kaldur
+1	Hún var í mikilli hættu.	hætta	none
+2	Amma naut góðrar heilsu alla ævi.	heilsa	none
+# ---- nominative singular, with article --------------------------------------
+1	Hérna er bókin mín.	bók	small|animal		pinned by mín
+1	Hundurinn er úti núna.	hundur	living
+1	Barnið sefur núna.	barn	living
+1	Stelpan hleypur mjög hratt.	stelpa	living
+1	Sólin skín í dag.	sól	none
+1	Kötturinn liggur á gólfinu.	köttur	living
+1	Kötturinn sefur í sófanum.	köttur	living
+1	Strákurinn hlær hátt.	strákur	person
+1	Bíllinn er rauður.	bíll	item|plant|struct|building
+1	Hundurinn geltir hátt.	hundur	none
+1	Síminn hringir aftur.	sími	none
+1	Fuglinn flýgur burt.	fugl	none
+1	Skólinn byrjar á morgun.	skóli	event
+1	Systir mín syngur vel.	systir	person		pinned by mín
+1	Kennarinn talar hátt.	kennari	person
+1	Bókin er þung.	bók	item
+1	Snjórinn bráðnar fljótt.	snjór	none
+1	Klukkan mín er ný.	klukka	thing		pinned by mín
+1	Þetta er húsið mitt.	hús	any		pinned by mitt
+1	Maturinn er tilbúinn.	matur	food		rk kk
+1	Veðrið er gott í dag.	veður	none
+1	Bróðir minn kemur í kvöld.	bróðir	person		pinned by minn
+1	Blómið er fallegt.	blóm	plant|animal|item|building|struct|nature|settlement		rk hk
+1	Hesturinn borðar gras.	hestur	none
+1	Skólinn er búinn í dag.	skóli	event
+1	Hestarnir standa þarna.	hestur	being
+1	Dagurinn leið mjög hratt.	dagur	time|event
+1	Hönd mín er köld.	hönd	body		pinned by mín
+1	Hamingjan skiptir mestu máli.	hamingja	any
+1	Kennarinn breytist aldrei.	kennari	any
+1	Veturinn er alltaf langur.	vetur	time|event		rk kk
+1	Hundurinn fylgir stráknum.	strákur	being
+1	Gamli maðurinn sefur.	maður	=person|job		pinned
+1	Gamla konan les bók.	kona	=person|job		pinned
+1	Litla barnið sefur.	barn	child		pinned
+1	Gamla konan brosti.	kona	=person|job		pinned
+1	Litli strákurinn hljóp.	strákur	child		pinned
+1	Nýja húsið er bjart.	hús	place		pinned
+1	Hesturinn er gamall.	hestur	living		rk kk
+1	Strákurinn er þreyttur.	strákur	living		rk kk
+1	Bókin er ný.	bók	item
+1	Stelpan er glöð.	stelpa	living		rk kvk
+1	Húsið er hvítt.	hús	item|plant|struct|building
+1	Barnið er lítið.	barn	living		rk hk
+1	Húsið er stórt.	hús	item|plant|struct|building
+1	Stelpan er glaðari núna.	stelpa	living		rk kvk
+1	Bókin er skemmtileg.	bók	text|film|event		rk kvk
+1	Þetta er stærsti hesturinn.	hestur	living		pinned
+1	Þetta er yngsta barnið mitt.	barn	child		pinned
+1	Þetta er bókin mín.	bók	thing|animal		pinned
+1	Bíllinn hennar er nýr.	bíll	thing		pinned
+1	Mín bók er horfin.	bók	thing		pinned
+1	Þetta var besti dagurinn.	dagur	time|event		pinned
+1	Hún byrjar að syngja.
+1	Hann er farinn heim.
+1	Þú mátt koma núna.
+1	Þú mátt fara heim.
+1	Bókin seldist strax.	bók	item|food
+1	Hurðin lokaðist hægt.	hurð	none
+1	Bílarnir eru stærstir í bænum.	bíll	vehicle|building|plant|animal
+# ---- nominative plural ------------------------------------------------------
+1	Bækurnar eru þarna.	bók	item|living|plant
+1	Tveir strákar hlaupa úti.	strákur	living		pinned by tveir
+1	Þrír hestar standa þarna.	hestur	being		pinned
+1	Fjórar stelpur sungu saman.	stelpa	person		pinned
+1	Þrjú börn biðu úti.	barn	living		pinned
+1	Tvær konur komu inn.	kona	living		pinned
+1	Fjórir fuglar flugu burt.	fugl	none
+1	Hestarnir eru gamlir.	hestur	living		rk kk
+1	Strákarnir eru þreyttir.	strákur	living		rk kk
+1	Bækurnar eru nýjar.	bók	item
+1	Stelpurnar eru glaðar.	stelpa	living		rk kvk
+1	Húsin eru hvít.	hús	item|plant|struct|building
+1	Börnin eru lítil.	barn	living		rk hk
+1	Húsin eru gömul.	hús	item|plant|struct|building
+1	Litlu börnin sofa.	barn	child		pinned
+1	Stóru hestarnir sofa.	hestur	living		pinned
+1	Öll húsin eru auð.	hús	place
+1	Dagarnir líða hratt.	dagur	time
+1	Hendurnar voru kaldar.	hönd	none
+1	Krakkarnir vilja synda.	krakki	living
+1	Allir krakkar komu.	krakki	person		pinned
+1	Hópur barna beið úti.	barn	living
+1	Bækur nemenda hurfu.	nemandi	person
+1	Þrjú hús standa þarna.	hús	building|plant
+1	Strákarnir heilsuðust ekki.
+1	Vinirnir hittust í gær.	vinur	living
+1	Hugmyndirnar skipta máli.	hugmynd	any
+1	Hugmyndir koma og fara.	hugmynd	any
+1	Þetta eru bara hugmyndir.	hugmynd	any
+2	Hugmyndir skipta alltaf miklu máli.	hugmynd	any
+1	Krakkarnir eru alltaf eins.	krakki	any
+1	Þetta eru bara orð.	orð	any
+1	Hér eru þrjár bækur.	bók	thing		pinned by þrjár
+1	Þetta eru bækurnar þeirra.	bók	thing|animal		pinned
+# ---- accusative singular, no article ----------------------------------------
+1	Ég á hund heima.	hundur	animal
+1	Ég sá hest í gær.	hestur	sight
+1	Ég keypti brauð í dag.	brauð	food|drink|small
+1	Ég borða epli daglega.	epli	food
+1	Hann á hjól heima.	hjól	animal|object
+1	Stelpan teiknar mynd.	mynd	none
+1	Amma bakar köku handa mér.	kaka	none
+1	Þetta er saga um vináttu.	vinátta	abstract|event
+1	Ég sá stóran hund.	hundur	living		pinned
+1	Ég las gamla bók.	bók	text		pinned
+1	Ég á rauðan bíl.	bíll	thing		pinned
+1	Þetta er falleg mynd.	mynd	thing		pinned
+1	Ég man þennan dag.	dagur	time|event		pinned
+1	Ég man daginn vel.	dagur	time|event		with article, below
+# ---- accusative singular, with article --------------------------------------
+1	Ég sá bílinn í gær.	bíll	sight
+1	Við borðum matinn saman.	matur	food
+1	Pabbi keyrir bílinn heim.	bíll	none
+1	Ég les bókina núna.	bók	text
+1	Ég fann lykilinn aftur.	lykill	small|animal
+1	Mamma les blaðið núna.	blað	text
+1	Ég drekk mjólkina núna.	mjólk	drink
+1	Ég opna gluggann.	gluggi	none
+1	Ég sá tunglið í nótt.	tungl	none
+1	Ég sá fjallið úr bílnum.	fjall	nature|building
+1	Ég heyrði fuglinn í morgun.	fugl	living
+1	Ég hef lesið bókina.	bók	text
+1	Þú mátt lesa bókina núna.	bók	text
+1	Við borðuðum kvöldmatinn saman.	kvöldmatur	food
+1	Ég ætla að læra lagið.	lag	music
+1	Við töluðum um ferðina.	ferð	any
+1	Ég sá þau úti.
+1	Ég sé hana þarna.
+1	Ég talaði við ykkur báða.
+1	Ég hef borðað nóg.
+1	Ég ætla að læra heima.
+1	Við viljum fara heim.
+1	Ég reyni að hjálpa.
+# ---- accusative plural ------------------------------------------------------
+1	Ég sá hestana í gær.	hestur	sight
+1	Ég sá bílana í gær.	bíll	sight
+1	Við borðum fisk í kvöld.	fiskur	food
+1	Ég þvæ hendurnar.	hönd	none
+1	Við tökum rútuna heim.	rúta	none
+1	Ég sá þrjá hesta.	hestur	sight
+1	Ég keypti fjórar bækur.	bók	thing		pinned
+1	Ég á þrjú epli.	epli	thing|animal		pinned
+1	Ég á tvo hunda.	hundur	animal|thing		pinned
+1	Ég á þrjú hjól.	hjól	thing|animal		pinned
+1	Ég hitti fjórar stelpur.	stelpa	person		pinned
+1	Ég sá há tré.	tré	plant
+1	Ég á góða vini.	vinur	person		pinned
+1	Ég man dagana vel.	dagur	time|event
+1	Ég sá börn úti.	barn	living
+1	Ég sá kennarana í morgun.	kennari	sight
+1	Þetta er saga um krakka.	krakki	being|critter
+1	Við töluðum um dagana.	dagur	any
+1	Ég hugsa oft um krakkana.	krakki	any
+1	Ég hugsa oft um hugmyndir.	hugmynd	any
+2	Við töluðum lengi um hugmyndir.	hugmynd	any
+# ---- dative singular --------------------------------------------------------
+1	Ég hjálpa kennaranum í dag.	kennari	being
+1	Ég hjálpa mömmu í dag.	mamma	living
+1	Ég treysti kennaranum.	kennari	being
+1	Ég gleymdi töskunni heima.	taska	small
+1	Ég sagði frá ferðinni.	ferð	any
+1	Ég sagði frá hugmynd.	hugmynd	abstract|event|place|being|weather|film|music|text
+1	Hún hefur áhuga á tónlist.	tónlist	any
+1	Ég man vel eftir ferðinni.	ferð	any
+1	Ég gaf hesti vatn.	hestur	living
+1	Ég fór út án lykils.	lykill	small
+2	Ég er að leita að lykli.	lykill	item|living|food
+1	Ég fór heim án vinar.	vinur	person
+1	Ég treysti þeim.
+1	Hún hjálpaði honum.
+1	Þau komu í gær.
+1	Ég man vel eftir þér.
+1	Hún gaf mér þetta.
+# ---- dative plural ----------------------------------------------------------
+1	Ég hjálpa krökkunum í dag.	krakki	being
+1	Ég hjálpaði tveimur strákum.	strákur	living		pinned
+1	Ég gaf hestunum vatn.	hestur	living
+1	Ég ferðast með vinum.	vinur	person		nofill: með
+1	Hún borgaði með korti.	kort	none
+1	Ég gleymi aldrei andlitum.	andlit	person|settlement|building|animal
+1	Ég sagði frá hugmyndum.	hugmynd	abstract|event|place|being|weather|film|music|text
+1	Hún hefur áhuga á hestum.	hestur	any
+1	Ég man vel eftir dögunum.	dagur	any
+1	Ég fór út án lykla.	lykill	small
+2	Ég er að leita að lyklum.	lykill	item|living|food
+# ---- genitive singular ------------------------------------------------------
+1	Bíll pabba bilaði.	pabbi	person
+1	Þak hússins lekur.	hús	building
+1	Litur bílsins er fallegur.	bíll	item|food|plant|animal|struct|building|nature
+1	Þetta er hús ömmu.	amma	person
+1	Ég hlakka til sumarsins.	sumar	event
+1	Ég hlakka til jóla.	jól	none
+1	Hann talaði um mikilvægi vináttu.	vinátta	none
+1	Þetta er saga bæjarins.	bær	settlement|building|group|person
+# ---- genitive plural --------------------------------------------------------
+1	Nöfn barnanna gleymdust.	barn	named
+1	Hjól tveggja stráka hurfu.	strákur	person		pinned
+1	Ég man ekki nöfn kennaranna.	kennari	named
+1	Hann talaði um mikilvægi bóka.	bók	none
+1	Þetta er saga bæjanna.	bær	settlement|building|group|person
+# ---- frames that take nearly any noun (v6.4) ---------------------------------
+# The indefinite dative and genitive had no frame for most classes once the
+# needs were narrowed. These four are true of almost anything.
+1	Þetta gengur ekki án bíls.	bíll	any
+1	Þetta gengur ekki án bíla.	bíll	any
+1	Ferðin tafðist vegna bílsins.	bíll	any
+1	Ferðin tafðist vegna bílanna.	bíll	any
+1	Þetta er mynd af hesti.	hestur	being|critter|plant|body|food|clothing|vehicle|furniture|object|book|spot|sky
+1	Þetta er mynd af hestum.	hestur	being|critter|plant|body|food|clothing|vehicle|furniture|object|book|spot|sky
+1	Ég spurði um fjölda bílanna.	bíll	any
+1	Á myndinni sást fjöldi bíla.	bíll	sight|item|nature|sky|struct|furniture
+# ---- more frames that take nearly any noun (v6.13, critique item 24) ---------
+# In the reverse analysis ten frames made 60% of the questions, and *Þetta
+# gengur ekki án ___* and *Ferðin tafðist vegna ___* a quarter: for most
+# nouns the indefinite nominative, dative and genitive, and some plurals with
+# the article, had one to three frames that took them. These 40 are aimed at
+# those cells. Each `need` names what may stand in the slot without anyone
+# blinking; where a group was too wide (a mountain in *Ég safna ___*, a hand
+# in *___ kom mér á óvart*, *án truflunar* where "without" turns the meaning
+# round) the classes are listed one by one.
+# What is there, and where (nominative).
+1	Þarna er hestur.	hestur	sight|item|nature|sky|struct|furniture
+1	Á myndinni eru hestar.	hestur	sight|item|nature|sky|struct|furniture
+1	Hvar er síminn?	sími	item|living|food|drink
+1	Hvar eru lyklarnir?	lykill	item|living|food|drink
+1	Bækurnar voru út um allt.	bók	item|living|food|critter|plant
+1	Hvað kostar bókin?	bók	item|food|drink
+1	Hvað kosta bækurnar?	bók	item|food|drink
+2	Í búðinni voru bækur á tilboði.	bók	object|clothing|book|furniture|food|drink
+# What it did to me (nominative, with the article).
+1	Bókin kom mér á óvart.	bók	being|thing|spot|weather|sky|money|text|film|music|event|abstract
+1	Hestarnir komu mér á óvart.	hestur	being|thing|spot|weather|sky|money|text|film|music|event|abstract
+1	Fjölskyldan skiptir mig miklu máli.	fjölskylda	being|thing|spot|weather|sky|money|text|film|music|event|abstract
+# Wanting and getting (accusative, no article).
+1	Mig vantar blýant.	blýantur	item|food|drink|substance
+1	Ég fékk hund í jólagjöf.	hundur	small|animal
+# Talking, knowing, learning (um + accusative).
+2	Við lærðum um eldfjöll í skólanum.	eldfjall	concrete|abstract|event|weather|sky|music|film|text
+1	Bókin fjallar um drauga.	draugur	concrete|abstract|event|weather|sky|music|film|text
+1	Bókin fjallar um eldfjall.	eldfjall	concrete|abstract|event|weather|sky|music|film|text|money		v6.13 (S2): eina ÞFET-ramminn fyrir veður, himin, peninga og myndir eftir að „saga um“ var þrengd
+1	Ég veit ekkert um hesta.	hestur	concrete|abstract|event|weather|sky|music|film|text
+1	Ég veit ekkert um hestana.	hestur	any
+1	Mamma spurði mig um hestana.	hestur	any
+1	Við ræddum hugmyndirnar í tímanum.	hugmynd	any
+1	Við fórum að skoða hestana.	hestur	animal|critter|vehicle|building|plant|item|nature|struct
+# Pictures, stories, telling, forgetting (af / frá + dative, gleyma).
+1	Ég teiknaði mynd af hesti.	hestur	being|critter|plant|body|food|clothing|vehicle|furniture|object|book|spot|sky
+1	Ég teiknaði mynd af hestum.	hestur	being|critter|plant|body|food|clothing|vehicle|furniture|object|book|spot|sky
+1	Ég teiknaði mynd af hestinum.	hestur	being|critter|plant|body|food|clothing|vehicle|furniture|object|book|spot|sky
+2	Ég hef heyrt margar sögur af draugum.	draugur	living|critter|vehicle|building|settlement
+1	Ég hef gaman af hestum.	hestur	animal|vehicle|book|text|film|music|event|plant
+1	Ég safna steinum.	steinn	object|book
+1	Ég sagði mömmu frá hestunum.	hestur	abstract|event|place|being|weather|film|music|text
+1	Kennarinn sagði okkur frá ferðinni.	ferð	any
+1	Ég gleymdi alveg bókinni.	bók	item|food|drink|living|event|text|film|music|money|abstract
+1	Ég gleymdi alveg bókunum.	bók	item|food|drink|living|event|text|film|music|money|abstract
+# Without and because of (án / vegna / á milli + genitive). Not an idea or
+# the sky after *vegna* ("vegna hamingjunnar", "vegna himinsins"): item 30
+# took abstract nouns out of the genitive-with-article frame on purpose. Not a
+# place or a town after *án* ("án lands", "án hverfa"), as item 30 has it.
+1	Ég kom heim án lykils.	lykill	item|animal|food|drink
+2	Við komumst ekki af án vatns.	vatn	being|thing|building|room|substance|money
+2	Við komumst ekki af án bíla.	bíll	being|thing|building|room|money
+2	Ég gæti ekki verið án tónlistar.	tónlist	being|thing|music|money|text|film
+2	Ég gæti ekki verið án vina.	vinur	being|thing|music|text|film
+1	Leiknum var frestað vegna veðurs.	veður	weather|event
+1	Þetta gerðist allt vegna bílsins.	bíll	being|thing|spot|weather|money|text|film|music|event
+1	Þetta gerðist allt vegna bílanna.	bíll	being|thing|spot|weather|money|text|film|music|event
+2	Kötturinn faldi sig á milli bílanna.	bíll	vehicle|struct|building|furniture|object|plant
+2	Ég man ekki lengur lit bílsins.	bíll	item|food|plant|animal|struct|building|nature
+# ---- a verb or preposition that governs one case (critique item 23) ----------
+# Short sentences for "Hvaða falli stýrir orðið?" at þyngd 1: every one has a
+# verb from government.py with one case, or a preposition with one, or both.
+# The band's sentences gave about 120 such questions; a pupil met them again
+# within weeks. No slot: the cloze is not changed by these.
+1	Ég treysti vini mínum.
+1	Hún gleymdi húfunni sinni.
+1	Við söknum ömmu mikið.
+1	Við biðum hans lengi.
+1	Hún svaraði kennaranum strax.
+1	Strákurinn týndi lyklinum.
+1	Pabbi lokaði glugganum.
+1	Ég skilaði bókinni í gær.
+1	Hún hrósaði mér mikið.
+1	Mamma safnar frímerkjum.
+1	Við leituðum lyklanna.
+1	Hann gætti barnanna.
+1	Ég nennti þessu ekki.
+1	Kennarinn hjálpaði mér.
+1	Ég fór til ömmu.
+1	Hún kom úr skólanum.
+1	Ég fékk bréf frá afa.
+1	Við gengum um bæinn.
+1	Hann býr hjá ömmu sinni.
+1	Ég keypti blóm handa mömmu.
+1	Kötturinn hljóp undan hundinum.
+1	Ég drakk mjólk úr glasi.
+1	Við lukum verkefninu.
+1	Hann stal hjólinu mínu.
+1	Hún bjargaði kettinum.
+1	Ég trúi þér ekki.
+1	Hún kastaði boltanum.
+1	Við nutum sólarinnar.
+1	Ég henti ruslinu.
+1	Hún hrósaði stráknum.
+1	Við gengum framhjá kirkjunni.
+# and eighteen more (pool of govern at þyngd 1 was 159, too near 150): only
+# verbs and prepositions government.py lists with one case
+1	Ég sakna afa míns.
+1	Við hjálpuðum ömmu.
+1	Strákurinn gleymdi nestinu.
+1	Ég fór til læknisins.
+1	Kötturinn svaf hjá mér.
+1	Pabbi keypti gjöf handa mér.
+1	Hún svaraði spurningunni.
+1	Við biðum strætisvagnsins.
+1	Ég leitaði lykilsins.
+1	Hann gekk um garðinn.
+1	Barnið hló að trúðnum.
+1	Fuglinn flaug frá hreiðrinu.
+1	Hún tók bók úr hillunni.
+1	Hann kastaði steininum.
+1	Mamma lokaði hurðinni.
+1	Ég fer aldrei án húfu.
+1	Strákurinn bjargaði kettlingnum.
+1	Hún skilaði lyklinum.
+# =============================================================================
+# LEVEL 2 — 5-7 words
+# =============================================================================
+# ---- nominative ------------------------------------------------------------
+2	Kötturinn liggur á stólnum.	köttur	living
+2	Glasið stendur á borðinu.	glas	small
+2	Hann hjólaði í skólann í morgun.	skóli	building|settlement|=place		í: prep convention
+2	Mamma talaði við kennarann.	kennari	being
+2	Hundurinn hljóp á eftir kettinum.	köttur	being
+2	Bíllinn stoppaði fyrir utan húsið.	hús	building
+2	Kennarinn skrifaði á töfluna.	kennari	person
+2	Sólin skein á gluggann.	gluggi	nature
+2	Hundurinn beið fyrir utan búðina.	búð	building
+2	Fuglarnir sungu í trjánum.	fugl	none
+2	Snjórinn féll á jörðina.	snjór	none
+2	Stelpan las söguna upphátt.	saga	text
+2	Pabbi lagaði hjólið mitt.	hjól	thing		pinned
+2	Kennarinn hrósaði nemendunum.	nemandi	child
+2	Hesturinn stóð úti á túni.	hestur	living
+2	Barnið sofnaði í bílnum.	barn	living
+2	Bókin liggur á borðinu.	bók	small
+2	Strákurinn gleymdi töskunni heima.	strákur	person
+2	Kennarinn talar við nemendurna.	kennari	person
+2	Fuglarnir sitja í trénu.	fugl	none
+2	Krakkarnir hlaupa út í garð.	krakki	living
+2	Kaffið er alltaf heitt á morgnana.	kaffi	drink		rk hk
+2	Fjöllin eru há og hvít í vetur.	fjall	none
+2	Þessi hestur er stærri en hinn.	hestur	concrete		pinned
+2	Bókin mín er þyngri en þín.	bók	thing		pinned
+2	Húsið er minna en ég hélt.	hús	item|plant|spot		rk hk
+2	Hann er sterkastur í hópnum.	hópur	settlement
+2	Hún er fljótust í sundi.	sund	none
+2	Þetta hús er stærst í götunni.	hús	struct|place		pinned
+2	Besti vinur minn heitir Jón.	vinur	person		pinned
+2	Gömlu mennirnir sitja á bekknum.	maður	=person|job		pinned
+2	Nýja húsið okkar stendur við sjóinn.	hús	struct|place		pinned
+2	Fyrsti dagurinn í skólanum var langur.	dagur	none		pinned
+2	Þriðja bókin var skemmtilegust.	bók	text|film		pinned
+2	Það eru fjögur börn í hópnum.	barn	living		pinned
+2	Sú kona vinnur í búðinni.	kona	person		pinned
+1	Það hús er til sölu.	hús	building		pinned
+2	Allir krakkarnir fóru út í frímínútum.	krakki	child		pinned
+2	Hesturinn beið fyrir utan hesthúsið.	hesthús	building
+2	Konan gekk heim eftir vinnu.	vinna	event
+2	Tvö hús standa við enda götunnar.	hús	building
+2	Hundarnir tveir sváfu inni í stofunni.	hundur	living		pinned
+2	Boltar rúlluðu niður brekkuna.	bolti	none
+2	Skólar standa víða á landinu.	skóli	building
+2	Skólarnir byrja á morgun.	skóli	none
+2	Þök skólanna eru rauð.	skóli	building
+2	Gatan liggur milli skóla og kirkju.	skóli	building
+2	Steinn lá í fjörunni.	steinn	object|clothing|book
+2	Steinar lágu í fjörunni.	steinn	object|clothing|book
+2	Steinarnir lágu í fjörunni.	steinn	object|clothing|book
+2	Litur steinsins breyttist.	steinn	item|food|plant|animal|struct|building|nature
+2	Litir steinanna eru fallegir.	steinn	item|food|plant|animal|struct|building|nature
+2	Lófar handanna sneru upp.	hönd	none
+2	Ég kann nöfn daganna.	dagur	none
+2	Upphaf dagsins var rólegt.	dagur	time|event
+2	Verð bókanna kom mér á óvart.	bók	thing
+3	Hljóðið í vélum bátanna heyrðist um allan bæinn.	bátur	vehicle
+2	Hestar standa úti á túni.	hestur	being
+2	Hófar hests eru harðir.	hestur	none
+2	Hópur hesta stóð á túninu.	hestur	living
+2	Þyngd steins fer eftir stærð hans.	steinn	none
+2	Fjöldi steina lá í fjörunni.	steinn	object
+2	Hann kom heim í lok dags.	dagur	time|event
+2	Skólinn er til hægri handar.	hönd	none
+2	Bókin hafði gleymst uppi í hillu.	bók	small
+2	Bíllinn hefur verið þveginn í dag.	bíll	vehicle|clothing		rk kk
+2	Krakkarnir söfnuðust saman úti á vellinum.	krakki	being
+2	Bækur þeirra lágu eftir á borðinu.	bók	small		pinned
+2	Þú lest bókina alltaf á kvöldin.	bók	text
+2	Þið komið of seint í tímann aftur.	tími	none
+2	Strákurinn þarf að klára verkefnið sitt.	verkefni	any		pinned
+2	Við ætlum að hittast eftir skóla.	skóli	none
+2	Hann sagði okkur frá þessu í gær.
+2	Við sáum þá koma inn í stofuna.	stofa	room|building
+2	Kennarinn rétti mér blaðið sitt.	blað	small		pinned
+# ---- accusative ------------------------------------------------------------
+2	Ég sá hundinn í garðinum.	hundur	living|item|plant
+2	Hann gaf mér bókina sína.	bók	small		pinned
+2	Ég setti bækurnar í töskuna.	taska	none
+2	Ég fann símann undir rúminu.	sími	small|animal
+2	Ég setti mjólkina í ísskápinn.	mjólk	food|drink
+2	Ég setti tölvuna á borðið.	tölva	small
+2	Ég keypti nýja skó í búðinni.	skór	thing		pinned
+2	Ég skrifaði bréf til frænku minnar.	bréf	none
+2	Ég hlusta á tónlist á kvöldin.	tónlist	none
+2	Við hittum krakkana í bænum.	krakki	person
+2	Ég borðaði morgunmat með pabba.	pabbi	person		nofill: með
+2	Við borðuðum kvöldmat með ömmu.	amma	person		nofill: með
+2	Þeir léku sér að boltanum.	bolti	object
+2	Amma prjónaði peysu handa mér.	peysa	none
+2	Við gengum upp á fjallið.	fjall	none
+2	Við lékum okkur í garðinum.	garður	place		í
+2	Við fórum í sund eftir skóla.	sund	event		í
+2	Við förum í skólann á morgun.	skóli	building		í
+2	Ég hjálpaði mömmu með uppvaskið.	mamma	person
+2	Krakkarnir hlupu út á völl.	völlur	none
+2	Ég las söguna fyrir bróður minn.	saga	text
+2	Ég sá gamlan hest í garðinum.	hestur	living		pinned
+2	Ég sá gamla konu á bekknum.	kona	=person|job|animal		pinned
+2	Ég sá gamalt hús við götuna.	hús	struct|place		pinned
+2	Hann keypti nýjan bíl í fyrra.	bíll	thing		pinned
+2	Hún keypti nýja tösku fyrir skólann.	taska	thing		pinned
+2	Við keyptum nýtt borð í eldhúsið.	borð	thing		pinned
+2	Ég sá gamla manninn í búðinni.	maður	=person|job		pinned
+2	Ég sá gömlu konuna í garðinum.	kona	=person|job		pinned
+2	Ég sá litla barnið í vagninum.	barn	living		pinned
+2	Ég vil fá stærri skó.	skór	thing		pinned
+2	Ég sá stærri hest en þennan.	hestur	concrete		pinned
+2	Ég gaf litlu stelpunni fallega bók.	stelpa	child		pinned
+2	Ég sá skólann í gær.	skóli	sight
+2	Ég sá steinana í fjörunni.	steinn	small|animal
+2	Við hittum tvo stráka í búðinni.	strákur	person		pinned
+2	Mamma keypti þrjár bækur handa mér.	bók	small		pinned
+2	Ég talaði við þrjár stelpur í frímínútum.	stelpa	person		pinned
+2	Kennarinn talaði við þessa stelpu í gær.	stelpa	person		pinned
+2	Ég hitti þær fyrir utan skólann.	skóli	building
+2	Ég mætti barni á leiðinni.	barn	being
+2	Ég sagði frá bókunum í gær.	bók	any
+2	Ég sá kennarana í gær.	kennari	sight
+2	Við hugsum mikið um kennarann.	kennari	any
+2	Ég skil ekki þessa hugmynd.	hugmynd	any		pinned
+2	Þetta er saga um krakkana.	krakki	being|critter
+2	Við ræddum hugmyndina lengi.	hugmynd	abstract|event|text
+2	Við ræddum hugmyndirnar lengi.	hugmynd	abstract|event|text
+2	Hann nefndi aldrei vandamálið.	vandamál	abstract|event|text
+# ---- dative ----------------------------------------------------------------
+2	Ég gleymdi lyklinum heima.	lykill	small
+2	Mamma gaf barninu mjólk.	barn	being
+2	Hundurinn beið eftir stráknum.	strákur	being
+2	Systir mín býr í borginni.	borg	settlement
+2	Ég man ekki eftir myndinni.	mynd	any
+2	Krakkarnir léku sér með boltum.	bolti	none		nofill: með
+2	Hún borgaði með seðlum.	seðill	none
+2	Við mættum kennurum á ganginum.	kennari	person
+2	Ég sagði frá kennurunum í gær.	kennari	any
+2	Krakkarnir fóru í ferðina án kennaranna.	kennari	person
+2	Ég gaf tveimur hundum vatn í gær.	hundur	living		pinned
+2	Kennarinn hjálpaði þremur nemendum í morgun.	nemandi	child		pinned
+2	Ég gaf þremur börnum kökur í dag.	barn	person
+2	Kennarinn talaði við þrjár konur í morgun.	kona	person		pinned
+2	Ég sagði systur minni frá þessu.	systir	being		pinned
+2	Ég hef ekki áhuga á fótbolta.	fótbolti	any
+2	Ég hef mikinn áhuga á hestum.	hestur	any
+2	Ég hef mikinn áhuga á sögu.	saga	any
+2	Ég hef lengi haft áhuga á myndinni.	mynd	any
+2	Við höfum alltaf haft gaman af krökkunum.	krakki	living
+2	Þú lofaðir mér nýju hjóli.	hjól	thing		pinned
+2	Ég gaf gömlum manni sætið mitt.	maður	=person|job		pinned
+2	Ég talaði við litlu stelpuna í gær.	stelpa	child		pinned
+2	Litlu börnin sofnuðu strax eftir matinn.	barn	child		pinned
+2	Ég talaði lengi við kennarann.	kennari	being
+# ---- genitive --------------------------------------------------------------
+2	Ég man ekki nafn kennarans.	kennari	named
+2	Ég man ekki nafn myndarinnar.	mynd	named
+2	Þetta eru bækur systur minnar.	systir	person		pinned
+2	Ég man ekki nafn þessarar konu.	kona	being		pinned
+2	Bílar tveggja kennara stóðu fyrir utan skólann.	kennari	person		pinned
+2	Nöfn þriggja stráka stóðu efst á listanum.	strákur	person		pinned
+2	Verð hjólanna hækkaði mikið.	hjól	thing
+2	Kennarinn safnaði verkefnum nemenda í möppu.	nemandi	child
+2	Nöfn kennaranna standa á blaðinu.	kennari	named
+2	Hann talaði um sögu bæjarins.	bær	settlement|building
+2	Hann talaði um sögu bæjanna.	bær	settlement|building
+2	Hann talaði um mikilvægi vináttunnar.	vinátta	none
+2	Hún talaði um mikilvægi barna.	barn	none
+2	Hann talaði um mikilvægi ferðarinnar.	ferð	none
+2	Við fórum ekki út vegna veðurs.	veður	weather|event
+2	Við fórum ekki út vegna storma.	stormur	weather|event
+2	Við fórum ekki út vegna stormanna.	stormur	weather|event
+2	Ég kann nöfn mánaða og daga.	mánuður	none
+2	Við fórum ekki út vegna rigningarinnar.	rigning	weather|event
+2	Ég hlakka mikið til afmælisins.	afmæli	event
+2	Ég hlakka mikið til ferðanna.	ferð	event
+2	Ég hlakka til jólanna.	jól	none
+# ---- verbs and pronouns, no slot -------------------------------------------
+2	Ég vona að hann komi í kvöld.
+2	Við höfum aldrei séð svona stóran hund.	hundur	living		pinned
+2	Ég hitti þær fyrir utan búðina.	búð	building
+# =============================================================================
+# LEVEL 3 — 7-9 words
+# =============================================================================
+# ---- nominative ------------------------------------------------------------
+3	Í morgun sá ég hestinn fyrir utan skólann.	hestur	being|vehicle
+3	Kötturinn faldi sig undir stólnum í stofunni.	köttur	living
+3	Kötturinn faldi sig undir rúminu allan daginn.	köttur	living
+3	Stelpan æfir fótbolta þrisvar í viku.	stelpa	person
+3	Bróðir minn spilar á gítar á hverjum degi.	bróðir	person		pinned
+3	Mamma vinnur á sjúkrahúsinu á kvöldin.	sjúkrahús	building|room
+3	Hundurinn okkar er hræddur við þrumur.	þruma	animal|critter
+3	Við hjóluðum saman niður að sjónum.	sjór	nature|building
+3	Við fórum í göngutúr meðfram ánni.	á	nature
+3	Ég æfi mig á píanó á hverjum morgni.	morgunn	none
+3	Þau hittust fyrir utan skólann eftir tímann.	skóli	building
+3	Bókin fannst undir borðinu í stofunni.	bók	object|clothing|book
+3	Hann sagðist ekki muna eftir bókinni.	bók	any
+3	Dagar líða hratt á sumrin.	dagur	time
+3	Í garðinum stóðu tvö há tré alveg við húsið.	tré	plant		pinned
+3	Litla systir mín er miklu duglegri en ég var.	systir	none		pinned
+3	Þetta var erfiðasta verkefnið í öllu prófinu.	verkefni	any		pinned
+3	Þetta er stærsti hesturinn í hesthúsinu.	hestur	animal		pinned
+3	Eldri bróðir minn er í tíunda bekk.	bróðir	none		pinned
+3	Yngri systir mín byrjar í skóla í haust.	systir	none		pinned
+3	Veðrið var betra í dag en í gær.	veður	none
+3	Elsta systir mín er tvítug í dag.	systir	none		pinned
+3	Bílarnir höfðu verið þvegnir fyrir utan húsið.	bíll	vehicle		rk kk
+3	Þakið á húsinu er nýtt.	þak	none
+3	Hesturinn er hvergi sjáanlegur í dag.	hestur	living|item
+3	Steinarnir í fjörunni eru sléttir og fallegir.	steinn	none
+3	Hendur barnanna voru kaldar.	hönd	none
+3	Við fluttum til bæjar úti á landi.	bær	none
+3	Við keyrðum milli bæja allan daginn.	bær	none
+3	Hestarnir hlupu um allt túnið í morgun.	hestur	living
+3	Bækurnar standa í röð uppi í hillunni.	bók	=book
+# ---- accusative ------------------------------------------------------------
+3	Kennarinn spurði mig um bókina í tímanum.	bók	any
+3	Við töluðum um myndina alla leiðina heim.	mynd	any
+3	Pabbi keypti nýjan síma handa systur minni.	sími	thing		pinned
+3	Ég las bókina áður en ég fór að sofa.	bók	text
+3	Kennarinn skrifaði nafnið mitt á töfluna.	nafn	none		pinned
+3	Hundurinn hljóp á eftir bílnum niður götuna.	bíll	vehicle|living
+3	Strákurinn gleymdi peysunni sinni heima í morgun.	peysa	small		pinned
+3	Hundurinn hljóp á eftir boltanum niður brekkuna.	bolti	vehicle|living
+3	Ég las alla bókina á einu kvöldi.	bók	text		pinned
+3	Stelpan las söguna upphátt fyrir bekkinn.	saga	text
+3	Kennarinn sýndi okkur myndir frá Íslandi.	mynd	none
+3	Ég gleymdi að taka nestið með mér í skólann.	nesti	small
+3	Mamma keypti nýja tölvu handa bróður mínum.	tölva	thing		pinned
+3	Við sátum í sófanum og horfðum á mynd.	mynd	film
+3	Ég skildi töskuna eftir inni í stofunni.	taska	small
+3	Ég sá gamla hesta á vellinum í morgun.	hestur	living		pinned
+3	Ég sá gamlar bækur í hillunni hjá ömmu.	bók	small		pinned
+3	Kennarinn valdi erfitt verkefni fyrir hópinn.	verkefni	any		pinned
+3	Ég las skemmtilegustu bókina í sumar.	bók	text		pinned
+3	Ég hitti frænda minn á bókasafninu í gær.	frændi	person		pinned
+3	Ég setti bækurnar aftur upp í hillu.	bók	small
+3	Krakkarnir byggðu snjóhús í garðinum í gær.	snjóhús	none
+3	Við tíndum ber uppi í hlíðinni í ágúst.	ber	none
+3	Ég setti peysuna mína í þvottavélina.	peysa	clothing		pinned
+3	Stelpan gaf hestinum epli yfir girðinguna.	hestur	none
+3	Ég gaf tveimur strákum blöðrur á afmælinu.	strákur	person
+3	Kennarinn spurði fjóra nemendur um verkefnið í tímanum.	nemandi	person		pinned
+3	Í garðinum sá ég þrjá ketti sitja saman.	köttur	living		pinned
+3	Ég hitti engan nemanda á ganginum eftir tímann.	nemandi	person
+3	Hún talaði við gamlan mann úti á götu.	maður	person		pinned
+4	Ég hitti eldri bróður minn fyrir utan skólann í dag.	bróðir	person		pinned
+3	Hann á stærstan bíl allra í bænum.	bíll	thing		pinned
+3	Ég sá gamlan hest standa úti á túni.	hestur	living		pinned
+4	Í gær hitti ég góða vinkonu mína fyrir utan búðina.	vinkona	person		pinned
+3	Mamma keypti falleg blóm handa ömmu í dag.	blóm	thing		pinned
+3	Þetta er dýrasta hjólið í allri búðinni.	hjól	thing		pinned
+3	Ég sá steina í fjörunni.	steinn	object|animal
+3	Ég sá steininn í fjörunni.	steinn	object|animal
+3	Ég sé skólana út um gluggann.	skóli	building|vehicle|living|plant|nature
+3	Ég sá borgir úr flugvélinni.	borg	settlement|nature|building
+3	Ég sá hesta úti á túni.	hestur	being
+3	Ég sá hönd á myndinni.	hönd	concrete
+3	Ég sá höndina á myndinni.	hönd	concrete
+3	Ég henti steinunum í sjóinn.	steinn	none
+3	Ég hitti barnið á leiðinni heim.	barn	being
+3	Kennarinn talaði um börnin í bekknum.	barn	any
+3	Við ræddum vandamálið lengi í gærkvöldi.	vandamál	abstract|event|text
+3	Ég hugsaði mikið um ferðina í nótt.	ferð	any
+3	Þrjár stelpur úr bekknum mínum fóru saman í sund.	stelpa	person		pinned
+3	Þrír strákar úr bekknum mínum fóru saman heim.	strákur	person		pinned
+3	Ég sá tvö hús standa alveg við sjóinn.	hús	struct|place		pinned
+3	Í gær keypti mamma fjögur hjól handa okkur.	hjól	thing		pinned
+3	Fjögur börn hlupu út í garð eftir matinn.	barn	living		pinned
+3	Amma bakaði köku handa tveimur strákum í dag.	strákur	person		pinned
+# ---- dative ----------------------------------------------------------------
+3	Mamma sagði mér frá ferðinni í gærkvöldi.	ferð	any
+3	Ég ætla að hjálpa vini mínum eftir skóla.	vinur	person		pinned
+3	Strákurinn gaf hundinum vatn í dag.	hundur	living
+3	Sólin skein á fjöllin allan daginn.	fjall	nature|place|struct
+3	Við bíðum eftir rútunni fyrir utan skólann.	skóli	building
+3	Við fórum í bíó með vinum okkar á laugardaginn.	vinur	person		pinned
+3	Ég hjálpaði systur minni með heimanámið.	systir	person		pinned
+3	Pabbi lagaði hjólið mitt úti í bílskúr.	bílskúr	place		í
+3	Ég gleymdi símanum mínum heima hjá ömmu.	sími	small		pinned
+3	Við borðuðum kvöldmat saman við eldhúsborðið.	kvöldmatur	food
+3	Pabbi keyrði okkur upp í sumarbústað.	sumarbústaður	place		í
+3	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	dæmi	text
+3	Við keyrðum fram hjá vitanum á leiðinni heim.	viti	building
+3	Ég hjálpaði gömlum manni yfir götuna.	maður	living		pinned
+3	Ég hjálpaði gamalli konu með töskuna.	kona	person		pinned
+3	Ég hjálpaði litlu barni upp í rútuna.	barn	living		pinned
+3	Ég fékk bréf frá gömlum vini í gær.	vinur	person		pinned
+3	Hún kom með blóm til gamallar konu.	kona	person		pinned
+3	Ég gaf gamla manninum bókina mína.	maður	person		pinned
+3	Ég gaf gömlu konunni blómin.	kona	person		pinned
+3	Ég gaf litla barninu mjólk að drekka.	barn	living		pinned
+3	Mamma sagði mér frá þessum manni í gærkvöldi.	maður	being		pinned
+3	Mamma sagði frá tveimur konum í vinnunni.	kona	person		pinned
+3	Ég man eftir gömlu húsi sem stóð hérna áður.	hús	struct|place		pinned
+3	Kennarinn sagði mér frá skemmtilegri bók í morgun.	bók	text|film|event		pinned
+3	Strákurinn gaf litla hundinum vatn úti í garði.	hundur	animal		pinned
+3	Ég gaf hesti vatn í morgun.	hestur	living
+3	Ég sagði frá hestum í sveitinni.	hestur	living|building
+3	Hann sagði frá skólum í sveitinni.	skóli	living|building
+3	Við gengum saman að skólanum.	skóli	building|vehicle|nature
+3	Mamma bað mig um að loka glugganum strax.	gluggi	none
+3	Við bíðum eftir svari frá skólanum.	svar	text|person
+3	Hann gleymdi bókum sínum heima í morgun.	bók	small		pinned
+3	Kennarinn hjálpaði mér með verkefnið í dag.	kennari	person
+3	Ég sagði kennaranum frá hugmyndinni minni.	hugmynd	any		pinned
+3	Við höfum lítinn áhuga á gömlu bílunum.	bíll	any		pinned
+3	Ég hef alltaf haft áhuga á bílum.	bíll	any
+# ---- genitive --------------------------------------------------------------
+3	Þetta er bíll gamals manns.	maður	person		pinned
+3	Þetta er taska gamallar konu.	kona	person		pinned
+3	Þetta er þak gamals húss.	hús	struct|place		pinned
+3	Þetta eru myndir gamalla manna.	maður	person		pinned
+3	Þetta er hattur gamla mannsins.	maður	person		pinned
+3	Þetta er taska gömlu konunnar.	kona	person		pinned
+3	Þetta er leikfang litla barnsins.	barn	person		pinned
+3	Kennarinn skrifaði nöfn allra á blaðið.	nafn	none
+3	Bækur þriggja nemenda lágu eftir inni í stofunni.	nemandi	person		pinned
+3	Nöfn hestanna standa á blaðinu.	hestur	named
+3	Nafn hestsins stendur á blaðinu.	hestur	named
+3	Þetta er þak stærstu byggingarinnar í bænum.	bygging	struct|place		pinned
+3	Nöfn barnanna voru skrifuð á töfluna í morgun.	barn	named
+4	Ég man ekki nöfn þriggja kennara sem kenndu mér í fyrra.	kennari	person		pinned
+3	Við töluðum lengi um mikilvægi hvíldar.	hvíld	none
+3	Við töluðum lengi um mikilvægi vinanna.	vinur	none
+3	Ferðin féll niður vegna veðursins.	veður	weather|event
+3	Ég hlakka mikið til sumarfrísins í ár.	sumarfrí	event
+# ---- verb moods and voices -------------------------------------------------
+3	Ég vona að veðrið batni fyrir morgundaginn.	veður	none
+3	Við hittumst ekki í allt sumar.	sumar	none
+4	Ef veðrið yrði betra myndum við fara út að leika.	veður	none
+3	Ég held að þið séuð komin allt of seint.
+3	Kennarinn vonar að þú komir í tímann á morgun.	tími	none
+3	Ég held að þeir komi ekki heim í kvöld.	kvöld	none
+3	Þú kemur alltaf með nesti í skólann á morgnana.	nesti	small		nofill: með
+3	Mamma sagði mér að ég ætti að hjálpa þeim.
+3	Ég veit ekki hvar taskan hennar er núna.	taska	small|animal		pinned
+3	Annar bróðir minn býr í Reykjavík.	bróðir	person		pinned
+3	Við biðum í tuttugu mínútur eftir rútunni.	mínúta	none		pinned
+3	Sá strákur er í sama bekk og ég.	strákur	person		pinned
+3	Hvaða bók ætlar þú að lesa í kvöld?	bók	text		pinned
+3	Enginn strákur í bekknum vissi svarið.	strákur	person		pinned
+3	Sjálfur kennarinn gat ekki leyst dæmið.	kennari	person		pinned
+3	Báðir bræður mínir eru í fótbolta.	bróðir	person		pinned
+3	Öll börnin í bekknum mínum fóru saman í ferðalag.	barn	person		pinned
+3	Þrír kennarar töluðu við okkur í dag.	kennari	person		pinned
+# =============================================================================
+# LEVEL 4 — 9-11 words
+# =============================================================================
+4	Þegar ég vaknaði í morgun sá ég snjóinn fyrir utan gluggann.	gluggi	none
+4	Kennarinn sagði að við ættum að lesa bókina fyrir mánudaginn.	bók	text
+4	Ef þú ferð út í búð þarftu að muna eftir mjólkinni.	mjólk	food|drink
+4	Á meðan við borðuðum kvöldmat talaði pabbi um vinnuna sína.	vinna	any		pinned
+4	Þótt veðrið væri vont fórum við samt út að leika okkur.	veður	none
+4	Ég veit ekki hvort hundurinn kemur heim í kvöld.	hundur	being
+4	Systir mín segir að hún hafi séð hestinn í gær.	hestur	sight
+4	Þegar tíminn var búinn fóru allir krakkarnir út í frímínútur.	krakki	person		pinned
+4	Mamma bað mig um að hjálpa henni með matinn í kvöld.	matur	food		nofill: með
+4	Við ætlum að heimsækja ömmu sem býr úti á landi.	amma	person
+4	Þegar ég kom heim var maturinn tilbúinn.	matur	food		rk kk
+4	Mamma sagði að við ættum að fara snemma að sofa.	mamma	none
+4	Ef veðrið verður gott förum við í útilegu.	veður	none
+4	Kennarinn spurði hvort við hefðum lokið verkefninu.	verkefni	text
+4	Ég man þegar við bjuggum í gamla húsinu.	hús	place		pinned
+4	Hundurinn geltir alltaf þegar einhver kemur að dyrunum.	hundur	none
+4	Þótt ég væri þreyttur kláraði ég heimanámið.	heimanám	any
+4	Ég held að þessi bók sé betri en hin.	bók	any		pinned
+4	Við biðum þangað til rútan kom loksins.	rúta	being|vehicle
+4	Pabbi sagði mér að hann hefði gleymt lyklunum.	lykill	small
+4	Amma spurði hvort mig langaði í kakó.	kakó	food|drink
+4	Þegar snjórinn bráðnar kemur grasið í ljós.	snjór	none
+4	Ég vissi ekki að þú spilaðir á fiðlu.	fiðla	none
+4	Kennarinn útskýrði dæmið aftur svo allir skildu það.	dæmi	text
+4	Bróðir minn ætlar að verða læknir þegar hann verður stór.	læknir	job
+4	Þótt bókin væri löng las ég hana til enda.	bók	text
+4	Mamma vill að ég taki til í herberginu mínu.	herbergi	place		pinned
+4	Við hlógum þegar hundurinn hljóp á eftir skottinu á sér.	hundur	none
+4	Ef þú hjálpar mér með heimanámið hjálpa ég þér á morgun.	heimanám	text		nofill: með
+4	Ég sá að einhver hafði skilið gluggann eftir opinn.	gluggi	none
+4	Krakkarnir voru glaðir þegar skólanum lauk.	skóli	event
+4	Ég ætla að klára verkefnið áður en ég fer út.	verkefni	text|food
+4	Stelpan sem vann keppnina æfir á hverjum degi.	keppni	none
+4	Við vorum úti í garðinum þangað til það varð dimmt.	garður	=place|settlement		í
+4	Ég les alltaf bækur þegar það rignir úti.	bók	text
+4	Kennarinn sagði okkur að skila verkefninu á morgun.	kennari	person
+4	Þegar ég vakna á morgnana drekk ég vatn.	vatn	drink
+4	Ég ætla að læra þangað til ég skil þetta dæmi almennilega.	dæmi	any		pinned
+4	Hann sagðist hafa séð hvalinn úti á firðinum.	hvalur	none
+4	Ég gleymdi að hringja í ömmu eins og ég lofaði.	amma	person
+4	Við ætluðum í fjallgöngu en það rigndi allan daginn.	dagur	none		pinned
+4	Stelpan sem býr í næsta húsi er í mínum bekk.	hús	none		pinned
+4	Ég spurði kennarann hvort ég mætti fara á klósettið.	kennari	person
+4	Strákurinn sagði frá skemmtilegu ferðalagi í tímanum.	ferðalag	event|text|film		pinned
+3	Gamla myndin á veggnum er eftir afa minn.	mynd	thing
+4	Kennarinn sagði að ritgerðin mætti vera lengri.	ritgerð	text		rk kvk
+4	Þessi leið er fljótlegri en sú sem við fórum í morgun.	leið	none		pinned
+4	Erfiðasta prófið í vetur var í íslensku.	próf	event		pinned
+4	Fallegasta myndin á sýningunni var af fjöllunum.	mynd	thing		pinned
+4	Ef ég væri þú myndi ég lesa bókina aftur.	bók	text
+4	Mamma bað mig að þvo bílinn áður en gestirnir kæmu.	bíll	vehicle|clothing
+4	Krakkarnir klæddust hlýjum fötum áður en þeir fóru út.	krakki	person
+4	Kennarinn spurði hvort einhver hefði lesið kaflann.	kafli	text
+4	Ég hefði farið í bíó ef ég hefði vitað af myndinni.	mynd	film
+4	Hvorugur bíllinn komst upp brekkuna í snjónum.	bíll	vehicle		pinned
+4	Sumir krakkar í bekknum höfðu aldrei séð sjóinn.	krakki	person		pinned
+4	Þessir skór eru of litlir á mig núna.	skór	clothing		pinned
+4	Eftir að tíminn var búinn fóru krakkarnir heim til sín.	krakki	person
+4	Í byrjun vetrar var snjórinn þegar kominn í fjöllin.	vetur	none
+4	Í morgun komu þrír kennarar í heimsókn í skólann okkar.	kennari	person		pinned
+4	Í gær sá ég þrjá fugla sitja uppi á þakinu.	fugl	none
+3	Í gær hjálpaði ég þremur strákum með heimalærdóminn.	strákur	child
+4	Kennarinn sagði okkur frá þremur bókum sem við ættum að lesa.	bók	text		pinned
+4	Þegar tíminn var búinn fóru fjórar stelpur beint út í frímínútur.	stelpa	person		pinned
+4	Ég veit ekki hvort einhver krakki í bekknum á þessa tösku.	krakki	person		pinned
+4	Systir mín man ekki nöfn þessara stelpna úr gamla skólanum.	stelpa	person		pinned
+4	Kennarinn sagði að við ættum að hittast aftur eftir hádegi.	hádegi	none
+4	Þegar ég kom inn var maturinn kominn á borðið.	matur	food
+4	Ef þú hefðir hringt í mig hefði ég komið strax heim.
+4	Systir mín segist ætla að flytja til útlanda næsta sumar.	sumar	none		pinned
+4	Kennarinn sagði mér frá bestu bókinni sem hann hafði lesið.	bók	text
+4	Mamma sagði að nýja húsið væri miklu bjartara en það gamla.	hús	place		pinned
+4	Í gær talaði ég við eldri konu úr næsta húsi.	kona	person		pinned
+4	Kennarinn valdi bestu ritgerðirnar úr öllum bekkjum skólans.	ritgerð	text		pinned
+4	Bókin hafði verið lesin oft áður en ég fékk hana.	bók	text		rk kvk
+4	Kennarinn talaði við nýja nemandann sem byrjaði í gær.	nemandi	person		pinned
+4	Ég held að þetta sé fallegasta húsið í öllu hverfinu okkar.	hús	struct|place		pinned
+4	Mamma sagði að gamla hjólið mitt væri alveg ónýtt núna.	hjól	thing		pinned
+4	Í gær sagði mamma mér frá tveimur stelpum sem hún þekkti.	stelpa	person		pinned
+4	Kennarinn tók saman bækur þriggja nemenda eftir tímann í dag.	nemandi	person		pinned
+4	Í morgun sá ég fjögur börn hlaupa út á völlinn saman.	barn	living		pinned
+4	Ég man eftir garði fyrir aftan húsið.	garður	=place|building
+4	Ég man eftir hestinum sem stóð hérna.	hestur	living|building|furniture|vehicle|plant|struct
+4	Ég man eftir steininum sem lá hérna.	steinn	small|animal
+4	Ég man vel eftir einum degi í fyrra.	dagur	none
+2	Það rigndi dögum saman í fyrra.	dagur	none
+4	Ég man vel eftir ferðinni í fyrra.	ferð	any
+4	Ég man dag sem var mjög kaldur.	dagur	time
+4	Ég man daga sem voru mjög kaldir.	dagur	time
+4	Hann hélt á boltanum með annarri hendi.	hönd	none
+4	Hann hélt á boltanum með báðum höndum.	hönd	none
+4	Hún hélt fyrir eyrun með höndunum.	hönd	none
+4	Ég sá hendur á gömlu myndinni.	hönd	concrete
+4	Ég sá hendurnar á gömlu myndinni.	hönd	concrete
+4	Ég sagði frá bæjum úti á landi.	bær	settlement|building|living
+4	Ég sagði frá bæjunum úti á landi.	bær	settlement|building|living
+4	Hann kom með steina heim úr fjörunni.	steinn	none		nofill: með
+4	Hann sagði frá stærstu byggingunni í bænum.	bygging	struct|place		pinned
+4	Kennarinn hafði lengi haft áhuga á hugmyndinni.	hugmynd	any
+4	Hann sagði okkur frá mikilvægi hreyfingar.	hreyfing	none
+4	Við töluðum um gildi þessara hugmynda.	hugmynd	any		pinned
+# =============================================================================
+# LEVEL 5 — 11 words and up
+# =============================================================================
+5	Þegar ég var lítill fannst mér alltaf skemmtilegast að horfa á hestana á sumrin.	hestur	none
+5	Kennarinn útskýrði fyrir okkur í gær hvernig maður á að skrifa góða ritgerð.	ritgerð	text		pinned
+5	Eftir að við höfðum beðið lengi kom í ljós að rútan var farin.	rúta	being|vehicle
+5	Vinur minn sagði mér að hann hefði aldrei séð svona stóran hund.	hundur	living
+5	Mamma sagði að við gætum farið í bíó ef við kláruðum heimalærdóminn fyrst.	bíó	event|place		í
+5	Ég veit að þú getur þetta ef þú æfir þig á hverjum degi.	dagur	none
+5	Við fórum inn í húsið af því að það byrjaði að rigna.	hús	building|room		í
+5	Þegar ég kom heim úr skólanum sá ég að einhver hafði skilið dyrnar eftir opnar.	skóli	building
+5	Mamma sagði að ef við kláruðum heimanámið mættum við horfa á mynd.	mynd	film
+5	Ég ætlaði að hringja í ömmu í gærkvöldi en ég gleymdi því alveg.	amma	person
+5	Kennarinn útskýrði fyrir bekknum hvernig maður finnur stofn orðsins.	stofn	none
+5	Þótt veðrið væri leiðinlegt ákváðum við að fara í göngutúr niður að sjónum.	veður	none
+5	Bróðir minn sem býr í Reykjavík kemur í heimsókn um helgina.	helgi	none
+5	Ég man ekki hvort ég setti bækurnar í töskuna eða skildi þær eftir heima.	taska	none
+5	Við biðum úti í kuldanum þangað til rútan kom loksins að stoppistöðinni.	rúta	being|vehicle
+5	Amma sagði okkur frá því þegar hún var lítil og bjó úti á landi.	land	none
+5	Ég held að þessi æfing sé erfiðari en sú sem við gerðum í síðustu viku.	æfing	any		pinned
+5	Krakkarnir hlupu út á völl um leið og skólabjallan hringdi.	völlur	none
+5	Pabbi sagðist ætla að laga hjólið mitt þegar hann kæmi heim úr vinnunni.	hjól	thing		pinned
+5	Þegar snjórinn bráðnar á vorin kemur grænt grasið smám saman í ljós.	gras	none
+5	Ég spurði kennarann hvort ég mætti skila verkefninu seinna en hinir.	verkefni	text
+5	Stelpan sem situr við hliðina á mér í tímum er nýflutt til landsins.	stelpa	person
+5	Við sáum norðurljósin dansa yfir fjöllunum þegar við keyrðum heim í gærkvöldi.	fjall	nature|settlement
+5	Hundurinn okkar verður alltaf hræddur þegar það eru flugeldar á gamlárskvöld.	hundur	living		pinned
+5	Ég ætla að æfa mig á hverjum degi þangað til ég get spilað lagið villulaust.	lag	music
+5	Kennarinn sagði að við ættum að skrifa ritgerð um bók sem við höfum lesið.	ritgerð	text
+5	Þótt ég hefði lært vel fyrir prófið var ég samt taugaóstyrkur um morguninn.	próf	none
+5	Þegar við komum upp á fjallið horfðum við yfir allan bæinn og út á sjó.	bær	place		pinned
+5	Ég man vel eftir deginum þegar við fluttum í nýja húsið okkar.	dagur	none
+5	Mamma bað mig að passa litla bróður minn á meðan hún skryppi út í búð.	búð	place		í
+5	Ef þú hjálpar mér að taka til í herberginu getum við farið út að leika á eftir.	herbergi	room
+5	Ég vissi ekki að hægt væri að læra svona mikið á einum vetri.	vetur	none		pinned
+5	Við ætluðum í útilegu um helgina en hættum við ferðina þegar spáin versnaði.	spá	none
+5	Strákurinn sem vann hlaupið hafði æft á hverjum morgni allan veturinn.	hlaup	event
+5	Ég las alla bókina á einu kvöldi af því að ég gat ekki hætt.	kvöld	none		pinned
+5	Þegar rafmagnið fór af sátum við í myrkrinu og sögðum draugasögur.	myrkur	none
+4	Mér finnst skemmtilegast að lesa bók þegar ég er einn heima.	bók	text
+5	Kennarinn sagði okkur að skila ritgerðinni fyrir lok vikunnar.	vika	none
+5	Ég ætla að spara peningana mína þangað til ég á fyrir nýju hjóli.	peningur	none		pinned
+5	Þegar amma kom í heimsókn bakaði hún pönnukökur handa öllum krökkunum.	pönnukaka	none
+5	Við fórum snemma að sofa af því að við ætluðum að vakna snemma um morguninn.	morgunn	none
+5	Ég skildi ekki dæmið fyrr en kennarinn teiknaði það upp á töfluna.	tafla	none
+5	Þegar við komum heim úr ferðinni var kötturinn búinn að sofna í stólnum.	köttur	living
+5	Amma sagði mér söguna af gamla manninum sem bjó úti á nesinu.	maður	person
+5	Ég hafði aldrei séð svona stórt skip fyrr en við fórum niður á höfn.	skip	thing|struct
+5	Kennarinn útskýrði erfiðasta dæmið tvisvar fyrir okkur í tímanum.	dæmi	any		pinned
+5	Þótt bókin væri þykk las ég hana á tveimur dögum.	bók	text
+5	Litla barnið sofnaði í bílnum áður en við komum upp í sumarbústaðinn.	barn	person		pinned
+5	Skemmtilegasta ferðin í sumar var gangan upp á fjallið.	ferð	event		pinned
+5	Nýju skórnir mínir voru orðnir alveg blautir eftir gönguna í snjónum.	skór	clothing		pinned
+5	Þegar ég kom inn sá ég stærstu köku sem ég hafði nokkurn tímann séð.	kaka	thing		pinned
+5	Þegar við komum upp á fjallið var útsýnið enn fallegra en ég hafði búist við.	fjall	none
+5	Amma sagði mér að hún hefði átt miklu erfiðari daga þegar hún var ung.	dagur	time		pinned
+5	Ég held að þetta sé skemmtilegasta bókin sem ég hef lesið á þessu ári.	bók	text		pinned
+5	Vinur minn á miklu stærra herbergi en ég og hann kvartar samt alltaf.	herbergi	place		pinned
+5	Þegar við komum út stóðu fjórir bílar fyrir framan húsið okkar.	bíll	vehicle		pinned
+5	Mamma sagði að hún hefði keypt fjóra miða á tónleikana í kvöld.	miði	none		pinned
+5	Kennarinn útskýrði fyrir fjórum nemendum hvernig þeir ættu að leysa dæmið.	nemandi	person		pinned
+4	Ég hafði aldrei áður séð þrjár konur vinna svona vel saman.	kona	person
+5	Í blaðinu í gær var mynd af tveimur hestum sem stóðu úti í snjónum.	hestur	living		pinned
+5	Vinur minn sagði mér að hann ætti þrjú hjól heima hjá sér í bílskúrnum.	hjól	item		pinned
+5	Þegar ég kom heim í gær voru nöfn allra barnanna komin á listann.	barn	concrete		pinned
+5	Amma sagði mér að hún myndi aldrei gleyma andlitum systkina sinna.	systkini	person		pinned
+5	Þegar ég var lítill þótti mér maturinn hjá ömmu alltaf bestur í heiminum.	matur	food		rk kk
+5	Ég hefði aldrei trúað því að bókin myndi seljast svona vel um jólin.	bók	item|food
+5	Þegar við höfðum beðið lengi kom í ljós að fundinum hafði verið frestað.	fundur	event
+5	Mamma sagði að við ættum að klára verkefnið áður en við horfðum á myndina.	verkefni	text|food
+5	Ef þið kæmuð aðeins fyrr gætum við borðað saman áður en myndin byrjar.	mynd	film|event
+5	Þegar ég kom inn sá ég stóra mynd hanga uppi á veggnum.	mynd	thing		pinned
+5	Þegar við gengum upp á fjallið fundum við fallegustu steina sem ég hef séð.	steinn	small|nature		pinned
+5	Amma sagði mér frá gömlum bæjum sem stóðu hérna þegar hún var barn.	bær	struct|place		pinned
+5	Ég veit ekki hvort nýi kennarinn okkar er strangari en sá gamli.	kennari	person		pinned
+5	Kennarinn sagði okkur að hann myndi taka saman verkefni allra nemendanna.	nemandi	person		pinned
+5	Mamma útskýrði fyrir mér í gærkvöldi af hverju litur himinsins breytist.	himinn	none
+5	Þegar ég kom heim úr skólanum lágu bækur systkina minna út um allt gólf.	bók	small		pinned
+5	Amma sagði mér að hún hefði átt þrjá hesta þegar hún var ung.	hestur	animal|item		pinned
+5	Ég veit ekki hvort þrjár bækur duga fyrir alla krakkana í bekknum.	bók	small		pinned
+5	Þegar við komum heim stóðu þrjú hjól fyrir utan dyrnar hjá okkur.	hjól	vehicle		pinned
+5	Kennarinn sagði að hann hefði talað við fjóra nemendur um verkefnið.	nemandi	person		pinned
+5	Þótt hann segðist vera búinn með heimalærdóminn var bókin enn ólesin.	bók	text		rk kvk
+5	Systir mín sagði að hún myndi hjálpa mér með verkefnið um kvöldið.	verkefni	text		nofill: með
+2	Ég meiddi mig á hendinni í gær.	hönd	none
+5	Kennarinn sagði okkur í gær frá mikilvægi hvíldarinnar fyrir prófið.	hvíld	none
+4	Í lok þessara daga voru allir krakkarnir orðnir mjög þreyttir.	dagur	none
+# =============================================================================
+# LEVEL 6 — year 9: 11 words and up, and one of the constructions the
+# docstring lists (two subordinate clauses, þolmynd, viðtengingarháttur
+# þátíðar, óbein ræða, a long noun phrase). Written for v6.13 (item 14).
+# Every slot is "none": at this length a swapped noun reads wrong more often
+# than not, so the cloze asks for the noun the sentence was written with.
+# For the same reason there is no adjective standing right before a noun in a
+# settled form, except where any fitting adjective reads well ("Gamli
+# maðurinn", "Litli hundurinn"): such a pair becomes an adjective frame
+# (tasks/frames.js) and "í heilan mánuð" comes back as "í langan mánuð",
+# "Flestir vinir mínir" as "Bestir vinir mínir". tests/levels67.test.js lists
+# the frames these two levels give; read the list when it changes.
+# =============================================================================
+6	Kennarinn sagði að verkefnunum yrði skilað á föstudaginn ef allir væru búnir.	verkefni	none
+6	Þegar bókasafnið var opnað um morguninn biðu nokkrir nemendur fyrir utan dyrnar.	morgunn	none
+6	Skólastjórinn tilkynnti að nýja íþróttahúsið yrði tekið í notkun strax eftir áramótin.	skólastjóri	none
+6	Okkur var sagt að ferðinni hefði verið frestað vegna veðurs fram í næstu viku.	ferð	none
+6	Verðlaunin voru afhent í íþróttahúsinu um kvöldið eftir að öllum leikjunum var lokið.	leikur	none
+6	Mér var boðið í afmæli til vinar míns sem býr í næsta bæ.	vinur	none
+6	Nemendunum var kennt að leita að heimildum áður en þeir byrjuðu að skrifa ritgerðina.	heimild	none
+6	Myndin sem var sýnd í skólanum í gær var tekin upp á Vestfjörðum.	skóli	none
+6	Húsið var málað rautt í sumar af því að gamla málningin var farin að flagna.	hús	none
+6	Sagan var lesin upphátt fyrir bekkinn á meðan við teiknuðum myndir við hana.	mynd	none
+6	Hjólið mitt var lagað á verkstæðinu við höfnina á meðan ég var á æfingu.	verkstæði	none
+6	Allar tölvurnar í stofunni voru uppfærðar í gær svo að þær ynnu hraðar en áður.	stofa	none
+6	Leikritið var æft á hverjum degi þangað til allir kunnu textann sinn utanbókar.	dagur	none
+6	Sundlauginni var lokað í tvær vikur á meðan verið var að gera við hana.	sundlaug	none
+6	Ef ég hefði vitað að prófið væri svona erfitt hefði ég lesið kaflann aftur.	kafli	none
+6	Ég myndi fara með ykkur í sund ef ég þyrfti ekki að læra fyrir prófið.	próf	none
+6	Ef við ættum heima nær skólanum gæti ég gengið þangað á hverjum morgni.	morgunn	none
+6	Amma sagði að hún kæmi í heimsókn um helgina ef veðrið yrði gott.	helgi	none
+6	Þótt liðið hefði æft vel allan veturinn tapaði það fyrsta leiknum um vorið.	leikur	none
+6	Ég vildi óska þess að sumarfríið væri lengra svo að við gætum ferðast meira.	sumarfrí	none
+6	Það væri gaman ef allir í bekknum gætu farið saman í ferðalag í vor.	bekkur	none
+6	Ég hefði viljað vera lengur hjá afa og ömmu ef skólinn hefði ekki byrjað.	afi	none
+6	Ef ég ætti hund myndi ég fara með hann í göngutúr á hverjum degi.	dagur	none
+6	Þjálfarinn sagði að við myndum vinna leikinn ef við spiluðum eins vel og síðast.	leikur	none
+6	Ég vissi ekki að þú hefðir búið á Akureyri áður en þú fluttir hingað.
+6	Þótt hann væri yngstur í hópnum hljóp hann hraðar en allir hinir strákarnir.	hópur	none
+6	Við hefðum komist upp á tindinn ef þokan hefði ekki skollið á.	tindur	none
+6	Kennarinn sagði að við ættum að skila ritgerðinni áður en vikan væri liðin.	ritgerð	none
+6	Pabbi sagði að hann hefði aldrei áður séð svona marga fugla á tjörninni við skólann.	tjörn	none
+6	Vinkona mín spurði hvort ég hefði heyrt nýja lagið sem allir voru að tala um.	lag	none
+6	Fréttamaðurinn sagði að búist væri við miklum snjó á öllu landinu um helgina.	land	none
+6	Systir mín hélt því fram að hún hefði slökkt á ofninum áður en við fórum út.	ofn	none
+6	Afi sagðist hafa gengið í skólann á hverjum degi þegar hann var strákur.	dagur	none
+6	Hún sagðist ætla að læra á gítar um leið og hún fengi tíma til þess.	tími	none
+6	Í fréttunum var sagt að vegurinn yfir heiðina yrði lokaður fram á kvöld.	frétt	none
+6	Kennarinn bað okkur að skrifa um allt sem við hefðum lært í ferðinni á safnið.	ferð	none
+6	Þegar ég kom heim sá ég að einhver hafði borðað kökuna sem ég ætlaði að geyma.	kaka	none
+6	Stelpan sem flutti í götuna okkar í haust segir að hún sakni gömlu vinanna sinna.	vinur	none
+6	Maðurinn sem lagaði hjólið mitt sagði að ég þyrfti að skipta um dekk fyrir veturinn.	vetur	none
+6	Ég man ekki hvar ég lagði frá mér lyklana þegar ég kom heim í gærkvöldi.	lykill	none
+6	Áður en við lögðum af stað athugaði mamma hvort allir væru með regnföt og nesti.	mamma	none
+6	Krakkarnir sem æfa sund með mér segja að æfingarnar verði erfiðari eftir áramót.	æfing	none
+6	Þar sem snjórinn var svo mikill gátum við ekki opnað dyrnar fyrr en pabbi hafði mokað.	pabbi	none
+6	Við vissum ekki að safnið væri lokað á mánudögum fyrr en við komum að dyrunum.	safn	none
+6	Kennarinn sem kenndi okkur í fyrra sagði alltaf að æfingin skapaði meistarann.	meistari	none
+6	Ég vona að þið komist á tónleikana þótt þið þurfið að keyra langa leið.	leið	none
+6	Þó að prófið væri langt tókst flestum að ljúka því áður en tíminn rann út.	tími	none
+6	Litli hundurinn hennar ömmu minnar sefur alltaf á gamla teppinu við ofninn í stofunni.	teppi	none
+6	Allir nýju nemendurnir í tíunda bekk fengu stundatöflu og lykil að skápnum sínum.	skápur	none
+6	Gömlu svarthvítu myndirnar úr albúminu hans afa voru teknar þegar hann var á sjónum.	afi	none
+6	Stóra hvíta húsið á horninu við hliðina á bakaríinu hefur staðið autt í mörg ár.	bakarí	none
+6	Báðar eldri systur mínar æfa handbolta með sama liði og frænka okkar.	systir	none
+6	Fyrsti kaflinn í nýju kennslubókinni okkar í náttúrufræði fjallar um hringrás vatnsins.	vatn	none
+6	Næstum allir krakkarnir í hverfinu okkar ganga eða hjóla í skólann á hverjum morgni allan veturinn.	morgunn	none
+6	Síðasta æfing okkar fyrir stóra mótið á Akureyri verður haldin á fimmtudaginn í næstu viku.	æfing	none
+6	Margar af fallegustu gönguleiðum landsins liggja um svæði þar sem engir vegir eru.	land	none
+6	Tveir bestu vinir bróður míns ætla að koma með okkur í sumarbústaðinn um páskana.	bróðir	none
+6	Okkur var kennt að flokka ruslið rétt þegar nýju tunnurnar voru settar upp við skólann.	skóli	none
+6	Mér fannst skrýtið að enginn skyldi hafa tekið eftir villunni í bókinni.	villa	none
+6	Ef þú hefðir sagt mér frá þessu fyrr hefði ég getað hjálpað þér með verkefnið.
+6	Kennarinn lofaði að við fengjum að fara fyrr heim ef allir ynnu vel í tímanum.	tími	none
+6	Hún spurði mig hvort ég gæti lánað henni bókina þegar ég væri búinn með hana.	bók	none
+6	Ég hefði ekki trúað þessu ef ég hefði ekki séð það með eigin augum.
+6	Vinur minn sagði að hann kæmist ekki á æfingu vegna þess að hann væri kvefaður.	vinur	none
+6	Nýja bókin hennar var gefin út í haust og hefur þegar verið þýdd á þrjú tungumál.	tungumál	none
+6	Gestunum var boðið upp á heitt kakó og vöfflur þegar þeir komu inn úr kuldanum.	kuldi	none
+6	Þegar búið var að telja atkvæðin kom í ljós að tillagan hafði verið samþykkt.	tillaga	none
+6	Ljósin á jólatrénu í miðbænum voru kveikt við hátíðlega athöfn á sunnudaginn.	miðbær	none
+6	Mér var sagt að gamla kirkjan hefði verið flutt hingað frá öðrum bæ.	bær	none
+6	Krakkarnir voru beðnir um að ganga hljóðlega um gangana á meðan prófin stóðu yfir.	gangur	none
+6	Hún sagði mér að bróðir hennar hefði fengið vinnu á bóndabæ fyrir norðan.	vinna	none
+6	Ef veðrið hefði verið betra hefðum við getað séð alla leið út í eyjarnar.	veður	none
+6	Gamla brúin yfir ána við bæinn var byggð áður en afi minn fæddist.	bær	none
+6	Bréfið var skrifað fyrir mörgum árum en það fannst ekki fyrr en í fyrra.	bréf	none
+6	Glugginn hafði staðið opinn alla nóttina þótt það væri frost úti.	nótt	none
+6	Öllum nemendum í tíunda bekk var boðið á tónleikana sem voru haldnir í kirkjunni.	kirkja	none
+6	Ef strætó hefði komið á réttum tíma hefðum við ekki komið of seint á tónleikana.	tími	none
+6	Ég myndi fara oftar í sund ef sundlaugin væri ekki svona langt í burtu.	sund	none
+6	Læknirinn sagði að ég mætti ekki spila fótbolta fyrr en fóturinn væri gróinn.	fótbolti	none
+6	Kennarinn spurði af hverju enginn hefði boðið sig fram þegar hann leitaði að sjálfboðaliðum.	sjálfboðaliði	none
+6	Þjálfarinn spurði hvort einhver gæti komið fyrr á laugardaginn til að hjálpa við undirbúninginn.	undirbúningur	none
+6	Ég veit ekki hvort bókin sem ég pantaði kemur áður en ég fer í frí.	frí	none
+6	Leiknum var útvarpað beint svo að þeir sem komust ekki gætu hlustað heima.	leikur	none
+6	Hún hefði unnið hlaupið ef hún hefði ekki dottið fyrir framan markið.	mark	none
+6	Pabbi sagði að við myndum fara í útilegu um leið og hann fengi sumarfrí.	sumarfrí	none
+6	Ef ég mætti ráða yrðu alltaf pönnukökur í matinn á föstudögum í skólanum.	skóli	none
+6	Verkefninu sem okkur var sett fyrir í gær á að skila á mánudaginn.	verkefni	none
+6	Mamma sagði að ég mætti fara út þegar ég hefði tekið til í herberginu.	herbergi	none
+6	Um leið og bjallan hringdi hlupu allir út þótt kennarinn væri enn að tala.	kennari	none
+6	Þegar við höfðum borðað spurði pabbi hvort einhver vildi koma með í gönguferð.	pabbi	none
+6	Fundinum var frestað um tvær vikur vegna þess að margir voru veikir.	fundur	none
+6	Mamma sagði að kötturinn hefði legið í glugganum allan daginn og horft á fuglana.	gluggi	none
+6	Ég fór að velta því fyrir mér hvort ég hefði gleymt að loka glugganum.	gluggi	none
+6	Kennarinn spurði hvort við vildum taka þátt í spurningakeppni milli skólanna í bænum.	bær	none
+6	Mig hefur lengi langað til að læra tungumál sem enginn í bekknum mínum kann.	bekkur	none
+6	Strákurinn sem sat fyrir aftan mig í bíóinu hló hátt þegar myndin byrjaði.	bíó	none
+6	Ég spurði bókavörðinn hvort hann ætti bók um eldgos sem hentaði fyrir ritgerðina mína.	ritgerð	none
+6	Mamma spurði hvort ég vildi koma með í búðina eða vera heima hjá ömmu.	amma	none
+6	Okkur var lofað að við fengjum að sjá leikritið þegar æfingunum væri lokið.	æfing	none
+6	Mér var kennt að synda þegar ég var fimm ára og bjó fyrir norðan.
+6	Öllum bókunum var raðað í hillurnar áður en bókasafnið var opnað aftur.	bók	none
+6	Okkur var sagt að taka með okkur úlpu og húfu af því að spáð var kulda.
+6	Mér var bent á að ég hefði gleymt að skrifa nafnið mitt á prófið.	próf	none
+6	Henni var þakkað fyrir alla hjálpina þegar verkinu var loksins lokið um kvöldið.	verk	none
+6	Bílnum var lagt fyrir framan húsið á meðan við bárum töskurnar inn.	bíll	none
+6	Leiknum var frestað til morguns af því að völlurinn var á kafi í snjó.	leikur	none
+6	Ég hefði hringt í þig ef ég hefði vitað að þú værir kominn heim.
+6	Ef þið hefðuð lagt fyrr af stað hefðuð þið náð ferjunni sem fór á hádegi.	ferja	none
+6	Hann sagði að hann hefði aldrei komið til útlanda þótt hann væri tvítugur.
+6	Ég vissi ekki að hún ætti tvo bræður sem byggju í öðru landi.	land	none
+6	Kennarinn sagði að allir sem vildu gætu tekið prófið aftur í næstu viku.	próf	none
+6	Amma spurði hvort við vildum heldur fisk eða kjöt þegar við kæmum í mat.	kjöt	none
+6	Hann lofaði að hann kæmi aftur um leið og hann hefði lokið vinnunni.	vinna	none
+6	Stelpurnar sögðu að þær hefðu æft dansinn á hverjum degi í fjórar vikur.	dagur	none
+6	Ég held að hann hefði komið í veisluna ef honum hefði verið boðið.	veisla	none
+6	Ef kennarinn hefði ekki hjálpað mér hefði ég aldrei skilið þetta dæmi.	dæmi	none
+6	Það væri betra ef við hittumst fyrir utan bíóið áður en myndin byrjar.	bíó	none
+6	Mér þætti gaman ef þú gætir komið á tónleikana mína á sunnudaginn.
+6	Hún sagði að sig langaði að verða dýralæknir þegar hún yrði stór.	dýralæknir	none
+6	Við spurðum hvort við mættum fara fyrr heim af því að rútan átti að fara snemma.	rúta	none
+6	Þegar ég var yngri hélt ég að tunglið elti mig þegar ég gekk heim.	tungl	none
+6	Hann sagðist hafa týnt símanum sínum þegar hann var á leiðinni heim úr skólanum.	skóli	none
+6	Þær sögðust ætla að hittast fyrir utan sundlaugina þegar æfingunni væri lokið.	æfing	none
+6	Ég hlakka til þess að sumarið komi svo að við getum farið í útilegu.	sumar	none
+6	Okkur fannst skrýtið að enginn skyldi koma til dyra þegar við hringdum bjöllunni tvisvar.	bjalla	none
+6	Vegna þess að snjórinn var svo mikill komumst við ekki í skólann fyrr en um hádegi.	hádegi	none
+6	Gamli maðurinn sem býr við hliðina á okkur gefur fuglunum brauð á hverjum morgni.	morgunn	none
+6	Kennarinn sem tók við bekknum eftir áramót hafði áður kennt í litlum skóla úti á landi.	land	none
+6	Allir vinir mínir sem æfa fótbolta fara á æfingu þrisvar í viku.	fótbolti	none
+6	Eldri bróðir vinkonu minnar vinnur á bóndabæ fyrir norðan á hverju sumri.	sumar	none
+6	Margir af krökkunum í bekknum mínum hafa aldrei komið upp á jökul.	bekkur	none
+6	Stærsta herbergið á efri hæð gamla hússins var notað sem kennslustofa í mörg ár.	hús	none
+6	Ég skil ekki af hverju hann sagði ekki frá því að hann væri veikur.
+6	Ég lofaði ömmu að ég skyldi hjálpa henni í garðinum þegar veðrið batnaði.	garður	none
+6	Við ákváðum að bíða inni í skálanum þangað til það hætti að rigna.	skáli	none
+6	Hún gleymdi að segja mér að æfingunni hefði verið frestað til fimmtudags.	æfing	none
+6	Okkur var sýnt hvernig brauð er bakað áður en við fengum að smakka það.	brauð	none
+6	Ef ég þyrfti ekki að vakna snemma myndi ég koma með ykkur í bíó í kvöld.
+6	Ef við ynnum keppnina fengjum við að fara í ferð til Akureyrar.	keppni	none
+# =============================================================================
+# LEVEL 7 — year 10: 15 words and up, three clauses or more, usually two of
+# the level-6 constructions at once (þolmynd inside óbein ræða, a relative
+# clause inside a conditional …).
+# =============================================================================
+7	Ef ég hefði vitað að leiknum yrði frestað hefði ég ekki flýtt mér svona mikið heim úr skólanum.	skóli	none
+7	Amma sagði mér að þegar hún var lítil hefði mjólkin verið sótt á næsta bæ á hverjum morgni.	morgunn	none
+7	Þegar við komum loksins á áfangastað var okkur sagt að herbergin yrðu ekki tilbúin fyrr en búið væri að þrífa þau.	herbergi	none
+7	Bókin sem okkur var sagt að lesa fyrir prófið var svo löng að fáir náðu að klára hana í tæka tíð.	próf	none
+7	Kennarinn útskýrði að orðin sem við hefðum lært um haustið yrðu notuð í verkefninu sem við ættum að vinna eftir jól.	verkefni	none
+7	Hún sagðist hafa haldið að fundinum hefði verið aflýst þar sem enginn var mættur þegar hún kom.	fundur	none
+7	Ef mér hefði verið sagt frá keppninni fyrr hefði ég skráð mig áður en fresturinn rann út.	keppni	none
+7	Afi sagði okkur að bærinn þar sem hann ólst upp hefði verið yfirgefinn þegar vegurinn var lagður hinum megin við fjörðinn.	vegur	none
+7	Þegar búið var að tilkynna úrslitin sagði dómarinn að aldrei hefðu svona margir tekið þátt í keppninni áður.	keppni	none
+7	Vinur minn sagði að ef hann hefði ekki verið minntur á afmælið hefði hann gleymt að kaupa gjöf handa systur sinni.	systir	none
+7	Mér var sagt að stelpan sem vann upplestrarkeppnina í fyrra hefði æft sig fyrir framan spegil á hverju kvöldi.	kvöld	none
+7	Kennarinn sagði að þeim sem skiluðu verkefninu á réttum tíma yrði leyft að velja sér efni í næstu ritgerð.	tími	none
+7	Ég vissi ekki að brauðið sem við borðum á hverjum morgni væri bakað í litla bakaríinu við höfnina.	bakarí	none
+7	Þótt spáð hefði verið rigningu ákváðu skipuleggjendurnir að hátíðin yrði haldin úti eins og til stóð.	hátíð	none
+7	Læknirinn sagði að ef ég hvíldi fótinn í tvær vikur gæti ég byrjað að æfa aftur áður en mótið hæfist.	vika	none
+7	Mér finnst ótrúlegt að handritin sem voru skrifuð á skinn fyrir mörgum öldum skuli enn vera læsileg.	öld	none
+7	Safnvörðurinn sagði okkur að munirnir sem fundust við uppgröftinn hefðu verið notaðir af fólki sem bjó þar á landnámsöld.	fólk	none
+7	Ef ég hefði ekki verið beðinn um að passa litlu systur mína hefði ég farið með ykkur á skauta.	systir	none
+7	Okkur var bent á að þeir sem ætluðu að taka þátt í ferðinni þyrftu að skrá sig áður en vikan væri liðin.	ferð	none
+7	Ef brúin hefði ekki verið byggð þyrftu íbúarnir enn að keyra langa leið til að komast í næsta bæ.	leið	none
+7	Af því að rafmagnið fór af öllu hverfinu var okkur sagt að prófinu yrði frestað til næsta dags.	próf	none
+7	Hann sagðist ekki hafa vitað að bréfið sem lá á borðinu hefði verið ætlað honum fyrr en hann sá nafnið sitt á því.	borð	none
+7	Þótt mér hefði verið ráðlagt að byrja snemma á ritgerðinni beið ég með hana fram á kvöldið áður en ég átti að skila henni.	ritgerð	none
+7	Ef ég væri beðinn um að velja skemmtilegustu bókina sem ég hef lesið í vetur gæti ég ekki ákveðið mig strax.	bók	none
+7	Þjálfarinn sagði að leikmönnunum sem meiddust í síðasta leik yrði gefið frí þangað til þeir hefðu jafnað sig.	leikmaður	none
+7	Pabbi sagði að þegar hann var á mínum aldri hefði honum verið kennt að synda í köldum sjónum fyrir neðan bæinn.	sjór	none
+7	Ég vissi ekki að tónlistin sem er spiluð í byrjun þáttarins hefði verið samin af konu sem býr í næstu götu.	kona	none
+7	Ef okkur hefði verið sagt að taka með nesti hefðum við ekki þurft að leita að búð sem var opin á sunnudegi.	búð	none
+7	Kennarinn sagði að ritgerðunum sem við höfðum skrifað um bókina yrði skilað aftur þegar búið væri að fara yfir þær.	ritgerð	none
+7	Skólastjórinn sagði að ef fleiri nemendur skráðu sig í kórinn gætum við haldið tónleika fyrir jólin.	kór	none
+7	Þjálfarinn sagði að þeir sem hefðu komið á allar æfingarnar í vetur fengju að spila fyrsta leikinn á mótinu.	mót	none
+7	Okkur var sagt að sýningunni yrði frestað ef leikarinn sem fór með aðalhlutverkið væri enn veikur um helgina.	sýning	none
+7	Þótt ég hefði lesið alla kaflana tvisvar var ég ekki viss um að ég myndi ná prófinu.	próf	none
+7	Fréttamaðurinn sagði að vegurinn yrði lokaður þangað til búið væri að moka snjónum sem féll um nóttina.	snjór	none
+7	Þegar ég spurði af hverju búðinni hefði verið lokað svaraði konan að eigandinn væri fluttur úr bænum.	bær	none
+7	Systir mín heldur því fram að hún hefði náð strætó ef ég hefði ekki þurft að leita að skónum mínum.	skór	none
+7	Kennarinn bað þá sem höfðu lokið verkefninu að hjálpa hinum sem voru enn að skrifa.	verkefni	none
+7	Kennarinn sagði að sagan sem við ættum að lesa hefði verið skrifuð áður en höfundurinn varð frægur.	höfundur	none
+7	Kennarinn spurði hvort einhver gæti útskýrt af hverju laufin skiptu um lit á haustin áður en þau féllu af trjánum.	tré	none
+7	Konan sem rekur bókabúðina sagði að bækurnar sem við pöntuðum kæmu ekki til landsins fyrr en eftir jól.	land	none
+7	Vísindamennirnir sögðu að ef jöklarnir héldu áfram að bráðna myndu sumir þeirra hverfa áður en öldin væri liðin.	öld	none
+7	Kennarinn sagði að ef við skoðuðum textann vandlega myndum við sjá að höfundurinn hefði falið vísbendingar í fyrsta kaflanum.	kafli	none
+7	Þegar ég spurði afa hvernig hann hefði lært að tefla sagði hann að honum hefði verið kennt það á sjónum.	sjór	none
+7	Ef allir sem lofuðu að hjálpa til hefðu komið hefði verkinu verið lokið áður en gestirnir komu.	verk	none
+7	Ef snjónum hefði verið mokað af vellinum um morguninn hefði leikurinn getað byrjað á réttum tíma.	tími	none
+7	Bókin fjallar um strák sem kemst að því að afi hans hafði verið frægur skákmaður þegar hann var ungur.	strákur	none
+7	Ég spurði kennarann hvort ég mætti skila verkefninu eftir helgi af því að ég hafði verið veikur alla vikuna.	verkefni	none
+7	Bóndinn sagði að ef sumarið yrði þurrt þyrfti hann að vökva túnin á hverjum degi svo að grasið sprytti.	dagur	none
+7	Hún sagði að þótt æfingarnar væru erfiðar ætlaði hún ekki að hætta í liðinu fyrr en tímabilinu væri lokið.	tímabil	none
+7	Mig langar að vita hvort myndin sem var sýnd í sjónvarpinu í gær verður sýnd aftur um næstu helgi.	sjónvarp	none
+7	Þegar gestirnir voru farnir sagði mamma að hún væri ánægð með að við hefðum hjálpað til án þess að kvarta.	mamma	none
+7	Stjórnandi kórsins sagði að lagið sem yrði flutt á hátíðinni hefði verið valið af nemendunum sjálfum.	nemandi	none
+7	Kennarinn bað okkur að hringja í sig ef við sæjum einhvern sem þyrfti á hjálp að halda á leiðinni.	leið	none
+7	Þótt fáir hefðu búist við því að liðið kæmist í úrslit var því fagnað vel þegar það kom heim.	lið	none
+7	Kennarinn sagði að ef veðrið yrði gott á föstudaginn yrði íþróttatíminn haldinn úti á vellinum fyrir aftan skólann.	völlur	none
+7	Mér var sagt að bókin sem ég bað um hefði verið lánuð öðrum nemanda áður en ég kom á bókasafnið.	nemandi	none
+7	Ef okkur hefði verið sagt að prófinu yrði flýtt hefðum við byrjað að lesa fyrir það miklu fyrr.	próf	none
+7	Þegar búið var að slökkva ljósin sagði leiðsögumaðurinn að við skyldum bíða þangað til augun hefðu vanist myrkrinu.	myrkur	none
+7	Afi sagði að þegar hann var ungur hefði öllum börnunum í sveitinni verið kennt að synda í lauginni við ána.	laug	none
+7	Ég hefði ekki vitað að leiknum hefði verið frestað ef vinur minn hefði ekki hringt í mig um morguninn.	leikur	none
+7	Mamma sagði að ef ég kláraði heimanámið áður en hún kæmi heim mætti ég bjóða vinum mínum í mat.	vinur	none
+7	Hann sagði að ef honum hefði verið boðið fyrr hefði hann getað tekið sér frí úr vinnunni til að koma.	vinna	none
+7	Okkur var sagt að safnið sem við ætluðum að skoða væri lokað vegna þess að verið væri að gera við þakið.	þak	none
+7	Ég hélt að ég hefði týnt lyklunum þangað til mér var sagt að þeir hefðu fundist í íþróttahúsinu.	lykill	none
+7	Ef ég hefði ekki séð það sjálfur hefði ég ekki trúað því að hundurinn gæti opnað dyrnar.	hundur	none
+7	Systir mín sagði að hún myndi lána mér hjólið sitt ef ég lofaði að skila því áður en æfingin hennar byrjaði.	hjól	none
+7	Kennarinn sagði að verkefnin sem hefðu verið valin yrðu hengd upp á vegg svo að foreldrarnir gætu skoðað þau.	verkefni	none
+7	Þegar við spurðum hvenær húsið hefði verið byggt sagði eigandinn að það hefði staðið þar frá því að afi hans var barn.	barn	none
+7	Mér var sagt að ef ég æfði mig á hverjum degi gæti ég spilað lagið villulaust áður en tónleikarnir yrðu haldnir.	dagur	none
+7	Ég vissi ekki að bókin sem ég fékk í jólagjöf hefði verið skrifuð af konu sem ólst upp í sömu götu og ég.	kona	none
+7	Stelpan sem vann keppnina sagði að hún hefði aldrei trúað því að hún kæmist svona langt þegar hún byrjaði að æfa.	keppni	none
+7	Ef strákarnir hefðu sagt frá því strax að rúðan hefði brotnað hefði enginn orðið reiður.	rúða	none
+7	Ég hefði viljað að mér hefði verið sagt frá breytingunni áður en ég keypti miðann á leikinn.	breyting	none
+7	Hún sagði að ef hún mætti velja myndi hún búa í litlu húsi við sjóinn þar sem hún gæti átt hesta.	hús	none
+7	Mér var ráðlagt að lesa spurningarnar vandlega áður en ég byrjaði að skrifa svo að ég misskildi ekkert.	spurning	none
+7	Þeim sem komu of seint var sagt að bíða fyrir utan þangað til hléið byrjaði svo að þeir trufluðu ekki hina.
+7	Þegar okkur var sagt að ferðinni yrði aflýst ef færri en tíu skráðu sig fórum við strax að hringja í vini okkar.	ferð	none
+7	Hún sagði að henni hefði verið sagt að bíða þangað til nafnið hennar yrði kallað upp.	nafn	none
+# =============================================================================
+# KINDS OF SUBORDINATE CLAUSE (v6.13, item 28) — levels 2-5
+# =============================================================================
+# Written for "Tegundir aukasetninga" (tasks/setningagerd.js). The bank had 11
+# orsakarsetningar, 16 viðurkenningarsetningar and not one clause of purpose or
+# of result whose kind the build could vouch for, and nearly all of what it had
+# stood at levels 6 and 7. These are short on purpose: the question is what
+# KIND of clause, not how long a sentence a pupil can hold.
+#
+# What makes a clause count (phrases.py): the conjunction is one with a single
+# reading, and for *svo að* the verb SHOWS its mood — *komst / kæmist*, *sat /
+# sæti*, never *heyrði* or *gleymdi*, where the indicative and the subjunctive
+# look alike. Result has the indicative, purpose the subjunctive.
+# No slots: none of these is a cloze frame.
+# afleiðingarsetningar: *svo að* + framsöguháttur
+3	Ég gleymdi lyklunum svo að ég komst ekki inn.
+3	Snjórinn var djúpur svo að bíllinn sat fastur.
+4	Strætó kom of seint svo að ég náði ekki fyrsta tímanum.
+5	Ég svaf illa í nótt svo að ég er syfjaður í dag.
+3	Hundurinn gelti alla nóttina svo að enginn gat sofið.
+5	Það var hált úti svo að margir duttu á leiðinni í skólann.
+4	Vegurinn var lokaður svo að við urðum að snúa við.
+3	Bókin var uppseld svo að ég fékk hana ekki.
+3	Kennarinn var veikur svo að tíminn féll niður.
+4	Glugginn stóð opinn svo að það var kalt í stofunni.
+4	Ég gleymdi nestinu heima svo að ég var svangur allan daginn.
+4	Veðrið var vont svo að við vorum inni allan daginn.
+4	Rafmagnið fór af svo að við gátum ekki horft á myndina.
+4	Það snjóaði mikið í nótt svo að jörðin er hvít.
+4	Mamma keyrði okkur svo að við þurftum ekki að ganga.
+4	Ég æfði mig vel svo að mér gekk vel í prófinu.
+3	Brúin var lokuð svo að við fórum aðra leið.
+4	Taskan var þung svo að ég gat varla borið hana.
+# tilgangssetningar: *svo að* / *til þess að* + viðtengingarháttur
+4	Ég vaknaði snemma svo að ég kæmi ekki of seint.
+3	Mamma talaði hægt svo að amma gæti skilið hana.
+3	Við lokuðum glugganum svo að kötturinn kæmist ekki út.
+3	Kennarinn talar hátt svo að allir heyri í honum.
+5	Ég lána þér bókina svo að þú getir lesið hana um helgina.
+4	Pabbi hélt á mér svo að ég sæi yfir girðinguna.
+3	Við kveiktum ljósið svo að við sæjum betur.
+3	Við töluðum lágt til þess að barnið gæti sofið.
+5	Ég fór snemma að sofa til þess að ég gæti vaknað snemma.
+5	Hún æfir á hverjum degi til þess að hún komist í liðið.
+5	Við tókum með okkur nesti til þess að við yrðum ekki svöng.
+4	Ég stillti klukkuna til þess að ég svæfi ekki yfir mig.
+5	Ég skrifaði nafnið mitt í bókina til þess að enginn tæki hana.
+4	Kennarinn las hægt til þess að allir gætu skrifað textann niður.
+4	Við lögðum snemma af stað svo að við næðum ferjunni.
+3	Ég læsti hjólinu svo að enginn tæki það.
+4	Ég setti á mig húfu svo að mér yrði ekki kalt.
+4	Pabbi lyfti litlu systur minni upp svo að hún sæi fuglana.
+# orsakarsetningar: *af því að*, *vegna þess að*
+4	Ég fór snemma heim af því að ég var veikur.
+3	Við vorum inni vegna þess að veðrið var vont.
+5	Við komum of seint af því að bíllinn fór ekki í gang.
+3	Ég er glaður af því að sólin skín.
+3	Hundurinn gelti af því að hann heyrði í bílnum.
+3	Stelpan grét af því að hún týndi bangsanum sínum.
+3	Leikurinn féll niður vegna þess að völlurinn var blautur.
+4	Ég gat ekki sofið vegna þess að hundurinn gelti alla nóttina.
+4	Af því að ég var veikur fór ég ekki í skólann.
+4	Vegna þess að veðrið var gott borðuðum við úti í garði.
+5	Mamma var glöð af því að ég tók til í herberginu mínu.
+4	Krakkarnir hlógu af því að hundurinn elti skottið á sér.
+4	Við fórum í sund vegna þess að sólin skein allan daginn.
+4	Ég keypti bókina af því að vinur minn mælti með henni.
+3	Kennarinn hrósaði okkur vegna þess að allir skiluðu verkefninu.
+# viðurkenningarsetningar: *þótt*, *þó að*, *enda þótt*
+2	Ég fór út þótt það væri kalt.
+3	Hún kom í skólann þótt hún væri veik.
+3	Hann borðaði fiskinn þótt honum þætti hann vondur.
+3	Við unnum leikinn þótt besti leikmaðurinn væri veikur.
+2	Amma prjónar enn þótt hún sjái illa.
+4	Ég skil þetta ekki þótt ég hafi lesið kaflann tvisvar.
+3	Þótt húsið sé lítið búa þar sex manns.
+3	Þó að ég væri veikur kláraði ég verkefnið.
+4	Strákurinn hélt áfram að hlaupa þó að hann væri orðinn svangur.
+3	Þó að bíllinn sé gamall gengur hann vel.
+2	Hún brosti þó að hún væri leið.
+3	Enda þótt veðrið væri vont komu allir á æfingu.
+3	Þótt það væri orðið dimmt vildi enginn fara heim.
+3	Við fórum í gönguferð þó að veðrið væri leiðinlegt.
+# skilyrðissetningar: *ef*, *nema*
+2	Ég kem með þér ef ég má.
+2	Við förum ekki út nema veðrið batni.
+3	Þú færð ekki eftirrétt nema þú klárir matinn.
+4	Ég lána þér hjólið mitt ef þú lofar að fara varlega.
+2	Hundurinn bítur ekki nema einhver stríði honum.
+3	Ef þú ert svangur getur þú fengið brauð.
+4	Ef það verður gott veður á morgun förum við í sund.
+2	Ef þú flýtir þér nærð þú strætó.
+# spurnarsetningar
+2	Ég veit ekki hvenær rútan kemur.
+2	Mamma spurði hvar ég hefði verið.
+3	Kennarinn spurði hvenær við ætluðum að skila verkefninu.
+3	Pabbi spurði hvort ég væri búinn að læra.
+2	Ég skil ekki hvernig þetta tæki virkar.
+3	Hún vildi vita hvort við kæmum í afmælið.
+2	Ég man ekki hvar ég lagði símann.
+# skýringarsetningar
+2	Ég veit að þú segir satt.
+2	Mamma heldur að ég sé svangur.
+3	Mér finnst að við ættum að fara heim.
+2	Kennarinn sagði að prófið væri á föstudaginn.
+2	Hún lofaði að hún kæmi á morgun.
+3	Ég vona að þú komir í afmælið mitt.
+# tilvísunarsetningar
+3	Hundurinn sem býr í næsta húsi geltir mikið.
+2	Þetta er strákurinn sem vann keppnina.
+2	Kakan sem amma bakaði var mjög góð.
+2	Ég þekki stelpuna sem situr við gluggann.
+2	Bíllinn sem pabbi keypti er rauður.

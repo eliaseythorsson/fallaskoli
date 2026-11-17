@@ -60,6 +60,17 @@ a few sentences that make one smile ("Blaðran er þung", "Ég á þrjú geimski
 
 ## Still open
 
+> **v6.13 (critique item 30):** points 1 and 2 below were taken up. Every
+> unclassified noun was read (`noun_classes.py`: `ABSTRACT`, `NO_FRAME`, and
+> "in no list = not used in a frame"), every adjective has the nouns it is
+> shown with or none, and the adjectives that are not compared have lost
+> their comparison forms (`adj_classes.py`). `node tools/semantic-sample.mjs
+> 300 <seed>` prints generated questions as text for reading, and
+> `tests/semantic.test.js` keeps a list of outputs that must not come back.
+> What is still soft: `group` in frames where people act ("Mamma gaf
+> stjórninni mjólk"), `object` on the beach ("Fjöldi gaffla lá í fjörunni"),
+> and the abstract nouns after *án*.
+
 1. **Soft spots in generated sentences** (grammatical, sometimes odd):
    - the 1,380 unclassified nouns are `abstract` and meet only the frames that
      take anything; ~15 obviously concrete ones were classified, the rest

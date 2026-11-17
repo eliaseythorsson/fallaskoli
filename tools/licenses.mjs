@@ -10,6 +10,7 @@
  * build but not in the table here, this tool stops and says what is missing.
  *
  *   node tools/licenses.mjs      -> data/licenses.js
+ *   node tools/licenses.mjs <file>   -> that file instead (tests/reproducible.test.js)
  */
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -17,6 +18,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const p = (...x) => path.join(root, ...x);
+const OUT = process.argv[2] ? path.resolve(process.argv[2]) : p("data/licenses.js");
 
 /* What is known about each package. The licences are copied from the publisher
    itself. */
@@ -35,6 +37,9 @@ const KNOWN = {
   "puppeteer-core": { nm: "puppeteer-core", who: "Google LLC", lic: "Apache-2.0",
     url: "https://github.com/puppeteer/puppeteer",
     what: "Stýring á Chrome í vafraprófunum. Fylgir ekki afurðinni." },
+  typescript: { nm: "TypeScript", who: "Microsoft Corp.", lic: "Apache-2.0",
+    url: "https://github.com/microsoft/TypeScript",
+    what: "Villuleit í kóðanum við smíði. Fylgir ekki afurðinni." },
 };
 
 /* Data sets and other things that are not packages. */
@@ -86,12 +91,33 @@ if (missing.length) {
 }
 
 const packages = used.map((u) => ({ ...KNOWN[u.id], id: u.id, ver: u.ver, kind: u.kind }));
-const out = {
-  built: new Date().toISOString().slice(0, 10),
+const body = {
   app: { nm: "Fallaskóli", lic: "engin markaðssetning, engin gjaldtaka" },
   packages,
   data: DATA_SOURCES,
 };
-await writeFile(p("data/licenses.js"),
+
+/* The date the list was made (shown as "Listinn var smíðaður …"). It used to
+   be the day the build ran, so two builds of the same source on two days —
+   or on the owner's Mac and in CI — never gave the same file (item 80).
+   Now it is the day the list last CHANGED: if what is already in
+   data/licenses.js says the same apart from the date, its date is kept. A
+   new list takes SOURCE_DATE_EPOCH if it is set (the reproducible-builds
+   convention), otherwise today. */
+async function previousDate() {
+  try {
+    const text = await readFile(OUT, "utf8");
+    const old = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+    const { built, ...rest } = old;
+    return JSON.stringify(rest) === JSON.stringify(body) && /^\d{4}-\d{2}-\d{2}$/.test(built) ? built : null;
+  } catch { return null; }
+}
+const epoch = Number(process.env.SOURCE_DATE_EPOCH);
+const out = {
+  built: (await previousDate())
+    || (Number.isFinite(epoch) && epoch > 0 ? new Date(epoch * 1000) : new Date()).toISOString().slice(0, 10),
+  ...body,
+};
+await writeFile(OUT,
   "export const LICENSES=" + JSON.stringify(out, null, 1) + ";\nexport default LICENSES;\n", "utf8");
-console.log(`licences: ${packages.length} packages, ${DATA_SOURCES.length} data sources -> data/licenses.js`);
+console.log(`licences: ${packages.length} packages, ${DATA_SOURCES.length} data sources -> ${path.relative(root, OUT)}`);

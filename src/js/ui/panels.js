@@ -6,15 +6,19 @@ import { rarityOf, wordRarity, shareText, measurable, tierMove, TIERS,
 import { METRICS } from "../core/leaderboard.js";
 import { overallLevel, overallRank, levelBand } from "../core/progress.js";
 import { showcaseOf, togglePin, titleOf, titlesOf, titleText, medalOf, medalByTier,
-         holders, windowed, compare, feed, weekXp, SHOWCASE_MAX } from "../core/social.js";
+         holders, windowed, compare, feed, weekXp, weekKey, SHOWCASE_MAX } from "../core/social.js";
+import { weekGains, MEND_POINTS, MEND_RUN, REVIEWS_PER_DAY } from "../core/mending.js";
 import { crestOf } from "../core/profile.js";
+import { renderClassGoal } from "./classgoal.js";
 import { ALL_CLASSES } from "../core/marks.js";
 import { collectionByClass } from "../core/collection.js";
 import { vocabScore, weakWords, HEALTH, DRILL, STATUS_LABEL } from "../core/wordhealth.js";
-import { $, esc } from "./dom.js";
+import { $, esc, keypadOn, keypadEnv } from "./dom.js";
 import { renderPolicyEditor } from "./policyui.js";
 import { holidayName } from "../core/calendar.js";
+import { weekGoalOf } from "../core/state.js";
 import { LICENSES } from "../../../data/licenses.js";
+import { renderL2Setting } from "./secondlang.js";
 
 /* ---------- dates on badges --------------------------------------------- */
 
@@ -58,6 +62,8 @@ const GROUPS = [
      be visible from day one so the child knows they exist. */
   ["yfir", "Það sem allt endar í"],
   ["fyrst", "Fyrstu skrefin"],
+  /* Item 56: what pays for getting better, high on the page on purpose. */
+  ["framfarir", "Framfarir"],
   ["röð", "Réttar í röð"],
   ["dagar", "Dagar og þrautseigja"],
   ["safn", "Samtals"],
@@ -231,6 +237,7 @@ export function renderBadges(app) {
 /** Skólastofan: the board and the people. Drawn when that tab is opened and
     again when the server's picture arrives (app.js `redrawOpenView`). */
 export function renderClass(app) {
+  renderClassGoal(app);               // item 59: ui/classgoal.js
   renderLeaderboard(app);
   renderRoster(app);
 }
@@ -578,6 +585,7 @@ export function renderLeaderboard(app) {
     const cut = shown.length !== rows.length;
     box.innerHTML = `<div class="boardpick" id="boardpick"></div>
       ${metric.id === "week" ? weekLine(app, rows, me) : ""}
+      ${metric.id === "framfarir" ? gainsLine(app) : ""}
       ${metric.id === "vocab" ? `<p class="weekline">Orðaforði: 1 stig fyrir hvert orð í safninu (2 fyrir
         sjaldgæft orð), 2 í viðbót fyrir orð á valdi þínu og 1 fyrir orð sem þú hefur bjargað. Orð í
         hættu telur ekkert fyrr en því er bjargað — svo það borgar sig að halda öllu safninu við.</p>` : ""}
@@ -615,6 +623,23 @@ export function renderLeaderboard(app) {
     await app.loadBoard();
     renderLeaderboard(app);
   };
+}
+
+/* The sentence above "Framfarir" (item 58): what it counts, and this pupil's
+   own week in words — so a zero says where the points are, not that the
+   pupil is last. Read from the pupil's own state, the same function the
+   board's number comes from (core/mending.js `weekGains`). */
+function gainsLine(app) {
+  const g = weekGains(app.S, weekKey(new Date()));
+  const mine = g.mended || g.reviews
+    ? `Þín vika: ${g.mended ? `${g.mended} ${g.mended === 1 ? "villumynstur lagað" : "villumynstur löguð"}` : ""}${
+      g.mended && g.reviews ? " og " : ""}${g.reviews ? `${g.reviews} ${
+        g.reviews % 10 === 1 && g.reviews % 100 !== 11 ? "upprifjun tókst" : "upprifjanir tókust"}` : ""}.`
+    : "Ekkert komið enn í þessari viku — upprifjanirnar fremst í Dagsins lotu eru fljótlegasta leiðin.";
+  return `<p class="weekline">Framfarir telja það sem lagast í vikunni, ekki hve mikið er æft:
+    ${MEND_POINTS} stig fyrir hvert villumynstur sem þú lagar (${MEND_RUN} rétt í röð eftir að það var
+    algengt hjá þér) og 1 fyrir hverja upprifjun sem tekst, mest ${REVIEWS_PER_DAY} á dag. Talan byrjar
+    á núlli hjá öllum á mánudegi. ${esc(mine)}</p>`;
 }
 
 /* The sentence above the weekly board: how far it is to the next person, and
@@ -740,8 +765,14 @@ function wordChip(w, stats) {
 export function renderSettings(app) {
   const S = app.S;
   $("goalin").value = S.goal;
-  $("set-decay").checked = S.settings.decay !== false;
+  $("weekin").value = String(weekGoalOf(S));
+  $("set-decay").checked = S.settings.decay === true;
   $("set-gloss").checked = S.settings.glossary !== false;
+  $("set-comfort").checked = S.settings.comfort === true;
+  /* Item 53: the box shows what is in force, the guess included, so ticking
+     it always does what it looks like it will. */
+  $("set-keys").checked = keypadOn(S.settings, keypadEnv());
+  renderL2Setting(app);                     // item 45, ui/secondlang.js
 
   S.policy ||= { skills: {}, types: {}, levels: {}, attrs: {}, safeVocab: null };
   const view = {
@@ -752,7 +783,8 @@ export function renderSettings(app) {
   };
   renderPolicyEditor($("policyeditor"), view, {
     ceiling: S.allowed || null,
-    /* The cached policy in tasks/index.js is now stale — say so, or the next
+    teacherFold: true,        // item 50: types, levels and features behind a disclosure
+    /* The policy app.js keeps for the builders is now stale — say so, or the next
        question is drawn from the material that was just switched off. */
     onChange: () => { app.reloadPolicy(); app.save(); },
   });

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BADGES, checkBadges } from "../src/js/core/badges.js";
-import { SKILL_IDS } from "../src/js/core/skills.js";
+import { BADGES, checkBadges, noteAccidents } from "../src/js/core/badges.js";
+import { SKILLS, SKILL_IDS } from "../src/js/core/skills.js";
 import { blankState, newSession, record, badgeContext } from "../src/js/core/state.js";
 
 test("there are many badges and every id is unique", () => {
@@ -117,8 +117,15 @@ test("a run within a skill is independent of the overall run", () => {
 /* v6.9: 373 badges made each one worth little. */
 test("the catalogue that can still be won is about half what it was", async () => {
   const { ACTIVE_BADGES, RETIRED_IDS, isRetired } = await import("../src/js/core/badges.js");
-  assert.ok(ACTIVE_BADGES.length <= 210, `${ACTIVE_BADGES.length} active badges`);
-  assert.ok(ACTIVE_BADGES.length >= 150, `${ACTIVE_BADGES.length} active badges`);
+  /* v6.13, item 56: the badges that pay for getting better (group
+     "framfarir": mending, reviews on time, two mastery marks per skill) are
+     counted on their own. The rule of v6.9 still holds for everything else,
+     which item 56 made smaller, not larger, to make room. */
+  const volume = ACTIVE_BADGES.filter((b) => b.group !== "framfarir");
+  const better = ACTIVE_BADGES.filter((b) => b.group === "framfarir");
+  assert.ok(volume.length <= 210, `${volume.length} active badges outside Framfarir`);
+  assert.ok(volume.length >= 150, `${volume.length} active badges outside Framfarir`);
+  assert.ok(better.length <= 2 * SKILLS.length + 10, `${better.length} Framfarir badges`);
   const ids = new Set(BADGES.map((b) => b.id));
   for (const id of RETIRED_IDS) assert.ok(ids.has(id), `retired id ${id} does not exist`);
   for (const b of BADGES) assert.equal(!!b.retired, isRetired(b.id), b.id);
@@ -140,4 +147,60 @@ test("a retired badge someone already owns does not block Öll merkin", async ()
   const won = checkBadges({ skillRun: {}, skillCorrect: {}, skillLevel: {}, collection: {} },
     owned, {}, ACTIVE_BADGES);
   assert.ok(won.some((b) => b.id === "all_badges"), won.map((b) => b.id).join(" "));
+});
+
+/* ---- the accident counters (§14d), counted when a question ends ----
+   Moved out of app.js `finish` (critique item 76), where no test reached them. */
+
+test("slips in a row: counted on right answers accepted with a slip, reset otherwise", () => {
+  const S = blankState(), sess = newSession(S);
+  const cur = { word: "hestur|kk", cell: "NFET" };
+  noteAccidents(S, sess, cur, { correct: true, slip: true });
+  noteAccidents(S, sess, cur, { correct: true, slip: true });
+  assert.equal(sess.slipRun, 2);
+  noteAccidents(S, sess, cur, { correct: null });
+  assert.equal(sess.slipRun, 2, "a question with no right answer changes nothing");
+  noteAccidents(S, sess, cur, { correct: true, slip: true });
+  assert.equal(sess.slipRun, 3);
+  assert.equal(badgeContext(S, sess).slipRun, 3);
+  noteAccidents(S, sess, cur, { correct: true });
+  assert.equal(sess.slipRun, 0, "a clean right answer ends the run");
+  noteAccidents(S, sess, cur, { correct: true, slip: true });
+  noteAccidents(S, sess, cur, { correct: false });
+  assert.equal(sess.slipRun, 0, "so does a wrong one");
+});
+
+test("one word in all four cases: right answers only, and never from a whole table", () => {
+  const S = blankState(), sess = newSession(S);
+  const at = (cell, extra = { correct: true }, word = "hestur|kk") => noteAccidents(S, sess, { word, cell }, extra);
+  at("NFET"); at("ÞFFT"); at("NFFT");
+  assert.equal(sess.wordCasesBest, 2, "the same case twice is one case");
+  at("ÞGFET", { correct: false });
+  at("EFET", { correct: null });
+  assert.equal(sess.wordCasesBest, 2, "only right answers count");
+  at("ÞGFET", { correct: true, perfectTable: true });
+  assert.equal(sess.wordCasesBest, 2, "a table hands over all four at once");
+  at("GM-FH-NT-3P-ET", { correct: true }, "fara|so");
+  assert.deepEqual(Object.keys(sess.wordCases), ["hestur|kk"], "a cell that is no case is not counted");
+  at("ÞGFET"); at("EFFT");
+  assert.equal(sess.wordCasesBest, 4);
+  assert.deepEqual(sess.wordCases["hestur|kk"], ["NF", "ÞF", "ÞGF", "EF"]);
+  at("NFET", { correct: true }, "bók|kvk");
+  assert.equal(sess.wordCasesBest, 4, "the best word so far is kept");
+  assert.equal(badgeContext(S, sess).wordCases, 4);
+});
+
+test("the goldfish: the first miss on a word that had gone right five times", () => {
+  const S = blankState(), sess = newSession(S);
+  const cur = { word: "hestur|kk", cell: "NFET", changes: 2 };
+  S.words["hestur|kk"] = { c: 5, w: 1 };
+  assert.deepEqual(noteAccidents(S, sess, cur, { correct: false }), { goldfish: true, pickChanges: 2 });
+  S.words["hestur|kk"] = { c: 4, w: 1 };
+  assert.equal(noteAccidents(S, sess, cur, { correct: false }).goldfish, false, "four right is not enough");
+  S.words["hestur|kk"] = { c: 9, w: 2 };
+  assert.equal(noteAccidents(S, sess, cur, { correct: false }).goldfish, false, "not the first miss");
+  S.words["hestur|kk"] = { c: 5, w: 1 };
+  assert.equal(noteAccidents(S, sess, cur, { correct: true }).goldfish, false, "a right answer");
+  assert.equal(noteAccidents(S, sess, { cell: "NFET" }, { correct: false }).goldfish, false, "no word");
+  assert.deepEqual(noteAccidents(S, sess, null, { correct: null }), { goldfish: false, pickChanges: 0 });
 });

@@ -15,12 +15,21 @@
  * *bíðum*, it is the past tense. Beygingartöflur stay strict — a table colours
  * each cell, and a forgiven cell would not add up.
  *
- * One decision, made here, read by every submit handler. */
+ * One decision, made here, read for every written answer by core/answer.js
+ * (`judge`) — and so the same on the screen, in a duel and in a simulation. */
 
 import { readMark } from "./marks.js";
 
 /* How much of the XP survives. */
 export const SLIP_XP = { accents: 0.95, greinir: 0.90, tid: 0.90 };
+
+/* v6.13 (critique item 42): a written answer that was wrong may be tried once
+ * more, with the rule in view, before the right form is shown. A right second
+ * try earns this share of what a right first try would have earned now — the
+ * answer is still a miss in every record (core/answer.js `judgeRetry` says
+ * which), and the half is what the retry itself is worth. Which question
+ * types offer a second try is decided in core/answer.js (`retryAllowed`). */
+export const RETRY_XP = 0.5;
 
 /* The headings. `CHEERS_OK` stays for a clean answer; these replace it, and
    they open with praise on purpose — the answer was right. */
@@ -110,7 +119,8 @@ export function slipFor(g, target) {
 /**
  * The whole verdict for one written answer, in one call.
  *
- * Returns what every submit handler needs and nothing it does not:
+ * Returns what the judge (core/answer.js) and the verdict box need and nothing
+ * they do not:
  *
  *   ok      count it as a correct answer — for the run, the streak, the
  *           spacing and the badges. A forgiven slip is `true`: the answer is

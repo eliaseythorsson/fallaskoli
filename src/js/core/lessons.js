@@ -9,11 +9,16 @@
    Pure functions. No DOM.                                                  */
 
 import { LESSONS } from "../content/lessons.js";
+import { NODES } from "./curriculum.js";
 
 export { LESSONS };
 
 const BY_ID = new Map(LESSONS.map((l) => [l.id, l]));
-export const lessonById = (id) => BY_ID.get(id) || null;
+/* Pages that were renamed: the old id still opens the page (a link or a
+   saved `lessonOpen` from before). core/state.js `migrate` moves the
+   pupil's read mark. */
+export const LESSON_RENAMED = { setningalidir: "setningarhlutar" };
+export const lessonById = (id) => BY_ID.get(id) || BY_ID.get(LESSON_RENAMED[id]) || null;
 
 /** The pages of one skill, in the order they were written. */
 export const lessonsOfSkill = (skill) => LESSONS.filter((l) => l.skill === skill);
@@ -39,13 +44,15 @@ export function lessonFor(task) {
   const m = marksOf(task);
   switch (task.skill) {
     case "nafnord":
-      if (task.type === "table") return first("nafnord-beyging", "foll");
+      if (task.type === "table" || task.type === "kenni") return first("nafnord-beyging", "foll");
       return first("foll");
     case "lysingarord":
       if (/\b(MST|ESB|EVB)-/.test(m)) return first("stigbreyting", "lo-beyging");
       if (task.type === "parse" && /^(FSB|FVB)-/.test(m)) return first("lo-beyging");
       return first("lo-beyging", "samraemi");
     case "sagnord":
+      /* item 27: a question about one thing a page teaches says which page. */
+      if (task.lesson && BY_ID.has(task.lesson)) return task.lesson;
       if (/(^|\s|-)MM-/.test(m) || /^MM-/.test(m)) return first("mynd");
       if (/-(VH|BH)(-|\b)|GM-BH|LHÞT|LHNT|SAGNB|-NH\b/.test(m)) return first("hattur");
       if (/-ÞT-/.test(m)) return first("tid", "persona-tala");
@@ -71,9 +78,13 @@ export function lessonFor(task) {
     }
     case "fallstjorn": return first("fallstjorn");
     case "ordaford": return first("ordafordi");
-    case "setningafraedi": return first("setningalidir");
-    case "setningagerd": return first("setningagerdir");
-    case "malbeiting": return first("malbeiting");
+    /* item 28: the three year-10 pages. The cell says which question it is. */
+    case "setningafraedi":
+      return /^lidur:/.test(task.cell || "") ? first("lidir", "setningarhlutar") : first("setningarhlutar");
+    case "setningagerd":
+      return /^tegund:/.test(task.cell || "") ? first("aukasetningar", "setningagerdir") : first("setningagerdir");
+    case "malbeiting":
+      return task.kind === "indirect" ? first("raeda", "malbeiting") : first("malbeiting");
     default: return null;
   }
 }
@@ -92,14 +103,15 @@ export const TERM_LESSON = {
   framsoguhattur: "hattur", vidtengingarhattur: "hattur", bodhattur: "hattur", styfdurbh: "hattur",
   nafnhattur: "hattur", lhnt: "hattur", lhtht: "hattur", sagnbot: "hattur", hattur: "hattur",
   germynd: "mynd", midmynd: "mynd", mynd: "mynd",
-  sterksogn: "sterkar-veikar", veiksogn: "sterkar-veikar",
+  sterksogn: "sterkar-veikar", veiksogn: "sterkar-veikar", beyging_so: "sterkar-veikar",
+  sterknafnord: "nafnord-beyging", veiknafnord: "nafnord-beyging", beyging_no: "nafnord-beyging",
   fornafn: "fornofn", toluord: "toluord",
   atviksord: "obeygjanleg", forsetning: "obeygjanleg", samtenging: "obeygjanleg",
   upphropun: "obeygjanleg", nhm: "obeygjanleg", obeygjanleg: "obeygjanleg",
   ordflokkur: "ordflokkar", fallord: "ordflokkar", nafnord: "ordflokkar",
   lysingarord: "ordflokkar", sagnord: "ordflokkar",
   stjorn: "fallstjorn",
-  frumlag: "setningalidir", umsogn: "setningalidir", andlag: "setningalidir", sagnfylling: "setningalidir",
+  frumlag: "setningarhlutar", umsogn: "setningarhlutar", andlag: "setningarhlutar", sagnfylling: "setningarhlutar",
   adalsetning: "setningagerdir", aukasetning: "setningagerdir",
 };
 export const lessonForTerm = (id) => (BY_ID.has(TERM_LESSON[id]) ? TERM_LESSON[id] : null);
@@ -208,6 +220,69 @@ export function brokenTables(lex) {
     if (b.table && !buildTable(lex, b)) out.push(`${l.id} #${i} ${b.table} ${[].concat(b.w).join(",")}`);
   }));
   return out;
+}
+
+/* ---------- "Æfa þetta": practice on exactly what a page teaches (item 41) -- */
+
+/**
+ * Pages that teach and have nothing to practise, by decision rather than by
+ * accident. Empty today: every page is the `lesson` of at least one
+ * curriculum node with question types. A page added without a node fails
+ * tests/lessons-practice.test.js until it gets one or is listed here.
+ */
+export const READING_ONLY = new Set([]);
+
+/** How many questions "Æfa þetta" asks. */
+export const PRACTICE_SIZE = 5;
+
+/**
+ * What a page's "Æfa þetta" session asks, read off the curriculum nodes
+ * (core/curriculum.js) whose Lesefni page it is — never typed by hand, so the
+ * map, the skill map of item 83 and this button cannot drift apart.
+ *
+ *   types  every question type of those nodes
+ *   cats   the nodes' categories (a type that serves several, the reverse
+ *          analysis, is then asked only in these: `practiceSkills`)
+ *   attrs  { group: [keys] } where EVERY node of the page that has questions
+ *          narrows the same group (the tense page asks the past tense, the
+ *          mood page every mood but the indicative); a group only some of
+ *          them narrow is left open, so no node is cut out
+ *
+ * @returns {{id, types:string[], cats:string[], attrs:object}|null} null for a
+ *   page with nothing to practise (READING_ONLY, or no such page)
+ */
+export function lessonPractice(id) {
+  if (!BY_ID.has(id) || READING_ONLY.has(id)) return null;
+  const nodes = NODES.filter((n) => n.lesson === id && n.types.length);
+  if (!nodes.length) return null;
+  const types = [...new Set(nodes.flatMap((n) => n.types))];
+  const cats = [...new Set(nodes.map((n) => n.cat))];
+  const attrs = {};
+  const groups = new Set(nodes.flatMap((n) => Object.keys(n.attrs || {})));
+  for (const g of groups) {
+    if (!nodes.every((n) => n.attrs && n.attrs[g])) continue;
+    attrs[g] = [...new Set(nodes.flatMap((n) => n.attrs[g]))];
+  }
+  return { id, types, cats, attrs };
+}
+
+/**
+ * The categories such a session switches on: the nodes' own, and the
+ * category of every type that serves only one (*Kyn og tala* is asked inside
+ * the word-class analysis, which is Orðflokkagreining). A type that serves
+ * several (`anyOf`) adds none of its own, so it stays inside the page's.
+ * Pure: the catalogue is passed in (tasks/registry.js TASKS), since core/
+ * does not import tasks/.
+ */
+export function practiceSkills(practice, catalogue) {
+  if (!practice) return [];
+  const byId = new Map((catalogue || []).map((t) => [t.id, t]));
+  const out = new Set(practice.cats);
+  for (const id of practice.types) {
+    const t = byId.get(id);
+    if (t && !t.anyOf) out.add(t.skill);
+  }
+  return [...out];
 }
 
 /* ---------- what has been read --------------------------------------------- */

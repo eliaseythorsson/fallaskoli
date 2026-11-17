@@ -1,0 +1,98 @@
+# Orðaforði: orð í samhengi
+#
+# Aðeins einn kosturinn passar við merkingu setningarinnar. Allir kostirnir eru
+# nafnorð í sama BÍN-marki svo að málfræðin gefi svarið ekki upp.
+#
+# Dálkar:
+#   þyngd    1–5
+#   setning  setningin; ___ er nafnorðið
+#   mark     BÍN-mark allra kostanna
+#   svar     rétta nafnorðið
+#   rangt    röngu nafnorðin þrjú, aðskilin með kommu
+#   merking  hvaða merking svarsins í Íslenskri nútímamálsorðabók (ÍNO) er sú sem
+#            setningin á við: númer merkingarinnar (1, 2, 3 …), eða - ef engin
+#            þeirra á við (þá er engin skýring sýnd). Skylt ef orðið hefur fleiri
+#            en eina merkingu í ÍNO; autt þýðir annars eina merking orðsins.
+#            Skýringin eftir svarið („*lag*: tónstef, sungið eða spilað“) kemur
+#            úr þeirri merkingu, ekki þeirri fyrstu.
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Word in context: exactly one option makes sense. Every option is a noun in
+# the same mark (BÍN), so grammar never gives the answer away; where a word
+# beside the blank agrees with it, all four have the same gender.
+# (level, sentence, mark, right, [wrong, wrong, wrong], sense)
+# Sense (v6.13 review M1): the `why` printed ÍNO's FIRST sense of the answer,
+# and for a homonym that is another word: *Ég hlustaði á lagið í útvarpinu* →
+# "*lag*: partur af stafla …". build_exercises.py now refuses an answer with
+# several ÍNO senses and no `merking`, and the item carries the chosen sense
+# as `d` (null for "-"), which tasks/ordaford.js prints.
+# Level = length; +1 for an answer or a clue that is not an everyday word
+# (tvinni, sjónauki, hitamælir, snagi, til þerris).
+#
+
+þyngd	setning	mark	svar	rangt	merking
+2	Ég drakk glas af ___ með matnum.	ÞGFET	mjólk	stóll, skór, bíll	1
+1	Hún burstaði ___ fyrir svefninn.	ÞFFTgr	tönn	gluggi, stjarna, eldavél	1
+2	Við fórum með ___ til dýralæknisins.	ÞFETgr	hundur	sófi, snjór, blýantur	1
+1	Ég klippti blaðið með ___.	ÞGFFT	skæri	sokkur, ský, egg:hk
+1	Fiskurinn synti í ___.	ÞGFETgr	sjór	eyðimörk, bókahilla, sófi	1
+2	Ég þurrkaði mér með ___ eftir sundið.	ÞGFET	handklæði	gaffall, lykill, steinn
+1	Ég skrifaði bréfið með ___.	ÞGFET	penni	hamar, skór, diskur
+2	Bóndinn mjólkaði ___ á hverjum morgni.	ÞFFTgr	kýr	stóll, bíll, blóm
+2	Á veturna fellur ___ af himni.	NFET	snjór	gras, stóll, brauð	1
+3	Ég saumaði gatið með nál og ___.	ÞGFET	tvinni	hamar, skeið:kvk, sápa
+2	Læknirinn hlustaði á ___ í sjúklingnum.	ÞFETgr	hjarta	gluggi, eldhús, gaffall	1
+1	Hún vökvaði ___ í garðinum.	ÞFFTgr	blóm	bók, bíll, skór	1
+1	Kokkurinn skar laukinn með ___.	ÞGFET	hnífur	blýantur, bók, sokkur
+2	Fuglinn byggði sér ___ í trénu.	ÞFET	hreiður	bíll, sundlaug, kirkja
+3	Ég fékk ___ í hálsinn og fór til læknis.	ÞFET	verkur	gluggi, bók, ský
+3	Bíllinn var tómur svo við keyptum ___ á bensínstöðinni.	ÞFET	bensín	gras, ský, hunang
+2	Ég þvoði mér um hendurnar með ___.	ÞGFET	sápa	mjólk, blek, hunang
+2	Á haustin falla ___ af trjánum.	NFFTgr	lauf	bók, skór, diskur	1
+3	Hundurinn gelti að ___ sem kom með bréfin.	ÞGFETgr	póstur	stóll, ský, brauð	3
+2	Mig klæjaði eftir að ___ stakk mig.	NFETgr	fluga	skeið:kvk, sól:kvk, bók
+3	Ég setti frímerki á ___ og sendi það.	ÞFETgr	bréf	epli, rúm, fjall
+3	Við kveiktum á ___ þegar dimmt var orðið.	ÞGFFTgr	kerti	epli, skæri, egg:hk	1
+4	Hún hengdi ___ upp á snúru til þerris.	ÞFETgr	þvottur	sófi, bíll, snjór	2
+3	Ég bauð vinum mínum í ___ á laugardaginn.	ÞFET	afmæli	ský, egg:hk, gras
+4	Ég setti mjólkina inn í ___ svo hún skemmdist ekki.	ÞFETgr	ísskápur	sófi, gluggi, hattur
+3	Hann las ___ áður en hann fór að sofa.	ÞFET	bók	mjólk, eldavél, skeið:kvk
+1	Hún opnaði ___ með lyklinum.	ÞFETgr	hurð	ský, mjólk, sól:kvk
+3	Við fórum með ___ yfir hafið til Danmerkur.	ÞGFETgr	ferja	skeið:kvk, sápa, kaka
+4	Ég setti á mig ___ því það var kalt úti.	ÞFET	húfa	kaka, gata, eldavél
+1	Ég borðaði ___ í morgunmat.	ÞFET	hafragrautur	stóll, sófi, hamar
+1	Ég þvoði fötin í ___.	ÞGFETgr	þvottavél	eldavél, bókahilla, klukka
+1	Hann negldi naglann með ___.	ÞGFET	hamar	penni, sokkur, diskur	1
+1	Kýrin gefur okkur ___.	ÞFET	mjólk	bensín, sápa, blek	1
+2	Ég burstaði tennurnar með nýjum ___.	ÞGFET	tannbursti	hamar, penni, stóll
+2	Ég borga fyrir matinn með ___.	ÞGFFT	peningur	sokkur, steinn, bátur	-
+3	Í ___ eru margar bækur sem má fá lánaðar.	ÞGFETgr	bókasafn	sundlaug, bakarí, fjós:hk	1
+1	Ég keypti brauð í ___.	ÞGFETgr	bakarí	bókasafn, fjós:hk, kirkja
+2	Ég synti tíu ferðir í ___.	ÞGFETgr	sundlaug	bókasafn, ísskápur, bakarí
+1	Flugvélin lenti á ___.	ÞGFETgr	flugvöllur	ísskápur, sokkur, diskur
+1	Hún skar brauðið með ___.	ÞGFETgr	hnífur	sokkur, penni, koddi
+2	Ég lagði höfuðið á ___ og sofnaði.	ÞFETgr	koddi	hnífur, gaffall, ofn
+1	Ég drakk ___ úr bolla.	ÞFET	kaffi	sandur, stóll, grjót	2
+1	Ég vaknaði þegar ___ hringdi.	NFETgr	vekjaraklukka	sófi, koddi, teppi
+1	Við grilluðum ___ í kvöldmat.	ÞFFT	pylsa	sokkur, blýantur, steinn
+3	Það rigndi svo ég tók með mér ___.	ÞFET	regnhlíf	eldavél, koddi, diskur
+1	Kötturinn veiddi ___ í garðinum.	ÞFET	mús	sófi, bók, klukka	1
+2	Ég hringdi í mömmu úr ___ mínum.	ÞGFET	sími	sokkur, koddi, gaffall
+2	Bóndinn rak ___ inn í fjárhúsið.	ÞFFTgr	kind	bók, skeið:kvk, klukka
+1	Skipið sigldi út á ___.	ÞFETgr	haf	eldhús, rúm, bókasafn
+2	Ég mældi hitann með ___.	ÞGFET	hitamælir	sokkur, koddi, diskur
+3	Við horfðum á tunglið í ___.	ÞGFET	sjónauki	sokkur, koddi, hamar
+1	Mamma bakaði ___ í ofninum.	ÞFFT	smákaka	sokkur, steinn, penni
+1	Ég sópaði gólfið með ___.	ÞGFET	kústur	ostur, sími, diskur	1
+2	Hún skrifaði á töfluna með ___.	ÞGFET	krít	mjólk, sápa, kaka
+1	Ég setti bréfið í ___.	ÞFETgr	umslag	ský, tungl, fjall	1
+1	Hesturinn borðaði ___ í hesthúsinu.	ÞFET	hey	blek, gler, járn
+2	Við gistum á ___ í fríinu.	ÞGFET	hótel	ský, egg:hk, blóm
+1	Ég setti plásturinn á ___.	ÞFETgr	sár:hk	ský, tungl, haf	1
+3	Hann tók mynd af fjallinu með ___ sinni.	ÞGFET	myndavél	eldavél, þvottavél, skeið:kvk
+2	Ég hengdi úlpuna á ___.	ÞFETgr	snagi	himinn, snjór, sandur

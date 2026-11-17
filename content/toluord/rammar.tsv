@@ -1,0 +1,60 @@
+# Töluorð: rammar með nafnorðum eftir merkingu
+#
+# Eins og samraemi.tsv, en nafnorðin má velja eftir merkingarflokki.
+#
+# Dálkar:
+#   þyngd    1–5
+#   rammi    setningin; ___ er töluorðið, {N} nafnorðið
+#   fall     fall nafnorðsins
+#   tölur    hvaða tölur má spyrja um
+#   nafnorð  nafnorðin, aðskilin með kommu — EÐA autt og þá:
+#   flokkar  merkingarflokkar (noun_classes.py), aðskildir með bili; algengustu nafnorð flokkanna eru tekin
+#   sleppa   nafnorð úr flokkunum sem ramminn tekur ekki
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# v6.13 (critique item 23): frames × nouns, for to_samr and to_val. The list
+# above held 164 items; a pupil met each one again within a few sessions.
+# These frames take nouns by MEANING (noun_classes.py) instead of a short
+# hand list: build_exercises.py takes the commonest nouns of the classes
+# named (the `NUMERAL_TAKE` most frequent, by the lexicon's rank) that may
+# stand in a generated sentence at all (noun_classes.reviewed, not excluded),
+# have a singular (a plural-only noun takes *tvennir*: to_flt, below) and,
+# for 2-4, a plural people say (no_plural). A list of lemmas instead of
+# classes is taken as it is; a sixth element lists nouns the frame does not
+# take. Every frame was read with each noun it takes.
+# Same levels as above; ÞF/NF frames are level 1 when short.
+#
+# Nouns of those classes that are not counted one, two, three: a pair (*tveir
+# skór* and *tvennir skór* are both right), a mass (*dót*, *peningur* =
+# money), the few a class takes that a child does not count like this, and
+# the family roles one has one of: "Ég hitti þrjá afa", "tvær dætur". (A
+# leading _: build_freq.py ranks up the words of exercises.py, and words
+# left OUT are not words the school material uses.)
+#
+# the people one lives with or misses, and the children who own bicycles
+#
+
+þyngd	rammi	fall	tölur	nafnorð	flokkar	sleppa
+1	Ég á ___ {N}.	ÞF	1, 2, 3, 4	köttur, hundur, hestur, fiskur, páfagaukur, systir, bróðir, frænka, frændi, vinur, vinkona
+1	Ég á ___ {N}.	ÞF	1, 2, 3, 4		object book clothing
+1	Hér eru ___ {N}.	NF	2, 3, 4		object book clothing
+1	___ {N} komu í heimsókn.	NF	2, 3, 4		person job child
+1	Ég hitti ___ {N} í gær.	ÞF	1, 2, 3, 4		person job child
+1	Á bænum eru ___ {N}.	NF	2, 3, 4	kýr, hestur, kind, hæna, svín, hundur, köttur, geit, hani, kálfur, lamb, gæs, önd
+1	Ég beið í ___ {N}.	ÞF	1, 2, 3, 4	dagur, vika, mínúta, klukkutími, mánuður, sekúnda
+2	Hún keypti ___ {N} í búðinni.	ÞF	1, 2, 3, 4		object book clothing	bréf
+2	Í garðinum eru ___ {N}.	NF	2, 3, 4	tré, blóm, runni, fugl, köttur, bekkur
+2	Ég las ___ {N} í sumar.	ÞF	1, 2, 3, 4	bók, saga, blað, teiknimyndasaga, ljóð
+2	Við hjálpuðum ___ {N}.	ÞGF	1, 2, 3, 4		person job child
+2	Ég gaf ___ {N} mat.	ÞGF	1, 2, 3, 4	köttur, hundur, hestur, kind, hæna, fugl, fiskur, kýr, geit, önd, gæs
+3	Hún bjó hjá ___ {N} í sumar.	ÞGF	1, 2, 3, 4	vinur, vinkona, frænka, frændi, bróðir, systir, félagi, nágranni, strákur, stelpa
+3	Þetta eru hjól ___ {N}.	EF	2, 3, 4	strákur, stelpa, krakki, barn, drengur, vinur, vinkona, bróðir, systir, nemandi
+3	Hún saknaði ___ {N}.	EF	1, 2, 3, 4	vinur, vinkona, frænka, frændi, bróðir, systir, félagi, nágranni, strákur, stelpa
+4	Kennarinn talaði lengi við foreldra ___ {N}.	EF	2, 3, 4	stelpa, strákur, barn, nemandi
+4	Hún passaði hunda ___ {N} um helgina.	EF	1, 2, 3, 4	vinur, vinkona, frænka, frændi, bróðir, systir, félagi, nágranni, strákur, stelpa
+4	Kennarinn hrósaði verkefnum ___ {N} í dag.	EF	1, 2, 3, 4	strákur, stelpa, krakki, barn, drengur, vinur, vinkona, bróðir, systir, nemandi

@@ -1,0 +1,29 @@
+# Fornöfn: eignarfornafn, sinn eða hans/hennar
+#
+# {frumlag} {sögn} {hluturinn} ___. Lína á spjaldinu segir hver á hlutinn.
+#
+# Dálkar:
+#   sögn    sögnin (nafnháttur)
+#   fall    fall hlutarins: ÞF eða ÞGF
+#   hlutir  hlutirnir, aðskildir með kommu
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# (verb, case of the thing owned, the things) — the possessive frame,
+# "{subject} {verb} {the thing} ___." Each pair of verb and thing is said by
+# three of the subjects, in turn, so the list stays a list of frames and
+# not of names.
+#
+
+sögn	fall	hlutir
+taka	ÞF	taska, bók, húfa, peysa, sími, bolti, úlpa, hjól
+sækja	ÞF	taska, hjól, úlpa, bolti
+finna	ÞF	taska, bók, húfa, sími, lykill
+þvo	ÞF	peysa, húfa, úlpa, hjól
+laga	ÞF	hjól, sími
+týna	ÞGF	taska, bók, húfa, sími, lykill, bolti
+gleyma	ÞGF	taska, bók, húfa, peysa, úlpa

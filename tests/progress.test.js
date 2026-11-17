@@ -1,34 +1,53 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  overallNeed, skillNeed, overallLevel, computeXp, easeOf, easeMult,
+  overallNeed, skillNeed, overallLevel, levelFromXp, computeXp, easeOf, easeMult,
   mastery, applyDecay, decayAmount, daysBetween, overallRank, skillRank, levelBand,
 } from "../src/js/core/progress.js";
 import { blankState } from "../src/js/core/state.js";
 
-/* Roughly one day's work for this user. */
-const DAY_XP = 200;
+/* One session of ten questions (Dagsins lota), what a pupil earns by it, measured by
+   tools/sim/levels.mjs with every reward on (item 60): weak 60, typical 77, strong 95. */
+const SESSION_XP = { weak: 60, typical: 77, strong: 95 };
+const WEEK = 4;                                       // sessions a week
 
-test("the level curve hits the timing targets", () => {
-  /* v6.1: the early levels were brought forward so the first fortnight holds
-     several level-ups. Every level still takes longer than the one before. */
-  const day = (xp) => xp / DAY_XP;
-  assert.ok(day(overallNeed(2)) <= 1, "level 2 should be reached on the first day");
-  const toThree = day(overallNeed(3) - overallNeed(2));
-  assert.ok(toThree >= 2 && toThree <= 4, `stig 3 tók ${toThree.toFixed(1)} daga`);
-  const toFour = day(overallNeed(4) - overallNeed(3));
-  assert.ok(toFour >= 4 && toFour <= 8, `stig 4 tók ${toFour.toFixed(1)} daga`);
+test("the level curve hits the timing targets (one session, four days a week)", () => {
+  const weeks = (xp, who = "typical") => xp / (SESSION_XP[who] * WEEK);
+  assert.ok(overallNeed(2) <= SESSION_XP.typical, "level 2 should be reached in the first session");
+  const toThree = weeks(overallNeed(3)) * WEEK;
+  assert.ok(toThree >= 3 && toThree <= 6, `level 3 took ${toThree.toFixed(1)} sessions`);
+  const toFour = weeks(overallNeed(4)) * WEEK;
+  assert.ok(toFour >= 8 && toFour <= 12, `level 4 took ${toFour.toFixed(1)} sessions`);
+  /* The promise in the comment on the curve: level 5 in about four to five
+     weeks for the typical child, not much later for the weak one, not before
+     three for the strong. */
+  const five = weeks(overallNeed(5));
+  assert.ok(five >= 4 && five <= 5, `level 5 took the typical child ${five.toFixed(1)} weeks`);
+  assert.ok(weeks(overallNeed(5), "weak") <= 6.5, "weak child: level 5 within a school half-term");
+  assert.ok(weeks(overallNeed(5), "strong") >= 3, "strong child: not in the first fortnight");
   for (let L = 2; L <= 25; L++) {
     assert.ok(overallNeed(L + 1) - overallNeed(L) > overallNeed(L) - overallNeed(L - 1),
       "each level should be longer than the last");
   }
 });
 
-test("no level costs more than it did before v6.1", () => {
+test("the curve in numbers", () => {
+  assert.deepEqual([2, 3, 4, 5, 6, 10, 20].map(overallNeed),
+    [70, 322, 785, 1478, 2415, 8799, 45536]);
+});
+
+test("no level costs more than it did before v6.1 or before v6.13", () => {
   /* The promise that lets the curve change under stored progress: a child's
      level can rise when they open the new version, never fall. */
-  const before = (L) => Math.round(250 * Math.pow(L - 1, 2.5));
-  for (let L = 2; L <= 40; L++) assert.ok(overallNeed(L) <= before(L), `stig ${L}`);
+  const v61 = (L) => Math.round(250 * Math.pow(L - 1, 2.5));
+  const v612 = (L) => Math.round(150 * Math.pow(L - 1, 2.2));
+  for (let L = 2; L <= 40; L++) {
+    assert.ok(overallNeed(L) <= v61(L), `stig ${L} (v6.1)`);
+    assert.ok(overallNeed(L) <= v612(L), `stig ${L} (v6.12)`);
+  }
+  /* ...so a pupil saved at any XP under the old curve is at the same level or higher. */
+  for (let xp = 0; xp < 60000; xp += 137)
+    assert.ok(overallLevel(xp).level >= levelFromXp(xp, v612).level, `${xp} XP`);
 });
 
 test("every level up to twenty has its own title, and a band", () => {
@@ -39,6 +58,11 @@ test("every level up to twenty has its own title, and a band", () => {
   assert.equal(levelBand(1).id, "b1");
   assert.equal(levelBand(10).nm, "Gull");
   assert.equal(levelBand(99).id, "b6");
+});
+
+test("a skill level never costs more than it did before v6.13", () => {
+  for (let L = 2; L <= 40; L++)
+    assert.ok(skillNeed(L) <= Math.round(90 * Math.pow(L - 1, 2.1)), `skill level ${L}`);
 });
 
 test("stig innan flokks nást fyrr en heildarstig", () => {
@@ -112,6 +136,7 @@ test("applyDecay reduces the total and the skills in the same proportion", () =>
   S.skills.nafnord.xp = 2000;
   S.skills.sagnord.xp = 2000;
   S.lastActive = "2026-01-01";
+  S.settings.decay = true;     // item 22: off by default, so this test switches it on
   const rep = applyDecay(S, "2026-01-21");
   assert.ok(rep && rep.lost > 0);
   assert.equal(S.xp, 4000 - rep.lost);

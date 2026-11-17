@@ -5,7 +5,7 @@ import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
-import { TASKS } from "../src/js/tasks/index.js";
+import { TASKS, makeView, applyEffects } from "../src/js/tasks/index.js";
 import { describeMark } from "../src/js/core/marks.js";
 import { sentenceText } from "../src/js/tasks/frames.js";
 
@@ -15,14 +15,17 @@ const S = blankState();
 SKILL_IDS.forEach((id) => { S.enabled[id] = true; });
 const sess = newSession(S);
 SKILL_IDS.forEach((id) => { sess.diff[id] = D; });
-const ctx = { lex, S, sess, forcedNoun: null };
+const host = { S, sess, forcedNoun: null };
+const rng = () => Math.random();
 const blank = (s, i) => s.tok.map((t, j) => (j === i ? "____" : t.w)).join(" ").replace(/ ([.,?!])/g, "$1");
 const mark = (s, i) => s.tok.map((t, j) => (j === i ? `[${t.w}]` : t.w)).join(" ").replace(/ ([.,?!])/g, "$1");
 for (const T of TASKS) {
   console.log(`\n== ${T.id}`);
   for (let k = 0, n = 0; k < 400 && n < N; k++) {
-    const t = T.gen(ctx);
-    if (!t) continue;
+    const b = T.build(lex, makeView(host), rng);
+    if (!b) continue;
+    applyEffects(host, b.effects);          // read as shown, so the next one differs
+    const t = b.task;
     n++;
     if (t.type === "fill") console.log(`  ${blank(t.s, t.i)}  (${t.extra ? t.extra.lemma + " + " : ""}${t.n.o}) → ${t.answers[0]}   | ${t.why || ""}`);
     else if (t.type === "verb") console.log(`  ${t.pron} ____ (að ${t.v.o}; ${t.label}) → ${t.answers.join("/")}`);

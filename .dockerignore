@@ -11,7 +11,10 @@ docs
 *.py
 *.json
 !package.json
-freq_raw.txt
+# The Python build and its sources (item 79) are not part of the image.
+pipeline
+sources
+data/*.json
 .git
 .github
 _backup
@@ -22,3 +25,7 @@ _grammar-audit
 
 # Test data from test-together.sh (testers, passwords, progress).
 _prufa
+
+# Item 46: the writing check's worker and its pins, for the optional
+# `greynir` target (the default image does not copy them).
+!server/greynir_worker.py

@@ -1,0 +1,29 @@
+# Óbeygjanleg orð: áður en og eftir að
+#
+# „{fyrst} áður en {svo}“ og „{svo 2} eftir að {fyrst 2}“: skrifað tvisvar svo að
+# fornafn komi aldrei á undan nafnorðinu sínu.
+#
+# Dálkar:
+#   fyrst    það sem gerðist fyrst (í „… áður en …“)
+#   svo      það sem gerðist svo (í „… áður en …“)
+#   svo 2    það sem gerðist svo (í „… eftir að …“)
+#   fyrst 2  það sem gerðist fyrst (í „… eftir að …“)
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# (first, then, then', first'): "{first} áður en {then}", "{then'} eftir að
+# {first'}" — written twice, so that a pronoun never comes before its noun
+# (*Ég sendi bréfið eftir að ég skrifaði það*).
+#
+
+fyrst	svo	svo 2	fyrst 2
+ég vaknaði	ég fór á fætur	ég fór á fætur	ég vaknaði
+ég skrifaði bréfið	ég sendi það	ég sendi bréfið	ég skrifaði það
+mamma bakaði kökuna	við borðuðum hana	við borðuðum kökuna	mamma bakaði hana
+ég lærði að synda	ég synti yfir ána	ég synti yfir ána	ég lærði að synda
+við keyptum okkur miða í miðasölunni	við fórum inn í bíósalinn	við fórum inn í bíósalinn	við keyptum okkur miða í miðasölunni
+mamma setti kökuna inn í heitan ofninn	við borðuðum hana með rjóma	við borðuðum kökuna með rjóma	mamma setti hana inn í heitan ofninn

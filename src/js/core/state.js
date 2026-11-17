@@ -1,3 +1,4 @@
+// @ts-check
 /* User state and session state.
 
    Everything that is persisted goes through here. The functions take the state
@@ -6,13 +7,24 @@
 import { SKILL_IDS, defaultEnabled } from "./skills.js";
 import { createPolicy, blankPolicy, sanitisePolicy } from "./policy.js";
 import { overallLevel, skillLevel, easeOf } from "./progress.js";
-import { initDiff } from "./difficulty.js";
-import { timeContext } from "./calendar.js";
-import { checkDayEnd } from "./badges.js";
+import { visitLevels, cleanLevels, levelsFromXp } from "./difficulty.js";
+import { cleanTour } from "./placement.js";
+import { timeContext, mondayOf, weekKeys, isBreakWeek } from "./calendar.js";
+import { checkDayEnd, legacyStreakCredit } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
+import { blankReview, sanitiseReview } from "./review.js";
+import { cleanByType, masteryOf } from "./mastery.js";
+import { cleanByNode } from "./skillmap.js";
+import { cleanSeenTypes } from "./examples.js";
+import { blankMend, sanitiseMend, patternsMended, reviewsOnTime } from "./mending.js";
+
+/** @typedef {import("../types").State} State */
+/** @typedef {import("../types").Session} Session */
+/** @typedef {import("../types").DayKey} DayKey */
 
 export const STATE_VERSION = 11;
 
+/** @param {Date} d @returns {DayKey} */
 export const dkey = (d) =>
   d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" +
   String(d.getDate()).padStart(2, "0");
@@ -26,6 +38,7 @@ export function prevKey(key) {
   return dkey(new Date(y, m - 1, d - 1));
 }
 
+/** @returns {State} */
 export function blankState() {
   const skills = {};
   SKILL_IDS.forEach((id) => { skills[id] = { xp: 0, c: 0, w: 0, bestRun: 0 }; });
@@ -39,10 +52,15 @@ export function blankState() {
        about correctness. See core/spacing.js. */
     vocab: {},
     goal: 10, run: 0, bestRun: 0,
+    /* The weekly goal (item 57): days of seven on which the daily goal is met.
+       The main streak counts weeks in which it was met. See `weekStreak`. */
+    weekGoal: WEEK_GOAL_DEFAULT,
     totalAnswers: 0, totalCorrect: 0,
     /* Consecutive sessions touching three or more skills (multi-skill badges). */
     multiSessionRun: 0, lastSessionSkills: null,
-    counters: { perfectTables: 0, perfectParses: 0, meanings: 0 },
+    /* `retries`, `retryFixed`: second tries made, and right (item 42,
+       core/answer.js `judgeRetry`). */
+    counters: { perfectTables: 0, perfectParses: 0, meanings: 0, retries: 0, retryFixed: 0 },
     enabled: defaultEnabled(),
     /* `policy` is what the child switched on, `allowed` the ceiling the
        administrator set; kept apart so tightening and loosening the ceiling
@@ -52,7 +70,7 @@ export function blankState() {
     allowed: null,
     /* `badgeView`: which view of the badge cabinet is showing (ui/panels.js).
        A child with nothing on the shelf yet is shown the catalogue instead. */
-    settings: { decay: true, audio: true, glossary: true, badgeView: "rarity" },
+    settings: { decay: false, settingsRev: 1, glossary: true, badgeView: "rarity" },
     lastActive: null,
     /* `periods`: the once-per-day / once-per-night ledger (core/badges.js).
        `settled`: the last day whose day-end badges have been judged. */
@@ -85,6 +103,40 @@ export function blankState() {
     /* Practice sessions (v6.10): the last 40, newest last —
        {at: ms, d: date, topic, n, c, j: judged, xp, top: [pattern ids]}. */
     runs: [],
+    /* The review queue (v6.13, core/review.js): what was missed and when it
+       is next to be asked — { items: [entry …], stats: { … } }. That file
+       describes the shape; nothing else writes to it. */
+    review: blankReview(),
+    /* Each skill's level of difficulty, kept between visits (v6.13, critique
+       item 11): { skill: {d, r, h, at, src} } — see core/difficulty.js. */
+    difficulty: {},
+    /* Which bank sentences have carried a question for this pupil, and how
+       often: { frame key: count } (tasks/frames.js `frameKey`). The reverse
+       analysis prefers the ones seen least (v6.13, critique item 24). */
+    frames: {},
+    /* Per question type (v6.13, item 44): answers ever, right ones, and the
+       last twenty with the step of difficulty each was asked at —
+       { typeId: {n, c, h, at} }. What the mastery mark reads; see
+       core/mastery.js. */
+    byType: {},
+    /* The same record for the few curriculum nodes that are not simply
+       their question types — the past tense, the subjunctive, the middle
+       voice … share the verb types (item 83): { nodeId: {n, c, h, at} }.
+       See core/skillmap.js. */
+    byNode: {},
+    /* The question types this pupil has met, { typeId: day } (item 41): a
+       type not in it shows one worked example on its first card
+       (core/examples.js). */
+    seenTypes: {},
+    /* Getting better, counted (items 56 and 58, core/mending.js): the error
+       patterns active and waiting to be mended, the patterns mended (with
+       the day, the last sixty) and the reviews passed per day (five weeks).
+       Pattern ids, days and counts. */
+    mend: blankMend(),
+    /* The guided first run (item 84, core/placement.js): null until it has
+       begun; then { st: "open"|"done"|"skipped", at, d, placed, year }. A
+       pupil with no answers and no record is offered it once. */
+    tour: null,
   };
 }
 
@@ -111,7 +163,37 @@ function cleanWordKeys(words) {
   return out;
 }
 
-/** Bring any older saved blob up to the current shape without losing data. */
+/** The frame tally (`frames` above): short keys and whole counts, nothing else. */
+export const FRAME_KEY = /^f[0-9a-z]{1,7}$/;
+export const FRAMES_MAX = 4000;
+export function cleanFrames(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+  for (const [k, v] of Object.entries(raw).slice(0, FRAMES_MAX)) {
+    const c = Number.isFinite(v) ? Math.floor(v) : 0;
+    if (FRAME_KEY.test(k) && c >= 1) out[k] = Math.min(c, 100000);
+  }
+  return out;
+}
+
+/** Bring any older saved blob up to the current shape without losing data.
+    @param {any} raw  whatever was saved, of any age, or nothing
+    @returns {State} */
+/* Lesefni pages whose id changed: the pupil's read mark moves with the page
+   (v6.13 review, S12: *setningalidir* → *setningarhlutar*). Kept here and
+   not imported from core/lessons.js, which this module must not depend on. */
+const READ_RENAMED = { setningalidir: "setningarhlutar" };
+function renamedRead(raw) {
+  const out = raw && typeof raw === "object" && !Array.isArray(raw) ? { ...raw } : {};
+  for (const [from, to] of Object.entries(READ_RENAMED)) {
+    if (from in out) {
+      if (!(to in out)) out[to] = out[from];
+      delete out[from];
+    }
+  }
+  return out;
+}
+
 export function migrate(raw) {
   const S = blankState();
   if (!raw || typeof raw !== "object") return S;
@@ -127,11 +209,20 @@ export function migrate(raw) {
       /* `lg` — the program was opened on this day, whether or not anything was
          answered. A day with answers also counts as opened (`loginStreak`). */
       lg: d.lg ? 1 : 0,
+      /* `wg` — the weekly goal in force on that day, as `g` is for the daily
+         one: raising the goal later must not un-meet a week already won. */
+      wg: d.wg ?? null,
     }])),
     cells: raw.cells || {},
     words: cleanWordKeys(raw.words),
-    badges: raw.badges || {},
+    /* Item 57: whoever won a day-streak badge keeps it, and is credited the
+       week badges it stands for (`legacyStreakCredit`, core/badges.js). */
+    badges: (() => {
+      const own = raw.badges && typeof raw.badges === "object" ? raw.badges : {};
+      return { ...legacyStreakCredit(own), ...own };
+    })(),
     goal: raw.goal || 10,
+    weekGoal: cleanWeekGoal(raw.weekGoal),
     bestRun: raw.bestRun || 0,
     totalAnswers: raw.totalAnswers || 0,
     totalCorrect: raw.totalCorrect || 0,
@@ -150,10 +241,27 @@ export function migrate(raw) {
     social: raw.social && typeof raw.social === "object" ? raw.social : null,
     drills: raw.drills && typeof raw.drills === "object" ? { ...raw.drills } : {},
     drillDays: raw.drillDays && typeof raw.drillDays === "object" ? { ...raw.drillDays } : {},
-    read: raw.read && typeof raw.read === "object" ? { ...raw.read } : {},
+    read: renamedRead(raw.read),
     duels: raw.duels && typeof raw.duels === "object" ? { ...raw.duels } : {},
     diag: raw.diag && typeof raw.diag === "object" && !Array.isArray(raw.diag) ? { ...raw.diag } : {},
     runs: Array.isArray(raw.runs) ? raw.runs.filter((r) => r && typeof r === "object").slice(-40) : [],
+    /* Rebuilt field by field: a state saved before the queue existed gets an
+       empty one, and nothing of the wrong shape survives a load. */
+    review: sanitiseReview(raw.review),
+    /* Saved levels (v6.13). A state from before they existed is placed once
+       from its skills' XP; from then on the saved levels are used and XP is
+       not read again. */
+    difficulty: raw.difficulty && typeof raw.difficulty === "object"
+      ? cleanLevels(raw.difficulty) : levelsFromXp(raw.skills),
+    frames: cleanFrames(raw.frames),
+    /* Items 44 and 41 (v6.13): rebuilt field by field, known types only. */
+    byType: cleanByType(raw.byType),
+    byNode: cleanByNode(raw.byNode),
+    seenTypes: cleanSeenTypes(raw.seenTypes),
+    /* Items 56 and 58: rebuilt field by field (core/mending.js). */
+    mend: sanitiseMend(raw.mend),
+    /* Item 84: the record of the first run, or null (core/placement.js). */
+    tour: cleanTour(raw.tour),
   });
   S.run = 0;
 
@@ -161,6 +269,8 @@ export function migrate(raw) {
     perfectTables: raw.counters?.perfectTables ?? raw.perfectTables ?? 0,
     perfectParses: raw.counters?.perfectParses ?? raw.perfectParses ?? 0,
     meanings: raw.counters?.meanings ?? raw.meanings ?? 0,
+    retries: raw.counters?.retries ?? 0,
+    retryFixed: raw.counters?.retryFixed ?? 0,
   };
 
   SKILL_IDS.forEach((id) => {
@@ -182,16 +292,29 @@ export function migrate(raw) {
   S.allowed = raw.allowed ? sanitisePolicy(raw.allowed) : null;
 
   if (raw.settings) Object.assign(S.settings, raw.settings);
+  /* Item 55: `settings.audio` was saved as true and never read by anything.
+     Dropped from every state that carries it. */
+  delete S.settings.audio;
+  /* Item 22: XP decay is off by default now ("N atriði bíða upprifjunar"
+     replaces it). Every state saved before had `decay: true`, which was the
+     old default and not a choice anybody made, so it is switched off once;
+     `settingsRev` records that, and a pupil who then ticks the box again
+     (or a teacher who does) keeps it. */
+  if (raw.settings && !(raw.settings.settingsRev >= 1)) S.settings.decay = false;
   if (raw.profile) Object.assign(S.profile, raw.profile);
   S.bestLevel = Math.max(raw.bestLevel || 1, overallLevel(S.xp).level);
   return S;
 }
 
-export function newSession(S) {
+/** @param {State} S @param {DayKey} [today] @returns {Session} */
+export function newSession(S, today = todayKey()) {
   const skillRun = {};
   SKILL_IDS.forEach((id) => { skillRun[id] = 0; });
   return {
-    diff: initDiff(S),
+    /* `diff`: each skill's live level, half a step below the saved one, and
+       `warm`, `seenAt`, `visitDay` beside it (core/difficulty.js visitLevels).
+       `range`: where each level may go, set by the app from the policy. */
+    ...visitLevels(S, today), range: null,
     skillRun, wrongRun: 0, sinceTable: 0, sinceMeaning: 0,
     seen: [], badgeAwards: {}, correct: 0, answers: 0, hintFreeRun: 0,
     newWords: 0, worstRun: 0,
@@ -231,10 +354,10 @@ export function idleDaysOf(S, today = todayKey()) {
    and `nw` (new words met that day). Older records have neither and get 0 — the
    charts then simply show nothing for those days rather than lying. */
 export const dayRec = (S, key = todayKey()) => {
-  const d = (S.days[key] ||= { a: 0, c: 0, xp: 0, ms: 0, nw: 0, sk: {}, g: null, lg: 0 });
+  const d = (S.days[key] ||= { a: 0, c: 0, xp: 0, ms: 0, nw: 0, sk: {}, g: null, lg: 0, wg: null });
   /* The goal in force on this day, stamped on first use and kept up to date
      while the day is still running. See the note in `migrate`. */
-  if (key === todayKey()) d.g = S.goal || 10;
+  if (key === todayKey()) { d.g = S.goal || 10; d.wg = weekGoalOf(S); }
   return d;
 };
 
@@ -295,6 +418,83 @@ function streakBack(S, from, qualifies) {
   if (!qualifies(S.days[dkey(d)])) d.setDate(d.getDate() - 1);
   while (qualifies(S.days[dkey(d)])) { n++; d.setDate(d.getDate() - 1); }
   return n;
+}
+
+/* ---- the weekly goal and the week streak (critique item 57) ------------
+ *
+ * Calendar days in a row punish a school child for weekends, holidays and a
+ * cold. The main streak is now counted in WEEKS: a week (Monday to Sunday) is
+ * met when at least `weekGoal` of its days met the daily goal (default four
+ * of seven). Days off inside a week break nothing.
+ *
+ * Three counters, as the day streaks were three: weeks met, weeks in which
+ * the program was opened often enough, weeks in which questions were answered
+ * often enough — the two easier ones judged by the same weekly goal.
+ *
+ * Counted like the day streaks: back from this week, and a week that is not
+ * yet met is skipped rather than counted as a miss — a streak is not broken
+ * on Tuesday. Two more kindnesses: a week lying wholly in a school break or
+ * on holidays (calendar.js `isBreakWeek`) is passed over, neither counted nor
+ * breaking; and a week is judged against the weekly goal in force during it
+ * (the lowest stamped on its days), so raising the goal cannot undo a week.
+ */
+export const WEEK_GOAL_DEFAULT = 4, WEEK_GOAL_MIN = 2, WEEK_GOAL_MAX = 7;
+
+/** A saved or typed weekly goal as a whole number from 2 to 7. */
+export function cleanWeekGoal(v) {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n < 1) return WEEK_GOAL_DEFAULT;
+  return Math.max(WEEK_GOAL_MIN, Math.min(WEEK_GOAL_MAX, n));
+}
+export const weekGoalOf = (S) => cleanWeekGoal(S && S.weekGoal);
+
+/* The three things a day can be, for the three week counters. */
+const dayAtGoal = (S) => (d) => !!d && (d.a || 0) >= (d.g ?? (S.goal || 10));
+const dayAnswered = () => (d) => !!d && (d.a || 0) >= 1;
+const dayOpened = () => (d) => !!d && !!(d.lg || d.a > 0);
+
+/** The weekly goal that applies to the week starting `monday`. */
+function weekGoalFor(S, monday) {
+  let g = null;
+  for (const k of weekKeys(monday)) {
+    const w = S.days[k] && S.days[k].wg;
+    if (w) g = g == null ? w : Math.min(g, w);
+  }
+  return g == null ? weekGoalOf(S) : cleanWeekGoal(g);
+}
+
+/** How many days of the week starting `monday` satisfy `qualifies`. */
+const daysIn = (S, monday, qualifies) =>
+  weekKeys(monday).reduce((n, k) => n + (qualifies(S.days[k]) ? 1 : 0), 0);
+
+function weeksBack(S, from, qualifies) {
+  const keys = Object.keys(S.days || {}).sort();
+  if (!keys.length) return 0;
+  const first = mondayOf(new Date(keys[0] + "T00:00:00"));
+  const met = (m) => daysIn(S, m, qualifies) >= weekGoalFor(S, m);
+  let m = mondayOf(from), n = 0;
+  if (!met(m)) m.setDate(m.getDate() - 7);          // this week is not over yet
+  while (m >= first) {
+    if (met(m)) n++;
+    else if (!isBreakWeek(m)) break;
+    m.setDate(m.getDate() - 7);
+  }
+  return n;
+}
+
+/** Consecutive weeks in which the weekly goal was met (days at the daily goal). */
+export const weekStreak = (S, from = new Date()) => weeksBack(S, from, dayAtGoal(S));
+/** Consecutive weeks with enough days on which something was answered. */
+export const weekAnswerStreak = (S, from = new Date()) => weeksBack(S, from, dayAnswered());
+/** Consecutive weeks with enough days on which the program was opened. */
+export const weekLoginStreak = (S, from = new Date()) => weeksBack(S, from, dayOpened());
+
+/** This week so far, for the interface: { done, goal, met }. */
+export function weekProgress(S, from = new Date()) {
+  const m = mondayOf(from);
+  const done = daysIn(S, m, dayAtGoal(S));
+  const goal = weekGoalFor(S, m);
+  return { done, goal, met: done >= goal };
 }
 
 /** Consecutive days on which the daily goal was reached. */
@@ -361,6 +561,13 @@ export function easeFor(S, { cell, word, skill }) {
 /**
  * Write one answer into the state. Single entry point, so every exercise
  * type updates the same counters in the same way.
+ *
+ * @param {State} S
+ * @param {Session} sess
+ * @param {{skill?: ?string, cell?: ?string, word?: ?string, ok: boolean, xp?: number,
+ *          hinted?: boolean, counts?: boolean, ms?: number, answer?: any,
+ *          tally?: boolean}} answer
+ * @returns {State}
  */
 export function record(S, sess, {
   skill, cell, word, ok, xp = 0, hinted = false, counts = true, ms = 0, answer = null,
@@ -575,6 +782,9 @@ export function badgeContext(S, sess, extra = {}, now = new Date()) {
     run: S.run,
     skillRun: sess.skillRun,
     dayStreak: dayStreak(S, now),
+    weekStreak: weekStreak(S, now),
+    weekAnswerStreak: weekAnswerStreak(S, now),
+    weekLoginStreak: weekLoginStreak(S, now),
     answerStreak: answerStreak(S, now),
     loginStreak: loginStreak(S, now),
     dayAnswers: day.a,
@@ -632,6 +842,16 @@ export function badgeContext(S, sess, extra = {}, now = new Date()) {
     correct: null, pickChanges: 0, goldfish: false,
     social: null,
     allOtherBadges: false,
+    /* ---- getting better (items 56 and 58, core/mending.js) ----
+       Different error patterns ever mended, reviews ever passed on time,
+       and a skill's mastery mark (core/mastery.js, 0–4). The mark is read
+       only for the skill a badge asks about, and once per context. */
+    mended: patternsMended(S),
+    reviewsOnTime: reviewsOnTime(S),
+    mastery: (() => {
+      const seen = {};
+      return (skill) => (seen[skill] ??= masteryOf(S, skill, now).level);
+    })(),
     ...extra,
   };
 }

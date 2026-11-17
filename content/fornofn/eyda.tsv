@@ -1,0 +1,56 @@
+# Fornöfn: persónufornafn í eyðu
+#
+# Persónufornafn í því falli sem sögnin eða forsetningin stýrir. Vísbendingin í
+# svigum er nefnifall sömu tölu.
+#
+# Dálkar:
+#   þyngd    1–5
+#   setning  setningin; ___ er eyðan
+#   svar     svarið: uppflettimynd|orðflokkur|BÍN-mark
+#   skýring  skýringin sem nemandinn les
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# A personal pronoun in the case the verb or preposition asks for.
+# The cue shown in brackets is the nominative of the same number.
+# Level = length; +1 for a plural pronoun (okkur, ykkur, þeim), +1 for the
+# genitive (mín, hans, okkar).
+#
+
+þyngd	setning	svar	skýring
+1	Ég gaf ___ bókina.	hún|pfn|ÞGFET	gefa e-m e-ð: sá sem fær stendur í þágufalli.
+1	Kennarinn hrósaði ___ fyrir verkefnið.	ég|pfn|ÞGFET	hrósa stýrir þágufalli.
+1	Viltu hjálpa ___ með heimavinnuna?	ég|pfn|ÞGFET	hjálpa stýrir þágufalli.
+2	Amma bakaði köku handa ___.	ég|pfn|ÞGFFT	handa stýrir þágufalli.
+3	Ég hlakka til að hitta ___ á morgun.	þú|pfn|ÞFET	hitta stýrir þolfalli.
+2	Strákarnir biðu eftir ___ í hálftíma.	hún|pfn|ÞGFET	bíða eftir e-m: eftir stýrir hér þágufalli.
+3	Hefur þú séð ___ í dag?	hann|pfn|ÞFFT	sjá stýrir þolfalli.
+2	Ég sakna ___ mikið.	þú|pfn|EFET	sakna stýrir eignarfalli.
+2	Við töluðum um ___ í gær.	hún|pfn|ÞFET	um stýrir þolfalli.
+3	Mamma keypti nýja skó handa ___.	þú|pfn|ÞGFFT	handa stýrir þágufalli.
+2	Hundurinn hljóp á eftir ___.	ég|pfn|ÞGFFT	á eftir stýrir þágufalli.
+2	Ég sendi ___ bréf.	hann|pfn|ÞGFFT	senda e-m e-ð: sá sem fær stendur í þágufalli.
+3	Hún saknaði ___ allan daginn.	það|pfn|EFFT	sakna stýrir eignarfalli.
+1	Ég fékk bréf frá ___.	hann|pfn|ÞGFET	frá stýrir þágufalli.
+1	Komdu með ___ í bíó!	ég|pfn|ÞGFET	með e-m (ásamt e-m) stýrir þágufalli.
+2	Pabbi spurði ___ um prófið.	ég|pfn|ÞFFT	spyrja stýrir þolfalli.
+2	Kötturinn svaf hjá ___ í nótt.	þú|pfn|ÞGFET	hjá stýrir þágufalli.
+1	Ég þekki ___ vel.	hún|pfn|ÞFET	þekkja stýrir þolfalli.
+3	Ég fór til ___ í gær.	hann|pfn|EFET	til stýrir eignarfalli.
+1	Ég treysti ___ alveg.	þú|pfn|ÞGFET	treysta stýrir þágufalli.
+2	Við heimsóttum ___ um jólin.	hann|pfn|ÞFFT	heimsækja stýrir þolfalli.
+2	Þjálfarinn óskaði ___ til hamingju.	þú|pfn|ÞGFFT	óska e-m til hamingju: þágufall.
+2	Hún hringdi í ___ í morgun.	ég|pfn|ÞFET	hringja í e-n: í stýrir hér þolfalli.
+1	Ég lánaði ___ hjólið mitt.	hún|pfn|ÞGFET	lána e-m e-ð: þágufall.
+3	Strákurinn leitaði ___ um allan bæ.	hún|pfn|EFET	leita stýrir eignarfalli.
+1	Við gleymdum ___ á stöðinni.	þú|pfn|ÞGFET	gleyma stýrir þágufalli.
+3	Ég heyrði í ___ í útvarpinu.	hann|pfn|ÞGFFT	heyra í e-m: í stýrir hér þágufalli.
+4	Þau fóru í bíó án ___.	ég|pfn|EFFT	án stýrir eignarfalli.
+1	Hver sagði ___ þetta?	þú|pfn|ÞGFET	segja e-m e-ð: þágufall.
+2	Ég sá ___ í búðinni.	hún|pfn|ÞFFT	sjá stýrir þolfalli.
+2	Afi gaf ___ nammi.	það|pfn|ÞGFFT	gefa e-m e-ð: þágufall.
+2	Mér þykir vænt um ___.	þú|pfn|ÞFFT	um stýrir þolfalli.

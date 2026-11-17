@@ -19,12 +19,13 @@ const INCLUDE = [
   "build.sh", "requirements.txt", "package.json", "package-lock.json",
   "README.md", "CHANGES.md", "docs", "src", "tests", "tools", "server",
   "Dockerfile", ".dockerignore", "fly.toml",
-  "sentences.py", "noun_classes.py", "definitions.py", "government.py",
-  "parse_guard.py", "parse_overrides.py", "vocab_filter.py",
-  "build_freq.py", "build_lexicon.py", "build_sentences.py", "build_bundle.py",
-  "exercises.py", "build_exercises.py",
-  "freq_raw.txt", "freq_raw.sha256", "freq_lemmas.json",
-  "lexicon.json", "sentences.json", "data",
+  "requirements-build.txt", "Dockerfile.build", "Dockerfile.build.dockerignore",
+  "build-in-container.sh", "test-together.sh",
+  /* the Python half of the build (critique item 79), its two fixed sources
+     and the generated data; the hand-written content (item 82) is read by
+     pipeline/content_io.py */
+  "pipeline", "sources", "content", "data",
+  "tsconfig.json", ".gitattributes",
   `dist/${name}.html`,
 ];
 
@@ -38,7 +39,7 @@ await mkdir(stage, { recursive: true });
 const missing = [];
 for (const f of INCLUDE) {
   if (!existsSync(p(f))) { missing.push(f); continue; }
-  await cp(p(f), path.join(stage, f), { recursive: true });
+  await cp(p(f), path.join(stage, f), { recursive: true, filter: (src) => !src.split(path.sep).includes("__pycache__") });
 }
 await rm(path.join(stage, "server", "data"), { recursive: true, force: true });
 if (missing.length) {

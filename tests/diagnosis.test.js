@@ -10,13 +10,18 @@ import { gradeForm } from "../src/js/core/grading.js";
 import { narrowPolicy } from "../src/js/core/policy.js";
 import { mergeStates } from "../src/js/core/merge.js";
 import { cleanState } from "../server/guard.mjs";
-import { nextTask, TASKS } from "../src/js/tasks/index.js";
-import { errorHunt, gradeHunt } from "../src/js/tasks/production.js";
+import { TASKS } from "../src/js/tasks/index.js";
+import { errorHunt } from "../src/js/tasks/malbeiting.js";
+import { gradeHunt } from "../src/js/core/answer.js";
+import { ask } from "./helpers.js";
 import {
   PATTERNS, patternById, casePattern, patternsForCells, patternsForForm, diagnose,
   noteDiagnosis, standingOf, activePatterns, tagsOf, chancesIn, targets, focusTypes,
   huntPreferFor, pickTargeted, runReport,
+  spellingPattern, vowelChange, wilsonLower, standings, UNREAD, MIN_CHANCES,
 } from "../src/js/core/diagnosis.js";
+import { verbConjugation } from "../src/js/tasks/sagnord.js";
+import { normalise } from "../src/js/core/grading.js";
 import { LESSONS } from "../src/js/core/lessons.js";
 
 const lex = buildLexicon(DATA);
@@ -28,7 +33,8 @@ test("every pattern is complete: a name, a rule, a real lesson, tags and real qu
   const ids = new Set();
   for (const p of PATTERNS) {
     assert.ok(!ids.has(p.id), `${p.id} twice`); ids.add(p.id);
-    assert.ok(p.nm && p.rule && p.tags.length, p.id);
+    /* "ogreint" is a count, not an error a question tests: no tags. */
+    assert.ok(p.nm && p.rule && (p.tags.length || p.meta), p.id);
     assert.ok(p.lesson === null || pages.has(p.lesson), `${p.id}: no page ${p.lesson}`);
     p.types.forEach((t) => assert.ok(types.has(t), `${p.id}: no question type ${t}`));
   }
@@ -109,7 +115,7 @@ test("a hunt: a missed error is its pattern, a changed correct word is over-corr
   const rnd = (() => { let x = 7; return () => ((x = (x * 16807) % 2147483647) / 2147483647); })();
   let checked = 0;
   for (let k = 0; k < 80 && checked < 10; k++) {
-    const h = errorHunt(lex, lex.sentences.filter((s) => s.lvl <= 3), { count: 2, rnd });
+    const h = errorHunt(lex, lex.sentences.filter((s) => s.lvl <= 3), rnd, { count: 2 });
     if (!h) continue;
     const task = { type: "villur", hunt: h };
     const ti = h.lines[0].toks.findIndex((t) => !t.err && !t.punct &&
@@ -140,7 +146,11 @@ test("chances and misses are counted, and a pattern turns active and back", () =
   assert.equal(r.n, 3); assert.equal(r.w, 2); assert.equal(r.h, "001");
   assert.deepEqual(r.ex, [{ w: "hestur|kk", m: "ÞGFET", o: "ÞFET" }]);
   assert.ok(S.diag.greinir && S.diag.greinir.w === 0, "every pattern the question tested got a chance");
-  assert.ok(standingOf(r).active);
+  assert.equal(standingOf(r).active, false, "v6.13: two misses in three answers are not yet enough");
+  noteDiagnosis(S, t, miss, false, "2026-11-12");
+  noteDiagnosis(S, t, [], true, "2026-11-12");
+  assert.equal(r.h, "00101");
+  assert.ok(standingOf(r).active, "three misses in five answers");
   assert.deepEqual(activePatterns(S).map((p) => p.id), ["thf_thgf"]);
   for (let k = 0; k < 16; k++) noteDiagnosis(S, t, [], true, "2026-11-13");
   assert.equal(standingOf(S.diag.thf_thgf).active, false, "sixteen right in a row and it is mended");
@@ -173,7 +183,7 @@ test("a session on one skill draws only that skill's questions", () => {
     const ctx = ctxFor(S);
     ctx.policy = narrowPolicy(effectivePolicy(S), { skills: [topic] });
     for (let k = 0; k < 25; k++) {
-      const t = nextTask(ctx);
+      const t = ask(ctx);
       assert.ok(t, `${topic}: no question`);
       const spec = TASKS.find((x) => x.id === t.typeId);
       assert.ok(spec.skill === topic || (spec.anyOf || []).includes(topic), `${topic}: got ${t.typeId}`);
@@ -191,7 +201,7 @@ test("questions aimed at a pattern come more often", () => {
     let hit = 0;
     let x = 99; const rnd = () => ((x = (x * 16807) % 2147483647) / 2147483647);
     for (let k = 0; k < 120; k++) {
-      const t = pickTargeted(() => nextTask(ctx), ids, { p, tries: 6, rnd });
+      const t = pickTargeted(() => ask(ctx), ids, { p, tries: 6, rnd });
       if (t && targets(t, ids)) hit++;
     }
     return hit;
@@ -203,8 +213,9 @@ test("questions aimed at a pattern come more often", () => {
 test("a session's report: what went right, the one thing to remember", () => {
   const S = blankState();
   const t = { type: "fill", m: "ÞGFET", word: "hestur|kk" };
-  noteDiagnosis(S, t, [{ p: "ef" }], false, "2026-11-12");
-  noteDiagnosis(S, t, [{ p: "ef" }], false, "2026-11-12");
+  /* v6.13: active takes at least five answers — three misses, two right. */
+  for (let k = 0; k < 3; k++) noteDiagnosis(S, t, [{ p: "ef" }], false, "2026-11-12");
+  for (let k = 0; k < 2; k++) noteDiagnosis(S, { type: "fill", m: "EFET" }, [], true, "2026-11-12");
   const run = {
     chances: { thf_thgf: 4, ef: 3, greinir: 5, broddar: 5 },
     misses: { thf_thgf: 2, broddar: 1 },
@@ -216,6 +227,9 @@ test("a session's report: what went right, the one thing to remember", () => {
   assert.deepEqual(rep.focus.ex, [{ said: "hest", right: "hesti" }]);
   assert.deepEqual(rep.mended.map((p) => p.id), ["ef"], "active before, tested, no miss");
   assert.ok(rep.clean.some((p) => p.id === "greinir"));
+  /* v6.13: no praise for the slips and catch-alls every form gives a chance at */
+  const quietRun = { chances: { y_i: 5, n_nn: 5, dh_d: 5, sogn_obeygd: 4, greinir: 5 }, misses: {}, found: [], before: [] };
+  assert.deepEqual(runReport(quietRun, S).clean.map((p) => p.id), ["greinir"]);
   /* nothing wrong in the session: the worst active pattern from before */
   const quiet = runReport({ chances: { greinir: 3 }, misses: {}, found: [], before: [] }, S);
   assert.equal(quiet.focus.id, "ef");
@@ -257,4 +271,437 @@ test("the diagnosis and the sessions survive saving, merging and the server", ()
 test("patternById", () => {
   assert.equal(patternById("v2").lesson, "malbeiting");
   assert.equal(patternById("nope"), null);
+});
+
+/* ===================== v6.13: critique items 7, 8, 31–35 ===================== */
+
+/** One typed answer to one cell of a real word, read the way the app reads it
+    (gradeForm → diagnose). Returns the pattern ids found. */
+const fileAs = (lemma, cls, m, typed) => {
+  const w = word(lemma, cls);
+  assert.ok(w, `${lemma} is not in the lexicon`);
+  const accepted = w.forms[m];
+  assert.ok(accepted, `${lemma} has no ${m}`);
+  const g = gradeForm(typed, { accepted, paradigm: w.forms });
+  const conj = cls === "so" ? verbConjugation(w) : null;
+  return diagnose({ type: cls === "so" ? "verb" : "fill", m, word: `${lemma}|${cls}` },
+    { kind: "form", items: [{ m, typed, g, accepted, conj }] }).map((x) => x.p);
+};
+const isFormOf = (w, x) => Object.values(w.forms).some((fs) => fs.some((f) => normalise(f) === x));
+const allOf = (classes) => classes.flatMap((c) => lex.byClass[c] || []);
+
+test("item 7: the three rule texts say what is true", () => {
+  const fs = patternById("fallstjorn_fs").rule;
+  assert.match(fs, /\*við\*/, "við can govern two cases");
+  assert.match(fs, /við húsið/); assert.match(fs, /taka við bréfinu/);
+  const v2 = patternById("v2").rule;
+  assert.match(v2, /fullyrðingarsetningu/);
+  assert.doesNotMatch(v2, /aðalsetningu/, "questions and commands are main clauses without V2");
+  const mm = patternById("mynd").rule;
+  assert.match(mm, /klæða – klæðast/);
+  assert.doesNotMatch(mm, /hlakkast/);
+});
+
+/* The critique's table of synthetic errors, one test per row: each now files
+   where it should, first with the word the critique names or a plain one,
+   then across every word in the lexicon the error can be made on. */
+
+test("table row 1: y for i, ý for í is y, ý og ey — not a vowel change", () => {
+  assert.equal(spellingPattern("firir", "fyrir"), "y_i");
+  assert.deepEqual(patternsForForm("firir", ["fyrir"], "NFET"), ["y_i"]);
+  assert.deepEqual(fileAs("drykkur", "kk", "NFET", "drikkur"), ["y_i"]);
+  assert.deepEqual(fileAs("dýr", "hk", "NFET", "dír"), ["y_i"]);
+  assert.deepEqual(fileAs("lykill", "kk", "NFET", "likill"), ["y_i"]);
+  assert.deepEqual(fileAs("heyra", "so", "GM-NH", "heira"), ["y_i"], "ei for ey");
+  let n = 0;
+  for (const w of allOf(["kk", "kvk", "hk"])) for (const m of ["NFET", "ÞGFET", "NFFT"]) {
+    const f = (w.forms[m] || [])[0];
+    if (!f || !/[yý]/.test(f)) continue;
+    const t = f.replace(/y/g, "i").replace(/ý/g, "í");
+    if (isFormOf(w, t)) continue;
+    assert.deepEqual(fileAs(w.o, w.c, m, t), ["y_i"], `${t} for ${f}`);
+    n++;
+  }
+  assert.ok(n > 200, `only ${n} words tried`);
+});
+
+test("table row 2: d for ð in a verb ending is ð eða d — not a wrong ending", () => {
+  assert.deepEqual(fileAs("kalla", "so", "GM-FH-ÞT-3P-ET", "kalladi"), ["dh_d"]);
+  assert.deepEqual(fileAs("heyra", "so", "GM-FH-ÞT-3P-ET", "heyrdi"), ["dh_d"]);
+  assert.deepEqual(fileAs("dæma", "so", "GM-FH-ÞT-3P-ET", "dæmði"), ["dh_d"], "and ð for d");
+  let n = 0;
+  for (const w of allOf(["so"])) {
+    if (verbConjugation(w) !== "veik") continue;
+    for (const m of ["GM-FH-ÞT-3P-ET", "GM-FH-ÞT-1P-FT"]) {
+      const f = (w.forms[m] || [])[0];
+      const t = f && f.replace(/ð(?=[iu])/, "d");
+      if (!f || t === f || isFormOf(w, t)) continue;
+      assert.deepEqual(fileAs(w.o, "so", m, t), ["dh_d"], `${t} for ${f}`);
+      n++;
+    }
+  }
+  assert.ok(n > 200, `only ${n} forms tried`);
+});
+
+test("table row 3: -inum for -unum is a wrong ending — not a vowel change", () => {
+  assert.deepEqual(fileAs("barn", "hk", "ÞGFFTgr", "börninum"), ["ending"]);
+  assert.deepEqual(fileAs("sjór", "kk", "ÞGFFTgr", "sjóinum"), ["ending"], "a stem ending in a vowel");
+  /* … while a real vowel change in the stem stays one */
+  assert.deepEqual(fileAs("bók", "kvk", "NFFT", "bókur"), ["hljodvarp"]);
+  assert.deepEqual(fileAs("kennari", "kk", "ÞGFFT", "kennarum"), ["hljodvarp"], "u-umlaut in the second syllable");
+  assert.equal(vowelChange("börninum", "börnunum"), false);
+  assert.equal(vowelChange("kennarum", "kennurum"), true);
+  assert.equal(vowelChange("hlaupur", "hleypur"), true);
+  let n = 0;
+  for (const w of allOf(["kk", "kvk", "hk"])) {
+    const f = (w.forms.ÞGFFTgr || [])[0];
+    if (!f || !f.endsWith("unum")) continue;
+    const t = f.replace(/unum$/, "inum");
+    if (isFormOf(w, t)) continue;
+    assert.deepEqual(fileAs(w.o, w.c, "ÞGFFTgr", t), ["ending"], `${t} for ${f}`);
+    n++;
+  }
+  assert.ok(n > 500, `only ${n} words tried`);
+});
+
+test("table row 4 (item 33): nominative = accusative typed for a dative is Þolfall og þágufall", () => {
+  assert.deepEqual(fileAs("barn", "hk", "ÞGFET", "barn"), ["thf_thgf"]);
+  assert.deepEqual(fileAs("barn", "hk", "ÞGFFT", "börn"), ["thf_thgf"]);
+  assert.deepEqual(fileAs("borð", "hk", "ÞGFETgr", "borðið"), ["thf_thgf"]);
+  assert.deepEqual(patternsForCells("ÞGFET", ["NFET", "ÞFET"]).map((x) => x.p), ["thf_thgf"]);
+  assert.deepEqual(patternsForCells("ÞGFET", ["ÞFET", "NFET"]).map((x) => x.p), ["thf_thgf"], "in any order");
+  /* the tie is broken only for a dative target */
+  assert.deepEqual(patternsForCells("EFET", ["NFET", "ÞFET"]).map((x) => x.p), ["ef"]);
+  assert.deepEqual(fileAs("hestur", "kk", "ÞFET", "hestur"), ["nf_aukafall"], "a form that is only nominative");
+  let n = 0;
+  for (const w of allOf(["kk", "kvk", "hk"]))
+    for (const [d, a, nf] of [["ÞGFET", "ÞFET", "NFET"], ["ÞGFFT", "ÞFFT", "NFFT"], ["ÞGFETgr", "ÞFETgr", "NFETgr"]]) {
+      const fa = (w.forms[a] || [])[0];
+      if (!fa || fa !== (w.forms[nf] || [])[0] || (w.forms[d] || []).includes(fa)) continue;
+      assert.deepEqual(fileAs(w.o, w.c, d, fa), ["thf_thgf"], `${fa} for ${w.forms[d]}`);
+      n++;
+    }
+  assert.ok(n > 1000, `only ${n} forms tried`);
+});
+
+test("table row 5 (item 34): the infinitive typed for a finite form is Sögnin ekki beygð", () => {
+  const p = patternById("sogn_obeygd");
+  assert.equal(p.nm, "Sögnin ekki beygð");
+  assert.deepEqual(fileAs("hlaupa", "so", "GM-FH-ÞT-3P-ET", "hlaupa"), ["sogn_obeygd"]);
+  assert.deepEqual(fileAs("fara", "so", "GM-FH-NT-1P-ET", "fara"), ["sogn_obeygd"]);
+  assert.deepEqual(fileAs("kalla", "so", "GM-FH-ÞT-1P-FT", "kalla"), ["sogn_obeygd"]);
+  /* any other wrong person is still that */
+  assert.deepEqual(fileAs("hlaupa", "so", "GM-FH-ÞT-3P-ET", "hlupum"), ["sogn_frumlag"]);
+  /* a question on a finite verb is a chance to make it */
+  assert.ok(chancesIn({ type: "verb", m: "GM-FH-ÞT-3P-ET" }).includes("sogn_obeygd"));
+  assert.ok(!chancesIn({ type: "fill", m: "ÞGFET" }).includes("sogn_obeygd"));
+  /* Setningasmiðja: the verb card put in as it stands */
+  const v = word("hlaupa", "so");
+  const cards = [{ m: "GM-FH-ÞT-3P-ET", e: v, answers: v.forms["GM-FH-ÞT-3P-ET"] }];
+  assert.deepEqual(diagnose({ type: "smidja", cards }, { kind: "cards", cards, per: [{ ok: false, typed: "hlaupa" }], extra: [] })
+    .map((x) => x.p), ["sogn_obeygd"]);
+  let n = 0;
+  for (const w of allOf(["so"])) {
+    const inf = (w.forms["GM-NH"] || [])[0];
+    if (!inf) continue;
+    for (const m of ["GM-FH-ÞT-3P-ET", "GM-FH-NT-1P-ET", "GM-FH-NT-2P-FT", "GM-FH-ÞT-1P-FT"]) {
+      if (!w.forms[m] || w.forms[m].includes(inf)) continue;
+      assert.deepEqual(fileAs(w.o, "so", m, inf), ["sogn_obeygd"], `${inf} for ${w.forms[m]}`);
+      n++;
+    }
+  }
+  assert.ok(n > 1000, `only ${n} forms tried`);
+});
+
+test("table row 6 (item 8): a strong verb given a weak plural past is diagnosed", () => {
+  assert.deepEqual(fileAs("ganga", "so", "GM-FH-ÞT-1P-FT", "ganguðum"), ["sterk_veik_sogn"]);
+  assert.deepEqual(fileAs("hefja", "so", "GM-FH-ÞT-2P-FT", "hefjuðuð"), ["sterk_veik_sogn"]);
+  assert.deepEqual(fileAs("ganga", "so", "GM-FH-ÞT-1P-FT", "gengdum"), ["sterk_veik_sogn"], "-dum, not a letter too many");
+  assert.deepEqual(fileAs("sitja", "so", "GM-FH-ÞT-1P-FT", "sitjuðum"), ["sterk_veik_sogn"], "the right form ends in -tum");
+  assert.deepEqual(fileAs("bjóða", "so", "GM-FH-ÞT-1P-FT", "bjóðuðum"), ["sterk_veik_sogn"], "the right form ends in -uðum");
+  for (const [typed, right] of [["fartum", "fórum"], ["fartuð", "fóruð"], ["gefðuð", "gáfuð"], ["gefdum", "gáfum"],
+    ["hlaupuðumst", "hlupumst"]])
+    assert.deepEqual(patternsForForm(typed, [right], "GM-FH-ÞT-1P-FT", "sterk"), ["sterk_veik_sogn"], typed);
+  /* not for a weak verb, a present tense, or a vowel slip */
+  assert.ok(!patternsForForm("hlaupuðum", ["hlupum"], "GM-FH-ÞT-1P-FT", "veik").includes("sterk_veik_sogn"),
+    "only a verb known to be strong");
+  assert.ok(!patternsForForm("ganguðum", ["göngum"], "GM-FH-NT-1P-FT", "sterk").includes("sterk_veik_sogn"));
+  assert.ok(!patternsForForm("situm", ["sátum"], "GM-FH-ÞT-1P-FT", "sterk").includes("sterk_veik_sogn"));
+  /* every strong verb in the lexicon, every person: -aði, -aðir, -uðum, -uðuð, -uðu */
+  const END = { "1P-ET": "aði", "2P-ET": "aðir", "3P-ET": "aði", "1P-FT": "uðum", "2P-FT": "uðuð", "3P-FT": "uðu" };
+  let n = 0;
+  for (const w of allOf(["so"])) {
+    if (verbConjugation(w) !== "sterk") continue;
+    const stem = ((w.forms["GM-NH"] || [])[0] || "").replace(/a$/, "");
+    if (!stem) continue;
+    for (const [pn, e] of Object.entries(END)) {
+      const m = "GM-FH-ÞT-" + pn;
+      if (!w.forms[m] || isFormOf(w, stem + e)) continue;
+      assert.deepEqual(fileAs(w.o, "so", m, stem + e), ["sterk_veik_sogn"], `${stem + e} for ${w.forms[m]}`);
+      n++;
+    }
+  }
+  assert.ok(n > 300, `only ${n} forms tried`);
+});
+
+test("item 32: n eða nn, and the order of the spelling tests", () => {
+  assert.deepEqual(fileAs("hestur", "kk", "ÞFETgr", "hestin"), ["n_nn"]);
+  assert.deepEqual(fileAs("bíll", "kk", "ÞFETgr", "bílin"), ["n_nn"]);
+  assert.deepEqual(fileAs("kona", "kvk", "NFETgr", "konann"), ["n_nn"]);
+  assert.equal(spellingPattern("kenari", "kennari"), "n_nn");
+  /* the old one-letter slip is still itself */
+  assert.equal(spellingPattern("viltuð", "villtuð"), "stafsetning");
+  assert.equal(spellingPattern("hestinu", "hestinum"), null, "a letter off the end is an ending");
+  assert.equal(spellingPattern("fíri", "fyrir"), null, "two kinds of error at once is not one pattern");
+  assert.equal(spellingPattern("bok", "bók"), null, "an accent alone is Broddar");
+  for (const id of ["y_i", "n_nn", "dh_d"]) {
+    const p = patternById(id);
+    assert.ok(p.tags.includes("form") && p.types.includes("fill"), id);
+    assert.ok(chancesIn({ type: "fill", m: "ÞGFET" }).includes(id), `${id}: a written form is a chance`);
+  }
+  assert.equal(patternById("y_i").nm, "y, ý og ey");
+  assert.equal(patternById("n_nn").nm, "n eða nn");
+  assert.equal(patternById("dh_d").nm, "ð eða d");
+});
+
+test("item 31: a wrong answer nothing could read is ógreint, and no success for anything", () => {
+  const S = blankState();
+  const t = { type: "fill", m: "ÞGFET", word: "hestur|kk" };
+  const tested = chancesIn(t);
+  assert.ok(tested.includes("thf_thgf") && !tested.includes(UNREAD));
+  /* wrong, nothing found */
+  assert.deepEqual(noteDiagnosis(S, t, [], false, "2026-11-16"), []);
+  for (const id of tested) assert.equal(S.diag[id], undefined, `${id} got a hit for an unread miss`);
+  assert.deepEqual(S.diag.ogreint, { n: 1, w: 1, h: "0", last: "2026-11-16", ex: [] });
+  /* wrong, diagnosed: ógreint gets a chance and no miss */
+  const back = noteDiagnosis(S, t, [{ p: "thf_thgf", m: "ÞGFET", other: "ÞFET" }], false, "2026-11-16");
+  assert.ok(back.includes("thf_thgf") && back.includes("greinir") && !back.includes(UNREAD));
+  assert.equal(S.diag.ogreint.n, 2); assert.equal(S.diag.ogreint.w, 1); assert.equal(S.diag.ogreint.h, "01");
+  /* right: ógreint is not touched */
+  noteDiagnosis(S, t, [], true, "2026-11-16");
+  assert.equal(S.diag.ogreint.n, 2);
+  assert.equal(S.diag.greinir.h, "11");
+  /* wrong with only a soft finding: that one is written, nothing else */
+  const S2 = blankState();
+  assert.deepEqual(noteDiagnosis(S2, t, [{ p: "broddar", soft: true }], false, "2026-11-16"), ["broddar"]);
+  assert.deepEqual(Object.keys(S2.diag).sort(), ["broddar", "ogreint"]);
+  assert.equal(S2.diag.ogreint.w, 1);
+});
+
+test("item 31: ógreint is visible but never active, never practised, last in the list", () => {
+  const S = blankState();
+  const t = { type: "fill", m: "ÞGFET", word: "hestur|kk" };
+  for (let k = 0; k < 16; k++) noteDiagnosis(S, t, [], false, "2026-11-16");
+  assert.equal(S.diag.ogreint.w, 16);
+  for (let k = 0; k < 6; k++) noteDiagnosis(S, t, [{ p: "ef" }], false, "2026-11-16");
+  const list = standings(S);
+  assert.equal(list[0].id, "ef");
+  assert.equal(list[list.length - 1].id, "ogreint", "last, though its rate is the highest");
+  const og = list.find((p) => p.id === "ogreint");
+  assert.equal(og.nm, "Ógreint");
+  assert.ok(og.n > 0 && og.w > 0, "the Framvinda panel lists patterns with n > 0 and w > 0");
+  assert.equal(og.active, false);
+  assert.deepEqual(activePatterns(S, 6).map((p) => p.id), ["ef"]);
+  assert.equal(focusTypes(["ogreint"]).size, 0);
+  assert.ok(!PATTERNS.some((p) => !p.meta && chancesIn({ type: "verb", m: "GM-FH-ÞT-3P-ET" }).includes(UNREAD)));
+});
+
+test("item 35: a pattern is active only on enough evidence (Wilson lower bound > 20 %)", () => {
+  assert.equal(MIN_CHANCES, 5);
+  assert.equal(wilsonLower(0, 0), 0);
+  assert.ok(Math.abs(wilsonLower(3, 5) - 0.272) < 0.002);
+  assert.ok(Math.abs(wilsonLower(6, 16) - 0.208) < 0.002);
+  const act = (h) => standingOf({ h }).active;
+  assert.equal(act("00"), false, "two slips are not enough");
+  assert.equal(act("0000"), false, "nor four answers, however bad");
+  assert.equal(act("01011"), false, "two of five");
+  assert.equal(act("01010"), true, "three of five");
+  assert.equal(act("0111111111"), false);
+  assert.equal(act("0011111111"), false, "two in ten flagged a pattern before v6.13");
+  assert.equal(act("0101011111111111"), false, "three of sixteen");
+  assert.equal(act("0101010101111111"), false, "five of sixteen");
+  assert.equal(act("0101010101011111"), true, "six of sixteen");
+  /* what it takes, window by window: monotone, and never fewer than three */
+  let last = 0;
+  for (let n = MIN_CHANCES; n <= 16; n++) {
+    let k = 0;
+    while (!act("0".repeat(k) + "1".repeat(n - k))) k++;
+    assert.ok(k >= 3 && k >= last && k / n > 0.2, `${k} of ${n}`);
+    last = k;
+  }
+});
+
+test("v6.12 saved diagnosis still loads, and the new keys travel like the old", () => {
+  /* a pupil's state as v6.12 saved it: old ids only, an old short history */
+  const old = blankState();
+  old.diag = {
+    thf_thgf: { n: 3, w: 2, h: "001", last: "2026-11-10", ex: [{ w: "hestur|kk", m: "ÞGFET", o: "ÞFET" }] },
+    stafsetning: { n: 9, w: 1, h: "111110111", last: "2026-11-09", ex: [] },
+    retired_pattern: { n: 4, w: 4, h: "0000", last: null, ex: [] },
+  };
+  const S = migrate(JSON.parse(JSON.stringify(old)));
+  assert.deepEqual(S.diag.thf_thgf, old.diag.thf_thgf);
+  const list = standings(S);
+  assert.deepEqual(list.map((p) => p.id).sort(), ["stafsetning", "thf_thgf"], "an unknown key is ignored, not an error");
+  assert.equal(list.find((p) => p.id === "thf_thgf").misses, 2);
+  /* answering on top of it */
+  noteDiagnosis(S, { type: "fill", m: "ÞGFET", word: "hestur|kk" }, [], false, "2026-11-16");
+  assert.equal(S.diag.thf_thgf.h, "001", "the unread miss left the old record alone");
+  assert.equal(S.diag.ogreint.w, 1);
+  /* the server keeps the new keys */
+  noteDiagnosis(S, { type: "fill", m: "ÞFETgr" }, [{ p: "n_nn", m: "ÞFETgr" }], false, "2026-11-16");
+  noteDiagnosis(S, { type: "verb", m: "GM-FH-ÞT-3P-ET" }, [{ p: "sogn_obeygd", m: "GM-FH-ÞT-3P-ET" }], false, "2026-11-16");
+  const clean = cleanState(JSON.parse(JSON.stringify(S)));
+  for (const id of ["ogreint", "n_nn", "sogn_obeygd"]) assert.deepEqual(clean.diag[id].h, S.diag[id].h, id);
+  /* two devices: ógreint adds up like any other pattern */
+  const base = migrate(JSON.parse(JSON.stringify(S)));
+  const L = migrate(JSON.parse(JSON.stringify(S))), R = migrate(JSON.parse(JSON.stringify(S)));
+  noteDiagnosis(L, { type: "fill", m: "ÞGFET" }, [], false, "2026-11-17");
+  noteDiagnosis(R, { type: "fill", m: "ÞGFET" }, [], false, "2026-11-17");
+  const M = mergeStates(base, L, R);
+  assert.equal(M.diag.ogreint.n, S.diag.ogreint.n + 2);
+  assert.equal(M.diag.ogreint.w, S.diag.ogreint.w + 2);
+});
+
+/* ---------- item 38: the classifier against a second opinion ----------------
+   core/classifiercheck.js. The critique asked for real wrong answers labelled
+   by a teacher; the owner asked that nobody label anything by hand. So the
+   check is the classifier against a rule that looks the typed form up in
+   every cell of the word. The cases just below are constructed (they test the
+   CHECK); the real ones come from tests/fixtures/wrong-answers.json, which is
+   what the administrator's page downloads. */
+import fsSync from "node:fs";
+import { judge as judgeAnswer, askedCells } from "../src/js/core/answer.js";
+import { cleanSample, samplesOf, classify, ruleReading, agrees, agreement, SPELLING_PATTERNS }
+  from "../src/js/core/classifiercheck.js";
+
+const sample = (w, m, typed, extra = {}) => {
+  const e = lex.lookup(...w.split("|"));
+  return { t: "fill", w, m, typed, right: e.forms[m][0], p: [], ...extra };
+};
+
+test("the rule reads a typed form in EVERY cell of the word it stands in", () => {
+  /* *hest* for *hesti*: only the accusative singular */
+  const a = ruleReading(lex, sample("hestur|kk", "ÞGFET", "hest"));
+  assert.deepEqual([a.kind, a.cells], ["cell", ["ÞFET"]]);
+  assert.deepEqual([...a.implied], ["thf_thgf"]);
+  /* *barn* for *barni*: nominative AND accusative — both readings are kept */
+  const b = ruleReading(lex, sample("barn|hk", "ÞGFET", "barn"));
+  assert.deepEqual(b.cells.sort(), ["NFET", "ÞFET"].sort());
+  assert.deepEqual([...b.implied].sort(), ["nf_aukafall", "thf_thgf"]);
+  /* the infinitive for a finite form */
+  const c = ruleReading(lex, sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlaupa"));
+  assert.ok(c.implied.has("sogn_obeygd"));
+  /* not a form of the word at all */
+  const d = ruleReading(lex, sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlaupaði"));
+  assert.deepEqual([d.kind, d.cells, d.implied.size], ["nonform", [], 0]);
+  /* no form — but one letter from the accusative *hestinn* and from the bare
+     dative *hesti*, and two from the *hestinum* that was asked for */
+  const n = ruleReading(lex, sample("hestur|kk", "ÞGFETgr", "hestin"));
+  assert.deepEqual([n.kind, [...n.cells].sort(), [...n.implied].sort()],
+    ["nearcell", ["ÞFETgr", "ÞGFET"].sort(), ["greinir", "thf_thgf"]]);
+  /* one letter from the form asked for as well: just a misspelling of it */
+  assert.equal(ruleReading(lex, sample("hestur|kk", "ÞGFETgr", "hestinu")).kind, "nonform");
+  assert.equal(ruleReading(lex, sample("bók|kvk", "NFFT", "bókur")).kind, "nonform");
+  /* another cell, but for an accent */
+  const g = word("góður", "lo");
+  const acc = ruleReading(lex, { t: "tbl_lo", w: "góður|lo", m: "FSB-KK-NFET", typed: "goðan", right: g.forms["FSB-KK-NFET"][0], p: [] });
+  assert.equal(acc.kind, "accent");
+  assert.ok(acc.implied.has("broddar") && acc.cells.includes("FSB-KK-ÞFET"));
+});
+
+test("agreement: what the classifier names must be something the rule allows", () => {
+  const cell = ruleReading(lex, sample("barn|hk", "ÞGFET", "barn"));
+  assert.equal(agrees(cell, ["thf_thgf"]), true, "one of the two readings");
+  assert.equal(agrees(cell, ["nf_aukafall"]), true, "the other");
+  assert.equal(agrees(cell, ["tala"]), false, "neither");
+  assert.equal(agrees(cell, ["thf_thgf", "tala"]), false, "one right is not enough");
+  assert.equal(agrees(cell, []), false, "a form that IS a cell, left unread");
+  assert.equal(agrees(cell, ["ending"]), false, "a cell called a misspelling");
+  const non = ruleReading(lex, sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlaupaði"));
+  assert.equal(agrees(non, ["sterk_veik_sogn"]), true);
+  assert.equal(agrees(non, []), true, "Ógreint: the rule cannot better it");
+  assert.equal(agrees(non, ["tid"]), false, "a cell pattern for something that is no cell");
+  /* nearly another cell: the classifier must have seen the cell, not only the spelling */
+  const near = ruleReading(lex, sample("hestur|kk", "ÞGFETgr", "hestin"));
+  assert.equal(agrees(near, ["ending"]), false, "a wrong case read as a wrong ending");
+  assert.equal(agrees(near, []), false);
+  assert.equal(agrees(near, ["thf_thgf"]), true);
+  assert.equal(agrees(near, ["thf_thgf", "n_nn"]), true, "the cell, and how it was misspelt");
+  assert.equal(agrees(near, ["thf_thgf", "tala"]), false);
+  for (const p of SPELLING_PATTERNS) assert.ok(patternById(p), p);
+});
+
+test("on textbook errors the classifier of this version and the rule agree", () => {
+  const cases = [
+    sample("hestur|kk", "ÞGFET", "hest"), sample("hestur|kk", "EFET", "hestur"),
+    sample("hestur|kk", "NFET", "hestar"), sample("hestur|kk", "ÞGFETgr", "hesti"),
+    sample("barn|hk", "ÞGFET", "barn"), sample("bók|kvk", "NFFT", "bókur"),
+    sample("hestur|kk", "ÞGFETgr", "hestinu"),
+    sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlupum"), sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlaupa"),
+    sample("hlaupa|so", "GM-FH-ÞT-3P-ET", "hlaupaði", { conj: "sterk" }),
+    sample("gamall|lo", "FSB-KVK-ÞGFET", "gömlum"),
+  ];
+  for (const c of cases) assert.deepEqual(cleanSample(lex, c), c, `${c.typed}: a clean sample`);
+  const r = agreement(lex, cases, { rerun: true });
+  const off = cases.filter((c) => !agrees(ruleReading(lex, c), classify(lex, c)))
+    .map((c) => `${c.typed} for ${c.right}: ${classify(lex, c).join("+") || "—"}`);
+  assert.deepEqual(off, []);
+  assert.deepEqual([r.n, r.disagree, r.rate], [cases.length, 0, 0]);
+  assert.equal(r.byKind.cell + r.byKind.accent + r.byKind.nearcell + r.byKind.nonform, cases.length);
+  assert.ok(r.ambiguous >= 1, "barn for barni could be two cells");
+  const dat = r.byPattern.find((x) => x.p === "thf_thgf");
+  assert.ok(dat.ambiguous >= 1 && dat.ambiguous <= dat.n, "counted under the pattern that was named");
+  /* The blind spot the check exists to count: *hestin* for *hestinum* is the
+     accusative *hestinn* misspelt, and this classifier reads a wrong ending. */
+  const blind = sample("hestur|kk", "ÞGFETgr", "hestin");
+  assert.ok(!classify(lex, blind).includes("thf_thgf"));
+  assert.deepEqual([agreement(lex, [blind], { rerun: true }).disagree], [1]);
+  assert.deepEqual(classify(lex, cases[0]), ["thf_thgf"]);
+  assert.deepEqual(classify(lex, cases[9]), ["sterk_veik_sogn"]);
+  /* …and a deliberately wrong label is found, under the pattern it names */
+  const bad = agreement(lex, [{ ...cases[0], p: ["tala"] }, { ...cases[0], p: ["thf_thgf"] }, { ...cases[6], p: [] }]);
+  assert.deepEqual([bad.n, bad.disagree], [3, 1]);
+  assert.deepEqual(bad.byPattern[0], { p: "tala", n: 1, disagree: 1, ambiguous: 0, name: "Eintala og fleirtala", rate: 1 });
+  assert.ok(bad.byPattern.some((x) => x.p === "ogreint" && x.n === 1 && x.disagree === 0));
+});
+
+test("a judged answer gives samples: one per wrong cell, with what the classifier said of that cell", () => {
+  const h = word("hestur", "kk");
+  const task = { type: "fill", typeId: "fill", skill: "nafnord", m: "ÞGFET", cell: "ÞGFET", word: "hestur|kk",
+    answers: h.forms["ÞGFET"], paradigm: h.forms, base: 10, lvl: 1 };
+  const wrong = judgeAnswer(task, { text: "hest" });
+  assert.deepEqual(samplesOf(task, wrong, lex),
+    [{ t: "fill", w: "hestur|kk", m: "ÞGFET", typed: "hest", right: "hesti", p: ["thf_thgf"] }]);
+  /* nothing from a right answer, an unfinished one, or free text */
+  assert.deepEqual(samplesOf(task, judgeAnswer(task, { text: "hesti" }), lex), []);
+  assert.deepEqual(samplesOf(task, judgeAnswer(task, { text: "" }), lex), []);
+  assert.deepEqual(samplesOf(task, judgeAnswer(task, { text: "ég heiti Jón og veit þetta ekki" }), lex), []);
+  assert.deepEqual(samplesOf({ ...task, word: null }, wrong, lex), []);
+  /* a table: only the cells that were wrong */
+  const tbl = { type: "table", typeId: "tbl_no", skill: "nafnord", w: h, word: "hestur|kk", base: 6, lvl: 1,
+    cells: ["NFET", "ÞFET", "ÞGFET", "EFET"].map((m) => ({ m, given: false })) };
+  const cells = askedCells(tbl);
+  const j = judgeAnswer(tbl, { cells: cells.map((c) => (c.m === "ÞGFET" ? "hest" : c.m === "EFET" ? "hestar" : h.forms[c.m][0])) });
+  const got = samplesOf(tbl, j, lex);
+  assert.deepEqual(got.map((x) => [x.m, x.typed]), [["ÞGFET", "hest"], ["EFET", "hestar"]]);
+  assert.deepEqual(got[0].p, ["thf_thgf"]);
+});
+
+test("real wrong answers (tests/fixtures/wrong-answers.json): clean, and checked against the rule", (t) => {
+  const file = JSON.parse(fsSync.readFileSync(new URL("./fixtures/wrong-answers.json", import.meta.url), "utf8"));
+  assert.equal(file.v, 1);
+  assert.ok(Array.isArray(file.samples));
+  /* Whatever is put in this file must be what the server would have kept:
+     one word that is an attempt at a word of the lexicon, and no other field. */
+  for (const s of file.samples) assert.deepEqual(cleanSample(lex, s), s, JSON.stringify(s));
+  const now = agreement(lex, file.samples, { rerun: true });
+  const then = agreement(lex, file.samples);
+  assert.equal(now.n, file.samples.length);
+  /* A measure, reported — not a bar: where rule and classifier disagree, one
+     of them is wrong, and which one is what the numbers are for. */
+  t.diagnostic(`${now.n} real wrong answers; this classifier and the rule disagree on ${now.disagree}`
+    + ` (${(now.rate * 100).toFixed(1)} %); as diagnosed when given: ${then.disagree}`);
+  now.byPattern.filter((r) => r.disagree).forEach((r) =>
+    t.diagnostic(`  ${r.name}: ${r.disagree} of ${r.n}`));
 });

@@ -11,7 +11,7 @@
     <div class="stat xp"><b id="s-xp">0</b><span>XP</span></div>
     <div class="stat"><b id="s-acc">—</b><span>Rétt í dag</span></div>
     <div class="stat"><b id="s-run">0</b><span>Rétt í röð</span></div>
-    <div class="stat flame"><b id="s-days">0</b><span>Dagar í röð</span></div>
+    <div class="stat flame" id="s-weeks"><b id="s-days">0</b><span>Vikur í röð</span></div>
   </div>
 </header>
 <div class="levelbar"><i id="lvlbar" style="width:0%"></i></div>
@@ -19,6 +19,7 @@
   <span id="lvlname">Stig 1</span>
   <span id="crest"></span>
   <span class="diff" id="diffmeter"></span>
+  <span id="duenow" role="status"></span>
   <span id="lvlnext"></span>
 </div>
 <div id="notice"></div>
@@ -41,6 +42,7 @@
       <span id="boarddate"></span>
       <span class="tally" id="tally"></span>
     </div>
+    <div id="livebar"></div>
     <div id="duelbar"></div>
     <div id="drillbar"></div>
     <div id="runbar"></div>
@@ -78,23 +80,15 @@
   </div>
 
   <div class="pane" id="pane-stats" hidden>
-    <h2 class="sec first">Styrkleikar eftir efni</h2>
-    <p class="sub">Hvert efni hefur sitt eigið stig og sína eigin þyngd. Að ganga vel í nafnorðum
-      gerir sagnirnar ekki erfiðari.</p>
-    <div id="skillgrid"></div>
-
-    <h2 class="sec">Villumynstur</h2>
-    <p class="sub">Hver villa er flokkuð: ruglast þolfall og þágufall, gleymist hljóðvarp, fær sterk
-      sögn veika þátíð? <b>Undanfarið</b> eru síðustu 16 skiptin sem spurning prófaði mynstrið.
-      Það sem fer oft úrskeiðis núna kemur oftar fyrir í æfingunum þangað til það lagast.</p>
-    <div class="chartbox" id="diaglist"></div>
-
-    <h2 class="sec">Hvar liggja mistökin?</h2>
-    <p class="sub">Hlutfall réttra svara í hverjum reit beygingartöflunnar.</p>
-    <div class="chartbox" style="overflow-x:auto"><div id="heat"></div></div>
-
-    <h2 class="sec">Orð sem þarf að æfa</h2>
-    <div class="chartbox"><div id="wordlist"></div></div>
+    <!-- Item 83: the skill map (ui/skillmap.js). It carries what four panels
+         used to show apart: Styrkleikar eftir efni, Villumynstur, Hvar liggja
+         mistökin and Orð sem þarf að æfa. -->
+    <h2 class="sec first">Færnikort</h2>
+    <p class="sub">Hér sérðu hvar þú stendur í málfræðinni í 8.–10. bekk. Hver hringur er eitt
+      efnisatriði. Smelltu á hring til að sjá regluna og hvað hefur farið úrskeiðis, og til að æfa
+      einmitt það.</p>
+    <div id="skillmap"></div>
+    <div id="loosepatterns"></div>
 
     <h2 class="sec">Svör á dag</h2>
     <p class="sub">Súlur eru svör, línan er hlutfall réttra svara. Síðustu 30 dagar.</p>
@@ -131,9 +125,14 @@
 
 <!-- ================= 3. Skólastofan ================================== -->
 <section class="view" id="view-class" hidden>
+  <!-- Items 37 and 65: the teacher's part (ui/teacher.js). Empty for a pupil. -->
+  <div id="teacher"></div>
+  <!-- Item 59: the group's weekly goal, one bar for everybody (ui/classgoal.js). -->
+  <div id="classgoal"></div>
   <h2 class="sec first">Stigatafla</h2>
-  <p class="sub">Þeir í hópnum þínum sem hafa valið að vera með. <b>Vikan</b> telur XP frá mánudegi og byrjar
-    upp á nýtt í hverri viku; hinir hnapparnir telja allt frá upphafi. Stigið er hæsta stig sem
+  <p class="sub">Þeir í hópnum þínum sem hafa valið að vera með. <b>Framfarir</b> telja villumynstur sem
+    þú lagar og upprifjanir sem takast í vikunni — ekki hve mikið þú æfir. <b>Vikan</b> telur XP frá
+    mánudegi. Hvort tveggja byrjar upp á nýtt í hverri viku; hinir hnapparnir telja allt frá upphafi. Stigið er hæsta stig sem
     hver hefur náð. <b>Orðaforði</b> telur orðin í safninu og gefur meira fyrir orð sem þú kannt
     vel — en orð í hættu telur ekkert fyrr en því hefur verið bjargað. <b>Mínútur</b> sýna aðeins þá
     sem hafa kveikt á þeim sérstaklega.</p>
@@ -141,9 +140,10 @@
   <div id="board"></div>
 
   <h2 class="sec">Einvígi</h2>
-  <p class="sub">Skoraðu á einhvern í hópnum: þið fáið bæði sömu 10, 20 eða 30 spurningarnar um sama
-    efnið, og svarið hvort í sínu lagi. Sá sem hefur fleiri rétt vinnur einvígismerki — en bæði fá XP.
-    Þyngdin er mitt á milli stigs ykkar beggja í efninu. Hvort ykkar sem svarar ekki innan sólarhrings
+  <p class="sub">Skoraðu á einhvern í hópnum: þið fáið bæði 10, 15 eða 20 spurningar um sama efnið,
+    jafnþungar en ekki þær sömu, og svarið hvort í sínu lagi. Sá sem hefur fleiri rétt vinnur
+    einvígismerki — en bæði fá XP. Þyngdin er mitt á milli stigs ykkar beggja í efninu, og ef meira en
+    eitt stig skilur ykkur að fær það ykkar sem er á lægra stigi nokkur rétt svör í forgjöf. Hvort ykkar sem svarar ekki innan sólarhrings
     frá áskoruninni tapar. Aðeins þeir sem eru á stigatöflunni geta skorað á og fengið áskoranir.</p>
   <div id="duelroom"></div>
 
@@ -157,7 +157,8 @@
 <!-- ================= 4. Stillingar og námsefni ======================= -->
 <section class="view" id="view-settings" hidden>
   <h2 class="sec first">Námsefni</h2>
-  <p class="sub">Kveiktu á því sem á við hverju sinni. Kóðinn vísar í aðalnámskrá.
+  <p class="sub">Kveiktu á því sem á við hverju sinni. Merkið við hvern flokk (8.b, 10.b)
+    sýnir í hvaða bekk efnið er yfirleitt fyrst kennt.
     Ef umsjónarmaður hefur slökkt á einhverju er það sýnt en ekki hægt að kveikja á því.</p>
   <div id="policyeditor"></div>
   <p class="sub warn" id="curwarn"></p>
@@ -170,10 +171,36 @@
       <button class="ghost" id="goalsave">Vista dagsmarkmið</button>
     </div>
   </div>
+  <!-- Item 57: the main streak counts weeks in which this many days met the daily goal. -->
+  <div class="setrow">
+    <label for="weekin">Vikumarkmið, dagar í viku sem dagsmarkmiði er náð</label>
+    <div class="answer">
+      <select id="weekin" style="flex:0 0 90px;font-size:16px">
+        <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+        <option value="5">5</option><option value="6">6</option><option value="7">7</option>
+      </select>
+    </div>
+  </div>
   <div class="filters">
     <label><input type="checkbox" id="set-gloss"> Sýna skýringar á málfræðihugtökum þegar bendillinn stoppar á þeim</label>
-    <label><input type="checkbox" id="set-decay"> Láta XP fjara hægt út eftir langt hlé (mest eitt stig)</label>
+    <label><input type="checkbox" id="set-decay"> Láta XP fjara hægt út eftir langt hlé (mest eitt stig) — slökkt nema þú kveikir á því; upprifjun kemur í staðinn</label>
+    <!-- Item 52. Off by default; body.comfort in head.html. -->
+    <label><input type="checkbox" id="set-comfort"> Þægilegur lestur: stærra letur, meira bil milli stafa og orða, og orðmyndir í venjulegu letri í stað tölvuleturs</label>
+    <!-- Item 53. Off at first on a touch device set to Icelandic (ui/dom.js). -->
+    <label><input type="checkbox" id="set-keys"> Sýna hnappa með íslensku stöfunum (á ð é í ó ú ý þ æ ö) undir svarreitnum</label>
   </div>
+  <!-- Item 45: the second-language mode (core/profile.js, ui/secondlang.js). -->
+  <div class="filters" id="l2set">
+    <label><input type="checkbox" id="set-l2"> Íslenska er annað tungumálið mitt: skýring á orðunum í setningunni þegar ýtt er á þau, setningin lesin upphátt ef tækið á íslenska rödd, og þyngdin hækkar hægar</label>
+    <p class="sub faint" id="set-l2-note" hidden>Kennari hópsins kveikti á þessu. Aðeins kennarinn getur slökkt á því.</p>
+  </div>
+
+  <!-- Item 84: the guided first run, to be seen again (ui/tour.js). -->
+  <h2 class="sec">Kynning</h2>
+  <p class="sub">Stutt kynning á því helsta í forritinu. Þar getur þú líka svarað byrjunarspurningunum
+    aftur til að stilla þyngdina í hverju efni upp á nýtt.</p>
+  <div class="answer"><button type="button" class="ghost" id="tour-again">Sýna kynninguna aftur</button></div>
+  <p class="sub" id="tour-note" role="status"></p>
 
   <h2 class="sec">Færa milli tækja</h2>
   <p class="sub">Framvindan er geymd í þessum vafra. Til að flytja hana í annað tæki: afritaðu hana hér,
