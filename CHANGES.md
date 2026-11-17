@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## v6.13 — November 2026
 
 Everything below implements the v6.12 critique ("Fallaskóli v6.12 — critique
 and improvement list", 84 items); the item numbers refer to it. Item 10 (the
