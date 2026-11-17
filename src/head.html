@@ -487,8 +487,12 @@ b.legendary,#crest.legendary,.legendary{color:#D9A21B}
    and the bars below need no second palette. Each category is a trail (a
    chalk line down the left) and each curriculum node a ring on it.
 
-   Laid out in CSS columns, so the same markup is three trails abreast on a
-   desk and one under the other on a phone, with nothing to scroll sideways.
+   Laid out on a grid (owner feedback, 6.13): every category is a box, the
+   boxes in a row are as tall as the tallest of them (a short one keeps the
+   dead space below its trail), and with subgrid the heads of a row share one
+   height, so every trail in a row starts on the same line. Three abreast on
+   a desk, two on a tablet, one under the other on a phone; nothing scrolls
+   sideways.
 
    The ring is the fill level (a quarter per mastery mark), dashed when there
    are too few answers to say. Colour repeats what the shape says and is never
@@ -521,8 +525,14 @@ b.legendary,#crest.legendary,.legendary{color:#D9A21B}
 .smnextbtn{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13px;color:var(--chalk);cursor:pointer;
   background:rgba(23,42,34,.55);border:1px solid var(--line);border-radius:99px;padding:5px 8px 5px 7px;min-height:34px;text-align:left}
 .smnextbtn:hover{border-color:var(--chalk-yellow)}
-.smlanes{columns:3 236px;column-gap:28px;margin-top:20px}
-.smlane{break-inside:avoid;-webkit-column-break-inside:avoid;page-break-inside:avoid;margin:0 0 24px;display:inline-block;width:100%}
+.smlanes{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:18px;margin-top:20px;align-items:stretch}
+.smlane{display:flex;flex-direction:column;margin:0;padding:12px 12px 10px;min-width:0;
+  border:1px solid rgba(243,241,231,.22);border-radius:var(--radius)}
+@supports (grid-template-rows:subgrid){
+  .smlanes{grid-auto-rows:auto auto}
+  .smlane{display:grid;grid-row:span 2;grid-template-rows:subgrid;row-gap:0;align-content:start}
+  .smlane>.smtrail{align-self:start}
+}
 .smhead{padding-bottom:7px;border-bottom:1px dashed var(--line)}
 .smhead h3{display:flex;align-items:baseline;gap:7px;margin:0;font-family:var(--display);font-size:16.5px;font-weight:600;
   color:var(--chalk);line-height:1.25}
@@ -631,7 +641,8 @@ table.heat td.h1{background:var(--rust-soft);color:var(--rust)}
 table.heat td span{color:var(--slate);font-size:9.5px}
 @media (max-width:600px){
   .skillboard.blackboard{padding:12px 12px 16px;border-bottom-width:7px}
-  .smlanes{columns:1;margin-top:16px}
+  .smlanes{grid-template-columns:1fr;gap:14px;margin-top:16px}
+  .smlane{padding:10px 8px 8px}
   .smlegend{grid-template-columns:1fr}
   .smnode{min-height:52px}
   .smtext b{font-size:14.5px} .smtext small{font-size:12.5px}
@@ -1466,7 +1477,7 @@ body.insession .blackboard{padding-top:8px}
 button.ghost.small{padding:5px 10px;font-size:13px}
 
 /* ---- v6.13 (atriði 65): verkefni efst í Æfa ----
-   Það sem kennarinn setti hópnum, fyrir ofan dagsins lotu: eitt kort á
+   Það sem kennarinn setti hópnum, fyrir ofan lotu dagsins: eitt kort á
    verkefni, og hnappurinn byrjar það strax. */
 .assignbox{margin:0 0 18px;padding:0 0 14px;border-bottom:1px dashed var(--line)}
 .assignrow{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;
@@ -1681,7 +1692,9 @@ body.liveon{overflow:hidden}
 .writebox{margin:0 0 14px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px}
 .writebox.done{opacity:.8}
 .writecard textarea{width:100%;box-sizing:border-box;min-height:7.5em;font:inherit;font-size:17px;line-height:1.5;
-  padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:inherit;resize:vertical}
+  padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--sheet);color:var(--ink);caret-color:currentColor;resize:vertical}
+/* Owner feedback 6.13: on the board `color:inherit` was chalk on a white box. The box takes the
+   sheet and ink of where it stands: chalk on the translucent board, ink on white paper. */
 .writecard textarea:focus{outline:2px solid var(--moss);outline-offset:1px}
 .wrcount{margin:4px 0 8px;font-size:13px}
 .wrmode{font-size:14px;margin:4px 0}
@@ -1692,7 +1705,7 @@ body.liveon{overflow:hidden}
 .wrmsg{margin:6px 0 2px}
 .wrdetail{font-size:14px;margin:2px 0 8px;color:var(--slate)}
 .wrkept{display:grid;gap:8px;margin:8px 0}
-.wrkepttext{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.wrkepttext{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#121922}
 .wrkepttext p{margin:2px 0}
 </style>
 </head>

@@ -18,9 +18,9 @@
         wrong answer is not offered a second try or "Þrjár í röð" — the
         round is only finding a place to begin.
      3. What it found, and the year it suggests.
-     4. Four pointers, each at a real element of the page: Dagsins lota,
+     4. Four pointers, each at a real element of the page: Lota dagsins,
         Lesefni, the skill map, and the slim line of a session — for which
-        the pupil's first Dagsins lota is started, so the tour ends with the
+        the pupil's first Lota dagsins is started, so the tour ends with the
         pupil at their first question.
 
    Every screen has "Sleppa kynningunni", and Escape does the same. Done or
@@ -122,7 +122,7 @@ export const TEXT = {
   },
   steps: {
     today: {
-      title: "Dagsins lota",
+      title: "Lota dagsins",
       body: "Hér byrjar þú á hverjum degi. Tíu spurningar eru valdar fyrir þig: upprifjun, það sem þarf að æfa betur og eitthvað nýtt. Fyrir neðan má líka velja eitt efni.",
     },
     lessons: {
@@ -153,7 +153,7 @@ export const TEXT = {
 
    `enter` brings the part of the app onto the screen; `target` is the real
    element the ring is drawn round. A step whose element is not there (no
-   Dagsins lota because nothing is switched on) is passed over. */
+   Lota dagsins because nothing is switched on) is passed over. */
 function stepsFor(app, T) {
   return {
     today: {
@@ -177,7 +177,7 @@ function stepsFor(app, T) {
       target: () => document.querySelector("#skillmap .smnode:not(.locked)") || $("skillmap"),
     },
     line: {
-      /* The pupil's first Dagsins lota, started so that there is a line to
+      /* The pupil's first Lota dagsins, started so that there is a line to
          point at. If the pupil says "not now" it is taken away again, and so
          is the note that its first question's worked example was shown. */
       enter() {

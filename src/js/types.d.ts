@@ -355,4 +355,5 @@ export interface Node {
   cover: "full" | "part" | "none";
   attrs?: Record<string, string[]>;
   item?: number;
+  classes?: string[];
 }

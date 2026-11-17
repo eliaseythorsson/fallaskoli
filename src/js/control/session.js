@@ -1,6 +1,6 @@
 /* The session controller (critique item 76): practice in sessions (v6.10) —
    starting one, drawing its questions, counting its answers and ending it with
-   its summary — and the ways in: the picker, "Dagsins lota" (item 21), an
+   its summary — and the ways in: the picker, "Lota dagsins" (item 21), an
    assignment (item 65), "Æfa þetta" on a Lesefni page (item 41), a node of
    the skill map (item 83) and the placement round of the first run (item 84).
 

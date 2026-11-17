@@ -33,7 +33,8 @@ export function taskParse(lex, view, rng) {
     const s = pick(sentPool(lex, view, "greining"), rng);
     const cands = s.tok
       .map((t, j) => ({ t, j }))
-      .filter(({ t }) => t.c && !t.rj && !isAmbiguousForm(lex, t) && askable(view.policy, t.m));
+      .filter(({ t }) => t.c && !t.rj && (!view.policy.wordClass || view.policy.wordClass(t.c)) &&
+        !isAmbiguousForm(lex, t) && askable(view.policy, t.m));
     if (!cands.length) continue;
 
     const chosen = wpick(cands, ({ t }) => {
@@ -69,7 +70,12 @@ function isAmbiguousForm(lex, t) {
   return Object.entries(w.forms).some(([mm, ff]) => {
     if (!ff.includes(t.w)) return false;
     const b = readMark(mm);
-    return b.tala && (b.tala !== a.tala || b.greinir !== a.greinir);
+    /* Only a form whose own analysis has a number can be ambiguous about it.
+       A nafnháttur (*koma*), a sagnbót (*komið*) or a bare lýsingarháttur
+       þátíðar is spelt like a form with a number (*þeir koma*, *barnið er
+       komið*) and was therefore never asked — none of the fallhættir came up
+       in "Greindu orðið" (owner feedback, 6.13). The sentence settles them. */
+    return a.tala && b.tala && (b.tala !== a.tala || b.greinir !== a.greinir);
   });
 }
 

@@ -192,7 +192,7 @@ evidence above. Later years keep practising it.
 | `so-samsettar-tidir` | Samsettar tíðir | Orðflokkar | Sagnorð | none yet | Tíð sagna (`tid`) | **no** |
 | `so-vidtengingarhattur` | Framsöguháttur og viðtengingarháttur | Orðflokkar | Sagnorð | Beygðu sögnina (`verb`); Sögn í setningu (`verbslot`); Beygingartafla — sagnorð (`tbl_so`) | Hættir sagna (`hattur`) | yes |
 | `so-bodhattur` | Boðháttur | Orðflokkar | Sagnorð | Greindu beygðu myndina (`revform`); Boðháttur (`so_bodhattur`) | Hættir sagna (`hattur`) | yes |
-| `so-fallhaettir` | Fallhættir: nafnháttur, lýsingarhættir og sagnbót | Orðflokkar | Sagnorð | Greindu beygðu myndina (`revform`) | Hættir sagna (`hattur`) | in part |
+| `so-fallhaettir` | Fallhættir: nafnháttur, lýsingarhættir og sagnbót | Orðflokkar | Sagnorð | Greindu beygðu myndina (`revform`); Greindu orðið sem er merkt (`parse`) | Hættir sagna (`hattur`) | in part |
 | `so-midmynd` | Germynd og miðmynd | Orðflokkar | Sagnorð | Beygðu sögnina (`verb`); Sögn í setningu (`verbslot`); Beygingartafla — sagnorð (`tbl_so`) | Myndir sagna (`mynd`) | yes |
 | `so-tholmynd` | Þolmynd | Orðflokkar | Sagnorð | Umritun (`umritun`); Germynd, miðmynd eða þolmynd? (`so_mynd`) | Myndir sagna (`mynd`) | yes |
 | `so-sterkar-veikar` | Sterkar og veikar sagnir og kennimyndir | Orðflokkar | Sagnorð | Sterk eða veik sögn? (`so_beyging`) | Sterkar og veikar sagnir (`sterkar-veikar`) | yes |
@@ -261,7 +261,7 @@ cannot practise it on its own and the skill map cannot measure it.
 | `no-kyn-tala` | Kyn og tala nafnorða | 8 | only inside `parse` | `kyn-tala` |
 | `fn-greinir` | Laus og viðskeyttur greinir | 8 | only inside `tbl_fn` | `greinir` |
 | `so-samsettar-tidir` | Samsettar tíðir | 9 | **missing** | `tid` |
-| `so-fallhaettir` | Fallhættir: nafnháttur, lýsingarhættir og sagnbót | 9 | only inside `revform` | `hattur` |
+| `so-fallhaettir` | Fallhættir: nafnháttur, lýsingarhættir og sagnbót | 9 | only inside `revform`, `parse` | `hattur` |
 
 ### Item 28: new material
 

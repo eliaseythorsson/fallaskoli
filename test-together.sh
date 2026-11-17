@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Fallaskóli — run the multi-user server from this computer so several people
-# can test it together, before it goes on a real server.
+# Fallaskóli — try the multi-user version on this computer before it goes on a real server.
 #
-#   ./test-together.sh                  people on the SAME Wi-Fi / network
+#   ./test-together.sh                  FOUR test pupils on this computer, side by side in one
+#                                       page, each already logged in: answer in each, watch the
+#                                       leaderboard, challenge each other to duels (tools/quad.mjs)
+#   ./test-together.sh --reset          the same, with four fresh pupils
+#   ./test-together.sh --lan            people on the SAME Wi-Fi / network, each on their own device
 #   ./test-together.sh --internet       people ANYWHERE (free https tunnel)
-#   ./test-together.sh tester <name>    make an account for one tester
+#   ./test-together.sh tester <name>    make an account for one tester (--lan / --internet)
 #   ./test-together.sh demo [N]         make N ready-made test accounts (demo1, demo2 ...; default 3)
 #   ./test-together.sh admin <...>      any server/admin.mjs command (listi, opna, loka, lykilord ...)
 #
-# Being logged in as SEVERAL people at once, on one computer: a browser keeps
-# one login per web address, so open each account on its own address —
-#   http://localhost:8080   http://127.0.0.1:8080   http://demo1.localhost:8080 ...
-# (the *.localhost ones work in Chrome and Firefox; in Safari use a separate
-# private window per account instead). Or just log out ("Skrá út") and in.
+# The four-pupil mode keeps its own accounts and progress (a "fjorir" folder inside the test
+# folder below), so it never mixes with what testers made in --lan / --internet.
 #
 # Everything the testers create (accounts, password hashes, progress, and the
 # demo passwords) lives in a temporary folder OUTSIDE the project, made with
@@ -118,9 +118,15 @@ if [ "${1:-}" = "admin" ]; then
   exit $?
 fi
 
+# ---- the default: four pupils on this computer (tools/quad.mjs) ---------------
+if [ -z "${1:-}" ] || [ "${1:-}" = "--reset" ]; then
+  export FALLASKOLI_TEST_DIR="$TEST_DIR"
+  exec node tools/quad.mjs "$@"
+fi
+
 MODE="lan"
 [ "${1:-}" = "--internet" ] && MODE="internet"
-[ -n "${1:-}" ] && [ "$MODE" = "lan" ] && fail "Unknown option: $1  (use --internet, tester <name>, demo [N] or admin <...>)"
+[ "${1:-}" = "--lan" ] || [ "$MODE" = "internet" ] || fail "Unknown option: $1  (use nothing, --reset, --lan, --internet, tester <name>, demo [N] or admin <...>)"
 
 # ---- first run: an administrator account for you -----------------------------
 if ! has_users; then

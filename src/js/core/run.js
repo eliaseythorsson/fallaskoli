@@ -38,7 +38,7 @@ import { practiceSkills } from "./lessons.js";
 export const TOPIC = Object.freeze({
   MIXED: "blandad",       // everything switched on
   MINE: "villur",         // "Villurnar mínar": the pupil's own error patterns
-  TODAY: "dagsins",       // "Dagsins lota" (item 21, core/today.js)
+  TODAY: "dagsins",       // "Lota dagsins" (item 21, core/today.js)
   ASSIGNED: "verkefni",   // an assignment the teacher set (item 65)
 });
 

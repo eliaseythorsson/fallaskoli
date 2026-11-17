@@ -2445,7 +2445,7 @@ await page.setViewport({ width: 1100, height: 900 });
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.S.review = { items: [], stats: {} }; A.next(); });
 }
 
-/* v6.13 — "Dagsins lota" (critique item 21, core/today.js). The picker has
+/* v6.13 — "Lota dagsins" (critique item 21, core/today.js). The picker has
    one primary button above the categories; it starts a session of ten that
    opens with the due reviews, goes on to the pupil's active error pattern and
    ends with new material, and is written down as today's session. */
@@ -2476,10 +2476,10 @@ await page.setViewport({ width: 1100, height: 900 });
       line: (document.querySelector("#task .todayline") || {}).textContent || "",
     };
   }, TEST_NOUN);
-  ok(setup.go && /\bgo\b/.test(setup.goCls) && /Dagsins lota/.test(setup.goText),
-    "no primary „Dagsins lota“ button on the picker: " + JSON.stringify(setup));
+  ok(setup.go && /\bgo\b/.test(setup.goCls) && /Lota dagsins/.test(setup.goText),
+    "no primary „Lota dagsins“ button on the picker: " + JSON.stringify(setup));
   ok(setup.above && /\bghost\b/.test(setup.ownCls), "the categories are not below it, or their button is not the secondary one");
-  ok(setup.focused, "„Dagsins lota“ does not have the focus");
+  ok(setup.focused, "„Lota dagsins“ does not have the focus");
   ok(/^3 upprifjanir, \d spurningar um villurnar þínar og \d nýjar spurningar\.$/.test(setup.line),
     `the line under the button does not say what the session holds: "${setup.line}"`);
   const graded0 = await page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {}).reduce((a, x) => a + x.n, 0));
@@ -2492,7 +2492,7 @@ await page.setViewport({ width: 1100, height: 900 });
         tag: !!document.querySelector("#task .eyebrow .reviewtag"), bar: (document.querySelector("#runbar .runtopic") || {}).textContent || "" }; });
     if (i === 0) {
       ok(c.topic === "dagsins" && c.n === 10, "the button did not start a session of ten: " + JSON.stringify(c));
-      ok(/Dagsins lota/.test(c.bar), `the line above the session does not name it: "${c.bar}"`);
+      ok(/Lota dagsins/.test(c.bar), `the line above the session does not name it: "${c.bar}"`);
     }
     if (i < 3) ok(c.review && c.tag, `question ${i + 1} of today's session is not a due review: ` + JSON.stringify(c));
     kinds.push(c.today);

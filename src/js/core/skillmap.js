@@ -597,7 +597,9 @@ export function nodeSession(node, S, now = Date.now(), n = NODE_RUN) {
   const today = dayOf(now);
   const due = entriesOfNode(node, S, now).filter((e) => e.due <= today)
     .sort((a, b) => (a.s || 0) - (b.s || 0) || (a.due < b.due ? 1 : a.due > b.due ? -1 : 0));
-  return { id: node.id, n, types: [...node.types], cats: [node.cat], attrs: node.attrs || null,
+  /* A node asked inside a broader type keeps to its word classes (owner feedback, 6.13). */
+  const attrs = node.classes ? { ...(node.attrs || {}), ofl: [...node.classes] } : node.attrs || null;
+  return { id: node.id, n, types: [...node.types], cats: [node.cat], attrs,
     review: due.slice(0, openingSize(n)).map((e) => e.k),
     label: "Færnikort: " + node.nm, lesson: node.lesson || null };
 }

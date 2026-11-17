@@ -11,6 +11,11 @@
 import { LESSONS } from "../content/lessons.js";
 import { NODES } from "./curriculum.js";
 
+/** The word class a category is about, where it is one. */
+const CLASS_OF_CAT = /** @type {Record<string, string>} */ ({
+  nafnord: "nafnorð", lysingarord: "lýsingarorð", sagnord: "sagnorð", fornofn: "fornafn", toluord: "töluorð",
+});
+
 export { LESSONS };
 
 const BY_ID = new Map(LESSONS.map((l) => [l.id, l]));
@@ -262,6 +267,12 @@ export function lessonPractice(id) {
   for (const g of groups) {
     if (!nodes.every((n) => n.attrs && n.attrs[g])) continue;
     attrs[g] = [...new Set(nodes.flatMap((n) => n.attrs[g]))];
+  }
+  /* Word classes, as a node's session has them (core/skillmap.js nodeSession):
+     if any node on the page keeps to some, the page keeps to those and to
+     the class of every other node's category (the mood page: verbs). */
+  if (nodes.some((n) => n.classes)) {
+    attrs.ofl = [...new Set(nodes.flatMap((n) => n.classes || (CLASS_OF_CAT[n.cat] ? [CLASS_OF_CAT[n.cat]] : [])))];
   }
   return { id, types, cats, attrs };
 }

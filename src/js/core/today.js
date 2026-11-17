@@ -1,5 +1,5 @@
 // @ts-check
-/* "Dagsins lota" — today's session (critique item 21).
+/* "Lota dagsins" — today's session (critique item 21).
 
    The picker used to offer ten categories and no advice. A pupil who did not
    think of choosing "Villurnar mínar" met their own error patterns in 6–22 %

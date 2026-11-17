@@ -33,7 +33,7 @@ export const MINE = { id: TOPIC.MINE, nm: "Villurnar mínar", ico: "🎯",
   ds: "Spurningar sem prófa einmitt það sem hefur farið úrskeiðis hjá þér" };
 /* v6.13 (item 21): today's session — not a card among the others but the
    button above them (core/today.js plans it). */
-export const TODAY = { id: TOPIC.TODAY, nm: "Dagsins lota", ico: "☀️" };
+export const TODAY = { id: TOPIC.TODAY, nm: "Lota dagsins", ico: "☀️" };
 /* v6.13 (item 65): a session that answers an assignment the teacher set. */
 export const ASSIGNED = { id: TOPIC.ASSIGNED, nm: "Verkefni", ico: "📌" };
 

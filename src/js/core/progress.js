@@ -8,7 +8,7 @@ import { SKILL_IDS, skillById } from "./skills.js";
 
    What the curve is measured against (critique item 60, tools/sim/levels.mjs,
    v6.13, with everything the app pays: retries, the day multiplier, a perfect
-   table's bonus). A "session" is ten questions, which is what Dagsins lota is:
+   table's bonus). A "session" is ten questions, which is what Lota dagsins is:
 
      one session earns about  60 XP (weak, 50% right)
                               77 XP (typical, 72% right)

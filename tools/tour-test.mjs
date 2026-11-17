@@ -6,7 +6,7 @@
      * a pupil with nothing answered is met by the welcome, once; the whole
        first run can be completed with real clicks and real typing — the
        year, the placement round, what it found, the four pointers — and
-       ends with the pupil in their first Dagsins lota;
+       ends with the pupil in their first Lota dagsins;
      * the placement round moves up after a right answer and down after a
        wrong one, offers no second try and no "Þrjár í röð", opens no badge
        window, and writes every level with the source "placement";
@@ -370,7 +370,7 @@ async function pointerOK(page, vp, id) {
   ok(!overlap, `${W}: its board lies over the element it points at`);
   ok(m.arrow !== "none", `${W}: the board has no arrow towards its element`);
   ok(m.count === `${TOUR_STEPS.indexOf(id) + 1} af ${TOUR_STEPS.length}`, `${W}: says "${m.count}"`);
-  if (id === "line") ok(m.run === "dagsins", `${W}: no Dagsins lota is running under it`);
+  if (id === "line") ok(m.run === "dagsins", `${W}: no Lota dagsins is running under it`);
   await dialogOK(page, W);
   await noSideways(page, W);
   await shot(page, vp, `5-pointer-${TOUR_STEPS.indexOf(id) + 1}-${id}`);
@@ -510,7 +510,7 @@ for (const [vp, year] of [[PHONE, 8], [DESK, null]]) {
   if (!year) ok(await page.evaluate(() => (window.FALLASKOLI.S.policy.levels || {})["7"] === false && (window.FALLASKOLI.S.policy.levels || {})["6"] !== false),
     `${W} the year pressed on the result (9. bekkur) was not set`);
 
-  /* -- the end: the pupil's first Dagsins lota -- */
+  /* -- the end: the pupil's first Lota dagsins -- */
   await click(page, "#tour-next");                     // "Byrja að æfa →"
   await sleep(200);
   ok(await tourGone(page), `${W} the first run did not go away at its end`);
@@ -521,7 +521,7 @@ for (const [vp, year] of [[PHONE, 8], [DESK, null]]) {
       focus: !!document.activeElement.closest("#task"), cur: !!A.cur };
   });
   ok(end.tour && end.tour.st === "done" && end.tour.placed === 1, `${W} the first run is not written down as done: ${JSON.stringify(end.tour)}`);
-  ok(end.run && end.run.topic === "dagsins" && end.run.i === 0 && end.cur, `${W} the pupil is not at the first question of Dagsins lota`);
+  ok(end.run && end.run.topic === "dagsins" && end.run.i === 0 && end.cur, `${W} the pupil is not at the first question of Lota dagsins`);
   ok(!end.scrim, `${W} a badge window opened over the first question`);
   ok(end.won === 0 || end.run.badges >= 1, `${W} the badges won during the first run are not kept for the session's summary`);
   if (!vp.isMobile) ok(end.focus, `${W} the keyboard is not at the question when the first run ends`);

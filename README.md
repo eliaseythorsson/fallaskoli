@@ -30,7 +30,13 @@ nothing configured — the program looks at where it was loaded from:
 | served by any plain web host — a hosted page, GitHub Pages, Netlify, a folder on a school server | this browser, `localStorage` |
 | served by `server/server.mjs` | on the server, behind a login (see `docs/SERVER.md`) |
 
-**Testing with several people from your own computer:** `./test-together.sh`
+**Trying it as four pupils on your own computer:** `./test-together.sh` (or
+double-click `Start test server.command`) starts the server with four test pupils
+and a teacher, and opens one page with all four side by side, each already logged
+in (`tools/quad.mjs`): answer in each, watch the leaderboard, challenge one another
+to duels. `--reset` starts again with four fresh pupils.
+
+**Testing with several people:** `./test-together.sh --lan`
 runs the server for everyone on the same Wi-Fi; `./test-together.sh --internet`
 gives a temporary https address that works from anywhere (needs
 `brew install cloudflared`, no account). Test accounts, passwords and progress live
@@ -230,7 +236,7 @@ src/js/core/review.js the review queue: every wrong answer goes in with a
                       forced). Also what is one entry, the cap, the expiry
                       and the merge between devices — each choice explained
                       at the top of the file
-src/js/core/today.js  "Dagsins lota", the picker's main button: plans ten
+src/js/core/today.js  "Lota dagsins", the picker's main button: plans ten
                       questions — the due reviews, then the active error
                       patterns, then new material spread over several skills
                       (least practised first; for a new pupil the core
@@ -272,7 +278,7 @@ src/js/core/placement.js  the guided first run's rules (item 84): the
                       that the first run is done or skipped. ui/tour.js
                       draws it: the welcome and the year, the round (an
                       ordinary session on the board), what it found, and
-                      four pointers at Dagsins lota, Lesefni, the skill map
+                      four pointers at Lota dagsins, Lesefni, the skill map
                       and the slim session line. A pupil with no answers
                       meets it once; Stillingar has "Sýna kynninguna aftur"
 src/js/core/mix.js    the mix rule for a session: ≥3 kinds of question, none
@@ -350,7 +356,7 @@ server/               the optional multi-user server (Node, JSON files on disk):
                       teamduel.mjs, privs.mjs (give up root)
 Dockerfile, fly.toml  the server as a container, and where it runs
 Dockerfile.build, build-in-container.sh   the pinned build (see above)
-test-together.sh      the server for several testers on your own computer
+test-together.sh      four test pupils on your own computer, or the server for several testers
 .github/workflows/    ci.yml (tests, bundle, manifest, the reproducible build),
                       typecheck.yml (tsc, docs/TYPES.md)
                       and release.yml (a tag → a release)

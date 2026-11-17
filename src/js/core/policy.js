@@ -297,6 +297,16 @@ export function createPolicy(allowed, chosen) {
 
   return {
     skill, type, level: (n) => usableLevels.includes(n), attr,
+    /** May a word of this class ("nafnorð", "sagnorð" …) be the one a
+        question is about? Always yes here; a session on one node of the
+        skill map narrows it (`narrowPolicy`, attrs.ofl). */
+    wordClass: (/** @type {string} */ _c) => true,
+    /** Was the session asked for this feature by name (a node of the skill
+        map, a Lesefni page)? Then a builder's "later, at a higher þyngd" rule
+        must not hold it back: a pupil who opens "Viðtengingarháttur" gets
+        the subjunctive at any þyngd. `key` omitted: any key of the group.
+        Never, here; `narrowPolicy` with `attrs` says yes. */
+    focus: (/** @type {string} */ _group, /** @type {string} */ _key = undefined) => false,
     levels: usableLevels,
     minLevel: usableLevels[0],
     maxLevel: usableLevels[usableLevels.length - 1],
@@ -368,7 +378,16 @@ export function narrowPolicy(P, { skills = null, types = null, attrs = null } = 
      so a cell is held to both. */
   const A = attrs && Object.keys(attrs).length
     ? Object.fromEntries(Object.entries(attrs).map(([g, keys]) => [g, new Set(keys)])) : null;
+  /* `attrs.ofl` (owner feedback, 6.13): the word classes the question may be
+     about, e.g. { ofl: ["nafnorð"] } for "Kyn og tala nafnorða", which is
+     asked inside the word-class analysis. Not an inflectional feature, so the
+     marks below never see it. */
+  if (A && A.ofl) {
+    const O = A.ofl;
+    out.wordClass = (c) => O.has(c) && P.wordClass(c);
+  }
   if (A) {
+    out.focus = (group, key = undefined) => !!A[group] && (key === undefined || A[group].has(key));
     out.attr = (group, key) => (!A[group] || A[group].has(key)) && P.attr(group, key);
     out.mark = (m) => P.mark(m) &&
       Object.entries(featuresOf(m)).every(([g, k]) => !k || !A[g] || A[g].has(k));
