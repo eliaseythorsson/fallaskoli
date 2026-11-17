@@ -46,7 +46,7 @@ where, and reuses it next time), never in the repository, the image or the zip.
 address (`http://demo1.localhost:8080`, `http://demo2.localhost:8080` …) to stay
 logged in as all of them at once.
 
-**Installing it (v6.13).** Served over http(s), the program can sit on the
+**Installing it (v6.14).** Served over http(s), the program can sit on the
 home screen of a phone or a Chromebook and opens without a network. The build
 writes `dist/web/` for this: the same program as `index.html`, with a manifest,
 icons (the board's tally mark in chalk, drawn by `tools/pwa.mjs`) and a service
@@ -89,7 +89,7 @@ Needs Python 3.10+ with `pip`, Node 20+ (CI and the container use 22), and for t
 `apt install -y nodejs npm python3 python3-pip`. The grammar libraries ship
 Linux wheels for x86_64 only.
 
-**The same bytes on any computer (v6.13).** `./build.sh` on your own machine
+**The same bytes on any computer (v6.14).** `./build.sh` on your own machine
 uses whatever Python and processor it finds — and with the very same library
 versions, an ARM Linux VM (which compiles the parser from source) parsed one
 token differently from an x86_64 one. The committed data is the x86_64 build.
@@ -191,7 +191,7 @@ pipeline/             the Python half of the build (critique item 79), run from 
   definitions.py      a handful of hand-written definitions; the rest are ÍNO
   exercises.py        reads the hand-written items for the v6.11 question types
                       (pronouns, numerals, dates, government, synonyms …) and
-                      the frames build_exercises.py fills in from BÍN (v6.13)
+                      the frames build_exercises.py fills in from BÍN (v6.14)
                       out of content/, under the names the build has always
                       used; keeps the rules for levels and the closed tables
                       (ordinals, months, multi-word conjunctions). Items are

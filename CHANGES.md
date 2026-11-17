@@ -1,6 +1,9 @@
 # Changes
 
-## Unreleased
+## v6.14 — November 2026 (the 84-item critique of v6.12)
+
+Developed under the working name 6.13 (the integration branch, the project notes and the
+code comments still say "v6.13"); released as 6.14.
 
 Everything below implements the v6.12 critique ("Fallaskóli v6.12 — critique
 and improvement list", 84 items); the item numbers refer to it. Item 10 (the
