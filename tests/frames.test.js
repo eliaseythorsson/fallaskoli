@@ -15,6 +15,7 @@ import { blankState, newSession } from "../src/js/core/state.js";
 import { taskReverse } from "../src/js/tasks/lysingarord.js";
 import { taskFill } from "../src/js/tasks/nafnord.js";
 import { show, rng } from "./helpers.js";
+import { seeded } from "../src/js/core/duel.js";
 import { frameIndex, fillFrame, acceptsNoun, nounSentence, adjectiveSentence,
          sentenceText, frameCoverage, candidateNouns, showable,
          fittingAdjectives } from "../src/js/tasks/frames.js";
@@ -156,9 +157,13 @@ test("verbs are never substituted into a frame", () => {
 
 test("the analysis question almost always has a sentence now", () => {
   const c = ctx();
+  /* A fixed seed: the share is about 48% and an unseeded sample of 2,000
+     crossed the 50% line on CI one run in a few (50.3%, 2026-11-17). The
+     guard is for the builder, not for the dice. */
+  const r = seeded(425);
   let n = 0, bare = 0;
   for (let i = 0; i < 2000; i++) {
-    const t = show(c, taskReverse);
+    const t = show(c, taskReverse, r);
     if (!t) continue;
     n += 1;
     if (t.standalone) bare += 1;

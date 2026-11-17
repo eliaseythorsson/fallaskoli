@@ -1,11 +1,9 @@
 # Changes
 
-## v6.14 — November 2026
+## v6.14 — November 2026 (the 84-item critique of v6.12)
 
 Developed under the working name 6.13 (the integration branch, the project notes and the
-code comments still say "v6.13"); released as 6.14.
-
-## v6.13 — November 2026
+code comments still say "v6.13"); released as 6.14. There is no v6.13 release.
 
 Everything below implements the v6.12 critique ("Fallaskóli v6.12 — critique
 and improvement list", 84 items); the item numbers refer to it. Item 10 (the
@@ -13,7 +11,7 @@ duel data fingerprint) was left out by the owner's decision; item 40 is part
 of item 84. A v6.12 state opens and is migrated; nothing a pupil earned is
 taken away.
 
-### The owner's first pass over 6.13
+### The owner's first pass over the 6.13 test build
 - „Dagsins lota“ heitir nú **„Lota dagsins“**.
 - **Færnikortið** er grind: hver flokkur í kassa, kassarnir í hverri röð jafnháir
   og slóðirnar byrja í sömu hæð; einn dálkur á síma, tveir á spjaldtölvu, þrír á borðtölvu.
