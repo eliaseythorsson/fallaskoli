@@ -11,6 +11,9 @@
  *   when last   "í gær", "fyrir 3 vikum", under the name
  *   waiting     a yellow disc at the end of the row: the number of reviews
  *               due there, or "!" when one of its error patterns is active
+ *   which step  the number in the ring (owner feedback 6.14): the step of
+ *               difficulty the ring measures. It only goes up; when it has,
+ *               the map plays the rise once (`playRises`, at the bottom)
  *
  * A node no question asks yet is a padlock. Every ring is a real button:
  * Tab reaches it, its label says all three facts in a sentence, and it opens
@@ -38,7 +41,7 @@ import { LABELS, masteryLine } from "../core/mastery.js";
 import { effectivePolicy } from "../core/state.js";
 import { weakWords } from "../core/wordhealth.js";
 import {
-  mapOf, nodeDetail, lastText, needsText, nodeSentence, NODE_RUN,
+  mapOf, nodeDetail, lastText, needsText, nodeSentence, NODE_RUN, noteMapShown,
 } from "../core/skillmap.js";
 
 /* ---------- the ring ---------------------------------------------------------- */
@@ -51,9 +54,10 @@ const WEDGE = {
   3: "M16 16 L16 5 A11 11 0 1 1 5 16 Z",
 };
 
-/** The ring of one node. `level`: 0–4, or "locked". Decorative: the words
-    are beside it and in the button's label. */
-export function ringSVG(level, size = 32) {
+/** The ring of one node. `level`: 0–4, or "locked"; `band`: the step it
+    measures, written in it (owner feedback 6.14), or null. Decorative: the
+    words are beside it and in the button's label. */
+export function ringSVG(level, size = 32, band = null) {
   /* The stylesheet sizes every svg to its box (`svg{width:100%}`), so the
      size is said in the style, not in the attributes. */
   const dim = `width="${size}" height="${size}" style="width:${size}px;height:${size}px"`;
@@ -66,7 +70,8 @@ export function ringSVG(level, size = 32) {
   return `<svg class="smring r${k}" viewBox="0 0 32 32" ${dim} aria-hidden="true" focusable="false">
     ${k === 4 ? `<circle class="fill" cx="16" cy="16" r="11"/>` : k ? `<path class="fill" d="${WEDGE[k]}"/>` : ""}
     <circle class="rim" cx="16" cy="16" r="11" fill="none"/>
-    ${k === 4 ? `<path class="tick" d="M11 16.5 L14.6 20 L21.5 12.5" fill="none"/>` : ""}</svg>`;
+    ${band ? `<text class="num" x="16" y="16.5" text-anchor="middle" dominant-baseline="central">${Number(band)}</text>`
+      : k === 4 ? `<path class="tick" d="M11 16.5 L14.6 20 L21.5 12.5" fill="none"/>` : ""}</svg>`;
 }
 
 /* ---------- the mastery mark of a category (item 44) --------------------------- */
@@ -91,7 +96,7 @@ function flagHTML(st, teacher = false) {
   return `<span class="smflag" title="${esc((teacher ? "Bíður nemandans: " : "Bíður þín: ") + text)}"><i aria-hidden="true">${st.due ? (st.due > 9 ? "9+" : st.due) : "!"}</i></span>`;
 }
 
-function nodeHTML(n, { teacher }) {
+function nodeHTML(n, { teacher, rise = null }) {
   const sentence = nodeSentence(n, n, { teacher });
   if (n.locked) {
     return `<li><button type="button" class="smnode locked" data-node="${esc(n.id)}" aria-label="${esc(sentence)}">
@@ -99,14 +104,20 @@ function nodeHTML(n, { teacher }) {
       <span class="smtext"><b>${esc(n.nm)}</b><small>engar spurningar enn</small></span></button></li>`;
   }
   const lvl = n.mastery.level;
+  /* A rise to play: the ring and its words are drawn as they were, and the
+     button carries what they become. */
+  const was = rise && typeof n.before === "number" ? n.before : null;
+
   /* Never answered: one thing to say, not "too few answers · never". */
-  const facts = teacher ? esc(n.mastery.label)
+  const factsOf = (label) => (teacher ? esc(label)
     : n.last == null ? "ekki æft enn"
-    : `${esc(n.mastery.label)} · <span class="smlast">${esc(lastText(n.lastDays))}</span>`;
-  return `<li><button type="button" class="smnode m${lvl}${n.needsWork ? " needs" : ""}${n.on ? "" : " off"}"
-      data-node="${esc(n.id)}" data-level="${lvl}" aria-label="${esc(sentence + (n.on ? "" : " Slökkt í námsefninu."))}">
-    <span class="smglyph">${ringSVG(lvl)}</span>
-    <span class="smtext"><b>${esc(n.nm)}</b><small>${facts}${n.on ? "" : " · slökkt"}</small></span>
+    : `${esc(label)} · <span class="smlast">${esc(lastText(n.lastDays))}</span>`);
+  const facts = factsOf(n.mastery.label);
+  return `<li><button type="button" class="smnode m${was !== null ? was : lvl}${n.needsWork ? " needs" : ""}${n.on ? "" : " off"}"
+      data-node="${esc(n.id)}" data-level="${lvl}" aria-label="${esc(sentence + (n.on ? "" : " Slökkt í námsefninu."))}"
+      ${was !== null ? `data-before="${was}" data-facts="${esc(facts + (n.on ? "" : " · slökkt"))}"` : ""}>
+    <span class="smglyph">${was !== null ? ringSVG(was, 32, rise.from) : ringSVG(lvl, 32, n.mastery.band)}</span>
+    <span class="smtext"><b>${esc(n.nm)}</b><small>${was !== null ? factsOf(LABELS[was]) : facts}${n.on ? "" : " · slökkt"}</small></span>
     ${flagHTML(n, teacher)}</button></li>`;
 }
 
@@ -124,19 +135,36 @@ function laneHTML(c, opts) {
           ? `${num(s.xp)} XP · ${Math.round(100 * s.acc)}% rétt af ${num(s.answers)}` : "ekkert svarað enn"}</p>` : ""}
       ${m ? `<p class="smmark">${masteryHTML(m)}${s && s.strong ? `<i class="tagstrong">sterkasta</i>` : ""}
         <span class="mline">${esc(masteryLine(m))}</span></p>` : ""}`;
+  const rise = !opts.teacher && c.rise ? c.rise : null;
   const trail = c.groups.map((g) => `<li class="smyear" aria-hidden="true"><span>${g.year}. bekkur</span></li>` +
-    g.nodes.map((n) => nodeHTML(n, opts)).join("")).join("");
-  return `<section class="smlane${c.on || c.planned ? "" : " off"}${c.planned ? " planned" : ""}" data-skill="${esc(c.id)}"
+    g.nodes.map((n) => nodeHTML(n, { ...opts, rise })).join("")).join("");
+  return `<section class="smlane${c.on || c.planned ? "" : " off"}${c.planned ? " planned" : ""}${rise ? " rising" : ""}" data-skill="${esc(c.id)}"
+      ${rise ? `data-from="${rise.from}" data-to="${rise.to}"` : ""}
       ${m ? `data-mastery="${m.level}"` : ""} aria-labelledby="sml-${esc(c.id)}${opts.teacher ? "-t" : ""}">
     <header class="smhead">
       <h3 id="sml-${esc(c.id)}${opts.teacher ? "-t" : ""}"><span class="skico" aria-hidden="true">${c.ico}</span>
         <span class="smname">${esc(c.nm)}</span>
         ${s ? `<span class="smstig" title="${esc(toNext)}">Stig ${s.level}</span>` : ""}
+        ${c.band ? `<span class="smband" title="Þyngdin sem hringirnir mæla">þyngd <b>${rise ? rise.from : c.band}</b></span>` : ""}
         ${c.on || c.planned ? "" : `<span class="smoff">slökkt</span>`}</h3>
       ${head}
     </header>
     <ol class="smtrail">${trail}</ol>
   </section>`;
+}
+
+/* ---------- a rise, announced (owner feedback 6.14) ----------------------------- */
+
+/** One line over the board when any category has gone up a step since the
+    map was last looked at: which ones, each a button to its trail — on a
+    phone the trail may be far down. */
+function riseBannerHTML(view) {
+  const up = view.cats.filter((c) => c.rise);
+  if (!up.length) return "";
+  return `<div class="smrise" role="status">
+    <span class="smriselbl">${up.length === 1 ? "Nýtt stig" : `Nýtt stig í ${up.length} flokkum`} síðan þú skoðaðir kortið síðast:</span>
+    ${up.map((c) => `<button type="button" class="smrisebtn" data-riselane="${esc(c.id)}">${c.ico} ${esc(c.nm)} · þyngd ${c.rise.from} → <b>${c.rise.to}</b></button>`).join("")}
+  </div>`;
 }
 
 /* ---------- the board ----------------------------------------------------------- */
@@ -152,6 +180,9 @@ function legendHTML({ teacher, wide = true }) {
     <li class="smlegmarks"><span class="smlegrings" aria-hidden="true">${LEGEND_MARKS.map((k) => ringSVG(k, 20)).join("")}</span>
       <span><b>Hringurinn</b> fyllist eftir því sem ${teacher ? "nemandinn nær" : "þú nærð"} betra valdi á efninu:
         ${LEGEND_MARKS.map((k) => LABELS[k].toLowerCase()).join(" → ")}</span></li>
+    <li><span aria-hidden="true">${ringSVG(3, 20, 3)}</span>
+      <span><b>Talan í hringnum</b> er þyngdin sem hringurinn mælir. Þegar ${teacher ? "nemandinn hækkar" : "þú hækkar"} um þyngd
+        mælir hann svörin á nýju þyngdinni — þá getur hann tæmst og fyllist aftur með æfingu</span></li>
     ${teacher ? "" : `<li><span class="smlegword" aria-hidden="true">í gær</span>
       <span><b>Undir nafninu</b> stendur hvenær þú æfðir efnið síðast</span></li>`}
     <li><span class="smflag" aria-hidden="true"><i>2</i></span>
@@ -183,6 +214,7 @@ export function mapHTML(view, { teacher = false, title = "Færnikort", wide = tr
       </span>
     </div>
     ${legendHTML({ teacher, wide })}
+    ${teacher ? "" : riseBannerHTML(view)}
     ${next.length ? `<div class="smnext"><span class="smnextlbl">${teacher ? "Mest bíður hér:" : "Byrjaðu hér:"}</span>
       ${next.map((n) => `<button type="button" class="smnextbtn" data-node="${esc(n.id)}">${
         ringSVG(n.mastery.level, 18)}<span>${esc(n.nm)}</span>${flagHTML(n, teacher)}</button>`).join("")}</div>` : ""}
@@ -375,6 +407,12 @@ const isWide = () => typeof window === "undefined" || !window.matchMedia || wind
 /** Clicks on the rings of a drawn map. */
 function wireMap(el, ctx) {
   el.onclick = (e) => {
+    const up = e.target.closest("button[data-riselane]");
+    if (up) {
+      const lane = el.querySelector(`.smlane[data-skill="${up.dataset.riselane}"]`);
+      if (lane) lane.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+      return;
+    }
     const b = e.target.closest("button[data-node]");
     if (b) openNode(ctx, b.dataset.node);
   };
@@ -384,9 +422,14 @@ function wireMap(el, ctx) {
 export function renderSkillMap(app) {
   const el = $("skillmap");
   if (!el) return;
+  stopRises();
+  /* A skill the map has never shown is written down as it is: the first
+     look is not a rise (a new pupil, a pupil from before 6.14). */
+  if (noteMapShown(app.S)) app.save();
   const view = mapOf(app.S, Date.now(), effectivePolicy(app.S));
   el.innerHTML = mapHTML(view, { wide: isWide() });
   wireMap(el, { app });
+  playRises(el, app);
   const loose = $("loosepatterns");
   if (!loose) return;
   const usable = (id) => !!(app.patternUsable && app.patternUsable(id));
@@ -410,4 +453,173 @@ export function drawTeacherMap(el, data) {
   el.innerHTML = (data.pupil.practised ? "" : `<p class="sub faint">${esc(data.pupil.name)} hefur ekki æft sig enn — kortið er autt.</p>`) + mapHTML(view, { teacher: true, title: "Færnikort · " + data.pupil.name, wide: isWide() }) +
     (view.loose.length ? `<div class="chartbox">${loosePatternsHTML(view.loose)}</div>` : "");
   wireMap(el, { view });
+}
+
+/* ---------- playing a rise (owner feedback 6.14) ----------------------------------
+ *
+ * The step of difficulty is a category's, so a rise moves every ring of its
+ * trail at once — and between two looks at the map several categories may
+ * have risen, some by more than one step. What a rise looks like, and how
+ * many of them are played:
+ *
+ *   one category = one rise   All the trail's rings move together, not node
+ *                             after node: the ones whose mark falls drain
+ *                             (a short stagger, capped, so a long trail is
+ *                             not a long wait), the step in the head counts
+ *                             up — one tick a step, 2 → 3 → 4 for a jump of
+ *                             two — and every ring comes back with the new
+ *                             number, refilled to what it now reads. Rings
+ *                             whose mark does not fall only change number.
+ *   played when seen          A trail plays when it comes on the screen
+ *                             (IntersectionObserver), not before: on a phone
+ *                             the trails below are played when scrolled to,
+ *                             and the line over the board lists them all,
+ *                             each a button that scrolls there.
+ *   one at a time, three      Trails that come into view together play one
+ *                             after another, top first. At most three play
+ *                             per look; any more are drawn as they now are,
+ *                             with the same line under their head — a child
+ *                             who went up in six categories reads it, rather
+ *                             than sitting through six animations.
+ *   once                      A rise is written as shown (`S.mapBand`) the
+ *                             moment its trail is seen, played or not. One
+ *                             never scrolled to waits for the next look.
+ *   no motion asked for       prefers-reduced-motion: every rise is drawn at
+ *                             its end at once, with its line.
+ *   interrupted               Drawing the map again (a switch changed, the
+ *                             tab opened anew) ends what is playing at its
+ *                             end state first.
+ */
+
+const MAX_PLAYED = 3;
+const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** The one rise being played on the map, if any. */
+let stage = null;
+function stopRises() { if (stage) stage.stop(); stage = null; }
+
+/** What the line under the head of a risen trail says. */
+function riseLine(from, to, emptied) {
+  const up = to - from > 1 ? ` (upp um ${to - from})` : "";
+  return `<b>Nýtt stig: þyngd ${to}${up}!</b> Hringirnir mæla nú svörin á þyngd ${to}` +
+    (emptied ? `, svo sumir byrja upp á nýtt og fyllast aftur þegar þú æfir. Það sem þú gerðir á þyngd ${from} kom þér hingað.` : ".");
+}
+
+/** A trail drawn as it now is: the rings, the step, the line. */
+function endLane(lane) {
+  const from = Number(lane.dataset.from), to = Number(lane.dataset.to);
+  let emptied = false;
+  lane.querySelectorAll(".smnode[data-before]").forEach((b) => {
+    const after = Number(b.dataset.level), before = Number(b.dataset.before);
+    if (after < before) emptied = true;
+    b.querySelector(".smglyph").innerHTML = ringSVG(after, 32, to);
+    const small = b.querySelector(".smtext small");
+    if (small && b.dataset.facts != null) small.innerHTML = b.dataset.facts;
+    b.classList.remove(`m${before}`); b.classList.add(`m${after}`);
+    b.removeAttribute("data-before"); b.removeAttribute("data-facts");
+  });
+  const chip = lane.querySelector(".smband");
+  if (chip) { chip.classList.add("up"); chip.innerHTML = `↑ þyngd <b>${to}</b>`; }
+  if (!lane.querySelector(".smriseline")) {
+    lane.querySelector(".smhead").insertAdjacentHTML("beforeend",
+      `<p class="smriseline">${riseLine(from, to, emptied)}</p>`);
+  }
+  lane.classList.remove("rising", "playing");
+  lane.classList.add("risen");
+}
+
+/** Play one trail's rise; `done` when it is over. Returns a function that
+    ends it at once. */
+function playLane(lane, done) {
+  const from = Number(lane.dataset.from), to = Number(lane.dataset.to);
+  const timers = [];
+  const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+  lane.classList.add("playing");
+  const falling = [...lane.querySelectorAll(".smnode[data-before]")]
+    .filter((b) => Number(b.dataset.level) < Number(b.dataset.before));
+  /* 1. The rings whose mark falls drain, 40 ms apart and never more than
+        0.3 s in all. */
+  falling.forEach((b, k) => {
+    const svg = b.querySelector("svg.smring");
+    if (!svg) return;
+    svg.style.setProperty("--d", `${Math.min(k * 40, 300)}ms`);
+    svg.classList.add("drain");
+  });
+  /* 2. The step counts up in the head, one tick a step. */
+  const chip = lane.querySelector(".smband");
+  const steps = Math.max(1, to - from), tick = Math.min(220, 600 / steps);
+  for (let k = 1; k <= steps; k++) {
+    at(350 + k * tick, () => {
+      if (!chip) return;
+      chip.classList.remove("tick"); void chip.offsetWidth; chip.classList.add("tick", "up");
+      chip.innerHTML = `${k === steps ? "↑ " : ""}þyngd <b>${from + k}</b>`;
+    });
+  }
+  /* 3. Every ring comes back with the new number, refilled to what it reads. */
+  const back = 350 + steps * tick + 150;
+  at(back, () => {
+    lane.querySelectorAll(".smnode[data-before]").forEach((b) => {
+      const g = b.querySelector(".smglyph");
+      g.innerHTML = ringSVG(Number(b.dataset.level), 32, to);
+      g.firstElementChild?.classList.add("refill");
+      const small = b.querySelector(".smtext small");
+      if (small && b.dataset.facts != null) small.innerHTML = b.dataset.facts;
+    });
+  });
+  at(back + 450, () => { endLane(lane); done(); });
+  return () => { timers.forEach(clearTimeout); endLane(lane); };
+}
+
+/**
+ * Play the rises of a freshly drawn map, as the long note above says.
+ * @param {HTMLElement} el  the map's box
+ * @param {any} app
+ */
+function playRises(el, app) {
+  const lanes = [...el.querySelectorAll(".smlane.rising")];
+  if (!lanes.length) return;
+  const quiet = reducedMotion() || typeof IntersectionObserver === "undefined";
+  const queue = [], seen = new Set();
+  let played = 0, end = null, stopped = false;
+  /* The rise is written as shown when its trail is seen. */
+  const shown = (lane) => { if (noteMapShown(app.S, [lane.dataset.skill])) app.save(); };
+  const next = () => {
+    if (end || stopped) return;
+    const lane = queue.shift();
+    if (!lane) return;
+    end = playLane(lane, () => { end = null; setTimeout(next, 250); });
+  };
+  const onSeen = (lane) => {
+    if (seen.has(lane)) return;
+    seen.add(lane);
+    shown(lane);
+    if (quiet || played >= MAX_PLAYED) { endLane(lane); return; }
+    played++;
+    queue.push(lane);
+    next();
+  };
+  if (quiet) {
+    /* No motion: drawn at the end at once — and written as shown only
+       when it is on the screen, as below, where that can be told. */
+    lanes.forEach((l) => endLane(l));
+    if (typeof IntersectionObserver === "undefined") lanes.forEach(shown);
+  }
+  const io = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver((entries) => {
+    /* Top first, when several come into view together. */
+    entries.filter((e) => e.isIntersecting)
+      .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top || a.boundingClientRect.left - b.boundingClientRect.left)
+      .forEach((e) => { io.unobserve(e.target); onSeen(/** @type {HTMLElement} */ (e.target.closest(".smlane"))); });
+  }, { threshold: 0.6 });
+  /* The head of a trail, not the trail: a long trail on a phone is taller
+     than the screen and would never be "30 % in view". */
+  if (io) lanes.forEach((l) => io.observe(l.querySelector(".smhead") || l));
+  stage = {
+    stop() {
+      stopped = true;
+      if (io) io.disconnect();
+      if (end) { end(); end = null; }
+      queue.splice(0).forEach(endLane);
+    },
+  };
 }

@@ -168,6 +168,8 @@ export interface State {
   frames: Record<string, number>;
   byType: Record<string, AnswerRecord>;
   byNode: Record<string, AnswerRecord>;
+  /** Owner feedback 6.14: the highest step the skill map has shown, per skill (core/skillmap.js). */
+  mapBand: Record<string, number>;
   seenTypes: Record<string, DayKey>;
   mend: any;
   /** The guided first run (item 84, core/placement.js `cleanTour`). */

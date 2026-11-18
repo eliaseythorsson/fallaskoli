@@ -234,13 +234,81 @@ export function entriesOfNode(node, S, now = Date.now()) {
 /** @type {(S: State, skill: string) => number} */
 const bandNow = (S, skill) => Math.min(MAX, Math.max(MIN, Math.round(storedLevel(S, skill))));
 
+/* ---------- the step a ring measures (owner feedback 6.14) ------------------
+
+   A ring reads the answers near one step of difficulty (core/mastery.js
+   NEAR). Until 6.14 that was the step the skill is at NOW — and the level
+   moves in half steps, a new visit starts half a step lower, so the step a
+   ring read went up and down between visits, and a ring could empty with no
+   word of why. A teenager saw green rings go grey for nothing.
+
+   Now a ring reads the HIGHEST step the map has shown for the skill
+   (`S.mapBand`), or the step now if that is higher, and the step is written
+   in the ring. It only ever goes up, and when it does the map says so, once
+   (ui/skillmap.js plays it): that is a `rise`, from the step last shown to
+   the step now. A skill the map has never shown is taken as it is, without
+   a rise — a new pupil, a pupil from before 6.14, a placement round that
+   set the levels. */
+
+/** The step a ring of this skill measures. @type {(S: State, skill: string) => number} */
+export function ringBand(S, skill) {
+  const seen = isObj(S && S.mapBand) ? Number(S.mapBand[skill]) || 0 : 0;
+  return Math.max(seen, bandNow(S, skill));
+}
+
+/** The rise the map has not shown yet, or null: `{ from, to }`.
+    @param {State} S @param {string} skill @returns {?{from: number, to: number}} */
+export function riseOf(S, skill) {
+  const seen = isObj(S && S.mapBand) ? Number(S.mapBand[skill]) || 0 : 0;
+  const now = bandNow(S, skill);
+  return seen && now > seen ? { from: seen, to: now } : null;
+}
+
+/**
+ * The map has shown these skills as they are now: their step is written into
+ * `S.mapBand` (never lowered). With no `skills`, only the skills the map has
+ * never shown are written — the first look, which is not a rise. Returns
+ * whether anything changed.
+ * @param {State} S @param {?string[]} [skills] @returns {boolean}
+ */
+export function noteMapShown(S, skills = null) {
+  if (!S) return false;
+  const book = isObj(S.mapBand) ? S.mapBand : (S.mapBand = {});
+  let changed = false;
+  for (const sk of SKILLS.map((x) => x.id)) {
+    const now = bandNow(S, sk);
+    const has = Number(book[sk]) || 0;
+    if (skills ? skills.includes(sk) && now > has : !has) { book[sk] = Math.max(has, now); changed = true; }
+  }
+  return changed;
+}
+
+/** `S.mapBand` as it may be trusted: known skills, whole steps MIN–MAX.
+    @param {any} raw @returns {Record<string, number>} */
+export function cleanMapBand(raw) {
+  const out = {};
+  if (!isObj(raw)) return out;
+  for (const s of SKILLS) {
+    const v = Math.round(Number(raw[s.id]));
+    if (Number.isFinite(v) && v >= MIN && v <= MAX) out[s.id] = v;
+  }
+  return out;
+}
+
+/** Two devices: a step shown on either has been shown. */
+export function mergeMapBand(local, remote) {
+  const L = cleanMapBand(local), R = cleanMapBand(remote), out = { ...R };
+  for (const [k, v] of Object.entries(L)) out[k] = Math.max(v, out[k] || 0);
+  return out;
+}
+
 /* The mark of a node with a record of its own: the same reading as a type's
    (core/mastery.js recentAtLevel), of the one record. Review tallies are not
    kept per node, so "Fullt vald" asks only that nothing of the node is
    overdue in the queue. */
-function markOfRecord(S, node, entries, now) {
+function markOfRecord(S, node, entries, now, bandOf) {
   const rec = isObj(S && S.byNode) ? S.byNode[node.id] : null;
-  const cur = bandNow(S, node.cat);
+  const cur = bandOf(node.cat);
   const recent = rec && typeof rec.h === "string"
     ? [...rec.h].reverse().map(readChar).filter((x) => Math.abs(x.band - cur) <= NEAR).slice(0, WINDOW) : [];
   const today = dayOf(now);
@@ -248,7 +316,7 @@ function markOfRecord(S, node, entries, now) {
   return { ...markFrom(recent, { overdue }), band: cur, at: rec ? rec.at || 0 : 0, total: rec ? rec.n || 0 : 0 };
 }
 
-function markOfTypes(S, node, now) {
+function markOfTypes(S, node, now, bandOf) {
   const by = isObj(S && S.byType) ? S.byType : {};
   let at = 0, total = 0;
   for (const t of node.types) {
@@ -257,7 +325,7 @@ function markOfTypes(S, node, now) {
     at = Math.max(at, r.at || 0); total += r.n || 0;
   }
   const known = SKILLS.some((s) => s.id === node.cat);
-  return { ...masteryOfTypes(S, node.types, now), band: known ? bandNow(S, node.cat) : null, at, total };
+  return { ...masteryOfTypes(S, node.types, now, { bandOf }), band: known ? bandOf(node.cat) : null, at, total };
 }
 
 /**
@@ -266,6 +334,8 @@ function markOfTypes(S, node, now) {
  * @param {?Node} node  an entry of core/curriculum.js NODES
  * @param {State} S     the saved state
  * @param {number} [now]   ms
+ * @param {{bandOf?: ?((skill: string) => number)}} [opts]  the step to read
+ *        each skill at; default `ringBand`
  * @returns {?Standing}  null for no node. The fields:
  *
  *   id: string,
@@ -280,7 +350,8 @@ function markOfTypes(S, node, now) {
  *   active: string[],         ids of the node's error patterns that are active
  *   needsWork: boolean        due > 0 or an active pattern
  */
-export function standingOfNode(node, S, now = Date.now()) {
+export function standingOfNode(node, S, now = Date.now(), { bandOf = null } = {}) {
+  const readAt = bandOf || ((skill) => ringBand(S, skill));
   if (!node) return null;
   if (!node.types.length) {
     return { id: node.id, locked: true, mastery: null, answers: 0, last: null, lastDays: null,
@@ -289,7 +360,7 @@ export function standingOfNode(node, S, now = Date.now()) {
   const entries = entriesOfNode(node, S, now);
   const today = dayOf(now);
   const m = node.attrs && ATTR_NODE_IDS.includes(node.id)
-    ? markOfRecord(S, node, entries, now) : markOfTypes(S, node, now);
+    ? markOfRecord(S, node, entries, now, readAt) : markOfTypes(S, node, now, readAt);
   const { at, total, ...mastery } = m;
   const due = entries.filter((e) => e.due <= today).length;
   const diag = (S && S.diag) || {};
@@ -344,7 +415,7 @@ export function needsText(st) {
     @returns {string} */
 export function nodeSentence(node, st, { teacher = false } = {}) {
   if (st.locked) return `${node.nm}. Læst: engar spurningar eru um þetta enn.`;
-  const bits = [`${node.nm}. Vald: ${st.mastery.label}.`];
+  const bits = [`${node.nm}${st.mastery.band ? `, þyngd ${st.mastery.band}` : ""}. Vald: ${st.mastery.label}.`];
   if (!teacher) bits.push(st.last == null ? "Ekki æft enn." : `Síðast æft ${lastText(st.lastDays)}.`);
   const needs = needsText(st);
   if (needs) bits.push(`${teacher ? "Bíður nemandans" : "Bíður þín"}: ${needs}.`);
@@ -490,10 +561,15 @@ export function mapOf(S, now = Date.now(), policy = null) {
 
   const cats = lanes.map((lane) => {
     const r = summary.get(lane.id) || null;
+    /* A rise not shown yet (owner feedback 6.14): every node also carries the
+       mark it had at the old step, for the map to play the change from. */
+    const rise = lane.planned ? null : riseOf(S, lane.id);
+    const before = rise ? (skill) => (skill === lane.id ? rise.from : ringBand(S, skill)) : null;
     const groups = YEARS.map((year) => ({
       year,
       nodes: NODES.filter((n) => n.cat === lane.id && n.year === year).map((n) => {
         const st = standingOfNode(n, S, now);
+        const was = before && !st.locked ? standingOfNode(n, S, now, { bandOf: before }) : null;
         const on = !st.locked && (policy
           ? policy.skill(n.cat) && n.types.some((t) => policy.type(t))
           : !!(r && r.enabled));
@@ -506,7 +582,8 @@ export function mapOf(S, now = Date.now(), policy = null) {
           else totals.unknown++;
           if (st.needsWork) { totals.needs++; flagged.push({ id: n.id, due: st.due, active: st.active.length, on }); }
         }
-        return { ...st, nm: n.nm, year: n.year, cat: n.cat, lesson: n.lesson || null, on };
+        return { ...st, nm: n.nm, year: n.year, cat: n.cat, lesson: n.lesson || null, on,
+          ...(was ? { before: was.mastery.level } : {}) };
       }),
     })).filter((g) => g.nodes.length);
     return {
@@ -516,7 +593,9 @@ export function mapOf(S, now = Date.now(), policy = null) {
          way to the next stig, its XP and its accuracy over all time. */
       skill: r ? { level: r.level, rank: r.rank, xp: r.xp, into: r.into, need: r.need,
         answers: r.answers, acc: r.acc, strong: r.level === best && r.answers >= 10 } : null,
-      mastery: r ? masteryOf(S, lane.id, now) : null,
+      mastery: r ? masteryOf(S, lane.id, now, { bandOf: (sk) => ringBand(S, sk) }) : null,
+      band: lane.planned ? null : ringBand(S, lane.id),
+      rise,
       groups,
     };
   }).filter((c) => c.groups.length);
@@ -560,10 +639,11 @@ export function mapOf(S, now = Date.now(), policy = null) {
  */
 export function teacherMap(S, now = Date.now(), policy = null) {
   const m = mapOf(S, now, policy);
-  const strip = (st) => { const { last, lastDays, answers, ...rest } = st; return rest; };
+  /* No `before`: the rise is the pupil's to see, and only once. */
+  const strip = (st) => { const { last, lastDays, answers, before, ...rest } = st; return rest; };
   const details = {};
   const cats = m.cats.map((c) => ({
-    id: c.id, nm: c.nm, ico: c.ico, planned: c.planned, on: c.on, skill: null,
+    id: c.id, nm: c.nm, ico: c.ico, planned: c.planned, on: c.on, skill: null, band: c.band, rise: null,
     mastery: c.mastery ? { level: c.mastery.level, label: c.mastery.label, n: c.mastery.n,
       right: c.mastery.right, band: c.mastery.band, reviewsOnTime: c.mastery.reviewsOnTime,
       overdue: c.mastery.overdue } : null,

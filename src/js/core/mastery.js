@@ -213,15 +213,19 @@ const bandNow = (S, skill) => Math.min(MAX, Math.max(MIN, Math.round(storedLevel
  * session the types come interleaved; it also keeps one type answered fifty
  * times from drowning the others of a node.
  *
- * @param {State} S @param {Iterable<string>} typeIds @param {{window?: number}} [opts]
+ * @param {State} S @param {Iterable<string>} typeIds
+ * @param {{window?: number, bandOf?: ?((skill: string) => number)}} [opts]
  * @returns {{band: number, ok: boolean}[]}
  */
-export function recentAtLevel(S, typeIds, { window = WINDOW } = {}) {
+export function recentAtLevel(S, typeIds, { window = WINDOW, bandOf = null } = {}) {
   const lanes = [];
   for (const id of new Set(typeIds || [])) {
     const r = S && isObj(S.byType) ? S.byType[id] : null;
     if (!isObj(r) || !r.h) continue;
-    const cur = bandNow(S, SKILL_OF.get(id));
+    /* `bandOf(skill)`: the step to read at, when it is not the level now —
+       the skill map reads at the highest step it has shown (core/skillmap.js
+       `ringBand`), so a ring does not move with every half step. */
+    const cur = bandOf ? bandOf(SKILL_OF.get(id)) : bandNow(S, SKILL_OF.get(id));
     const lane = [...String(r.h)].reverse().map(readChar)
       .filter((x) => Math.abs(x.band - cur) <= NEAR);
     if (lane.length) lanes.push(lane);
@@ -288,13 +292,14 @@ export function markFrom(recent, rev) {
  * types waiting in it.
  *
  * @param {State} S @param {Iterable<string>} typeIds @param {When} [now]
+ * @param {{bandOf?: ?((skill: string) => number)}} [opts]  see `recentAtLevel`
  * @returns {Mark}
  */
-export function masteryOfTypes(S, typeIds, now = Date.now()) {
+export function masteryOfTypes(S, typeIds, now = Date.now(), { bandOf = null } = {}) {
   const ids = [...new Set(typeIds || [])].filter((id) => KNOWN.has(id));
   const set = new Set(ids);
   const rev = reviewFigures(S, now, ids.map((id) => "t:" + id), (e) => set.has(e.t));
-  return markFrom(recentAtLevel(S, ids), rev);
+  return markFrom(recentAtLevel(S, ids, { bandOf }), rev);
 }
 
 /**
@@ -305,12 +310,13 @@ export function masteryOfTypes(S, typeIds, now = Date.now()) {
  *
  * @param {State} S @param {string} skill
  * @param {When} [now]  ms, a Date (core/state.js badgeContext) or a day key
+ * @param {{bandOf?: ?((skill: string) => number)}} [opts]  see `recentAtLevel`
  * @returns {Mark}
  */
-export function masteryOf(S, skill, now = Date.now()) {
+export function masteryOf(S, skill, now = Date.now(), { bandOf = null } = {}) {
   const ids = typesOfSkill(skill);
   const rev = reviewFigures(S, now, ["s:" + skill], (e) => e.sk === skill);
-  return { ...markFrom(recentAtLevel(S, ids), rev), band: bandNow(S, skill) };
+  return { ...markFrom(recentAtLevel(S, ids, { bandOf }), rev), band: bandOf ? bandOf(skill) : bandNow(S, skill) };
 }
 
 /**

@@ -16,6 +16,7 @@ import { blankReview, sanitiseReview } from "./review.js";
 import { cleanByType, masteryOf } from "./mastery.js";
 import { cleanByNode } from "./skillmap.js";
 import { cleanSeenTypes } from "./examples.js";
+import { cleanMapBand } from "./skillmap.js";
 import { blankMend, sanitiseMend, patternsMended, reviewsOnTime } from "./mending.js";
 
 /** @typedef {import("../types").State} State */
@@ -128,6 +129,9 @@ export function blankState() {
        type not in it shows one worked example on its first card
        (core/examples.js). */
     seenTypes: {},
+    /* Owner feedback 6.14: the highest step of difficulty the skill map has
+       shown for each skill (core/skillmap.js `ringBand`). */
+    mapBand: {},
     /* Getting better, counted (items 56 and 58, core/mending.js): the error
        patterns active and waiting to be mended, the patterns mended (with
        the day, the last sixty) and the reviews passed per day (five weeks).
@@ -258,6 +262,7 @@ export function migrate(raw) {
     byType: cleanByType(raw.byType),
     byNode: cleanByNode(raw.byNode),
     seenTypes: cleanSeenTypes(raw.seenTypes),
+    mapBand: cleanMapBand(raw.mapBand),
     /* Items 56 and 58: rebuilt field by field (core/mending.js). */
     mend: sanitiseMend(raw.mend),
     /* Item 84: the record of the first run, or null (core/placement.js). */
