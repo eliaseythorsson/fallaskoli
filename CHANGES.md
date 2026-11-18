@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## v6.14.1
 
 ### Færnikort: nýtt stig sést
 - **Talan í hringnum** er þyngdin sem hringurinn mælir, og þyngdin í haus hvers flokks.
