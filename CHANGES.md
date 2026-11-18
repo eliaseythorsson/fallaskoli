@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Færnikort: nýtt stig sést
+- **Talan í hringnum** er þyngdin sem hringurinn mælir, og þyngdin í haus hvers flokks.
+  Hringur mælir nú hæstu þyngd sem kortið hefur sýnt (`S.mapBand`), svo talan lækkar
+  aldrei og hringur tæmist ekki lengur þó að ný heimsókn byrji hálfu stigi neðar.
+- **Þegar þyngd hækkar** sýnir kortið það einu sinni: lína yfir kortinu nefnir flokkana
+  (hver hnappur skrunar að sínum), hringir flokksins sem lækka renna út, þyngdin í hausnum
+  telur upp (2 → 3 → 4) og hringirnir koma aftur með nýju tölunni. Lína undir hausnum segir
+  hvað gerðist.
+- **Margar hækkanir í einu**: flokkur hreyfist þegar hann sést á skjánum, einn í einu,
+  mest þrír í hvert sinn; hinir eru sýndir strax eins og þeir eru nú, með sömu línu.
+  Flokkur sem aldrei sást bíður næstu heimsóknar. Engin hreyfing ef tækið biður um minni
+  hreyfingu. Kennari sér tölurnar en enga hreyfingu.
+
 ### The owner's second pass (6.14 in use)
 - **Færnikort er fyrsti flipinn**: Færnikort · Æfa · Lesefni · Merki og framvinda ·
   Skólastofan · Stillingar. „Stillingar og námsefni“ heitir nú **Stillingar**.

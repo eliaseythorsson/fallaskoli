@@ -585,6 +585,44 @@ svg.smring{flex:none;width:32px;height:32px;display:block;overflow:visible}
 .smring .tick{stroke:var(--board-deep);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
 .smring.locked path{stroke:var(--chalk-dim);stroke-width:2;stroke-linecap:round}
 .smring.locked rect{fill:none;stroke:var(--chalk-dim);stroke-width:2}
+/* Owner feedback 6.14: the step a ring measures, in it, and a rise played
+   (ui/skillmap.js playRises). The number keeps a halo of the board so it
+   reads over any part of the wedge; on a full disc it is dark. */
+.smring .num{font-family:var(--mono);font-size:12.5px;font-weight:700;fill:var(--chalk);
+  paint-order:stroke;stroke:var(--board);stroke-width:3px;stroke-linejoin:round}
+.smring.r4 .num{fill:var(--board-deep);stroke:none}
+.smband{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--chalk-dim);white-space:nowrap;
+  padding:0 5px;border:1px solid transparent;border-radius:3px}
+.smband b{color:var(--chalk);font-weight:700}
+.smband.up{background:var(--chalk-yellow);color:var(--board-deep)}
+.smband.up b{color:var(--board-deep)}
+.smband.tick{animation:smtick .32s cubic-bezier(.3,1.6,.5,1)}
+@keyframes smtick{from{transform:scale(1.35)}to{transform:scale(1)}}
+.smring .fill,.smring .num{transform-box:view-box;transform-origin:16px 16px}
+.smring.drain .fill{transform:scale(0);opacity:0;transition:transform .6s cubic-bezier(.55,0,.75,.2) var(--d,0ms),opacity .2s ease calc(var(--d,0ms) + .45s)}
+.smring.drain .num{opacity:0;transition:opacity .25s ease var(--d,0ms)}
+.smring.refill .fill{animation:smrefill .45s cubic-bezier(.2,.8,.3,1)}
+.smring.refill .num{animation:smnum .45s ease}
+@keyframes smrefill{from{transform:scale(0)}to{transform:scale(1)}}
+@keyframes smnum{from{opacity:0;transform:scale(1.4)}to{opacity:1;transform:scale(1)}}
+.smriseline{margin:6px 0 0;padding:6px 8px;font-size:12px;line-height:1.45;color:var(--chalk);
+  background:rgba(242,217,107,.12);border-radius:var(--radius);animation:smline .5s ease}
+.smriseline b{color:var(--chalk-yellow)}
+@keyframes smline{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.smlane.rising .smmark,.smlane.playing .smmark{opacity:0}
+.smlane.risen .smmark{transition:opacity .4s ease}
+.smlane.playing,.smlane.risen{box-shadow:inset 0 0 0 1px rgba(242,217,107,.45)}
+.smrise{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:4px 0 12px;padding:8px 10px;
+  border:1px dashed var(--chalk-yellow);border-radius:var(--radius);font-size:12.5px;color:var(--chalk)}
+.smriselbl{font-family:var(--display);font-size:14px;font-weight:600;color:var(--chalk-yellow)}
+.smrisebtn{font:inherit;font-size:12.5px;color:var(--chalk);background:none;border:1px solid var(--line);
+  border-radius:var(--radius);padding:0 9px;min-height:36px;cursor:pointer}
+.smrisebtn b{color:var(--chalk-yellow)}
+.smrisebtn:hover{border-color:var(--chalk-yellow)}
+.smrisebtn:focus-visible{outline:2px solid var(--chalk-yellow);outline-offset:1px}
+@media (prefers-reduced-motion: reduce){
+  .smring.drain .fill,.smring.drain .num,.smring.refill .fill,.smring.refill .num,.smband.tick,.smriseline{animation:none;transition:none}
+}
 .smflag{flex:none;display:inline-flex}
 .smflag i{font-style:normal;font-family:var(--mono);font-size:11.5px;font-weight:600;line-height:1;min-width:22px;height:22px;padding:0 5px;
   display:inline-flex;align-items:center;justify-content:center;border-radius:99px;background:var(--chalk-yellow);color:var(--board-deep);

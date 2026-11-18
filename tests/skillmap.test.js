@@ -11,6 +11,7 @@ import {
   patternsOfNode, cellOfNode, noteNodeAnswer, partsOf, cleanByNode, mergeByNode,
   entriesOfNode, standingOfNode, lastText, needsText, nodeSentence, cellLabel,
   nodeDetail, mapOf, teacherMap, nodeSession,
+  ringBand, riseOf, noteMapShown, cleanMapBand, mergeMapBand,
 } from "../src/js/core/skillmap.js";
 import { NODES, nodeById, YEARS } from "../src/js/core/curriculum.js";
 import { PATTERNS, patternById, standingOf } from "../src/js/core/diagnosis.js";
@@ -307,7 +308,7 @@ test("lastText and needsText say it as a pupil would", () => {
   const S = pupil("no-foll", { answers: "1", daysAgo: 1 });
   entry(S, { t: "fill", c: "ÞGFFT", w: "hestur|kk" });
   const n = node("no-foll"), s = standingOfNode(n, S, NOW);
-  assert.equal(nodeSentence(n, s), "Föllin fjögur. Vald: Of fá svör. Síðast æft í gær. Bíður þín: 1 atriði bíður upprifjunar.");
+  assert.equal(nodeSentence(n, s), `Föllin fjögur, þyngd ${s.mastery.band}. Vald: Of fá svör. Síðast æft í gær. Bíður þín: 1 atriði bíður upprifjunar.`);
   assert.doesNotMatch(nodeSentence(n, s, { teacher: true }), /Síðast|í gær|þín/);
   const lock = NODES.find((x) => !x.types.length);
   assert.match(nodeSentence(lock, standingOfNode(lock, S, NOW)), /Læst/);
@@ -475,4 +476,50 @@ test("a node's session: exactly its question types and features, opening with it
   assert.equal(nodeSession(NODES.find((n) => !n.types.length), S, NOW), null, "a locked node starts nothing");
   assert.equal(nodeSession(null, S, NOW), null);
   for (const n of NODES.filter((x) => x.types.length)) assert.deepEqual(nodeSession(n, S, NOW).types, n.types);
+});
+
+/* ---------- owner feedback 6.14: the step a ring measures -------------------- */
+
+test("a ring reads the highest step the map has shown, and a rise is a step above it", () => {
+  const S = pupil("no-foll", { level: 2, answers: "1111111111" });
+  /* Never shown: no rise, and the first look writes the step down. */
+  assert.equal(riseOf(S, "nafnord"), null);
+  assert.equal(noteMapShown(S), true);
+  assert.equal(S.mapBand.nafnord, 2);
+  assert.equal(noteMapShown(S), false, "the first look is written once");
+  const full = standingOfNode(node("no-foll"), S, NOW).mastery.level;
+  assert.ok(full >= 3);
+  /* Up two steps: the ring reads step 4, the answers at 2 fall out of it, and
+     the rise is waiting, with the mark the node had before. */
+  setSkillLevel(S, "nafnord", 4, { now: 2 });
+  assert.deepEqual(riseOf(S, "nafnord"), { from: 2, to: 4 });
+  assert.equal(ringBand(S, "nafnord"), 4);
+  const lane = mapOf(S, NOW).cats.find((c) => c.id === "nafnord");
+  assert.deepEqual(lane.rise, { from: 2, to: 4 });
+  assert.equal(lane.band, 4);
+  const n = lane.groups.flatMap((g) => g.nodes).find((x) => x.id === "no-foll");
+  assert.equal(n.before, full);
+  assert.equal(n.mastery.level, 0);
+  /* The teacher gets no rise and no `before`. */
+  const t = teacherMap(S, NOW).cats.find((c) => c.id === "nafnord");
+  assert.equal(t.rise, null);
+  assert.ok(!t.groups.flatMap((g) => g.nodes).some((x) => "before" in x));
+  /* Shown: no rise. Down half a step at a new visit: the ring stays at 4. */
+  assert.equal(noteMapShown(S, ["nafnord"]), true);
+  assert.equal(riseOf(S, "nafnord"), null);
+  setSkillLevel(S, "nafnord", 3, { now: 3 });
+  assert.equal(ringBand(S, "nafnord"), 4, "the step in the ring never goes down");
+  assert.equal(riseOf(S, "nafnord"), null, "nor is going back up to it a rise");
+});
+
+test("S.mapBand is cleaned, merged by the larger step and survives the guard", () => {
+  assert.deepEqual(cleanMapBand({ nafnord: 3, sagnord: 99, x: 2, fornofn: "2" }), { nafnord: 3, fornofn: 2 });
+  assert.deepEqual(mergeMapBand({ nafnord: 3, sagnord: 2 }, { nafnord: 2, fornofn: 4 }), { nafnord: 3, sagnord: 2, fornofn: 4 });
+  const S = blankState(); S.mapBand = { nafnord: 3, bad: 1 };
+  assert.deepEqual(migrate(JSON.parse(JSON.stringify(S))).mapBand, { nafnord: 3 });
+  const B = blankState(), L = blankState(), R = blankState();
+  L.mapBand = { nafnord: 3 }; R.mapBand = { nafnord: 4, sagnord: 2 };
+  assert.deepEqual(mergeStates(B, L, R).mapBand, { nafnord: 4, sagnord: 2 });
+  const G = blankState(); G.mapBand = { nafnord: 2, evil: 7 };
+  assert.deepEqual(cleanState(G).mapBand, { nafnord: 2 });
 });

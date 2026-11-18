@@ -26,6 +26,7 @@ import { mergeLevels } from "./difficulty.js";
 import { mergeByType } from "./mastery.js";
 import { mergeByNode } from "./skillmap.js";
 import { mergeSeenTypes } from "./examples.js";
+import { mergeMapBand } from "./skillmap.js";
 import { mergeTour } from "./placement.js";
 
 /** @typedef {import("../types").State} State */
@@ -223,6 +224,8 @@ export function mergeStates(base, local, remote) {
   /* The same record per curriculum node (item 83, core/skillmap.js). */
   out.byNode = mergeByNode(B.byNode, L.byNode, R.byNode);
   out.seenTypes = mergeSeenTypes(L.seenTypes, R.seenTypes);
+  /* The skill map's steps (owner feedback 6.14): shown on either, shown. */
+  out.mapBand = mergeMapBand(L.mapBand, R.mapBand);
   /* Getting better (items 56 and 58, core/mending.js): a pattern mended on
      either device is no longer waiting, and the counts add. */
   out.mend = mergeMend(B.mend, L.mend, R.mend);
