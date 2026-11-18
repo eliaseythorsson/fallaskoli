@@ -1,4 +1,4 @@
-/* The skill map (critique item 83), drawn: Merki og framvinda → Framvinda.
+/* The skill map (critique item 83), drawn: the Færnikort tab (the first since owner feedback 6.14).
  *
  * One board, chalk on green like the board in Æfa. Every category is a trail
  * down it and every curriculum node a ring on the trail, in the order of the

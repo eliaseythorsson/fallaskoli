@@ -300,13 +300,13 @@ export async function renderTeacher(app) {
     <h3 class="sec2">Villumynstur hópsins</h3>
     <p class="sub">Nemendur niður, villumynstur þvert, algengasta villa hópsins fremst. Í hverjum reit:
       hve oft svarið var rangt af síðustu svörum sem prófa mynstrið — sömu tölur og nemandinn sér
-      sjálfur undir <b>Merki og framvinda → Framvinda</b>. ⚠ merkir „algengt núna“ og ▲ betra, ● svipað
+      sjálfur undir <b>Færnikort</b>. ⚠ merkir „algengt núna“ og ▲ betra, ● svipað
       og ▼ verra en áður. <b>Ógreint</b> er hve mörg röng svör villugreiningin kunni ekki að
       flokka — það er ekki villa nemandans.</p>
     <div id="tc-table"><p class="sub faint">Sæki töfluna…</p></div>
     <p><a class="ghost filelabel" id="tc-csv" href="${esc(app.server.classPatternsCsvUrl(group))}" download>Sækja töfluna (CSV)</a></p>
     <h3 class="sec2">Færnikort nemanda</h3>
-    <p class="sub">Sama kort og nemandinn sér sjálfur undir <b>Merki og framvinda → Framvinda</b>: hvert
+    <p class="sub">Sama kort og nemandinn sér sjálfur undir <b>Færnikort</b>: hvert
       efnisatriði námskrárinnar, hve gott vald nemandinn hefur á því og hvað bíður hans þar. Þú sérð
       tölurnar um efnið — ekki hvenær nemandinn æfði sig, ekki hvaða orð fóru úrskeiðis og ekkert sem
       hann skrifaði.</p>

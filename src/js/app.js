@@ -352,11 +352,13 @@ meet(app, sessionControl(), drillControl(), duelControl(), liveControl());
  * child is answering questions.
  */
 
-const VIEWS = ["practice", "lessons", "progress", "class", "settings"];
+/* Owner feedback 6.14: the skill map is its own tab, the first. */
+const VIEWS = ["map", "practice", "lessons", "progress", "class", "settings"];
 
 const DRAW = {
+  map: () => renderSkillMap(app),
   lessons: (id) => renderLessons(app, id),
-  progress: () => { renderBadges(app); renderStats(app); renderSkillMap(app); },
+  progress: () => { renderBadges(app); renderStats(app); },
   class: () => {
     renderTeacher(app); renderShareCard(app); renderClass(app); renderDuelRoom(app);
     /* Fresh duel info also carries whether the account is held for review. */
@@ -387,7 +389,7 @@ function openView(view, arg) {
 function redrawOpenView() {
   /* Not the settings: redrawing the switches under somebody's finger because
      the leaderboard arrived would be a strange thing to do to them. */
-  const open = ["progress", "class"].find((v) => !$("view-" + v).hidden);
+  const open = ["map", "progress", "class"].find((v) => !$("view-" + v).hidden);
   if (open) DRAW[open]();
 }
 

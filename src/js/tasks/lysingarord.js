@@ -46,6 +46,10 @@ const ADJ_DEGREES = {
 function helperNounFor(lex, adj, deg, kyn, caseKey, num) {
   const a = ADJ_DEGREES[deg];
   if (!a) return null;
+  /* Owner feedback 6.14: the strong superlative does not stand before a
+     noun — *stærst barn, notalegastir dagar* is not said; one says *stærsta
+     barnið* or *barnið er stærst*. Its table is the bare forms. */
+  if (deg === "ESB") return null;
   const mark = `${caseKey}${num}${a.article ? "gr" : ""}`;
   return adjectiveHelperForm(lex, adj, kyn, mark);
 }
@@ -54,8 +58,13 @@ export function tableAdj(lex, view, rng) {
   const { sess } = view;
   const d = diffOf(sess, "lysingarord");
   if (drilling(view) && !forced(view, ["lo"])) return null;
+  /* Owner feedback 6.14: a table with no noun beside it gives the pupil
+     nothing to read "með greini" off (*algjör* in the weak masculine). The
+     table is drawn from the adjectives that have a helper noun; the others
+     are asked in sentences, and here only when a review asks for them. */
+  const withNoun = topByRank(lex.adjectives, 0.38).filter((x) => x.h && ["KK", "KVK", "HK"].some((k) => adjectiveHelperLemma(x, k)));
   const adj = forced(view, ["lo"]) ||
-    wpick(topByRank(lex.adjectives, 0.38), (x) => wordWeight(lex, view, x, "lysingarord"), rng);
+    wpick(withNoun.length ? withNoun : topByRank(lex.adjectives, 0.38), (x) => wordWeight(lex, view, x, "lysingarord"), rng);
   /* A review (tasks/review.js) asks for the table its cell is in: that
      degree, gender and number, whatever the difficulty is now. */
   const fc = /^(FSB|FVB|MST|ESB|EVB)-(KK|KVK|HK)-(?:NF|ÞF|ÞGF|EF)(ET|FT)$/.exec(forcedCell(view) || "");
@@ -81,14 +90,22 @@ export function tableAdj(lex, view, rng) {
       .filter((c) => adj.forms[c.m]);
     if (cells.length < 4) continue;
     if (!view.policy.marks(cells.map((c) => c.m))) continue;
+    /* Owner feedback 6.14: the degree and the declension describe the
+       adjective; gender, number and the article describe the noun it goes
+       with, so they are read together — "frumstig, veik beyging · karlkyn,
+       eintala, með greini". The article last, where it is not missed. */
     const article = a.article === null ? "" : a.article ? "með greini" : "án greinis";
     const beyging = deg === "MST" ? "" : a.article ? "veik beyging" : "sterk beyging";
-    const spec = [a.name, article, beyging].filter(Boolean).join(", ");
+    const spec = [a.name, beyging].filter(Boolean).join(", ");
+    const noun = [GENDERS[kyn.toLowerCase()], num === "ET" ? "eintala" : "fleirtala", article].filter(Boolean).join(", ");
     const sample = cells[0].helper ? `${adj.forms[cells[0].m][0]} ${cells[0].helper}` : null;
     return built({
       type: "table", kind: "lo", skill: "lysingarord", w: adj, cells,
-      title: `${adj.o} · ${spec} · ${GENDERS[kyn.toLowerCase()]} ${num === "ET" ? "eintala" : "fleirtala"}`,
+      title: `${adj.o} · ${spec} · ${noun}`,
       sample,
+      note: deg === "ESB"
+        ? `Sterkt efsta stig stendur ekki á undan nafnorði heldur eitt, oftast á eftir *er*: *hann er ${(adj.forms["ESB-KK-NFET"] || ["…"])[0]}*. Með nafnorði er það veikt: *${(adj.forms["EVB-KK-NFET"] || ["…"])[0]} maðurinn*.`
+        : null,
       base: 5, word: wordKey(adj.o, adj.c), lvl: bandFor(view, "lysingarord"),
       paradigm: adj.forms,
       why: explainDegree(readMark(cells[0].m).stig),
@@ -384,7 +401,7 @@ export function framedAdjective(lex, view, rng, want, { place = null, fc = null,
   const markOk = memo((m) => want.test(m) && P.mark(m));
   const frames = (EX.adjFrames || []).filter((f) => {
     const m = frameMark(f);
-    return markOk(m) && P.level(f.lvl) && (!fc || m === fc)
+    return markOk(m) && P.level(f.lvl) && (!fc || m === fc) && (!!f.p || !STRONG_SUP.test(m))
       && (place === null || (place === "pred") === !!f.p) && fits(f).length;
   });
   if (!frames.length) return null;
@@ -398,10 +415,16 @@ export function framedAdjective(lex, view, rng, want, { place = null, fc = null,
   return { s, i, w, m, lvl: Math.max(f.lvl, Math.min(adjLevel(w), P.maxLevel)), framed: true };
 }
 
+/* Owner feedback 6.14: the strong superlative is said after *vera* or
+   *verða* (*hann er stærstur*), not before a noun (*stærstur maður*). A
+   frame or a sentence made here puts it only where it stands alone. */
+const STRONG_SUP = /^ESB-/;
+
 function adjSlot(lex, view, rng, want, { pred = null, frames = true, place = null } = {}) {
   const P = view.policy;
   const b = bandFor(view, "lysingarord");
-  const firm = (t) => !(t.u || []).length && !t.rj;
+  const firm = (t) => !(t.u || []).length && !t.rj
+    && (!STRONG_SUP.test(t.m) || t.r === "sagnfylling");
   /* A review (tasks/review.js): this cell, and this adjective if one is
      given — from the bank, or put into a frame — or nothing. */
   const fc = forcedCell(view), fw = forced(view, ["lo"]);
@@ -414,7 +437,7 @@ function adjSlot(lex, view, rng, want, { pred = null, frames = true, place = nul
     if (bank.length) { const r = pick(bank, rng); return { s: r.s, i: r.i, w: r.w, m: r.t.m, lvl: r.s.lvl }; }
     const gen = framedAdjective(lex, view, rng, want, { place, fc, fw });
     if (gen) return gen;
-    if (!frames || !fc || !want.test(fc) || !P.mark(fc)) return null;
+    if (!frames || !fc || !want.test(fc) || !P.mark(fc) || STRONG_SUP.test(fc)) return null;
     /* Into a frame: the review's adjective, or a common one that has the form. */
     const words = fw ? [fw] : lex.adjectives.filter((w) => w.r <= 300 + 150 * b && w.forms[fc]);
     for (let k = 0; k < 25 && words.length; k++) {
@@ -451,7 +474,7 @@ function adjSlot(lex, view, rng, want, { pred = null, frames = true, place = nul
   const pool = lex.adjectives.filter((w) => w.r <= 300 + 150 * b);
   for (let k = 0; k < 25; k++) {
     const w = pick(pool, rng);
-    const marks = Object.keys(w.forms).filter((m) => want.test(m) && P.mark(m));
+    const marks = Object.keys(w.forms).filter((m) => want.test(m) && P.mark(m) && !STRONG_SUP.test(m));
     if (!marks.length) continue;
     const m = pick(marks, rng);
     const made = adjectiveSentence(lex, w, m, w.forms[m][0], { maxLvl: b + 1, levelOk: (n) => P.level(n), rng });
@@ -495,7 +518,9 @@ export function loDegree(lex, view, rng) {
     hint: a.stig === "miðstig" ? "Miðstig ber saman tvennt." : "Efsta stig: mest af öllu.",
     why: a.stig === "miðstig"
       ? "**Miðstig** ber saman tvennt og beygist alltaf veikt: *stærri, stærri, stærra*."
-      : `**Efsta stig** — ${a.beyging === "veik" ? "hér veikt, því nafnorðið hefur greini" : "hér sterkt"}: *stærstur / stærsti*.`,
+      : a.beyging === "veik"
+        ? "**Efsta stig**, hér **veikt** því nafnorðið hefur greini: *sterkasti strákurinn*. Án nafnorðs, á eftir *er*, er það sterkt: *hann er sterkastur*."
+        : "**Efsta stig**, hér **sterkt** því það stendur eitt á eftir *er / var / verður*: *hann er sterkastur*. Með nafnorði með greini væri það veikt: *sterkasti strákurinn*.",
     tags: ["adj"],
   }));
 }

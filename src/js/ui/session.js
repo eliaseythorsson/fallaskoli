@@ -131,7 +131,7 @@ export function renderPicker(app) {
   const el = $("task");
   if (!list.length) {
     el.innerHTML = `<div class="card"><p class="eyebrow"><span>Ekkert efni valið</span></p>
-      <p class="sentence">Kveiktu á að minnsta kosti einu námsefni undir Stillingar og námsefni.</p>
+      <p class="sentence">Kveiktu á að minnsta kosti einu námsefni undir Stillingar.</p>
       <div class="answer"><button type="button" class="go" id="tosettings">Opna stillingar og námsefni</button></div></div>`;
     $("tosettings").onclick = () => app.openView("settings");
     return;
@@ -467,12 +467,13 @@ export function renderSummary(app) {
     ${d.assignment ? `<p class="assignsent">${esc(assignmentSummary(d))}</p>` : ""}
     <div class="sumdots" aria-hidden="true">${d.items.map((it) => `<i class="${it.ok === true ? "ok" : it.ok === false ? "no" : "opt"}"></i>`).join("")}</div>
     ${d.badges.length ? `<div class="sumbadges">${d.badges.map((b) => `<span class="runchip">${b.ico} ${esc(b.nm)}</span>`).join("")}</div>` : ""}
+    ${(d.earlier || []).length ? `<p class="sumearlier">Unnið fyrr, utan lotunnar (t.d. í einvígi eða umferð): ${d.earlier.map((b) => `<span class="runchip">${b.ico} ${esc(b.nm)}</span>`).join(" ")}</p>` : ""}
     <section class="sumsec"><h3>✓ Það sem gekk vel</h3><ul>${good.join("")}</ul></section>
     <section class="sumsec remember"><h3>💡 Eitt atriði til að muna</h3>${remember}</section>
     <section class="sumsec"><h3>→ Hvað næst?</h3><div class="answer nextrow">${next.join("")}</div></section>
     <section class="sumsec"><h3>🔎 Villugreining</h3>${diag}
       <p class="faint small">Fylgst er með villumynstrum í öllum æfingum. Spurningar sem prófa
-        þau koma oftar þangað til þau lagast. Yfirlitið er undir <b>Merki og framvinda → Framvinda</b>.</p></section>
+        þau koma oftar þangað til þau lagast. Yfirlitið er undir <b>Færnikort</b>.</p></section>
   </div>`;
 
   el.querySelectorAll("[data-next]").forEach((b) => {

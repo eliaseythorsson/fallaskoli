@@ -705,3 +705,10 @@ test("real wrong answers (tests/fixtures/wrong-answers.json): clean, and checked
   now.byPattern.filter((r) => r.disagree).forEach((r) =>
     t.diagnostic(`  ${r.name}: ${r.disagree} of ${r.n}`));
 });
+
+test("owner feedback 6.14: the weak form for the strong one is strong/weak, not gender", () => {
+  const a = word("gamall", "lo");
+  /* *Ég hjálpaði gömlu konu*: the weak feminine, not the strong neuter of *gömlu barni* */
+  const g = gradeForm("gömlu", { accepted: a.forms["FSB-KVK-ÞGFET"], paradigm: a.forms });
+  assert.deepEqual(patternsForCells("FSB-KVK-ÞGFET", g.otherMarks).map((x) => x.p), ["beyging_lo"]);
+});

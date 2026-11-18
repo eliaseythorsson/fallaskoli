@@ -82,7 +82,7 @@ export const PATTERNS = [
     rule: "Lýsingarorð og fornöfn taka kyn, tölu og fall nafnorðsins sem þau standa með: *góður maður, góð kona, gott barn* — *gamalli konu, gömlum konum*.",
     lesson: "samraemi", tags: ["agree:kyn"], types: ["fill", "tbl_lo", "tbl_fn", "villur", "smidja", "lo_samr", "to_samr", "fn_stad"], hunt: "samræmi" },
   { id: "beyging_lo", ok: "sterka og veika beygingu", nm: "Sterk og veik beyging lýsingarorða",
-    rule: "**Veik** beyging kemur á eftir greini eða ábendingarfornafni: *góði maðurinn, þessi góði maður*. Annars **sterk**: *góður maður*.",
+    rule: "Gáðu fyrst hvort nafnorðið hefur **greini**. Með greini (eða á eftir *þessi, sá, hinn*) beygist lýsingarorðið **veikt**: *gamla konan, gömlu konunni, sterkasti strákurinn*. Án greinis beygist það **sterkt**: *gömul kona, gamalli konu*. Á eftir *er, var, verður* stendur það eitt og er líka sterkt: *hann er sterkastur*.",
     lesson: "lo-beyging", tags: ["adj"], types: ["tbl_lo", "parse", "revform", "lo_beyging"] },
   { id: "stig", ok: "stigbreytingu", nm: "Stigbreyting",
     rule: "**Frumstig** lýsir (*stór*), **miðstig** ber saman tvennt (*stærri en*), **efsta stig** er mest af öllum (*stærstur*).",
@@ -433,8 +433,15 @@ export function patternsForCells(target, others) {
      accusative and dative confused, not a word left in the nominative. */
   const tgtCase = caseKey(readMark(target).fall);
   const pref = (m) => (tgtCase === "ÞGF" && caseKey(readMark(m).fall) === "ÞF" ? 0 : 1);
+  /* Owner feedback 6.14: the gender is the one thing a child can see on the
+     page — the noun stands there — so on a tie the strong/weak reading wins
+     over another gender. *gömlu* for *gamalli* (*hjálpaði gamalli konu*) is
+     the weak feminine (the article assumed), not the strong neuter of *gömlu
+     barni*: "Sterk og veik beyging", not "Samræmi í kyni". */
+  const weakFirst = (d) => (d.includes("beyging") && !d.includes("kyn") ? 0 : 1);
   const best = others.map((m) => ({ m, d: markDiff(target, m) }))
-    .filter((x) => x.d.length).sort((x, y) => x.d.length - y.d.length || pref(x.m) - pref(y.m))[0];
+    .filter((x) => x.d.length)
+    .sort((x, y) => x.d.length - y.d.length || weakFirst(x.d) - weakFirst(y.d) || pref(x.m) - pref(y.m))[0];
   if (!best) return [];
   const a = readMark(target), b = readMark(best.m);
   /* v6.13 (critique 34): the infinitive — the form on the card — typed where

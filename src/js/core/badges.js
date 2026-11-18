@@ -47,13 +47,18 @@ export const WEEK_RUNGS = [2, 4, 8, 12, 20, 30];
 export function buildBadges() {
   const B = [];
 
-  /* ---- 1. Correct in a row, overall ---- */
+  /* ---- 1. Correct in a row, overall ----
+     Owner feedback 6.14: every badge that reads a run is tested only on the
+     answer that lengthened it (`c.correct === true`). A question that is
+     neither right nor wrong (the meaning question, an unjudged word) leaves
+     the run where it was, and a test of `run === n` came true again on it:
+     "5 í röð" twice in one session, from one run of five. */
   [5, 10, 15, 20, 30, 50, 75, 100].forEach((n) => {
     B.push({
       id: `run${n}`, ico: RUN_ICONS[n], nm: `${n} í röð`,
       ds: `${n} rétt svör í röð`, group: "röð", fam: "run", n,
       cap: n <= 10 ? 2 : undefined,
-      test: (c) => c.run === n,
+      test: (c) => c.correct === true && c.run === n,
     });
   });
 
@@ -65,7 +70,7 @@ export function buildBadges() {
         id: `run_${s.id}_${n}`, ico: SKILL_RUN_ICONS[n], nm: `${s.nm}: ${n} í röð`,
         ds: `${n} rétt svör í röð í flokknum ${s.nm.toLowerCase()}`,
         skill: s.id, group: "röð", fam: "runskill", n, cap: 2,
-        test: (c) => (c.skillRun[s.id] || 0) === n,
+        test: (c) => c.correct === true && (c.skillRun[s.id] || 0) === n,
       });
     });
   });
@@ -229,7 +234,7 @@ export function buildBadges() {
     { id: "helper", ico: "🪜", nm: "Eigin hjálparorð", ds: "Beygði rétt í heilli setningu með eigin hjálparorðum",
       group: "atvik", est: 0.30, once: true, test: (c) => c.usedHelpers },
     { id: "nohint20", ico: "🧠", nm: "Engar vísbendingar", ds: "20 rétt í röð án vísbendingar",
-      group: "atvik", est: 0.26, cap: 1, test: (c) => c.run >= 20 && c.hintFreeRun >= 20 },
+      group: "atvik", est: 0.26, cap: 1, test: (c) => c.correct === true && c.run >= 20 && c.hintFreeRun >= 20 },
   );
 
   /* ---- 10. The session itself ---- */
@@ -323,9 +328,9 @@ export function buildBadges() {
     secret("s_" + day.replace(/[^a-záðéíóúýþæö]/gi, ""), ico, nm,
       `Æfing á ${day}`, est, (c) => c.time.holiday === day, DAY);
   });
-  secret("s_13", "🐈‍⬛", "Óheillatalan", "Þrettán rétt í röð", 0.62, (c) => c.run === 13);
+  secret("s_13", "🐈‍⬛", "Óheillatalan", "Þrettán rétt í röð", 0.62, (c) => c.correct === true && c.run === 13);
   secret("s_comeback5", "🛟", "Upp úr öldudalnum", "Fimm rétt í röð eftir fimm röng í röð",
-    0.34, (c) => c.run === 5 && c.wasStruggling);
+    0.34, (c) => c.correct === true && c.run === 5 && c.wasStruggling);
   secret("s_marathon", "🏃", "Maraþon", "Hundrað svör á einum degi", 0.24,
     (c) => c.dayAnswers >= 100, DAY);
   /* ---- 12b. The three that need the day to be OVER ----
@@ -431,9 +436,9 @@ export function buildBadges() {
   secret("s_firstofmonth", "📆", "Fyrsti dagur mánaðar", "Svar þann fyrsta",
     0.60, (c) => c.time.date === 1, DAY);
   secret("s_oddweek", "🧿", "Oddatöluvika", "Sjö rétt í röð í oddatöluviku",
-    0.66, (c) => c.run === 7 && c.time.week % 2 === 1);
+    0.66, (c) => c.correct === true && c.run === 7 && c.time.week % 2 === 1);
   secret("s_sevenseven", "🎰", "Sjö sjö", "Sjö rétt í röð klukkan sjö",
-    0.05, (c) => c.run === 7 && c.time.hour === 7);
+    0.05, (c) => c.correct === true && c.run === 7 && c.time.hour === 7);
   /* Both are about where the day STOPPED, so neither can be judged while it is
      running. One badge, one claim: "Upp á hár" is the goal exactly, "Flekklaus
      dagur" is the flawless day. */
@@ -449,7 +454,7 @@ export function buildBadges() {
   secret("s_allthree_gender", "⚖️", "Öll þrjú kynin", "Öll þrjú kyn nafnorða rétt í röð",
     0.55, (c) => c.genderRun >= 3);
   secret("s_hint_never", "🧗‍♀️", "Fimmtíu án hjálpar", "Fimmtíu rétt í röð án vísbendingar",
-    0.05, (c) => c.hintFreeRun === 50);
+    0.05, (c) => c.correct === true && c.hintFreeRun === 50);
   secret("s_slow", "🐌", "Þolinmæðin", "Rétt svar eftir að hafa hugsað í meira en tvær mínútur",
     0.38, (c) => (c.answerMs || 0) > 120000);
   secret("s_fast", "🐇", "Á augabragði", "Fimm rétt svör í röð, hvert undir fimm sekúndum",

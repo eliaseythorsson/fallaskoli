@@ -197,7 +197,7 @@ export function renderShareCard(app) {
     <b>Þú ert ekki á stigatöflunni.</b>
     <p class="sub">Enginn í hópnum sér gælunafnið þitt eða merkin þín fyrr en þú ákveður það.
       Ef þú ert með sjá hinir gælunafn, stig, XP og merki — ekkert annað. Þú getur hætt
-      hvenær sem er undir <b>Stillingar og námsefni → Aðgangurinn minn</b>.</p>
+      hvenær sem er undir <b>Stillingar → Aðgangurinn minn</b>.</p>
     <div class="answer"><button type="button" class="go" id="share-on">Vera með á töflunni</button></div>
     <div id="share-note"></div></div>`;
   $("share-on").onclick = async () => {
@@ -454,7 +454,7 @@ async function policyPanel(app) {
     const who = users.find((u) => u.id === target);
     el.innerHTML = `<h3 class="sec2">Hvað má hver sjá</h3>
       <p class="sub">Þetta er þakið. Innan þess velur notandinn sjálfur í
-        flipanum Stillingar og námsefni — hann getur slökkt á fleiru en aldrei kveikt á
+        flipanum Stillingar — hann getur slökkt á fleiru en aldrei kveikt á
         því sem er slökkt hér.</p>
       <div class="polactions">
         <select class="poluser" id="pol-who">

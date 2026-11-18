@@ -194,12 +194,22 @@ export function sessionControl() {
         cal: this.viewCal(),
       });
       const effects = new Map();
+      /* Owner feedback 6.14: never the same question twice in a row. A node
+         of the skill map at a low þyngd has few sentences, and a review of
+         the question just missed could be drawn next. A candidate equal to
+         the last question shown is built again (a few times) instead. */
+      const last = r.lastSig || null;
       const buildIn = (v) => () => {
-        const b = nextTask(this.lex, v, rng);
-        if (!b) return null;
-        effects.set(b.task, b.effects);
-        return b.task;
+        for (let k = 0; k < 6; k++) {
+          const b = nextTask(this.lex, v, rng);
+          if (!b) return null;
+          if (last && RUN.questionSig(b.task) === last && k < 5) continue;
+          effects.set(b.task, b.effects);
+          return b.task;
+        }
+        return null;
       };
+      const shownTask = (t) => { if (t) r.lastSig = RUN.questionSig(t); return t; };
       const build = buildIn(view);
       /* v6.13, the review queue. A session opens with up to three entries that
          are due; and the noun of a cloze missed earlier in the session comes
@@ -208,12 +218,13 @@ export function sessionControl() {
          are at most three of the first, and the second is held to the share of
          clozes a session may have. */
       const rv = withView(view, { policy: this.reviewPolicy(), mix: null });
-      const due = nextOpening(this.lex, rv, rng, r)
+      let due = nextOpening(this.lex, rv, rng, r)
         || nextReask(this.lex, rv, rng, r, (counts.fill || 0) + 1 <= maxOf("fill", r.n));
+      if (due && last && RUN.questionSig(due.task) === last) due = null;
       if (due) {
         applyEffects(this, due.effects);
         if (r.plan) due.task.today = "review";
-        return due.task;
+        return shownTask(due.task);
       }
       /* Today's session (item 21): the next slot of the plan. A pattern slot
          is drawn from the pattern's own question types and must test it; a
@@ -237,12 +248,12 @@ export function sessionControl() {
         }
         t ||= build();
         if (t) { applyEffects(this, effects.get(t)); t.today = t.targeted && slot.kind === "pattern" ? "pattern" : "new"; }
-        return t;
+        return shownTask(t);
       }
       const t = this.forcedNoun ? build()
         : pickTargeted(build, ids, { p: r.focus ? 0.85 : 0.4, tries: r.focus ? 8 : 5, rnd: rng });
       if (t) applyEffects(this, effects.get(t));
-      return t;
+      return shownTask(t);
     },
 
     /**
@@ -305,7 +316,7 @@ export function sessionControl() {
       if (!r.i) {
         this.runDone = null;
         if (empty) this.runNotice = "Engin spurning fannst í þessu efni með þeim stillingum sem eru á. " +
-          "Kveiktu á fleiri tegundum spurninga eða þyngdarstigum undir Stillingar og námsefni.";
+          "Kveiktu á fleiri tegundum spurninga eða þyngdarstigum undir Stillingar.";
         this.next();
         return;
       }
@@ -319,6 +330,11 @@ export function sessionControl() {
         ? this.sendAssignment({ id: r.assignment.id, i: r.i, j: r.j, c: r.c }) : null;
       this.runDone = RUN.summaryOf(r, report, xp, early || empty, Date.now());
       const done = this.runDone;
+      /* Owner feedback 6.14: badges won outside the session (a duel, a live
+         round, a rescue drill) and held for a right answer open their windows
+         over this summary. They are named apart, so a pupil does not take
+         them for the session's own. */
+      done.earlier = (this.sess.heldBadges || []).filter((h) => !r.badges.some((b) => b.id === h.id));
       /* The summary says whether the teacher has the result; drawn again when
          the server has answered, if it is still on the board. */
       if (sending) sending.then((sent) => {

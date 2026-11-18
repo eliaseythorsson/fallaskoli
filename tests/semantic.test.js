@@ -214,6 +214,9 @@ test("the table: the helper is the adjective's own, in the cell's own case and n
     const lemma = adjectiveHelperLemma(adj("ferskur"), kyn);
     const entry = lex.lookup(lemma, kyn.toLowerCase());
     for (const c of t.cells) {
+      /* Owner feedback 6.14: the strong superlative stands alone (*hann er
+         stærstur*), never before a noun. */
+      if (c.m.startsWith("ESB-")) { assert.equal(c.helper, null, `${c.m} has no helper`); continue; }
       assert.ok(c.helper, `${c.m} has a helper`);
       assert.ok(Object.values(entry.forms).some((ff) => ff.includes(c.helper)), `${c.helper} is a form of ${lemma}`);
     }

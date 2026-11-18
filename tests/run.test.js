@@ -253,3 +253,12 @@ test("a finished session is written down, the last forty kept, and summed up", (
   assert.deepEqual(summaryOf(a, report, 0, false, NOW).assignment,
     { id: "a7", target: { kind: "skill", id: "nafnord" }, sent: null }, "sent: filled in when the server answers");
 });
+
+test("owner feedback 6.14: questionSig tells the same question from another", async () => {
+  const { questionSig } = await import("../src/js/core/run.js");
+  const s = { tok: [{ w: "Hvar" }, { w: "eru" }, { w: "hreinu" }, { w: "koddarnir" }, { w: "?" }] };
+  const a = { typeId: "lo_beyging", word: "hreinn|lo", cell: "FVB-KK-NFFT", s };
+  assert.equal(questionSig(a), questionSig({ ...a }));
+  assert.notEqual(questionSig(a), questionSig({ ...a, cell: "FSB-KK-NFFT" }));
+  assert.notEqual(questionSig(a), questionSig({ ...a, word: "skítugur|lo" }));
+});

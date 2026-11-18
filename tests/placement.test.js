@@ -644,7 +644,7 @@ test("there is a pointer text for each of the four parts, and each names its par
   assert.match(TEXT.steps.today.title, /Lota dagsins/);
   assert.match(TEXT.steps.lessons.title, /Lesefni/);
   assert.match(TEXT.steps.map.title, /Færnikort/);
-  assert.match(TEXT.steps.map.body, /Merki → Framvinda/);
+  assert.match(TEXT.steps.map.body, /fyrsta flipanum, Færnikort/);
   assert.match(TEXT.steps.line.body, /×/);
   for (const s of Object.values(TEXT.steps)) assert.ok(s.body.length < 260, "a pointer's text is too long to read on a phone");
 });
@@ -656,7 +656,7 @@ test("what the pointers name is what the page calls it", () => {
   assert.match(session, /nm: "Lota dagsins"/);
   assert.match(body, /data-view="lessons">Lesefni</);
   assert.match(body, /data-pane="stats"[^>]*>Framvinda</);
-  assert.match(body, />Færnikort</);
+  assert.match(body, /data-view="map">Færnikort</);
   assert.match(lessons, /Æfa þetta/);
   assert.match(TEXT.steps.lessons.body, /„Æfa þetta“/);
   /* Stillingar has the way back in, by the name the skipped notice gives it. */
