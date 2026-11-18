@@ -131,7 +131,7 @@ export const TEXT = {
     },
     map: {
       title: "Færnikortið",
-      body: "Hér sérðu hvar þú stendur. Hver hringur er eitt efnisatriði og fyllist eftir því sem þú nærð betra valdi á því. Smelltu á hring til að sjá regluna og æfa einmitt það. Kortið er undir Merki → Framvinda.",
+      body: "Hér sérðu hvar þú stendur. Hver hringur er eitt efnisatriði og fyllist eftir því sem þú nærð betra valdi á því. Smelltu á hring til að sjá regluna og æfa einmitt það. Kortið er í fyrsta flipanum, Færnikort.",
     },
     line: {
       title: "Í lotu",
@@ -170,9 +170,7 @@ function stepsFor(app, T) {
     },
     map: {
       enter() {
-        app.openView("progress");
-        const pane = document.querySelector('#panepick button[data-pane="stats"]');
-        if (pane) pane.click();
+        app.openView("map");
       },
       target: () => document.querySelector("#skillmap .smnode:not(.locked)") || $("skillmap"),
     },

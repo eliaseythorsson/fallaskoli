@@ -24,16 +24,29 @@
 </div>
 <div id="notice"></div>
 
-<!-- The four tabs are the dividers of a ring binder: one colour each, and the
+<!-- The tabs are the dividers of a ring binder: one colour each, and the
      colour is the only decoration they carry. `data-view` names the section
      underneath; app.js `VIEWS` is the same list. -->
 <nav class="tabs" role="tablist" aria-label="Hlutar forritsins">
+  <button role="tab" aria-selected="false" data-view="map">Færnikort</button>
   <button role="tab" aria-selected="true" data-view="practice">Æfa</button>
   <button role="tab" aria-selected="false" data-view="lessons">Lesefni</button>
   <button role="tab" aria-selected="false" data-view="progress">Merki<span class="tablong"> og framvinda</span></button>
   <button role="tab" aria-selected="false" data-view="class">Skólastofan</button>
-  <button role="tab" aria-selected="false" data-view="settings">Stillingar<span class="tablong"> og námsefni</span></button>
+  <button role="tab" aria-selected="false" data-view="settings">Stillingar</button>
 </nav>
+
+<!-- ================= 0. Færnikort ==================================== -->
+<!-- Item 83: the skill map (ui/skillmap.js). It carries what four panels used
+     to show apart: Styrkleikar eftir efni, Villumynstur, Hvar liggja mistökin
+     and Orð sem þarf að æfa. Owner feedback 6.14: its own tab, the first. -->
+<section class="view" id="view-map" hidden>
+  <p class="sub" style="margin-top:4px">Hér sérðu hvar þú stendur í málfræðinni í 8.–10. bekk. Hver hringur er eitt
+    efnisatriði. Smelltu á hring til að sjá regluna og hvað hefur farið úrskeiðis, og til að æfa
+    einmitt það.</p>
+  <div id="skillmap"></div>
+  <div id="loosepatterns"></div>
+</section>
 
 <!-- ================= 1. Æfa: taflan ================================== -->
 <section class="view" id="view-practice">
@@ -80,17 +93,7 @@
   </div>
 
   <div class="pane" id="pane-stats" hidden>
-    <!-- Item 83: the skill map (ui/skillmap.js). It carries what four panels
-         used to show apart: Styrkleikar eftir efni, Villumynstur, Hvar liggja
-         mistökin and Orð sem þarf að æfa. -->
-    <h2 class="sec first">Færnikort</h2>
-    <p class="sub">Hér sérðu hvar þú stendur í málfræðinni í 8.–10. bekk. Hver hringur er eitt
-      efnisatriði. Smelltu á hring til að sjá regluna og hvað hefur farið úrskeiðis, og til að æfa
-      einmitt það.</p>
-    <div id="skillmap"></div>
-    <div id="loosepatterns"></div>
-
-    <h2 class="sec">Svör á dag</h2>
+    <h2 class="sec first">Svör á dag</h2>
     <p class="sub">Súlur eru svör, línan er hlutfall réttra svara. Síðustu 30 dagar.</p>
     <div class="chartbox"><div id="chart1"></div>
       <div class="legend">

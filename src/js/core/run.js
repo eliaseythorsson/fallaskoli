@@ -264,3 +264,16 @@ export function summaryOf(r, report, xp, early, now) {
       : null,
   };
 }
+
+/**
+ * What makes two questions "the same question" to a pupil (owner feedback
+ * 6.14): the type, the word, the cell asked and the sentence it stands in.
+ * A session never shows the same one twice in a row (control/session.js).
+ * @param {any} t @returns {string}
+ */
+export function questionSig(t) {
+  if (!t) return "";
+  const word = t.word || (t.w && t.w.o) || (t.n && t.n.o) || "";
+  const sent = t.s && Array.isArray(t.s.tok) ? t.s.tok.map((x) => x.w).join(" ") : (t.title || "");
+  return [t.typeId || t.type || "", word, t.cell || t.m || "", sent].join("|");
+}

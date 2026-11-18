@@ -343,7 +343,7 @@ async function pointerOK(page, vp, id) {
       map: () => document.querySelector("#skillmap .smnode:not(.locked)"),
       line: () => document.querySelector("#runbar .runline"),
     }[id]();
-    const view = { today: "practice", lessons: "lessons", map: "progress", line: "practice" }[id];
+    const view = { today: "practice", lessons: "lessons", map: "map", line: "practice" }[id];
     const rect = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; };
     const ring = document.querySelector("#tour .tourring"), tip = document.querySelector("#tour .tourtip");
     const css = target ? getComputedStyle(target) : null;
@@ -351,7 +351,7 @@ async function pointerOK(page, vp, id) {
       has: !!target, T: target && rect(target), R: ring && rect(ring), P: tip && rect(tip),
       shown: !!target && css.visibility !== "hidden" && css.display !== "none" && target.offsetParent !== null,
       viewOpen: !document.getElementById("view-" + view).hidden,
-      mapPane: id !== "map" || !document.getElementById("pane-stats").hidden,
+      mapPane: id !== "map" || !document.getElementById("view-map").hidden,
       vw: document.documentElement.clientWidth, vh: window.innerHeight,
       count: document.querySelector("#tour .toureyebrow b")?.textContent || "",
       run: A.run ? A.run.topic : null,

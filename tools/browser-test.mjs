@@ -1261,10 +1261,10 @@ for (const view of ["progress", "class", "settings"]) {
   ok(filled > 120, `tab ${view} is empty (${filled} characters)`);
 }
 
-/* The skill cards are on Merki og framvinda (the heads of the skill map's
-   trails) and the switches on Stillingar og námsefni; both are drawn when
+/* The skill cards are on Færnikort (the heads of the skill map's
+   trails) and the switches on Stillingar; both are drawn when
    their tab is opened. */
-await openTab("progress");
+await openTab("map");
 await openTab("settings");
 /* The count is read from SKILLS, not written here. A new skill should appear
    in both lists by itself — that is the whole of the claim that years 9 and 10
@@ -2763,7 +2763,7 @@ await page.setViewport({ width: 1100, height: 900 });
 }
 
 /* The tabs must stay reachable at the narrowest width — they scroll sideways
-   there, or (since v6.2) wrap their long names onto two lines so that all four
+   there, or (since v6.2) wrap their long names onto two lines so that all of them
    fit; a tab that has been pushed off the screen is the same as a tab that is
    gone. */
 await page.setViewport({ width: 360, height: 740, isMobile: true, hasTouch: true });
@@ -2776,7 +2776,8 @@ await startPractice(page, 15000);
              count: nav.querySelectorAll("button").length,
              overflowX: getComputedStyle(nav).overflowX };
   });
-  ok(tabs.count === 5, `${tabs.count} tabs at 360px`);
+  ok(tabs.count === 6, `${tabs.count} tabs at 360px`);
+  /* Owner feedback 6.14: Færnikort is the sixth tab, the first. */
   ok(!tabs.scrollable || tabs.overflowX === "auto" || tabs.overflowX === "scroll",
     "the tabs are wider than the screen and cannot be scrolled to");
 }
@@ -3087,9 +3088,9 @@ await page.setViewport({ width: 1100, height: 900 });
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
 
   /* 44: the mastery mark beside every category's stig. */
-  await page.evaluate(() => window.FALLASKOLI.openView("progress"));
-  /* Since item 83 the category's card is the head of its trail on the skill map. */
-  await page.evaluate(() => document.querySelector('button[data-pane="stats"]').click());
+  /* Since item 83 the category's card is the head of its trail on the skill
+     map, which has its own tab since owner feedback 6.14. */
+  await page.evaluate(() => window.FALLASKOLI.openView("map"));
   const marks = await page.evaluate(() => [...document.querySelectorAll("#skillmap .smlane:not(.planned)")].map((c) => ({
     skill: c.dataset.skill, level: Number(c.dataset.mastery),
     mark: c.querySelector(".smmark .mastery b")?.innerText || "", line: c.querySelector(".mline")?.innerText || "",
@@ -3482,8 +3483,7 @@ await page.setViewport({ width: 1100, height: 900 });
     S.cells["ÞGFFT"] = { c: 2, w: 5 }; S.cells.NFET = { c: 9, w: 0 };
     S.review.items.push({ k: key, t: "fill", sk: "nafnord", p: "thf_thgf", c: "ÞGFFT", w: "hestur|kk", i: null,
       s: 0, due: today, add: today, last: today, l: 2, ok: 0 });
-    A.openView("progress");
-    document.querySelector('button[data-pane="stats"]').click();
+    A.openView("map");
   }, REVIEW);
   await page.waitForSelector("#skillmap .smnode", { timeout: 5000 });
 
@@ -3509,7 +3509,7 @@ await page.setViewport({ width: 1100, height: 900 });
       next: [...document.querySelectorAll("#skillmap .smnextbtn")].map((b) => b.dataset.node),
       loose: document.querySelector("#loosepatterns")?.innerText || "",
       old: ["skillgrid", "diaglist", "heat", "wordlist"].filter((id) => document.getElementById(id)),
-      heads: [...document.querySelectorAll("#pane-stats h2")].map((h) => h.innerText.trim()),
+      heads: [...document.querySelectorAll("#view-map h2, #pane-stats h2")].map((h) => h.innerText.trim()),
     };
   });
   const m = await readMap();
@@ -3592,7 +3592,7 @@ await page.setViewport({ width: 1100, height: 900 });
   await dismissModalsOn(page);
 
   /* A locked node opens, says so, and starts nothing. */
-  await page.evaluate(() => { window.FALLASKOLI.openView("progress"); document.querySelector('button[data-pane="stats"]').click(); });
+  await page.evaluate(() => { window.FALLASKOLI.openView("map"); });
   await tap(`#skillmap .smtrail .smnode[data-node="${locked[0].id}"]`);
   await page.waitForSelector(".smpanel.locked", { timeout: 4000 });
   const lock = await page.evaluate(() => ({ text: document.querySelector(".smpanel").innerText, go: !!document.querySelector(".smpanel [data-nodego]") }));
@@ -3611,7 +3611,7 @@ await page.setViewport({ width: 1100, height: 900 });
 
   /* A desktop: the same map in columns, and still no sideways scrolling. */
   await page.setViewport({ width: 1280, height: 900 });
-  await page.evaluate(() => { window.FALLASKOLI.openView("progress"); document.querySelector('button[data-pane="stats"]').click(); });
+  await page.evaluate(() => { window.FALLASKOLI.openView("map"); });
   await new Promise((r) => setTimeout(r, 200));
   const d = await readMap();
   ok(d.overflow <= 1 && d.outside === 0, `the skill map scrolls sideways at 1280 px by ${d.overflow}px`);

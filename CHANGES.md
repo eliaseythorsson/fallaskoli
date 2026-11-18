@@ -1,5 +1,27 @@
 # Changes
 
+## Unreleased
+
+### The owner's second pass (6.14 in use)
+- **Færnikort er fyrsti flipinn**: Færnikort · Æfa · Lesefni · Merki og framvinda ·
+  Skólastofan · Stillingar. „Stillingar og námsefni“ heitir nú **Stillingar**.
+- **Villugreining lýsingarorða**: *gömlu* fyrir *gamalli* (*hjálpaði gamalli konu*) er
+  nú „Sterk og veik beyging“ (greininum bætt við), ekki „Samræmi í kyni“. Reglan í
+  „Sterk og veik beyging“ byrjar á greininum og nefnir að lýsingarorð á eftir *er* sé
+  sterkt (*hann er sterkastur*); skýringin við efsta stig í setningu segir af hverju.
+- **Beygingartafla lýsingarorða**: fyrirsögnin er „frumstig, veik beyging · karlkyn,
+  eintala, með greini“ — það sem á við nafnorðið stendur saman og greinirinn síðast.
+  Taflan velur lýsingarorð sem eiga hjálparnafnorð, og reitirnir enda allir í sömu línu
+  (nafnorðið fær breidd þess lengsta).
+- **Sterkt efsta stig stendur ekki með nafnorði**: tafla í sterku efsta stigi (*stærstur,
+  stærstan …*) sýnir ekkert nafnorð heldur skýringu (*hann er stærstur*, en *stærsti
+  maðurinn*), og setningar í „Stigbreyting í setningu“ nota það aðeins á eftir *er/var*.
+- **Aldrei sama spurningin tvisvar í röð** í lotu (sama tegund, orð, reitur og setning).
+- **Merki um rétt svör í röð** („5 í röð“, „20 í röð“, „Engar vísbendingar“ o.fl.) eru
+  aðeins prófuð á svarinu sem lengdi röðina; spurning sem er hvorki rétt né röng gat
+  áður veitt sama merkið aftur. Merki sem unnust utan lotu (einvígi, umferð) og opnast
+  yfir samantektinni eru nú nefnd sér í samantektinni.
+
 ## v6.14 — November 2026 (the 84-item critique of v6.12)
 
 Developed under the working name 6.13 (the integration branch, the project notes and the

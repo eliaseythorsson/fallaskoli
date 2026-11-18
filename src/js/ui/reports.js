@@ -9,9 +9,9 @@
 
    Where reports go:
    - on a server, to `POST /reports`; administrators review them under
-     Stillingar og námsefni → Umsjón → Villutilkynningar;
+     Stillingar → Umsjón → Villutilkynningar;
    - opened from a file or a plain web host, to this browser's storage, and the
-     adult reviews them under Stillingar og námsefni → Villutilkynningar, with
+     adult reviews them under Stillingar → Villutilkynningar, with
      a download of everything as JSON.                                       */
 
 import { $, esc, openSheet } from "./dom.js";
@@ -195,7 +195,7 @@ export function openReport(app) {
     try {
       await store(app).send({ kind, note, ctx: which === "prev" ? prevSnap : snapCur });
       el.innerHTML = `<p><b>Takk! Tilkynningin er komin til skila.</b></p>
-        <p class="sub">${app.server ? "Umsjónarmaður fer yfir hana." : "Hún er geymd í þessum vafra þar til fullorðinn fer yfir hana undir Stillingar og námsefni."}</p>
+        <p class="sub">${app.server ? "Umsjónarmaður fer yfir hana." : "Hún er geymd í þessum vafra þar til fullorðinn fer yfir hana undir Stillingar."}</p>
         <div class="answer"><button type="button" class="go" id="rpok">Loka</button></div>`;
       el.querySelector("#rpok").onclick = () => sheet.close();
       el.querySelector("#rpok").focus();

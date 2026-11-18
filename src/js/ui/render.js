@@ -1029,10 +1029,15 @@ function tableTitleHTML(title) {
 
 RENDER.table = function (app) {
   const t = app.cur;
+  /* Owner feedback 6.14: every helper noun gets the width of the longest
+     (*mennirnir* beside *mönnunum*), so the boxes end in one straight line. */
+  const helperW = Math.max(0, ...t.cells.map((c) => (c.helper ? [...c.helper].length : 0)));
+  const helperStyle = helperW ? ` style="min-width:${helperW + 1}ch"` : "";
   $("task").innerHTML = `
   <div class="card">
     <p class="eyebrow"><span>Fylltu út alla reitina</span><b>${esc(KINDNAME[t.kind] || "")}</b></p>
     <p class="sentence tabletitle">${tableTitleHTML(t.title)}</p>
+    ${t.note ? `<p class="gloss">${fmt(t.note)}</p>` : ""}
     ${t.sample ? `<p class="gloss">Nefnifallið er <span class="forms">${esc(t.sample)}</span> og er gefið — beygðu lýsingarorðið eins með nafnorðinu í hinum föllunum.</p>` : ""}
     ${defBox(app, t.w)}
     <table class="decl">${t.cells.map((c, k) => `<tr><th class="rowh">${esc(c.label)}</th>
@@ -1040,7 +1045,7 @@ RENDER.table = function (app) {
         /* v6.10: the nominative shown above is not asked for again. */
         ? `<input type="text" class="given" data-given="1" value="${esc((t.w.forms[c.m] || [""])[0])}" disabled>`
         : `<input type="text" data-m="${esc(c.m)}" autocomplete="off" autocapitalize="off" spellcheck="false">`}${
-        c.helper ? `<span class="helpernoun">${esc(c.helper)}</span>` : ""}</div>
+        c.helper ? `<span class="helpernoun"${helperStyle}>${esc(c.helper)}</span>` : ""}</div>
       <span class="fix" data-fix="${esc(c.m)}"></span></td></tr>`).join("")}</table>
     <p class="helpnote">${t.kind === "lo"
       ? "Skrifaðu bara lýsingarorðið — nafnorðið stendur við hliðina. Hjálparorð eru samt í lagi."

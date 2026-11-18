@@ -62,7 +62,7 @@ test("a skill's badge does not fire when another skill answers", () => {
      correctly. */
   const owned = {}, awards = {};
   const cat = BADGES.filter((b) => b.id === "run_nafnord_10");
-  const base = { skillRun: { nafnord: 10 }, skillCorrect: {}, skillLevel: {}, run: 11 };
+  const base = { skillRun: { nafnord: 10 }, skillCorrect: {}, skillLevel: {}, run: 11, correct: true };
 
   const onNoun = checkBadges({ ...base, skill: "nafnord" }, owned, awards, cat);
   assert.equal(onNoun.length, 1, "should fire when a noun is answered");
@@ -203,4 +203,16 @@ test("the goldfish: the first miss on a word that had gone right five times", ()
   assert.equal(noteAccidents(S, sess, cur, { correct: true }).goldfish, false, "a right answer");
   assert.equal(noteAccidents(S, sess, { cell: "NFET" }, { correct: false }).goldfish, false, "no word");
   assert.deepEqual(noteAccidents(S, sess, null, { correct: null }), { goldfish: false, pickChanges: 0 });
+});
+
+test("owner feedback 6.14: a run badge fires on the answer that made the run, not again after it", () => {
+  const cat = BADGES.filter((b) => ["run5", "nohint20", "run20"].includes(b.id));
+  const ctx = { skillRun: {}, skillCorrect: {}, skillLevel: {}, run: 5, hintFreeRun: 5 };
+  assert.deepEqual(checkBadges({ ...ctx, correct: true }, {}, {}, cat).map((b) => b.id), ["run5"]);
+  /* A question that is neither right nor wrong (the meaning question) leaves
+     the run at 5: the badge must not come again. */
+  assert.deepEqual(checkBadges({ ...ctx, correct: null }, {}, {}, cat), []);
+  assert.deepEqual(checkBadges({ ...ctx, run: 20, hintFreeRun: 20, correct: false }, {}, {}, cat), []);
+  assert.deepEqual(checkBadges({ ...ctx, run: 20, hintFreeRun: 20, correct: true }, {}, {}, cat).map((b) => b.id).sort(),
+    ["nohint20", "run20"]);
 });
