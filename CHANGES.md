@@ -1,5 +1,12 @@
 # Changes
 
+## Unreleased
+
+### Færnikort
+- **Langt heiti flokks fer ekki út fyrir rammann**: „Orðflokkagreining“, „Setningafræði“
+  og „Setningagerð“ ýttu „Stig“ og „þyngd“ út fyrir kassann sinn. Nú færast þau í næstu
+  línu þegar ekki er pláss (`.smhead h3` brotnar, `.smname` getur minnkað).
+
 ## v6.14.1
 
 ### Færnikort: nýtt stig sést
