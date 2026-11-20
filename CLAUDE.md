@@ -113,5 +113,12 @@ git tag -a v6.13.0 -m "v6.13.0"
 git push && git push --tags      # → GitHub builds it and attaches the HTML
 ```
 
-Deploying the server (`fly deploy`, see `docs/HOSTING.md`) is done from a tag,
-so what runs online is always a version that exists in git.
+The website deploys itself: every change to `main` is tested and, if the tests
+pass, sent to Fly.io by `.github/workflows/deploy.yml` (`WEBSITE.md`). So
+merging a PR into `main` puts it online — another reason `main` must always be
+releasable. What runs online is always a commit that exists in git.
+
+The owner works from `~/Projects/fallaskoli` and syncs it with GitHub by
+double-clicking `Update website.command` (pull, then commit and push to `main`).
+That is the one exception to "nobody commits to `main` directly"; agents still
+use branches and pull requests.

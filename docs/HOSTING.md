@@ -1,5 +1,10 @@
 # Putting Fallaskóli on the internet with Fly.io
 
+> **The owner's short version is `WEBSITE.md`**: the app, its disk, the first
+> deploy and the administrator account are made by the GitHub workflow *Set up
+> website (once)*, and every change to `main` is deployed by *Deploy website*.
+> This file is the manual way and the reference behind it.
+
 This replaces Part 2 of `docs/SERVER.md` (renting a machine and looking after it
 yourself). It is written the same way: what you type, what you should see, what
 to do if you do not.

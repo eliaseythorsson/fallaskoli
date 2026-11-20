@@ -7,6 +7,19 @@
   og „Setningagerð“ ýttu „Stig“ og „þyngd“ út fyrir kassann sinn. Nú færast þau í næstu
   línu þegar ekki er pláss (`.smhead h3` brotnar, `.smname` getur minnkað).
 
+### The website updates itself
+- **`WEBSITE.md`**: the owner's whole guide to hosting, without Terminal — a Fly.io
+  account, one key pasted into GitHub, one button.
+- **Set up website (once)** (`.github/workflows/setup-website.yml`): creates the Fly app
+  and its disk, builds and deploys, and creates the administrator account (password
+  printed once). Safe to run again.
+- **Deploy website** (`.github/workflows/deploy.yml`): every change to `main` is tested,
+  built and deployed with `--ha=false`; a failing test leaves the website on the previous
+  version. Does nothing (and stays green) until the website is set up.
+- **`Update website.command`**: double-click on the Mac to pull GitHub's changes and push
+  the folder's own; the website follows.
+- `fly.toml`: app name `fallaskoli-elias`.
+
 ## v6.14.1
 
 ### Færnikort: nýtt stig sést

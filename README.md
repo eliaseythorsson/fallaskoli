@@ -74,7 +74,8 @@ anywhere on the web and open the same link everywhere. Progress is then kept
 per device; **Stillingar og námsefni → Færa milli tækja** moves it between devices as
 a small JSON file. The server route adds accounts, a leaderboard within a group
 and progress that follows the child automatically and merges between devices.
-`docs/HOSTING.md` puts it on Fly.io for a few dollars a month;
+`WEBSITE.md` puts it on Fly.io for a few dollars a month and keeps it updated from
+`main` by itself (`docs/HOSTING.md` is the manual way);
 `docs/PRIVACY.md` is what running it for other people's children asks of you.
 
 ## Building
