@@ -1,0 +1,155 @@
+# Puts Fallaskóli on the internet for the first time (WEBSITE.md step 3).
+#
+# Run it from GitHub: Actions → "Set up website (once)" → Run workflow.
+# It does everything docs/HOSTING.md steps 3–5 do by hand:
+#   1. creates the app on Fly.io (if it is not there yet),
+#   2. creates its disk, where the accounts and progress are kept,
+#   3. builds the program and sends it up,
+#   4. creates your administrator account and prints its password ONCE.
+# Running it again is safe: whatever already exists is left alone, and no
+# second administrator is made if anybody has an account already.
+#
+# After this, "Deploy website" (deploy.yml) keeps it up to date by itself.
+name: Set up website (once)
+
+on:
+  workflow_dispatch:
+    inputs:
+      website_name:
+        description: "Name of the website (lowercase, no spaces). The address becomes https://NAME.fly.dev"
+        required: true
+        default: "fallaskoli-elias"
+      admin_username:
+        description: "Your administrator username (lowercase, no spaces)"
+        required: true
+        default: "elias"
+
+concurrency:
+  group: deploy-website
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # only to save a changed website name in fly.toml
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      APP: ${{ inputs.website_name }}
+      ADMIN: ${{ inputs.admin_username }}
+    steps:
+      - name: Check the Fly.io key is in place
+        run: |
+          if [ -z "$FLY_API_TOKEN" ]; then
+            echo "::error title=No Fly.io key::Add the secret FLY_API_TOKEN first (WEBSITE.md step 2), then run this again."
+            exit 1
+          fi
+          case "$APP" in
+            *[!a-z0-9-]*|"") echo "::error::The website name may only have lowercase letters, digits and '-'"; exit 1;;
+          esac
+          case "$ADMIN" in
+            *[!a-z0-9._-]*|"") echo "::error::The username may only have lowercase letters, digits, '.', '_' and '-'"; exit 1;;
+          esac
+
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: 1. The app
+        run: |
+          if flyctl status -a "$APP" >/dev/null 2>&1; then
+            echo "The app $APP already exists — keeping it."
+          else
+            if ! out="$(flyctl apps create "$APP" --org personal 2>&1)"; then
+              echo "$out"
+              case "$out" in
+                *taken*|*exists*) echo "::error title=Name taken::Somebody else on Fly.io already uses the name '$APP'. Run this again with another website name, e.g. '$APP-2'.";;
+                *) echo "::error title=Could not create the app::See the lines above. Is the Fly.io account's payment card added?";;
+              esac
+              exit 1
+            fi
+            echo "Created $APP"
+          fi
+
+      - name: Save the website name in fly.toml
+        run: |
+          current="$(sed -n 's/^app = "\(.*\)"/\1/p' fly.toml)"
+          if [ "$current" != "$APP" ]; then
+            sed -i "s/^app = \".*\"/app = \"$APP\"/" fly.toml
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "Website name: $APP (set by 'Set up website')"
+            git push
+            echo "fly.toml now says app = \"$APP\""
+          fi
+
+      - name: 2. The disk for the data
+        run: |
+          n="$(flyctl volumes list -a "$APP" --json | jq 'length')"
+          if [ "$n" -gt 0 ]; then
+            echo "The disk already exists — keeping it (and everything on it)."
+          else
+            flyctl volumes create fallaskoli_data --region ams --size 1 --yes -a "$APP"
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.4
+          cache: npm
+      - name: 3. Build the program
+        run: |
+          npm ci --no-audit --no-fund
+          node --test tests/*.test.js
+          node tools/build.mjs
+
+      - name: 3. Send it up
+        run: flyctl deploy --remote-only --ha=false -a "$APP"
+
+      - name: 3. Wait until it answers
+        id: health
+        run: |
+          URL="https://$APP.fly.dev"
+          for _ in $(seq 1 30); do
+            body="$(curl -fsS "$URL/health" || true)"
+            case "$body" in *'"ok":true'*) break;; esac
+            sleep 6
+          done
+          echo "$body"
+          case "$body" in *'"ok":true'*) ;; *) echo "::error::$URL/health did not answer"; exit 1;; esac
+          users="$(echo "$body" | jq '.users')"
+          echo "users=$users" >> "$GITHUB_OUTPUT"
+
+      - name: 4. Your administrator account
+        if: steps.health.outputs.users == '0'
+        run: |
+          out="$(flyctl ssh console -a "$APP" -C "node server/admin.mjs nyr $ADMIN --umsjon")"
+          pw="$(printf '%s\n' "$out" | sed -n 's/^Lykilorð: *//p' | tr -d '\r')"
+          [ -n "$pw" ] || { echo "$out"; echo "::error::Could not create the administrator"; exit 1; }
+          # The running server reads accounts at start; restart so it sees this one.
+          flyctl apps restart "$APP"
+          echo ""
+          echo "=================================================================="
+          echo "  YOUR LOGIN — write the password down now, it is not shown again"
+          echo ""
+          echo "  Website:   https://$APP.fly.dev"
+          echo "  Username:  $ADMIN"
+          echo "  Password:  $pw"
+          echo "=================================================================="
+          echo ""
+          echo "When it is written down, delete this run (the ⋯ menu at the top"
+          echo "right of this page → Delete workflow run), so the password is not"
+          echo "kept here."
+
+      - name: Done
+        run: |
+          {
+            echo "### ✅ Fallaskóli is online: https://$APP.fly.dev"
+            if [ "${{ steps.health.outputs.users }}" = "0" ]; then
+              echo "Your username is **$ADMIN**. The password is in the log of step **4. Your administrator account** above — open it, write it down, then delete this run."
+            else
+              echo "Accounts already existed, so no new administrator was made."
+            fi
+            echo ""
+            echo "From now on the website updates itself whenever main changes (workflow **Deploy website**)."
+          } >> "$GITHUB_STEP_SUMMARY"
