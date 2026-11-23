@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Plan: vocabulary, comprehension and stories
+- **`docs/DLD-RESEARCH.md`**: the evidence on interventions for teenagers with
+  developmental language disorder (vocabulary, complex sentences and texts, narrative),
+  and what it means for a self-paced trainer.
+- **`docs/DLD-PLAN.md`**: the owner's decisions — LÍNO-2 word track, colour-coded
+  sentence structure, texts with MAIN's story map, Frásögn, LLM grading per pupil.
+- **`docs/agents/`** and an *Agent skills* section in `CLAUDE.md`: issues live in
+  GitHub Issues, the default triage labels, single-context domain docs.
+
 ### Færnikort
 - **Langt heiti flokks fer ekki út fyrir rammann**: „Orðflokkagreining“, „Setningafræði“
   og „Setningagerð“ ýttu „Stig“ og „þyngd“ út fyrir kassann sinn. Nú færast þau í næstu
