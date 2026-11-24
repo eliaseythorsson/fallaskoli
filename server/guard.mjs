@@ -24,14 +24,13 @@
 import { migrate, FRAMES_MAX } from "../src/js/core/state.js";
 import { BADGES } from "../src/js/core/badges.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
-import { sanitiseReview, REVIEW_MAX, STATS_MAX } from "../src/js/core/review.js";
+import { cleanContext, cleanSlices } from "../src/js/core/slices.js";
 import { cleanLevels } from "../src/js/core/difficulty.js";
 import { cleanByType } from "../src/js/core/mastery.js";
 import { cleanByNode, cleanMapBand } from "../src/js/core/skillmap.js";
 import { cleanSeenTypes } from "../src/js/core/examples.js";
 import { sanitiseMend } from "../src/js/core/mending.js";
 import { cleanTour } from "../src/js/core/placement.js";
-import { TYPE_IDS } from "../src/js/core/policy.js";
 
 export const MAX_STATE_BYTES = 2 * 1024 * 1024;
 
@@ -52,7 +51,6 @@ export const LIMITS = {
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const BADGE_IDS = new Set(BADGES.map((b) => b.id));
 const SKILLS = new Set(SKILL_IDS);
-const TYPES = new Set(TYPE_IDS);
 
 const n = (x, max = 1e9) =>
   (typeof x === "number" && Number.isFinite(x) ? Math.min(Math.max(0, Math.round(x)), max) : 0);
@@ -84,7 +82,7 @@ export function cleanState(raw, { today = new Date() } = {}) {
   const S = migrate(raw);
 
   /* Tomorrow is allowed (time zones); the day after is not a day yet. */
-  const limit = new Date(today.getTime() + 36 * 3600000).toISOString().slice(0, 10);
+  const ctx = cleanContext(today), { limit } = ctx;
 
   S.xp = n(S.xp, LIMITS.xpTotal);
   S.bestLevel = n(S.bestLevel, 999) || 1;
@@ -182,24 +180,11 @@ export function cleanState(raw, { today = new Date() } = {}) {
     top: (Array.isArray(r.top) ? r.top : []).filter((x) => typeof x === "string" && x.length <= 40).slice(0, 5),
   }));
 
-  /* The review queue (v6.13, core/review.js): at most REVIEW_MAX entries of
-     short strings, dates and small numbers, and a tally per error pattern and
-     per category. `sanitiseReview` rebuilds it field by field — the same
-     function the browser loads a state with, so the two cannot drift apart —
-     and here the dates are held to the calendar as well: an entry cannot be
-     due further ahead than the longest interval allows, and one whose
-     category the program does not have is dropped. */
-  const review = sanitiseReview(raw.review);
-  const ahead = new Date(today.getTime() + 60 * 86400000).toISOString().slice(0, 10);
-  review.items = review.items
-    .filter((e) => e.due <= ahead && e.last <= limit && e.add <= limit && (!e.sk || SKILLS.has(e.sk)))
-    .slice(0, REVIEW_MAX);
-  /* Tallies per pattern, per category and (item 44) per question type: a
-     category or a type the program does not have is dropped. */
-  review.stats = Object.fromEntries(Object.entries(review.stats)
-    .filter(([k]) => (!k.startsWith("s:") || SKILLS.has(k.slice(2))) &&
-      (!k.startsWith("t:") || TYPES.has(k.slice(2)))).slice(0, STATS_MAX));
-  S.review = review;
+  /* The converted slices (core/slices.js) check themselves: each slice's
+     `clean`, with the date. The review queue (core/review.js `cleanReview`)
+     is rebuilt by the function the browser loads with and held to the
+     calendar. */
+  cleanSlices(S, ctx);
 
   /* Saved levels (v6.13, core/difficulty.js): known skills only, the level
      inside 1–7, the run 0–1, a dozen 1s and 0s, a time and one of three
@@ -261,6 +246,13 @@ export function cleanState(raw, { today = new Date() } = {}) {
   S.profile = { id: "local", name: "" };
   return S;
 }
+
+/* ---- checks across slices ----------------------------------------------
+ *
+ * What follows reads more than one slice, so it belongs to no slice's
+ * `clean` (core/slices.js) and stays here: XP may not rise faster than the
+ * days' records, and old days may not grow. (In `cleanState` above, the
+ * showcase is held to the badges the pupil has, for the same reason.) */
 
 const sumDays = (S) => Object.values(S?.days || {}).reduce((a, d) => a + (d.xp || 0), 0);
 

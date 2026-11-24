@@ -318,6 +318,30 @@ chosen so that nothing private is needed. Abuse limits: 30 checks an hour per
 account, 600 characters per text, 8 seconds per check, after which the worker
 is killed and restarted.
 
+## 1g. The pupil's own text in their progress: only for the pupil (issue #49, ADR 0003)
+
+*No part of the progress holds such text yet. The word cards (Orðakort,
+issues #15 and #18) will be the first; this section is the rule they are
+built under, and the notice (`/personuvernd`) gets its paragraph when they
+arrive.*
+
+Some parts of a pupil's progress will hold **text the pupil wrote in their own
+words**: on a word card, their own explanation of a word, their own sentence
+and related words. In the code such a part is a slice marked `ownText: true`
+(`src/js/core/slices.js`). It is the pupil's notebook, and **nobody but the
+pupil can read it**:
+
+| | |
+|---|---|
+| **Where it goes** | Only (1) between the pupil's own devices, as their progress syncs; (2) into their own export ("Sækja gögnin mín", `/account/export`); (3) to the server's text reader when the pupil asks for something they wrote to be graded — sent from the screen with that request, never read from the stored progress. |
+| **Where it never goes** | A teacher's, guardian's or classmate's screen; the leaderboard, the roster, the badge statistics; any log. The administrator does not get it either: reading or exporting a pupil's progress (`GET /state/:id`, `/admin/users/:id/export`) leaves it out (`withoutOwnText`), and an administrator's write to a pupil's progress keeps what the pupil wrote (`keepOwnText`). |
+| **Guardians** | See the list of hard words, never the text. |
+| **Rights** | In the pupil's own export, and erased with the account, like the rest of the progress. In backups for as long as a backup lives (§6). An access request answered by the administrator (§5) leaves it out: the pupil gets it with their own export. |
+| **Held by** | `tests/owntext.test.js`: a fixture slice with a marker in it is saved for a pupil, every server route that reads other pupils' progress is called as a classmate, a guardian and the administrator, and the marker must be in no answer, no log line and no file but the pupil's own progress, and gone when the account is. A new place in `server/` that reads progress fails that test until its route is called there. |
+
+Opening any of this up — letting a guardian or a teacher read word cards —
+would be a deliberate, separate decision, with its own line in the notice.
+
 ---
 
 ## 2. Record of processing (Art. 30) — *vinnsluskrá*

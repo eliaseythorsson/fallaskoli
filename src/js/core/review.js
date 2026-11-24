@@ -100,6 +100,8 @@
  */
 
 import { chancesIn } from "./diagnosis.js";
+import { SKILL_IDS } from "./skills.js";
+import { TYPE_IDS } from "./policy.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Task} Task */
@@ -642,3 +644,50 @@ export function mergeReview(base, local, remote) {
   }
   return out;
 }
+
+/* ---------- the slice ------------------------------------------------------
+ *
+ * The queue as one slice of the saved state (core/slices.js, issue #49): the
+ * worked example of a slice that owns its shape. The four places that used
+ * to name `review` (blankState, migrate, mergeStates, cleanState) now walk
+ * the list of slices and call these. */
+
+const KNOWN_SKILLS = new Set(SKILL_IDS);
+const KNOWN_TYPES = new Set(TYPE_IDS);
+
+/**
+ * The server's check (server/guard.mjs `cleanState`): rebuilt field by field
+ * by the same function the browser loads with, so the two cannot drift apart
+ * — and here the dates are held to the calendar as well: an entry cannot be
+ * due further ahead than the longest interval allows, nor answered or added
+ * after tomorrow, and one whose category the program does not have is
+ * dropped. Tallies per pattern, per category and (item 44) per question type:
+ * a category or a type the program does not have is dropped.
+ * @param {any} value  what `migrate` made of the saved queue
+ * @param {import("../types").CleanContext} ctx
+ * @returns {ReviewState}
+ */
+export function cleanReview(value, { today, limit }) {
+  const review = sanitiseReview(value);
+  const ahead = new Date(today.getTime() + 60 * DAY_MS).toISOString().slice(0, 10);
+  review.items = review.items
+    .filter((e) => e.due <= ahead && e.last <= limit && e.add <= limit && (!e.sk || KNOWN_SKILLS.has(e.sk)))
+    .slice(0, REVIEW_MAX);
+  review.stats = Object.fromEntries(Object.entries(review.stats)
+    .filter(([k]) => (!k.startsWith("s:") || KNOWN_SKILLS.has(k.slice(2))) &&
+      (!k.startsWith("t:") || KNOWN_TYPES.has(k.slice(2)))).slice(0, STATS_MAX));
+  return review;
+}
+
+/** `S.review`. Nothing the pupil typed is kept (see the top of this file).
+    @type {import("../types").Slice<ReviewState>} */
+export const reviewSlice = {
+  key: "review",
+  /* A state saved before the queue existed gets an empty one. */
+  blank: blankReview,
+  /* Rebuilt field by field: nothing of the wrong shape survives a load. */
+  migrate: (raw) => sanitiseReview(raw),
+  merge: (base, local, remote) => mergeReview(base, local, remote),
+  clean: cleanReview,
+  ownText: false,
+};

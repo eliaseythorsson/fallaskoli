@@ -28,6 +28,7 @@
     "src/js/core/diagnosis.js",
     "src/js/core/merge.js",
     "src/js/core/state.js",
+    "src/js/core/slices.js",
     "src/js/tasks/registry.js",
     "src/js/tasks/shared.js"
   ]

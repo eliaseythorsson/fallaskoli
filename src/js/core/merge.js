@@ -20,7 +20,7 @@
  * Pure: no DOM, no requests, never mutates its arguments.
  */
 
-import { mergeReview } from "./review.js";
+import { mergeSlices } from "./slices.js";
 import { mergeMend } from "./mending.js";
 import { mergeLevels } from "./difficulty.js";
 import { mergeByType } from "./mastery.js";
@@ -205,10 +205,10 @@ export function mergeStates(base, local, remote) {
     .forEach((x) => { if (x && x.at) runs.set(x.at, x); });
   out.runs = [...runs.values()].sort((a, b) => a.at - b.at).slice(-40);
 
-  /* The review queue (v6.13): one entry per thing missed, whichever device
-     missed it; the rule for an entry both devices changed is in
-     core/review.js `mergeReview`. */
-  out.review = mergeReview(B.review, L.review, R.review);
+  /* The converted slices (core/slices.js) merge themselves — the review
+     queue (core/review.js `mergeReview`): one entry per thing missed,
+     whichever device missed it. */
+  mergeSlices(out, B, L, R);
 
   /* Saved levels (v6.13, core/difficulty.js): a position, not a count — per
      skill the record changed last wins whole. */
