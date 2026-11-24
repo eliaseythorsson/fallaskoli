@@ -100,47 +100,13 @@ export function mergeStates(base, local, remote) {
   const B = obj(base), L = obj(local), R = obj(remote);
   const out = { ...R, ...L };
 
-  for (const part of ["words"]) {
-    out[part] = {};
-    for (const k of keys(L[part], R[part])) {
-      const l = obj(L[part])[k], r = obj(R[part])[k];
-      out[part][k] = !l ? r : !r && !obj(B[part])[k] ? l
-        : counters(obj(B[part])[k], l, r, ["c", "w"]);
-      /* A word's last dozen outcomes (`h`) follow whichever device answered it
-         since `base`; a device that did not touch the word must not put its
-         older history over the other's (found by tests/state-property.test.js). */
-      const b = obj(B[part])[k];
-      if (part === "words" && l && r && b && typeof r.h === "string"
-          && num(l.c) + num(l.w) === num(b.c) + num(b.w)) out[part][k].h = r.h;
-    }
-  }
-
   out.badges = {};
   for (const k of keys(L.badges, R.badges))
     out.badges[k] = mergeBadge(obj(B.badges)[k], obj(L.badges)[k], obj(R.badges)[k]);
 
   out.counters = counters(B.counters, L.counters, R.counters,
     keys(L.counters, R.counters));
-  /* core/spacing.js keeps the same record per word as a badge has: a count
-     and its dates. */
-  out.vocab = {};
-  for (const k of keys(L.vocab, R.vocab)) {
-    const v = mergeBadge(obj(B.vocab)[k], obj(L.vocab)[k], obj(R.vocab)[k], 40);
-    out.vocab[k] = v;
-  }
   out.periods = { ...obj(R.periods), ...obj(L.periods) };
-
-  /* The rescue drill (v6.6): counts are added like any counter; the date and
-     the answer count at the last rescue are the later of the two. */
-  out.drills = {};
-  for (const k of keys(L.drills, R.drills)) {
-    const b = obj(B.drills)[k], l = obj(L.drills)[k], r = obj(R.drills)[k];
-    const m = !l ? { ...r } : !r && !b ? { ...l } : counters(b, l, r, ["p", "t", "f"]);
-    m.last = later(obj(l).last, obj(r).last);
-    m.at = Math.max(num(obj(l).at), num(obj(r).at));
-    out.drills[k] = m;
-  }
-  out.drillDays = counters(B.drillDays, L.drillDays, R.drillDays, keys(L.drillDays, R.drillDays));
 
   /* Lesefni and duels (v6.7): a page read anywhere is read; a duel settled
      anywhere is settled, and both devices agree on its result. */

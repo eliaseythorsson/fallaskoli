@@ -50,11 +50,7 @@ export function prevKey(key) {
 export function blankState() {
   return /** @type {State} */ (assembleBlank({
     profile: { id: "local", name: "" },
-    words: {}, badges: {},
-    /* When each word was last asked about in the vocabulary skill. Kept apart
-       from `words` (which is right/wrong) because the wait is about dates, not
-       about correctness. See core/spacing.js. */
-    vocab: {},
+    badges: {},
     /* Consecutive sessions touching three or more skills (multi-skill badges). */
     multiSessionRun: 0, lastSessionSkills: null,
     /* `retries`, `retryFixed`: second tries made, and right (item 42,
@@ -80,13 +76,6 @@ export function blankState() {
     showcase: [],
     title: null,
     social: null,
-    /* The rescue drill (core/wordhealth.js, v6.6). `drills` is per word:
-       {p: rescues, t: drills started and finished, f: drills endured without
-       passing, last: date, at: the word's answer count when the last one
-       ended}. `drillDays` counts rescues per day, for one badge, a fortnight
-       deep. */
-    drills: {},
-    drillDays: {},
     /* Lesefni (v6.7): the pages read, { pageId: true }. */
     read: {},
     /* Duels (v6.7, core/duel.js): every settled duel, { duelId: "w"|"l"|"t" }
@@ -140,29 +129,6 @@ export function blankState() {
   }));
 }
 
-/* Word classes a per-word key may legitimately carry. This is the lexicon's
-   own set; anything else is a key nothing can look up. */
-const WORD_CLASSES = new Set([
-  "kk", "kvk", "hk", "lo", "so", "fn", "pfn", "gr", "to", "rt",
-  "ao", "fs", "st", "uh", "nhm",
-]);
-
-/**
- * Drop per-word keys that no lookup can resolve: older builds filed nouns
- * under Greynir's short code (`vindur|no`), a class the lexicon does not know.
- * Removed rather than repaired (the gender is not in the key); only the ease
- * history is lost.
- */
-function cleanWordKeys(words) {
-  const out = {};
-  for (const [k, v] of Object.entries(words || {})) {
-    const cls = String(k).split("|")[1];
-    if (cls && !WORD_CLASSES.has(cls)) continue;
-    out[k] = v;
-  }
-  return out;
-}
-
 /** The frame tally (`frames` above): short keys and whole counts, nothing else. */
 export const FRAME_KEY = /^f[0-9a-z]{1,7}$/;
 export const FRAMES_MAX = 4000;
@@ -199,14 +165,12 @@ export function migrate(raw) {
   if (!raw || typeof raw !== "object") return S;
 
   Object.assign(S, {
-    words: cleanWordKeys(raw.words),
     /* Item 57: whoever won a day-streak badge keeps it, and is credited the
        week badges it stands for (`legacyStreakCredit`, core/badges.js). */
     badges: (() => {
       const own = raw.badges && typeof raw.badges === "object" ? raw.badges : {};
       return { ...legacyStreakCredit(own), ...own };
     })(),
-    vocab: raw.vocab || {},
     multiSessionRun: raw.multiSessionRun || 0,
     lastSessionSkills: raw.lastSessionSkills ?? null,
     periods: (raw.periods && typeof raw.periods === "object") ? { ...raw.periods } : {},
@@ -218,8 +182,6 @@ export function migrate(raw) {
       ? raw.showcase.filter((x) => typeof x === "string").slice(0, 3) : [],
     title: typeof raw.title === "string" ? raw.title : null,
     social: raw.social && typeof raw.social === "object" ? raw.social : null,
-    drills: raw.drills && typeof raw.drills === "object" ? { ...raw.drills } : {},
-    drillDays: raw.drillDays && typeof raw.drillDays === "object" ? { ...raw.drillDays } : {},
     read: renamedRead(raw.read),
     duels: raw.duels && typeof raw.duels === "object" ? { ...raw.duels } : {},
     diag: raw.diag && typeof raw.diag === "object" && !Array.isArray(raw.diag) ? { ...raw.diag } : {},

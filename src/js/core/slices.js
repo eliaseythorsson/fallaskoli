@@ -113,6 +113,8 @@
 import { reviewSlice } from "./review.js";
 import { xpSlice, bestLevelSlice, runSlice, bestRunSlice, totalAnswersSlice, totalCorrectSlice,
   skillsSlice, cellsSlice } from "./progress.js";
+import { wordsSlice, drillsSlice, drillDaysSlice } from "./wordhealth.js";
+import { vocabSlice } from "./spacing.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
 
 /** @typedef {import("../types").Slice} Slice */
@@ -152,10 +154,10 @@ export const SLICES = [
   bestLevelSlice,
   daysSlice,
   cellsSlice,
-  notYet("words"),
+  wordsSlice,
   skillsSlice,
   notYet("badges"),
-  notYet("vocab"),
+  vocabSlice,
   goalSlice,
   runSlice,
   bestRunSlice,
@@ -175,8 +177,8 @@ export const SLICES = [
   notYet("showcase"),
   notYet("title"),
   notYet("social"),
-  notYet("drills"),
-  notYet("drillDays"),
+  drillsSlice,
+  drillDaysSlice,
   notYet("read"),
   notYet("duels"),
   notYet("diag"),

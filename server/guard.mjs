@@ -89,18 +89,6 @@ export function cleanState(raw, { today = new Date() } = {}) {
   S.lastSessionSkills = S.lastSessionSkills == null ? null : n(S.lastSessionSkills, 99);
   S.settled = dayStr(S.settled);
 
-  for (const part of ["words"]) {
-    const out = {};
-    for (const [k, v] of pairs(S[part], 30000)) {
-      if (!isObj(v)) continue;
-      out[k] = { c: n(v.c), w: n(v.w) };
-      /* A word's last dozen outcomes (v6.6, core/wordhealth.js): ones and
-         zeros and nothing else. */
-      if (part === "words" && typeof v.h === "string" && /^[01]{1,12}$/.test(v.h)) out[k].h = v.h;
-    }
-    S[part] = out;
-  }
-
   /* Only badges the program has. An invented id would otherwise be counted by
      the leaderboard and by the rarity statistics. */
   const badges = {};
@@ -111,28 +99,6 @@ export function cleanState(raw, { today = new Date() } = {}) {
     badges[id] = { n: Math.max(1, n(b.n, 100000)), dates, first, last: dayStr(b.last) || first };
   }
   S.badges = badges;
-
-  /* core/spacing.js: when each word was last asked — the same shape as a
-     badge, with a shorter list of dates. */
-  const vocab = {};
-  for (const [k, v] of pairs(S.vocab, 30000)) {
-    if (!isObj(v)) continue;
-    const dates = (Array.isArray(v.dates) ? v.dates : []).map(dayStr).filter(Boolean).slice(-40);
-    vocab[k] = { n: n(v.n, 100000), dates, first: dayStr(v.first) || dates[0] || null,
-      last: dayStr(v.last) };
-  }
-  S.vocab = vocab;
-
-  /* The rescue drill (v6.6): per word, numbers and one date. */
-  const drills = {};
-  for (const [k, v] of pairs(S.drills, 30000)) {
-    if (!isObj(v)) continue;
-    drills[k] = { p: n(v.p, 10000), t: n(v.t, 10000), f: n(v.f, 10000),
-      last: dayStr(v.last), at: n(v.at) };
-  }
-  S.drills = drills;
-  S.drillDays = Object.fromEntries(pairs(S.drillDays, 40, 10)
-    .filter(([k]) => DAY.test(k)).map(([k, v]) => [k, n(v, 1000)]));
 
   /* Lesefni and duels (v6.7): page ids, and duel ids with one letter each. */
   S.read = Object.fromEntries(pairs(S.read, 200, 40).map(([k]) => [k, true]));
