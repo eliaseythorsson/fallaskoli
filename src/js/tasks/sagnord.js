@@ -15,8 +15,8 @@ import { skillLevel } from "../core/progress.js";
 import { wordKey } from "../core/state.js";
 import { explainVerbForm, conjugationNote } from "./explain.js";
 import { built, FX } from "./effects.js";
-import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, topByRank,
-         shareForLevel, wordWeight, cellWeight, cellEase, fresh, textSentence } from "./shared.js";
+import { pick, wpick, shuffle, askable, bandFor, forcedCell, topByRank,
+         shareForLevel, cellWeight, cellEase, fresh, textSentence } from "./shared.js";
 
 /* ================= Sagnbeyging ========================================== */
 
@@ -93,10 +93,10 @@ function forcedVerb(lex, view, rng, pool) {
     /* The middle voice only of a verb that has one in use, as below. */
     return v.forms[fc] && sub && (!/^MM/.test(fc) || personalMM(v)) ? sub : null;
   };
-  const only = forced(view, ["so"]);
+  const only = view.askedWord(["so"]);
   const bag = only ? [only] : pool.filter(has);
   if (!bag.length) return null;
-  const v = only || wpick(bag, (x) => wordWeight(lex, view, x, "sagnord"), rng);
+  const v = only || view.pickByWord(lex, bag, (x) => x, "sagnord", rng);
   const sub = has(v);
   return sub ? verbTask(view, v, spec[0], spec[1], sub[0], sub[1]) : null;
 }
@@ -105,10 +105,10 @@ export function taskVerb(lex, view, rng) {
   const { sess, S } = view;
   const L = skillLevel(S.skills.sagnord.xp).level;
   const d = diffOf(sess, "sagnord");
-  if (drilling(view) && !forced(view, ["so"])) return null;
+  if (view.cannotAsk(["so"])) return null;
   const pool = topByRank(lex.verbs, shareForLevel(L, 0.21, 0.09));
   if (forcedCell(view)) return forcedVerb(lex, view, rng, pool);
-  const v = forced(view, ["so"]) || wpick(pool, (x) => wordWeight(lex, view, x, "sagnord"), rng);
+  const v = view.pickWord(lex, pool, "sagnord", rng, ["so"]);
 
   const P = view.policy;
   /* A session asked for by name (the skill map, a Lesefni page) gets its
@@ -178,8 +178,8 @@ export function taskVerbSlot(lex, view, rng) {
     if (u.includes("háttur") && t.k !== "aðalsetning") return false;
     return true;
   };
-  if (drilling(view) && !forced(view, ["so"])) return null;
-  const only = forced(view, ["so"]);
+  if (view.cannotAsk(["so"])) return null;
+  const only = view.askedWord(["so"]);
   /* A review (tasks/review.js) asks for one cell, whatever the difficulty is
      now — the pupil has met it, that is how it was missed — and in a sentence
      at their level if there is one, otherwise in any they may meet. */
@@ -197,9 +197,8 @@ export function taskVerbSlot(lex, view, rng) {
       (only ? r.w.o === only.o && r.w.c === only.c : r.s.lvl <= bandFor(view, "sagnord")));
   if (!slots.length) return null;
 
-  const r = wpick(slots, (x) =>
-    cellWeight(S, x.t.m) * cellEase(lex, view, "sagnord", x.t.m)
-      * wordWeight(lex, view, x.w, "sagnord"), rng);
+  const r = view.pickByWord(lex, slots, (x) => x.w, "sagnord", rng,
+    (x) => cellWeight(S, x.t.m) * cellEase(lex, view, "sagnord", x.t.m));
   const { s, i, t, w: v } = r;
 
   return built({
@@ -274,10 +273,9 @@ export function tableVerb(lex, view, rng) {
   const { sess } = view;
   const d = diffOf(sess, "sagnord");
   /* A table has six cells, and a verb said only of the weather has one. */
-  if (drilling(view) && !forced(view, ["so"])) return null;
-  if (forced(view, ["so"]) && forced(view, ["so"]).t3) return null;
-  const v = forced(view, ["so"]) || wpick(topByRank(lex.verbs, 0.36).filter((x) => !x.t3),
-    (x) => wordWeight(lex, view, x, "sagnord"), rng);
+  if (view.cannotAsk(["so"])) return null;
+  if (view.askedWord(["so"]) && view.askedWord(["so"]).t3) return null;
+  const v = view.pickWord(lex, topByRank(lex.verbs, 0.36).filter((x) => !x.t3), "sagnord", rng, ["so"]);
   let prefs = ["GM-FH-NT", "GM-FH-ÞT"];
   if (d >= 3 || view.policy.focus("hattur", "VH")) prefs.push("GM-VH-ÞT");
   if (personalMM(v) && (d >= 4 || view.policy.focus("mynd", "MM"))) prefs.push("MM-FH-NT");
@@ -422,9 +420,9 @@ const SLOTS_KENNI = [
  * every strong one, and "veik" every time must not be a guess that pays.
  */
 export function soBeyging(lex, view, rng) {
-  if (drilling(view) && !forced(view, ["so"])) return null;
+  if (view.cannotAsk(["so"])) return null;
   const b = bandFor(view, "sagnord");
-  const fw = forced(view, ["so"]);
+  const fw = view.askedWord(["so"]);
   const fc = forcedCell(view);
   if (fc && !/^sobeyging:(sterk|veik)$/.test(fc)) return null;
   const slots = b >= 5 ? SLOTS_KENNI : b >= 3 ? [SLOT_PAST] : [];
@@ -453,7 +451,7 @@ export function soBeyging(lex, view, rng) {
     /* From þyngd 5 the falloff of `wordWeight` is undone, as in no_beyging:
        the rarer verbs come up as often as the common ones. */
     const flat = b >= 5 ? (y) => 1 + y.v.r / 150 : () => 1;
-    x = wpick(pool, (y) => wordWeight(lex, view, y.v, "sagnord") * flat(y), rng);
+    x = view.pickByWord(lex, pool, (y) => y.v, "sagnord", rng, flat);
   }
   const { v, kind, trap } = x;
   const forms = (m) => v.forms[m].join(" / ");
@@ -639,10 +637,10 @@ function myndWhy(x) {
  * third question.
  */
 export function soMynd(lex, view, rng) {
-  if (drilling(view) && !forced(view, ["so"])) return null;
+  if (view.cannotAsk(["so"])) return null;
   const P = view.policy;
   const b = bandFor(view, "sagnord");
-  const fw = forced(view, ["so"]);
+  const fw = view.askedWord(["so"]);
   const fc = forcedCell(view);
   if (fc && !Object.values(MYND_CELL).includes(fc)) return null;
   const avoid = view.force && view.force.avoid;
@@ -790,10 +788,10 @@ function bodhatturWhy(v) {
  * with a name (`bodh_styfdur`).
  */
 export function soBodhattur(lex, view, rng) {
-  if (drilling(view) && !forced(view, ["so"])) return null;
+  if (view.cannotAsk(["so"])) return null;
   const P = view.policy;
   const b = bandFor(view, "sagnord");
-  const fw = forced(view, ["so"]);
+  const fw = view.askedWord(["so"]);
   const fc = forcedCell(view);
   if (fc && fc !== BH_ET && fc !== BH_FT) return null;
   if (!askable(P, BH_ET)) return null;
@@ -817,7 +815,7 @@ export function soBodhattur(lex, view, rng) {
       }
     }
     const flat = b >= 5 ? (y) => 1 + y.v.r / 150 : () => 1;
-    v = wpick(pool, (y) => wordWeight(lex, view, y.v, "sagnord") * flat(y), rng).v;
+    v = view.pickByWord(lex, pool, (y) => y.v, "sagnord", rng, flat).v;
   }
   const misses = bodhatturMisses(v);
   const slots = [

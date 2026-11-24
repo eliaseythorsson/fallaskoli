@@ -21,8 +21,8 @@ import { explainDegree } from "./explain.js";
 import { personalMM } from "./sagnord.js";
 import { nounSentence, adjectiveSentence, nounFrames, adjectiveFrames, showable, frameKey } from "./frames.js";
 import { built, FX } from "./effects.js";
-import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, cellWanted,
-         topByRank, wordWeight, cellEase, nearBand, cap1, caseWord, classRankLevel, textSentence } from "./shared.js";
+import { pick, wpick, shuffle, askable, bandFor, forcedCell, cellWanted,
+         topByRank, cellEase, nearBand, cap1, caseWord, classRankLevel, textSentence } from "./shared.js";
 
 /* ================= Beygingartafla ======================================== */
 
@@ -57,14 +57,13 @@ function helperNounFor(lex, adj, deg, kyn, caseKey, num) {
 export function tableAdj(lex, view, rng) {
   const { sess } = view;
   const d = diffOf(sess, "lysingarord");
-  if (drilling(view) && !forced(view, ["lo"])) return null;
+  if (view.cannotAsk(["lo"])) return null;
   /* Owner feedback 6.14: a table with no noun beside it gives the pupil
      nothing to read "með greini" off (*algjör* in the weak masculine). The
      table is drawn from the adjectives that have a helper noun; the others
      are asked in sentences, and here only when a review asks for them. */
   const withNoun = topByRank(lex.adjectives, 0.38).filter((x) => x.h && ["KK", "KVK", "HK"].some((k) => adjectiveHelperLemma(x, k)));
-  const adj = forced(view, ["lo"]) ||
-    wpick(withNoun.length ? withNoun : topByRank(lex.adjectives, 0.38), (x) => wordWeight(lex, view, x, "lysingarord"), rng);
+  const adj = view.pickWord(lex, withNoun.length ? withNoun : topByRank(lex.adjectives, 0.38), "lysingarord", rng, ["lo"]);
   /* A review (tasks/review.js) asks for the table its cell is in: that
      degree, gender and number, whatever the difficulty is now. */
   const fc = /^(FSB|FVB|MST|ESB|EVB)-(KK|KVK|HK)-(?:NF|ÞF|ÞGF|EF)(ET|FT)$/.exec(forcedCell(view) || "");
@@ -145,7 +144,7 @@ const frameWeight = (S) => (key) => 1 / (1 + ((S.frames && S.frames[key]) || 0))
 export function taskReverse(lex, view, rng) {
   const { S, sess } = view;
   const P = view.policy;
-  const only = view.drillWord || null;
+  const only = view.askedWord();
   const pools = REVERSE_POOLS.filter((p) => P.skill(p.skill) && (!only || p.cls === only.c));
   if (!pools.length) return null;
   const used = new Set(only ? [] : sess.frames || []);
@@ -157,7 +156,7 @@ export function taskReverse(lex, view, rng) {
     const p = pick(pools, rng);
     const bag = only ? [only] : topByRank(lex.byClass[p.cls] || [], 0.35);
     if (!bag.length) continue;
-    const w = only || wpick(bag, (x) => wordWeight(lex, view, x, p.skill), rng);
+    const w = only || view.pickByWord(lex, bag, (x) => x, p.skill, rng);
 
     /* Only forms with a single analysis inside their own paradigm —
        otherwise the question has more than one correct answer. */
@@ -410,7 +409,7 @@ export function framedAdjective(lex, view, rng, want, { place = null, fc = null,
   const all = fits(f);
   /* the commonest adjectives at a low band; the rest come in a step at a time */
   const near = fc || fw ? all : all.filter((a) => adjLevel(a) <= Math.max(1, b));
-  const w = wpick(near.length ? near : all.slice(0, 12), (x) => wordWeight(lex, view, x, "lysingarord"), rng);
+  const w = view.pickByWord(lex, near.length ? near : all.slice(0, 12), (x) => x, "lysingarord", rng);
   const { s, i } = textSentence(f.t);
   return { s, i, w, m, lvl: Math.max(f.lvl, Math.min(adjLevel(w), P.maxLevel)), framed: true };
 }
@@ -427,8 +426,8 @@ function adjSlot(lex, view, rng, want, { pred = null, frames = true, place = nul
     && (!STRONG_SUP.test(t.m) || t.r === "sagnfylling");
   /* A review (tasks/review.js): this cell, and this adjective if one is
      given — from the bank, or put into a frame — or nothing. */
-  const fc = forcedCell(view), fw = forced(view, ["lo"]);
-  if (drilling(view) && !fw) return null;
+  const fc = forcedCell(view), fw = view.askedWord(["lo"]);
+  if (view.cannotAsk(["lo"])) return null;
   const asked = (r) => (!fc || r.t.m === fc) && (!fw || (r.w.o === fw.o && r.w.c === fw.c));
   const bank = lex.slotsFor("lýsingarorð").filter((r) => want.test(r.t.m) && firm(r.t)
     && P.level(r.s.lvl) && P.mark(r.t.m) && (!pred || pred(r)) && headSettles(lex, r.s, r.i)

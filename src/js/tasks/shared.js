@@ -1,5 +1,6 @@
 // @ts-check
-/* What the category files share: the random source, word choice, sentence
+/* What the category files share: the random source, the weight of a word
+   (`wordWeight` — the view's `pickWord` draws by it, tasks/view.js), sentence
    pools, the curriculum gate, and the small text helpers.
 
    Nothing here knows about any one category. A helper used by one category
@@ -135,25 +136,11 @@ export function itemsForBand(view, skill, items, key, min = 4) {
   return nearBand(unseen.length ? unseen : pool, (x) => x.lvl, bandFor(view, skill), min);
 }
 
-/* ---------- the rescue drill ---------------------------------------------
- *
- * The rescue drill (v6.6) asks about ONE word again and again. Every builder
- * that chooses a word asks this first: during a drill it hands back the drilled
- * word if it belongs to one of these classes, and null otherwise — in which
- * case a builder for some other class has nothing to do and returns null. */
-/** @type {(view: View, classes: string[]) => any} */
-export const forced = (view, classes) => {
-  const w = view.drillWord;
-  return w && classes.includes(w.c) ? w : null;
-};
-/** @type {(view: View) => boolean} */
-export const drilling = (view) => !!view.drillWord;
-
 /* ---------- a review (v6.13, tasks/review.js) -----------------------------
  *
- * A review asks for one cell, one word, or both (`view.force`, tasks/view.js).
- * The word arrives as the drill word, so `forced` above already hands it
- * over. These read the rest. A builder that honours a forced cell builds that
+ * A review asks for one cell, one word, or both (tasks/view.js). The word is
+ * the view's strict `mustAsk`, as in a rescue drill, and the view hands it
+ * over (`pickWord`, `askedWord`). These read the rest (`view.force`). A builder that honours a forced cell builds that
  * cell or returns null. */
 
 /** The cell a review asks for, or null. @type {(view: View) => ?string} */
@@ -263,7 +250,8 @@ export function caseCellEase(lex, view, skill, m) {
   return hardnessWeight(axisLevel(view, skill), 1 + Math.max(0, h - h0));
 }
 
-/** Word choice: common words first, rarer as the skill level grows, regular
+/** The weight of a word, for the view's word choice (tasks/view.js
+    `pickByWord`; no builder calls this itself, #45): common words first, rarer as the skill level grows, regular
     words first and irregular ones as the level of the session grows, and
     words this child gets wrong come back sooner.
     @param {Lexicon} lex @param {View} view

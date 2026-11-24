@@ -17,21 +17,22 @@ import { wordKey } from "../core/state.js";
 import { explainAdjective } from "./explain.js";
 import { showable, fittingAdjectives } from "./frames.js";
 import { built } from "./effects.js";
-import { withView } from "./view.js";
 import { nounCloze } from "./cloze.js";
-import { pick, wpick, shuffle, askable, bandFor, forced, drilling, forcedCell, wordWeight,
-         cellWeight, cellEase, cap1, topByRank } from "./shared.js";
+import { pick, wpick, shuffle, askable, bandFor, forcedCell, cellWeight, cellEase, cap1, topByRank } from "./shared.js";
 
 /* ================= Cloze — noun (± adjective) =========================== */
 
-export function taskFill(lex, view, rng) {
+export const taskFill = (lex, view, rng) => fillWith(lex, view, rng, view.retryWord());
+
+/** The cloze, asking about `noun` if one is given. */
+function fillWith(lex, view, rng, noun) {
   const { S, sess } = view;
   const pPhrase = Math.min(0.5, 0.05 * (diffOf(sess, "nafnord") - 1) +
     0.03 * (skillLevel(S.skills.nafnord.xp).level - 1));
   const pDem = Math.min(0.45, 0.25 + 0.05 * (diffOf(sess, "nafnord") - 1));
 
   const P = view.policy;
-  const task = nounCloze(lex, view, rng, { noun: view.forcedNoun, balanced: true });
+  const task = nounCloze(lex, view, rng, { noun, balanced: true });
   if (!task) return null;
   const { s, n, a } = task;
   const t = s.tok[s.slot];
@@ -86,7 +87,7 @@ export function taskFill(lex, view, rng) {
 }
 
 /** The cloze on one given noun — a rescue drill (tasks/drill.js). */
-const fillWord = (lex, view, rng, entry) => taskFill(lex, withView(view, { forcedNoun: entry }), rng);
+const fillWord = (lex, view, rng, entry) => fillWith(lex, view, rng, entry);
 
 /* ================= Choice between case forms (v6.11) ==================== */
 
@@ -119,7 +120,7 @@ export function noChoice(lex, view, rng) {
 export function tableNoun(lex, view, rng) {
   const { S } = view;
   const P = view.policy;
-  if (drilling(view) && !forced(view, ["kk", "kvk", "hk"])) return null;
+  if (view.cannotAsk(["kk", "kvk", "hk"])) return null;
   /* The columns of one noun that may be asked: all four cases must exist,
      the column must be showable for the word (no plural of *friður*), and
      the policy must allow every cell in it. */
@@ -134,9 +135,8 @@ export function tableNoun(lex, view, rng) {
      a large share of reviews into nothing once the frequency ranks favoured
      singular-only abstract nouns (item 9) — a pupil's mistake in the plural
      then waited for a lucky draw. A forced word is still honoured as it is. */
-  const n = forced(view, ["kk", "kvk", "hk"]) || wpick(
-    fc ? lex.nouns.filter((x) => colsOf(x).some(hasCell)) : lex.nouns,
-    (x) => wordWeight(lex, view, x, "nafnord"), rng);
+  const n = view.pickWord(lex,
+    fc ? lex.nouns.filter((x) => colsOf(x).some(hasCell)) : lex.nouns, "nafnord", rng, ["kk", "kvk", "hk"]);
   if (!n) return null;
   const cols = colsOf(n);
   if (!cols.length) return null;
@@ -244,9 +244,9 @@ function declensionWhy(x) {
  *              words
  */
 export function noDeclension(lex, view, rng) {
-  if (drilling(view) && !forced(view, ["kk", "kvk", "hk"])) return null;
+  if (view.cannotAsk(["kk", "kvk", "hk"])) return null;
   const b = bandFor(view, "nafnord");
-  const fw = forced(view, ["kk", "kvk", "hk"]);
+  const fw = view.askedWord(["kk", "kvk", "hk"]);
   const fc = forcedCell(view);
   if (fc && !/^beyging:(sterk|veik)$/.test(fc)) return null;
   const all = declensionPool(lex);
@@ -280,7 +280,7 @@ export function noDeclension(lex, view, rng) {
        falloff is undone, so the rarer words come up as often as the common
        ones; what the pupil gets wrong still comes back sooner. */
     const flat = b >= 5 ? (y) => 1 + y.n.r / 150 : () => 1;
-    x = wpick(pool, (y) => wordWeight(lex, view, y.n, "nafnord") * flat(y), rng);
+    x = view.pickByWord(lex, pool, (y) => y.n, "nafnord", rng, flat);
   }
   const { n, kind } = x;
   const ask = b >= 5;

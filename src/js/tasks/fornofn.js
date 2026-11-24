@@ -15,7 +15,7 @@ import { wordKey } from "../core/state.js";
 import { wantsHelper, phrase, paradigmWithHelper, helperChoices } from "../core/helpers.js";
 import { settled } from "./frames.js";
 import { built, FX } from "./effects.js";
-import { pairOf, pick, wpick, shuffle, bandFor, levelFor, forced, drilling, forcedCell, wordWeight, sameInEveryCell,
+import { pairOf, pick, wpick, shuffle, bandFor, levelFor, forcedCell, sameInEveryCell,
          cap1, caseWord, caseOf, textSentence, fresh, itemsForBand, lexWord, isTimeNoun, headsTimePhrase } from "./shared.js";
 
 /* ================= Beygingartafla ======================================== */
@@ -44,8 +44,8 @@ export function tablePronoun(lex, view, rng) {
     .filter((x) => !PRONOUN_TABLE_SKIP.has(x.o));
   const pool = all.filter((x) => x.c !== "fn" || x.r <= pronounRankCap(b));
   if (!pool.length) return null;
-  if (drilling(view) && !forced(view, ["fn", "pfn", "gr"])) return null;
-  const w = forced(view, ["fn", "pfn", "gr"]) || wpick(pool, (x) => wordWeight(lex, view, x, "fornofn"), rng);
+  if (view.cannotAsk(["fn", "pfn", "gr"])) return null;
+  const w = view.pickWord(lex, pool, "fornofn", rng, ["fn", "pfn", "gr"]);
   /* A review (tasks/review.js) asks for the table its cell is in. */
   const fc = forcedCell(view);
   const f = /^(?:(KK|KVK|HK)-)?(?:NF|ÞF|ÞGF|EF)(ET|FT)$/.exec(fc || "");
@@ -408,8 +408,8 @@ function kindWhy(x) {
 export function fnKind(lex, view, rng) {
   const P = view.policy;
   const b = bandFor(view, "fornofn");
-  if (drilling(view) && !forced(view, ["fn", "pfn"])) return null;
-  const fw = forced(view, ["fn", "pfn"]);
+  if (view.cannotAsk(["fn", "pfn"])) return null;
+  const fw = view.askedWord(["fn", "pfn"]);
   const fc = forcedCell(view);
   const avoid = view.force && view.force.avoid;
   const six = b >= 3;

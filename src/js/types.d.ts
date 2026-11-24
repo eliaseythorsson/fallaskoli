@@ -321,13 +321,28 @@ export interface View {
   readonly sess: Session;
   readonly policy: Policy;
   readonly today: DayKey;
-  readonly forcedNoun: any;
-  readonly drillWord: any;
+  /** The question type being built, or null (a builder called on its own). */
+  readonly typeId: string | null;
+  /** The one word this question is to be about (tasks/view.js "Choosing a word"). */
+  readonly mustAsk: { readonly word: any; readonly strict: boolean } | null;
   readonly mix: { n: number; counts: Record<string, number> } | null;
   readonly inRun: boolean;
   readonly huntPrefer: string[];
-  readonly force: { cell?: string | null; word?: any; item?: string | null; avoid?: any } | null;
+  readonly force: { cell?: string | null; item?: string | null; avoid?: any } | null;
   readonly cal: any;
+  /** The word to ask about, from `pool`, or null (tasks/view.js). */
+  pickWord(lex: Lexicon, pool: readonly any[], skill: string, rng: Rng, classes: readonly string[]): any;
+  /** One of `items`, weighted by the word each carries (tasks/view.js). */
+  pickByWord<T>(lex: Lexicon, items: readonly T[], wordOf: (x: T) => any, skill: string, rng: Rng,
+    factor?: ((x: T) => number) | null): T | null;
+  /** The strict `mustAsk` word if of these classes (any if left out), else null. */
+  askedWord(classes?: readonly string[] | null): any;
+  /** A strict `mustAsk` word of a class not in `classes`. */
+  cannotAsk(classes?: readonly string[] | null): boolean;
+  /** The non-strict `mustAsk` word (a cloze asked again), or null. */
+  retryWord(): any;
+  /** A weight multiplier for a sentence by its words; 1 until #13. */
+  wordBoost(wordKeys?: readonly (string | null)[]): number;
 }
 
 /** One question type as core/catalogue.js declares it. */

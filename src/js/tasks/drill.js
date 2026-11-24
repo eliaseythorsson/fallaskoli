@@ -1,8 +1,9 @@
 /* The rescue drill (v6.6): ten to twenty questions about ONE word.
 
    The general builders choose their sentence or their word themselves. In a
-   drill the word is given: the view carries it (`drillWord`), and every
-   builder that chooses a word asks `forced(view, …)` first (tasks/shared.js).
+   drill the word is given: the view carries it (`mustAsk`, strict), and
+   every builder that chooses a word asks the view for it (`pickWord`,
+   `askedWord`, `cannotAsk` in tasks/view.js).
    Four types have a variant that starts from the word instead — the cloze,
    the analysis, the word-class question and the case a word governs; each
    exports it as `drill` beside `build` in its category's BUILDERS. */
@@ -55,12 +56,12 @@ export function drillTask(lex, view, rng, entry, turn = 0) {
   const slot = turn > DRILL_MEANING_TURN ? turn - 1 : turn;
   /* The drilled word is the only word there is; a noun left waiting by an
      earlier cloze has no say here, and is let go when the question is shown. */
-  const dv = withView(view, { drillWord: entry, forcedNoun: null });
+  const dv = withView(view, { mustAsk: { word: entry, strict: true } });
   for (let k = 0; k < plan.length * 3; k++) {
     const id = plan[(slot + k) % plan.length];
     const spec = typeById(id);
     if (!spec || !enabled(P, spec)) continue;
-    const b = (spec.drill || spec.build)(lex, dv, rng, entry);
+    const b = (spec.drill || spec.build)(lex, withView(dv, { typeId: id }), rng, entry);
     if (!b) continue;
     const { task } = b;
     if (task.word !== key) continue;
@@ -101,7 +102,7 @@ export function patternTask(lex, view, rng, p, avoid = [], prefer = null) {
   if (!types.length) return null;
   const pv = withView(view, {
     policy: narrowPolicy(view.policy, { types }),
-    huntPrefer: huntPreferFor([p]), forcedNoun: null, drillWord: null, mix: null, force: null,
+    huntPrefer: huntPreferFor([p]), mustAsk: null, mix: null, force: null,
   });
   const own = prefer && types.includes(prefer) ? typeById(prefer) : null;
   const ownOk = !!own && enabled(pv.policy, own);
@@ -110,7 +111,7 @@ export function patternTask(lex, view, rng, p, avoid = [], prefer = null) {
   for (let k = 0; k < PATTERN_TRIES; k++) {
     let b;
     if (ownOk && k % 2 === 0) {
-      b = own.build(lex, pv, rng);
+      b = own.build(lex, withView(pv, { typeId: own.id }), rng);
       if (b) {
         /* What the session knows once it is shown — as tasks/next.js adds. */
         b.task.typeId = own.id;
