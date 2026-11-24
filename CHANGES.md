@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Framvindan: hver sneið á sínum stað (#50)
+- **Engin breyting sést**: hver sneið framvindunnar (dagar, merki, upprifjun, stillingar …) er
+  skilgreind í einingunni sem á hana, og hleðsla, sameining tækja og athugun þjónsins fara aðeins
+  yfir listann. Vistuð framvinda hermds nemanda á tveimur tækjum kemur bæti fyrir bæti eins út og áður.
+
 ### Framvindan, sneið fyrir sneið (#49)
 - **Öryggisnet undir framvindunni**: hver hluti hennar (sneið) er á einum lista
   (`core/slices.js`), og próf sendir framvindu með öllum sneiðum fylltum gegnum hleðslu,
