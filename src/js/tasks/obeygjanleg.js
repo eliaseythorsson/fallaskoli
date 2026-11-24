@@ -4,6 +4,9 @@
      ob_smella  click every adverb, preposition or conjunction in a sentence
      ob_fsao    preposition or adverb: the same word in two roles
      ob_st      choose the conjunction (hand-written, data/exercises.js)
+     ob_tengiord  choose the connective of cause, time or contrast (issue #28)
+     ob_skilja    what a sentence with hvorki … né or ekki aðeins … heldur
+                  einnig says (issue #28)
 
    The hand-written items carry a level each and are chosen near the pupil's
    band, as the sentences of the bank are (critique item 13).
@@ -14,7 +17,7 @@ import { wordKey } from "../core/state.js";
 import { built, FX } from "./effects.js";
 import { tapTask } from "./tap.js";
 import { pairOf, pick, shuffle, bandFor, levelFor, sentPool, nearBand, itemsForBand, tokenKey, tokensOf, cap1, textSentence, lexWord,
-         clean, forcedItem } from "./shared.js";
+         clean, forcedItem, fresh, cellWanted } from "./shared.js";
 
 /** The fewest items or sentences a band chooses among (critique item 23):
     ob_st and ob_flokka have too few at the low levels for a window of the
@@ -167,6 +170,77 @@ export function obConj(lex, view, rng) {
   }, [FX.exSeen(x.t)]);
 }
 
+/* ================= Connectives (issue #28, docs/DLD-PLAN.md §3) ==========
+ *
+ * Two types on hand-written, reviewed items only (content/obeygjanleg/
+ * tengiord.tsv, tengiord-skilningur.tsv), written for pupils with
+ * developmental language disorder: short everyday sentences, one option that
+ * fits by meaning and by word order, and beside every wrong option the
+ * reason it fails (`whyNot`), which the pupil who picks it reads.
+ *
+ * Neither follows the band. The lists are a few dozen sentences of one to
+ * three lines' difficulty; a window by level would leave a pupil ten of them.
+ * The item's level is still its label, and a curriculum that closes a level
+ * closes its items. */
+
+/** The item a review asks for, or one this pupil may meet and has not just
+    seen; with a cell forced (a review, a duel), an item of that cell or
+    nothing. @template {{t: string, lvl: number}} T
+    @param {import("../types").View} view @param {T[]} items
+    @param {(x: T) => string} cellOf @param {() => number} rng @returns {?T} */
+function reviewedItem(view, items, cellOf, rng) {
+  const want = forcedItem(view);
+  if (want) return items.find((y) => y.t === want) || null;
+  const mine = items.filter((y) => cellWanted(view, cellOf(y)));
+  const allowed = mine.filter((y) => view.policy.level(y.lvl));
+  const pool = fresh(view, (y) => y.t, allowed.length ? allowed : mine);
+  return pool.length ? pick(pool, rng) : null;
+}
+
+/** Choose the connective: af því að, þess vegna, þegar, síðan or en. The
+    cell is the connective that fits, so a review of one that was missed
+    brings another sentence with the same one. */
+const connectiveCell = (x) => "tengi:" + x.a;
+export function obConnective(lex, view, rng) {
+  const x = reviewedItem(view, EX.connective, connectiveCell, rng);
+  if (!x) return null;
+  const { s, i } = textSentence(x.t);
+  /* first in the sentence — also in the second of two (*… bilaði. Þess vegna …*) */
+  const cap = i === 0 || /^[.!?]$/.test(s.tok[i - 1].w);
+  const fix = (f) => (cap ? cap1(f) : f);
+  const whyNot = {};
+  x.w.forEach((o) => { whyNot[fix(o)] = x.no[o]; });
+  return built({
+    type: "choice", skill: "obeygjanleg", s, i,
+    title: "Veldu tengiorðið", question: "Hvaða orð passar í eyðuna?",
+    options: shuffle([x.a, ...x.w], rng).map(fix), answer: fix(x.a), why: x.why, whyNot,
+    base: 8, lvl: levelFor(view.policy, x.lvl), cell: connectiveCell(x), word: null,
+    item: x.t, tags: ["tengi"], miss: ["tengiord"],
+  }, [FX.exSeen(x.t)]);
+}
+
+/** What does the sentence say? *Hvorki A né B*, *ekki aðeins A heldur einnig
+    B* and, beside them, *ekki A heldur B* and *A en ekki B*. The four answers
+    stand in the same order every time — only the first, only the second,
+    both, neither — so that the reading is of the sentence and not of the
+    buttons. The cell is the pair of connectives the sentence is built on. */
+const senseCell = (x) => "skilja:" + (/hvorki/.test(x.t) ? "hvorki" : /ekki aðeins/.test(x.t) ? "ekki-adeins"
+  : / en ekki /.test(x.t) ? "en-ekki" : "ekki-heldur");
+export function obSense(lex, view, rng) {
+  const x = reviewedItem(view, EX.connectiveSense, senseCell, rng);
+  if (!x) return null;
+  const { s } = textSentence(x.t);
+  const only = [x.a, ...x.w].filter((o) => o.startsWith("bara "))
+    .sort((a, b) => x.t.indexOf(a.slice(5)) - x.t.indexOf(b.slice(5)));
+  return built({
+    type: "choice", skill: "obeygjanleg", s, i: -1,
+    title: "Hvað segir setningin?", question: x.q,
+    options: [...only, "bæði", "hvorugt"], answer: x.a, why: x.why, whyNot: x.no,
+    base: 8, lvl: levelFor(view.policy, x.lvl), cell: senseCell(x), word: null,
+    item: x.t, tags: ["tengi"], miss: ["tengiord"],
+  }, [FX.exSeen(x.t)]);
+}
+
 /* Sort words into classes: the words of one sentence, which settles what
    each one is. */
 /* The words of a sentence that may be sorted: at least three indeclinable
@@ -224,4 +298,6 @@ export const BUILDERS = {
   ob_fsao: { build: obAdvPrep },
   ob_st: { build: obConj },
   ob_flokka: { build: obSort },
+  ob_tengiord: { build: obConnective },
+  ob_skilja: { build: obSense },
 };

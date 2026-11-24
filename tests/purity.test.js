@@ -231,7 +231,8 @@ test("the meaning question shows the word's history as it stands once it is show
 });
 
 test("a hand-written item is remembered when it is shown, and at most forty of them", () => {
-  for (const id of ["fn_eyda", "fn_stad", "fn_aftur", "to_val", "ob_st", "fs_hreyf", "fs_sogn", "fs_operson"]) {
+  for (const id of ["fn_eyda", "fn_stad", "fn_aftur", "to_val", "ob_st", "fs_hreyf", "fs_sogn", "fs_operson",
+    "ob_tengiord", "ob_skilja"]) {
     const p = pupil(3, 7);
     p.sess.exSeen = [];
     const b = typeById(id).build(lex, view(p), seeded(11));

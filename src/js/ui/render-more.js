@@ -163,6 +163,12 @@ const choiceHalf = (h, n) => `
     <div class="qrow"><div class="opts" data-q="${n}">
       ${h.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>`;
 
+/* Why the option the pupil picked does not fit (issue #28): a builder that
+   knows gives `whyNot`, option → reason, and the reason for the one picked
+   stands above the rule. */
+const whyNotBox = (t, ok) => (!ok && t.whyNot && t.picked && t.whyNot[t.picked]
+  ? `<div class="why whynot"><b>af hverju ekki „${esc(t.picked)}“</b>${fmt(t.whyNot[t.picked])}</div>` : "");
+
 RENDER.choice = function (app) {
   const t = app.cur;
   const halves = t.second ? [t, t.second] : [t];
@@ -233,7 +239,7 @@ function submitChoice(app) {
     <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
     ${t.second ? pairBody()
       : `${!t.mark && t.s && t.i >= 0 ? solvedSentence(t, t.answer) : `<p>Rétt svar: <span class="forms">${esc(t.answer)}</span>.</p>`}
-    ${whyBox(t.why)}`}
+    ${whyNotBox(t, ok)}${whyBox(t.why)}`}
     ${defs ? `<div class="why"><b>í orðabók</b><ul class="deflist">${defs}</ul></div>` : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
     bonusBox(app, t);

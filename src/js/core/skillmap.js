@@ -122,6 +122,7 @@ export const NODE_PATTERNS = {
   "so-sterkar-veikar": ["beyging_so", "beyging_so_hljod", "sterk_veik_sogn"],
   "ob-fs-ao": ["ao_fs"],
   "ob-samtengingar": ["samtengingar"],
+  "ob-tengiord": ["tengiord"],
   "gr-ordflokkar": ["ordflokkur"],
   "fs-forsetningar": ["fallstjorn_fs"],
   "fs-hreyfing": ["hreyfing"],

@@ -416,6 +416,9 @@ export const CELL_IS_ANSWER = new Set([
   "fn_flokkar", "no_beyging", "so_mynd", "gerd_tegund", "setn_lidir",
   "fs_sogn",
   "to_samr", "to_val", "fn_stad",
+  /* issue #28: the cell is the connective that fits, or the pair of
+     connectives whose meaning is the answer */
+  "ob_tengiord", "ob_skilja",
 ]);
 
 /** Do two questions weigh the same? The type and the level, and the cell —

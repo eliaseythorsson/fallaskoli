@@ -433,7 +433,21 @@ const LIST = [
     ds: "Settu orð annarra í óbeina ræðu: Hún sagði að hún væri þreytt. Frá þyngd 4 er beina ræðan í þátíð: hefði farið",
     renderer: "umritun", weight: 5, recall: false, grader: "app",
     tags: ["speech", "verb:vh"],
-    bands: [1, 4] },];
+    bands: [1, 4] },
+  /* issue #28 (docs/DLD-PLAN.md §3): connectives, on reviewed items only. A
+     few dozen short sentences each, so neither follows the band. */
+  { id: "ob_tengiord", skill: "obeygjanleg",
+    nm: "Veldu tengiorðið",
+    ds: "Orsök, tími og andstæða: af því að, þess vegna, þegar, síðan, en",
+    renderer: "choice", weight: 3, recall: false, grader: "app",
+    tags: ["tengi"],
+    bands: [1] },
+  { id: "ob_skilja", skill: "obeygjanleg",
+    nm: "Hvað segir setningin?",
+    ds: "Að skilja hvorki … né og ekki aðeins … heldur einnig",
+    renderer: "choice", weight: 2, recall: false, grader: "app",
+    tags: ["tengi"],
+    bands: [1] },];
 
 /** What is wrong with a list of declarations, as sentences; empty when
     nothing is. Read as untrusted: a test passes broken ones.

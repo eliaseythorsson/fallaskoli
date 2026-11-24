@@ -2899,6 +2899,86 @@ await startPractice(page, 15000);
   await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
 }
 
+/* ---------- issue #28: connectives ------------------------------------------
+ *
+ * Veldu tengiorðið and Hvað segir setningin?, on a phone and on a desktop:
+ * each comes in a session aimed at its error pattern, shows four options,
+ * and under a wrong answer says why the option that was picked does not
+ * fit — that option's own reason, above the rule. */
+{
+  for (const vp of [{ w: 390, h: 844, touch: true }, { w: 1280, h: 900, touch: false }]) {
+    await page.setViewport({ width: vp.w, height: vp.h, isMobile: vp.touch, hasTouch: vp.touch, deviceScaleFactor: 1 });
+    await dismissModals();
+    await page.evaluate(() => {
+      const A = window.FALLASKOLI;
+      A.S.enabled.obeygjanleg = true;
+      A.reloadPolicy();
+      A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
+      A.sess.warm = {};
+      A.startRun("obeygjanleg", 10, ["tengiord"], { review: false });
+    });
+    await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
+    const seen = new Map();
+    for (let k = 0; k < 10; k++) {
+      const q = await page.evaluate(() => {
+        const t = window.FALLASKOLI.cur;
+        return { typeId: t.typeId, type: t.type, options: t.options || [], answer: t.answer,
+          buttons: [...document.querySelectorAll("#task .opts button")].map((b) => b.textContent),
+          blank: !!document.querySelector("#task .sentence .blank"),
+          shown: document.querySelector("#task .sentence")?.textContent || "",
+          whyNot: t.whyNot || null,
+          wide: document.documentElement.scrollWidth - window.innerWidth };
+      });
+      const at = `#28 ${q.typeId}, ${vp.w} px`;
+      if (!["ob_tengiord", "ob_skilja"].includes(q.typeId)) {
+        /* a session aimed at a pattern asks something else about one time in seven */
+        await page.evaluate(() => window.FALLASKOLI.next());
+        await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+        continue;
+      }
+      /* each type once right and once wrong */
+      const n = seen.get(q.typeId) || 0;
+      seen.set(q.typeId, n + 1);
+      const correct = n % 2 === 1;
+      ok(q.type === "choice" && q.buttons.length === 4 && q.buttons.join("|") === q.options.join("|"),
+        `${at}: buttons "${q.buttons.join(" · ")}" for options "${q.options.join(" · ")}"`);
+      ok(q.wide <= 1, `${at}: the page scrolls sideways by ${q.wide} px`);
+      ok(q.whyNot && q.options.filter((o) => o !== q.answer).every((o) => q.whyNot[o]), `${at}: a wrong option without its reason`);
+      if (q.typeId === "ob_tengiord") ok(q.blank, `${at}: no blank in "${q.shown}"`);
+      else ok(!q.blank && /[.]$/.test(q.shown) && q.buttons.slice(2).join("|") === "bæði|hvorugt",
+        `${at}: "${q.shown}" with ${q.buttons.join(" · ")}`);
+      await answerOneNoNext(correct);
+      await page.waitForSelector("#verdict .verdict", { timeout: 4000 });
+      const v = await page.evaluate(() => {
+        const t = window.FALLASKOLI.cur, el = document.querySelector("#verdict .verdict");
+        const box = el.querySelector(".whynot");
+        return { cls: el.className, picked: t.picked, answer: t.answer,
+          whynot: box ? box.textContent : "", want: t.whyNot[t.picked] || "",
+          whys: [...el.querySelectorAll(".why")].map((x) => x.className),
+          wide: document.documentElement.scrollWidth - window.innerWidth };
+      });
+      ok(correct ? /\bok\b/.test(v.cls) : /\bno\b/.test(v.cls), `${at}: a ${correct ? "right" : "wrong"} answer drew "${v.cls}"`);
+      if (correct) ok(!v.whynot && v.whys.length === 1, `${at}: a right answer is told why not: ${v.whynot}`);
+      else {
+        ok(v.picked !== v.answer && v.want.length > 20, `${at}: picked ${v.picked}`);
+        /* the reason for the option that was picked, named, and above the rule */
+        ok(v.whynot.includes(v.picked) && v.whynot.replace(/[*]/g, "").includes(v.want.replace(/[*]/g, "").slice(0, 25)),
+          `${at}: under "${v.picked}" the pupil reads "${v.whynot}", the item says "${v.want}"`);
+        ok(v.whys.length === 2 && /whynot/.test(v.whys[0]), `${at}: boxes ${v.whys.join(", ")}`);
+      }
+      ok(v.wide <= 1, `${at}: the verdict makes the page scroll sideways by ${v.wide} px`);
+      await dismissModals();
+      await page.evaluate(() => window.FALLASKOLI.next());
+      await page.waitForFunction("window.FALLASKOLI.cur && document.querySelector('#task .card')", { timeout: 4000 });
+      if ((seen.get("ob_tengiord") || 0) >= 2 && (seen.get("ob_skilja") || 0) >= 2) break;
+    }
+    ok((seen.get("ob_tengiord") || 0) >= 2 && (seen.get("ob_skilja") || 0) >= 2,
+      `#28 at ${vp.w} px: ten questions brought ${JSON.stringify([...seen])}`);
+  }
+  await page.setViewport({ width: 1100, height: 900 });
+  await page.evaluate(() => { const A = window.FALLASKOLI; A.run = null; A.runDone = null; A.next(); });
+}
+
 /* ---------- items 50, 51, 52, 43 (v6.13 small UX) -------------------------- */
 {
   await page.setViewport({ width: 900, height: 900 });

@@ -61,6 +61,7 @@
   (`server/reader-greynir.mjs`); Claude (#37) verður annað.
 ### Tegundir spurninga
 - **Ein skrá lýsir öllum tegundum spurninga** (`src/js/core/catalogue.js`, #46): heiti, lýsing, flokkur, þyngdarþrep, `recall` og `grader` á einum stað, í röð einvíganna; ný tegund er ein færsla þar og einn smiður í skrá flokksins. Umsjónarmaður getur nú leyft „spurningar sem þjónninn les“ fyrir einn nemanda í einu (slökkt nema kveikt sé á því); engin slík tegund er til enn. Sömu spurningar koma úr sama fræi og áður.
+- **Tengiorð í Óbeygjanlegum orðum** (#28): tvær nýjar tegundir spurninga, skrifaðar fyrir nemendur með málþroskaröskun. Í *Veldu tengiorðið* er valið á milli *af því að, þess vegna, þegar, síðan* og *en* í stuttum setningum úr daglegu lífi; í *Hvað segir setningin?* er spurt hvað setning með *hvorki … né* eða *ekki aðeins … heldur einnig* segir. Sá sem velur rangt sér hvers vegna einmitt sá kostur gengur ekki. Atriðin eru handskrifuð (`content/obeygjanleg/tengiord.tsv`, `tengiord-skilningur.tsv`) og Lesefni um óbeygjanleg orð hefur fengið kafla um tengiorð.
 
 ### Færnikort
 - **Langt heiti flokks fer ekki út fyrir rammann**: „Orðflokkagreining“, „Setningafræði“
