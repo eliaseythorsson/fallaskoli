@@ -131,13 +131,17 @@ import { tourSlice } from "./placement.js";
 import { enabledSlice, policySlice, allowedSlice } from "./policy.js";
 import { settingsSlice } from "./settings.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
+import { wordKnowledgeSlice } from "./wordknowledge.js";
 
 /** @typedef {import("../types").Slice} Slice */
 /** @typedef {import("../types").CleanContext} CleanContext */
 
 /* ---------- the version of the saved file ---------- */
 
-export const STATE_VERSION = 11;
+/* 12 (issue #8): word knowledge (core/wordknowledge.js). A copy saved
+   before it starts word knowledge empty and `S.words` without its short
+   history (`RESET_BEFORE` there). */
+export const STATE_VERSION = 12;
 
 /** `S.v`: the shape this program saves. A copy of any age is loaded into
     this shape, so a loaded copy always has it. @type {Slice} */
@@ -201,6 +205,7 @@ export const SLICES = [
   mapBandSlice,
   mendSlice,
   tourSlice,
+  wordKnowledgeSlice,
 ];
 
 /** The keys of the slices that hold the pupil's own text. @returns {string[]} */

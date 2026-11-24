@@ -103,6 +103,7 @@ import { noteTypeAnswer } from "./mastery.js";
 import { noteNodeAnswer, partsOf } from "./skillmap.js";
 import { noteReview } from "./review.js";
 import { noteReviewsPassed } from "./mending.js";
+import { noteWords } from "./wordknowledge.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Session} Session */
@@ -1371,6 +1372,11 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
      (core/mending.js). A duel's answers count too: a due entry answered
      right is a review passed wherever it happens. */
   noteReviewsPassed(S, review.passed.length + review.done.length, todayKey());
+  /* Word knowledge (core/wordknowledge.js, issue #8): one entry per word the
+     question was about. Here, once per answered question; a second try and
+     the bonus sentence returned above (no `finish`), so only a first try is
+     an entry. A duel's and a live round's answers count. */
+  noteWords(S, task, j, todayKey());
   /** @type {Record<string, any>} */
   const out = { ...j.finish, findings: j.findings, review };
   /* The badges for a quick or a curious answer read its time and its shape

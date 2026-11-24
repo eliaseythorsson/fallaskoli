@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Orðaþekking: ein saga fyrir hvert orð (#8)
+- **Hvert svar um orð er skráð með degi og spurningagerð** (rétt, rangt eða séð), ein færsla á
+  spurningu, í nýrri einingu (`core/wordknowledge.js`) sem lærðu orðin og erfiðu orðin byggja á.
+  Engin breyting sést. Prófnemendur byrja með tóma orðasögu (útgáfa 12): XP, merki og stig haldast.
+
 ### Skemmd framvinda hrynur ekki lengur
 - **Skemmd eða fölsuð vistuð framvinda** þar sem dagsfærsla er `null` (eða ekki hlutur) felldi hleðsluna og
   athugun þjónsins. Nú er sú færsla sleppt og aðrir dagar haldast; próf setur rusl inn í hverja færsluskrá
