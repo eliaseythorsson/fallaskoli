@@ -103,7 +103,7 @@ test("the node ids are pinned: saved progress will be keyed by them", () => {
     "lo-beyging", "lo-samraemi", "lo-stig",
     "mb-malsnid", "mb-raeda", "mb-smidja", "mb-umritun", "mb-villur",
     "no-beyging", "no-foll", "no-kyn-tala",
-    "ob-atviksord", "ob-flokkar", "ob-fs-ao", "ob-samtengingar",
+    "ob-atviksord", "ob-flokkar", "ob-fs-ao", "ob-samtengingar", "ob-tengiord",
     "or-hljodbreytingar", "or-merking", "or-myndun", "or-ordhlutar", "or-ordtok",
     "setn-hlutar", "setn-lidir", "setn-ordarod",
     "so-bodhattur", "so-fallhaettir", "so-midmynd", "so-persona-tala",

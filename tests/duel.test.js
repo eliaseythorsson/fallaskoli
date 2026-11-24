@@ -282,8 +282,13 @@ test("item 63: where the same cell means the same answer, the two players' cells
     const sess = newSession(S);
     Object.keys(sess.diff).forEach((k) => { sess.diff[k] = diff; });
     const view = makeView({ S, sess, policy: createPolicy(null, null), today: "2000-01-01" });
-    const rng = seeded(5);
     for (const id of measured.keys()) {
+      /* Its own dice for every type (#28): with one generator for the whole
+         list, what a type drew depended on what the types before it had
+         drawn — and so on the order of the words in the lexicon. fn_eyda
+         measures 0.21–0.32 from one seed to the next (six seeds, both
+         levels), and a new word in the content moved it across the 0.3 line. */
+      const rng = seeded(5);
       const built = [];
       for (let i = 0; i < 120; i++) {
         const b = buildTask(duelLex, view, rng, id);

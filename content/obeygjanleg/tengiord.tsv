@@ -1,0 +1,81 @@
+# Óbeygjanleg orð: tengiorð um orsök, tíma og andstæðu
+#
+# Nemandinn velur orðið sem tengir: af því að, þess vegna, þegar, síðan eða en.
+# Setningarnar eru stuttar og úr daglegu lífi. Í hverri línu er EITT rétt svar.
+#
+# Reglurnar sem atriðin eru skrifuð eftir:
+#   * Kostirnir eru alltaf fjórir: rétta svarið og þrjú af hinum fjórum orðunum.
+#   * Hver rangur kostur er rangur af ástæðu sem stendur í dálkinum við hliðina á
+#     honum. Nemandinn sér þá ástæðu ef hann velur þann kost.
+#   * Orð sem gæti líka gengið er ALDREI boðið. *Þegar* er ekki boðið þar sem
+#     það gæti staðið í stað *af því að* (Ég datt þegar það var hálka), *síðan*
+#     ekki þar sem það gæti staðið í stað *þess vegna* (Bíllinn bilaði. Síðan
+#     komum við of seint), og *en* ekki þar sem lesa mætti andstæðu úr setningunni.
+#   * Á eftir *þess vegna* og *síðan* kemur sögnin strax (Þess vegna fór ég).
+#     Á eftir *af því að*, *þegar* og *en* kemur frumlagið á undan sögninni
+#     (af því að ég fór). Það nota atriðin: orðaröðin á eftir eyðunni útilokar
+#     oft tvo kosti og merkingin þann þriðja.
+#   * Ef vafi leikur á atriði á það ekki heima hér.
+#
+# Dálkar:
+#   setning             setningin (eða tvær stuttar setningar); ___ er tengiorðið
+#   svar                rétta tengiorðið
+#   skýring             skýringin sem nemandinn les
+#   rangt 1             fyrsti rangi kosturinn
+#   af hverju ekki 1    hvers vegna hann gengur ekki; nemandinn les það ef hann velur hann
+#   rangt 2, af hverju ekki 2, rangt 3, af hverju ekki 3    eins
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Connectives of cause, time and contrast (issue #28, docs/DLD-PLAN.md §3), for
+# pupils with developmental language disorder: short, concrete sentences.
+# The five words are a closed set (exercises.CONNECTIVES); *þess vegna* and
+# *síðan* are adverbs, not conjunctions, so the question says "tengiorð".
+# The build checks every word against BÍN, parses every completed sentence
+# with Greynir, and holds an answer of *þess vegna* or *síðan* to a verb right
+# after the blank. The level is the sentence's length (exercises.py LEVELS).
+# What the build cannot check is that the three wrong options really fail:
+# that is the reader's part, and the reason beside each is what to read.
+#
+
+setning	svar	skýring	rangt 1	af hverju ekki 1	rangt 2	af hverju ekki 2	rangt 3	af hverju ekki 3
+# af því að: orsökin kemur á eftir
+Ég er svangur ___ ég borðaði ekki morgunmat.	af því að	*Af því að* segir hvers vegna: ég er svangur vegna þess að ég borðaði ekki morgunmat.	þess vegna	Á eftir *þess vegna* kemur sögnin strax (*þess vegna er ég svangur*) og þá kemur afleiðingin. Hér kemur orsökin á eftir eyðunni.	þegar	*Þegar* segir hvenær. En ég er svangur núna og morgunmaturinn var í morgun.	en	*En* tengir andstæður. Hér er engin andstæða: sá sem borðar ekki verður svangur.
+Ég er þreytt ___ ég svaf illa í nótt.	af því að	*Af því að* segir hvers vegna: ég er þreytt vegna þess að ég svaf illa.	þess vegna	Á eftir *þess vegna* kemur sögnin strax (*þess vegna er ég þreytt*) og þá kemur afleiðingin. Hér kemur orsökin á eftir eyðunni.	þegar	*Þegar* segir hvenær. En ég er þreytt núna og ég svaf illa í nótt.	en	*En* tengir andstæður. Hér er engin andstæða: sá sem sefur illa verður þreyttur.
+Ég datt ___ það var hálka.	af því að	*Af því að* segir hvers vegna: ég datt vegna þess að það var hálka.	þess vegna	Á eftir *þess vegna* kemur sögnin strax (*þess vegna datt ég*) og þá kemur afleiðingin. Hér kemur orsökin á eftir eyðunni.	en	*En* tengir andstæður. Hér er engin andstæða: fólk dettur í hálku.	síðan	*Síðan* segir hvað gerðist næst. Hálkan kom ekki á eftir: hún er ástæðan.
+Óli grætur ___ hann meiddi sig.	af því að	*Af því að* segir hvers vegna: Óli grætur vegna þess að hann meiddi sig.	þess vegna	Á eftir *þess vegna* kemur sögnin strax (*þess vegna grætur Óli*) og þá kemur afleiðingin. Hér kemur orsökin á eftir eyðunni.	þegar	*Þegar* segir hvenær. En Óli grætur núna og hann meiddi sig áðan.	en	*En* tengir andstæður. Hér er engin andstæða: sá sem meiðir sig grætur oft.
+Ég kemst ekki inn ___ ég gleymdi lyklinum.	af því að	*Af því að* segir hvers vegna: ég kemst ekki inn vegna þess að ég gleymdi lyklinum.	þess vegna	Á eftir *þess vegna* kemur sögnin strax (*þess vegna kemst ég ekki inn*) og þá kemur afleiðingin. Hér kemur orsökin á eftir eyðunni.	þegar	*Þegar* segir hvenær. En ég kemst ekki inn núna og ég gleymdi lyklinum áðan.	en	*En* tengir andstæður. Hér er engin andstæða: án lykils kemst enginn inn.
+Gólfið er blautt ___ ég hellti niður vatni.	af því að	*Af því að* segir hvers vegna: gólfið er blautt vegna þess að ég hellti niður vatni.	þess vegna	Á eftir *þess vegna* kemur sögnin strax (*þess vegna er gólfið blautt*) og þá kemur afleiðingin. Hér kemur orsökin á eftir eyðunni.	þegar	*Þegar* segir hvenær. En gólfið er blautt núna og ég hellti niður áðan.	en	*En* tengir andstæður. Hér er engin andstæða: vatn gerir gólfið blautt.
+___ Sara er veik fer hún ekki í skólann.	af því að	*Af því að* segir hvers vegna: Sara fer ekki í skólann vegna þess að hún er veik.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna er Sara veik*. Og veikindin eru orsökin, ekki afleiðingin.	en	*En* tengir andstæður. Hér er engin andstæða, og á eftir *en* kæmi *hún fer*, ekki *fer hún*.	síðan	*Síðan* segir hvað gerðist næst. Hér er sagt hvers vegna, ekki hvað kom næst.
+# þess vegna: afleiðingin kemur á eftir, og sögnin strax
+Ég er veikur. ___ fer ég ekki í skólann.	þess vegna	*Þess vegna* bendir á afleiðinguna: ég er veikur og af þeirri ástæðu fer ég ekki í skólann. Á eftir *þess vegna* kemur sögnin strax: *þess vegna fer ég*.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að ég fer*. Hér kemur sögnin *fer* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en ég fer*, ekki *en fer ég*.	þegar	Á eftir *þegar* kemur frumlagið á undan sögninni: *þegar ég fer*. Hér kemur sögnin *fer* strax.
+Það rignir mikið. ___ förum við ekki út.	þess vegna	*Þess vegna* bendir á afleiðinguna: það rignir og af þeirri ástæðu förum við ekki út. Á eftir *þess vegna* kemur sögnin strax: *þess vegna förum við*.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að við förum*. Hér kemur sögnin *förum* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en við förum*, ekki *en förum við*.	þegar	Á eftir *þegar* kemur frumlagið á undan sögninni: *þegar við förum*. Hér kemur sögnin *förum* strax.
+Bíllinn bilaði. ___ komum við of seint.	þess vegna	*Þess vegna* bendir á afleiðinguna: bíllinn bilaði og af þeirri ástæðu komum við of seint. Á eftir *þess vegna* kemur sögnin strax: *þess vegna komum við*.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að við komum*. Hér kemur sögnin *komum* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en við komum*, ekki *en komum við*.	þegar	Á eftir *þegar* kemur frumlagið á undan sögninni: *þegar við komum*. Hér kemur sögnin *komum* strax.
+Ég gleymdi lyklinum. ___ komst ég ekki inn.	þess vegna	*Þess vegna* bendir á afleiðinguna: ég gleymdi lyklinum og af þeirri ástæðu komst ég ekki inn. Á eftir *þess vegna* kemur sögnin strax: *þess vegna komst ég*.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að ég komst*. Hér kemur sögnin *komst* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en ég komst*, ekki *en komst ég*.	þegar	Á eftir *þegar* kemur frumlagið á undan sögninni: *þegar ég komst*. Hér kemur sögnin *komst* strax.
+Óli er með hita. ___ fer hann ekki út.	þess vegna	*Þess vegna* bendir á afleiðinguna: Óli er með hita og af þeirri ástæðu fer hann ekki út. Á eftir *þess vegna* kemur sögnin strax: *þess vegna fer hann*.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að hann fer*. Hér kemur sögnin *fer* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en hann fer*, ekki *en fer hann*.	þegar	Á eftir *þegar* kemur frumlagið á undan sögninni: *þegar hann fer*. Hér kemur sögnin *fer* strax.
+Búðin var lokuð. ___ keyptum við engan ís.	þess vegna	*Þess vegna* bendir á afleiðinguna: búðin var lokuð og af þeirri ástæðu keyptum við engan ís. Á eftir *þess vegna* kemur sögnin strax: *þess vegna keyptum við*.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að við keyptum*. Hér kemur sögnin *keyptum* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en við keyptum*, ekki *en keyptum við*.	þegar	Á eftir *þegar* kemur frumlagið á undan sögninni: *þegar við keyptum*. Hér kemur sögnin *keyptum* strax.
+# síðan: það sem gerðist næst, og sögnin strax
+Fyrst lékum við okkur. ___ fórum við í bíó.	síðan	*Síðan* segir hvað gerðist næst: fyrst lékum við okkur, síðan fórum við í bíó.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að við fórum*. Hér kemur sögnin *fórum* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en við fórum*, ekki *en fórum við*.	þess vegna	*Þess vegna* bendir á afleiðingu. Við fórum ekki í bíó vegna þess að við lékum okkur: það kom bara á eftir.
+Fyrst las ég bók. ___ horfði ég á mynd.	síðan	*Síðan* segir hvað gerðist næst: fyrst bók, síðan mynd.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að ég horfði*. Hér kemur sögnin *horfði* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en ég horfði*, ekki *en horfði ég*.	þess vegna	*Þess vegna* bendir á afleiðingu. Myndin er ekki afleiðing af bókinni: hún kom bara á eftir.
+Fyrst borðuðum við pítsu. ___ fengum við ís.	síðan	*Síðan* segir hvað gerðist næst: fyrst pítsa, síðan ís.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að við fengum*. Hér kemur sögnin *fengum* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en við fengum*, ekki *en fengum við*.	þess vegna	*Þess vegna* bendir á afleiðingu. Ísinn er ekki afleiðing af pítsunni: hann kom bara á eftir.
+Fyrst burstaði ég tennurnar. ___ greiddi ég mér.	síðan	*Síðan* segir hvað gerðist næst: fyrst burstaði ég tennurnar, síðan greiddi ég mér.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að ég greiddi*. Hér kemur sögnin *greiddi* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en ég greiddi*, ekki *en greiddi ég*.	þess vegna	*Þess vegna* bendir á afleiðingu. Ég greiddi mér ekki vegna þess að ég burstaði tennurnar: það kom bara á eftir.
+Ég fór í sokka. ___ fór ég í skó.	síðan	*Síðan* segir hvað gerðist næst: fyrst sokkar, síðan skór.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að ég fór*. Hér kemur sögnin *fór* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en ég fór*, ekki *en fór ég*.	þess vegna	*Þess vegna* bendir á afleiðingu. Ég fór ekki í skó vegna þess að ég fór í sokka: það kom bara á eftir.
+Ég klæddi mig. ___ borðaði ég morgunmat.	síðan	*Síðan* segir hvað gerðist næst: ég klæddi mig og eftir það borðaði ég.	af því að	Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að ég borðaði*. Hér kemur sögnin *borðaði* strax.	en	Á eftir *en* kemur sögnin ekki strax: *en ég borðaði*, ekki *en borðaði ég*.	þess vegna	*Þess vegna* bendir á afleiðingu. Ég borðaði ekki vegna þess að ég klæddi mig: það kom bara á eftir.
+# þegar: hvenær
+___ ég kom heim var klukkan orðin tíu.	þegar	*Þegar* segir hvenær: klukkan var orðin tíu á þeirri stundu sem ég kom heim.	af því að	*Af því að* segir hvers vegna. Klukkan varð ekki tíu vegna þess að ég kom heim.	en	*En* tengir andstæður. Hér er engin andstæða, og á eftir *en* kæmi *klukkan var*, ekki *var klukkan*.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna kom ég heim*. Hér kemur *ég* fyrst.
+___ við komum í bíóið var myndin byrjuð.	þegar	*Þegar* segir hvenær: myndin var byrjuð á þeirri stundu sem við komum.	af því að	*Af því að* segir hvers vegna. Myndin byrjaði ekki vegna þess að við komum.	en	*En* tengir andstæður. Hér er engin andstæða, og á eftir *en* kæmi *myndin var*, ekki *var myndin*.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna komum við*. Hér kemur *við* fyrst.
+___ ég var lítill átti ég heima á Akureyri.	þegar	*Þegar* segir hvenær: ég átti heima á Akureyri á þeim árum sem ég var lítill.	af því að	*Af því að* segir hvers vegna. Ég átti ekki heima á Akureyri vegna þess að ég var lítill.	en	*En* tengir andstæður. Hér er engin andstæða, og á eftir *en* kæmi *ég átti*, ekki *átti ég*.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna var ég lítill*. Hér kemur *ég* fyrst.
+___ pabbi kom heim var ég sofnaður.	þegar	*Þegar* segir hvenær: ég var sofnaður á þeirri stundu sem pabbi kom heim.	af því að	*Af því að* segir hvers vegna. Ég sofnaði ekki vegna þess að pabbi kom heim.	en	*En* tengir andstæður. Hér er engin andstæða, og á eftir *en* kæmi *ég var*, ekki *var ég*.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna kom pabbi heim*. Hér kemur *pabbi* fyrst.
+___ ég kom út var farið að rigna.	þegar	*Þegar* segir hvenær: það var farið að rigna á þeirri stundu sem ég kom út.	af því að	*Af því að* segir hvers vegna. Það fór ekki að rigna vegna þess að ég kom út.	en	*En* tengir andstæður. Hér er engin andstæða, og á eftir *en ég kom út* kæmi ekki sögnin *var* strax.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna kom ég út*. Hér kemur *ég* fyrst.
+Klukkan var sjö ___ ég vaknaði.	þegar	*Þegar* segir hvenær: klukkan var sjö á þeirri stundu sem ég vaknaði.	af því að	*Af því að* segir hvers vegna. Klukkan varð ekki sjö vegna þess að ég vaknaði.	en	*En* tengir andstæður. Hér er engin andstæða: klukkan var sjö og ég vaknaði.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna vaknaði ég*. Hér kemur *ég* fyrst.
+# en: andstæða
+Jón er lítill ___ hann er mjög sterkur.	en	*En* tengir andstæður: Jón er lítill og samt er hann mjög sterkur.	af því að	*Af því að* segir hvers vegna. Jón er ekki lítill vegna þess að hann er sterkur.	þegar	*Þegar* segir hvenær. Hér er ekki sagt hvenær Jón er lítill.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna er hann*. Hér kemur *hann* fyrst.
+Sólin skein ___ það var samt kalt.	en	*En* tengir andstæður: sólin skein og samt var kalt. Orðið *samt* sýnir andstæðuna.	af því að	*Af því að* segir hvers vegna. Sólin skein ekki vegna þess að það var kalt.	þegar	*Þegar* segir hvenær. Orðið *samt* sýnir andstæðu, ekki tíma.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna var það*. Hér kemur *það* fyrst.
+Anna hljóp ___ hún kom samt of seint.	en	*En* tengir andstæður: Anna hljóp og samt kom hún of seint. Orðið *samt* sýnir andstæðuna.	af því að	*Af því að* segir hvers vegna. Anna hljóp ekki vegna þess að hún kom of seint.	þegar	*Þegar* segir hvenær. Orðið *samt* sýnir andstæðu, ekki tíma.	síðan	Á eftir *síðan* kemur sögnin strax: *síðan kom hún*. Hér kemur *hún* fyrst.
+Húsið er gamalt ___ það er mjög fallegt.	en	*En* tengir andstæður: húsið er gamalt og samt er það mjög fallegt.	af því að	*Af því að* segir hvers vegna. Húsið er ekki gamalt vegna þess að það er fallegt.	þegar	*Þegar* segir hvenær. Hér er ekki sagt hvenær húsið er gamalt.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna er það*. Hér kemur *það* fyrst.
+Pabbi er hár ___ mamma er lítil.	en	*En* tengir andstæður: pabbi er hár og mamma er lítil.	af því að	*Af því að* segir hvers vegna. Pabbi er ekki hár vegna þess að mamma er lítil.	þegar	*Þegar* segir hvenær. Hér er ekki sagt hvenær pabbi er hár.	síðan	*Síðan* segir hvað gerðist næst. Hér gerist ekkert á eftir öðru.
+Óli æfði sig mikið ___ hann tapaði samt.	en	*En* tengir andstæður: Óli æfði sig mikið og samt tapaði hann. Orðið *samt* sýnir andstæðuna.	af því að	*Af því að* segir hvers vegna. Orðið *samt* sýnir andstæðu, ekki ástæðu.	þegar	*Þegar* segir hvenær. Orðið *samt* sýnir andstæðu, ekki tíma.	þess vegna	Á eftir *þess vegna* kemur sögnin strax: *þess vegna tapaði hann*. Hér kemur *hann* fyrst.

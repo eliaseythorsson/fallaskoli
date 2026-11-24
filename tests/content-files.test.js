@@ -114,6 +114,8 @@ print(json.dumps(out))`);
     CONJ_FRAME_LINES: lines("obeygjanleg/samtengingar-rammar.tsv"),
     CONJ_CAUSE: lines("obeygjanleg/samtengingar-orsok.tsv"),
     CONJ_ORDER: lines("obeygjanleg/samtengingar-rod.tsv"),
+    CONNECTIVE: lines("obeygjanleg/tengiord.tsv"),
+    CONNECTIVE_SENSE: lines("obeygjanleg/tengiord-skilningur.tsv"),
     SYNONYM_GROUPS: lines("ordafordi/samheiti.tsv"),
     ANTONYM_PAIRS: lines("ordafordi/andheiti.tsv"),
     WORD_IN_CONTEXT: lines("ordafordi/samhengi.tsv"),

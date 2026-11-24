@@ -365,6 +365,27 @@ CONJ_ORDER = _table("obeygjanleg/samtengingar-rod.tsv", [
 # a conjunction there; an option with a space must be one of these.
 CONJ_PHRASES = {"af því að", "til þess að", "svo að", "hvort sem", "áður en", "eftir að"}
 
+# Connectives of cause, time and contrast, and understanding the paired ones
+# (issue #28, docs/DLD-PLAN.md §3; content/obeygjanleg/tengiord.tsv and
+# tengiord-skilningur.tsv, whose headers hold the rules). Short sentences for
+# pupils with developmental language disorder. Each wrong option carries the
+# reason it fails, which the pupil who picks it reads.
+#   CONNECTIVE        (sentence with ___, right, why, [(wrong, why not) × 3])
+#   CONNECTIVE_SENSE  (sentence, question, right, why, [(wrong, why not) × 3])
+_WRONG3 = [(c, "text") for k in "123" for c in ("rangt " + k, "af hverju ekki " + k)]
+def _wrong3(r):
+    return [(r["rangt " + k], r["af hverju ekki " + k]) for k in "123"]
+CONNECTIVE = [(r["setning"], r["svar"], r["skýring"], _wrong3(r)) for r in _C.rows(
+    "obeygjanleg/tengiord.tsv", [("setning", "text"), ("svar", "text"), ("skýring", "text")] + _WRONG3)]
+CONNECTIVE_SENSE = [(r["setning"], r["spurning"], r["svar"], r["skýring"], _wrong3(r)) for r in _C.rows(
+    "obeygjanleg/tengiord-skilningur.tsv",
+    [("setning", "text"), ("spurning", "text"), ("svar", "text"), ("skýring", "text")] + _WRONG3)]
+# The five connectives CONNECTIVE chooses among, and whether the verb comes
+# straight after each (an adverb in first place: *Þess vegna fór ég*) or the
+# subject first (a conjunction: *af því að ég fór*). The build holds every
+# answer to it.
+CONNECTIVES = {"af því að": False, "þess vegna": True, "þegar": False, "síðan": True, "en": False}
+
 # Synonyms and antonyms (content/ordafordi/samheiti.tsv, andheiti.tsv): groups
 # of words that mean the same, by word class; pairs of opposites. A
 # distractor is never taken from the same group or from an antonym.

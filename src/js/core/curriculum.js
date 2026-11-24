@@ -166,6 +166,11 @@ export const NODES = [
     hv: "ordflokkar", types: ["ob_fsao"], lesson: "obeygjanleg", cover: "full" },
   { id: "ob-samtengingar", nm: "Samtengingar", cat: "obeygjanleg", year: 9,
     hv: "ordflokkar", types: ["ob_st"], lesson: "obeygjanleg", cover: "full" },
+  /* issue #28: what a connective MEANS — cause, time, contrast, and the
+     paired ones. Year 8: it is the easiest thing in the category, written
+     for pupils with developmental language disorder (docs/DLD-PLAN.md §3). */
+  { id: "ob-tengiord", nm: "Tengiorð: orsök, tími og andstæða", cat: "obeygjanleg", year: 8,
+    hv: "ordflokkar", types: ["ob_tengiord", "ob_skilja"], lesson: "obeygjanleg", cover: "full" },
   { id: "ob-atviksord", nm: "Flokkar atviksorða og stigbreyting þeirra", cat: "obeygjanleg",
     year: 9, hv: "ordflokkar", types: [], lesson: null, cover: "none", item: 28 },
 

@@ -216,6 +216,18 @@ export const EXAMPLES = {
     how: "*mjög* segir hversu, *og* tengir saman tvo hluta setningarinnar, og *að* á undan nafnhætti (*að sofa*) er nafnháttarmerki.",
     forms: [],
   },
+  ob_tengiord: {
+    q: "Það var kalt. ___ fór ég í úlpu. Veldu: *af því að · þess vegna · en*",
+    a: "þess vegna",
+    how: "*Þess vegna* bendir á afleiðinguna, og á eftir því kemur sögnin strax: *þess vegna fór ég*. Á eftir *af því að* og *en* kæmi *ég fór*.",
+    forms: [],
+  },
+  ob_skilja: {
+    q: "Óli á hvorki bróður né systur. Hvort á Óli bróður eða systur?",
+    a: "hvorugt",
+    how: "*Hvorki … né* þýðir: ekki þetta og ekki hitt. Óli á ekki bróður og hann á ekki systur.",
+    forms: [],
+  },
 
   /* ---- Orðflokkagreining ---- */
   parse: {
