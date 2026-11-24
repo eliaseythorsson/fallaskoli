@@ -12,6 +12,8 @@
 
    The dates sit before TODAY, which is the day the test hands the server. */
 
+import { STATE_VERSION } from "../../src/js/core/slices.js";
+
 export const TODAY = new Date("2026-11-20T12:00:00Z");
 
 const skill = (xp, c, w, bestRun) => ({ xp, c, w, bestRun });
@@ -21,7 +23,10 @@ const tally = (a, l, p, t, g, x) => ({ a, l, p, t, g, x });
     and a test that did would not leak into the next. */
 export function fullProgress() {
   return {
-    v: 11,
+    /* The version this program saves: a copy of an older version is
+       brought up to date by migrate, which is not what this fixture tests
+       (tests/wordknowledge.test.js tests the step to 12). */
+    v: STATE_VERSION,
     profile: { id: "u-fixture", name: "Sól" },
     xp: 1050,
     bestLevel: 4,
@@ -129,5 +134,12 @@ export function fullProgress() {
       rv: { "2026-11-19": 3, "2026-11-18": 4 },
     },
     tour: { st: "done", at: 1795300000000, d: "2026-11-16", placed: 1, year: 9 },
+    wordKnowledge: {
+      "hugsa|so": { c: 1, w: 4, e: [
+        ["2026-11-17", "verbslot", "w"], ["2026-11-17", "verbslot", "w"], ["2026-11-18", "tbl_so", "w"],
+        ["2026-11-18", "meaning", "s"], ["2026-11-19", "verbslot", "r"], ["2026-11-19", "verbslot", "w"]] },
+      "piltur|kk": { c: 1, w: 1, e: [["2026-11-17", "fill", "r"], ["2026-11-18", "villur", "w"]] },
+      "sætur|lo": { c: 1, w: 0, e: [["2026-11-18", "lo_stig", "r"]] },
+    },
   };
 }

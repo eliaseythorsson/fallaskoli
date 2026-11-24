@@ -174,7 +174,23 @@ export interface State {
   mend: any;
   /** The guided first run (item 84, core/placement.js `cleanTour`). */
   tour: TourRecord | null;
+  /** One history per word (issue #8, core/wordknowledge.js). */
+  wordKnowledge: WordKnowledge;
 }
+
+/* ---------- word knowledge (core/wordknowledge.js) -------------------------- */
+
+/** A word entry as saved: [day, question type id, "r" | "w" | "s"]. */
+export type SavedWordEntry = [DayKey, string, string];
+
+/** One word's history: right and wrong totals and every entry, oldest first. */
+export interface WordHistory { c: number; w: number; e: SavedWordEntry[] }
+
+/** `S.wordKnowledge`: per word key ("hestur|kk"). */
+export type WordKnowledge = Record<string, WordHistory>;
+
+/** A word entry as `entriesOf` hands it out. */
+export interface WordEntry { day: DayKey; type: string; outcome: string }
 
 /**
  * One slice of the saved state and everything about its shape (core/slices.js,

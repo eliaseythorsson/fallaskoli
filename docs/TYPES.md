@@ -26,7 +26,7 @@ pinned devDependency. It is not in the built file or in the server image.
 - **`src/js/types.d.ts`** describes the shapes everything shares: `State`
   (the saved state, in the order of `blankState`), `Session`, `Task`,
   `CatalogueEntry`/`TaskType`/`Builder`, `View`, `Built`/`BuildEffect`, `Judgement`/`Effect`/`Finding`,
-  `ReviewEntry`/`ReviewState`, `LevelRecord`, `AnswerRecord`, `DiagRecord`,
+  `ReviewEntry`/`ReviewState`, `WordKnowledge`/`WordHistory`/`WordEntry`, `LevelRecord`, `AnswerRecord`, `DiagRecord`,
   `Node`, `PolicyChoice` and `Policy`. `Policy` and `Lexicon` are taken from
   the code itself (`ReturnType<typeof createPolicy>`, `… buildLexicon`), so
   they cannot drift. Nothing imports the file at run time. A module names the
@@ -68,6 +68,7 @@ The pure modules, where the shared shapes matter most:
 | `core/frametally.js` | the `frames` slice, `cleanFrames` |
 | `core/answer.js` | `judge`, `judgeRetry`, `judgeBonus`, `settle`, and the effects |
 | `core/review.js` | the review queue: `ReviewEntry`, `noteReview`, `dueEntries`, `dayOf` |
+| `core/wordknowledge.js` | one history per word (`WordKnowledge`, `WordEntry`): `noteWords`, `entriesOf`, `totalsOf`, the slice |
 | `core/difficulty.js` | saved levels (`LevelRecord`), `bumpDiff`, `levelRanges` (JSDoc only) |
 | `core/mastery.js` | `S.byType`, the mark (`Mark`), `markFrom` |
 | `core/skillmap.js` | the curriculum nodes' standing (`Standing`), `S.byNode`, the teacher's copy |
