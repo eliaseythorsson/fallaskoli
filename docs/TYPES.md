@@ -60,6 +60,7 @@ The pure modules, where the shared shapes matter most:
 | module | what it holds |
 |---|---|
 | `core/state.js` | the saved state and the session: `blankState`, `migrate`, `newSession`, `record` |
+| `core/slices.js` | the list of the saved state's slices (`Slice`, `SliceEntry`, `CleanContext`) and the walks over it |
 | `core/answer.js` | `judge`, `judgeRetry`, `judgeBonus`, `settle`, and the effects |
 | `core/review.js` | the review queue: `ReviewEntry`, `noteReview`, `dueEntries`, `dayOf` |
 | `core/difficulty.js` | saved levels (`LevelRecord`), `bumpDiff`, `levelRanges` (JSDoc only) |
@@ -114,8 +115,30 @@ They are the work list for each file as it is brought under the check.
      looser type: `/** @type {BuildEffect} */ (FX.asked(…))`. The brackets
      are part of the cast.
 4. Change behaviour only for a real bug, and say so in the commit.
-5. A field added to the saved state goes into `State` in `types.d.ts` as well
-   as into `blankState`, `migrate` and the server guard.
+5. A field added to the saved state is a new slice: see "Adding a slice"
+   below.
+
+## Adding a slice
+
+A slice is one top-level key of the saved state (`S.review`, `S.days` …).
+`src/js/core/slices.js` explains the description and the trap it guards
+against; in short:
+
+1. In the module that owns the slice, export a `Slice`
+   (`/** @type {import("../types").Slice<T>} */`): `key`, `blank()`,
+   `migrate(raw, whole)`, `merge(base, local, remote)`, `clean(value, ctx)`
+   (the server's check) and `ownText` (true only for text the pupil wrote
+   in their own words). `core/review.js` `reviewSlice` is the example. That
+   module must not import `core/state.js` or `core/merge.js`.
+2. Add it to `SLICES` in `core/slices.js`, and its shape to `State` in
+   `types.d.ts`.
+3. Give it realistic data in `tests/fixtures/full-progress.js`.
+   `tests/slices.test.js` fails until you do, and fails if migrate, merge or
+   the server's check would lose it.
+
+`blankState`, `migrate`, `mergeStates` and `cleanState` need no change: they
+walk the list. A slice that is still `notYet(…)` in the list (until #50) keeps
+its code in those four places.
 
 A few things that trip up TypeScript 7 in JSDoc:
 

@@ -41,6 +41,7 @@ import {
   googleConfig, googleAuthUrl, googleExchange,
 } from "./auth.mjs";
 import { cleanState, suspicion, MAX_STATE_BYTES } from "./guard.mjs";
+import { withoutOwnText, keepOwnText } from "../src/js/core/slices.js";
 import { privacyConfig, privacyPage, CONSENT_AGE, PRIVACY_VERSION } from "./privacy.mjs";
 import { createCalibration } from "./calibrate.mjs";
 import { createLive } from "./live.mjs";
@@ -561,8 +562,9 @@ export function createApp({
   };
 
   /** Everything held about one person, in one object. Used by the child's own
-      "Sækja gögnin mín" and by the administrator answering an access request. */
-  async function dossier(u) {
+      "Sækja gögnin mín" and by the administrator answering an access request.
+      The pupil's own text (core/slices.js `ownText`) is only in their own. */
+  async function dossier(u, { own = false } = {}) {
     const policies = await store.policies();
     const hidden = await store.hidden();
     const groups = await groupsNow();
@@ -606,7 +608,7 @@ export function createApp({
         .map((a) => ({ id: a.id, target: a.target, n: a.n, due: a.due, created: a.created,
           result: a.res[u.id] })),
       progressSavedAt: rec ? rec.at : null,
-      progress: rec ? rec.state : null,
+      progress: rec ? (own ? rec.state : withoutOwnText(rec.state)) : null,
     };
   }
 
@@ -634,7 +636,7 @@ export function createApp({
   on("GET", "/account/export", async (req, res) => {
     const u = await needUser(req, res);
     if (!u) return;
-    return sendFile(res, `fallaskoli-${u.username}.json`, await dossier(u));
+    return sendFile(res, `fallaskoli-${u.username}.json`, await dossier(u, { own: true }));
   });
 
   on("POST", "/account/name", async (req, res) => {
@@ -729,7 +731,9 @@ export function createApp({
     if (!ownsState(u, id)) return json(res, 403, { error: "Ekki þitt ástand." });
     const rec = await store.stateRec(id);
     if (!rec) return json(res, 404, { error: "Ekkert ástand." });
-    return json(res, 200, rec.state, revHeaders(rec.rev));
+    /* An administrator reading a pupil's progress does not get the pupil's
+       own text (core/slices.js `ownText`, ADR 0003). */
+    return json(res, 200, u.id === id ? rec.state : withoutOwnText(rec.state), revHeaders(rec.rev));
   });
 
   on("PUT", /^\/state\/([^/]+)$/, async (req, res, { params }) => {
@@ -757,10 +761,14 @@ export function createApp({
        breakfast erasing the evening's work on the laptop. */
     const m = /(\d+)/.exec(String(req.headers["if-match"] || ""));
     const before = await store.stateRec(id);
+    /* Somebody else's write (an administrator's) can neither replace nor
+       erase the pupil's own text: what is stored stays. */
+    if (u.id !== id) keepOwnText(clean, before ? before.state : null);
     const out = await store.putState(id, clean, { expectRev: m ? Number(m[1]) : null });
     if (!out.ok) {
       return json(res, 409, {
-        error: "Framvindan breyttist í öðru tæki.", rev: out.rev, state: out.state,
+        error: "Framvindan breyttist í öðru tæki.", rev: out.rev,
+        state: u.id === id ? out.state : withoutOwnText(out.state),
       }, revHeaders(out.rev));
     }
 

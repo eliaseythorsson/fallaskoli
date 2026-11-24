@@ -12,7 +12,7 @@ import { cleanTour } from "./placement.js";
 import { timeContext, mondayOf, weekKeys, isBreakWeek } from "./calendar.js";
 import { checkDayEnd, legacyStreakCredit } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
-import { blankReview, sanitiseReview } from "./review.js";
+import { assembleBlank, migrateSlices } from "./slices.js";
 import { cleanByType, masteryOf } from "./mastery.js";
 import { cleanByNode } from "./skillmap.js";
 import { cleanSeenTypes } from "./examples.js";
@@ -39,11 +39,16 @@ export function prevKey(key) {
   return dkey(new Date(y, m - 1, d - 1));
 }
 
-/** @returns {State} */
+/** A new pupil's state. Assembled in the order of core/slices.js: the
+    converted slices make their own blank, and the literal below holds the
+    ones not converted yet (#50). A key here that the list does not name, or
+    one the list says is converted, throws — see the trap at the top of
+    core/slices.js.
+    @returns {State} */
 export function blankState() {
   const skills = {};
   SKILL_IDS.forEach((id) => { skills[id] = { xp: 0, c: 0, w: 0, bestRun: 0 }; });
-  return {
+  return /** @type {State} */ (assembleBlank({
     v: STATE_VERSION,
     profile: { id: "local", name: "" },
     xp: 0, bestLevel: 1,
@@ -104,10 +109,9 @@ export function blankState() {
     /* Practice sessions (v6.10): the last 40, newest last —
        {at: ms, d: date, topic, n, c, j: judged, xp, top: [pattern ids]}. */
     runs: [],
-    /* The review queue (v6.13, core/review.js): what was missed and when it
-       is next to be asked — { items: [entry …], stats: { … } }. That file
-       describes the shape; nothing else writes to it. */
-    review: blankReview(),
+    /* `review`, the review queue (v6.13), is a converted slice: its blank,
+       its migrate, its merge and its server check are core/review.js
+       `reviewSlice`. */
     /* Each skill's level of difficulty, kept between visits (v6.13, critique
        item 11): { skill: {d, r, h, at, src} } — see core/difficulty.js. */
     difficulty: {},
@@ -141,7 +145,7 @@ export function blankState() {
        begun; then { st: "open"|"done"|"skipped", at, d, placed, year }. A
        pupil with no answers and no record is offered it once. */
     tour: null,
-  };
+  }));
 }
 
 /* Word classes a per-word key may legitimately carry. This is the lexicon's
@@ -249,9 +253,6 @@ export function migrate(raw) {
     duels: raw.duels && typeof raw.duels === "object" ? { ...raw.duels } : {},
     diag: raw.diag && typeof raw.diag === "object" && !Array.isArray(raw.diag) ? { ...raw.diag } : {},
     runs: Array.isArray(raw.runs) ? raw.runs.filter((r) => r && typeof r === "object").slice(-40) : [],
-    /* Rebuilt field by field: a state saved before the queue existed gets an
-       empty one, and nothing of the wrong shape survives a load. */
-    review: sanitiseReview(raw.review),
     /* Saved levels (v6.13). A state from before they existed is placed once
        from its skills' XP; from then on the saved levels are used and XP is
        not read again. */
@@ -268,6 +269,8 @@ export function migrate(raw) {
     /* Item 84: the record of the first run, or null (core/placement.js). */
     tour: cleanTour(raw.tour),
   });
+  /* The converted slices (core/slices.js) rebuild themselves. */
+  migrateSlices(S, raw);
   S.run = 0;
 
   S.counters = {

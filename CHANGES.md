@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Framvindan, sneið fyrir sneið (#49)
+- **Öryggisnet undir framvindunni**: hver hluti hennar (sneið) er á einum lista
+  (`core/slices.js`), og próf sendir framvindu með öllum sneiðum fylltum gegnum hleðslu,
+  sameiningu tækja og athugun þjónsins og stöðvast ef sneið týnist. Engin breyting sést.
+  Eigin texti nemandans (orðakortin sem koma) verður aðeins nemandans (`docs/PRIVACY.md` §1g).
+
 ### Plan: vocabulary, comprehension and stories
 - **`docs/DLD-RESEARCH.md`**: the evidence on interventions for teenagers with
   developmental language disorder (vocabulary, complex sentences and texts, narrative),

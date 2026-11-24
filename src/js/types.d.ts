@@ -176,6 +176,37 @@ export interface State {
   tour: TourRecord | null;
 }
 
+/**
+ * One slice of the saved state and everything about its shape (core/slices.js,
+ * where each field is explained). `T` is the slice's saved value.
+ */
+export interface Slice<T = any> {
+  key: string;
+  blank(): T;
+  migrate(raw: any, whole: any): T;
+  merge(base: any, local: any, remote: any): T;
+  clean(value: any, ctx: CleanContext): T;
+  /** Text the pupil wrote in their own words: only for the pupil (ADR 0003). */
+  ownText: boolean;
+  notYet?: false;
+}
+
+/** A key of the saved state whose code is still in the four places (#50). */
+export interface SliceNotYet {
+  key: string;
+  notYet: true;
+  ownText: false;
+}
+
+export type SliceEntry = Slice | SliceNotYet;
+
+/** What a slice's server check is told (core/slices.js `cleanContext`). */
+export interface CleanContext {
+  today: Date;
+  /** The last day key a saved day may have: tomorrow, for time zones. */
+  limit: DayKey;
+}
+
 /** Where a pupil is in the guided first run (core/placement.js). */
 export interface TourRecord {
   st: "open" | "done" | "skipped";

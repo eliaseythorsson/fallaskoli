@@ -308,6 +308,12 @@ src/js/core/calibration.js, classifiercheck.js  difficulty set from anonymous
                       counts of answers, and the check of the error
                       classifier against a sample of real wrong answers
                       (server/calibrate.mjs holds what only a server has)
+src/js/core/slices.js the saved state as one list of slices, each with its
+                      blank, migrate, merge and server check, and which hold
+                      the pupil's own text (`ownText`); blankState, migrate,
+                      mergeStates and cleanState walk it. The top of the file
+                      explains the trap it guards against and how to add a
+                      slice; tests/slices.test.js is the safety net
 src/js/core/merge.js, server.js, social.js, leaderboard.js  progress from two
                       devices put together, the program's one view of the
                       server, and what pupils see of each other
