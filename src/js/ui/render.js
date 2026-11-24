@@ -1713,6 +1713,10 @@ function submitTransform(app) {
 
 function drawTransform(app, t, j, val) {
   const { slip, short } = j.detail;
+  /* Right, but unusual in everyday speech (`t.odd`, Sameina og skipta): the
+     pupil's own sentence is shown, and the note under it holds the usual
+     one — so the model is not printed a second time. */
+  const odd = !!j.detail.unusual;
   const ok = j.ok, xp = j.xp;
   t.done = true;
   $("ans").disabled = true;
@@ -1742,9 +1746,9 @@ function drawTransform(app, t, j, val) {
     : `${xp ? `<span class="xpop">+${xp} XP</span>` : ""}
     <h3>${ok ? (slip ? "Rétt — en gáðu að broddunum" : cheer(CHEERS_OK)) : cheer(CHEERS_NO)}</h3>`;
   $("verdict").innerHTML = `<div class="verdict ${ok ? (slip ? "near" : "ok") : "no"}">${head}
-  ${ok && !slip && !short && !j.retry ? "" : wrote.map((w) => `<p>Þú skrifaðir <span class="forms">${esc(w)}</span>${/[.?!]$/.test(w) ? "" : "."}</p>`).join("")}
-  ${ok && j.retry && (slip || short) ? `<p>Seinna svarið: <span class="forms">${esc(val.trim())}</span></p>` : ""}
-  <p>${ok && !slip ? "" : "Rétt: "}${changedHTML(model, t.from || t.s.t)}</p>
+  ${ok && !slip && !short && !j.retry && !odd ? "" : wrote.map((w) => `<p>Þú skrifaðir <span class="forms">${esc(w)}</span>${/[.?!]$/.test(w) ? "" : "."}</p>`).join("")}
+  ${ok && j.retry && (slip || short || odd) ? `<p>Seinna svarið: <span class="forms">${esc(val.trim())}</span></p>` : ""}
+  ${odd ? "" : `<p>${ok && !slip ? "" : "Rétt: "}${changedHTML(model, t.from || t.s.t)}</p>`}
   ${j.detail.note ? `<p class="streakline">${fmt(j.detail.note)}</p>` : ""}
   ${short ? `<p class="streakline">${fmt("Afgangurinn af setningunni breytist ekki, svo það er í lagi að sleppa honum.")}</p>` : ""}
   ${other}

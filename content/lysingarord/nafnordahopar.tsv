@@ -59,7 +59,11 @@ rooms	gangur, stofa, herbergi
 # where one lives: *í húsi*, *í borg*, *í landi*, *í herbergi* (not *á stað*)
 homes	hús, borg, land, herbergi
 house	hús
-# the room one picks: *stærsta herbergið*, not "bjartasta ganginn"
+# "bedroom" is only this group's internal NAME (rammar.tsv refers to it; a pupil
+# never sees it, so it is not translated). It is a group of ONE noun on purpose —
+# the room one picks or gets: *stærsta herbergið*, not "bjartasta ganginn" —
+# for the two frames in rammar.tsv that list it (*Hún fékk ___ {N} en ég.*,
+# *Ég tók ___ {N}.*).
 bedroom	herbergi
 # what a town has the biggest of
 town	hús, bíll, hundur, kisa

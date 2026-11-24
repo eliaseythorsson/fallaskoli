@@ -452,8 +452,11 @@ export function gradeHunt(task, edits) {
  * copied *bíðum* back has changed nothing.
  */
 export function gradeTransform(input, task) {
-  const v = judgeText(input, task.answers);
+  let v = judgeText(input, task.answers);
   if (v === "empty") return "empty";
+  /* Right, but unusual in everyday speech (`task.odd`, Sameina og skipta):
+     graded as any right answer; `transformFeedback` adds the usual way. */
+  if (v === "wrong" && unusual(input, task)) v = judgeText(input, task.odd.answers);
   /* What the pupil was shown: the bank sentence, or — for the kinds that
      show something else (a passive, two sentences, a quotation) — `from`.
      For *active* and *join* the bank sentence IS the answer. */
@@ -467,6 +470,15 @@ export function gradeTransform(input, task) {
   if (v === "wrong" && task.open) return "unlisted";
   if (v === "wrong") return (SHORT_OK.has(task.kind || "past") && tailLeftOut(input, task)) || "wrong";
   return v === "accents" ? "slip" : v;
+}
+
+/** Is this one of the task's right-but-unusual answers (`task.odd`: {
+    answers, note }) and not one of its ordinary ones? Sameina og skipta
+    (tasks/malbeiting.js) lists there what is good Icelandic but seldom said:
+    the answer is right, and the note shows the usual way. */
+export function unusual(input, task) {
+  return !!(task.odd && task.odd.answers && task.odd.answers.length) &&
+    judgeText(input, task.answers) === "wrong" && judgeText(input, task.odd.answers) !== "wrong";
 }
 
 /* The kinds where an unchanged end may be left out (`tailLeftOut`). Not the
@@ -530,6 +542,9 @@ export function transformFeedback(input, task, grade) {
   if (grade === "wrong" && task.open && task.copyNote) return task.copyNote;
   if (!ok) return grade === "empty" ? null : transformNote(input, task);
   const text = String(input || "").trim();
+  /* Right, but not how it is usually said: the usual way, shown. This comes
+     before the smaller remarks below — one thing at a time. */
+  if (unusual(input, task)) return task.odd.note;
   /* Two sentences are two full stops, or at least one between them. */
   if (task.kind === "split" && !/[.!?]\s+\S/.test(text))
     return "Rétt — en mundu eftir punkti á milli setninganna og stórum staf á eftir honum.";
@@ -1185,7 +1200,7 @@ JUDGES.umritun = (t, response, hist) => {
     ok, verdict: VERDICT(ok, slip), effects,
     resp: { kind: "transform", typed: text, ok },
     finish: { slip },
-    detail: { grade, slip, short, note },
+    detail: { grade, slip, short, note, ...(unusual(text, t) ? { unusual: true } : {}) },
   });
 };
 

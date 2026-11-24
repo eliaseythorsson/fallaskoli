@@ -1309,17 +1309,20 @@ for it in out["hver"]:
 import clause_shape as CS
 items = []
 seen_pairs = set()
-for lvl, kind, conj, first, second, joined, apart, line in X.COMBINE:
+# "odd" (the column „óvenjulegt“): joined sentences that are right but unusual
+# in everyday speech. The app accepts them and points to the model; they are
+# parsed and checked here exactly as the other joined sentences are.
+for lvl, kind, conj, first, second, joined, apart, line, odd in X.COMBINE:
     where = f"COMBINE content/malbeiting/sameina.tsv:{line} {first} {second}"
     if lvl not in (1, 2, 3): fail(f"{where}: þyngd must be 1, 2 or 3")
     if (first, second) in seen_pairs: fail(f"{where}: the pair twice")
     seen_pairs.add((first, second))
-    for t in joined + [t for pair in apart for t in pair]:
+    for t in joined + odd + [t for pair in apart for t in pair]:
         check_words(t, where)
         if blocked_words(t): fail(f"{where}: a word on the block list ({t})")
-    for why in CS.problems({"kind": kind, "conj": conj, "joined": joined, "apart": apart}): fail(f"{where}: {why}")
+    for why in CS.problems({"kind": kind, "conj": conj, "joined": joined + odd, "apart": apart}): fail(f"{where}: {why}")
     items.append({"lvl": lvl, "kind": kind, "conj": conj, "a": first, "b": second,
-                  "joined": joined, "apart": apart})
+                  "joined": joined, "apart": apart, **({"odd": odd} if odd else {})})
 out["combine"] = items
 
 # ---------------------------------------------------------------- word lists
