@@ -157,7 +157,7 @@ test("a rescue drill builds its questions without touching the state", () => {
       const b = drillTask(lex, v, seeded(turn), w, turn);
       assert.deepEqual(plain(a), plain(b), `${w.o}, turn ${turn}`);
       if (a) assert.equal(a.task.word, wordKey(w.o, w.c));
-      assert.equal(v.drillWord, null, "the drilled word is in a view of the drill's own");
+      assert.equal(v.mustAsk, null, "the drilled word is in a view of the drill's own");
     }
   }
   assert.deepEqual(copy(p), before);
@@ -166,11 +166,12 @@ test("a rescue drill builds its questions without touching the state", () => {
 test("the view is read-only, and deriving one leaves the first as it was", () => {
   const p = pupil(2);
   const v = view(p);
-  assert.throws(() => { v.forcedNoun = lex.nouns[0]; }, TypeError);
+  assert.throws(() => { v.mustAsk = { word: lex.nouns[0], strict: false }; }, TypeError);
   assert.throws(() => { v.policy = null; }, TypeError);
-  const w = withView(v, { drillWord: lex.nouns[0] });
-  assert.equal(v.drillWord, null);
-  assert.equal(w.drillWord, lex.nouns[0]);
+  const w = withView(v, { mustAsk: { word: lex.nouns[0], strict: true } });
+  assert.equal(v.mustAsk, null);
+  assert.equal(w.mustAsk.word, lex.nouns[0]);
+  assert.ok(Object.isFrozen(w.mustAsk));
   assert.equal(w.S, v.S);
   /* with nothing given, the policy is the child's own and the day is today */
   const bare = makeView({ S: p.S, sess: p.sess });

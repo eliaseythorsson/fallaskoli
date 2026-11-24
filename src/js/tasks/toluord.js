@@ -35,14 +35,14 @@ import { wordKey } from "../core/state.js";
 import { MORE_HELPER_NOUNS } from "../core/helpers.js";
 import { showable } from "./frames.js";
 import { built, FX } from "./effects.js";
-import { pick, wpick, shuffle, randInt, bandFor, levelFor, forced, drilling, forcedCell,
-         forcedItem, wordWeight, cellWeight, sameInEveryCell, cap1, caseWord, textSentence,
+import { pick, wpick, shuffle, randInt, bandFor, levelFor, forcedCell,
+         forcedItem, cellWeight, sameInEveryCell, cap1, caseWord, textSentence,
          itemsForBand, nearBand, lexWord } from "./shared.js";
 
 /* What a review may ask of the hand-written numeral items (tasks/review.js):
    the cell ("to:KVK-ÞFFT") and the numeral (*tveir*). Both or nothing. */
 const numeralAsked = (view) => {
-  const fc = forcedCell(view), fw = forced(view, ["to"]);
+  const fc = forcedCell(view), fw = view.askedWord(["to"]);
   return (x) => (!fc || "to:" + x.m === fc) && (!fw || (x.l === fw.o && x.c === fw.c));
 };
 
@@ -61,16 +61,16 @@ export function tableNumeral(lex, view, rng) {
   const pool = [...(lex.byClass.to || []),
     ...(lex.byClass.rt || []).filter((x) => x.r <= ordinalRankCap(b))];
   if (!pool.length) return null;
-  if (drilling(view) && !forced(view, ["to", "rt"])) return null;
+  if (view.cannotAsk(["to", "rt"])) return null;
   /* A review (tasks/review.js) asks for the table its cell is in — of the
      review's own word, or of a numeral that has such a table (most ordinals
      have no plural worth asking: *þriðju* × 4). */
   const fc = forcedCell(view);
   const f = /^(KK|KVK|HK)-/.exec(fc || "");
   if (fc && !f) return null;
-  const able = fc && !forced(view, ["to", "rt"]) ? pool.filter((x) => numeralCells(view, x, f[1], fc)) : pool;
+  const able = fc && !view.askedWord(["to", "rt"]) ? pool.filter((x) => numeralCells(view, x, f[1], fc)) : pool;
   if (!able.length) return null;
-  const w = forced(view, ["to", "rt"]) || wpick(able, (x) => wordWeight(lex, view, x, "toluord"), rng);
+  const w = view.pickWord(lex, able, "toluord", rng, ["to", "rt"]);
   const kyn = f ? f[1] : pick(["KK", "KVK", "HK"], rng);
   const made = numeralCells(view, w, kyn, fc);
   if (!made) return null;
@@ -195,8 +195,8 @@ export function pluralItems() {
 /** "Ég á ___ (2) systur." → tvær */
 export function toAgree(lex, view, rng) {
   const P = view.policy;
-  if (drilling(view) && !forced(view, ["to"])) return null;
-  const reviewing = !!(forcedCell(view) || forced(view, ["to"]));
+  if (view.cannotAsk(["to"])) return null;
+  const reviewing = !!(forcedCell(view) || view.askedWord(["to"]));
   /* A review asks for what was missed, whatever its level; otherwise the
      items near the band (the genitive frames are level 3, so a beginner
      meets them only once the easier ones are used up). */
@@ -230,10 +230,10 @@ const pluralKey = (x) => `p${x.n}:${x.t}`;
 /** The same item as a choice between forms of the numeral. */
 export function toChoice(lex, view, rng) {
   const P = view.policy;
-  if (drilling(view) && !forced(view, ["to"])) return null;
+  if (view.cannotAsk(["to"])) return null;
   const items = numeralItems().filter((x) => P.mark(x.m) && x.n > 1 && numeralAsked(view)(x));
   if (!items.length) return null;
-  const reviewing = !!(forcedCell(view) || forced(view, ["to"]));
+  const reviewing = !!(forcedCell(view) || view.askedWord(["to"]));
   const x = pick(reviewing ? items : itemsForBand(view, "toluord", items, (y) => "c" + y.t, 8), rng);
   const para = EX.para[`${x.l}|${x.c}`] || {};
   const right = new Set(x.a);
@@ -265,7 +265,7 @@ export function toDate(lex, view, rng) {
   const P = view.policy;
   const b = bandFor(view, "toluord");
   const D = EX.dates;
-  if (drilling(view)) return null;
+  if (view.cannotAsk([])) return null;
   /* A review (tasks/review.js) asks for the case that was missed. */
   const frames = D.frames.filter((f) => P.mark(`KK-${f.case}ET`) &&
     (!forcedCell(view) || forcedCell(view) === "to:dags-" + f.case));
@@ -307,7 +307,7 @@ export function toDate(lex, view, rng) {
 /** "Ég keypti ___ (2) buxur." → tvennar */
 export function toPlural(lex, view, rng) {
   const P = view.policy;
-  if (drilling(view)) return null;
+  if (view.cannotAsk([])) return null;
   /* A review (tasks/review.js) asks for the very item that was missed:
      *tvennar buxur* is known noun by noun. */
   const want = forcedItem(view);

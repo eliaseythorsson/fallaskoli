@@ -44,11 +44,15 @@ function viewForType(view, t) {
   return moved ? withView(view, { sess: { ...view.sess, diff } }) : view;
 }
 
+/** The view a type is built from: calibrated, and knowing which type it is
+    building (`typeId`, tasks/view.js). */
+const viewFor = (view, t) => withView(viewForType(view, t), { typeId: t.id });
+
 /** Mark a task of ordinary practice as one whose answer may be counted, with
     the level its skill REALLY stood at (not the shifted one): the table is
     keyed by where the pupil is, and says what to build for them there. */
 function markForCount(view, task) {
-  if (view.cal && !view.force && !view.drillWord && task.skill)
+  if (view.cal && !view.force && !view.askedWord() && task.skill)
     task.calBand = bandOf(view.sess, task.skill);
 }
 
@@ -81,7 +85,7 @@ function shown(type, b, after = []) {
  */
 export function buildTask(lex, view, rng, typeId) {
   const type = typeById(typeId);
-  return type ? shown(type, type.build(lex, view, rng)) : null;
+  return type ? shown(type, type.build(lex, withView(view, { typeId: type.id }), rng)) : null;
 }
 
 /**
@@ -94,11 +98,12 @@ export function nextTask(lex, view, rng) {
   /* A noun waiting to be asked again (a wrong cloze) has its turn now,
      whatever comes out — in the cloze if a sentence accepts it, and otherwise
      it is let go. */
-  const after = view.forcedNoun ? [FX.clearForcedNoun()] : [];
-  if (view.forcedNoun) {
-    const b = typeById("fill").build(lex, view, rng);
+  const retry = view.retryWord();
+  const after = retry ? [FX.clearForcedNoun()] : [];
+  if (retry) {
+    const b = typeById("fill").build(lex, withView(view, { typeId: "fill" }), rng);
     if (b) { b.task.typeId = "fill"; return built(b.task, [...b.effects, ...after]); }
-    view = withView(view, { forcedNoun: null });
+    view = withView(view, { mustAsk: null });
   }
   const P = view.policy;
   const all = TASKS.filter((t) => enabled(P, t) && weightOf(t, view) > 0);
@@ -139,14 +144,14 @@ export function nextTask(lex, view, rng) {
     }, rng);
     if (tried.has(choice.id) && tried.size < avail.length) continue;
     tried.add(choice.id);
-    const b = shown(choice, choice.build(lex, viewForType(view, choice), rng), after);
+    const b = shown(choice, choice.build(lex, viewFor(view, choice), rng), after);
     if (b) { markForCount(view, b.task); return b; }
   }
 
   /* The last resort walks only the builders that ARE available and returns
      null if nothing is possible. No material beats material switched off. */
   for (const t of [...avail, ...all.filter((x) => !avail.includes(x))]) {
-    const b = t.build(lex, viewForType(view, t), rng);
+    const b = t.build(lex, viewFor(view, t), rng);
     if (b) { b.task.typeId = t.id; markForCount(view, b.task); return built(b.task, [...b.effects, ...after]); }
   }
   return null;

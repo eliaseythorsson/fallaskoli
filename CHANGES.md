@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Orðavalið á einum stað (#45)
+- **Engin breyting sést**: hvaða orð spurning er um velur nú einn staður (`view.pickWord`
+  í `tasks/view.js`) í stað þess að hver spurningagerð velji sjálf, og „spurðu um þetta orð“ (björgunaræfing,
+  upprifjun, rétta fallið aftur) er eitt (`view.mustAsk`). Sama fræ gefur sömu spurningar (18.242 tilvik eins).
+
 ### Orðaþekking: allt sem les orðin fer í gegnum hana (#42)
 - **Engin breyting sést**: orðaheilsa, björgunaræfingin, orðasafnið, sjaldgæfni, merkin, færnikortið og
   orðavalið lesa orðin og björgunarskrána í gegnum `core/wordknowledge.js`, sem sameinar líka og athugar þær.

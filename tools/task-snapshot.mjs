@@ -28,6 +28,8 @@
      C  practice sessions of 15 as tasks/next.js chooses them, mixed and per
         category, with a noun waiting for another cloze now and then
      D  rescue drills: four words of every class, ten turns
+     E  reviews (tasks/review.js): a question of every type asked again,
+        cell first and word first, with its sentence avoided (#45)
    Each line is [fingerprint of the task(s), a readable hint, fingerprint of
    the state afterwards] — the state too, because what showing a question
    changes (tasks/effects.js) is part of what a builder means.
@@ -215,6 +217,22 @@ async function take() {
       c.policy = old ? undefined : ST.effectivePolicy(c.S);     // a drill runs under the child's own policy
       if (turn === 6) c.forcedNoun = lex.nouns[5];
       put(`D|${cls}|${w.o}|${turn}|${seed}`, api.drill(c, w, turn, seeded(555 + turn * 3 + seed)), c);
+    }
+  }
+  /* E. reviews: a question of every type, asked again as the review queue
+     asks it (tasks/review.js) — its cell and word, item, or pattern forced,
+     the word first or the cell first, with the sentence just missed avoided. */
+  if (!old && T.reviewTask) for (const spec of T.TASKS) for (const d of [1, 3, 5]) for (let seed = 0; seed < 6; seed++) {
+    const c = host(seed + 120, d, seed % 2 === 1);
+    const t = api.type(spec, c, seeded(8100 + seed * 17 + d));
+    if (!t) continue;
+    const entry = { t: spec.id, c: t.cell || null, w: t.word || null, i: t.item || null,
+      p: (t.miss && t.miss[0]) || null, k: `${spec.id}#${seed}` };
+    for (const wordFirst of [false, true]) {
+      const b = T.reviewTask(lex, viewOf(c), seeded(8300 + seed * 7 + d), entry,
+        { avoid: t.s ? t.s.t : null, wordFirst });
+      put(`E|${spec.id}|${d}|${seed}|${wordFirst ? "w" : "c"}`, b && { ...b.task, hit: b.hit }, c);
+      if (b) T.applyEffects(c, b.effects);
     }
   }
   process.stdout.write(JSON.stringify(snap));

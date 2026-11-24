@@ -34,7 +34,7 @@ import { wordKey } from "../core/state.js";
 import { secondLanguage as pupilIsL2 } from "../core/profile.js";
 import { explainVerbForm } from "./explain.js";
 import { built, FX } from "./effects.js";
-import { pick, shuffle, askable, bandFor, sentPool, levelFor, fresh, forced, drilling, forcedCell } from "./shared.js";
+import { pick, shuffle, askable, bandFor, sentPool, levelFor, fresh, forcedCell } from "./shared.js";
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -1703,8 +1703,8 @@ function speechItems(lex) {
 
 export function taskSpeech(lex, view, rng) {
   const P = view.policy;
-  const fw = forced(view, ["so"]);
-  if (drilling(view) && !fw) return null;
+  const fw = view.askedWord(["so"]);
+  if (view.cannotAsk(["so"])) return null;
   const fc = forcedCell(view);
   const avoid = view.force && view.force.avoid;
   const hard = bandFor(view, PROD) >= 4;

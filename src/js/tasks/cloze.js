@@ -10,8 +10,7 @@ import { readMark } from "../core/marks.js";
 import { wordKey } from "../core/state.js";
 import { explainSlot } from "./explain.js";
 import { substitutable, acceptsNoun, slotFrame, candidateNouns, settled, repeatsNoun } from "./frames.js";
-import { pick, wpick, shuffle, askable, sentPool, drilling, forced, forcedCell, wordWeight,
-         isTimeNoun, bandFor, caseCellEase } from "./shared.js";
+import { pick, shuffle, askable, sentPool, forcedCell, isTimeNoun, bandFor, caseCellEase } from "./shared.js";
 
 /* How often a slot of each case is let through when the cloze is `balanced`
    (critique item 15). The bank is full of subjects, so left alone 37% of the
@@ -32,6 +31,10 @@ export function nounCloze(lex, view, rng, { noun = null, only = null, balanced =
   if (forcedCell(view)) return forcedCloze(lex, view, rng, { noun, only });
   const P = view.policy;
   let s = null, n = null, a = null;
+  /* A word given that must be asked (a drill, a review): the view's strict
+     `mustAsk`, whatever its class — `noun` is the word itself, when the
+     caller has one to ask about. */
+  const given = !!view.askedWord();
   const pool0 = sentPool(lex, view, "nafnord");
   if (!pool0.length) return null;
   for (let k = 0; k < 60; k++) {
@@ -51,7 +54,7 @@ export function nounCloze(lex, view, rng, { noun = null, only = null, balanced =
     if (!a.fall) continue;
     if (!askable(P, t.m)) continue;
     /* Not in a drill: that asks about one word and takes the sentence it can get. */
-    const weigh = balanced && !drilling(view);
+    const weigh = balanced && !given;
     /* Two intents, one each: item 15 decides HOW OFTEN each case is asked
        (CASE_ODDS), and the second axis (item 16) decides WHICH CELL of that
        case — at a low level the plural and the article are kept less often
@@ -60,7 +63,7 @@ export function nounCloze(lex, view, rng, { noun = null, only = null, balanced =
        genitive singular already sat at the floor at þyngd 1 and the genitive
        became the rarest case again. Not in a drill, and not for the word
        asked again after a wrong answer: those take the sentence they can get. */
-    const ease = drilling(view) || noun ? 1 : caseCellEase(lex, view, "nafnord", t.m);
+    const ease = given || noun ? 1 : caseCellEase(lex, view, "nafnord", t.m);
     const odds = (weigh ? CASE_ODDS[a.fall] : 1) * ease;
     if (odds < 1 && rng() >= odds) continue;
     const open = substitutable(s);
@@ -68,7 +71,7 @@ export function nounCloze(lex, view, rng, { noun = null, only = null, balanced =
        use — nor is it to the word asked again after a wrong answer: the
        sentence's own noun would be asked instead, the word let go, and the
        pupil never asked it again. */
-    if ((drilling(view) || noun) && !open) continue;
+    if ((given || noun) && !open) continue;
     if (noun && open) {
       /* The same word again after a wrong answer — but only in a sentence
          that accepts it. */
@@ -82,7 +85,7 @@ export function nounCloze(lex, view, rng, { noun = null, only = null, balanced =
     } else {
       const pool = candidateNouns(lex, s);
       if (!pool.length) continue;
-      n = wpick(pool, (x) => wordWeight(lex, view, x, "nafnord"), rng);
+      n = view.pickByWord(lex, pool, (x) => x, "nafnord", rng);
     }
     if (!n || !n.forms[t.m]) continue;
     /* The card prints the dictionary form; a slot whose answer is that very
@@ -130,9 +133,9 @@ function forcedCloze(lex, view, rng, { noun = null, only = null }) {
   const P = view.policy;
   const cell = forcedCell(view);
   const avoid = view.force.avoid || null;
-  const want = noun || forced(view, ["kk", "kvk", "hk"]);
+  const want = noun || view.askedWord(["kk", "kvk", "hk"]);
   /* A word that is not a noun cannot be put in a noun's slot. */
-  if (!want && drilling(view)) return null;
+  if (!want && view.cannotAsk(["kk", "kvk", "hk"])) return null;
   if (!askable(P, cell)) return null;
   const fits = (s) => {
     if (s.slot == null || s.nf || s.t === avoid) return false;
@@ -155,7 +158,7 @@ function forcedCloze(lex, view, rng, { noun = null, only = null }) {
         } else if (own && own.o === want.o && own.c === want.c) n = own;
       } else if (open) {
         const cands = candidateNouns(lex, s);
-        if (cands.length) n = wpick(cands, (x) => wordWeight(lex, view, x, "nafnord"), rng);
+        if (cands.length) n = view.pickByWord(lex, cands, (x) => x, "nafnord", rng);
       } else n = own;
       if (n && n.forms[t.m]) return clozeTask(s, n, readMark(t.m));
     }

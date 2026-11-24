@@ -3,7 +3,7 @@
    core/review.js keeps the queue and knows nothing about builders. This file
    is the other half: it takes an entry — "ÞGFFT of *hestur*, missed in a
    cloze" — and has the entry's own question type build it again, with the
-   cell or the word forced (`view.force`, tasks/view.js).
+   cell forced (`view.force`) or the word (`view.mustAsk`, tasks/view.js).
 
    No builder is trusted to have honoured the request. Some know the hook
    (the cloze, the verb questions, the tables, the adjective and numeral
@@ -69,11 +69,13 @@ export function reviewTask(lex, view, rng, entry, { avoid = null, wordFirst = fa
   const word = wordOf(lex, entry.w);
   const c = entry.c || null;
 
-  const attempt = (force, drillWord, tries, ok) => {
-    const v = withView(view, { force: force ? Object.freeze(force) : null,
-      drillWord: drillWord || null, forcedNoun: null });
+  /* `asked`: the word to ask about, or null — the view's strict `mustAsk`
+     (tasks/view.js); `force` holds the cell, the item and the sentence to avoid. */
+  const attempt = (force, asked, tries, ok) => {
+    const v = withView(view, { force: force ? Object.freeze(force) : null, typeId: spec.id,
+      mustAsk: asked ? { word: asked, strict: true } : null });
     for (let k = 0; k < tries; k++) {
-      const b = drillWord && spec.drill ? spec.drill(lex, v, rng, drillWord) : spec.build(lex, v, rng);
+      const b = asked && spec.drill ? spec.drill(lex, v, rng, asked) : spec.build(lex, v, rng);
       if (!b) continue;
       if (b.task.answers !== undefined && !(b.task.answers && b.task.answers.length)) continue;
       if (ok(b.task)) return b;
@@ -84,10 +86,10 @@ export function reviewTask(lex, view, rng, entry, { avoid = null, wordFirst = fa
   const steps = [];
   if (entry.i) steps.push(["item", () => attempt({ item: entry.i, cell: c, avoid }, null, TRIES.item,
     (t) => t.item === entry.i)]);
-  if (c && word) steps.push(["both", () => attempt({ cell: c, word, avoid }, word, TRIES.both,
+  if (c && word) steps.push(["both", () => attempt({ cell: c, avoid }, word, TRIES.both,
     (t) => hasCell(t, c) && t.word === entry.w)]);
   const cellStep = c ? ["cell", () => attempt({ cell: c, avoid }, null, TRIES.cell, (t) => hasCell(t, c))] : null;
-  const wordStep = word ? ["word", () => attempt({ word, avoid }, word, TRIES.word, (t) => t.word === entry.w)] : null;
+  const wordStep = word ? ["word", () => attempt({ avoid }, word, TRIES.word, (t) => t.word === entry.w)] : null;
   steps.push(...(wordFirst ? [wordStep, cellStep] : [cellStep, wordStep]).filter(Boolean));
   /* The fall-back: the same type, and a question that tests the pattern the
      miss was filed under. With no pattern on the entry, the type is all

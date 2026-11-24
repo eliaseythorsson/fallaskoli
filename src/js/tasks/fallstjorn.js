@@ -86,7 +86,7 @@ export function fsPrepNoun(lex, view, rng) {
     const p = s.tok[i - 1];
     return !!p && p.c === "forsetning" && !!p.pg && !headsTimePhrase(lex, s, i - 1);
   };
-  const t = nounCloze(lex, view, rng, { noun: view.forcedNoun, only });
+  const t = nounCloze(lex, view, rng, { noun: view.retryWord(), only });
   if (!t || !only(t.s, t.i)) return null;
   const p = t.s.tok[t.i - 1].w.toLowerCase();
   return built({
@@ -154,8 +154,8 @@ export function fsMotion(lex, view, rng) {
   const P = view.policy;
   if (!P.attr("fall", "ÞF") || !P.attr("fall", "ÞGF")) return null;
   /* A review asks for the very pair (`force.item`), or one about the same
-     preposition (`force.cell`) or noun (`view.drillWord`). */
-  const want = forcedItem(view), cell = forcedCell(view), dw = view.drillWord;
+     preposition (`force.cell`) or noun (`view.askedWord()`). */
+  const want = forcedItem(view), cell = forcedCell(view), dw = view.askedWord();
   const pairs = motionPairs().filter((y) => (!want || y.key === want) &&
     (!cell || cell === "stjórn:" + y.go.prep) && (!dw || (dw.o === y.go.noun && dw.c === y.go.g)));
   if (!pairs.length) return null;
@@ -179,7 +179,7 @@ export function fsVerb(lex, view, rng) {
   const P = view.policy;
   /* VERB_CASE by hand and VERB_FRAMES × noun groups (critique item 23). A
      review asks for the very item, the verb (`force.cell`) or the noun. */
-  const want = forcedItem(view), cell = forcedCell(view), dw = view.drillWord;
+  const want = forcedItem(view), cell = forcedCell(view), dw = view.askedWord();
   const key = (y) => y.t + y.noun;
   const items = EX.verbCase.filter((x) => P.mark(x.m) && (!want || key(x) === want) &&
     (!cell || cell === "stjórn:" + x.verb) && (!dw || (dw.o === x.noun && dw.c === x.g)));
@@ -243,10 +243,10 @@ export function impersonalItems() {
 /** "___ (ég) langar í ís." → Mig. Two traps take the nominative. A review
     (tasks/review.js) asks for the very item (`view.force.item`), one of the
     same verb (`force.cell`, "stjórn:langa"), or the same subject
-    (`view.drillWord`, which a review sets for `force.word`). */
+    (`view.askedWord()`, the word a review asks for). */
 export function fsImpers(lex, view, rng) {
   const P = view.policy;
-  const want = forcedItem(view), cell = forcedCell(view), dw = view.drillWord;
+  const want = forcedItem(view), cell = forcedCell(view), dw = view.askedWord();
   const items = impersonalItems().filter((x) => P.mark(x.m) &&
     (!want || x.key === want) && (!cell || "stjórn:" + x.verb === cell) &&
     (!dw || (dw.o === x.l && dw.c === x.c)));

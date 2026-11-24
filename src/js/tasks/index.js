@@ -6,14 +6,15 @@
      <skill>.js         one file per category, its BUILDERS by type id: nafnord, lysingarord, sagnord,
                         fornofn, toluord, obeygjanleg, greining, fallstjorn,
                         ordaford, setningafraedi, malbeiting, setningagerd
-     view.js            what a builder may look at: (lex, view, rng)
+     view.js            what a builder may look at: (lex, view, rng); and
+                        which word it asks about (`view.pickWord`)
      effects.js         what showing a question changes, as data
      next.js            choosing the next question of a session or a duel
      drill.js           the rescue drill: questions about one word; and
                         "Þrjár í röð", three questions on one error pattern
      review.js          a review: an entry of the queue (core/review.js) asked
                         again, with its cell or word forced
-     shared.js          the random source, word choice, pools, small helpers
+     shared.js          the random source, a word's weight, pools, small helpers
      cloze.js, tap.js   the two builders more than one category asks for
      frames.js          sentence frames: one word lifted out, another put in
      explain.js         the explanation under an answer
