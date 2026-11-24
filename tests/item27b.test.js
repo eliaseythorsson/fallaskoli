@@ -352,8 +352,13 @@ test("so_bodhattur: the steps really change the question", () => {
   }
   const hard = (band) => BH.get(band).filter((t) => (t.v.irr || 0) >= 4).length / 1500;
   assert.ok(hard(5) > hard(3) + 0.15, `irregular verbs ${Math.round(hard(3) * 100)}% → ${Math.round(hard(5) * 100)}%`);
+  /* The rank rises from 1 to 3. From 3 to 5 it is the irregular verbs that
+     rise (above), and they are among the commonest, so the median rank at 5
+     is a coin: five blocks of 1,500 seeds on main before #9 gave 3 → 5 as
+     110→111, 110→107, 111→106, 105→106, 113→110 (only the first, the one
+     pinned here, rose). 1 → 3 rose in every block, before and after #9. */
   const rank = (band) => median(BH.get(band).map((t) => t.v.r));
-  assert.ok(rank(5) > rank(3) && rank(3) > rank(1), `median rank ${rank(1)} → ${rank(3)} → ${rank(5)}`);
+  assert.ok(rank(3) > rank(1), `median rank ${rank(1)} → ${rank(3)} → ${rank(5)}`);
   /* Never an order to harm, and no verb with no boðháttur in use. */
   const asked = new Set([...BH.values()].flat().map((t) => t.v.o));
   for (const o of ["drepa", "stela", "ljúga", "deyja", "munu", "skulu", "mega", "vilja", "verða"]) assert.ok(!asked.has(o), o);

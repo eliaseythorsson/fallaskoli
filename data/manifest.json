@@ -18,9 +18,9 @@
   "pipeline/parse_guard.py": "e7fa87891c0a4cebec431c2aac84383a6c2b4cfa3b5ae07ecb679d4da4da6dea",
   "pipeline/parse_overrides.py": "8c247a4c2379695f21114ad2c37a4dfa1a853616787e473d976d761dbdfad03d",
   "pipeline/build_freq.py": "a498bb7646c6b2279335d131b9d96576cb409025025fc3f0e2a18e6c1a5d0a5c",
-  "pipeline/build_lexicon.py": "b16c6c97e40dffd808b8e19e94f16b80931348c0cd75e01bb11b5b28a7aed0de",
+  "pipeline/build_lexicon.py": "920575308f4dd4673a56fa3cfe8ad59743e3e386b5e72b22dc5fa25a86bbd19c",
   "pipeline/build_sentences.py": "956df1d41b67c6ee90f3410b81acc5ecdf2f16f8ed28b505dc9462da55d9965d",
-  "pipeline/build_bundle.py": "656e4622ec1426e7f9a3bb8a0c41661dc799c9191fa5620a4dededf695e7e25a",
+  "pipeline/build_bundle.py": "a83cb6fbcb6bcbba2b7c6baf9cfd0d21db4a81e179c34f2713349382d98a3f6b",
   "pipeline/irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
   "pipeline/exercises.py": "88419ad19bf71e093566446ff6d858e3579865e057438663ba4d041fb90264b7",
   "pipeline/build_exercises.py": "4fa116847fc848e7af7f65f342268948a8cb9c0bce2efc3cc45107173666ef5c",
@@ -28,8 +28,8 @@
   "pipeline/content_io.py": "f70116a2eb0031119ab311329a3912fe144d943b9a74583c9aab8902ad7566fe",
   "pipeline/who_did.py": "1abfd3de384d81f7015f2c65ca007fb527f838f34a52034b6a513e931c8e3a46",
   "pipeline/clause_shape.py": "c621aff33c85e96bf2a85df4adb288a74d2d07b640f7afeefeb6055b210104f0",
-  "sources/lino2.csv": null,
-  "pipeline/lino.py": "e3bef7f6b7b5d0d23d0bd0eb16fc5fe8ce07d815f8f63b40aeef7f2e486e668a",
+  "sources/lino2.csv": "4e9450d6bd1f6230f9377d61e33b0b49e479dbb24fc94a697d13ed9dbf8378fc",
+  "pipeline/lino.py": "c532b6d9419d2fb8c70bf6b1454d627cf93139ab004f7ec2f36a6a57fe4328f4",
   "pipeline/frame_allow.py": "1882339d84eb52b4db7bbb87e5d506f81342e7fc8035c9689219cabe9222a540",
   "content/fallstjorn/hreyfing-sett.tsv": "076a6ee92e32eecfe13cc27dccaedab43be938a6d65ad1549a9cdc1fe7bb481f",
   "content/fallstjorn/hreyfing.tsv": "e8c50725b1570b14a5627e244b54a99cc4258218c12e45db97eb8e9497d70b8a",
@@ -75,21 +75,21 @@
   "content/villuveidar/villur.tsv": "3960bbff68ce25a326f6c9d9194680da97654a3c9a5da2befa26abf469abe92c"
  },
  "artifacts": {
-  "data/freq_lemmas.json": "403e6c8770d20cb3023308d3a606ff817ce33de74eb76ac876defe1d22f0bf6b",
-  "data/lexicon.json": "b9e41b1b88e202702fc103c0049415c0eaa5051aac9c568cf3e5624aec584b3b",
+  "data/freq_lemmas.json": "2ee3297c431689ab3ec2da9e6583ee701c064c87d339657050f9055042350cd4",
+  "data/lexicon.json": "c166ce4922c53d69526c93dbacea3372a5fbaa67b45304a4698405613df75fe0",
   "data/sentences.json": "1fbb7a55c19923732dfb61c149bb4c4ddd6452a047eee88e7953a9c50737a669",
-  "data/data_bundle.js": "01befcfc08e496e09bfe1e6c5b3a587cf93511455bb4fdde8963545a9b2b427c",
-  "data/exercises.js": "4b1f7ed440bf74c5a991b7c13e0611e9645b580437b5703e558559089099bcc3"
+  "data/data_bundle.js": "8166c111b2d39750a7ead280d6a5c6c25564f976bd7788e9b0f020f5c088c784",
+  "data/exercises.js": "d44d49e2bf2929ef0608063b0da5e1955df6a98784b3255f291a2f98171c8da4"
  },
  "counts": {
-  "words": 6564,
+  "words": 7405,
   "sentences": 1131,
   "uncertain_tokens": 1534,
   "rejected_tokens": 222,
   "clause_unsure": 0,
   "definitions": 6509,
-  "rare_words": 449,
-  "lino_words": 0,
+  "rare_words": 468,
+  "lino_words": 2177,
   "guard": {
    "hard": 0,
    "soft": {

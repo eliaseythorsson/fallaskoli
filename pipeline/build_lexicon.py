@@ -144,14 +144,22 @@ for ofl in ['fs','st','ao','uh','nhm']:
         W.append({'i':bid,'o':o,'c':c,'r':got+1,'f':o}); got+=1
 
 # LÍNO-2, the academic word list (lino.py, issue #9). A word on it that the
-# subtitle list never saw (*forsenda* is not film dialogue) comes in the way the
-# sentence bank's nouns do: out of BÍN's core, if BÍN has every form a question
-# needs, at the same middling rank. The first BÍN class that qualifies is
-# taken (one reading per entry; the homograph pass below adds the others).
+# subtitle list never saw (*ljóstillífun* is not film dialogue) comes in out of
+# BÍN's core, if BÍN has every form a question needs. The first BÍN class that
+# qualifies is taken (one reading per entry; the homograph pass below adds the
+# others). Its rank `r` is AFTER every word of its class the corpus attests, in
+# LÍNO order: nothing says it is common in speech, and some 800 words at one
+# middling rank (as the sentence bank's few nouns get) flooded the easy
+# levels — the lowest þyngd asked academic nouns before *hestur*.
 import lino
 LINO_WORDS=lino.load()
 LINO_ADDABLE=('kk','kvk','hk','lo','so','ao')
 _lino_added=[]; _lino_out=[]
+_lino_next={}
+for x in W: _lino_next[x['c']]=max(_lino_next.get(x['c'],0), x['r'])
+def _lino_r(ofl):
+    _lino_next[ofl]=_lino_next.get(ofl,0)+1
+    return _lino_next[ofl]
 have={(x['o'],x['c']) for x in W}
 for lemma,cls,rank in LINO_WORDS:
     cand=[c for c in LINO_ADDABLE if cls is None or c in cls]
@@ -164,12 +172,12 @@ for lemma,cls,rank in LINO_WORDS:
     for ofl,bid in ids:
         if not vf.keep(lemma,ofl): why='vocab_filter'; continue
         if ofl=='ao':
-            W.append({'i':bid,'o':lemma,'c':ofl,'r':300,'f':lemma})
+            W.append({'i':bid,'o':lemma,'c':ofl,'r':_lino_r(ofl),'f':lemma})
         else:
             f=paradigm(bid,ORDERS[ORDER_OF[ofl]])
             need=6 if ofl=='so' else 4
             if sum(1 for x in f[:need] if x)<need: continue
-            W.append({'i':bid,'o':lemma,'c':ofl,'r':300,'f':';'.join(f)})
+            W.append({'i':bid,'o':lemma,'c':ofl,'r':_lino_r(ofl),'f':';'.join(f)})
         have.add((lemma,ofl)); _lino_added.append(f'{lemma}·{ofl}'); break
     else:
         _lino_out.append((rank,lemma,why))

@@ -96,8 +96,8 @@ export const LICENSES={
    "what": "Tíðniröðun orða — hvaða orð barnið sér fyrst. Afritið er í zip-inu með sha256."
   },
   {
-   "nm": "Listi yfir íslenskan námsorðaforða (LÍNO-2)",
-   "who": "Auður Pálsdóttir og Sigríður Ólafsdóttir, 2023",
+   "nm": "Listi yfir íslenskan námsorðaforða í lagi 2 (LÍNO-2), v. 1.0",
+   "who": "Sigríður Ólafsdóttir og Auður Pálsdóttir, 2023",
    "lic": "CC BY 4.0",
    "url": "http://hdl.handle.net/20.500.12537/307",
    "what": "Námsorðaforði: hvaða orð eru námsorð og í hvaða röð. Skráin er í sources/ með sha256."

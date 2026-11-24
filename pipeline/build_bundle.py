@@ -21,15 +21,27 @@ for w in lex['w']:
     if s:
         best_for_lemma[w['o']] = max(best_for_lemma[w['o']], s)
 
+# A word on LÍNO-2 that the subtitles never saw, in any reading (the words
+# build_lexicon.py adds from BÍN, issue #9), gets NO score: the corpus says
+# nothing about it, and 0 would make it the rarest word there is. Without `q`
+# it is no rare find (core/rarity.js `isRareScore`) and shows no tier. Rare
+# finds are words rare in everyday language that a pupil happens to meet;
+# these are words the program sets out to teach.
 inherited = []
+unscored = []
 for w in lex['w']:
     s = score_of_id.get(w.get('i'))
+    if s is None and w.get('lino') and not best_for_lemma.get(w['o']):
+        w.pop('q', None)
+        unscored.append(w['o'])
+        continue
     if s is None:
         s = best_for_lemma.get(w['o'], 0) / HOMOGRAPH_DISCOUNT
         inherited.append('%s·%s→%.0f' % (w['o'], w['c'], s))
     # One decimal is plenty: the tier boundaries are 100/40/12/4/1.5 and no
     # boundary is decided by a hundredth of an occurrence.
     w['q'] = round(s, 1)
+print('LÍNO-2 words with no corpus score (no rare find): %d' % len(unscored))
 
 # Íslensk nútímamálsorðabók, if present (data/ino.json, written by
 # tools/ino.mjs — see docs/DEFINITIONS.md). Joined on bin_id, so homographs get
@@ -227,13 +239,16 @@ BANDS = [('Algengt', 100), ('Óalgengt', 40), ('Sjaldgæft', 12),
          ('Mjög sjaldgæft', 4), ('Sögulegt', 1.5), ('Goðsagnakennt', 0)]
 counts = collections.Counter()
 for w in lex['w']:
+    if 'q' not in w:
+        counts['no score'] += 1
+        continue
     for nm, lo in BANDS:
         if w['q'] >= lo:
             counts[nm] += 1
             break
 n = len(lex['w'])
 print('word rarity:', ' | '.join('%s %d (%.1f%%)' % (nm, counts[nm], 100 * counts[nm] / n)
-                                 for nm, _ in BANDS))
+                                 for nm, _ in BANDS), '| no score %d' % counts['no score'])
 print('inherited scores (%d):' % len(inherited), ' '.join(inherited))
 print('bundle %.0f KB' % (os.path.getsize('data/data_bundle.js') / 1024))
 print('sem:', dict(collections.Counter(w.get('s') for w in lex['w'] if w.get('s'))))

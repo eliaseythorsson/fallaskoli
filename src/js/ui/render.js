@@ -1754,7 +1754,7 @@ function drawTransform(app, t, j, val) {
 }
 
 /* v6.11: shared with the renderers in ui/render-more.js. */
-export { sentenceHTML, whyBox, conclude, enterToSubmit, skillTag, slipNote, nearNote, multLine, PUNCT };
+export { sentenceHTML, wordHTML, whyBox, conclude, enterToSubmit, skillTag, slipNote, nearNote, multLine, PUNCT };
 /* Item 42: the second try, shared with the gap and the boðháttur. */
 export { offerRetry, endRetry, say, SAME_AGAIN, judgeTry, noteTry, compareHTML, retryRightHTML, RETRY_STILL_MISS };
 /* Moved to core/answer.js in v6.13; still exported from here for the tests

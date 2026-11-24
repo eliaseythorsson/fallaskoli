@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """LÍNO-2, the Icelandic academic word list, read for the build (issue #9).
 
-    Listi yfir íslenskan námsorðaforða (LÍNO), v. 1.0: 2,294 Tier-2 lemmas
-    chosen from the 5,000 commonest words of MÍNO, a corpus of school texts.
-    Auður Pálsdóttir & Sigríður Ólafsdóttir 2023. CLARIN-IS,
+    Listi yfir íslenskan námsorðaforða í lagi 2 (LÍNO-2), v. 1.0: 2,294 Tier-2
+    lemmas chosen from the 5,000 commonest words of MÍNO, a corpus of school
+    texts. Sigríður Ólafsdóttir & Auður Pálsdóttir 2023. CLARIN-IS,
     http://hdl.handle.net/20.500.12537/307, CC BY 4.0.
+    sources/lino2.csv is LINO_frequency_list_1_0.csv from LÍNO_1_0.zip, unchanged.
 
 The file is committed as it was downloaded, like the frequency list:
 `sources/lino2.csv` with its checksum `sources/lino2.sha256`, checked by
@@ -56,22 +57,26 @@ MISSING = f"""{LINO_CSV} is missing. The build needs LÍNO-2, the Icelandic acad
 COLUMNS = {
     'lemma': {'lemma', 'lemmur', 'orð', 'flettiorð', 'uppflettiorð', 'word', 'lemma/orð'},
     'cls':   {'orðflokkur', 'orðfl.', 'orðfl', 'ofl', 'pos', 'word class', 'wordclass', 'part of speech'},
-    'rank':  {'röð', 'rank', 'sæti', 'nr', 'nr.', 'númer', '#'},
+    # LINO_frequency_list_1_0.csv: `tíðnisæti MÍNO`, the word's place on the
+    # MÍNO frequency list. The LÍNO rank is the order it gives (1 … 2,294).
+    'rank':  {'tíðnisæti mínó', 'tíðnisæti', 'röð', 'rank', 'sæti', 'nr', 'nr.', 'númer', '#'},
     'freq':  {'tíðni', 'freq', 'frequency', 'fjöldi', 'count'},
 }
 
 # A word class on the list -> the BÍN classes (`ofl`) it can be. A noun on the
-# list is a noun of any gender; BÍN says which.
+# list is a noun of any gender; BÍN says which. LÍNO-2's own codes, from the
+# README in LÍNO_1_0.zip: n = nafnorð, s = sagnorð, l = lýsingarorð,
+# a = atviksorð, c = samtenging.
 _NOUN = frozenset({'kk', 'kvk', 'hk'})
 CLASSES = {}
 for names, ofl in [
-    (('no', 'nafnorð', 'noun'), _NOUN),
+    (('n', 'no', 'nafnorð', 'noun'), _NOUN),
     (('kk',), {'kk'}), (('kvk',), {'kvk'}), (('hk',), {'hk'}),
-    (('so', 'sagnorð', 'sögn', 'verb'), {'so'}),
-    (('lo', 'lýsingarorð', 'adjective', 'adj'), {'lo'}),
-    (('ao', 'atviksorð', 'adverb', 'adv'), {'ao'}),
+    (('s', 'so', 'sagnorð', 'sögn', 'verb'), {'so'}),
+    (('l', 'lo', 'lýsingarorð', 'adjective', 'adj'), {'lo'}),
+    (('a', 'ao', 'atviksorð', 'adverb', 'adv'), {'ao'}),
     (('fs', 'forsetning', 'preposition'), {'fs'}),
-    (('st', 'samtenging', 'conjunction'), {'st'}),
+    (('c', 'st', 'samtenging', 'conjunction'), {'st'}),
     (('to', 'töluorð', 'numeral'), {'to'}),
     (('fn', 'fornafn', 'pronoun'), {'fn', 'pfn', 'afn', 'abfn'}),
 ]:
@@ -208,15 +213,18 @@ def ranks(words, classes):
 
 
 def core(b, lemma):
-    """BÍN's core entries (birting K, the general vocabulary) whose lemma is
-    `lemma`. The lemma is looked up as a form: it is its own first form."""
+    """BÍN's core entries (birting K) whose lemma is `lemma`. The lemma is
+    looked up as a form: it is its own first form. Any domain (`hluti`): an
+    academic list has *samheiti* and *örnefni* (málfr), *klæði* (alm,text) and
+    *þorri* (tími); a proper name never matches, because its lemma has a
+    capital and the list's do not."""
     _, ms = b.lookup_ksnid(lemma)
-    return [m for m in ms if m.ord == lemma and m.hluti == 'alm' and m.birting == 'K' and m.bin_id]
+    return [m for m in ms if m.ord == lemma and m.birting == 'K' and m.bin_id]
 
 
 def not_in_bin(words, b):
-    """The list's entries BÍN's core (birting K, the general vocabulary) does
-    not have in the class the list gives: [(rank, lemma, class names)]."""
+    """The list's entries BÍN's core (birting K) does not have in the class the
+    list gives: [(rank, lemma, class names)]."""
     out = []
     for lemma, cls, rank in words:
         have = {m.ofl for m in core(b, lemma)}

@@ -598,7 +598,7 @@ BÍN (CC BY-SA 4.0, Stofnun Árna Magnússonar), Greynir (MIT, Miðeind), the
 OpenSubtitles frequency list (hermitdave/FrequencyWords), Bricolage Grotesque,
 Public Sans and IBM Plex Mono (OFL; bundled, notice in `src/fonts/OFL.txt`), and
 Íslensk nútímamálsorðabók (CC BY-SA 4.0) for the definitions, and LÍNO-2, the
-Icelandic academic word list (Auður Pálsdóttir & Sigríður Ólafsdóttir 2023,
+Icelandic academic word list, v. 1.0 (Sigríður Ólafsdóttir & Auður Pálsdóttir 2023,
 CLARIN-IS http://hdl.handle.net/20.500.12537/307, CC BY 4.0). The full list
 is at the bottom of the Stillingar og námsefni tab and in `data/licenses.js`. ShareAlike applies to the built
 file: it contains ÍNO's definitions.

@@ -381,7 +381,11 @@ export const RARE_WORD_TIER = "mjogsjaldgaeft";
 export const RARE_MAX_Q = WORD_TIERS[
   WORD_TIERS.findIndex((t) => t.tier === RARE_WORD_TIER) - 1].min;
 
-/** Is this corpus score rare enough to count towards the rare-find badges? */
+/** Is this corpus score rare enough to count towards the rare-find badges?
+    A word with no score is never a rare find: the words of LÍNO-2 the
+    subtitle corpus never saw have none (pipeline/build_bundle.py, #9) —
+    they are words the program sets out to teach, not rare words a pupil
+    happens to meet. */
 export const isRareScore = (q) =>
   q != null && !Number.isNaN(q) && q < RARE_MAX_Q;
 

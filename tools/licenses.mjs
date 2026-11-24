@@ -58,8 +58,10 @@ const DATA_SOURCES = [
     who: "Hermit Dave, byggt á OpenSubtitles", lic: "MIT / CC BY-SA 4.0",
     url: "https://github.com/hermitdave/FrequencyWords",
     what: "Tíðniröðun orða — hvaða orð barnið sér fyrst. Afritið er í zip-inu með sha256." },
-  { nm: "Listi yfir íslenskan námsorðaforða (LÍNO-2)",
-    who: "Auður Pálsdóttir og Sigríður Ólafsdóttir, 2023",
+  /* Title, authors and version as the README in LÍNO_1_0.zip gives them; the
+     licence as the CLARIN-IS page does (the README names none). */
+  { nm: "Listi yfir íslenskan námsorðaforða í lagi 2 (LÍNO-2), v. 1.0",
+    who: "Sigríður Ólafsdóttir og Auður Pálsdóttir, 2023",
     lic: "CC BY 4.0", url: "http://hdl.handle.net/20.500.12537/307",
     what: "Námsorðaforði: hvaða orð eru námsorð og í hvaða röð. Skráin er í sources/ með sha256." },
   /* The three typefaces are inside the built file since v6.3 (src/fonts/,
