@@ -90,7 +90,7 @@
    Pure: no DOM, no clock (the caller passes `now` and `day`), no random
    numbers. core/ does not import tasks/: the catalogue is passed in.          */
 
-import { SKILL_IDS } from "./skills.js";
+import { SKILLS, SKILL_IDS, skillById } from "./skills.js";
 import { MIN, MAX, clamp, setSkillLevel } from "./difficulty.js";
 import { YEARS } from "./curriculum.js";
 
@@ -101,15 +101,13 @@ export const MIN_QUESTIONS = 12, MAX_QUESTIONS = 15;
 /** Below this many answers a round that was left places nothing. */
 export const MIN_ANSWERS = 6;
 
-/* The order the skills are asked in: what a pupil has known longest first, so
-   the round opens with something familiar, and the two categories of year
-   10 last. */
-export const PLACEMENT_ORDER = [
-  "nafnord", "sagnord", "lysingarord", "greining", "fornofn", "fallstjorn",
-  "toluord", "obeygjanleg", "ordaford", "malbeiting", "setningafraedi", "setningagerd",
-];
+/* The order the skills are asked in, and the ones asked twice: core/skills.js
+   (`placement`, `placementTwice`). A skill without a turn is asked last. */
+export const PLACEMENT_ORDER = SKILLS
+  .map((s, k) => ({ id: s.id, at: s.placement ?? 1000 + k }))
+  .sort((a, b) => a.at - b.at).map((s) => s.id);
 /** The skills asked a second time: where most of the practice will be. */
-export const PLACEMENT_TWICE = ["nafnord", "sagnord", "lysingarord"];
+export const PLACEMENT_TWICE = PLACEMENT_ORDER.filter((id) => skillById(id).placementTwice);
 
 /* Shapes of question the round leaves out: a whole table is six answers and
    two minutes, an error hunt is a text to read, and an explanation in the
