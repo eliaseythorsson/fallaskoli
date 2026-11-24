@@ -9,7 +9,7 @@
 import { readMark } from "../core/marks.js";
 import { wordKey } from "../core/state.js";
 import { explainSlot } from "./explain.js";
-import { substitutable, acceptsNoun, candidateNouns, settled, repeatsNoun } from "./frames.js";
+import { substitutable, acceptsNoun, slotFrame, candidateNouns, settled, repeatsNoun } from "./frames.js";
 import { pick, wpick, shuffle, askable, sentPool, drilling, forced, forcedCell, wordWeight,
          isTimeNoun, bandFor, caseCellEase } from "./shared.js";
 
@@ -72,7 +72,7 @@ export function nounCloze(lex, view, rng, { noun = null, only = null, balanced =
     if (noun && open) {
       /* The same word again after a wrong answer — but only in a sentence
          that accepts it. */
-      if (!acceptsNoun({ rk: s.rk, need: s.need, ps: s.ps || null }, noun, t.m)
+      if (!acceptsNoun(slotFrame(s), noun, t.m)
           || repeatsNoun(s, s.slot, noun)) continue;
       n = noun;
     } else if (!open) {
@@ -150,7 +150,7 @@ function forcedCloze(lex, view, rng, { noun = null, only = null }) {
       let n = null;
       if (want) {
         if (open) {
-          if (acceptsNoun({ rk: s.rk, need: s.need, ps: s.ps || null }, want, t.m)
+          if (acceptsNoun(slotFrame(s), want, t.m)
               && !repeatsNoun(s, s.slot, want)) n = want;
         } else if (own && own.o === want.o && own.c === want.c) n = own;
       } else if (open) {

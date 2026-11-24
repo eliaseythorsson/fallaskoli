@@ -34,7 +34,7 @@ import {
 } from "../src/js/core/review.js";
 import { TASKS, typeById, nextTask, makeView, withView, applyEffects,
   reviewTask, planOpening, nextOpening, scheduleReask, nextReask } from "../src/js/tasks/index.js";
-import { substitutable, acceptsNoun, repeatsNoun } from "../src/js/tasks/frames.js";
+import { substitutable, acceptsNoun, slotFrame, repeatsNoun } from "../src/js/tasks/frames.js";
 
 const lex = buildLexicon(DATA);
 const D0 = "2026-11-16";
@@ -632,7 +632,7 @@ test("item 19: after a wrong cloze the noun is not the next question; it comes b
   const elsewhere = (n, cell, not) => lex.sentences.some((s) => s.t !== not && s.slot != null && !s.nf
     && s.tok[s.slot].m === cell
     && (substitutable(s)
-      ? acceptsNoun({ rk: s.rk, need: s.need, ps: s.ps || null }, n, cell) && !repeatsNoun(s, s.slot, n)
+      ? acceptsNoun(slotFrame(s), n, cell) && !repeatsNoun(s, s.slot, n)
       : s.tok[s.slot].l === n.o));
   for (let seed = 0; seed < 60; seed++) {
     const p = pupil(3);

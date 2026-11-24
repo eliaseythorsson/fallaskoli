@@ -1,0 +1,54 @@
+# Orð sem mega standa í einstökum römmum
+#
+# Rammi er setning úr setningabankanum (setningar.tsv) þar sem skipta má einu nafnorði
+# út fyrir annað. Hver rammi tekur við nafnorðum úr ákveðnum merkingarflokkum (dálkurinn
+# „þörf“ í setningar.tsv). Sum orð passa vel í ramma þótt flokkurinn þeirra geri það ekki:
+# „hugtak“ er ekki texti sem maður les, en „Kennarinn útskýrði hugtakið fyrir bekknum“
+# er góð setning. Hér eru slík pör skráð, eitt í línu: þetta orð má standa í þessum ramma.
+# Ramminn breytist ekki fyrir nein önnur orð.
+#
+# Parið segir aðeins að MERKINGIN gangi upp. Beygingarmyndin er aldrei skrifuð hér:
+# forritið sækir hana í BÍN, í því falli og þeirri tölu sem ramminn biður um, með eða án
+# greinis. Smíðin (./build.sh) stoppar og nefnir skrá og línu ef
+#   - ramminn er ekki setning í setningar.tsv, staf fyrir staf, eða tekur engin önnur orð,
+#   - orðið er ekki nafnorð í orðaforðanum eða í BÍN,
+#   - ramminn bindur kynið (lýsingarorð, töluorð eða fornafn í setningunni beygist með
+#     eyðunni) og orðið er í öðru kyni,
+#   - eyðan stendur á eftir „í“ eða „á“ og orðið er ekki skráð með þeirri forsetningu,
+#   - eyðan er í fleirtölu og orðið er ekki notað í fleirtölu,
+#   - orðið stendur þegar í setningunni.
+#
+# Regla við skráningu: lestu setninguna upphátt með orðinu í réttri mynd (yfirlitssíðan,
+# dist/review.html, sýnir hana útfyllta). Ef Íslendingur myndi hika, slepptu parinu.
+# Orðin þurfa ekki að vera á LÍNO-2-listanum; smíðin segir frá því hver þeirra eru þar.
+#
+# Dálkar:
+#   orð           nafnorðið í uppflettimynd. Ef orðið er til í fleiri en einu kyni: orð|kyn (t.d. skúr|kk)
+#   rammi         setningin úr setningar.tsv, nákvæmlega eins og hún stendur þar
+#   yfirfarið af  hver las setninguna með orðinu og samþykkti parið
+#   athugasemd    frjáls athugasemd, forritið les hana ekki
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+
+orð	rammi	yfirfarið af	athugasemd
+# ---- það sem kennari útskýrir: ramminn tekur annars aðeins við texta og bókum ----
+hugtak	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+aðferð	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+regla	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+niðurstaða	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+lausn	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+hugtak	Kennarinn útskýrði dæmið aftur svo allir skildu það.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+# ---- það sem maður man: ramminn tekur annars aðeins við tíma og viðburðum ----
+ástæða	Ég man daginn vel.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+regla	Ég man daginn vel.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+niðurstaða	Ég man daginn vel.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+ástæða	Ég man dagana vel.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+regla	Ég man dagana vel.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+# ---- orsök: rammarnir taka ekki við hugmyndum almennt (noun_classes.py, NEED_FIX) ----
+bilun	Ferðin tafðist vegna bílsins.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+misskilningur	Þetta gerðist allt vegna bílsins.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+bilun	Leiknum var frestað vegna veðurs.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+misskilningur	Leiknum var frestað vegna veðurs.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa

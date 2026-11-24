@@ -22,9 +22,14 @@
                                  parsed the way pipeline/content_io.py parses them)
      src/js/content/lessons.js   the Lesefni pages (left in JavaScript: the
      src/js/content/examples.js  app imports them as they are)
-     content/REVIEW-NOTES.md     the notes                                    */
+     content/REVIEW-NOTES.md     the notes
+     data/data_bundle.js         only for the words allowed into one frame
+                                 each (content/setningar/lino-rammar.tsv): the
+                                 page shows the sentence as the pupil will
+                                 read it, with the word in the form BÍN gives  */
 
 import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 
@@ -108,6 +113,51 @@ function itemFromRow(rel, kind, list, header, r) {
   };
 }
 
+/* ---------- a word allowed into one frame (issue #20) --------------------
+   content/setningar/lino-rammar.tsv holds a word and a frame; what a reader
+   has to judge is the sentence the two make. It is made here the way the app
+   makes it (tasks/frames.js fillFrame): the frame's slot, the word's form
+   under the slot's own BÍN mark, out of the built data. A pair the built data
+   does not have (the file was edited and ./build.sh has not run) is shown as
+   written, and says so. */
+export const PAIRS_FILE = "content/setningar/lino-rammar.tsv";
+
+async function builtData() {
+  const f = p("data/data_bundle.js");
+  if (!existsSync(f)) return null;
+  const js = await readFile(f, "utf8");
+  const D = JSON.parse(js.slice(js.indexOf("{"), js.lastIndexOf("};") + 1));
+  const order = D.lex.orders.no;
+  const nouns = new Map();
+  for (const w of D.lex.w) if (["kk", "kvk", "hk"].includes(w.c)) nouns.set(w.o + "|" + w.c, w);
+  return { sent: new Map(D.sent.map((s) => [s.t, s])), nouns, order };
+}
+
+/** The pair's card: the filled sentence as the text, the frame as written
+    and the form beside it, the frame's own þyngd. */
+function pairItem(it, cells, data) {
+  const [lemma, gender] = cells["orð"].split("|");
+  const frame = cells["rammi"];
+  const s = data && data.sent.get(frame);
+  const key = s && (s.al || []).find((k) => k === lemma + "|" + (gender || k.split("|")[1]));
+  const w = key && data.nouns.get(key);
+  const mark = s && s.slot != null ? s.tok[s.slot].m : "";
+  const form = w ? (String(w.f).split(";")[data.order.indexOf(mark)] || "").split("|")[0] : "";
+  it.fields = it.fields.filter(([h]) => h !== "orð");
+  it.fields.unshift(["orð", cells["orð"]], ["rammi", frame]);
+  if (s) { it.level = String(s.lvl); it.levelName = "þyngd"; }
+  if (!form) {
+    it.fields.push(["ath.", "parið er ekki í smíðuðu gögnunum; keyrðu ./build.sh"]);
+    return it;
+  }
+  const old = s.tok[s.slot].w;
+  const cap = old[0] !== old[0].toLowerCase() ? form[0].toUpperCase() + form.slice(1) : form;
+  it.text = s.tok.map((t, j) => ([".", "?", "!", ","].includes(t.w) ? t.w : (j ? " " : "") + (j === s.slot ? cap : t.w))).join("");
+  it.answer = cap; it.answerLabel = "Orðið í setningunni";
+  it.fields.push(["mynd", mark]);
+  return it;
+}
+
 /** A Lesefni page as lines of text, in the order the app shows them. */
 function lessonBody(L) {
   const out = [];
@@ -142,7 +192,11 @@ export async function collect() {
     const kind = rel.split("/")[1];
     const { title, header, rows } = parseTsv(await readFile(p(rel), "utf8"));
     lists.push({ file: rel, title, n: rows.length });
-    for (const r of rows) items.push(itemFromRow(rel, kind, title, header, r));
+    const data = rel === PAIRS_FILE ? await builtData() : null;
+    for (const r of rows) {
+      const it = itemFromRow(rel, kind, title, header, r);
+      items.push(rel === PAIRS_FILE ? pairItem(it, r.cells, data) : it);
+    }
   }
 
   const lessonsRel = "src/js/content/lessons.js", examplesRel = "src/js/content/examples.js";

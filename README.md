@@ -180,6 +180,9 @@ pipeline/             the Python half of the build (critique item 79), run from 
                       On a server both, and each question type's place on the
                       level scale, are adjusted from anonymous counts of right
                       and wrong answers (core/calibration.js; docs/SERVER.md §4.3)
+  frame_allow.py      words allowed into one frame each, on top of its noun
+                      classes (content/setningar/lino-rammar.tsv): reads the
+                      pairs and checks each against the frame and the paradigm
   noun_classes.py     semantic class of every noun; í/á convention; exclusions;
                       which nouns nobody has read (not used in a frame); the
                       needs of a few frames narrowed (NEED_FIX)
@@ -441,6 +444,7 @@ can read it, correct it and add to it without reading Python:
 
 ```
 content/setningar/setningar.tsv     the sentence bank (1,130 sentences)
+content/setningar/lino-rammar.tsv   words allowed into one frame each (word, frame, checked by)
 content/villuveidar/villur.tsv      the real errors of Villuveiðar
 content/lysingarord/ …/ordafordi/   exercise items and frames, by category
 content/REVIEW-NOTES.md             what a native reader should check first
@@ -496,6 +500,20 @@ the subject *ég* or *við* where the gender should stay free; and say exactly
 which nouns the blank accepts — `drink` for *Ég drekk ___*, not `thing`. The
 full rules are at the top of `pipeline/sentences.py`, and the rules for each exercise
 list at the top of its file.
+
+**A word for one frame.** A frame takes the nouns of the classes its `þörf`
+names, and that is sometimes too coarse: *hugtak* is not a text, yet
+"Kennarinn útskýrði hugtakið fyrir bekknum" is a good sentence. Rather than
+widen the frame for every abstract noun, write the pair down, one per line, in
+`content/setningar/lino-rammar.tsv`: the word, the frame (the sentence exactly
+as it stands in `setningar.tsv`; that is the frame's id) and who read the
+two together. The build lets that word into that frame and changes nothing
+else. The form is never written: it is BÍN's, under the frame's own mark, and
+a pair the frame or BÍN contradicts (a pinned gender, í/á, a plural nobody
+says, a word already in the sentence) stops the build with the file and line,
+as an unknown frame or word does. The word need not be on LÍNO-2; the build
+reports which are. The review page shows each pair as the sentence it makes.
+`pipeline/frame_allow.py` has the rules.
 
 **The review page.** `node tools/review.mjs` (also run by `./build.sh`) writes
 `dist/review.html`: one self-contained page with every hand-written item —

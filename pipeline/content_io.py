@@ -180,13 +180,15 @@ if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     try:
-        import sentences, exercises
+        import sentences, exercises, frame_allow
+        allow = frame_allow.read(sentences.S)
     except ContentError as e:
         print("Villa / error:", e, file=sys.stderr)
         sys.exit(1)
     n_ex = sum(len(v) for k, v in vars(exercises).items()
                if k.isupper() and isinstance(v, (list, dict)) and not k.startswith("VC_"))
-    print("Allt lesið / all read: %d setningar, %d atriði í Villuveiðum, %d færslur í öðrum listum."
-          % (len(sentences.S), len(exercises.HUNT), n_ex - len(exercises.HUNT)))
+    print("Allt lesið / all read: %d setningar, %d orð leyfð í einstaka ramma, %d atriði í Villuveiðum, "
+          "%d færslur í öðrum listum."
+          % (len(sentences.S), len(allow), len(exercises.HUNT), n_ex - len(exercises.HUNT)))
     print("Keyrðu ./build.sh: þá er efnið borið saman við BÍN og greint með Greyni / "
           "run ./build.sh for the full check.")
