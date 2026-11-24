@@ -8,11 +8,26 @@
 
    Tests of purity itself (tests/purity.test.js) call the builders directly. */
 
+import { beforeEach } from "node:test";
+import { seeded } from "../src/js/core/duel.js";
 import { effectivePolicy } from "../src/js/core/state.js";
 import { nextTask, drillTask, makeView, applyEffects } from "../src/js/tasks/index.js";
 
-/** The test suite's random source. Only the builders are forbidden Math.random. */
-export const rng = () => Math.random();
+/** The test suite's random source: seeded, so a run is the same every time.
+    A statistical assertion ("this type shows up more than 40 times in 2,500
+    questions") over Math.random fails now and then by chance, and a red CI that
+    is only chance costs a pull request an hour. The stream starts again from
+    the same seed before EVERY test (the hook below is registered in each test
+    file that imports this one), so a test does not depend on which tests ran
+    before it or on how many were added. A test that wants a different stream
+    passes its own `seeded(n)` (src/js/core/duel.js) as the `random` argument. */
+/** SUITE_SEED=n in the environment tries another stream (to see whether a threshold holds across seeds). */
+export const SUITE_SEED = Number(process.env.SUITE_SEED) || 20261124;
+let stream = seeded(SUITE_SEED);
+beforeEach(() => { stream = seeded(SUITE_SEED); });
+export const rng = () => stream();
+/** A fresh seeded source for tests that must not share the suite's stream. */
+export const seededRng = (n = SUITE_SEED) => seeded(n);
 
 /** The view of a test context. The policy is worked out once and kept on the
     context, as the app keeps it. */

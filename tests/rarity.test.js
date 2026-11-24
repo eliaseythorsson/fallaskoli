@@ -7,6 +7,7 @@
  */
 
 import { test } from "node:test";
+import { seededRng } from "./helpers.js";
 import assert from "node:assert/strict";
 import { BADGES, badgeById } from "../src/js/core/badges.js";
 import {
@@ -16,6 +17,7 @@ import {
   CONSISTENCY, consistencyPairs, monthKey, nextRefresh, tierMove,
   badgeWindows, windowsFor, tierRank, PLAIN_CEILING, EXTRA_AFTER_RARE,
 } from "../src/js/core/rarity.js";
+const dice = seededRng(11);   // seeded: the 500 trials are the same every run
 import { SKILL_IDS } from "../src/js/core/skills.js";
 
 /* ---------- the tiers themselves (v5.6) ---------------------------------- */
@@ -470,9 +472,9 @@ test("the ceiling holds for every shape of win", () => {
   let five = 0, more = 0;
   for (let trial = 0; trial < 500; trial++) {
     const won = [];
-    const n = 1 + Math.floor(Math.random() * 9);
+    const n = 1 + Math.floor(dice() * 9);
     for (let i = 0; i < n; i++)
-      won.push(at("b" + i, tiers[Math.floor(Math.random() * tiers.length)]));
+      won.push(at("b" + i, tiers[Math.floor(dice() * tiers.length)]));
     const { show, quiet } = badgeWindows(won);
 
     assert.equal(show.length + quiet.length, won.length, "a badge went missing");

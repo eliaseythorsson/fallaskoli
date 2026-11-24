@@ -12,7 +12,9 @@ import { bumpDiff } from "../src/js/core/difficulty.js";
 import { TASKS } from "../src/js/tasks/index.js";
 import { verbConjugation } from "../src/js/tasks/sagnord.js";
 import { topByRank, shareForLevel, wordWeight } from "../src/js/tasks/shared.js";
-import { ask } from "./helpers.js";
+import { ask, seededRng } from "./helpers.js";
+// the pupil's right and wrong answers: seeded, like the questions
+const pupil = seededRng(70);
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { readMark, isStyfdur } from "../src/js/core/marks.js";
 import { parseRows } from "../src/js/ui/render.js";
@@ -82,7 +84,7 @@ test("5000 tasks in a row are all intact", () => {
     checkTask(t);
     seen.add(t.typeId);
     /* let the child answer sometimes right and sometimes wrong so difficulty drifts */
-    const ok = Math.random() < 0.7;
+    const ok = pupil() < 0.7;
     record(ctx.S, ctx.sess, {
       skill: t.skill, cell: t.cell, word: t.word, ok,
       xp: ok ? 10 : 0, counts: t.counts !== false,
@@ -242,7 +244,7 @@ test("no question is ever built on a stýfður boðháttur", () => {
     const marks = [t.m, t.cell, t.t && t.t.m, ...(t.cells || []).map((c) => c.m)];
     for (const m of marks)
       if (m && isStyfdur(m)) bad.push(`${t.type}: ${t.word || ""} ${m}`);
-    const ok = Math.random() < 0.7;
+    const ok = pupil() < 0.7;
     record(ctx.S, ctx.sess, { skill: t.skill, cell: t.cell, word: t.word, ok,
       xp: ok ? 10 : 0, counts: t.counts !== false });
     bumpDiff(ctx.sess, ctx.S, t.skill, ok);
