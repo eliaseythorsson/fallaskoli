@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Skemmd framvinda hrynur ekki lengur
+- **Skemmd eða fölsuð vistuð framvinda** þar sem dagsfærsla er `null` (eða ekki hlutur) felldi hleðsluna og
+  athugun þjónsins. Nú er sú færsla sleppt og aðrir dagar haldast; próf setur rusl inn í hverja færsluskrá
+  framvindunnar. Auk þess var `lastLogin` skrifað en aldrei lesið (og alltaf hent við hleðslu): skrifið er fjarlægt.
+
 ### Framvindan: hver sneið á sínum stað (#50)
 - **Engin breyting sést**: hver sneið framvindunnar (dagar, merki, upprifjun, stillingar …) er
   skilgreind í einingunni sem á hana, og hleðsla, sameining tækja og athugun þjónsins fara aðeins
