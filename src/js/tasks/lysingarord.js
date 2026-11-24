@@ -542,31 +542,14 @@ export function loAgree(lex, view, rng) {
   }));
 }
 
-export const TYPES = [
-  { id: "revform", skill: "lysingarord", anyOf: ["lysingarord", "sagnord", "nafnord"],
-    weight: 7, renderer: "parse",
-    tags: ["adj", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "noun", "num", "ofl",
-      "verb:agree", "verb:mm", "verb:tense", "verb:vh"],
-    bands: [1, 2, 3, 4, 5],
-    build: taskReverse },
-  { id: "tbl_lo", skill: "lysingarord", weight: 6, renderer: "table",
-    tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3, 4, 5],
-    build: tableAdj },
-  /* The three below choose a bank sentence near the band (`adjSlot`), and
-     the rank cap on the adjectives tried in a frame lets in more words at
-     each step. Until v6.13 only the cap read the band, and the critique
-     (item 13) rightly counted these three as ignoring difficulty. */
-  { id: "lo_beyging", skill: "lysingarord", weight: 8, renderer: "gap",
-    tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: loStrongWeak },
-  { id: "lo_stig", skill: "lysingarord", weight: 6, renderer: "gap",
-    tags: ["adj", "agree:kyn", "case:NF", "case:ÞF", "form", "num"],
-    bands: [1, 2, 3, 4, 5, 6],
-    build: loDegree },
-  { id: "lo_samr", skill: "lysingarord", weight: 7, renderer: "gap",
-    tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: loAgree },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  revform: { build: taskReverse },
+  tbl_lo: { build: tableAdj },
+  lo_beyging: { build: loStrongWeak },
+  lo_stig: { build: loDegree },
+  lo_samr: { build: loAgree },
+};

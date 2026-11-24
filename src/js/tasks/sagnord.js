@@ -845,32 +845,15 @@ export function soBodhattur(lex, view, rng) {
   });
 }
 
-export const TYPES = [
-  { id: "verbslot", skill: "sagnord", weight: 14, renderer: "verbslot",
-    tags: ["form", "num", "verb:agree", "verb:mm", "verb:strongpast", "verb:tense", "verb:vh"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: taskVerbSlot },
-  { id: "verb", skill: "sagnord", weight: 8, renderer: "verb",
-    tags: ["form", "num", "verb:agree", "verb:mm", "verb:strongpast", "verb:tense", "verb:vh"],
-    bands: [1, 2, 3, 4, 5],
-    build: taskVerb },
-  { id: "tbl_so", skill: "sagnord", weight: 5, renderer: "table",
-    tags: ["form", "num", "verb:agree", "verb:mm", "verb:tense", "verb:vh"],
-    bands: [1, 2, 3, 4, 5],
-    build: tableVerb },
-  /* item 27. so_beyging and so_bodhattur have their own steps at 3 and 5;
-     the verb is chosen by `wordWeight`, which since item 16 reads the level
-     at every step to 5 (regular words first), so 2 and 4 move too. */
-  { id: "so_beyging", skill: "sagnord", weight: 5, renderer: "slots",
-    tags: ["form", "sobeyg", "sobeyg:hljod", "verb:strongpast"],
-    bands: [1, 2, 3, 4, 5],
-    build: soBeyging },
-  { id: "so_mynd", skill: "sagnord", weight: 5, renderer: "choice",
-    tags: ["somynd", "somynd:st"],
-    bands: [1, 3, 5],
-    build: soMynd },
-  { id: "so_bodhattur", skill: "sagnord", weight: 5, renderer: "slots",
-    tags: ["bodh", "bodh:nh", "bodh:st", "form"],
-    bands: [1, 2, 3, 4, 5],
-    build: soBodhattur },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  verbslot: { build: taskVerbSlot },
+  verb: { build: taskVerb },
+  tbl_so: { build: tableVerb },
+  so_beyging: { build: soBeyging },
+  so_mynd: { build: soMynd },
+  so_bodhattur: { build: soBodhattur },
+};

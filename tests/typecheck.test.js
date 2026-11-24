@@ -24,7 +24,7 @@ const REQUIRED = [
   "src/js/core/answer.js", "src/js/core/review.js", "src/js/core/difficulty.js",
   "src/js/core/mastery.js", "src/js/core/skillmap.js", "src/js/core/today.js",
   "src/js/core/curriculum.js", "src/js/core/diagnosis.js", "src/js/core/merge.js",
-  "src/js/core/state.js", "src/js/tasks/registry.js", "src/js/tasks/shared.js",
+  "src/js/core/state.js", "src/js/core/catalogue.js", "src/js/tasks/registry.js", "src/js/tasks/shared.js",
 ];
 
 const PRAGMA = /^\/\/ @ts-check\s*$/;

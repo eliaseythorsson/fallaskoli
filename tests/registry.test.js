@@ -1,8 +1,9 @@
-/* The catalogue of question types (v6.13, tasks/registry.js).
+/* The catalogue of question types (core/catalogue.js, #46) and the registry
+   that joins it with the builders (tasks/registry.js).
 
-   One file per category, and in each a TYPES list where every type declares
-   its skill, its renderer, the diagnosis tags its questions carry and the
-   steps of difficulty it knows. The declarations are held to what the
+   One entry per type declares its skill, its renderer, the diagnosis tags
+   its questions carry, the steps of difficulty it knows, recall and grader;
+   one file per category builds them. The declarations are held to what the
    builders build — a registry nobody checks is a comment. */
 
 import test from "node:test";
@@ -19,6 +20,7 @@ import { RENDER } from "../src/js/ui/render.js";
 import "../src/js/ui/render-more.js";
 import { TASKS, CATEGORIES, typeById, enabled, weightOf, makeView } from "../src/js/tasks/index.js";
 import { registryFaults } from "../src/js/tasks/registry.js";
+import { CATALOGUE, catalogueFaults, isRecall, graderOf } from "../src/js/core/catalogue.js";
 
 const lex = buildLexicon(DATA);
 const allOn = {};
@@ -62,38 +64,89 @@ test("one file per category: the twelve skills, each type in the file of its ski
 });
 
 test("the registry notices a declaration that is wrong", () => {
+  assert.deepEqual(catalogueFaults(), []);
   assert.deepEqual(registryFaults(), []);
-  const ok = { id: "x", skill: "nafnord", weight: 1, renderer: "gap", tags: [], bands: [1], build: () => null };
-  const faults = (t, order = ["x"]) => registryFaults({ nafnord: [t] }, order).join(" | ");
+  const ok = { id: "x", skill: "nafnord", nm: "X", ds: "Prófun", weight: 1, renderer: "gap",
+    recall: false, grader: "app", tags: [], bands: [1] };
+  const build = { build: () => null };
+  const faults = (t) => registryFaults([t], { nafnord: { x: build } }).join(" | ");
   assert.equal(faults(ok), "");
-  assert.match(faults({ ...ok, skill: "sagnord" }), /filed under sagnord/);
+  assert.match(faults({ ...ok, skill: "kennsla" }), /kennsla is not a skill/);
   assert.match(faults({ ...ok, weight: 0 }), /no weight/);
   assert.match(faults({ ...ok, renderer: "" }), /no renderer/);
+  assert.match(faults({ ...ok, nm: "" }), /no name/);
+  assert.match(faults({ ...ok, ds: undefined }), /no description/);
   assert.match(faults({ ...ok, tags: null }), /no tags/);
   assert.match(faults({ ...ok, bands: [2, 3] }), /bands/);
   assert.match(faults({ ...ok, bands: [1, 3, 3] }), /bands/);
   assert.match(faults({ ...ok, bands: [1, 8] }), /bands/);
-  assert.match(faults({ ...ok, build: null }), /no builder/);
   assert.match(faults({ ...ok, anyOf: ["sagnord"] }), /anyOf/);
-  assert.match(faults(ok, []), /no place in ORDER/);
-  assert.match(faults(ok, ["x", "y"]), /ORDER names y/);
-  assert.match(registryFaults({ nafnord: [ok], sagnord: [{ ...ok, skill: "sagnord" }] }, ["x"]).join(" | "), /also declared/);
-  assert.match(registryFaults({ kennsla: [] }, []).join(" | "), /not a skill/);
+  assert.match(faults({ ...ok, recall: undefined }), /recall must be true or false/);
+  assert.match(faults({ ...ok, recall: "yes" }), /recall must be true or false/);
+  assert.match(faults({ ...ok, grader: undefined }), /grader must be/);
+  assert.match(faults({ ...ok, grader: "claude" }), /grader must be/);
+  assert.match(registryFaults([ok, ok], { nafnord: { x: build } }).join(" | "), /declared twice/);
+  assert.match(registryFaults([ok], { nafnord: { x: { build: null } } }).join(" | "), /no build function/);
+  assert.match(registryFaults([ok], { nafnord: { x: build }, kennsla: {} }).join(" | "), /kennsla is not a skill/);
+});
+
+test("registryFaults: a declaration without a builder, a builder without a declaration", () => {
+  const ok = { id: "x", skill: "nafnord", nm: "X", ds: "Prófun", weight: 1, renderer: "gap",
+    recall: false, grader: "app", tags: [], bands: [1] };
+  const build = { build: () => null };
+  /* declared in the catalogue, built nowhere */
+  assert.match(registryFaults([ok], { nafnord: {} }).join(" | "),
+    /core\/catalogue\.js x: declared and has no builder — export one as BUILDERS\.x in tasks\/nafnord\.js/);
+  /* built in a category file, declared nowhere */
+  assert.match(registryFaults([], { nafnord: { x: build } }).join(" | "),
+    /tasks\/nafnord\.js BUILDERS\.x: builds a type core\/catalogue\.js does not declare/);
+  /* built in the file of another skill */
+  assert.match(registryFaults([ok], { sagnord: { x: build } }).join(" | "),
+    /its builder belongs in tasks\/nafnord\.js/);
+  /* built twice */
+  assert.match(registryFaults([ok], { nafnord: { x: build }, sagnord: { x: build } }).join(" | "), /also built/);
+  /* a skill whose file is not imported at all */
+  assert.match(registryFaults([ok], {}).join(" | "), /import that file's BUILDERS in tasks\/registry\.js/);
+});
+
+test("recall and grader are declared on every type: no recall and no server grading yet", () => {
+  for (const t of CATALOGUE) {
+    assert.equal(typeof t.recall, "boolean", `${t.id}: recall`);
+    assert.ok(["app", "server"].includes(t.grader), `${t.id}: grader`);
+  }
+  /* #14 adds the first recall type and the first server-graded type comes
+     after #47; until then every type is the browser's and none is recall. */
+  assert.deepEqual(CATALOGUE.filter((t) => t.recall).map((t) => t.id), []);
+  assert.deepEqual(CATALOGUE.filter((t) => t.grader !== "app").map((t) => t.id), []);
+  assert.equal(isRecall("fill"), false);
+  assert.equal(isRecall("ekki-til"), false);
+  assert.equal(graderOf("fill"), "app");
+  /* the registry's types are the catalogue's, field for field, plus a builder */
+  for (const t of TASKS) {
+    const c = CATALOGUE.find((x) => x.id === t.id);
+    for (const [k, v] of Object.entries(c)) assert.deepEqual(t[k], v, `${t.id}.${k}`);
+    assert.equal(typeof t.build, "function");
+  }
 });
 
 test("the order of the catalogue is the order a seed means", () => {
   /* The weighted choice walks TASKS, so moving a type changes which question
      every seed gives — two browsers on two versions would build different
-     duels. New types go at the end; these stay where v6.12 had them. (The
-     split into category files must not reorder them: each file lists its
-     own types, and tasks/registry.js ORDER puts them back in this order.) */
-  const V612 = ["fill", "verbslot", "verb", "parse", "revform", "govern", "indecl", "syntax", "clause",
+     duels. New types go at the END of core/catalogue.js; these stay where
+     they are. Up to gerd_upphaf is v6.12's order; the rest was tasks/registry.js
+     ORDER until #46 made the catalogue's own order the duel order. */
+  const PINNED = ["fill", "verbslot", "verb", "parse", "revform", "govern", "indecl", "syntax", "clause",
     "tbl_no", "tbl_lo", "tbl_so", "tbl_fn", "tbl_to", "meaning", "umritun", "smidja", "villur",
     "no_val", "lo_beyging", "lo_stig", "lo_samr", "fn_eyda", "fn_stad", "fn_aftur", "to_samr", "to_val",
     "to_dags", "to_flt", "ob_smella", "ob_fsao", "ob_st", "ob_flokka", "gr_smella", "gr_flokka",
     "fs_fsno", "fs_hreyf", "fs_sogn", "fs_operson", "or_heiti", "or_samhengi", "or_myndun", "or_utundan",
-    "setn_hlut", "setn_flokka", "gerd_finna", "gerd_upphaf"];
-  assert.deepEqual(TASKS.map((t) => t.id).slice(0, V612.length), V612);
+    "setn_hlut", "setn_flokka", "gerd_finna", "gerd_upphaf",
+    "fn_flokkar", "no_beyging", "so_beyging", "so_mynd", "so_bodhattur",
+    "gerd_tegund", "setn_lidir", "lid_finna", "raeda"];
+  assert.deepEqual(CATALOGUE.map((t) => t.id).slice(0, PINNED.length), PINNED,
+    "the catalogue was reordered: new types go at the end of core/catalogue.js");
+  assert.deepEqual(TASKS.map((t) => t.id), CATALOGUE.map((t) => t.id));
+  assert.deepEqual(TYPE_IDS, CATALOGUE.map((t) => t.id), "core/policy.js TYPE_IDS is the catalogue's");
 });
 
 test("a type is on when its skill is — the reverse analysis when any of its three is", () => {
@@ -159,7 +212,7 @@ test("tags: a type declares every diagnosis tag its questions can carry", () => 
     const { tags } = SEEN.get(spec.id);
     const undeclared = [...tags].filter((x) => !spec.tags.includes(x));
     assert.deepEqual(undeclared, [],
-      `${spec.id} builds questions tagged ${undeclared.join(", ")}: add to its tags in tasks/${spec.skill}.js`);
+      `${spec.id} builds questions tagged ${undeclared.join(", ")}: add to its tags in core/catalogue.js`);
     assert.equal(new Set(spec.tags).size, spec.tags.length, `${spec.id}: a tag twice`);
     spec.tags.forEach((x) => assert.ok(known.has(x), `${spec.id}: no error pattern reads the tag ${x}`));
   }
@@ -172,7 +225,7 @@ test("bands: at a step a type does not declare, it builds exactly what it built 
       if (spec.bands.includes(band)) continue;
       assert.deepEqual(rows[band - 1], rows[band - 2],
         `${spec.id} builds other questions at þyngd ${band} than at ${band - 1}, and its bands ` +
-        `(${spec.bands.join(", ")}) do not say so: add ${band} in tasks/${spec.skill}.js`);
+        `(${spec.bands.join(", ")}) do not say so: add ${band} to its bands in core/catalogue.js`);
     }
   }
 });

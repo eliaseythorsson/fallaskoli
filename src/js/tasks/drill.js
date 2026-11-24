@@ -5,7 +5,7 @@
    builder that chooses a word asks `forced(view, …)` first (tasks/shared.js).
    Four types have a variant that starts from the word instead — the cloze,
    the analysis, the word-class question and the case a word governs; each
-   declares it as `drill` in its category's TYPES. */
+   exports it as `drill` beside `build` in its category's BUILDERS. */
 
 import { wordKey } from "../core/state.js";
 import { built, FX } from "./effects.js";

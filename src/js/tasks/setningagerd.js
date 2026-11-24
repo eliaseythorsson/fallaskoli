@@ -345,22 +345,13 @@ export function clKind(lex, view, rng) {
   }, [FX.exSeen(x.key)]);
 }
 
-export const TYPES = [
-  { id: "clause", skill: "setningagerd", weight: 8, renderer: "clause",
-    tags: ["clause"],
-    bands: [1, 5, 6, 7],
-    build: taskClause },
-  { id: "gerd_finna", skill: "setningagerd", weight: 5, renderer: "tap",
-    tags: ["clause"],
-    bands: [1, 5, 6, 7],
-    build: clFind },
-  { id: "gerd_upphaf", skill: "setningagerd", weight: 4, renderer: "choice",
-    tags: ["clause"],
-    bands: [1, 5, 6, 7],
-    build: clStart },
-  /* item 28 */
-  { id: "gerd_tegund", skill: "setningagerd", weight: 7, renderer: "choice",
-    tags: ["subkind", "subkind:svo"],
-    bands: [1, 4, 6],
-    build: clKind },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  clause: { build: taskClause },
+  gerd_finna: { build: clFind },
+  gerd_upphaf: { build: clStart },
+  gerd_tegund: { build: clKind },
+};

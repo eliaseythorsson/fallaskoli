@@ -138,18 +138,12 @@ export function grSort(lex, view, rng) {
   });
 }
 
-export const TYPES = [
-  { id: "parse", skill: "greining", weight: 11, renderer: "parse",
-    tags: ["adj", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "noun", "num", "ofl",
-      "verb:agree", "verb:mm", "verb:tense", "verb:vh"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: taskParse, drill: taskParseWord },
-  { id: "gr_smella", skill: "greining", weight: 5, renderer: "tap",
-    tags: ["ofl", "ofl:ao_fs"],
-    bands: [1, 2, 3, 4, 5, 6],
-    build: grTap },
-  { id: "gr_flokka", skill: "greining", weight: 4, renderer: "sort",
-    tags: ["ofl"],
-    bands: [1, 2, 3, 4, 5],
-    build: grSort },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  parse: { build: taskParse, drill: taskParseWord },
+  gr_smella: { build: grTap },
+  gr_flokka: { build: grSort },
+};

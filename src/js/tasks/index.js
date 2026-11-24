@@ -1,8 +1,9 @@
 /* The question builders — the door the rest of the program comes in by.
 
    tasks/
-     registry.js        the catalogue: every question type, declared (start here)
-     <skill>.js         one file per category: nafnord, lysingarord, sagnord,
+     registry.js        the catalogue (core/catalogue.js) joined with the
+                        builders: every question type, ready to build
+     <skill>.js         one file per category, its BUILDERS by type id: nafnord, lysingarord, sagnord,
                         fornofn, toluord, obeygjanleg, greining, fallstjorn,
                         ordaford, setningafraedi, malbeiting, setningagerd
      view.js            what a builder may look at: (lex, view, rng)
@@ -27,8 +28,9 @@
        const b = nextTask(lex, makeView({ S, sess, policy }), rng);
        if (b) { applyEffects(app, b.effects); show(b.task); }
 
-   A new type is one builder and one TYPES entry in its category's file, and a
-   renderer in ui/ if no existing one draws its shape (see registry.js).     */
+   A new type is one entry at the end of core/catalogue.js and one builder in
+   its category's BUILDERS, and a renderer in ui/ if no existing one draws its
+   shape (see registry.js).                                                  */
 
 export { TASKS, CATEGORIES, typeById, enabled, weightOf } from "./registry.js";
 export { nextTask, buildTask } from "./next.js";

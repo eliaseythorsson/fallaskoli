@@ -11,7 +11,9 @@
  * child gets back exactly what they had chosen.
  *
  * A missing key means yes, so a blank policy is "everything" and nothing had to
- * be migrated. Four dimensions: skills, question types, difficulty levels, and
+ * be migrated. One exception, on purpose: `allowed.serverGrading`, the
+ * administrator's per-pupil switch for server-graded question types, is OFF
+ * unless written `true` (docs/adr/0004; see `createPolicy`). Four dimensions: skills, question types, difficulty levels, and
  * inflectional features — the last read off the BÍN mark itself (`featuresOf`),
  * never from a table of which question types involve which cases.
  *
@@ -23,131 +25,19 @@ import { readMark } from "./marks.js";
 import { SKILLS } from "./skills.js";
 import { MIN, MAX } from "./difficulty.js";
 import { YEARS, presetContent } from "./curriculum.js";
+import { CATALOGUE, graderOf } from "./catalogue.js";
 
 /* ---------- the dimensions ---------------------------------------------- */
 
 /**
- * The question types, named for a person rather than by their builder id.
- * `skill` ties each one to the category it belongs to, so the interface can
- * group them the way the child already understands.
+ * The question types, named for a person rather than by their builder id,
+ * in catalogue order. Declared in core/catalogue.js, with everything else
+ * about a type; here only what the switches need. `skill` ties each one to
+ * the category it belongs to, so the interface can group them the way the
+ * child already understands; `grader` says whether it can exist without
+ * server grading (`createPolicy`).
  */
-export const QUESTION_TYPES = [
-  { id: "fill",     nm: "Settu orðið í rétt horf",     skill: "nafnord",
-    ds: "Nafnorð (og stundum lýsingarorð eða fornafn) sett í eyðu í setningu" },
-  { id: "verbslot", nm: "Sögn í setningu",             skill: "sagnord",
-    ds: "Sögn sett í eyðu í heilli setningu" },
-  { id: "verb",     nm: "Beygðu sögnina",              skill: "sagnord",
-    ds: "Sögn beygð eftir persónu, tíð, hætti og mynd" },
-  { id: "parse",    nm: "Greindu orðið sem er merkt",  skill: "greining",
-    ds: "Orðflokkur og öll beygingaratriði orðs í setningu" },
-  { id: "revform",  nm: "Greindu beygðu myndina",      skill: "lysingarord",
-    ds: "Beygð mynd greind — í setningu þegar hún er til, annars ein og sér" },
-  { id: "govern",   nm: "Hvaða falli stýrir orðið?",   skill: "fallstjorn",
-    ds: "Fallstjórn sagna og forsetninga" },
-  { id: "indecl",   nm: "Í hvaða orðflokki er orðið?", skill: "obeygjanleg",
-    ds: "Óbeygjanleg orð þekkt í setningu" },
-  { id: "syntax",   nm: "Smelltu á rétta orðið",       skill: "setningafraedi",
-    ds: "Frumlag, umsögn, andlag og sagnfylling fundin í setningu" },
-  { id: "clause",   nm: "Hvers konar setning er þetta?", skill: "setningagerd",
-    ds: "Aðalsetning, aukasetning og nafnháttarsetning" },
-  { id: "tbl_no",   nm: "Beygingartafla — nafnorð",    skill: "nafnord",
-    ds: "Öll fjögur föllin í einum dálki" },
-  { id: "tbl_lo",   nm: "Beygingartafla — lýsingarorð", skill: "lysingarord",
-    ds: "Stigbreyting, sterk og veik beyging" },
-  { id: "tbl_so",   nm: "Beygingartafla — sagnorð",    skill: "sagnord",
-    ds: "Sögn beygð í öllum persónum" },
-  { id: "tbl_fn",   nm: "Beygingartafla — fornöfn",    skill: "fornofn",
-    ds: "Fornöfn og greinir beygð" },
-  { id: "tbl_to",   nm: "Beygingartafla — töluorð",    skill: "toluord",
-    ds: "Frumtölur og raðtölur beygðar" },
-  { id: "meaning",  nm: "Hvað þýðir orðið?",           skill: "ordaford",
-    ds: "Merking orðs með eigin orðum — í lotu sem valfrjáls bónus" },
-  { id: "villur",   nm: "Villuveiðar",                 skill: "malbeiting",
-    ds: "Finndu og lagaðu eina eða tvær villur í tveimur setningum: fall og samræmi, og frá þyngd 3 algengar málvillur (mér langar, ég vill)" },
-  { id: "smidja",   nm: "Setningasmiðja",              skill: "malbeiting",
-    ds: "Búðu til setningu úr orðum í orðabókarmynd og beygðu hvert orð" },
-  { id: "umritun",  nm: "Umritun",                     skill: "malbeiting",
-    ds: "Settu setningu í þátíð, fleirtölu eða þolmynd, eða byrjaðu hana á Í gær / Á morgun" },
-  /* v6.11 */
-  { id: "no_val",     nm: "Veldu rétt fall",            skill: "nafnord",
-    ds: "Nafnorð í setningu: valið milli falla" },
-  { id: "lo_beyging", nm: "Sterk eða veik beyging",     skill: "lysingarord",
-    ds: "Lýsingarorð skrifað í eyðu, með eða án greinis" },
-  { id: "lo_stig",    nm: "Stigbreyting í setningu",    skill: "lysingarord",
-    ds: "Miðstig og efsta stig skrifað í eyðu" },
-  { id: "lo_samr",    nm: "Samræmi lýsingarorðs",       skill: "lysingarord",
-    ds: "Lýsingarorð lagað að nafnorði eða frumlagi" },
-  { id: "fn_eyda",    nm: "Fornafn í eyðu",             skill: "fornofn",
-    ds: "Persónufornafn í réttu falli: Ég gaf ___ (hún) bókina" },
-  { id: "fn_stad",    nm: "Fornafn í stað nafnorðs",    skill: "fornofn",
-    ds: "Nafnorð í setningu leyst af hólmi með persónufornafni" },
-  { id: "fn_aftur",   nm: "Afturbeygt eða ekki",        skill: "fornofn",
-    ds: "sér eða honum, sína eða hans — merkingin ræður" },
-  { id: "to_samr",    nm: "Töluorð í eyðu",             skill: "toluord",
-    ds: "Frumtala 1–4 löguð að nafnorði: Ég á ___ (2) systur" },
-  { id: "to_val",     nm: "Veldu mynd töluorðs",        skill: "toluord",
-    ds: "Valið milli mynda af tveir, þrír, fjórir" },
-  { id: "to_dags",    nm: "Dagsetningar",               skill: "toluord",
-    ds: "Raðtölur í dagsetningum: ___ (3.) maí" },
-  { id: "to_flt",     nm: "Töluorð með fleirtöluorðum", skill: "toluord",
-    ds: "tvennar buxur, þrenn skæri" },
-  { id: "ob_smella",  nm: "Smelltu á orðin",            skill: "obeygjanleg",
-    ds: "Öll atviksorð, forsetningar eða samtengingar í setningu" },
-  { id: "ob_fsao",    nm: "Forsetning eða atviksorð",   skill: "obeygjanleg",
-    ds: "Sama orð, ólíkt hlutverk: hljóp upp stigann / leit upp" },
-  { id: "ob_st",      nm: "Veldu samtenginguna",        skill: "obeygjanleg",
-    ds: "hvort eða ef, sem, né, þótt …" },
-  { id: "ob_flokka",  nm: "Flokkaðu óbeygjanleg orð",   skill: "obeygjanleg",
-    ds: "Orð úr setningu sett í orðflokk" },
-  { id: "gr_smella",  nm: "Smelltu á orðflokkinn",      skill: "greining",
-    ds: "Öll nafnorð, sagnir, lýsingarorð … í setningu" },
-  { id: "gr_flokka",  nm: "Flokkaðu orðin",             skill: "greining",
-    ds: "Orð í orðabókarmynd sett í orðflokk" },
-  { id: "fs_fsno",    nm: "Forsetning + nafnorð",       skill: "fallstjorn",
-    ds: "Nafnorð í réttu falli á eftir forsetningu" },
-  { id: "fs_hreyf",   nm: "Hreyfing eða kyrrstaða",     skill: "fallstjorn",
-    ds: "í/á með þolfalli eða þágufalli: á borðið / á borðinu" },
-  { id: "fs_sogn",    nm: "Sögn stýrir falli",          skill: "fallstjorn",
-    ds: "hjálpa, sakna, bíða … með nafnorði í réttu falli" },
-  { id: "fs_operson", nm: "Ópersónulegar sagnir",       skill: "fallstjorn",
-    ds: "Mig langar, mér finnst — og ég hlakka til" },
-  { id: "or_heiti",   nm: "Samheiti og andheiti",       skill: "ordaford",
-    ds: "Orð sem merkir það sama eða hið gagnstæða" },
-  { id: "or_samhengi", nm: "Orð í samhengi",            skill: "ordaford",
-    ds: "Veldu orðið sem passar í setninguna" },
-  { id: "or_myndun",  nm: "Orðmyndun",                  skill: "ordaford",
-    ds: "ó-, -ari, -ing, -un" },
-  { id: "or_utundan", nm: "Hvert á ekki heima?",        skill: "ordaford",
-    ds: "Fjögur orð, eitt sker sig úr" },
-  { id: "setn_hlut",  nm: "Hvaða setningarhluti?",      skill: "setningafraedi",
-    ds: "Hlutverk undirstrikaðs orðs" },
-  { id: "setn_flokka", nm: "Flokkaðu setningarhluta",   skill: "setningafraedi",
-    ds: "Frumlag, umsögn, andlag, sagnfylling" },
-  { id: "gerd_finna", nm: "Finndu aukasetninguna",      skill: "setningagerd",
-    ds: "Smelltu á öll orð aukasetningar eða nafnháttarsetningar" },
-  { id: "gerd_upphaf", nm: "Hvar hefst setningin?",     skill: "setningagerd",
-    ds: "Fyrsta orð aukasetningar" },
-  /* item 27 */
-  { id: "fn_flokkar", nm: "Hvers konar fornafn?",       skill: "fornofn",
-    ds: "Persónu-, afturbeygt, eignar-, ábendingar-, spurnar- eða óákveðið fornafn í setningu" },
-  { id: "no_beyging", nm: "Sterkt eða veikt nafnorð",   skill: "nafnord",
-    ds: "Sterk eða veik beyging af eignarfalli eintölu: til hests, til pabba. Frá þyngd 5 er eignarfallið skrifað" },
-  { id: "so_beyging", nm: "Sterk eða veik sögn?",      skill: "sagnord",
-    ds: "Sterk eða veik sögn eftir þátíðinni: í gær kallaði ég, í gær tók ég. Frá þyngd 3 er þátíðin skrifuð, frá þyngd 5 kennimyndirnar" },
-  { id: "so_mynd",   nm: "Germynd, miðmynd eða þolmynd?", skill: "sagnord",
-    ds: "Mynd sagnar í setningu: hittust, var byggt — og þú lest, sem er germynd þótt það endi á -st" },
-  { id: "so_bodhattur", nm: "Boðháttur",               skill: "sagnord",
-    ds: "Boðháttur skrifaður: komdu, lestu, farðu — og frá þyngd 3 fleirtalan: komið" },
-  /* item 28: years 9 and 10 */
-  { id: "gerd_tegund", nm: "Hvers konar aukasetning?", skill: "setningagerd",
-    ds: "Fall-, tilvísunar- eða atvikssetning; frá þyngd 4 skýringar-, spurnar-, tíðar-, skilyrðis-, orsakar- og viðurkenningarsetning; frá þyngd 6 líka tilgangs- og afleiðingarsetning" },
-  { id: "setn_lidir", nm: "Hvers konar liður?",         skill: "setningafraedi",
-    ds: "Nafnliður, sagnliður eða forsetningarliður í setningu; frá þyngd 3 líka atviksliður" },
-  { id: "lid_finna", nm: "Finndu forsetningarliðinn",   skill: "setningafraedi",
-    ds: "Smelltu á öll orð forsetningarliðar; frá þyngd 4 geta þeir verið tveir" },
-  { id: "raeda", nm: "Bein og óbein ræða",              skill: "malbeiting",
-    ds: "Settu orð annarra í óbeina ræðu: Hún sagði að hún væri þreytt. Frá þyngd 4 er beina ræðan í þátíð: hefði farið" },
-];
+export const QUESTION_TYPES = CATALOGUE.map(({ id, nm, skill, ds, grader }) => ({ id, nm, skill, ds, grader }));
 
 export const TYPE_IDS = QUESTION_TYPES.map((t) => t.id);
 
@@ -273,17 +163,42 @@ function bothOn(a, b, key) {
 }
 
 /**
+ * May server-graded question types exist for this pupil? Only with BOTH: a
+ * server whose grader is up (`serverGrader`, which the caller knows and this
+ * module does not), and the administrator's per-pupil switch written `true`.
+ *
+ * THE EXCEPTION to this file's rule. Every other key of `allowed` is on
+ * unless somebody wrote `false`; this one is OFF unless somebody wrote
+ * `true` — missing, null, or any other value is off. It sends a child's
+ * writing to an outside grader and costs money, so nobody gets it by not
+ * having been asked (docs/adr/0004).
+ *
+ * @param {?object} allowed  the administrator's ceiling
+ * @param {boolean} serverGrader  is a server grader available to this program?
+ */
+export const serverGradingOn = (allowed, serverGrader) =>
+  serverGrader === true && !!allowed && allowed.serverGrading === true;
+
+/**
  * Build the effective policy.
  *
  * @param allowed  the administrator's ceiling (may be null)
  * @param chosen   the child's own switches (may be null)
+ * @param opts.serverGrader  is a server grader available (default no). With
+ *   it off, or the ceiling's `serverGrading` not `true`, every type whose
+ *   catalogue `grader` is "server" is switched off here — and so is invisible
+ *   to every caller that asks `type` (sessions, Lota dagsins, duels, live
+ *   rounds, the switches).
  */
-export function createPolicy(allowed, chosen) {
+export function createPolicy(allowed, chosen, { serverGrader = false } = {}) {
   const A = allowed || blankPolicy();
   const C = chosen || blankPolicy();
 
+  const serverGrading = serverGradingOn(A, serverGrader);
+  /** May a question judged by this grader appear? */
+  const grader = (/** @type {string} */ g) => (g === "server" ? serverGrading : true);
   const skill = (id) => bothOn(A.skills, C.skills, id);
-  const type = (id) => bothOn(A.types, C.types, id);
+  const type = (id) => bothOn(A.types, C.types, id) && grader(graderOf(id));
   const level = (n) => bothOn(A.levels, C.levels, String(n));
   const attr = (group, key) =>
     bothOn(A.attrs && A.attrs[group], C.attrs && C.attrs[group], key);
@@ -343,6 +258,9 @@ export function createPolicy(allowed, chosen) {
         means "never decided" and becomes on, and an administrator who
         unticked it keeps that choice. */
     safeVocab: A.safeVocab !== false,
+
+    /** Server grading for this pupil: see `serverGradingOn`. */
+    serverGrading, grader,
 
     /** For the interface: is this switch the administrator's to explain? */
     allowedBy: {
@@ -543,6 +461,9 @@ export function sanitisePolicy(raw) {
     }
   }
   if (typeof raw.safeVocab === "boolean") out.safeVocab = raw.safeVocab;
+  /* Kept only as a boolean, and only when present: missing means off
+     (`serverGradingOn`), so there is nothing to fill in. */
+  if (typeof raw.serverGrading === "boolean") out.serverGrading = raw.serverGrading;
   return out;
 }
 

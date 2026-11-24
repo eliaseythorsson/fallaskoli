@@ -27,7 +27,8 @@ import { seeded } from "../src/js/core/duel.js";
 import { PATTERNS, BANK_PATTERNS, bankTag, patternById, tagsOf, chancesIn, diagnose,
   huntPreferFor, focusTypes } from "../src/js/core/diagnosis.js";
 import { taskHunt, bankHunt, bankPool, huntSource, secondLanguage, BANK_FROM_BAND,
-  joinTokens, TYPES } from "../src/js/tasks/malbeiting.js";
+  joinTokens } from "../src/js/tasks/malbeiting.js";
+import { catalogueEntry } from "../src/js/core/catalogue.js";
 import { makeView, applyEffects } from "../src/js/tasks/index.js";
 
 /* Grading lives in tasks/production.js until core/answer.js takes it over
@@ -249,7 +250,7 @@ test("the bank grows with the þyngd: 3, then 4, then 5, and nothing new above",
     t.hunt.lines.forEach((l) => assert.ok(BANK.find((x) => x.t === l.s.t).b <= 3, l.s.t));
   }
   /* and the declaration in the catalogue says exactly this */
-  assert.deepEqual(TYPES.find((t) => t.id === "villur").bands, [1, 2, 3, 4, 5]);
+  assert.deepEqual(catalogueEntry("villur").bands, [1, 2, 3, 4, 5]);
 });
 
 test("a second-language profile keeps the generated hunt at every þyngd (the hook for item 45)", () => {
@@ -402,11 +403,11 @@ test("a missed error is filed under the patterns its item names — and no other
 test("the patterns of the bank: listed once, each with a tag of its own that the catalogue declares", () => {
   const used = new Set(BANK.flatMap((x) => x.p));
   assert.deepEqual([...used].sort(), [...BANK_PATTERNS].sort(), "BANK_PATTERNS (core/diagnosis.js) and the bank disagree");
-  const declared = TYPES.find((t) => t.id === "villur").tags;
+  const declared = catalogueEntry("villur").tags;
   for (const id of BANK_PATTERNS) {
     const p = patternById(id);
     assert.ok(p.tags.includes(bankTag(id)), id);
-    assert.ok(declared.includes(bankTag(id)), `${id}: add ${bankTag(id)} to the tags of villur`);
+    assert.ok(declared.includes(bankTag(id)), `${id}: add ${bankTag(id)} to the tags of villur in core/catalogue.js`);
     assert.ok(BANK.some((x) => x.p.includes(id)), `${id}: no item`);
     /* a tag of its own: no other pattern reads it */
     assert.equal(PATTERNS.filter((q) => q.tags.includes(bankTag(id))).length, 1);

@@ -453,28 +453,14 @@ export function fnKind(lex, view, rng) {
   }, [FX.exSeen(x.key)]);
 }
 
-export const TYPES = [
-  { id: "tbl_fn", skill: "fornofn", weight: 4, renderer: "table",
-    tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun", "num"],
-    bands: [1, 2, 3, 4],
-    build: tablePronoun },
-  { id: "fn_eyda", skill: "fornofn", weight: 7, renderer: "gap",
-    tags: ["case:EF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3, 4],
-    build: fnGap },
-  { id: "fn_stad", skill: "fornofn", weight: 6, renderer: "gap",
-    tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3, 4, 5, 6],
-    build: fnReplace },
-  { id: "fn_aftur", skill: "fornofn", weight: 5, renderer: "choice",
-    tags: ["reflex"],
-    bands: [1, 3, 4],
-    build: fnReflex },
-  /* item 27. Six kinds from þyngd 3, the genitive trap from 5, and bank
-     sentences up to one level above the band — like fn_stad, so at 6 the
-     level-7 sentences (item 14) come in, and 7 adds nothing new. */
-  { id: "fn_flokkar", skill: "fornofn", weight: 5, renderer: "choice",
-    tags: ["fnkind", "fnkind:gen"],
-    bands: [1, 2, 3, 4, 5, 6],
-    build: fnKind },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  tbl_fn: { build: tablePronoun },
+  fn_eyda: { build: fnGap },
+  fn_stad: { build: fnReplace },
+  fn_aftur: { build: fnReflex },
+  fn_flokkar: { build: fnKind },
+};

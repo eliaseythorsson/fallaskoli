@@ -443,29 +443,14 @@ export function ordOdd(lex, view, rng) {
   return null;
 }
 
-export const TYPES = [
-  /* v6.11: in a session the free-text meaning question is an optional bonus
-     after the graded Orðaforði questions (ui/render-more.js), not a question
-     of its own — hence no weight inside one. It still comes in a rescue
-     drill. */
-  { id: "meaning", skill: "ordaford", weight: 4, weightInRun: 0, renderer: "meaning",
-    tags: [],
-    bands: [1],
-    build: taskMeaning },
-  { id: "or_heiti", skill: "ordaford", weight: 4, renderer: "choice",
-    tags: ["vocab"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: ordSynAnt },
-  { id: "or_samhengi", skill: "ordaford", weight: 4, renderer: "choice",
-    tags: ["vocab"],
-    bands: [1, 3],
-    build: ordContext },
-  { id: "or_myndun", skill: "ordaford", weight: 3, renderer: "gap",
-    tags: ["wordform"],
-    bands: [1, 3, 4, 5],
-    build: ordFormation },
-  { id: "or_utundan", skill: "ordaford", weight: 3, renderer: "choice",
-    tags: ["vocab"],
-    bands: [1, 2, 3, 4, 5],
-    build: ordOdd },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  meaning: { build: taskMeaning },
+  or_heiti: { build: ordSynAnt },
+  or_samhengi: { build: ordContext },
+  or_myndun: { build: ordFormation },
+  or_utundan: { build: ordOdd },
+};
