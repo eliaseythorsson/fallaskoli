@@ -33,12 +33,16 @@ const sentOf = (t) => (t.s ? t.s.t : null);
    core/answer.js reads, `judge` says whether it was right and what it earns, and
    `settle` writes it exactly as the app does (record, difficulty, review queue).
    `builderRng` replaces Math.random for the builders (a seeded rng makes a run
-   repeatable). Without them nothing changes from before. */
-export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2, size = 10, topic = "blandad", allSkills = false, seed = 1, review = true, rewards = false, activeDays = null, respond = null, builderRng = null }) {
+   repeatable). Without them nothing changes from before. `setup(S)` is called
+   once on the blank state, before the first day. */
+export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2, size = 10, topic = "blandad", allSkills = false, seed = 1, review = true, rewards = false, activeDays = null, respond = null, builderRng = null, setup = null }) {
   const rnd = rng(seed);
   const appRng = builderRng || (() => Math.random());
   const S = ST.blankState();
   if (allSkills) SKILL_IDS.forEach((id) => { S.enabled[id] = true; });
+  /* `setup(S)`: the pupil's own choices before the first day, e.g. question
+     types switched off (tests/wordknowledge-readers.test.js). */
+  if (setup) setup(S);
   const app = { lex, S, sess: null, forcedNoun: null, policy: null, mix: null, run: null, huntPrefer: null };
   const log = []; const dayXp = []; const lvlByDay = [];
   const cellN = {}; // exposures per cell -> learning
