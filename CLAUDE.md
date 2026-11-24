@@ -122,3 +122,17 @@ The owner works from `~/Projects/fallaskoli` and syncs it with GitHub by
 double-clicking `Update website.command` (pull, then commit and push to `main`).
 That is the one exception to "nobody commits to `main` directly"; agents still
 use branches and pull requests.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues on eliaseythorsson/fallaskoli (the `gh` CLI); the issue number is the item number in branch names. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `docs/adr/` at the root, created when first needed. See `docs/agents/domain.md`.
