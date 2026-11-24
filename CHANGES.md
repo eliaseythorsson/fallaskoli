@@ -13,6 +13,11 @@
   sæti sitt á listanum (`lino`). LÍNO-2 (CC BY 4.0) er komið í leyfalistann. Skráin sjálf,
   `sources/lino2.csv`, bætist við einu sinni (`python3 pipeline/lino.py` segir hvernig);
   þangað til varar smíðin við og gögnin eru óbreytt.
+### Setningafræði
+- **Vísbending sýnir byggingu málsgreinarinnar** í „Smelltu á rétta orðið“: frumlag, umsögn,
+  andlag, sagnfylling, forsetningarliðir og samtengingar fá hvert sinn lit, sína línu og
+  heitið sitt undir, og aukasetningar ramma — allt nema það sem spurt er um, og aðeins það
+  sem greiningin er viss um. Sést jafnt á töflu og blaði og án lita (#25).
 
 ### Plan: vocabulary, comprehension and stories
 - **`docs/DLD-RESEARCH.md`**: the evidence on interventions for teenagers with

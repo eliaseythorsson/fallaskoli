@@ -39,7 +39,7 @@
  *   parse                       { picks: { fl, kyn, tala, … } } — the class
  *                               (`fl`) first and alone; see JUDGES.parse
  *   sort                        { picks: { 0: bucket, 1: bucket, … } }
- *   syntax                      { picked: tokenIndex }
+ *   syntax                      { picked: tokenIndex, hinted? }
  *   govern, indecl, clause,
  *   choice                      { picked: value }
  *   kenni                       { picked: "sterk" | "veik", text? } — the
@@ -692,10 +692,12 @@ JUDGES.syntax = (t, response, hist) => {
       detail: { kind, good },
     });
   const ok = kind === "right";
+  /* Item 25: the structure hint (ui/render.js) halves the XP, like every hint. */
+  const hinted = !!response.hinted;
   return result(t, {
     ok, verdict: VERDICT(ok),
     effects: [
-      rec({ skill: t.skill, cell: t.cell, ok, xp: xpFor(hist, t, { ok }), timed: true }),
+      rec({ skill: t.skill, cell: t.cell, ok, xp: xpFor(hist, t, { ok, hinted }), ...(hinted ? { hinted } : {}), timed: true }),
       bump(t.skill, ok),
     ],
     resp: { kind: "syntax", ok,
