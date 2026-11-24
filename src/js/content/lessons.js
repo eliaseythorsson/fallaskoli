@@ -35,7 +35,7 @@ export const LESSONS = [
       { tip: "Sum orð eru eins í mörgum föllum, til dæmis *bók*. Þá er gott að setja orðið *hestur* í staðinn. *Ég las bók* verður *Ég las hest*. Setningin verður skrítin, en þú heyrir strax að þetta er þolfall." },
       { h: "Af hverju skiptir fallið máli?" },
       { p: "Fallið sýnir hlutverk orðsins. Sá sem gerir eitthvað er oftast í nefnifalli. Sagnir og forsetningar ráða svo í hvaða falli önnur orð standa. Lýsingarorð, fornöfn og greinir fara í sama fall og nafnorðið sem þau standa með." },
-      { warn: "Nefnifall, þolfall og þágufall eru oft eins. Ekki giska eftir útliti orðsins. Spurðu alltaf með: *hver, hvern, hverjum* og *hvers* eða prófaðu orðið *hestur*." },
+      { warn: "Nefnifall, þolfall og þágufall eru oft eins. Ekki giska eftir útliti orðsins. Spyrðu alltaf með: *hver, hvern, hverjum* og *hvers* eða prófaðu orðið *hestur*." },
     ],
     check: [
       { q: "Hvað eru föllin mörg og hvað heita þau?", a: "Fjögur: nefnifall, þolfall, þágufall og eignarfall." },

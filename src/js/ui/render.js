@@ -1267,7 +1267,7 @@ function submitGovern(app) {
     $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
     <p>${fmt(body)}</p>
-    <div class="why"><b>prófaðu</b>${fmt("Spurðu þig: *" + cs.q + "*")}</div>
+    <div class="why"><b>prófaðu</b>${fmt("Spyrðu þig: *" + cs.q + "*")}</div>
     <p class="streakline">Enter fyrir næstu.</p></div>`;
   });
 }

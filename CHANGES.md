@@ -4,6 +4,7 @@
 
 ### Yfirlestur eiganda á efninu (24.11.2026)
 - **Athugasemdir móðurmálshafa eru komnar inn**: í „Sameina og skipta“ telst svar sem er rétt en óvenjulegt (*Af því að það var kalt úti fór ég í úlpu.*, *Ég sá það. Hurðin var opin.*) áfram rétt, en nemandinn sér líka algengari röðina; setningin *Músin var veidd af kettinum.* er farin; orðalag lagað á þremur síðum í Lesefni (Föllin fjögur, Kyn og tala nafnorða, Greinir).
+- **Boðháttur af *spyrja* er alls staðar *spyrðu***, ekki *spurðu* (sem er þátíð, *þau spurðu*): í Föllin fjögur, í fimm reglum villugreiningar, í vísbendingu á svarskjá og í einni setningu í Villuveiðum.
 
 ### Bil milli endurtekninga: ein regla (#10)
 - **Sama orð kemur aldrei tvisvar í röð í sömu spurningagerð**, en má koma strax aftur í annarri

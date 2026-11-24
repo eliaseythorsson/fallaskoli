@@ -72,14 +72,14 @@
   "content/toluord/fleirtoluord.tsv": "4ca785c55a91b761ee79a275f399cb0a114e0e5db0f78ea604d7d48cd177136f",
   "content/toluord/rammar.tsv": "ca45d5f8e28f0157b2096cbc7130383159de385d43d76674a5148b57cc7cf373",
   "content/toluord/samraemi.tsv": "2141e2808d0c782042f522980706a5e8b30daed68a863aea9355840220692aa2",
-  "content/villuveidar/villur.tsv": "3960bbff68ce25a326f6c9d9194680da97654a3c9a5da2befa26abf469abe92c"
+  "content/villuveidar/villur.tsv": "0e3d366621c0eb586cc1037af8392b2d15c52614a10867e668b82ebb7ab2cdb9"
  },
  "artifacts": {
   "data/freq_lemmas.json": "2ee3297c431689ab3ec2da9e6583ee701c064c87d339657050f9055042350cd4",
   "data/lexicon.json": "c166ce4922c53d69526c93dbacea3372a5fbaa67b45304a4698405613df75fe0",
   "data/sentences.json": "1fbb7a55c19923732dfb61c149bb4c4ddd6452a047eee88e7953a9c50737a669",
   "data/data_bundle.js": "8166c111b2d39750a7ead280d6a5c6c25564f976bd7788e9b0f020f5c088c784",
-  "data/exercises.js": "2a2d6b6147d99b0a6f0199b9494d7bea41247fe7a964723cbefd8c0d525a2baf"
+  "data/exercises.js": "9a884ce8e7090eabcdd49b2eea5fc57a1ab593ede12abe1879ddf3388f2df7bb"
  },
  "counts": {
   "words": 7405,

@@ -53,10 +53,10 @@ const FORM_TYPES = ["fill", "verb", "verbslot", "tbl_no", "tbl_lo", "tbl_so", "t
 
 export const PATTERNS = [
   { id: "thf_thgf", ok: "þolfall og þágufall", nm: "Þolfall og þágufall ruglast",
-    rule: "Spurðu þig: *um hvern?* → **þolfall**, *frá hverjum?* → **þágufall**. *Um, gegnum, kringum* stýra þolfalli; *frá, af, hjá, úr, að* stýra þágufalli.",
+    rule: "Spyrðu þig: *um hvern?* → **þolfall**, *frá hverjum?* → **þágufall**. *Um, gegnum, kringum* stýra þolfalli; *frá, af, hjá, úr, að* stýra þágufalli.",
     lesson: "foll", tags: ["case:ÞF", "case:ÞGF"], types: CASE_TYPES, hunt: "fall" },
   { id: "ef", ok: "eignarfall", nm: "Eignarfallið forðast",
-    rule: "Spurðu þig: *til hvers?* → **eignarfall**. Það kemur á eftir *til, án, vegna, milli, meðal* og sögnum eins og *sakna, leita, njóta* — ekki skipta því út fyrir þágufall.",
+    rule: "Spyrðu þig: *til hvers?* → **eignarfall**. Það kemur á eftir *til, án, vegna, milli, meðal* og sögnum eins og *sakna, leita, njóta* — ekki skipta því út fyrir þágufall.",
     lesson: "foll", tags: ["case:EF"], types: CASE_TYPES, hunt: "fall" },
   { id: "nf_aukafall", ok: "að beygja orðið í rétt fall", nm: "Nefnifall þar sem á að beygja",
     rule: "Orðið á spjaldinu eða í orðabókinni stendur í **nefnifalli**. Í setningunni ræður sögnin eða forsetningin fallinu — beygðu orðið áður en þú skrifar það.",
@@ -135,7 +135,7 @@ export const PATTERNS = [
     rule: "Í þátíð veikra sagna: **-ði** á eftir sérhljóði og *r, f, g* (*náði, heyrði, hafði, sagði*), **-di** oftast á eftir *l, m, n* (*taldi, dæmdi, kenndi*), **-ti** á eftir *p, t, k, s* (*keypti, mætti, vakti, kyssti*). *-aði* er alltaf með ð (*kallaði*). Segðu orðið upphátt: **ð** er mjúkt, **d** er hart.",
     lesson: "sterkar-veikar", tags: ["form"], types: FORM_TYPES },
   { id: "ordflokkur", ok: "orðflokka", nm: "Orðflokkar ruglast",
-    rule: "Spurðu hvað orðið gerir: nafnorð nefnir, lýsingarorð lýsir og stigbreytist, sögn segir hvað gerist, fornafn kemur í stað nafnorðs.",
+    rule: "Spyrðu hvað orðið gerir: nafnorð nefnir, lýsingarorð lýsir og stigbreytist, sögn segir hvað gerist, fornafn kemur í stað nafnorðs.",
     lesson: "ordflokkar", tags: ["ofl"], types: ["parse", "indecl", "gr_smella", "gr_flokka", "ob_smella", "ob_flokka"] },
   { id: "ao_fs", ok: "atviksorð og forsetningar", nm: "Atviksorð eða forsetning",
     rule: "**Forsetning** stendur með fallorði og stýrir falli þess: *í húsinu*. **Atviksorð** stendur eitt og stýrir engu: *hann fór inn*.",
@@ -144,7 +144,7 @@ export const PATTERNS = [
      review S12). It is never shown, and it is stored in pupils' progress
      and in the teacher's pattern exports, so it stays. */
   { id: "setningalidir", ok: "setningarhluta", nm: "Frumlag, andlag og umsögn",
-    rule: "Finndu sögnina (umsögnina) fyrst. Spurðu svo *hver/hvað gerir?* → frumlag, og *hvern/hvað?* → andlag.",
+    rule: "Finndu sögnina (umsögnina) fyrst. Spyrðu svo *hver/hvað gerir?* → frumlag, og *hvern/hvað?* → andlag.",
     lesson: "setningarhlutar", tags: ["syn"], types: ["syntax", "setn_hlut", "setn_flokka"] },
   { id: "setningagerd", ok: "setningagerðir", nm: "Setningagerðir",
     rule: "Aðalsetning getur staðið ein. Aukasetning hefst oftast á samtengingu (*að, sem, þegar, ef*) og er liður í annarri setningu.",
@@ -178,7 +178,7 @@ export const PATTERNS = [
     rule: "*Af því að* segir hvers vegna og *þess vegna* hvað leiddi af því. *Þegar* segir hvenær og *síðan* hvað gerðist næst. *En* tengir andstæður. *Hvorki … né* þýðir hvorugt og *ekki aðeins … heldur einnig* þýðir bæði.",
     lesson: "obeygjanleg", tags: ["tengi"], types: ["ob_tengiord", "ob_skilja"] },
   { id: "merking", ok: "merkingu orða", nm: "Merking orða",
-    rule: "Lestu alla setninguna og spurðu: hvað passar við merkinguna? Ef þú ert ekki viss, flettu orðinu upp — 📖 hnappurinn er við hverja spurningu.",
+    rule: "Lestu alla setninguna og spyrðu: hvað passar við merkinguna? Ef þú ert ekki viss, flettu orðinu upp — 📖 hnappurinn er við hverja spurningu.",
     lesson: "ordafordi", tags: ["vocab"], types: ["or_heiti", "or_samhengi", "or_utundan"] },
   { id: "ordmyndun", ok: "orðmyndun", nm: "Orðmyndun",
     rule: "Forskeyti og viðskeyti breyta orðum: *ó-* snýr merkingunni við (*heppinn – óheppinn*), *-ari* er sá sem gerir (*kenna – kennari*), *-ing/-un* gera nafnorð úr sögn (*æfa – æfing*).",
