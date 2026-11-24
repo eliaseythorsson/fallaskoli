@@ -6,40 +6,49 @@
    code from the aðalnámskrá: the national text sets criteria for the end of
    year 10 only and names no year for anything. A category runs on through
    the later years; what a later year adds inside it is in the map's nodes.
-   A test keeps these labels equal to the map. */
+   A test keeps these labels equal to the map.
+
+   `placement` is the skill's turn in the placement round (core/placement.js):
+   what a pupil has known longest first, so the round opens with something
+   familiar, and the two categories of year 10 last. `placementTwice`: asked a
+   second time, because that is where most of the practice will be.
+
+   What else a skill needs — a lesson page, curriculum nodes, error patterns,
+   skill-map nodes, a builders file — is listed by
+   tests/skills-checklist.test.js, which names the file to fill in. */
 
 import { presetContent } from "./curriculum.js";
 
 export const SKILLS = [
-  { id: "nafnord",      nm: "Nafnorð",          cur: "8.b", ico: "🧱",
+  { id: "nafnord",      nm: "Nafnorð",          cur: "8.b", ico: "🧱", placement: 1, placementTwice: true,
     ds: "Föll, tala, greinir, kyn" },
-  { id: "lysingarord",  nm: "Lýsingarorð",      cur: "8.b", ico: "🎨",
+  { id: "lysingarord",  nm: "Lýsingarorð",      cur: "8.b", ico: "🎨", placement: 3, placementTwice: true,
     ds: "Sterk og veik beyging, stigbreyting, samræmi" },
-  { id: "sagnord",      nm: "Sagnorð",          cur: "8.b", ico: "⚙️",
+  { id: "sagnord",      nm: "Sagnorð",          cur: "8.b", ico: "⚙️", placement: 2, placementTwice: true,
     ds: "Persóna, tíð, háttur, mynd, sterk/veik beyging" },
-  { id: "fornofn",      nm: "Fornöfn og greinir", cur: "8.b", ico: "👉",
+  { id: "fornofn",      nm: "Fornöfn og greinir", cur: "8.b", ico: "👉", placement: 5,
     ds: "Gerðir fornafna, laus og viðskeyttur greinir" },
-  { id: "toluord",      nm: "Töluorð",          cur: "8.b", ico: "🔢",
+  { id: "toluord",      nm: "Töluorð",          cur: "8.b", ico: "🔢", placement: 7,
     ds: "Frumtölur og raðtölur" },
-  { id: "obeygjanleg",  nm: "Óbeygjanleg orð",  cur: "8.b", ico: "🔗",
+  { id: "obeygjanleg",  nm: "Óbeygjanleg orð",  cur: "8.b", ico: "🔗", placement: 8,
     ds: "Atviksorð, forsetningar, samtengingar, upphrópanir" },
-  { id: "greining",     nm: "Orðflokkagreining", cur: "8.b", ico: "🔍",
+  { id: "greining",     nm: "Orðflokkagreining", cur: "8.b", ico: "🔍", placement: 4,
     ds: "Þekkja alla ellefu orðflokkana í texta" },
-  { id: "fallstjorn",   nm: "Fallstjórn",       cur: "8.b", ico: "🧭",
+  { id: "fallstjorn",   nm: "Fallstjórn",       cur: "8.b", ico: "🧭", placement: 6,
     ds: "Hvaða falli sögn eða forsetning stýrir" },
-  { id: "ordaford",     nm: "Orðaforði",        cur: "8.b", ico: "💬",
+  { id: "ordaford",     nm: "Orðaforði",        cur: "8.b", ico: "💬", placement: 9,
     ds: "Merking orða með eigin orðum" },
   /* Year 10: the school plans and the year-10 textbook that could be read put
      setningarhlutar and aðal-/aukasetningar there (v6.13; they said 9.b). */
-  { id: "setningafraedi", nm: "Setningafræði",  cur: "10.b", ico: "🌳",
+  { id: "setningafraedi", nm: "Setningafræði",  cur: "10.b", ico: "🌳", placement: 11,
     ds: "Frumlag, umsögn, andlag, aðal- og aukasetningar" },
   /* v6.9: the grammar used, not just named — find and fix errors in a text,
      build a sentence from word cards, rewrite a sentence. */
-  { id: "malbeiting",   nm: "Málbeiting",       cur: "8.b", ico: "✍️",
+  { id: "malbeiting",   nm: "Málbeiting",       cur: "8.b", ico: "✍️", placement: 10,
     ds: "Villuveiðar, setningasmiðja og umritun: tíð, tala, þolmynd, orðaröð" },
   /* Year 10. Off by default like everything outside year 8, until the
      adult switches it on in the Stillingar og námsefni tab. */
-  { id: "setningagerd", nm: "Setningagerðir",   cur: "10.b", ico: "🪜",
+  { id: "setningagerd", nm: "Setningagerðir",   cur: "10.b", ico: "🪜", placement: 12,
     ds: "Aðalsetning, aukasetning og nafnháttarsetning" },
 ];
 

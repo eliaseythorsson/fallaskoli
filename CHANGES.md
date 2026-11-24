@@ -29,6 +29,8 @@
   (`server/reader.mjs`) sem heldur tímamörkum, „margir í einu“, stærð textans, því að textinn
   gleymist, og því að hver athugasemd vísi í texta nemandans. GreynirCorrect er fyrsta tengið
   (`server/reader-greynir.mjs`); Claude (#37) verður annað.
+### Tegundir spurninga
+- **Ein skrá lýsir öllum tegundum spurninga** (`src/js/core/catalogue.js`, #46): heiti, lýsing, flokkur, þyngdarþrep, `recall` og `grader` á einum stað, í röð einvíganna; ný tegund er ein færsla þar og einn smiður í skrá flokksins. Umsjónarmaður getur nú leyft „spurningar sem þjónninn les“ fyrir einn nemanda í einu (slökkt nema kveikt sé á því); engin slík tegund er til enn. Sömu spurningar koma úr sama fræi og áður.
 
 ### Færnikort
 - **Langt heiti flokks fer ekki út fyrir rammann**: „Orðflokkagreining“, „Setningafræði“

@@ -333,25 +333,14 @@ export function toPlural(lex, view, rng) {
   }, [FX.exSeen(pluralKey(x))]);
 }
 
-export const TYPES = [
-  { id: "tbl_to", skill: "toluord", weight: 3, renderer: "table",
-    tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3],
-    build: tableNumeral },
-  { id: "to_samr", skill: "toluord", weight: 5, renderer: "gap",
-    tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3, 4],
-    build: toAgree },
-  { id: "to_val", skill: "toluord", weight: 3, renderer: "choice",
-    tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "num"],
-    bands: [1, 2, 3, 4],
-    build: toChoice },
-  { id: "to_dags", skill: "toluord", weight: 4, renderer: "gap",
-    tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "num"],
-    bands: [1, 2, 3],
-    build: toDate },
-  { id: "to_flt", skill: "toluord", weight: 3, renderer: "gap",
-    tags: ["agree:kyn", "case:NF", "case:ÞF", "case:ÞGF", "num", "plnum"],
-    bands: [1, 3, 4],
-    build: toPlural },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  tbl_to: { build: tableNumeral },
+  to_samr: { build: toAgree },
+  to_val: { build: toChoice },
+  to_dags: { build: toDate },
+  to_flt: { build: toPlural },
+};

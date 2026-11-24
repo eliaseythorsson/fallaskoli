@@ -55,19 +55,29 @@ data in that container and fails on any difference.
 
 ## Question types: one category, one file
 
-`src/js/tasks/<skill>.js` holds a category's builders and its `TYPES` list;
-`tasks/registry.js` is the catalogue and explains every field. To work on a
-category, its file is the only one to open.
+A question type is **one entry in `src/js/core/catalogue.js` plus one builder**
+in its category's file, `src/js/tasks/<skill>.js` (exported as `BUILDERS.<id>`),
+plus a renderer in `ui/` only if no existing one draws its shape. The catalogue
+entry says what the type is — `skill`, `nm`/`ds`, `renderer`, `tags`, `bands`,
+`weight`, `recall`, `grader` — and its header explains every field.
+`tasks/registry.js` joins the two and refuses to start if a declaration has no
+builder or a builder has no declaration.
 
+- New types go at the END of `core/catalogue.js`: its order is the duel order,
+  part of what a duel's seed means. `tests/registry.test.js` pins it.
 - A builder is `build(lex, view, rng)` → `{ task, effects }` or `null`. It does
   not write to the state (it returns an effect, `tasks/effects.js`), does not
   read the clock (`view.today`) and never calls `Math.random` (it draws from
   `rng`). `tests/purity.test.js` holds all three.
 - What a type declares — `renderer`, `tags`, `bands` — is checked against what
   it builds by `tests/registry.test.js`. When you change a builder on purpose,
-  the failing test names the line of `TYPES` to update.
-- New types go at the END of `ORDER` in `registry.js`: the order is part of
-  what a duel's seed means.
+  the failing test names the catalogue line to update.
+- `grader: "server"` types exist only for a pupil whose administrator switched
+  server grading on, on a server whose grader is up (`core/policy.js`,
+  `docs/adr/0004`); they need no other code to stay hidden.
+- A new skill is an entry in `core/skills.js`; `tests/skills-checklist.test.js`
+  then names each file still to fill in (lesson page, curriculum nodes, error
+  patterns, skill-map nodes, builders file).
 - To see exactly what a change moved, type by type:
   `node tools/task-snapshot.mjs take` before and after, then `compare`.
 

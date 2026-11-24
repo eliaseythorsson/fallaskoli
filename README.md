@@ -321,9 +321,12 @@ src/js/tasks/         the question builders, one file per category:
                       nafnord.js, lysingarord.js, sagnord.js, fornofn.js,
                       toluord.js, obeygjanleg.js, greining.js, fallstjorn.js,
                       ordaford.js, setningafraedi.js, malbeiting.js,
-                      setningagerd.js. registry.js is the catalogue: every
-                      question type declares its skill, renderer, diagnosis
-                      tags and the steps of difficulty it knows. A builder is
+                      setningagerd.js, each exporting its BUILDERS by type
+                      id. What a question type is — skill, name, renderer,
+                      diagnosis tags, steps of difficulty, recall, grader —
+                      is declared once in src/js/core/catalogue.js, whose
+                      order is the duel order; registry.js joins the two.
+                      A builder is
                       pure — build(lex, view, rng) → { task, effects }
                       (view.js, effects.js): it changes nothing and never
                       draws a random number of its own. next.js chooses the

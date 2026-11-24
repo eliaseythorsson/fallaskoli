@@ -301,24 +301,13 @@ export function noDeclension(lex, view, rng) {
   });
 }
 
-export const TYPES = [
-  { id: "fill", skill: "nafnord", weight: 26, renderer: "fill",
-    tags: ["agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun", "num"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: taskFill, drill: fillWord },
-  { id: "tbl_no", skill: "nafnord", weight: 5, renderer: "table",
-    tags: ["case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun", "num"],
-    bands: [1, 2, 3, 4, 5],
-    build: tableNoun },
-  { id: "no_val", skill: "nafnord", weight: 8, renderer: "choice",
-    tags: ["case:EF", "case:NF", "case:ÞF", "case:ÞGF", "noun", "num"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: noChoice },
-  /* item 27. Its own steps are 3 (every noun, the traps) and 5 (write the
-     genitive); the word is chosen by `wordWeight`, which since item 16 reads
-     the level at every step to 5 (regular words first), so 2 and 4 move too. */
-  { id: "no_beyging", skill: "nafnord", weight: 5, renderer: "kenni",
-    tags: ["case:EF", "form", "nobeyg", "nobeyg:nf"],
-    bands: [1, 2, 3, 4, 5],
-    build: noDeclension },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  fill: { build: taskFill, drill: fillWord },
+  tbl_no: { build: tableNoun },
+  no_val: { build: noChoice },
+  no_beyging: { build: noDeclension },
+};

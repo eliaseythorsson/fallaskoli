@@ -326,26 +326,14 @@ export function synFindPP(lex, view, rng) {
   }, [FX.exSeen("finna:" + x.s.t)]);
 }
 
-export const TYPES = [
-  { id: "syntax", skill: "setningafraedi", weight: 8, renderer: "syntax",
-    tags: ["syn"],
-    bands: [1, 4, 5, 6, 7],
-    build: taskSyntax },
-  { id: "setn_hlut", skill: "setningafraedi", weight: 5, renderer: "choice",
-    tags: ["syn"],
-    bands: [1, 4, 5, 6, 7],
-    build: synRole },
-  { id: "setn_flokka", skill: "setningafraedi", weight: 4, renderer: "sort",
-    tags: ["syn"],
-    bands: [1, 4, 5, 6, 7],
-    build: synSort },
-  /* item 28 */
-  { id: "setn_lidir", skill: "setningafraedi", weight: 6, renderer: "choice",
-    tags: ["lidir", "lidir:fl"],
-    bands: [1, 3, 5],
-    build: synPhrase },
-  { id: "lid_finna", skill: "setningafraedi", weight: 4, renderer: "tap",
-    tags: ["lidir"],
-    bands: [1, 4],
-    build: synFindPP },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  syntax: { build: taskSyntax },
+  setn_hlut: { build: synRole },
+  setn_flokka: { build: synSort },
+  setn_lidir: { build: synPhrase },
+  lid_finna: { build: synFindPP },
+};

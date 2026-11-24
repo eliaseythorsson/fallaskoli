@@ -319,18 +319,32 @@ export interface View {
   readonly cal: any;
 }
 
-/** One question type as its category file declares it (tasks/registry.js). */
-export interface TaskType {
+/** One question type as core/catalogue.js declares it. */
+export interface CatalogueEntry {
   id: string;
   skill: SkillId;
   anyOf?: SkillId[];
+  nm: string;
+  ds: string;
+  renderer: string;
   weight: number;
   weightInRun?: number;
-  renderer: string;
+  recall: boolean;
+  grader: "app" | "server";
   tags: string[];
   bands: number[];
+}
+
+/** A catalogue entry joined with its builder (tasks/registry.js). */
+export interface TaskType extends CatalogueEntry {
   build: (lex: Lexicon, view: View, rng: Rng) => Built | null;
   drill?: (lex: Lexicon, view: View, rng: Rng, entry: any) => Built | null;
+}
+
+/** What a category file exports for each of its types: `BUILDERS[id]`. */
+export interface Builder {
+  build: TaskType["build"];
+  drill?: TaskType["drill"];
 }
 
 /* ---------- judging (core/answer.js) ---------------------------------------- */

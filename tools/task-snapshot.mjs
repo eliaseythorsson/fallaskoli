@@ -143,7 +143,9 @@ async function take() {
     if (worn) {
       for (let k = 0; k < 12; k++) sess.seen.push(lex.all[ri(lex.all.length)].o);
       sess.exSeen = [];
-      for (const list of [EX.pronounGap, EX.reflexive, EX.conjunction, EX.motionRest, EX.verbCase, EX.impersonal, EX.advPrep])
+      for (const list of [EX.pronounGap, EX.reflexive, EX.conjunction, EX.motionRest, EX.verbCase, EX.impersonal.frames ?? EX.impersonal, EX.advPrep])
+        /* EX.impersonal became { frames, subjects } (critique item 23); a tree
+           from before that has the plain list. */
         for (const x of list) if (g() < 0.3) sess.exSeen.push(x.t, x.t + (x.gloss ?? x.w ?? x.noun ?? ""));
       sess.sinceTable = ri(7); sess.sinceMeaning = ri(4);
     }

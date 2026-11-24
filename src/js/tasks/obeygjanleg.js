@@ -214,25 +214,14 @@ export function obSort(lex, view, rng) {
   return null;
 }
 
-export const TYPES = [
-  { id: "indecl", skill: "obeygjanleg", weight: 5, renderer: "indecl",
-    tags: ["ofl", "ofl:ao_fs"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: taskIndecl, drill: taskIndeclWord },
-  { id: "ob_smella", skill: "obeygjanleg", weight: 4, renderer: "tap",
-    tags: ["ofl", "ofl:ao_fs"],
-    bands: [1, 2, 3, 4, 5, 6],
-    build: obTap },
-  { id: "ob_fsao", skill: "obeygjanleg", weight: 4, renderer: "choice",
-    tags: ["ofl", "ofl:ao_fs"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: obAdvPrep },
-  { id: "ob_st", skill: "obeygjanleg", weight: 4, renderer: "choice",
-    tags: ["conj"],
-    bands: [1, 4],
-    build: obConj },
-  { id: "ob_flokka", skill: "obeygjanleg", weight: 3, renderer: "sort",
-    tags: ["ofl", "ofl:ao_fs"],
-    bands: [1, 5, 6, 7],
-    build: obSort },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  indecl: { build: taskIndecl, drill: taskIndeclWord },
+  ob_smella: { build: obTap },
+  ob_fsao: { build: obAdvPrep },
+  ob_st: { build: obConj },
+  ob_flokka: { build: obSort },
+};

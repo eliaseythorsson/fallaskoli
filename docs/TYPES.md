@@ -25,7 +25,7 @@ pinned devDependency. It is not in the built file or in the server image.
   that calls it is checked against the real signature.
 - **`src/js/types.d.ts`** describes the shapes everything shares: `State`
   (the saved state, in the order of `blankState`), `Session`, `Task`,
-  `TaskType`, `View`, `Built`/`BuildEffect`, `Judgement`/`Effect`/`Finding`,
+  `CatalogueEntry`/`TaskType`/`Builder`, `View`, `Built`/`BuildEffect`, `Judgement`/`Effect`/`Finding`,
   `ReviewEntry`/`ReviewState`, `LevelRecord`, `AnswerRecord`, `DiagRecord`,
   `Node`, `PolicyChoice` and `Policy`. `Policy` and `Lexicon` are taken from
   the code itself (`ReturnType<typeof createPolicy>`, `… buildLexicon`), so
@@ -38,7 +38,7 @@ pinned devDependency. It is not in the built file or in the server image.
   ```
 
 - **`tests/typecheck.test.js`** fails if a listed module loses its
-  `// @ts-check`, if one of the twelve modules below leaves the list, if a
+  `// @ts-check`, if one of the thirteen modules below leaves the list, if a
   module carries the pragma without being listed, if a checked module uses
   `@ts-nocheck` or `@ts-ignore`, if a type tag sits in a plain `/* */`
   comment (where tsc ignores it), if any code imports `types` at run time,
@@ -71,7 +71,8 @@ The pure modules, where the shared shapes matter most:
 | `core/run.js` | a practice session without its screen: the record (`Run`), its policy, counting an answer, the summary |
 | `core/diagnosis.js` | findings, `S.diag`, the pattern standings |
 | `core/merge.js` | the three-way merge, typed at its edges (`State` in and out) |
-| `tasks/registry.js` | the catalogue: every category's `TYPES` must fit `TaskType` |
+| `core/catalogue.js` | every question type, declared once (`CatalogueEntry`), in duel order |
+| `tasks/registry.js` | the catalogue joined with each category's `BUILDERS` (`Builder`): every type must fit `TaskType` |
 | `tasks/shared.js` | the builders' helpers: `View`, `Rng`, `Lexicon` |
 
 ## What is not checked (yet)
@@ -83,7 +84,7 @@ The pure modules, where the shared shapes matter most:
 - **The category files** under `tasks/` (`nafnord.js` … `setningagerd.js`,
   `cloze.js`, `tap.js`, `frames.js`, `drill.js`, `review.js`, `next.js`,
   `view.js`, `effects.js`, `explain.js`, `index.js`). The registry already
-  holds their `TYPES` lists to `TaskType`. Their `build` functions are the
+  holds their `BUILDERS` to `Builder`. Their `build` functions are the
   next step: each returns a `Built`.
 - **The other `core/` modules**: `badges.js`, `calendar.js`, `definitions.js`,
   `duel.js`, `grading.js`, `leniency.js`, `lexicon.js`, `policy.js`,

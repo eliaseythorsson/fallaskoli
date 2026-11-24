@@ -1736,34 +1736,13 @@ export function taskSpeech(lex, view, rng) {
   }, [FX.exSeen(x.key)]);
 }
 
-export const TYPES = [
-  /* v6.9: production. Writing the Icelandic tests understanding rather than
-     recall, so these three together weigh about as much as the cloze. */
-  { id: "umritun", skill: "malbeiting", weight: 10, renderer: "umritun",
-    tags: ["num", "passive", "speech", "v2", "verb:agree", "verb:tense", "verb:vh"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: taskTransform },
-  { id: "smidja", skill: "malbeiting", weight: 8, renderer: "smidja",
-    tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun",
-      "num", "verb:agree", "verb:mm", "verb:tense", "verb:vh"],
-    bands: [1, 2, 3],
-    build: taskWorkshop },
-  { id: "villur", skill: "malbeiting", weight: 8, renderer: "villur",
-    /* The `bank:` tags are the patterns the hand-written bank files its items
-       under (core/diagnosis.js BANK_PATTERNS); the rest are the generator's. */
-    tags: ["agree:kyn", "case:EF", "case:ÞF", "case:ÞGF", "gov:fs", "gov:so", "hunt",
-      "verb:agree",
-      "bank:ad_af", "bank:ef", "bank:ending", "bank:fallstjorn_fs", "bank:fallstjorn_so",
-      "bank:fleirtoluord", "bank:hattur", "bank:hljodvarp", "bank:hvor", "bank:kyn_samraemi",
-      "bank:n_nn", "bank:nf_aukafall", "bank:opersonuleg", "bank:samtengingar",
-      "bank:sogn_frumlag", "bank:sterk_veik_sogn", "bank:thf_thgf", "bank:tholmynd", "bank:y_i"],
-    /* 1–2: the generator, on the sentences of that þyngd. 3, 4, 5: the bank,
-       each step adding the items written for it. Nothing new above 5. */
-    bands: [1, 2, 3, 4, 5],
-    build: taskHunt },
-  /* item 28: bein og óbein ræða, on its own */
-  { id: "raeda", skill: "malbeiting", weight: 5, renderer: "umritun",
-    tags: ["speech", "verb:vh"],
-    bands: [1, 4],
-    build: taskSpeech },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  umritun: { build: taskTransform },
+  smidja: { build: taskWorkshop },
+  villur: { build: taskHunt },
+  raeda: { build: taskSpeech },
+};

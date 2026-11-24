@@ -1499,7 +1499,10 @@ export function createApp({
   async function ceilingFor(userId) {
     const all = await store.policies();
     const mine = all[userId];
-    return sanitisePolicy(mine || all["*"] || null);
+    const out = sanitisePolicy(mine || all["*"] || null);
+    /* Server grading comes only from a pupil's own ceiling (#46). */
+    if (!mine) delete out.serverGrading;
+    return out;
   }
 
   /** May `me` set the ceiling of user `id`? Answers the request itself if not. */
@@ -1533,6 +1536,7 @@ export function createApp({
     if (!me) return;
     const body = await readBody(req);
     const clean = sanitisePolicy(body && body.policy);
+    delete clean.serverGrading;     // per pupil only (#46, docs/adr/0004)
     await store.updatePolicies((p) => { p["*"] = clean; return p; });
     await audit(me.id, "breytti sjálfgefnu þaki");
     return json(res, 200, { ok: true, policy: clean });
@@ -1558,6 +1562,12 @@ export function createApp({
       return json(res, 200, { ok: true, policy: await ceilingFor(id), own: false });
     }
     const clean = sanitisePolicy(body && body.policy);
+    /* Server grading is the administrator's alone (docs/adr/0004): a guardian
+       saving a ceiling keeps whatever was there. */
+    if (!can(me, "canAdminUsers")) {
+      const was = (await store.policies())[id];
+      if (was && was.serverGrading === true) clean.serverGrading = true; else delete clean.serverGrading;
+    }
     await store.updatePolicies((p) => { p[id] = clean; return p; });
     await audit(me.id, "breytti þaki", id);
     return json(res, 200, { ok: true, policy: clean, own: true });

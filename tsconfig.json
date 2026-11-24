@@ -18,6 +18,7 @@
   "files": [
     "src/js/types.d.ts",
     "src/js/core/answer.js",
+    "src/js/core/catalogue.js",
     "src/js/core/review.js",
     "src/js/core/difficulty.js",
     "src/js/core/mastery.js",

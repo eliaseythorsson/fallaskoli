@@ -265,25 +265,14 @@ export function fsImpers(lex, view, rng) {
   }, [FX.exSeen(x.key)]);
 }
 
-export const TYPES = [
-  { id: "govern", skill: "fallstjorn", weight: 8, renderer: "govern",
-    tags: ["case:EF", "case:ÞF", "case:ÞGF", "gov:fs", "gov:so"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: taskGovern, drill: taskGovernWord },
-  { id: "fs_fsno", skill: "fallstjorn", weight: 6, renderer: "fill",
-    tags: ["case:EF", "case:ÞF", "case:ÞGF", "form", "noun", "num"],
-    bands: [1, 2, 3, 4, 5, 6, 7],
-    build: fsPrepNoun },
-  { id: "fs_hreyf", skill: "fallstjorn", weight: 5, renderer: "choice",
-    tags: ["case:ÞF", "case:ÞGF", "gov:fs", "motion", "noun", "num"],
-    bands: [1, 2, 3],
-    build: fsMotion },
-  { id: "fs_sogn", skill: "fallstjorn", weight: 6, renderer: "gap",
-    tags: ["case:EF", "case:ÞF", "case:ÞGF", "form", "gov:so", "noun", "num"],
-    bands: [1, 3, 4],
-    build: fsVerb },
-  { id: "fs_operson", skill: "fallstjorn", weight: 5, renderer: "gap",
-    tags: ["case:NF", "case:ÞF", "case:ÞGF", "form", "impers", "noun", "num"],
-    bands: [1, 3, 4, 5],
-    build: fsImpers },
-];
+/** The builders of this category, by question type id. What each type is —
+   its name, renderer, tags, bands and weight — is declared in
+   core/catalogue.js; tasks/registry.js joins the two.
+   @type {Record<string, import("../types").Builder>} */
+export const BUILDERS = {
+  govern: { build: taskGovern, drill: taskGovernWord },
+  fs_fsno: { build: fsPrepNoun },
+  fs_hreyf: { build: fsMotion },
+  fs_sogn: { build: fsVerb },
+  fs_operson: { build: fsImpers },
+};
