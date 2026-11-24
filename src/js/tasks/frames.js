@@ -24,6 +24,13 @@
  *     "Mamman sefur núna"
  *   - a word the classifier excludes from generated sentences (`nx`)
  *
+ * One thing is added on top of the classes: a word that somebody has read in
+ * THIS sentence and written down as a pair (content/setningar/lino-rammar.tsv,
+ * `al` on the sentence; pipeline/frame_allow.py). For that word in that frame
+ * the class test and "nobody has read this noun" are answered already; the
+ * gender, the preposition, the plural and the article are checked as for any
+ * other noun, and the form still comes out of BÍN under the frame's mark.
+ *
  * Adjectives are substituted only where the adjective is one that suits the
  * kind of noun it would describe (`FITTING` below). The agreement was never
  * the problem — gender, number, case and strength are all inside the BÍN mark
@@ -53,12 +60,23 @@ export const substitutable = (s) =>
   !!s && s.slot != null && !s.fixed && Array.isArray(s.need) && s.need.length > 0
   && settled(s.tok[s.slot]);
 
+/** What a sentence's slot asks of a noun: the gender it pins, the classes it
+    takes, the preposition it stands under, and the words allowed by name. */
+export const slotFrame = (s) =>
+  ({ rk: s.rk || null, need: s.need, ps: s.ps || null, al: s.al || null });
+
+/** Is this word allowed into this frame by name ("lemma|gender" in `al`)? */
+export const allowedByName = (frame, word) =>
+  !!frame.al && !!word && frame.al.includes(word.o + "|" + word.c);
+
 /** May this noun stand in this frame, in this mark? */
 export function acceptsNoun(frame, word, mark) {
-  if (!word || word.nx) return false;
+  if (!word) return false;
+  const named = allowedByName(frame, word);
+  if (word.nx && !named) return false;
   if (!word.forms || !word.forms[mark]) return false;
   if (frame.rk && frame.rk !== word.c) return false;
-  if (!frame.need.includes(word.s)) return false;
+  if (!named && !frame.need.includes(word.s)) return false;
   if (frame.ps && word.p !== frame.ps) return false;
   if (!showable(word, mark)) return false;
   return true;
@@ -141,7 +159,7 @@ export const repeatsNoun = (s, slot, word) =>
 /** Every noun that may stand in this sentence's slot. */
 export function candidateNouns(lex, s) {
   if (!substitutable(s)) return [];
-  const f = { rk: s.rk || null, need: s.need, ps: s.ps || null };
+  const f = slotFrame(s);
   const m = s.tok[s.slot].m;
   return lex.nouns.filter((w) => !repeatsNoun(s, s.slot, w) && acceptsNoun(f, w, m));
 }
@@ -157,8 +175,7 @@ export function frameIndex(lex) {
     if (substitutable(s)) {
       const t = s.tok[s.slot];
       if (t.c === "nafnorð") {
-        push(noun, t.m, { s, i: s.slot, rk: s.rk || null, need: s.need,
-                          ps: s.ps || null, lvl: s.lvl });
+        push(noun, t.m, { s, i: s.slot, ...slotFrame(s), lvl: s.lvl });
       }
     }
     s.tok.forEach((t, i) => {

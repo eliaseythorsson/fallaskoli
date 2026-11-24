@@ -112,6 +112,29 @@ for _lvl,_text,_slot,*_rest in _sentences.S:
         W.append({'i':bid,'o':_slot,'c':ofl,'r':300,'f':';'.join(f)})
         have.add((_slot,ofl))
         print('  added for the sentence bank:',_slot,ofl)
+# A word allowed into a frame by content/setningar/lino-rammar.tsv (issue #20,
+# frame_allow.py) has to be in the vocabulary too, for the same reason. Most
+# are; one the subtitle list never saw comes out of BÍN's core here, so the
+# file works with or without LÍNO-2 in the build. A word BÍN's core does not
+# have as a noun with its four singular cases stops the build, with the line.
+import lino as _lino, frame_allow as _frame_allow
+have={(x['o'],x['c']) for x in W}
+for _r in _frame_allow.read(_sentences.S):
+    _g=[_r['gender']] if _r['gender'] else ['kk','kvk','hk']
+    if any((_r['lemma'],g) in have for g in _g): continue
+    _why='er ekki nafnorð í kjarna BÍN / is not a noun in BÍN\'s core'
+    for ofl,bid in sorted({(m.ofl,m.bin_id) for m in _lino.core(b,_r['lemma']) if m.ofl in _g}):
+        if not vf.keep(_r['lemma'],ofl):
+            _why='er síað úr orðaforðanum (vocab_filter.py) / is filtered out of the vocabulary'; continue
+        f=paradigm(bid,ORDERS['no'])
+        if sum(1 for x in f[:4] if x)<4:
+            _why='hefur ekki öll fjögur föll eintölu í BÍN / lacks a singular case in BÍN'; continue
+        W.append({'i':bid,'o':_r['lemma'],'c':ofl,'r':300,'f':';'.join(f)})
+        have.add((_r['lemma'],ofl))
+        print('  added for a frame pair:',_r['lemma'],ofl)
+        break
+    else:
+        raise SystemExit('%s:%d: „%s“ %s' % (_r.file,_r.line,_r['lemma'],_why))
 # indeclinables: one form each
 for ofl in ['fs','st','ao','uh','nhm']:
     got=0

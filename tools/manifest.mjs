@@ -52,6 +52,8 @@ const INPUTS = [
   "pipeline/content_io.py",
   /* Issue #9: LÍNO-2, the academic word list, and its reader */
   "sources/lino2.csv", "pipeline/lino.py",
+  /* Issue #20: the words allowed into one frame each (content/setningar/lino-rammar.tsv) */
+  "pipeline/frame_allow.py",
   ...contentFiles(),
 ];
 
@@ -90,8 +92,11 @@ export function sentenceFingerprint(s) {
     t.w, t.m ?? "", t.c ?? "", t.r ?? "", t.k ?? "",
     (t.g || []).join("+"), (t.u || []).join("+"), t.pg ?? "", t.rj ? "rj" : "",
   ].join("|"));
+  /* `al` (words allowed into this frame by name, issue #20) is part of what
+     the sentence can become, so a pair added or removed shows as a changed
+     sentence. A sentence without pairs keeps the fingerprint it had. */
   return sha12([s.t, s.lvl, s.slot ?? "", s.fixed ? 1 : 0, s.need ?? "",
-    s.rk ?? "", ...toks].join("\n"));
+    s.rk ?? "", ...toks, ...(s.al ? ["al:" + s.al.join("+")] : [])].join("\n"));
 }
 
 async function depVersions() {
@@ -206,6 +211,7 @@ async function showSentence(text) {
     if (t.pg) bits.push("fs→" + t.pg);
     console.log(`      ${String(i).padStart(2)} ${t.w.padEnd(14)} ${bits.filter(Boolean).join(" · ")}`);
   });
+  if (s.al) console.log(`      orð leyfð í eyðuna (content/setningar/lino-rammar.tsv): ${s.al.join(", ")}`);
 }
 
 /* ---------- CLI --------------------------------------------------------- */

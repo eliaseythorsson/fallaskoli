@@ -13,6 +13,11 @@
   sameiningu tækja og athugun þjónsins og stöðvast ef sneið týnist. Engin breyting sést.
   Eigin texti nemandans (orðakortin sem koma) verður aðeins nemandans (`docs/PRIVACY.md` §1g).
 ### Námsorð (LÍNO-2)
+- **Orð leyfð í einstaka ramma** (#20): ný skrá, `content/setningar/lino-rammar.tsv`, þar sem
+  skráð er að tiltekið orð megi standa í tiltekinni setningu bankans þótt merkingarflokkur þess
+  geri það ekki („Kennarinn útskýrði *hugtakið* fyrir bekknum“, „Ég man *ástæðuna* vel“).
+  Beygingarmyndin kemur áfram úr BÍN. Fyrstu 15 pörin eru komin inn og sjást útfyllt á
+  yfirlitssíðunni; móðurmálshafi á eftir að lesa þau.
 - **Námsorðaforðalistinn LÍNO-2 í smíðinni** (#9): orð á listanum koma oftar fyrir í æfingum
   (×3 í tíðniröðun), orð sem textalistinn þekkir ekki koma inn úr BÍN, og hvert orð ber
   sæti sitt á listanum (`lino`). LÍNO-2 (CC BY 4.0) er komið í leyfalistann. Skráin sjálf,

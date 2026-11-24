@@ -162,7 +162,9 @@ test("no frame offers a noun that is excluded, and every frame still has nouns",
     frames += 1;
     const pool = candidateNouns(lex, s);
     assert.ok(pool.length > 0, `no noun fits: ${s.t}`);
-    assert.ok(pool.every((w) => !w.nx), s.t);
+    /* … unless somebody read that very word in this very sentence and wrote
+       the pair down (content/setningar/lino-rammar.tsv, `al`; issue #20) */
+    assert.ok(pool.every((w) => !w.nx || (s.al || []).includes(w.o + "|" + w.c)), s.t);
   }
   assert.ok(frames > 300, `${frames} frames`);
 });

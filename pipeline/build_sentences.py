@@ -1146,6 +1146,25 @@ def main():
     prep_slots = [o for o in out if o.get('ps')]
     print('eyður undir forsetningu (ekki skipt út):', len(prep_slots))
 
+    # Words allowed into one frame each, on top of its `need` (issue #20):
+    # content/setningar/lino-rammar.tsv. frame_allow.py checks every pair
+    # against the frame as annotated above and the vocabulary as built, and
+    # stops with the file and line of one that could never be shown. A frame
+    # with pairs carries them as `al`, a list of "lemma|gender"; no other
+    # sentence changes by a byte.
+    import frame_allow, lino
+    try:
+        allow, lines = frame_allow.resolve(frame_allow.read(sentences.S), out, json.load(open('data/lexicon.json')),
+                                           noun_classes)
+    except frame_allow.ContentError as e:
+        raise SystemExit('Villa / error: %s' % e)
+    for o in out:
+        if o['t'] in allow:
+            o['al'] = allow[o['t']]
+    for line in lines:
+        print(line)
+    print(frame_allow.lino_report(allow, lino.load()))
+
     json.dump(out, open('data/sentences.json', 'w'), ensure_ascii=False, separators=(',', ':'))
     json.dump({'sentences': len(out), 'uncertain_tokens': amb, 'guard': rep,
                'prep_slots': len(prep_slots),

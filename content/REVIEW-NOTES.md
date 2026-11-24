@@ -20,6 +20,19 @@ Athugasemdir í síðasta hlutanum, „Utan síðunnar“, eiga við texta sem e
 á yfirlitssíðunni (texta í viðmótinu, persónuverndartilkynninguna) og standa
 þar aðeins sem listi.
 
+## Orð sem voru leyfð í einstaka ramma: eru setningarnar eðlilegar?
+Skrá: `content/setningar/lino-rammar.tsv`
+Úr: data/20-frame-allowlist (#20)
+
+Hvert par setur eitt orð í eina setningu úr bankanum, og síðan sýnir setninguna
+útfyllta (*Kennarinn útskýrði hugtakið fyrir bekknum í rólegheitum*, *Ég man
+ástæðuna vel*, *Leiknum var frestað vegna bilunar*). Beygingarmyndirnar eru úr
+BÍN; það sem þarf að lesa er hvort setningin sé eðlileg íslenska. Enginn
+móðurmálshafi hefur lesið pörin enn. Tvennt sérstaklega: *Ég man ástæðurnar
+vel* og *Ég man reglurnar vel* (fleirtala með greini), og *Þetta gerðist allt
+vegna misskilningsins* (með greini; án greinis væri hún algengari). Pari sem
+hljómar ekki vel á að eyða úr skránni.
+
 ## Hreyfing eða kyrrstaða: er þágufall líka rétt?
 Leita: `keyrðum inn í ___` · `hengdi myndina á ___`
 Úr: data/5-exercise-fixes (atriði 6)
