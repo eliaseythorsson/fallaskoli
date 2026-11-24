@@ -18,6 +18,12 @@
   returns findings and the browser judges; the pupil's own text is only the pupil's;
   server grading is off unless switched on.
 
+### Textalesari á þjóninum (#47)
+- **Ritun vikunnar er óbreytt**: yfirlestur GreynirCorrect fer nú um einn lítinn textalesara
+  (`server/reader.mjs`) sem heldur tímamörkum, „margir í einu“, stærð textans, því að textinn
+  gleymist, og því að hver athugasemd vísi í texta nemandans. GreynirCorrect er fyrsta tengið
+  (`server/reader-greynir.mjs`); Claude (#37) verður annað.
+
 ### Færnikort
 - **Langt heiti flokks fer ekki út fyrir rammann**: „Orðflokkagreining“, „Setningafræði“
   og „Setningagerð“ ýttu „Stig“ og „þyngd“ út fyrir kassann sinn. Nú færast þau í næstu
