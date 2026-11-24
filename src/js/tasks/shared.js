@@ -10,6 +10,7 @@ import { readMark, isStyfdur } from "../core/marks.js";
 import { bandOf, diffOf, hardnessWeight } from "../core/difficulty.js";
 import { skillLevel } from "../core/progress.js";
 import { wordKey } from "../core/state.js";
+import { wordRecord } from "../core/wordknowledge.js";
 import { chooseWord } from "../core/spacing.js";
 import { FX } from "./effects.js";
 
@@ -271,7 +272,7 @@ export function caseCellEase(lex, view, skill, m) {
 export function wordWeight(lex, view, x, skill) {
   const { S, sess } = view;
   const L = skillLevel((S.skills[skill] || {}).xp || 0).level;
-  const rec = S.words[wordKey(x.o, x.c)] || { c: 0, w: 0 };
+  const rec = wordRecord(S, wordKey(x.o, x.c)) || { c: 0, w: 0 };
   const seen = rec.c + rec.w;
   /* The smoother falloff below makes common words many times likelier within
      both halves of the pool — that, not the cap, is what ensures the child

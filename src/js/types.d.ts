@@ -38,6 +38,11 @@ export interface RightWrong { c: number; w: number }
 /** A word's tally: right, wrong and the last dozen outcomes ("1"/"0"). */
 export interface WordStat extends RightWrong { h?: string }
 
+/** A word's rescue record (`S.drills[word]`, core/wordknowledge.js): rescues
+    passed, drills run, drills endured, the day of the last, and the word's
+    answer count when it ended. */
+export interface DrillRecord { p: number; t: number; f: number; last: DayKey | null; at: number }
+
 /** One category's lifetime figures (`S.skills[skill]`). */
 export interface SkillStat { xp: number; c: number; w: number; bestRun: number }
 
@@ -157,7 +162,7 @@ export interface State {
   showcase: string[];
   title: string | null;
   social: any;
-  drills: Record<string, any>;
+  drills: Record<string, DrillRecord>;
   drillDays: Record<DayKey, number>;
   read: Record<string, boolean>;
   duels: Record<string, "w" | "l" | "t">;

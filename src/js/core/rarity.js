@@ -11,6 +11,8 @@
  * MIN_DAYS of activity. A user who signed up yesterday has had no chance to
  * win "30 days in a row" and must not dilute the share. */
 
+import { wordKeysMet } from "./wordknowledge.js";
+
 /* The six tiers, commonest first. `min` is the share of users holding the
  * badge; `tierFor` takes the first row the share clears. `col` is the fill and
  * `ink` the text colour that stays readable on it — both live here so a tier
@@ -454,7 +456,7 @@ export function tierMove(previous, current, id, badge = null) {
 export function contribution(S) {
   return {
     badges: Object.keys((S && S.badges) || {}),
-    words: Object.keys((S && S.words) || {}),
+    words: wordKeysMet(S),
     days: activeDays(S),
   };
 }

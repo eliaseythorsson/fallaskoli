@@ -26,6 +26,7 @@
 import { SKILLS } from "./skills.js";
 import { THEMES, KINDS, SAYINGS } from "./wordsets.js";
 import { prevKey } from "./calendar.js";
+import { wordRecord } from "./wordknowledge.js";
 import { obj, keys, later, counters, mergeBadge, thisDevice, n, dayStr, isObj, pairs, smallJSON } from "./slicerules.js";
 
 const RUN_ICONS = { 5: "✨", 10: "🔥", 15: "💥", 20: "⚡", 30: "🌟", 50: "💫", 75: "🚀", 100: "👑" };
@@ -1091,7 +1092,7 @@ export function noteAccidents(S, sess, cur, extra) {
     sess.wordCasesBest = Math.max(sess.wordCasesBest || 0, set.length);
   }
 
-  const rec = word ? S.words[word] : null;
+  const rec = word ? wordRecord(S, word) : null;
   const goldfish = extra.correct === false && !!rec && (rec.c || 0) >= 5 &&
     (rec.w || 0) === 1;
   return { goldfish, pickChanges: (cur && cur.changes) || 0 };

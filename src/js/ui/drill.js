@@ -5,6 +5,7 @@
 
 import { DRILL, recentOf } from "../core/wordhealth.js";
 import { $, esc } from "./dom.js";
+import { wordRecord } from "../core/wordknowledge.js";
 
 const pct = (x) => Math.round(100 * x) + "%";
 
@@ -58,7 +59,7 @@ export function renderDrillBar(app) {
 
   if (app.drillOffer) {
     const o = app.drillOffer;
-    const rec = app.S.words[o.key];
+    const rec = wordRecord(app.S, o.key);
     const r = recentOf(rec);
     el.innerHTML = `<div class="drillstrip offer" role="status"><span class="drillico">⚠️</span>
       <div class="drilltext"><b><em>${esc(o.lemma)}</em> er orð í hættu</b>

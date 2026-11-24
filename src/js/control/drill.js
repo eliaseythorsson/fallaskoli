@@ -23,6 +23,7 @@ import { renderDrillBar } from "../ui/drill.js";
 import { renderRunBar, usable, showStreakOffer, renderStreakIntro } from "../ui/session.js";
 import { showStreakEnd } from "../ui/verdict.js";
 import { rng } from "./rng.js";
+import { wordRecord } from "../core/wordknowledge.js";
 
 export function drillControl() {
   return {
@@ -50,7 +51,7 @@ export function drillControl() {
       const [lemma, cls] = String(key).split("|");
       const entry = this.lex.lookup(lemma, cls);
       if (!entry) return;
-      this.drill = { ...startDrill(key, this.S.words[key]), entry, turn: 0 };
+      this.drill = { ...startDrill(key, wordRecord(this.S, key)), entry, turn: 0 };
       this.policy = null;
       this.drillOffer = null;
       this.drillDone = null;
@@ -74,7 +75,7 @@ export function drillControl() {
       /* The word just answered, if it is in trouble … */
       const cur = this.cur && this.cur.word;
       let pick = null;
-      if (cur && fresh(cur) && statusOf(this.S.words[cur]) === "weak") {
+      if (cur && fresh(cur) && statusOf(wordRecord(this.S, cur)) === "weak") {
         const [lemma, cls] = cur.split("|");
         if (drillable(this.lex, this.lex.lookup(lemma, cls))) pick = { key: cur, lemma };
       }
@@ -130,7 +131,7 @@ export function drillControl() {
           (correct === true || correct === false)) {
         drillStep(this.drill, correct);
         if (this.drill.done) {
-          drill = settleDrill(this.S, this.drill, this.S.words[this.drill.key], todayKey());
+          drill = settleDrill(this.S, this.drill, wordRecord(this.S, this.drill.key), todayKey());
           grantXp(this.S, drill.xp);
           this.drillDone = { ...drill, lemma: this.drill.entry.o };
           this.drill = null;

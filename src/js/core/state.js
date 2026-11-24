@@ -15,7 +15,7 @@ import { overallLevel, skillLevel, easeOf } from "./progress.js";
 import { visitLevels } from "./difficulty.js";
 import { timeContext, mondayOf, weekKeys, isBreakWeek, prevKey } from "./calendar.js";
 import { checkDayEnd } from "./badges.js";
-import { pushHistory } from "./wordhealth.js";
+import { wordRecord, countAnswer } from "./wordknowledge.js";
 import { blankSlices, migrateSlices, STATE_VERSION } from "./slices.js";
 import { cleanWeekGoal, WEEK_GOAL_DEFAULT, WEEK_GOAL_MIN, WEEK_GOAL_MAX } from "./days.js";
 import { masteryOf } from "./mastery.js";
@@ -299,7 +299,8 @@ export const wordKey = (lemma, cls) => (cls ? `${lemma}|${cls}` : String(lemma))
 export function easeFor(S, { cell, word, skill }) {
   const buckets = [];
   if (cell && S.cells[cell]) buckets.push(S.cells[cell]);
-  if (word && S.words[word]) buckets.push(S.words[word]);
+  const known = word ? wordRecord(S, word) : null;
+  if (known) buckets.push(known);
   if (skill && S.skills[skill]) buckets.push(S.skills[skill]);
   return easeOf(buckets);
 }
@@ -334,17 +335,13 @@ export function record(S, sess, {
   if (tally) { S.totalAnswers++; if (ok) S.totalCorrect++; }
 
   if (cell) { const c = (S.cells[cell] ||= { c: 0, w: 0 }); ok ? c.c++ : c.w++; }
-  if (word) {
-    if (!S.words[word]) {
-      sess.newWords = (sess.newWords || 0) + 1;
-      day.nw = (day.nw || 0) + 1;
-    }
-    const w = (S.words[word] ||= { c: 0, w: 0 });
-    ok ? w.c++ : w.w++;
-    /* The last dozen outcomes (`h`), so a word is judged on how it is going
-       now rather than on its whole life (core/wordhealth.js). An answer that
-       does not count — the meaning question — is not an outcome. */
-    if (counts) pushHistory(w, ok);
+  /* The word's record (core/wordknowledge.js `countAnswer`): right or wrong,
+     and the last dozen outcomes (`h`), so a word is judged on how it is going
+     now rather than on its whole life (core/wordhealth.js). An answer that
+     does not count — the meaning question — is not an outcome. */
+  if (word && countAnswer(S, word, ok, counts)) {
+    sess.newWords = (sess.newWords || 0) + 1;
+    day.nw = (day.nw || 0) + 1;
   }
 
   /* The multi-skill badges need to know which skills have had a *correct*

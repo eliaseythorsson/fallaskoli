@@ -15,17 +15,21 @@
                  than half right
 
    Pure functions over the saved state. No DOM, no clock except through the
-   `today` arguments, so the server and the tests see the same thing.      */
+   `today` arguments, so the server and the tests see the same thing. The
+   word records and the rescue ledger are read and written through Word
+   knowledge (core/wordknowledge.js, #42).                                 */
 
 import { isRareScore } from "./rarity.js";
-import { num, obj, keys, later, counters, n, dayStr, isObj, pairs, DAY } from "./slicerules.js";
-import { RESET_BEFORE } from "./wordknowledge.js";
+import { RECENT_KEEP, pushHistory, wordRecords, drillRecord, drillRecords, noteRescue,
+  rescuesOn } from "./wordknowledge.js";
+
+export { pushHistory };
 
 /* ---------- 1. The thresholds, in one place ------------------------------ */
 
 export const HEALTH = {
   /** How many outcomes each word remembers (`h` on the word record). */
-  keep: 12,
+  keep: RECENT_KEEP,
   /** How many of the most recent outcomes a judgement looks at. */
   recent: 10,
   /** Flagged for a rescue: seen at least this often … */
@@ -64,11 +68,9 @@ export const DRILL = {
 
 /* ---------- 2. One word ---------------------------------------------------- */
 
-/** Append one outcome to a word record's short history. Mutates `rec`. */
-export function pushHistory(rec, ok) {
-  rec.h = ((rec.h || "") + (ok ? "1" : "0")).slice(-HEALTH.keep);
-  return rec;
-}
+/* `pushHistory(rec, ok)`, which appends one outcome to a word record's short
+   history, is Word knowledge's (core/wordknowledge.js) and exported from here
+   too, where it has always been. */
 
 /**
  * Accuracy over the most recent answers.
@@ -121,7 +123,7 @@ export function drillable(lex, entry) {
 /** The words flagged for a rescue, worst first. */
 export function weakWords(S, lex) {
   const out = [];
-  for (const [key, rec] of Object.entries(S.words || {})) {
+  for (const [key, rec] of wordRecords(S)) {
     if (statusOf(rec) !== "weak") continue;
     const [lemma, cls] = key.split("|");
     const entry = lex ? lex.lookup(lemma, cls) : null;
@@ -130,7 +132,7 @@ export function weakWords(S, lex) {
       key, lemma, cls, entry, seen: r.seen, acc: r.acc,
       correct: rec.c || 0, wrong: rec.w || 0,
       drillable: lex ? drillable(lex, entry) : true,
-      rescued: !!(S.drills && S.drills[key] && S.drills[key].p),
+      rescued: !!(drillRecord(S, key) && drillRecord(S, key).p),
     });
   }
   return out.sort((a, b) => a.acc - b.acc || b.seen - a.seen || a.lemma.localeCompare(b.lemma, "is"));
@@ -151,8 +153,7 @@ export function weakWords(S, lex) {
 export function vocabScore(S, lex) {
   let score = 0, found = 0, weak = 0, shaky = 0, strong = 0, judged = 0, healthy = 0,
     rescued = 0, kept = 0;
-  const drills = S.drills || {};
-  for (const [key, rec] of Object.entries(S.words || {})) {
+  for (const [key, rec] of wordRecords(S)) {
     const n = (rec.c || 0) + (rec.w || 0);
     if (!n) continue;
     found++;
@@ -160,7 +161,7 @@ export function vocabScore(S, lex) {
     const [lemma, cls] = key.split("|");
     const entry = lex ? lex.lookup(lemma, cls) : null;
     const base = entry && isRareScore(entry.q) ? 2 : 1;
-    const d = drills[key];
+    const d = drillRecord(S, key);
     if (d && d.p) rescued++;
     if (d && d.p && keptAfloat(rec, d)) kept++;
     if (st === "weak") { weak++; judged++; continue; }
@@ -217,7 +218,8 @@ export function drillStep(d, ok) {
   return d;
 }
 
-/** What a finished drill is worth. `prior` is `S.drills[key]` before it. */
+/** What a finished drill is worth. `prior` is the word's rescue record
+    (core/wordknowledge.js `drillRecord`) before it. */
 export function drillReward(d, prior) {
   if (!d || !d.done) return 0;
   if (!d.passed) return DRILL.xpEndure;
@@ -230,20 +232,13 @@ export function drillReward(d, prior) {
  * know about it. `wordRec` is the word's record AFTER the drill's answers.
  */
 export function settleDrill(S, d, wordRec, today) {
-  const drills = (S.drills ||= {});
-  const prior = drills[d.key] ? { ...drills[d.key] } : null;
+  const before = drillRecord(S, d.key);
+  const prior = before ? { ...before } : null;
   const xp = drillReward(d, prior);
-  const rec = (drills[d.key] ||= { p: 0, t: 0, f: 0, last: null, at: 0 });
-  rec.t++;
-  if (d.passed) rec.p++; else rec.f++;
-  rec.last = today;
-  rec.at = ((wordRec && wordRec.c) || 0) + ((wordRec && wordRec.w) || 0);
-  if (d.passed) {
-    const day = (S.drillDays ||= {});
-    day[today] = (day[today] || 0) + 1;
-    /* Only the last fortnight is kept; the badge asks about one day. */
-    for (const k of Object.keys(day)) if (k < daysBefore(today, 14)) delete day[k];
-  }
+  noteRescue(S, d.key, {
+    passed: d.passed, today,
+    at: ((wordRec && wordRec.c) || 0) + ((wordRec && wordRec.w) || 0),
+  });
   const firstThreeWrong = d.marks.slice(0, 3).length === 3 && d.marks.slice(0, 3).every((x) => !x);
   return {
     key: d.key, passed: d.passed, endured: !d.passed, n: d.n, c: d.c,
@@ -252,139 +247,10 @@ export function settleDrill(S, d, wordRec, today) {
     oldGhost: d.passed && (d.seenBefore || 0) >= 15,
     firstForWord: !(prior && prior.p) && d.passed,
     xp,
-    rescuesToday: (S.drillDays || {})[today] || 0,
+    rescuesToday: rescuesOn(S, today),
   };
 }
 
 /** How many different words have been rescued at least once. */
 export const rescueCount = (S) =>
-  Object.values(S.drills || {}).reduce((a, r) => a + (r.p ? 1 : 0), 0);
-
-function daysBefore(key, n) {
-  const [y, m, d] = String(key).split("-").map(Number);
-  const t = new Date(Date.UTC(y, m - 1, d - n));
-  return t.toISOString().slice(0, 10);
-}
-
-
-/* ---------- the slices (issue #50) -----------------------------------------
- * The word records and the rescue drill's records as slices of the saved
- * state (core/slices.js). Moved here unchanged from core/state.js
- * `migrate`, core/merge.js `mergeStates` and server/guard.mjs `cleanState`. */
-
-/** @typedef {import("../types").Slice} Slice */
-
-/* Word classes a per-word key may legitimately carry. This is the lexicon's
-   own set; anything else is a key nothing can look up. */
-const WORD_CLASSES = new Set([
-  "kk", "kvk", "hk", "lo", "so", "fn", "pfn", "gr", "to", "rt",
-  "ao", "fs", "st", "uh", "nhm",
-]);
-
-/**
- * Drop per-word keys that no lookup can resolve: older builds filed nouns
- * under Greynir's short code (`vindur|no`), a class the lexicon does not know.
- * Removed rather than repaired (the gender is not in the key); only the ease
- * history is lost.
- */
-function cleanWordKeys(words) {
-  const out = {};
-  for (const [k, v] of Object.entries(words || {})) {
-    const cls = String(k).split("|")[1];
-    if (cls && !WORD_CLASSES.has(cls)) continue;
-    out[k] = v;
-  }
-  return out;
-}
-
-/* Issue #8, decision 6: progress saved before word knowledge
-   (core/wordknowledge.js) existed loses each word's short history `h`, so
-   that word health and word knowledge start on the same day. The counts
-   `c`/`w` stay: they are the collection, the ease and the leaderboard's
-   Orðaforði. */
-function withoutHistory(words) {
-  const out = {};
-  for (const [k, v] of Object.entries(words)) {
-    if (v && typeof v === "object" && !Array.isArray(v)) { const { h: _, ...rest } = v; out[k] = rest; }
-    else out[k] = v;
-  }
-  return out;
-}
-
-/** `S.words`: per word key ("hestur|kk") right, wrong and the last dozen
-    outcomes, {c, w, h}. @type {Slice} */
-export const wordsSlice = {
-  key: "words",
-  blank: () => ({}),
-  migrate: (raw, whole) => (num(obj(whole).v) < RESET_BEFORE
-    ? withoutHistory(cleanWordKeys(raw)) : cleanWordKeys(raw)),
-  merge(B, L, R) {
-    const out = {};
-    for (const k of keys(L, R)) {
-      const l = obj(L)[k], r = obj(R)[k];
-      out[k] = !l ? r : !r && !obj(B)[k] ? l : counters(obj(B)[k], l, r, ["c", "w"]);
-      /* A word's last dozen outcomes (`h`) follow whichever device answered it
-         since `base`; a device that did not touch the word must not put its
-         older history over the other's (found by tests/state-property.test.js). */
-      const b = obj(B)[k];
-      if (l && r && b && typeof r.h === "string"
-          && num(l.c) + num(l.w) === num(b.c) + num(b.w)) out[k].h = r.h;
-    }
-    return out;
-  },
-  clean(value) {
-    const out = {};
-    for (const [k, v] of pairs(value, 30000)) {
-      if (!isObj(v)) continue;
-      out[k] = { c: n(v.c), w: n(v.w) };
-      /* A word's last dozen outcomes (v6.6): ones and zeros and nothing else. */
-      if (typeof v.h === "string" && /^[01]{1,12}$/.test(v.h)) out[k].h = v.h;
-    }
-    return out;
-  },
-  ownText: false,
-};
-
-/** `S.drills`: per word {p: rescues, t: drills started and finished, f: drills
-    endured without passing, last: date, at: the word's answer count when the
-    last one ended}. @type {Slice} */
-export const drillsSlice = {
-  key: "drills",
-  blank: () => ({}),
-  migrate: (raw) => (raw && typeof raw === "object" ? { ...raw } : {}),
-  /* Counts are added like any counter; the date and the answer count at the
-     last rescue are the later of the two. */
-  merge(B, L, R) {
-    const out = {};
-    for (const k of keys(L, R)) {
-      const b = obj(B)[k], l = obj(L)[k], r = obj(R)[k];
-      const m = !l ? { ...r } : !r && !b ? { ...l } : counters(b, l, r, ["p", "t", "f"]);
-      m.last = later(obj(l).last, obj(r).last);
-      m.at = Math.max(num(obj(l).at), num(obj(r).at));
-      out[k] = m;
-    }
-    return out;
-  },
-  /* Per word, numbers and one date. */
-  clean(value) {
-    const drills = {};
-    for (const [k, v] of pairs(value, 30000)) {
-      if (!isObj(v)) continue;
-      drills[k] = { p: n(v.p, 10000), t: n(v.t, 10000), f: n(v.f, 10000),
-        last: dayStr(v.last), at: n(v.at) };
-    }
-    return drills;
-  },
-  ownText: false,
-};
-
-/** `S.drillDays`: rescues per day, for one badge, a fortnight deep. @type {Slice} */
-export const drillDaysSlice = {
-  key: "drillDays",
-  blank: () => ({}),
-  migrate: (raw) => (raw && typeof raw === "object" ? { ...raw } : {}),
-  merge: (B, L, R) => counters(B, L, R, keys(L, R)),
-  clean: (value) => Object.fromEntries(pairs(value, 40, 10)
-    .filter(([k]) => DAY.test(k)).map(([k, v]) => [k, n(v, 1000)])),
-  ownText: false,
-};
+  drillRecords(S).reduce((a, [, r]) => a + (r.p ? 1 : 0), 0);
