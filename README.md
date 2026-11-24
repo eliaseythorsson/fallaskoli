@@ -303,8 +303,13 @@ src/js/core/structure.js  the structure of a sentence for SHOWING it (item 25):
                       shown", never "has no role". Pure, no DOM.
                       ui/structure.js draws it (`structureHTML`): every mark
                       has a colour, a kind of line and its name under it, on
-                      paper and on the board. Used by the hint of „Smelltu á
-                      rétta orðið“, which marks every part but the one asked for
+                      paper and on the board.
+src/js/core/hint.js   the structure as a hint on every Setningafræði question
+                      (item 26): shown from the start at þyngd 1–2, behind
+                      „Vísbending“ (half XP) at 3–5, gone at 6–7 (`hintStep`);
+                      `planHint` hides what the question asks and anything
+                      that would leave only the answer unmarked. The builders
+                      plan it (`task.coding`), ui/hint.js draws it
 src/js/core/skillmap.js  the skill map (item 83): every node with how well
                       (the mastery mark), when it was last trained and
                       whether it needs work (an active pattern, reviews due);

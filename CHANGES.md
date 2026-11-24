@@ -23,6 +23,10 @@
   andlag, sagnfylling, forsetningarliðir og samtengingar fá hvert sinn lit, sína línu og
   heitið sitt undir, og aukasetningar ramma — allt nema það sem spurt er um, og aðeins það
   sem greiningin er viss um. Sést jafnt á töflu og blaði og án lita (#25).
+- **Byggingin í öllum spurningum Setningafræði, og hún dofnar með þyngd**: á þyngd 1–2 er
+  hún sýnd frá byrjun, á þyngd 3–5 fæst hún með „Vísbending“ (helmingi minna XP), frá
+  þyngd 6 er hún ekki í boði. Hún merkir aldrei það sem spurt er um né skilur svarið eitt
+  eftir ómerkt; eftir svarið er það merkt líka (#26).
 
 ### Plan: vocabulary, comprehension and stories
 - **`docs/DLD-RESEARCH.md`**: the evidence on interventions for teenagers with

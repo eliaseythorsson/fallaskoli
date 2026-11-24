@@ -315,9 +315,10 @@ test("25: the hint never marks the part the question asks for, and is offered on
       assert.ok(!html.includes(`<span class="sc-name">${role}</span>`), `${role} named in: ${s.t}`);
     }
   }
-  /* the renderer: the button, the hidden role, the response */
+  /* the renderer: the button and the marks come from the plan the builder
+     made (item 26, tests/hint.test.js), and the response says whether it was used */
   const fn = RENDER_SRC.slice(RENDER_SRC.indexOf("RENDER.syntax = function"), RENDER_SRC.indexOf("/* Whether a click is right for a role"));
-  assert.match(fn, /canHint = hasMarks\(withoutMarks\(sentenceStructure\(t\.s\), \{ hide: \[t\.askRole\] \}\)\)/);
-  assert.match(fn, /canHint \? `<button class="ghost" id="hint">Vísbending<\/button>` : ""/);
+  assert.match(fn, /hintButtonHTML\(t\)/);
+  assert.match(RENDER_SRC, /codedHTML\(t, pickWord\)/);
   assert.match(fn, /judge\(t, \{ picked: t\.picked, hinted: !!t\.hinted \}, app\)/);
 });

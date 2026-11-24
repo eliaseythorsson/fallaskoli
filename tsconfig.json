@@ -36,6 +36,7 @@
     "src/js/core/runlog.js",
     "src/js/core/frametally.js",
     "src/js/core/settings.js",
+    "src/js/core/hint.js",
     "src/js/tasks/registry.js",
     "src/js/tasks/shared.js"
   ]

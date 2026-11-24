@@ -21,8 +21,7 @@ import { skillName } from "../core/skills.js";
 import { conjugationNoteFor } from "../tasks/explain.js";
 import { reportButtonHTML } from "./reports.js";
 import { l2On, glossToken, decorateTask } from "./secondlang.js";
-import { sentenceStructure, withoutMarks, hasMarks } from "../core/structure.js";
-import { structureHTML } from "./structure.js";
+import { codedOn, codedHTML, hintButtonHTML, wireHint, endHint } from "./hint.js";
 import {
   $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO, CHEERS_TRY, hideTip,
   defBox, unlockDefBox, freshEnter, stopConfetti,
@@ -939,36 +938,46 @@ function submitParse(app) {
 /* Item 25: the hint. "Vísbending" marks the structure of the sentence in the
    picker — every part the build vouches for (core/structure.js) EXCEPT the one
    asked for, which stays for the pupil to find. Like every hint it halves the
-   XP and is not an error. After the answer the asked part is marked too. */
+   XP and is not an error. After the answer the asked part is marked too.
+   Item 26: whether it is shown, offered or left out, and what more it hides
+   so that it never leaves only the answer open, the builder planned
+   (`t.coding`, core/hint.js); ui/hint.js draws it, as on every Setningafræði
+   question. */
 const ROLE_DEFINITE = { frumlag: ["Frumlagið", "það"], "umsögn": ["Umsögnin", "hana"], andlag: ["Andlagið", "það"],
   "óbeint andlag": ["Óbeina andlagið", "það"], sagnfylling: ["Sagnfyllingin", "hana"] };
 
 const pickWord = (tok, j) => `<span class="pickw" data-j="${j}">${esc(tok.w)}</span>`;
 
-function drawPicker(t, { hide = [] } = {}) {
+function drawPicker(t) {
   const el = $("picker");
-  el.classList.toggle("coded", !!t.hinted);
-  el.innerHTML = t.hinted
-    ? structureHTML(t.s, { word: pickWord, hide })
+  const coded = codedHTML(t, pickWord);
+  el.classList.toggle("coded", coded != null);
+  el.innerHTML = coded != null ? coded
     : t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w : `${j ? " " : ""}${pickWord(tok, j)}`).join("");
   if (t.picked != null && !t.done)
     el.querySelectorAll(".pickw").forEach((x) => x.classList.toggle("sel", +x.dataset.j === t.picked));
 }
 
+/** What the syntax hint says it shows: the asked role by name. */
+function syntaxHintText(t) {
+  const [the, it] = ROLE_DEFINITE[t.askRole] || [t.askRole, "það"];
+  return `Nú er bygging málsgreinarinnar sýnd: hver hluti hefur sinn lit, sína línu og sitt heiti.
+        Aðeins það sem er öruggt er merkt.
+        <b>${esc(the)}</b> er ekki merkt — ${esc(it)} átt þú að finna.`;
+}
+
 RENDER.syntax = function (app) {
   const t = app.cur;
-  /* The hint is offered only where it has something to show. */
-  const canHint = hasMarks(withoutMarks(sentenceStructure(t.s), { hide: [t.askRole] }));
   $("task").innerHTML = `
   <div class="card">
     <p class="eyebrow"><span>Smelltu á rétta orðið</span>${skillTag(t)}</p>
     <p class="sentence" id="picker"></p>
+    ${t.coding && t.coding.step === "shown" ? `<p class="gloss codednote">${syntaxHintText(t)}</p>` : ""}
     <p class="gloss">Hvaða orð er ${fmt(t.askRole)} í málsgreininni? Ef þau eru fleiri en eitt dugar að smella á eitt þeirra.</p>
-    <div class="answer"><button class="go" id="check">Athuga</button>${
-      canHint ? `<button class="ghost" id="hint">Vísbending</button>` : ""}</div>
+    <div class="answer"><button class="go" id="check">Athuga</button>${hintButtonHTML(t)}</div>
     <div id="verdict"></div>
   </div>`;
-  drawPicker(t, { hide: [t.askRole] });
+  drawPicker(t);
   $("picker").onclick = (e) => {
     const el = e.target.closest(".pickw");
     if (!el || t.done) return;
@@ -977,21 +986,7 @@ RENDER.syntax = function (app) {
     t.picked = +el.dataset.j;
   };
   $("check").onclick = () => submitSyntax(app);
-  if (canHint) {
-    $("hint").disabled = !!t.hinted;
-    $("hint").onclick = () => {
-      if (t.done) return;
-      t.hinted = true;
-      $("hint").disabled = true;
-      drawPicker(t, { hide: [t.askRole] });
-      const [the, it] = ROLE_DEFINITE[t.askRole] || [t.askRole, "það"];
-      $("verdict").innerHTML = `<div class="verdict neutral"><h3>Vísbending</h3>
-      <p>Nú er bygging málsgreinarinnar sýnd: hver hluti hefur sinn lit, sína línu og sitt heiti.
-        Aðeins það sem er öruggt er merkt.
-        <b>${esc(the)}</b> er ekki merkt — ${esc(it)} átt þú að finna.</p>
-      <p class="streakline">Vísbending gefur helmingi minna XP — hún telst ekki sem villa.</p></div>`;
-    };
-  }
+  wireHint(t, () => drawPicker(t), syntaxHintText(t));
 };
 
 function submitSyntax(app) {
@@ -1004,9 +999,9 @@ function submitSyntax(app) {
   const { good } = j.detail;
   const ok = j.ok, xp = j.xp;
   t.done = true;
-  if ($("hint")) $("hint").disabled = true;
-  /* With the hint open, the part that was asked for is now marked as well. */
-  if (t.hinted) drawPicker(t);
+  endHint();
+  /* With the structure drawn, the part that was asked for is now marked as well. */
+  if (codedOn(t)) drawPicker(t);
   document.querySelectorAll(".pickw").forEach((el) => {
     const k = +el.dataset.j;
     if (good.includes(k)) el.classList.add("right");
