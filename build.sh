@@ -46,11 +46,28 @@ PIP_FLAGS=""
 "$PY" -m pip install -r requirements.txt $PIP_FLAGS -q
 npm ci --no-audit --no-fund --silent 2>/dev/null || npm install --no-audit --no-fund --silent
 
-echo "── 2. frequency list (committed, not fetched) ──────────────────────"
-# (the checksum names the file without a folder, so it is checked from inside sources/)
-if command -v sha256sum >/dev/null 2>&1; then (cd sources && sha256sum -c freq_raw.sha256)
-elif command -v shasum >/dev/null 2>&1; then (cd sources && shasum -a 256 -c freq_raw.sha256)
-else echo "  Neither sha256sum nor shasum found." >&2; exit 1; fi
+echo "── 2. frequency list and LÍNO-2 (committed, not fetched) ───────────"
+# LÍNO-2 (issue #9) is not in the repository until the owner adds it once.
+# Without it the build warns and goes on as if the list were empty (the data
+# is what it was before LÍNO-2); with it, its checksum is required.
+SUMS="freq_raw.sha256"
+if [ -f sources/lino2.csv ]; then
+  [ -f sources/lino2.sha256 ] || {
+    echo "  sources/lino2.csv is there but sources/lino2.sha256 is not:" >&2
+    echo "    (cd sources && sha256sum lino2.csv > lino2.sha256)" >&2; exit 1; }
+  SUMS="$SUMS lino2.sha256"
+else
+  BAR='!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+  { echo "$BAR"; echo "WARNING: LÍNO-2 IS NOT IN THE BUILD. It goes on as if the list were empty."
+    "$PY" -c 'import sys; sys.path.insert(0,"pipeline"); import lino; sys.stderr.write(lino.MISSING)'
+    echo "$BAR"; } >&2
+fi
+# (a checksum names its file without a folder, so it is checked from inside sources/)
+for SUM in $SUMS; do
+  if command -v sha256sum >/dev/null 2>&1; then (cd sources && sha256sum -c "$SUM")
+  elif command -v shasum >/dev/null 2>&1; then (cd sources && shasum -a 256 -c "$SUM")
+  else echo "  Neither sha256sum nor shasum found." >&2; exit 1; fi
+done
 
 echo "── 3. data ─────────────────────────────────────────────────────────"
 # Run from the repository root; the Python modules are in pipeline/ (item 79).

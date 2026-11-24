@@ -1,5 +1,5 @@
 export const LICENSES={
- "built": "2026-11-16",
+ "built": "2026-11-24",
  "app": {
   "nm": "Fallaskóli",
   "lic": "engin markaðssetning, engin gjaldtaka"
@@ -94,6 +94,13 @@ export const LICENSES={
    "lic": "MIT / CC BY-SA 4.0",
    "url": "https://github.com/hermitdave/FrequencyWords",
    "what": "Tíðniröðun orða — hvaða orð barnið sér fyrst. Afritið er í zip-inu með sha256."
+  },
+  {
+   "nm": "Listi yfir íslenskan námsorðaforða (LÍNO-2)",
+   "who": "Auður Pálsdóttir og Sigríður Ólafsdóttir, 2023",
+   "lic": "CC BY 4.0",
+   "url": "http://hdl.handle.net/20.500.12537/307",
+   "what": "Námsorðaforði: hvaða orð eru námsorð og í hvaða röð. Skráin er í sources/ með sha256."
   },
   {
    "nm": "Bricolage Grotesque",

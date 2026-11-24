@@ -23,6 +23,7 @@ SO_ORDER=([f'{v}-{m}-{t}-{p}P-{n}' for v in ['GM','MM'] for m in ['FH','VH']
           + ['GM-NH','MM-NH','GM-SAGNB','MM-SAGNB','LHNT','GM-BH-ET','GM-BH-FT','GM-BH-ST',
              'LHÞT-SB-KK-NFET','LHÞT-SB-KVK-NFET','LHÞT-SB-HK-NFET'])
 ORDERS={'no':NO_ORDER,'lo':LO_ORDER,'fn':FN_ORDER,'pfn':PFN_ORDER,'so':SO_ORDER}
+ORDER_OF={'kk':'no','kvk':'no','hk':'no','lo':'lo','so':'so'}
 
 def paradigm(bin_id, order):
     """All BÍN-core forms for one lemma, in a fixed slot order; '|' separates
@@ -119,6 +120,39 @@ for ofl in ['fs','st','ao','uh','nhm']:
         if not vf.keep(o,c): continue
         W.append({'i':bid,'o':o,'c':c,'r':got+1,'f':o}); got+=1
 
+# LÍNO-2, the academic word list (lino.py, issue #9). A word on it that the
+# subtitle list never saw (*forsenda* is not film dialogue) comes in the way the
+# sentence bank's nouns do: out of BÍN's core, if BÍN has every form a question
+# needs, at the same middling rank. The first BÍN class that qualifies is
+# taken (one reading per entry; the homograph pass below adds the others).
+import lino
+LINO_WORDS=lino.load()
+LINO_ADDABLE=('kk','kvk','hk','lo','so','ao')
+_lino_added=[]; _lino_out=[]
+have={(x['o'],x['c']) for x in W}
+for lemma,cls,rank in LINO_WORDS:
+    cand=[c for c in LINO_ADDABLE if cls is None or c in cls]
+    if not cand:     # a closed class: BÍN's inventory is in already, or it is not taught
+        if not any((lemma,c) in have for c in cls): _lino_out.append((rank,lemma,'class not taught'))
+        continue
+    if any((lemma,c) in have for c in cand): continue
+    ids=sorted({(m.ofl,m.bin_id) for m in lino.core(b,lemma) if m.ofl in cand})
+    why='not in BÍN' if not ids else 'not all forms in BÍN'
+    for ofl,bid in ids:
+        if not vf.keep(lemma,ofl): why='vocab_filter'; continue
+        if ofl=='ao':
+            W.append({'i':bid,'o':lemma,'c':ofl,'r':300,'f':lemma})
+        else:
+            f=paradigm(bid,ORDERS[ORDER_OF[ofl]])
+            need=6 if ofl=='so' else 4
+            if sum(1 for x in f[:need] if x)<need: continue
+            W.append({'i':bid,'o':lemma,'c':ofl,'r':300,'f':';'.join(f)})
+        have.add((lemma,ofl)); _lino_added.append(f'{lemma}·{ofl}'); break
+    else:
+        _lino_out.append((rank,lemma,why))
+print('LÍNO-2: %d words added that the subtitle list does not have:' % len(_lino_added),
+      ' '.join(_lino_added[:20]) + (' …' if len(_lino_added)>20 else ''))
+
 # Two verbs, one infinitive. BÍN has *brenna* (brann) and *brenna* (brenndi),
 # and likewise *sleppa*, *skella*, *sökkva*, *smella*: a strong intransitive
 # verb and the weak transitive made from it. Both came in as separate entries
@@ -206,7 +240,6 @@ def _forms_of(fstr):
             if v: out.add(v.lower())
     return out
 TEACHABLE={'kk','kvk','hk','lo','so'}
-ORDER_OF={'kk':'no','kvk':'no','hk':'no','lo':'lo','so':'so'}
 have={(x['o'],x['c']) for x in W}
 skipped=[]
 rank_of={}
@@ -255,6 +288,16 @@ for x in W:
     if kept!=cells:
         x['f']=';'.join(kept); _stripped.append(x['o'])
 print('  adjectives shown in the positive degree only:',len(_stripped))
+
+# Every word on LÍNO-2 carries its LÍNO rank, `lino` (1 = the commonest on the
+# list); the app knows it as an academic word by that field alone. Only the
+# class(es) the list gives; with no class column, every class (lino.tag).
+_n=lino.tag(W,LINO_WORDS)
+_in={x['o'] for x in W if x.get('lino')}
+_lino_out=[t for t in _lino_out if t[1] not in _in]
+print('LÍNO-2: %d lexicon words carry a LÍNO rank; %d entries are not in the lexicon%s'
+      % (_n, len(_lino_out), ':' if _lino_out else ''))
+for r,o,why in sorted(_lino_out): print('    %4d  %s (%s)' % (r,o,why))
 
 # The second axis of difficulty (v6.13, critique item 16): how irregular each
 # paradigm is (`irr`, 1-5) and how hard each cell is (`cellh`, one digit per

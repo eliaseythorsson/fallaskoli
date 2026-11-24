@@ -18,7 +18,11 @@ import { normalise } from "./grading.js";
    Both come out of the build (pipeline/irregularity.py explains how they are
    measured; `DATA.lex.cellh` is the cell table). Item 17 — calibration from
    what pupils actually get wrong — changes them by passing `hardness` below:
-   the builders never see where a score came from. */
+   the builders never see where a score came from.
+
+   A word on LÍNO-2, the Icelandic academic word list, carries `w.lino`: its
+   rank on that list, 1 = the commonest (pipeline/lino.py, issue #9). A word
+   without it is not on the list. */
 const HARD_LO = 1, HARD_HI = 5;
 const hardScore = (v) => (typeof v === "number" && Number.isFinite(v)
   ? Math.max(HARD_LO, Math.min(HARD_HI, v)) : null);

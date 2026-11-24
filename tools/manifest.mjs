@@ -50,6 +50,8 @@ const INPUTS = [
   /* v6.13 (item 82): the hand-written content left Python for content/*.tsv;
      pipeline/sentences.py and pipeline/exercises.py read it through pipeline/content_io.py */
   "pipeline/content_io.py",
+  /* Issue #9: LÍNO-2, the academic word list, and its reader */
+  "sources/lino2.csv", "pipeline/lino.py",
   ...contentFiles(),
 ];
 
@@ -143,6 +145,8 @@ export async function compute() {
       /* Words rare enough to earn the rare-find badges. A build that quietly
          changes this has quietly changed how hard those badges are. */
       rare_words: lex.w.filter((w) => (w.q ?? 0) < 12).length,
+      /* Words that carry a LÍNO-2 rank (issue #9). */
+      lino_words: lex.w.filter((w) => w.lino).length,
       guard: report.guard ?? null,
     },
     sentence_fingerprints: fingerprints,

@@ -119,12 +119,17 @@ What the build does, in order:
 
 1. `pipeline/build_freq.py` — the committed frequency list (`sources/freq_raw.txt`, OpenSubtitles)
    → `data/freq_lemmas.json`, ranked towards school reading: words the hand-written
-   sentences, exercises and definitions use ×3, film register (pipeline/vocab_filter.py
-   `SUBTITLE_REGISTER`, and ÍNO's *niðrandi*/*gróft*) ×0.1
+   sentences, exercises and definitions use ×3, words on LÍNO-2, the academic word
+   list (`sources/lino2.csv`, read by `pipeline/lino.py`), ×3 (not both), film register
+   (pipeline/vocab_filter.py `SUBTITLE_REGISTER`, and ÍNO's *niðrandi*/*gróft*) ×0.1.
+   It lists the LÍNO-2 lemmas BÍN does not have. Until `sources/lino2.csv` is added the
+   build warns and goes on as if the list were empty (the data is then what it was before).
 2. `pipeline/build_lexicon.py` — every attested lemma's paradigm out of BÍN → `data/lexicon.json`
    (and, by `pipeline/irregularity.py`, how irregular each paradigm is, `irr` 1–5, and
    how hard each cell is, `cellh` — the second axis of difficulty)
-   (minus the comparison forms of the adjectives `pipeline/adj_classes.py` lists as not compared)
+   (minus the comparison forms of the adjectives `pipeline/adj_classes.py` lists as not compared).
+   LÍNO-2 words the subtitles never saw come in out of BÍN; every LÍNO-2 word carries
+   its LÍNO rank, `lino` (1 = commonest), and the build lists the entries that did not get in.
 3. `pipeline/build_sentences.py` — every sentence of the bank
    (`content/setningar/setningar.tsv`, read by `pipeline/sentences.py`) parsed by
    Greynir and checked by `pipeline/parse_guard.py` → `data/sentences.json`
@@ -205,7 +210,9 @@ pipeline/             the Python half of the build (critique item 79), run from 
                       build_freq.py ranks down as film-subtitle register
 
 sources/              what the build starts from and cannot make: the frequency list
-                      (freq_raw.txt, with its checksum) and the ÍNO dictionary XML
+                      (freq_raw.txt, with its checksum), LÍNO-2 (lino2.csv, with its
+                      checksum; `python3 pipeline/lino.py` says how to add it) and the
+                      ÍNO dictionary XML
 data/                 GENERATED, committed, never edited by hand: lexicon.json,
                       sentences.json, freq_lemmas.json (the build's own stages),
                       data_bundle.js, exercises.js, manifest.json …
@@ -510,6 +517,8 @@ worse than no question**, so every builder returns nothing rather than guess.
 BÍN (CC BY-SA 4.0, Stofnun Árna Magnússonar), Greynir (MIT, Miðeind), the
 OpenSubtitles frequency list (hermitdave/FrequencyWords), Bricolage Grotesque,
 Public Sans and IBM Plex Mono (OFL; bundled, notice in `src/fonts/OFL.txt`), and
-Íslensk nútímamálsorðabók (CC BY-SA 4.0) for the definitions. The full list
+Íslensk nútímamálsorðabók (CC BY-SA 4.0) for the definitions, and LÍNO-2, the
+Icelandic academic word list (Auður Pálsdóttir & Sigríður Ólafsdóttir 2023,
+CLARIN-IS http://hdl.handle.net/20.500.12537/307, CC BY 4.0). The full list
 is at the bottom of the Stillingar og námsefni tab and in `data/licenses.js`. ShareAlike applies to the built
 file: it contains ÍNO's definitions.

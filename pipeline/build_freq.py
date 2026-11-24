@@ -40,6 +40,10 @@ def form_counts(path='sources/freq_raw.txt'):
 #                    Icelandic. A form that BÍN gives several lemmas counts for
 #                    the one the corpus scores highest: *veit* lifts *vita* and
 #                    not *veita*, *við* the pronoun and not *viður*.
+#   lino.FACTOR      × 3 for a word on LÍNO-2, the Icelandic academic word
+#                    list (lino.py, issue #9): the words a pupil meets in the
+#                    textbooks of every subject. Not on top of SCHOOL_FACTOR:
+#                    a word that is both is lifted once, × 3.
 #   SUBTITLE_FACTOR  × 0.1 for film register: the words in
 #                    vocab_filter.SUBTITLE_REGISTER (address, film ranks, guns,
 #                    mild oaths …), and any word that Íslensk nútímamálsorðabók
@@ -110,18 +114,29 @@ def rank_key(score, meta):
     for bid,(o,c) in meta.items(): best[(o,c)]=max(best.get((o,c),0),score[bid])
     school=school_lemmas(best)
     coarse=ino_coarse()
+    import lino
+    words=lino.load()            # [] (and a warning) until sources/lino2.csv is added
+    lex={(o,c) for o,c in meta.values() if c in RERANK}
+    academic=lino.boost(lex, words, school)     # (o,c) -> LINO_FACTOR (lino.FACTOR)
     key={}
     for bid,(o,c) in meta.items():
         k=score[bid]
         if c in RERANK:
             if (o,c) in school: k*=SCHOOL_FACTOR
+            elif (o,c) in academic: k*=academic[(o,c)]
             if o in vf.SUBTITLE_REGISTER or (o,c) in coarse: k*=vf.SUBTITLE_FACTOR
         key[bid]=k
-    lex={(o,c) for o,c in meta.values() if c in RERANK}
     low=sorted(p for p in lex if p[0] in vf.SUBTITLE_REGISTER or p in coarse)
     print('rank: %d words lifted (school material), %d lowered (film register; %d of them by ÍNO label)'
           % (len(lex & school), len(low), len(lex & coarse)))
     print('  lowered by ÍNO label:', ' '.join(sorted(o for o,c in lex & coarse)))
+    print('rank: %d words lifted (LÍNO-2, not already lifted as school material)' % len(academic))
+    # Every LÍNO-2 entry is accounted for: lifted here, or added by
+    # build_lexicon.py (BÍN has it, the subtitles never saw it), or named here.
+    gone=lino.not_in_bin(words, b)
+    print('LÍNO-2: %d entries, %d not in BÍN\'s core in the class the list gives%s'
+          % (len(words), len(gone), ':' if gone else ''))
+    for r,o,c in gone: print('    %4d  %s (%s)' % (r,o,c))
     return key
 
 if __name__=='__main__':
