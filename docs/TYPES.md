@@ -61,6 +61,8 @@ The pure modules, where the shared shapes matter most:
 |---|---|
 | `core/state.js` | the saved state and the session: `blankState`, `migrate`, `newSession`, `record` |
 | `core/slices.js` | the list of the saved state's slices (`Slice`, `SliceEntry`, `CleanContext`) and the walks over it |
+| `core/slicerules.js` | the merge and server-check rules the slices share (`add`, `choice`, `pairs`, `dayStr` …) |
+| `core/days.js` | the slices `days`, `goal`, `weekGoal`, `lastActive`; `cleanWeekGoal` |
 | `core/answer.js` | `judge`, `judgeRetry`, `judgeBonus`, `settle`, and the effects |
 | `core/review.js` | the review queue: `ReviewEntry`, `noteReview`, `dueEntries`, `dayOf` |
 | `core/difficulty.js` | saved levels (`LevelRecord`), `bumpDiff`, `levelRanges` (JSDoc only) |

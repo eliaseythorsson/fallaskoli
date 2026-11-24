@@ -99,8 +99,11 @@ test("blankState refuses a key the list does not name (the trap, caught where it
   assert.doesNotThrow(() => assembleBlank(legacy));
   assert.throws(() => assembleBlank({ ...legacy, wordCards: {} }), /wordCards.*core\/slices\.js/);
   assert.throws(() => assembleBlank({ ...legacy, review: {} }), /review.*converted/);
-  const { days, ...short } = legacy;
-  assert.throws(() => assembleBlank(short), /days/);
+  const first = Object.keys(legacy)[0];
+  if (first) {
+    const { [first]: _, ...short } = legacy;
+    assert.throws(() => assembleBlank(short), new RegExp(`"${first}"`));
+  }
 });
 
 test(`the fixture fills every slice of blankState (${FIXTURE})`, () => {

@@ -56,22 +56,6 @@ function counters(b, l, r, fields) {
   return out;
 }
 
-function mergeDay(b, l, r) {
-  if (!l) return r;
-  if (!r && !b) return l;
-  const out = counters(b, l, r, ["a", "c", "xp", "ms", "nw"]);
-  out.sk = {};
-  for (const k of keys(obj(l).sk, obj(r).sk))
-    out.sk[k] = add(obj(obj(b).sk)[k], obj(obj(l).sk)[k], obj(obj(r).sk)[k]);
-  out.g = obj(l).g ?? obj(r).g ?? null;
-  out.lg = obj(l).lg || obj(r).lg ? 1 : 0;
-  /* The weekly goal in force that day (item 57): the lower, as `weekGoalFor`
-     judges a week by the lowest stamped on it. */
-  const wl = obj(l).wg, wr = obj(r).wg;
-  if (wl || wr) out.wg = wl && wr ? Math.min(wl, wr) : (wl || wr);
-  return out;
-}
-
 /** dates in `l` that were not already in `b`, as a multiset. */
 function newDates(b, l) {
   const left = [...(Array.isArray(b) ? b : [])];
@@ -121,10 +105,6 @@ export function mergeStates(base, local, remote) {
   out.bestRun = Math.max(num(L.bestRun), num(R.bestRun));
   out.totalAnswers = add(B.totalAnswers, L.totalAnswers, R.totalAnswers);
   out.totalCorrect = add(B.totalCorrect, L.totalCorrect, R.totalCorrect);
-
-  out.days = {};
-  for (const k of keys(L.days, R.days))
-    out.days[k] = mergeDay(obj(B.days)[k], obj(L.days)[k], obj(R.days)[k]);
 
   for (const part of ["cells", "words"]) {
     out[part] = {};
@@ -234,11 +214,10 @@ export function mergeStates(base, local, remote) {
      device is ended on both — nobody is walked through it twice. */
   out.tour = mergeTour(L.tour, R.tour);
 
-  out.lastActive = later(L.lastActive, R.lastActive);
   out.settled = later(L.settled, R.settled);
 
   /* The child's own switches: whichever device changed them. */
-  for (const k of ["goal", "weekGoal", "enabled", "policy", "settings", "showcase", "title"])
+  for (const k of ["enabled", "policy", "settings", "showcase", "title"])
     out[k] = choice(B[k], L[k], R[k]);
 
   /* The ceiling is the administrator's and always comes from the server. */

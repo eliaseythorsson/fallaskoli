@@ -86,23 +86,10 @@ export function cleanState(raw, { today = new Date() } = {}) {
 
   S.xp = n(S.xp, LIMITS.xpTotal);
   S.bestLevel = n(S.bestLevel, 999) || 1;
-  S.goal = Math.min(Math.max(n(S.goal, 499), 1), 499);
   S.bestRun = n(S.bestRun); S.totalAnswers = n(S.totalAnswers); S.totalCorrect = n(S.totalCorrect);
   S.multiSessionRun = n(S.multiSessionRun);
   S.lastSessionSkills = S.lastSessionSkills == null ? null : n(S.lastSessionSkills, 99);
-  S.lastActive = dayStr(S.lastActive);
   S.settled = dayStr(S.settled);
-
-  const days = {};
-  for (const [k, d] of pairs(S.days, 5000, 10)) {
-    if (!DAY.test(k) || k > limit || !isObj(d)) continue;
-    const sk = {};
-    for (const [id, v] of pairs(d.sk, 40)) if (SKILLS.has(id)) sk[id] = n(v);
-    days[k] = { a: n(d.a), c: n(d.c), xp: n(d.xp), ms: n(d.ms, 86400000), nw: n(d.nw),
-      sk, g: d.g == null ? null : n(d.g, 499), lg: d.lg ? 1 : 0,
-      wg: d.wg == null ? null : Math.min(Math.max(n(d.wg, 7), 2), 7) };
-  }
-  S.days = days;
 
   for (const part of ["cells", "words"]) {
     const out = {};

@@ -13,6 +13,7 @@ import { timeContext, mondayOf, weekKeys, isBreakWeek } from "./calendar.js";
 import { checkDayEnd, legacyStreakCredit } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
 import { assembleBlank, migrateSlices } from "./slices.js";
+import { cleanWeekGoal, WEEK_GOAL_DEFAULT, WEEK_GOAL_MIN, WEEK_GOAL_MAX } from "./days.js";
 import { cleanByType, masteryOf } from "./mastery.js";
 import { cleanByNode } from "./skillmap.js";
 import { cleanSeenTypes } from "./examples.js";
@@ -52,15 +53,12 @@ export function blankState() {
     v: STATE_VERSION,
     profile: { id: "local", name: "" },
     xp: 0, bestLevel: 1,
-    days: {}, cells: {}, words: {}, skills, badges: {},
+    cells: {}, words: {}, skills, badges: {},
     /* When each word was last asked about in the vocabulary skill. Kept apart
        from `words` (which is right/wrong) because the wait is about dates, not
        about correctness. See core/spacing.js. */
     vocab: {},
-    goal: 10, run: 0, bestRun: 0,
-    /* The weekly goal (item 57): days of seven on which the daily goal is met.
-       The main streak counts weeks in which it was met. See `weekStreak`. */
-    weekGoal: WEEK_GOAL_DEFAULT,
+    run: 0, bestRun: 0,
     totalAnswers: 0, totalCorrect: 0,
     /* Consecutive sessions touching three or more skills (multi-skill badges). */
     multiSessionRun: 0, lastSessionSkills: null,
@@ -77,7 +75,6 @@ export function blankState() {
     /* `badgeView`: which view of the badge cabinet is showing (ui/panels.js).
        A child with nothing on the shelf yet is shown the catalogue instead. */
     settings: { decay: false, settingsRev: 1, glossary: true, badgeView: "rarity" },
-    lastActive: null,
     /* `periods`: the once-per-day / once-per-night ledger (core/badges.js).
        `settled`: the last day whose day-end badges have been judged. */
     periods: {},
@@ -208,19 +205,6 @@ export function migrate(raw) {
 
   Object.assign(S, {
     xp: raw.xp || 0,
-    /* `g` is the daily goal as it stood on that day, so a day is judged
-       against the goal in force then rather than today's setting. Days
-       recorded before it existed get null and fall back to the current goal. */
-    days: Object.fromEntries(Object.entries(raw.days || {}).map(([k, d]) => [k, {
-      a: d.a || 0, c: d.c || 0, xp: d.xp || 0, ms: d.ms || 0, nw: d.nw || 0,
-      sk: d.sk || {}, g: d.g ?? null,
-      /* `lg` — the program was opened on this day, whether or not anything was
-         answered. A day with answers also counts as opened (`loginStreak`). */
-      lg: d.lg ? 1 : 0,
-      /* `wg` — the weekly goal in force on that day, as `g` is for the daily
-         one: raising the goal later must not un-meet a week already won. */
-      wg: d.wg ?? null,
-    }])),
     cells: raw.cells || {},
     words: cleanWordKeys(raw.words),
     /* Item 57: whoever won a day-streak badge keeps it, and is credited the
@@ -229,12 +213,9 @@ export function migrate(raw) {
       const own = raw.badges && typeof raw.badges === "object" ? raw.badges : {};
       return { ...legacyStreakCredit(own), ...own };
     })(),
-    goal: raw.goal || 10,
-    weekGoal: cleanWeekGoal(raw.weekGoal),
     bestRun: raw.bestRun || 0,
     totalAnswers: raw.totalAnswers || 0,
     totalCorrect: raw.totalCorrect || 0,
-    lastActive: raw.lastActive || null,
     vocab: raw.vocab || {},
     multiSessionRun: raw.multiSessionRun || 0,
     lastSessionSkills: raw.lastSessionSkills ?? null,
@@ -446,14 +427,8 @@ function streakBack(S, from, qualifies) {
  * breaking; and a week is judged against the weekly goal in force during it
  * (the lowest stamped on its days), so raising the goal cannot undo a week.
  */
-export const WEEK_GOAL_DEFAULT = 4, WEEK_GOAL_MIN = 2, WEEK_GOAL_MAX = 7;
-
-/** A saved or typed weekly goal as a whole number from 2 to 7. */
-export function cleanWeekGoal(v) {
-  const n = Math.round(Number(v));
-  if (!Number.isFinite(n) || n < 1) return WEEK_GOAL_DEFAULT;
-  return Math.max(WEEK_GOAL_MIN, Math.min(WEEK_GOAL_MAX, n));
-}
+/* The weekly goal as saved, and `cleanWeekGoal`, are core/days.js. */
+export { cleanWeekGoal, WEEK_GOAL_DEFAULT, WEEK_GOAL_MIN, WEEK_GOAL_MAX };
 export const weekGoalOf = (S) => cleanWeekGoal(S && S.weekGoal);
 
 /* The three things a day can be, for the three week counters. */

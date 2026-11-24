@@ -111,6 +111,7 @@
  */
 
 import { reviewSlice } from "./review.js";
+import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
 
 /** @typedef {import("../types").Slice} Slice */
 /** @typedef {import("../types").SliceEntry} SliceEntry */
@@ -131,16 +132,16 @@ export const SLICES = [
   notYet("profile"),
   notYet("xp"),
   notYet("bestLevel"),
-  notYet("days"),
+  daysSlice,
   notYet("cells"),
   notYet("words"),
   notYet("skills"),
   notYet("badges"),
   notYet("vocab"),
-  notYet("goal"),
+  goalSlice,
   notYet("run"),
   notYet("bestRun"),
-  notYet("weekGoal"),
+  weekGoalSlice,
   notYet("totalAnswers"),
   notYet("totalCorrect"),
   notYet("multiSessionRun"),
@@ -150,7 +151,7 @@ export const SLICES = [
   notYet("policy"),
   notYet("allowed"),
   notYet("settings"),
-  notYet("lastActive"),
+  lastActiveSlice,
   notYet("periods"),
   notYet("settled"),
   notYet("showcase"),
