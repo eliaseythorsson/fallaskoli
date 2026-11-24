@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Docs
+- **`CONTEXT.md`**: the project's glossary (pupil, skill, question type, þyngd, word,
+  word entry, word knowledge, word in learning, learned and hard words, the pupil's own
+  text …), from the architecture review of 2026-11-24. Agents use these words.
+- **`docs/adr/`**: the first four decisions: word knowledge keeps every entry; the server
+  returns findings and the browser judges; the pupil's own text is only the pupil's;
+  server grading is off unless switched on.
+
 ### Færnikort
 - **Langt heiti flokks fer ekki út fyrir rammann**: „Orðflokkagreining“, „Setningafræði“
   og „Setningagerð“ ýttu „Stig“ og „þyngd“ út fyrir kassann sinn. Nú færast þau í næstu
