@@ -4032,8 +4032,9 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
   await p.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess", { timeout: 60000 });
   const toMeaning = () => p.evaluate(() => {
     const A = window.FALLASKOLI;
-    if (!A.run) A.startRun("ordaford", 100000);
-    for (let i = 0; i < 400 && !(A.cur && A.cur.type === "meaning" && !A.cur.grader); i++) A.next();
+    /* The fifth question of a rescue drill is the meaning question. */
+    A.startDrill("hestur|kk");
+    if (A.drill) { A.drill.turn = 4; A.next(); }
     const t = A.cur;
     if (!t || t.type !== "meaning" || t.grader) return false;
     Object.assign(t, { grader: "server", typeId: "fixture_server", read: { kind: "fixture", context: null },
@@ -4087,7 +4088,7 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
     ok(end.last && end.last[1] === "fixture_server" && end.last[2] === "r", "#48: no right word entry: " + JSON.stringify(end.last));
 
     /* The grader down: "not judged", after one retry. */
-    await p.evaluate(() => { window.FALLASKOLI.next(); });
+    await p.evaluate(() => { window.FALLASKOLI.stopDrill(); });
     if (await toMeaning()) {
       await p.evaluate(() => { window.__reads = 0;
         window.FALLASKOLI.serverRead = async () => { window.__reads++; return { fault: "unavailable" }; }; });

@@ -36,7 +36,7 @@ function lock(on) {
 
 function checklistHTML(list) {
   if (!list || !list.length) return "";
-  return `<ul class="checklist">${list.map((p) => `<li class="${p.met ? "met" : "open"}">
+  return `<ul class="checklist" style="list-style:none;padding-left:0">${list.map((p) => `<li class="${p.met ? "met" : "open"}">
     <span aria-hidden="true">${p.met ? "✓" : "○"}</span>
     <span class="sr-only">${p.met ? "Komið:" : "Vantar:"}</span> ${fmt(p.label || "")}</li>`).join("")}</ul>`;
 }
@@ -64,8 +64,7 @@ function reviseHTML(j) {
     <h3>Svarið var lesið yfir</h3>
     ${checklistHTML(d.checklist)}
     ${d.ask ? `<p class="ask"><b>${fmt(d.ask)}</b></p>` : ""}
-    <p id="servernote">Þú mátt bæta svarið einu sinni: breyttu því og sendu aftur — eða haltu því eins og það er.</p>
-    <button type="button" class="ghost" id="keepanswer">Halda svarinu</button></div>`;
+    <p id="servernote">Þú mátt bæta svarið einu sinni: breyttu því og sendu aftur — eða haltu því eins og það er.</p></div>`;
 }
 
 /**
@@ -93,6 +92,10 @@ export async function awaitServer(app, task, j, done) {
 function show(app, task, q, r, done) {
   if (r.pending === "revise") {
     $("verdict").innerHTML = reviseHTML(r);
+    /* Beside the button, as "Sýna svarið" of a second try (ui/render.js). */
+    const go = $("check");
+    if (go && !$("keepanswer")) go.insertAdjacentHTML("afterend",
+      `<button type="button" class="ghost" id="keepanswer">Halda svarinu</button>`);
     $("keepanswer").onclick = () => { const k = q.keep(); if (k) show(app, task, q, k, done); };
     const box = document.querySelector("#task textarea, #task input[type=text]");
     if (box) { box.setAttribute("aria-describedby", "servernote"); box.focus(); }
