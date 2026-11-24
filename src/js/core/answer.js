@@ -419,6 +419,11 @@ export function gradeTransform(input, task) {
   const orig = task.from || (task.s && task.s.t);
   if (orig && normalise(input) === normalise(orig)) return "wrong";
   if (v === "accents" && orig && stripAccents(input) === stripAccents(orig)) return "wrong";
+  /* An open task (`task.open`, issue #29: Sameina og skipta) lists the
+     answers the build could vouch for, not every right one. What is not on
+     the list is "unlisted": the model is shown and the answer counts
+     neither way. Only what was shown, written back, is wrong (above). */
+  if (v === "wrong" && task.open) return "unlisted";
   if (v === "wrong") return (SHORT_OK.has(task.kind || "past") && tailLeftOut(input, task)) || "wrong";
   return v === "accents" ? "slip" : v;
 }
@@ -480,8 +485,13 @@ export function transformNote(input, task) {
  */
 export function transformFeedback(input, task, grade) {
   const ok = ["correct", "slip", "short", "shortslip"].includes(grade);
+  /* What was shown, written back (an open task says so in its own words). */
+  if (grade === "wrong" && task.open && task.copyNote) return task.copyNote;
   if (!ok) return grade === "empty" ? null : transformNote(input, task);
   const text = String(input || "").trim();
+  /* Two sentences are two full stops, or at least one between them. */
+  if (task.kind === "split" && !/[.!?]\s+\S/.test(text))
+    return "Rétt — en mundu eftir punkti á milli setninganna og stórum staf á eftir honum.";
   if (task.endMark && !text.endsWith(task.endMark))
     return "Rétt — en spurning endar á spurningarmerki (?).";
   /* The frame is two words (*Hann sagði*), so *að* is the third — an *að*
@@ -1107,6 +1117,18 @@ JUDGES.umritun = (t, response, hist) => {
   const grade = gradeTransform(text, t);
   if (grade === "empty") return pending("empty");
   const note = transformFeedback(text, t, grade);
+  /* Issue #29: an answer the build did not list (`t.open`). It may well be
+     right — the browser cannot parse it to find out — so it is not judged:
+     nothing is recorded for or against the pupil (no cell, no skill, no
+     run, no XP), the þyngd does not move and the review queue does not hear
+     of it. The question still counts as answered, and the renderer shows
+     the model beside what was written. */
+  if (grade === "unlisted")
+    return result(t, {
+      ok: null, verdict: "unjudged",
+      effects: [rec({ skill: null, cell: null, word: null, ok: false, xp: 0, counts: false, timed: true })],
+      detail: { grade, slip: false, short: false, note },
+    });
   const ok = ["correct", "slip", "short", "shortslip"].includes(grade);
   const slip = grade === "slip" || grade === "shortslip";
   const short = grade === "short" || grade === "shortslip";

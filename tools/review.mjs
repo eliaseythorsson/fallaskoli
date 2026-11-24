@@ -40,6 +40,7 @@ const p = (...x) => path.join(root, ...x);
 export const KINDS = [
   ["setningar", "Setningabankinn"],
   ["villuveidar", "Villuveiðar"],
+  ["malbeiting", "Málbeiting: sameina og skipta"],
   ["lysingarord", "Lýsingarorð"],
   ["fornofn", "Fornöfn"],
   ["toluord", "Töluorð"],
@@ -91,7 +92,7 @@ async function tsvFiles(dir = "content") {
 
 /* The columns that say the same thing in every file get a fixed place on the
    card; every other column is shown under its own name. */
-const TEXT_COLS = ["setning", "rammi", "texti"];
+const TEXT_COLS = ["setning", "rammi", "texti", "saman"];
 const LEVEL_COLS = ["þyngd", "bónus"];
 
 function itemFromRow(rel, kind, list, header, r) {

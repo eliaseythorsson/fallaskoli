@@ -124,7 +124,7 @@ every year.
 | Hæfniviðmið (heading in the aðalnámskrá) | Section | Within reach of a drill app? | Nodes | With questions | Fully covered |
 | --- | --- | --- | --- | --- | --- |
 | Orðflokkar | Mál og málnotkun | yes: the app's main subject | 32 | 30 | 27 |
-| Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 11 | 9 | 8 |
+| Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 12 | 10 | 9 |
 | Fjölbreytt málnotkun | Mál og málnotkun | partly | 2 | 1 | 1 |
 | Sköpunarkraftur | Mál og málnotkun | partly | 1 | 1 | 1 |
 | Orðtök og málshættir | Mál og málnotkun | partly | 1 | 0 | 0 |
@@ -180,6 +180,7 @@ evidence above. Later years keep practising it.
 | `mb-villur` | Villuveiðar | Einkenni málsins | Málbeiting | Villuveiðar (`villur`) | Málfræðin í notkun (`malbeiting`) | yes |
 | `mb-smidja` | Setningasmiðja | Einkenni málsins | Málbeiting | Setningasmiðja (`smidja`) | Málfræðin í notkun (`malbeiting`) | yes |
 | `mb-umritun` | Umritun | Einkenni málsins | Málbeiting | Umritun (`umritun`) | Málfræðin í notkun (`malbeiting`) | yes |
+| `mb-sameina` | Að sameina og skipta setningum | Einkenni málsins | Málbeiting | Sameina og skipta setningum (`sameina`) | Málfræðin í notkun (`malbeiting`) | yes |
 | `st-n-nn` | n eða nn | Stafsetning og greinarmerkjasetning | Stafsetning og greinarmerki | none yet | none yet | **no** |
 | `st-y` | y, ý og ey | Stafsetning og greinarmerkjasetning | Stafsetning og greinarmerki | none yet | none yet | **no** |
 | `st-stor-stafur` | Stór og lítill stafur | Stafsetning og greinarmerkjasetning | Stafsetning og greinarmerki | none yet | none yet | **no** |
@@ -457,9 +458,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 10 of 12 | 41 of 59 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
-| 9. bekkur | 10 of 12 | 48 of 59 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 12 of 12 | 59 of 59 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
+| 8. bekkur | 10 of 12 | 42 of 60 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
+| 9. bekkur | 10 of 12 | 49 of 60 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 12 of 12 | 60 of 60 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:

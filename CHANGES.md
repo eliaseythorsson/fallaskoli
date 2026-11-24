@@ -27,6 +27,13 @@
   skilgreind í einingunni sem á hana, og hleðsla, sameining tækja og athugun þjónsins fara aðeins
   yfir listann. Vistuð framvinda hermds nemanda á tveimur tækjum kemur bæti fyrir bæti eins út og áður.
 
+### Málbeiting: sameina og skipta setningum (#29)
+- **Ný spurningagerð, „Sameina og skipta setningum“**: nemandinn gerir eina setningu úr tveimur
+  stuttum (*af því að*, *þegar*, svo *að*, svo *sem*) eða skiptir einni setningu í tvær. 49 pör
+  úr daglegu lífi í `content/malbeiting/sameina.tsv`; Greynir greinir hverja setningu þegar
+  forritið er smíðað. Svar sem er ekki á listanum er ekki merkt rangt: nemandinn sér fyrirmynd
+  og svarið telst hvorki rétt né rangt.
+
 ### Framvindan, sneið fyrir sneið (#49)
 - **Öryggisnet undir framvindunni**: hver hluti hennar (sneið) er á einum lista
   (`core/slices.js`), og próf sendir framvindu með öllum sneiðum fylltum gegnum hleðslu,

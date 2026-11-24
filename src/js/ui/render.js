@@ -1629,7 +1629,7 @@ RENDER.umritun = function (app) {
     <p class="sentence">${shown}</p>
     <p class="gloss">${fmt(t.instruction)}</p>
     <div class="answer">
-      <input type="text" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="skrifaðu alla setninguna…">
+      <input type="text" id="ans" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc(t.placeholder || "skrifaðu alla setninguna…")}">
       <button class="go" id="check">Athuga</button>
       <button class="ghost" id="hint">Vísbending</button></div>
     <div class="keys" id="keys"></div><div id="verdict"></div>
@@ -1687,7 +1687,7 @@ function submitTransform(app) {
      what this rewrite got wrong (`transformNote`) — not `t.why`, which
      explains the answer by quoting it. */
   if (offerRetry(app, t, j, {
-    response, why: TRANSFORM_HINT[t.kind] || "", label: "regla",
+    response, why: t.hint || TRANSFORM_HINT[t.kind] || "", label: "regla",
     note: j.detail.note ? `<div class="why"><b>athugið</b>${fmt(hideAnswer(j.detail.note, t))}</div>` : "",
     inputs: [$("ans")], lock: [$("hint")], reveal: draw,
   })) return;
@@ -1701,6 +1701,22 @@ function drawTransform(app, t, j, val) {
   $("ans").disabled = true;
   $("hint").disabled = true;
   const model = t.model || t.answers[0];
+  /* Issue #29: an answer that is not on the list of an open task (`t.open`,
+     Sameina og skipta). Not right, not wrong, and said so: the model beside
+     what the pupil wrote, and the other answers the list holds. */
+  if (j.verdict === "unjudged") {
+    const others = t.answers.filter((a) => a !== model).slice(0, 3);
+    $("verdict").innerHTML = `<div class="verdict neutral">
+    <h3>Berðu svarið saman við fyrirmyndina</h3>
+    <p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>${/[.?!]$/.test(val.trim()) ? "" : "."}</p>
+    <p>Fyrirmynd: <b>${esc(model)}</b></p>
+    ${others.length ? `<p class="streakline">Líka rétt: ${others.map((a) => `<span class="forms">${esc(a)}</span>`).join(" · ")}</p>` : ""}
+    ${j.detail.note ? `<p class="streakline">${fmt(j.detail.note)}</p>` : ""}
+    <p class="streakline">Forritið þekkir ekki þetta svar og getur ekki metið það. Það telst hvorki rétt né rangt.</p>
+    ${whyBox(t.why)}
+    <p class="streakline">Enter fyrir næstu.</p></div>`;
+    return;
+  }
   const other = t.kind === "passive"
     ? `<p class="streakline">${fmt("Gerandinn (*af* …) má fylgja eða sleppa: hvort tveggja er rétt.")}</p>` : "";
   /* After a second try, every sentence the pupil wrote that was wrong. */

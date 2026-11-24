@@ -213,6 +213,10 @@ export const NODES = [
     hv: "fjolbreytt", types: [], lesson: null, cover: "none", item: 28 },
   { id: "mb-raeda", nm: "Bein og óbein ræða", cat: "malbeiting", year: 10, hv: "einkenni",
     types: ["raeda"], lesson: "raeda", cover: "full" },
+  /* Issue #29: two short sentences into one and one into two. Year 8 with
+     the rest of Málbeiting: it is writing, not naming the clause. */
+  { id: "mb-sameina", nm: "Að sameina og skipta setningum", cat: "malbeiting", year: 8, hv: "einkenni",
+    types: ["sameina"], lesson: "malbeiting", cover: "full" },
 
   /* ---- Setningafræði ---- */
   { id: "setn-hlutar", nm: "Frumlag, umsögn, andlag og sagnfylling", cat: "setningafraedi",

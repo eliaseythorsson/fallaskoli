@@ -53,6 +53,8 @@ const INPUTS = [
   /* Issue 27: who did what to whom, read out of the parse and held against the
      key in content/setningafraedi/ (the items themselves are in exercises.js) */
   "pipeline/who_did.py",
+  /* Issue #29: the clause check behind Sameina og skipta (EX.combine) */
+  "pipeline/clause_shape.py",
   /* Issue #9: LÍNO-2, the academic word list, and its reader */
   "sources/lino2.csv", "pipeline/lino.py",
   /* Issue #20: the words allowed into one frame each (content/setningar/lino-rammar.tsv) */

@@ -1207,6 +1207,14 @@ export const LESSONS = [
         "Við **lékum** okkur í garðinum. → Í gær **lékum við** okkur í garðinum.",
       ] },
       { warn: "Í þolmynd lagar lýsingarhátturinn sig að nýja frumlaginu: *Bókin var lesin*, *Bréfið var lesið*, *Kakan var bökuð*." },
+      { h: "Að sameina og skipta setningum" },
+      { p: "Tvær stuttar setningar geta orðið að einni, og ein löng setning að tveimur stuttum. Tengingin sýnir hvernig setningarnar hanga saman: *af því að* segir hvers vegna, *þegar* segir hvenær, *að* segir hvað það var og *sem* segir meira um orðið á undan." },
+      { ex: [
+        "Við fórum inn. Bjallan hringdi. → Við fórum inn **þegar** bjallan hringdi.",
+        "Hurðin var opin. Ég sá það. → Ég sá **að** hurðin var opin.",
+        "Ég á hund. Hann heitir Kátur. → Ég á hund **sem** heitir Kátur.",
+      ] },
+      { tip: "Oft er hægt að segja það sama á fleiri en einn veg. Ef forritið þekkir ekki svarið þitt sýnir það fyrirmynd, og svarið telst hvorki rétt né rangt." },
     ],
     check: [
       { q: "Hvað er rangt í „Ég kann nöfnum daganna“?", a: "Sögnin kunna stýrir þolfalli: Ég kann nöfn daganna." },
