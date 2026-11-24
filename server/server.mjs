@@ -40,7 +40,7 @@ import {
   makePassword, makeInviteCode,
   googleConfig, googleAuthUrl, googleExchange,
 } from "./auth.mjs";
-import { cleanState, suspicion, MAX_STATE_BYTES } from "./guard.mjs";
+import { cleanState, suspicion, MAX_STATE_BYTES, progressSizeWatch } from "./guard.mjs";
 import { withoutOwnText, keepOwnText } from "../src/js/core/slices.js";
 import { privacyConfig, privacyPage, CONSENT_AGE, PRIVACY_VERSION } from "./privacy.mjs";
 import { createCalibration } from "./calibrate.mjs";
@@ -2121,6 +2121,7 @@ export function createApp({
 
   /* Health check. `/heilsa` is the original name and stays for anything already
      pointed at it. Counts, not people. */
+  const largestProgress = progressSizeWatch(store);
   on("GET", "/health", async (req, res) => {
     const users = await store.users();
     return json(res, 200, {
@@ -2130,6 +2131,8 @@ export function createApp({
       active: users.filter((u) => u.status === "active").length,
       pending: users.filter((u) => u.status === "pending").length,
       dataset: (await store.datasetStatus()).uploaded === true,
+      /* #44: the largest progress file against MAX_STATE_BYTES; no name, no id. */
+      progress: await largestProgress(),
       google: google.enabled,
       /* false until FALLASKOLI_CONTROLLER and FALLASKOLI_CONTACT are set: a
          privacy notice with nobody's name on it is not one. */

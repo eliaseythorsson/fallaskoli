@@ -34,8 +34,8 @@ const sentOf = (t) => (t.s ? t.s.t : null);
    `settle` writes it exactly as the app does (record, difficulty, review queue).
    `builderRng` replaces Math.random for the builders (a seeded rng makes a run
    repeatable). Without them nothing changes from before. `setup(S)` is called
-   once on the blank state, before the first day. */
-export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2, size = 10, topic = "blandad", allSkills = false, seed = 1, review = true, rewards = false, activeDays = null, respond = null, builderRng = null, setup = null }) {
+   once on the blank state, before the first day; `onDay(S, day)` after each day. */
+export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2, size = 10, topic = "blandad", allSkills = false, seed = 1, review = true, rewards = false, activeDays = null, respond = null, builderRng = null, setup = null, onDay = null }) {
   const rnd = rng(seed);
   const appRng = builderRng || (() => Math.random());
   const S = ST.blankState();
@@ -145,6 +145,7 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
     }
     dayXp.push(S.xp - xp0);
     lvlByDay.push(PR.overallLevel(S.xp).level);
+    if (onDay) onDay(d, S); // after each day, with the state: #44 measures the size of the progress file along the way
   }
   return { log, S, dayXp, lvlByDay, nulls, msPerQ: ms / Math.max(1, log.length) };
 }

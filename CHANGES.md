@@ -10,6 +10,10 @@
 - **Hver staða orðs fylgir ástæða á mannamáli**, t.d. „Óstöðugt: 3 af síðustu 7 rétt, undir 50%“, og
   `node tools/word-history.mjs <framvinda.json> <orð>` sýnir alla sögu eins orðs úr útfluttri framvindu
   nemanda, án þjónsins. Engin breyting sést hjá nemanda.
+### Snemmviðvörun um stærð framvinduskrár (#44)
+- **`/health` og `/heilsa` segja nú hve stór stærsta framvinduskráin er** og hve stór hluti hún er af 2 MB
+  mörkunum (`progress`: bæti og hlutfall, ekkert nafn). Próf spilar mjög annasamt ár (150 spurningar á dag í
+  180 daga) og fellur ef skráin nær helmingi markanna; orðaþekking geymir enn allar færslur.
 
 ### Orðaþekking: allt sem les orðin fer í gegnum hana (#42)
 - **Engin breyting sést**: orðaheilsa, björgunaræfingin, orðasafnið, sjaldgæfni, merkin, færnikortið og
