@@ -25,6 +25,7 @@ import { migrate, FRAMES_MAX } from "../src/js/core/state.js";
 import { BADGES } from "../src/js/core/badges.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { cleanContext, cleanSlices } from "../src/js/core/slices.js";
+import { XP_MAX } from "../src/js/core/progress.js";
 import { cleanLevels } from "../src/js/core/difficulty.js";
 import { cleanByType } from "../src/js/core/mastery.js";
 import { cleanByNode, cleanMapBand } from "../src/js/core/skillmap.js";
@@ -44,7 +45,7 @@ export const LIMITS = {
   dayAnswers: 3000,      // answers in one day
   dayXp: 3000 * 12,      // XP in one day — in step with dayAnswers
   dayMs: 16 * 3600000,   // time at the screen in one day
-  xpTotal: 5_000_000,
+  xpTotal: XP_MAX,     // core/progress.js
   lateDays: 21,          // a day older than this should no longer be growing
 };
 
@@ -84,14 +85,11 @@ export function cleanState(raw, { today = new Date() } = {}) {
   /* Tomorrow is allowed (time zones); the day after is not a day yet. */
   const ctx = cleanContext(today), { limit } = ctx;
 
-  S.xp = n(S.xp, LIMITS.xpTotal);
-  S.bestLevel = n(S.bestLevel, 999) || 1;
-  S.bestRun = n(S.bestRun); S.totalAnswers = n(S.totalAnswers); S.totalCorrect = n(S.totalCorrect);
   S.multiSessionRun = n(S.multiSessionRun);
   S.lastSessionSkills = S.lastSessionSkills == null ? null : n(S.lastSessionSkills, 99);
   S.settled = dayStr(S.settled);
 
-  for (const part of ["cells", "words"]) {
+  for (const part of ["words"]) {
     const out = {};
     for (const [k, v] of pairs(S[part], 30000)) {
       if (!isObj(v)) continue;
@@ -102,13 +100,6 @@ export function cleanState(raw, { today = new Date() } = {}) {
     }
     S[part] = out;
   }
-
-  const skills = {};
-  for (const id of SKILL_IDS) {
-    const s = isObj(S.skills[id]) ? S.skills[id] : {};
-    skills[id] = { xp: n(s.xp, LIMITS.xpTotal), c: n(s.c), w: n(s.w), bestRun: n(s.bestRun) };
-  }
-  S.skills = skills;
 
   /* Only badges the program has. An invented id would otherwise be counted by
      the leaderboard and by the rarity statistics. */

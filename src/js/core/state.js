@@ -12,7 +12,7 @@ import { cleanTour } from "./placement.js";
 import { timeContext, mondayOf, weekKeys, isBreakWeek } from "./calendar.js";
 import { checkDayEnd, legacyStreakCredit } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
-import { assembleBlank, migrateSlices } from "./slices.js";
+import { assembleBlank, migrateSlices, STATE_VERSION } from "./slices.js";
 import { cleanWeekGoal, WEEK_GOAL_DEFAULT, WEEK_GOAL_MIN, WEEK_GOAL_MAX } from "./days.js";
 import { cleanByType, masteryOf } from "./mastery.js";
 import { cleanByNode } from "./skillmap.js";
@@ -24,7 +24,8 @@ import { blankMend, sanitiseMend, patternsMended, reviewsOnTime } from "./mendin
 /** @typedef {import("../types").Session} Session */
 /** @typedef {import("../types").DayKey} DayKey */
 
-export const STATE_VERSION = 11;
+/* The version of the saved file is the `v` slice, core/slices.js. */
+export { STATE_VERSION };
 
 /** @param {Date} d @returns {DayKey} */
 export const dkey = (d) =>
@@ -47,19 +48,13 @@ export function prevKey(key) {
     core/slices.js.
     @returns {State} */
 export function blankState() {
-  const skills = {};
-  SKILL_IDS.forEach((id) => { skills[id] = { xp: 0, c: 0, w: 0, bestRun: 0 }; });
   return /** @type {State} */ (assembleBlank({
-    v: STATE_VERSION,
     profile: { id: "local", name: "" },
-    xp: 0, bestLevel: 1,
-    cells: {}, words: {}, skills, badges: {},
+    words: {}, badges: {},
     /* When each word was last asked about in the vocabulary skill. Kept apart
        from `words` (which is right/wrong) because the wait is about dates, not
        about correctness. See core/spacing.js. */
     vocab: {},
-    run: 0, bestRun: 0,
-    totalAnswers: 0, totalCorrect: 0,
     /* Consecutive sessions touching three or more skills (multi-skill badges). */
     multiSessionRun: 0, lastSessionSkills: null,
     /* `retries`, `retryFixed`: second tries made, and right (item 42,
@@ -204,8 +199,6 @@ export function migrate(raw) {
   if (!raw || typeof raw !== "object") return S;
 
   Object.assign(S, {
-    xp: raw.xp || 0,
-    cells: raw.cells || {},
     words: cleanWordKeys(raw.words),
     /* Item 57: whoever won a day-streak badge keeps it, and is credited the
        week badges it stands for (`legacyStreakCredit`, core/badges.js). */
@@ -213,9 +206,6 @@ export function migrate(raw) {
       const own = raw.badges && typeof raw.badges === "object" ? raw.badges : {};
       return { ...legacyStreakCredit(own), ...own };
     })(),
-    bestRun: raw.bestRun || 0,
-    totalAnswers: raw.totalAnswers || 0,
-    totalCorrect: raw.totalCorrect || 0,
     vocab: raw.vocab || {},
     multiSessionRun: raw.multiSessionRun || 0,
     lastSessionSkills: raw.lastSessionSkills ?? null,
@@ -252,7 +242,6 @@ export function migrate(raw) {
   });
   /* The converted slices (core/slices.js) rebuild themselves. */
   migrateSlices(S, raw);
-  S.run = 0;
 
   S.counters = {
     perfectTables: raw.counters?.perfectTables ?? raw.perfectTables ?? 0,
@@ -261,11 +250,6 @@ export function migrate(raw) {
     retries: raw.counters?.retries ?? 0,
     retryFixed: raw.counters?.retryFixed ?? 0,
   };
-
-  SKILL_IDS.forEach((id) => {
-    const s = raw.skills?.[id];
-    if (s) S.skills[id] = { xp: s.xp || 0, c: s.c || 0, w: s.w || 0, bestRun: s.bestRun || 0 };
-  });
 
   /* v4 knew only three switches. They are translated onto the skills. */
   if (raw.enabled) Object.assign(S.enabled, raw.enabled);
@@ -291,7 +275,6 @@ export function migrate(raw) {
      (or a teacher who does) keeps it. */
   if (raw.settings && !(raw.settings.settingsRev >= 1)) S.settings.decay = false;
   if (raw.profile) Object.assign(S.profile, raw.profile);
-  S.bestLevel = Math.max(raw.bestLevel || 1, overallLevel(S.xp).level);
   return S;
 }
 

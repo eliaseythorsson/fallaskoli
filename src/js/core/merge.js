@@ -100,13 +100,7 @@ export function mergeStates(base, local, remote) {
   const B = obj(base), L = obj(local), R = obj(remote);
   const out = { ...R, ...L };
 
-  out.xp = pot(B.xp, L.xp, R.xp);
-  out.bestLevel = Math.max(num(L.bestLevel), num(R.bestLevel), 1);
-  out.bestRun = Math.max(num(L.bestRun), num(R.bestRun));
-  out.totalAnswers = add(B.totalAnswers, L.totalAnswers, R.totalAnswers);
-  out.totalCorrect = add(B.totalCorrect, L.totalCorrect, R.totalCorrect);
-
-  for (const part of ["cells", "words"]) {
+  for (const part of ["words"]) {
     out[part] = {};
     for (const k of keys(L[part], R[part])) {
       const l = obj(L[part])[k], r = obj(R[part])[k];
@@ -119,17 +113,6 @@ export function mergeStates(base, local, remote) {
       if (part === "words" && l && r && b && typeof r.h === "string"
           && num(l.c) + num(l.w) === num(b.c) + num(b.w)) out[part][k].h = r.h;
     }
-  }
-
-  out.skills = {};
-  for (const k of keys(L.skills, R.skills)) {
-    const b = obj(B.skills)[k], l = obj(L.skills)[k], r = obj(R.skills)[k];
-    out.skills[k] = {
-      xp: pot(obj(b).xp, obj(l).xp, obj(r).xp),
-      c: add(obj(b).c, obj(l).c, obj(r).c),
-      w: add(obj(b).w, obj(l).w, obj(r).w),
-      bestRun: Math.max(num(obj(l).bestRun), num(obj(r).bestRun)),
-    };
   }
 
   out.badges = {};

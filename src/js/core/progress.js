@@ -1,6 +1,7 @@
 /* Levels, XP and decay. Pure arithmetic — no side effects, testable. */
 
 import { SKILL_IDS, skillById } from "./skills.js";
+import { num, obj, keys, add, pot, counters, n, isObj, pairs } from "./slicerules.js";
 
 /* ---------- 1. Level curves ---------------------------------------------
    The first levels come quickly, so a new child levels up several times in
@@ -199,3 +200,138 @@ export function skillSummary(S) {
     };
   });
 }
+
+/* ---------- 6. The slices (issue #50) ------------------------------------
+ * XP, the levels, the runs, the totals, the skills and the inflection cells
+ * as slices of the saved state (core/slices.js): what a new pupil has, how a
+ * saved copy is loaded, how two devices' copies are merged, and what the
+ * server stores. Moved here unchanged from core/state.js `migrate`,
+ * core/merge.js `mergeStates` and server/guard.mjs `cleanState`. */
+
+/** The most XP a state may hold (server/guard.mjs LIMITS.xpTotal): far above
+    what practice produces, far below what somebody showing off would type. */
+export const XP_MAX = 5_000_000;
+
+/** This device's value if it has one, else the server's: what the merge did
+    for a key with no line of its own (`{ ...remote, ...local }`). */
+const thisDevice = (base, local, remote) => (local === undefined ? remote : local);
+const same = (value) => value;
+
+/** @typedef {import("../types").Slice} Slice */
+
+/** `S.xp`. A pot that both devices add to, and that can fade (`pot`). @type {Slice} */
+export const xpSlice = {
+  key: "xp",
+  blank: () => 0,
+  migrate: (raw) => raw || 0,
+  merge: pot,
+  clean: (value) => n(value, XP_MAX),
+  ownText: false,
+};
+
+/** `S.bestLevel`: the highest overall level reached; never below what the XP
+    gives. @type {Slice} */
+export const bestLevelSlice = {
+  key: "bestLevel",
+  blank: () => 1,
+  migrate: (raw, whole) => Math.max(raw || 1, overallLevel(whole.xp || 0).level),
+  merge: (base, local, remote) => Math.max(num(local), num(remote), 1),
+  clean: (value) => n(value, 999) || 1,
+  ownText: false,
+};
+
+/** `S.run`: right answers in a row. It does not outlive a load. @type {Slice} */
+export const runSlice = {
+  key: "run",
+  blank: () => 0,
+  migrate: () => 0,
+  merge: thisDevice,
+  clean: same,
+  ownText: false,
+};
+
+/** `S.bestRun`: the longest run ever. @type {Slice} */
+export const bestRunSlice = {
+  key: "bestRun",
+  blank: () => 0,
+  migrate: (raw) => raw || 0,
+  merge: (base, local, remote) => Math.max(num(local), num(remote)),
+  clean: (value) => n(value),
+  ownText: false,
+};
+
+/** A counter both devices only add to: `totalAnswers`, `totalCorrect`.
+    @param {string} key @returns {Slice} */
+const total = (key) => ({
+  key,
+  blank: () => 0,
+  migrate: (raw) => raw || 0,
+  merge: add,
+  clean: (value) => n(value),
+  ownText: false,
+});
+export const totalAnswersSlice = total("totalAnswers");
+export const totalCorrectSlice = total("totalCorrect");
+
+/** `S.skills`: per category {xp, c, w, bestRun}. Every category the program
+    has, and no other. @type {Slice} */
+export const skillsSlice = {
+  key: "skills",
+  blank() {
+    const skills = {};
+    SKILL_IDS.forEach((id) => { skills[id] = { xp: 0, c: 0, w: 0, bestRun: 0 }; });
+    return skills;
+  },
+  migrate(raw) {
+    const skills = skillsSlice.blank();
+    SKILL_IDS.forEach((id) => {
+      const s = raw?.[id];
+      if (s) skills[id] = { xp: s.xp || 0, c: s.c || 0, w: s.w || 0, bestRun: s.bestRun || 0 };
+    });
+    return skills;
+  },
+  merge(B, L, R) {
+    const out = {};
+    for (const k of keys(L, R)) {
+      const b = obj(B)[k], l = obj(L)[k], r = obj(R)[k];
+      out[k] = {
+        xp: pot(obj(b).xp, obj(l).xp, obj(r).xp),
+        c: add(obj(b).c, obj(l).c, obj(r).c),
+        w: add(obj(b).w, obj(l).w, obj(r).w),
+        bestRun: Math.max(num(obj(l).bestRun), num(obj(r).bestRun)),
+      };
+    }
+    return out;
+  },
+  clean(value) {
+    const skills = {};
+    for (const id of SKILL_IDS) {
+      const s = isObj(value[id]) ? value[id] : {};
+      skills[id] = { xp: n(s.xp, XP_MAX), c: n(s.c), w: n(s.w), bestRun: n(s.bestRun) };
+    }
+    return skills;
+  },
+  ownText: false,
+};
+
+/** `S.cells`: right and wrong per inflection cell, {c, w}. One of the three
+    buckets `easeOf` blends. @type {Slice} */
+export const cellsSlice = {
+  key: "cells",
+  blank: () => ({}),
+  migrate: (raw) => raw || {},
+  merge(B, L, R) {
+    const out = {};
+    for (const k of keys(L, R)) {
+      const l = obj(L)[k], r = obj(R)[k];
+      out[k] = !l ? r : !r && !obj(B)[k] ? l : counters(obj(B)[k], l, r, ["c", "w"]);
+    }
+    return out;
+  },
+  clean(value) {
+    const out = {};
+    for (const [k, v] of pairs(value, 30000)) if (isObj(v)) out[k] = { c: n(v.c), w: n(v.w) };
+    return out;
+  },
+  ownText: false,
+};

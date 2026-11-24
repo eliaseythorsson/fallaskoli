@@ -111,6 +111,8 @@
  */
 
 import { reviewSlice } from "./review.js";
+import { xpSlice, bestLevelSlice, runSlice, bestRunSlice, totalAnswersSlice, totalCorrectSlice,
+  skillsSlice, cellsSlice } from "./progress.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
 
 /** @typedef {import("../types").Slice} Slice */
@@ -121,6 +123,22 @@ import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js"
     @param {string} key @returns {SliceEntry} */
 const notYet = (key) => ({ key, notYet: true, ownText: false });
 
+/* ---------- the version of the saved file ---------- */
+
+export const STATE_VERSION = 11;
+
+/** `S.v`: the shape this program saves. A copy of any age is loaded into
+    this shape, so a loaded copy always has it. @type {Slice} */
+const versionSlice = {
+  key: "v",
+  blank: () => STATE_VERSION,
+  migrate: () => STATE_VERSION,
+  /* This device's, else the server's: what `{ ...remote, ...local }` gave. */
+  merge: (base, local, remote) => (local === undefined ? remote : local),
+  clean: (value) => value,
+  ownText: false,
+};
+
 /**
  * Every key of the saved state, in the order of the saved file. Exported as
  * a plain array so that a test can add a fixture slice (tests/owntext.test.js);
@@ -128,22 +146,22 @@ const notYet = (key) => ({ key, notYet: true, ownText: false });
  * @type {SliceEntry[]}
  */
 export const SLICES = [
-  notYet("v"),
+  versionSlice,
   notYet("profile"),
-  notYet("xp"),
-  notYet("bestLevel"),
+  xpSlice,
+  bestLevelSlice,
   daysSlice,
-  notYet("cells"),
+  cellsSlice,
   notYet("words"),
-  notYet("skills"),
+  skillsSlice,
   notYet("badges"),
   notYet("vocab"),
   goalSlice,
-  notYet("run"),
-  notYet("bestRun"),
+  runSlice,
+  bestRunSlice,
   weekGoalSlice,
-  notYet("totalAnswers"),
-  notYet("totalCorrect"),
+  totalAnswersSlice,
+  totalCorrectSlice,
   notYet("multiSessionRun"),
   notYet("lastSessionSkills"),
   notYet("counters"),
