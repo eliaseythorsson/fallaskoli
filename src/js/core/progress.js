@@ -1,7 +1,7 @@
 /* Levels, XP and decay. Pure arithmetic — no side effects, testable. */
 
 import { SKILL_IDS, skillById } from "./skills.js";
-import { num, obj, keys, add, pot, counters, n, isObj, pairs } from "./slicerules.js";
+import { num, obj, keys, add, pot, counters, thisDevice, n, isObj, pairs } from "./slicerules.js";
 
 /* ---------- 1. Level curves ---------------------------------------------
    The first levels come quickly, so a new child levels up several times in
@@ -212,9 +212,6 @@ export function skillSummary(S) {
     what practice produces, far below what somebody showing off would type. */
 export const XP_MAX = 5_000_000;
 
-/** This device's value if it has one, else the server's: what the merge did
-    for a key with no line of its own (`{ ...remote, ...local }`). */
-const thisDevice = (base, local, remote) => (local === undefined ? remote : local);
 const same = (value) => value;
 
 /** @typedef {import("../types").Slice} Slice */

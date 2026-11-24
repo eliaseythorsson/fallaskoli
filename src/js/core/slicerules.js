@@ -36,6 +36,11 @@ export const pot = (b, l, r) =>
 /** A setting: whoever changed it since `base` wins; if both did, this device. */
 export const choice = (b, l, r) => (same(l, b) ? (r === undefined ? l : r) : l);
 
+/** This device's value if it has one, else the server's: what the merge does
+    for a slice that has no rule of its own (`{ ...remote, ...local }` at the
+    top of core/merge.js `mergeStates`). */
+export const thisDevice = (base, local, remote) => (local === undefined ? remote : local);
+
 /** Every key of these objects, once. */
 export const keys = (...os) => [...new Set(os.flatMap((o) => Object.keys(obj(o))))];
 

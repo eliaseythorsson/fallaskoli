@@ -110,11 +110,16 @@
  * Pure: no DOM, no clock (the server hands `cleanContext` its date).
  */
 
+import { thisDevice } from "./slicerules.js";
 import { reviewSlice } from "./review.js";
 import { xpSlice, bestLevelSlice, runSlice, bestRunSlice, totalAnswersSlice, totalCorrectSlice,
   skillsSlice, cellsSlice } from "./progress.js";
 import { wordsSlice, drillsSlice, drillDaysSlice } from "./wordhealth.js";
 import { vocabSlice } from "./spacing.js";
+import { badgesSlice, multiSessionRunSlice, lastSessionSkillsSlice, countersSlice,
+  periodsSlice, settledSlice } from "./badges.js";
+import { showcaseSlice, titleSlice, socialSlice } from "./social.js";
+import { profileSlice } from "./profile.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
 
 /** @typedef {import("../types").Slice} Slice */
@@ -135,8 +140,7 @@ const versionSlice = {
   key: "v",
   blank: () => STATE_VERSION,
   migrate: () => STATE_VERSION,
-  /* This device's, else the server's: what `{ ...remote, ...local }` gave. */
-  merge: (base, local, remote) => (local === undefined ? remote : local),
+  merge: thisDevice,
   clean: (value) => value,
   ownText: false,
 };
@@ -149,14 +153,14 @@ const versionSlice = {
  */
 export const SLICES = [
   versionSlice,
-  notYet("profile"),
+  profileSlice,
   xpSlice,
   bestLevelSlice,
   daysSlice,
   cellsSlice,
   wordsSlice,
   skillsSlice,
-  notYet("badges"),
+  badgesSlice,
   vocabSlice,
   goalSlice,
   runSlice,
@@ -164,19 +168,19 @@ export const SLICES = [
   weekGoalSlice,
   totalAnswersSlice,
   totalCorrectSlice,
-  notYet("multiSessionRun"),
-  notYet("lastSessionSkills"),
-  notYet("counters"),
+  multiSessionRunSlice,
+  lastSessionSkillsSlice,
+  countersSlice,
   notYet("enabled"),
   notYet("policy"),
   notYet("allowed"),
   notYet("settings"),
   lastActiveSlice,
-  notYet("periods"),
-  notYet("settled"),
-  notYet("showcase"),
-  notYet("title"),
-  notYet("social"),
+  periodsSlice,
+  settledSlice,
+  showcaseSlice,
+  titleSlice,
+  socialSlice,
   drillsSlice,
   drillDaysSlice,
   notYet("read"),

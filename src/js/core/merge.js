@@ -100,13 +100,6 @@ export function mergeStates(base, local, remote) {
   const B = obj(base), L = obj(local), R = obj(remote);
   const out = { ...R, ...L };
 
-  out.badges = {};
-  for (const k of keys(L.badges, R.badges))
-    out.badges[k] = mergeBadge(obj(B.badges)[k], obj(L.badges)[k], obj(R.badges)[k]);
-
-  out.counters = counters(B.counters, L.counters, R.counters,
-    keys(L.counters, R.counters));
-  out.periods = { ...obj(R.periods), ...obj(L.periods) };
 
   /* Lesefni and duels (v6.7): a page read anywhere is read; a duel settled
      anywhere is settled, and both devices agree on its result. */
@@ -163,10 +156,9 @@ export function mergeStates(base, local, remote) {
      device is ended on both — nobody is walked through it twice. */
   out.tour = mergeTour(L.tour, R.tour);
 
-  out.settled = later(L.settled, R.settled);
 
   /* The child's own switches: whichever device changed them. */
-  for (const k of ["enabled", "policy", "settings", "showcase", "title"])
+  for (const k of ["enabled", "policy", "settings"])
     out[k] = choice(B[k], L[k], R[k]);
 
   /* The ceiling is the administrator's and always comes from the server. */

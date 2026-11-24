@@ -12,11 +12,15 @@
  * sent as bare id lists; the dates themselves stay where they were.
  */
 
-import { dkey } from "./state.js";
+/* The day key of a local date: core/state.js `dkey`, which is the same
+   function, cannot be imported here — the `social` slice is listed in
+   core/slices.js, which state.js imports (issue #50). */
+import { keyOf as dkey } from "./calendar.js";
 import { BADGES } from "./badges.js";
 import { overallRank } from "./progress.js";
 import { estimateShare } from "./rarity.js";
 import { goalWeekOf } from "./classgoal.js";
+import { choice, thisDevice, smallJSON } from "./slicerules.js";
 
 const BY_ID = new Map(BADGES.map((b) => [b.id, b]));
 
@@ -333,3 +337,45 @@ export function feed(roster, me) {
   return out.sort((x, y) =>
     (estimateShare(BY_ID.get(x.id)) ?? 1) - (estimateShare(BY_ID.get(y.id)) ?? 1));
 }
+
+/* ---------- the slices (issue #50) -----------------------------------------
+ * What other users see beside the name, as slices of the saved state
+ * (core/slices.js): up to three pinned badge ids and a title id. `social`
+ * remembers who was ahead on this week's board, which is how overtaking is
+ * noticed. Moved here unchanged from core/state.js `migrate`, core/merge.js
+ * `mergeStates` and server/guard.mjs `cleanState`. */
+
+/** `S.showcase`: up to three badge ids. @type {import("../types").Slice} */
+export const showcaseSlice = {
+  key: "showcase",
+  blank: () => [],
+  migrate: (raw) => (Array.isArray(raw) ? raw.filter((x) => typeof x === "string").slice(0, 3) : []),
+  /* The child's own choice: whichever device changed it. */
+  merge: choice,
+  /* Badges the program has. That the pupil has them too reads another slice,
+     so it is checked in server/guard.mjs. */
+  clean: (value) => value.filter((id) => BY_ID.has(id)).slice(0, 3),
+  ownText: false,
+};
+
+/** `S.title`: a title id, or null. @type {import("../types").Slice} */
+export const titleSlice = {
+  key: "title",
+  blank: () => null,
+  migrate: (raw) => (typeof raw === "string" ? raw : null),
+  merge: choice,
+  clean: (value) => (typeof value === "string" ? value.slice(0, 60) : null),
+  ownText: false,
+};
+
+/** `S.social`: who was ahead this week, or null. @type {import("../types").Slice} */
+export const socialSlice = {
+  key: "social",
+  blank: () => null,
+  migrate: (raw) => (raw && typeof raw === "object" ? raw : null),
+  /* No rule of its own: this device's (see the PR for #50). */
+  merge: thisDevice,
+  /* Small free-form data the program keeps for itself. */
+  clean: (value) => smallJSON(value, 20000),
+  ownText: false,
+};

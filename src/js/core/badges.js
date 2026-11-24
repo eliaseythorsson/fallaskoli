@@ -25,6 +25,8 @@
 
 import { SKILLS } from "./skills.js";
 import { THEMES, KINDS, SAYINGS } from "./wordsets.js";
+import { prevKey } from "./calendar.js";
+import { obj, keys, later, counters, mergeBadge, thisDevice, n, dayStr, isObj, pairs, smallJSON } from "./slicerules.js";
 
 const RUN_ICONS = { 5: "✨", 10: "🔥", 15: "💥", 20: "⚡", 30: "🌟", 50: "💫", 75: "🚀", 100: "👑" };
 const SKILL_RUN_ICONS = { 10: "🎪", 20: "🏹" };
@@ -1094,3 +1096,111 @@ export function noteAccidents(S, sess, cur, extra) {
     (rec.w || 0) === 1;
   return { goldfish, pickChanges: (cur && cur.changes) || 0 };
 }
+
+/* ---------- the slices (issue #50) -----------------------------------------
+ * What the badges keep in the saved state, as slices (core/slices.js): the
+ * badges won, the counts some of them are judged on, the once-a-day ledger
+ * and the last day judged. Moved here unchanged from core/state.js
+ * `migrate`, core/merge.js `mergeStates` and server/guard.mjs `cleanState`. */
+
+/** @typedef {import("../types").Slice} Slice */
+
+const BADGE_IDS = new Set(BADGES.map((b) => b.id));
+
+/** `S.badges`: per badge id {n, dates, first, last}. @type {Slice} */
+export const badgesSlice = {
+  key: "badges",
+  blank: () => ({}),
+  /* Item 57: whoever won a day-streak badge keeps it, and is credited the
+     week badges it stands for (`legacyStreakCredit`). */
+  migrate(raw) {
+    const own = raw && typeof raw === "object" ? raw : {};
+    return { ...legacyStreakCredit(own), ...own };
+  },
+  merge(B, L, R) {
+    const out = {};
+    for (const k of keys(L, R)) out[k] = mergeBadge(obj(B)[k], obj(L)[k], obj(R)[k]);
+    return out;
+  },
+  /* Only badges the program has. An invented id would otherwise be counted by
+     the leaderboard and by the rarity statistics. */
+  clean(value) {
+    const badges = {};
+    for (const [id, b] of pairs(value, 2000)) {
+      if (!BADGE_IDS.has(id) || !isObj(b)) continue;
+      const dates = (Array.isArray(b.dates) ? b.dates : []).map(dayStr).filter(Boolean).slice(-80);
+      const first = dayStr(b.first) || dates[0] || null;
+      badges[id] = { n: Math.max(1, n(b.n, 100000)), dates, first, last: dayStr(b.last) || first };
+    }
+    return badges;
+  },
+  ownText: false,
+};
+
+/** `S.multiSessionRun`: consecutive sessions touching three or more skills
+    (multi-skill badges). @type {Slice} */
+export const multiSessionRunSlice = {
+  key: "multiSessionRun",
+  blank: () => 0,
+  migrate: (raw) => raw || 0,
+  /* No rule of its own: this device's (see the PR for #50). */
+  merge: thisDevice,
+  clean: (value) => n(value),
+  ownText: false,
+};
+
+/** `S.lastSessionSkills`: how many skills the last session touched, or null.
+    @type {Slice} */
+export const lastSessionSkillsSlice = {
+  key: "lastSessionSkills",
+  blank: () => null,
+  migrate: (raw) => raw ?? null,
+  merge: thisDevice,
+  clean: (value) => (value == null ? null : n(value, 99)),
+  ownText: false,
+};
+
+/** `S.counters`: counts some badges are judged on. `retries`, `retryFixed`:
+    second tries made, and right (item 42, core/answer.js `judgeRetry`).
+    @type {Slice} */
+export const countersSlice = {
+  key: "counters",
+  blank: () => ({ perfectTables: 0, perfectParses: 0, meanings: 0, retries: 0, retryFixed: 0 }),
+  /* The first three were once at the top of the state. */
+  migrate: (raw, whole) => ({
+    perfectTables: raw?.perfectTables ?? whole.perfectTables ?? 0,
+    perfectParses: raw?.perfectParses ?? whole.perfectParses ?? 0,
+    meanings: raw?.meanings ?? whole.meanings ?? 0,
+    retries: raw?.retries ?? 0,
+    retryFixed: raw?.retryFixed ?? 0,
+  }),
+  merge: (B, L, R) => counters(B, L, R, keys(L, R)),
+  clean: (value) => Object.fromEntries(pairs(value, 20, 40).map(([k, v]) => [k, n(v)])),
+  ownText: false,
+};
+
+/** `S.periods`: the once-per-day / once-per-night ledger (`periodKey`).
+    @type {Slice} */
+export const periodsSlice = {
+  key: "periods",
+  blank: () => ({}),
+  migrate: (raw) => ((raw && typeof raw === "object") ? { ...raw } : {}),
+  merge: (B, L, R) => ({ ...obj(R), ...obj(L) }),
+  /* Small free-form data the program keeps for itself. */
+  clean: (value) => smallJSON(value, 60000) || {},
+  ownText: false,
+};
+
+/** `S.settled`: the last day whose day-end badges have been judged
+    (core/state.js `settleDays`). @type {Slice} */
+export const settledSlice = {
+  key: "settled",
+  blank: () => null,
+  /* A state saved before `settled` existed has an unjudged history. Everything
+     before the last active day is declared settled, so a returning child is
+     not greeted with a stack of windows for days they have forgotten. */
+  migrate: (raw, whole) => raw || (whole.lastActive ? prevKey(whole.lastActive) : null),
+  merge: (B, L, R) => later(L, R),
+  clean: (value) => dayStr(value),
+  ownText: false,
+};

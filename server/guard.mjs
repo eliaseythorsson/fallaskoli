@@ -85,20 +85,6 @@ export function cleanState(raw, { today = new Date() } = {}) {
   /* Tomorrow is allowed (time zones); the day after is not a day yet. */
   const ctx = cleanContext(today), { limit } = ctx;
 
-  S.multiSessionRun = n(S.multiSessionRun);
-  S.lastSessionSkills = S.lastSessionSkills == null ? null : n(S.lastSessionSkills, 99);
-  S.settled = dayStr(S.settled);
-
-  /* Only badges the program has. An invented id would otherwise be counted by
-     the leaderboard and by the rarity statistics. */
-  const badges = {};
-  for (const [id, b] of pairs(S.badges, 2000)) {
-    if (!BADGE_IDS.has(id) || !isObj(b)) continue;
-    const dates = (Array.isArray(b.dates) ? b.dates : []).map(dayStr).filter(Boolean).slice(-80);
-    const first = dayStr(b.first) || dates[0] || null;
-    badges[id] = { n: Math.max(1, n(b.n, 100000)), dates, first, last: dayStr(b.last) || first };
-  }
-  S.badges = badges;
 
   /* Lesefni and duels (v6.7): page ids, and duel ids with one letter each. */
   S.read = Object.fromEntries(pairs(S.read, 200, 40).map(([k]) => [k, true]));
@@ -171,11 +157,8 @@ export function cleanState(raw, { today = new Date() } = {}) {
     S.tour.at = Math.min(S.tour.at, today.getTime() + 2 * 86400000);
   }
 
-  S.counters = Object.fromEntries(pairs(S.counters, 20, 40).map(([k, v]) => [k, n(v)]));
-  S.periods = smallJSON(S.periods, 60000) || {};
-  S.social = smallJSON(S.social, 20000);
-  S.title = typeof S.title === "string" ? S.title.slice(0, 60) : null;
-  S.showcase = S.showcase.filter((id) => BADGE_IDS.has(id) && badges[id]).slice(0, 3);
+  /* Across slices: the showcase holds only badges the pupil has. */
+  S.showcase = S.showcase.filter((id) => S.badges[id]);
 
   const settings = {};
   for (const [k, v] of pairs(S.settings, 30, 40)) {
@@ -186,8 +169,6 @@ export function cleanState(raw, { today = new Date() } = {}) {
   S.settings = settings;
   S.enabled = Object.fromEntries(pairs(S.enabled, 60, 40).map(([k, v]) => [k, !!v]));
 
-  /* The name on the board comes from the user record, never from here. */
-  S.profile = { id: "local", name: "" };
   return S;
 }
 

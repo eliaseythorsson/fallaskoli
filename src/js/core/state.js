@@ -9,7 +9,7 @@ import { createPolicy, blankPolicy, sanitisePolicy } from "./policy.js";
 import { overallLevel, skillLevel, easeOf } from "./progress.js";
 import { visitLevels, cleanLevels, levelsFromXp } from "./difficulty.js";
 import { cleanTour } from "./placement.js";
-import { timeContext, mondayOf, weekKeys, isBreakWeek } from "./calendar.js";
+import { timeContext, mondayOf, weekKeys, isBreakWeek, prevKey } from "./calendar.js";
 import { checkDayEnd, legacyStreakCredit } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
 import { assembleBlank, migrateSlices, STATE_VERSION } from "./slices.js";
@@ -34,12 +34,8 @@ export const dkey = (d) =>
 
 export const todayKey = () => dkey(new Date());
 
-/** The day before this one, as a key. String in, string out — no time zones. */
-export function prevKey(key) {
-  const [y, m, d] = String(key).split("-").map(Number);
-  if (!y || !m || !d) return key;
-  return dkey(new Date(y, m - 1, d - 1));
-}
+/* `prevKey`, the day before a day key, is core/calendar.js. */
+export { prevKey };
 
 /** A new pupil's state. Assembled in the order of core/slices.js: the
     converted slices make their own blank, and the literal below holds the
@@ -49,13 +45,6 @@ export function prevKey(key) {
     @returns {State} */
 export function blankState() {
   return /** @type {State} */ (assembleBlank({
-    profile: { id: "local", name: "" },
-    badges: {},
-    /* Consecutive sessions touching three or more skills (multi-skill badges). */
-    multiSessionRun: 0, lastSessionSkills: null,
-    /* `retries`, `retryFixed`: second tries made, and right (item 42,
-       core/answer.js `judgeRetry`). */
-    counters: { perfectTables: 0, perfectParses: 0, meanings: 0, retries: 0, retryFixed: 0 },
     enabled: defaultEnabled(),
     /* `policy` is what the child switched on, `allowed` the ceiling the
        administrator set; kept apart so tightening and loosening the ceiling
@@ -66,16 +55,6 @@ export function blankState() {
     /* `badgeView`: which view of the badge cabinet is showing (ui/panels.js).
        A child with nothing on the shelf yet is shown the catalogue instead. */
     settings: { decay: false, settingsRev: 1, glossary: true, badgeView: "rarity" },
-    /* `periods`: the once-per-day / once-per-night ledger (core/badges.js).
-       `settled`: the last day whose day-end badges have been judged. */
-    periods: {},
-    settled: null,
-    /* What other users see beside the name (core/social.js): up to three
-       pinned badge ids and a title id. `social` remembers who was ahead on
-       this week's board, which is how overtaking is noticed. */
-    showcase: [],
-    title: null,
-    social: null,
     /* Lesefni (v6.7): the pages read, { pageId: true }. */
     read: {},
     /* Duels (v6.7, core/duel.js): every settled duel, { duelId: "w"|"l"|"t" }
@@ -165,23 +144,6 @@ export function migrate(raw) {
   if (!raw || typeof raw !== "object") return S;
 
   Object.assign(S, {
-    /* Item 57: whoever won a day-streak badge keeps it, and is credited the
-       week badges it stands for (`legacyStreakCredit`, core/badges.js). */
-    badges: (() => {
-      const own = raw.badges && typeof raw.badges === "object" ? raw.badges : {};
-      return { ...legacyStreakCredit(own), ...own };
-    })(),
-    multiSessionRun: raw.multiSessionRun || 0,
-    lastSessionSkills: raw.lastSessionSkills ?? null,
-    periods: (raw.periods && typeof raw.periods === "object") ? { ...raw.periods } : {},
-    /* A state saved before `settled` existed has an unjudged history. Everything
-       before the last active day is declared settled, so a returning child is
-       not greeted with a stack of windows for days they have forgotten. */
-    settled: raw.settled || (raw.lastActive ? prevKey(raw.lastActive) : null),
-    showcase: Array.isArray(raw.showcase)
-      ? raw.showcase.filter((x) => typeof x === "string").slice(0, 3) : [],
-    title: typeof raw.title === "string" ? raw.title : null,
-    social: raw.social && typeof raw.social === "object" ? raw.social : null,
     read: renamedRead(raw.read),
     duels: raw.duels && typeof raw.duels === "object" ? { ...raw.duels } : {},
     diag: raw.diag && typeof raw.diag === "object" && !Array.isArray(raw.diag) ? { ...raw.diag } : {},
@@ -204,14 +166,6 @@ export function migrate(raw) {
   });
   /* The converted slices (core/slices.js) rebuild themselves. */
   migrateSlices(S, raw);
-
-  S.counters = {
-    perfectTables: raw.counters?.perfectTables ?? raw.perfectTables ?? 0,
-    perfectParses: raw.counters?.perfectParses ?? raw.perfectParses ?? 0,
-    meanings: raw.counters?.meanings ?? raw.meanings ?? 0,
-    retries: raw.counters?.retries ?? 0,
-    retryFixed: raw.counters?.retryFixed ?? 0,
-  };
 
   /* v4 knew only three switches. They are translated onto the skills. */
   if (raw.enabled) Object.assign(S.enabled, raw.enabled);
@@ -236,7 +190,6 @@ export function migrate(raw) {
      `settingsRev` records that, and a pupil who then ticks the box again
      (or a teacher who does) keeps it. */
   if (raw.settings && !(raw.settings.settingsRev >= 1)) S.settings.decay = false;
-  if (raw.profile) Object.assign(S.profile, raw.profile);
   return S;
 }
 
