@@ -139,7 +139,7 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
         if (judged) DG.noteDiagnosis(S, t, findings, ok, ST.todayKey());
         if (review && judged && findings.length) { const e = RV.entryByKey(S, RV.keyFor({ t: t.typeId || t.type, c: t.type === "table" ? (t.cells[0] || {}).m : t.cell, w: t.word, i: t.item, p: findings[0].p })); if (e && !e.p) e.p = findings[0].p; }
         run.items.push({ type: t.typeId || t.type });
-        log.push({ d, r, i, type: t.typeId || t.type, skill: t.skill, lvl, ok, sig: sig(t), sent: sentOf(t), cell: t.cell || (t.type === "table" && t.cells[0] ? t.cells[0].m : null), word: t.word || null, targeted: !!t.targeted, diff: DF.diffOf(app.sess, t.skill), p,
+        log.push({ d, r, i, type: t.typeId || t.type, skill: t.skill, lvl, ok, sig: sig(t), sent: sentOf(t), cell: t.cell || (t.type === "table" && t.cells[0] ? t.cells[0].m : null), word: t.word || null, words: WK.wordsOf(t), targeted: !!t.targeted, diff: DF.diffOf(app.sess, t.skill), p,
           review: t.review ? t.reviewHit : null, reask: !!t.reask });
       }
     }

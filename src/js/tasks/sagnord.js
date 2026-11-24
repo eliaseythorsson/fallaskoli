@@ -97,6 +97,8 @@ function forcedVerb(lex, view, rng, pool) {
   const bag = only ? [only] : pool.filter(has);
   if (!bag.length) return null;
   const v = only || view.pickByWord(lex, bag, (x) => x, "sagnord", rng);
+  /* null: the spacing rule (#10) left no word to ask in this type now */
+  if (!v) return null;
   const sub = has(v);
   return sub ? verbTask(view, v, spec[0], spec[1], sub[0], sub[1]) : null;
 }
@@ -109,6 +111,8 @@ export function taskVerb(lex, view, rng) {
   const pool = topByRank(lex.verbs, shareForLevel(L, 0.21, 0.09));
   if (forcedCell(view)) return forcedVerb(lex, view, rng, pool);
   const v = view.pickWord(lex, pool, "sagnord", rng, ["so"]);
+  /* null: the spacing rule (#10) left no word to ask in this type now */
+  if (!v) return null;
 
   const P = view.policy;
   /* A session asked for by name (the skill map, a Lesefni page) gets its
@@ -199,6 +203,8 @@ export function taskVerbSlot(lex, view, rng) {
 
   const r = view.pickByWord(lex, slots, (x) => x.w, "sagnord", rng,
     (x) => cellWeight(S, x.t.m) * cellEase(lex, view, "sagnord", x.t.m));
+  /* null: the spacing rule (#10) left no word to ask in this type now */
+  if (!r) return null;
   const { s, i, t, w: v } = r;
 
   return built({
@@ -276,6 +282,8 @@ export function tableVerb(lex, view, rng) {
   if (view.cannotAsk(["so"])) return null;
   if (view.askedWord(["so"]) && view.askedWord(["so"]).t3) return null;
   const v = view.pickWord(lex, topByRank(lex.verbs, 0.36).filter((x) => !x.t3), "sagnord", rng, ["so"]);
+  /* null: the spacing rule (#10) left no word to ask in this type now */
+  if (!v) return null;
   let prefs = ["GM-FH-NT", "GM-FH-ÞT"];
   if (d >= 3 || view.policy.focus("hattur", "VH")) prefs.push("GM-VH-ÞT");
   if (personalMM(v) && (d >= 4 || view.policy.focus("mynd", "MM"))) prefs.push("MM-FH-NT");
@@ -453,6 +461,8 @@ export function soBeyging(lex, view, rng) {
     const flat = b >= 5 ? (y) => 1 + y.v.r / 150 : () => 1;
     x = view.pickByWord(lex, pool, (y) => y.v, "sagnord", rng, flat);
   }
+  /* null: the spacing rule (#10) left no word to ask in this type now */
+  if (!x) return null;
   const { v, kind, trap } = x;
   const forms = (m) => v.forms[m].join(" / ");
   return built({
@@ -815,7 +825,10 @@ export function soBodhattur(lex, view, rng) {
       }
     }
     const flat = b >= 5 ? (y) => 1 + y.v.r / 150 : () => 1;
-    v = view.pickByWord(lex, pool, (y) => y.v, "sagnord", rng, flat).v;
+    const got = view.pickByWord(lex, pool, (y) => y.v, "sagnord", rng, flat);
+    /* null: the spacing rule (#10) left no word to ask in this type now */
+    if (!got) return null;
+    v = got.v;
   }
   const misses = bodhatturMisses(v);
   const slots = [

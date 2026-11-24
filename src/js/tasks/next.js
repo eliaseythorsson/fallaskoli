@@ -71,8 +71,25 @@ function shown(type, b, after = []) {
     ...b.effects,
     FX.since(type.id.startsWith("tbl"), type.id === "meaning"),
     ...(words.length ? [FX.seen(words)] : []),
+    FX.last(task),
     ...after,
   ]);
+}
+
+/* The spacing rule (#10, tasks/view.js): never the same word in the same
+   type as the question just shown. The builders that choose by word leave
+   that word out already (`pickByWord`); one that chooses a sentence or an
+   item first may still land on it, and is built again — a few times, so that
+   the type keeps its turn — before it is given up. Draws more numbers only
+   when a build is turned down, so a seed means what it meant whenever the
+   rule has nothing to say. */
+const SPACING_TRIES = 4;
+function buildSpaced(lex, view, rng, t, v = viewFor(view, t)) {
+  for (let k = 0; k < SPACING_TRIES; k++) {
+    const b = t.build(lex, v, rng);
+    if (!b || !v.repeatsLast({ ...b.task, typeId: t.id })) return b;
+  }
+  return null;
 }
 
 /**
@@ -101,8 +118,8 @@ export function nextTask(lex, view, rng) {
   const retry = view.retryWord();
   const after = retry ? [FX.clearForcedNoun()] : [];
   if (retry) {
-    const b = typeById("fill").build(lex, withView(view, { typeId: "fill" }), rng);
-    if (b) { b.task.typeId = "fill"; return built(b.task, [...b.effects, ...after]); }
+    const b = buildSpaced(lex, view, rng, typeById("fill"), withView(view, { typeId: "fill" }));
+    if (b) { b.task.typeId = "fill"; return built(b.task, [...b.effects, FX.last(b.task), ...after]); }
     view = withView(view, { mustAsk: null });
   }
   const P = view.policy;
@@ -128,9 +145,10 @@ export function nextTask(lex, view, rng) {
     perSkill[k] = (perSkill[k] || 0) + weightOf(t, view);
   });
   const shares = Object.values(perSkill);
-  /* ×1.3: the spacing rule (one showing per word, then a wait) turns some of
-     its turns down, and they go to other skills. Measured over 1,500 questions
-     this lands Orðaforði at or a little above the average skill. */
+  /* ×1.3: measured over 1,500 questions in v6.11, when a wait of days
+     after each showing turned some of its turns down, this landed Orðaforði
+     at or a little above the average skill. The wait is gone (#10); the
+     factor is kept until the meaning question's share is set (DLD-PLAN §1). */
   const meaningW = shares.length ? 1.3 * shares.reduce((a, b) => a + b, 0) / shares.length : 4;
 
   const tried = new Set();
@@ -144,15 +162,18 @@ export function nextTask(lex, view, rng) {
     }, rng);
     if (tried.has(choice.id) && tried.size < avail.length) continue;
     tried.add(choice.id);
-    const b = shown(choice, choice.build(lex, viewFor(view, choice), rng), after);
+    const b = shown(choice, buildSpaced(lex, view, rng, choice), after);
     if (b) { markForCount(view, b.task); return b; }
   }
 
   /* The last resort walks only the builders that ARE available and returns
      null if nothing is possible. No material beats material switched off. */
   for (const t of [...avail, ...all.filter((x) => !avail.includes(x))]) {
-    const b = t.build(lex, viewFor(view, t), rng);
-    if (b) { b.task.typeId = t.id; markForCount(view, b.task); return built(b.task, [...b.effects, ...after]); }
+    const b = buildSpaced(lex, view, rng, t);
+    if (b) {
+      b.task.typeId = t.id; markForCount(view, b.task);
+      return built(b.task, [...b.effects, FX.last(b.task), ...after]);
+    }
   }
   return null;
 }

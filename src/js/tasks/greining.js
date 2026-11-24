@@ -45,7 +45,8 @@ export function taskParse(lex, view, rng) {
         const n = rec.c + rec.w;
         if (n >= 3) w *= 0.6 + 2.4 * (rec.w / n);   // what goes wrong comes back
       } else w *= 1.5;                              // ósnert kemur fyrr
-      /* The word the token is (tasks/view.js `wordBoost`; 1 until #13). */
+      /* The word the token is (tasks/view.js `wordBoost`: 0 for the word the
+         last question asked here, #10; otherwise 1 until #13). */
       return w * view.wordBoost([tokenKey(lex, t)]);
     }, rng);
 

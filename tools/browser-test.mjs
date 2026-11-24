@@ -806,7 +806,11 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
       });
       return { right: c.answers[0], wrong: c.n.forms[wrongM][0], wrongM, m: c.m,
         xp: A.S.xp, answers: A.S.totalAnswers, correct: A.S.totalCorrect,
-        review: A.S.review.items.length, fixed: A.S.counters.retryFixed || 0 };
+        review: A.S.review.items.length, fixed: A.S.counters.retryFixed || 0,
+        /* The same noun in the same cell may have been missed earlier in this
+           test (which cell the cloze draws depends on the seed; #10 moved it):
+           then the miss renews its entry instead of adding one. */
+        had: A.S.review.items.some((x) => x.t === "fill" && x.c === c.m && x.w === `${c.n.o}|${c.n.c}`) };
     });
     await tap("#ans");
     await page.type("#ans", plan.wrong);
@@ -830,6 +834,7 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
         reveal: !!document.getElementById("reveal"),
         check: document.getElementById("check").textContent,
         answers: A.S.totalAnswers, review: A.S.review.items.length,
+        queued: A.S.review.items.some((x) => x.t === "fill" && x.c === A.cur.m && x.w === `${A.cur.n.o}|${A.cur.n.c}` && x.s === 0),
         inView: r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight,
         /* the prompt's first lines, under the box, are on the screen too */
         promptInView: (() => { const p = document.getElementById("retrynote").getBoundingClientRect();
@@ -851,7 +856,7 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
     ok(first.diag, "the error pattern is not named under the first miss");
     ok(first.reveal && first.check === "Athuga", `the buttons during the second try: reveal ${first.reveal}, "${first.check}"`);
     ok(first.answers === plan.answers + 1, `the first miss recorded ${first.answers - plan.answers} answers`);
-    ok(first.review === plan.review + 1, "the first miss is not in the review queue");
+    ok(first.queued && first.review === plan.review + (plan.had ? 0 : 1), "the first miss is not in the review queue");
 
     await page.$eval("#ans", (el) => { el.value = ""; });
     await page.type("#ans", plan.right);
@@ -2363,6 +2368,14 @@ await page.setViewport({ width: 1100, height: 900 });
   });
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
   await answerOneNoNext(true);
+  /* A question whose word the lexicon lacks (*skæri* in "Orð í samhengi")
+     has no word to write a sentence with and offers no bonus; which comes
+     first depends on the seed, so the next ones are tried (#10 moved it). */
+  for (let k = 0; k < 5 && !(await page.$("#bonus")) && !(await page.evaluate(() => !!window.FALLASKOLI.cur.bonus)); k++) {
+    await page.evaluate(() => window.FALLASKOLI.next());
+    await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4000 });
+    await answerOneNoNext(true);
+  }
   if (await page.$("#bonus")) {
     const xp0 = await page.evaluate(() => window.FALLASKOLI.S.xp);
     await page.type("#bonustext", "Þetta er ágætis setning um daginn");

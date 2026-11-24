@@ -667,6 +667,12 @@ test("item 19: after a wrong cloze the noun is not the next question; it comes b
        same day did not move the entry */
     const e = entryByKey(p.S, keyFor({ t: "fill", c: missed.t.cell, w: missed.t.word }));
     assert.deepEqual([e.s, e.due], [0, addDays(D0, 1)]);
+    /* The next day is a new visit, and a new session (app.js `newSession`)
+       remembers no last question. This test keeps the session for its
+       levels; without this, a re-ask that was today's last question would
+       be the question just shown, and the spacing rule (#10) would rightly
+       keep the same word in the same type from coming straight after it. */
+    p.sess.lastAsked = null;
     const tomorrow = session(p, 10, () => true, { today: addDays(D0, 1), rng: seeded(seed) });
     assert.equal(tomorrow[0].t.review, e.k);
     assert.equal(tomorrow[0].t.word, missed.t.word);
@@ -696,7 +702,7 @@ test("item 19: the renderer no longer makes the missed noun the next question", 
  * 6. Item 20: the numeral items are grammar, not vocabulary
  * ====================================================================== */
 
-test("item 20: to_samr and to_flt write nothing to the vocabulary record and wait for nothing", () => {
+test("item 20: to_samr and to_flt are remembered by the session only, and wait for nothing", () => {
   for (const id of ["to_samr", "to_flt"]) {
     const spec = typeById(id);
     const p = pupil(3);
@@ -710,8 +716,7 @@ test("item 20: to_samr and to_flt write nothing to the vocabulary record and wai
       applyEffects(host, b.effects);
       shown.push(b.effects[0].key);
     }
-    assert.deepEqual(p.S.vocab, {}, `${id}: the vocabulary record is not theirs`);
-    assert.ok(!Object.keys(p.S.vocab).some((k) => k.startsWith("samhengi:")));
+    /* (Until #10 they also wrote nothing to `S.vocab`; that record is gone.) */
     /* the short gate: within a visit no item twice while others are left */
     assert.equal(new Set(shown).size, Math.min(30, pool.length), `${id}: an item was repeated within the visit`);
     /* …and the next day (a new visit) the same items may come again: no week's wait */

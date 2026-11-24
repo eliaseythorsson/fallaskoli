@@ -85,6 +85,9 @@ export function newSession(S, today = todayKey()) {
     recentGenders: [],
     recentCases: [],
     sameWordRun: 0, lastWord: null,
+    /* The question just shown, { type, words } (tasks/effects.js "last"):
+       the next is never the same word in the same type (#10). */
+    lastAsked: null,
     tableRun: 0, fastRun: 0, accentFreeRun: 0,
     idleDays: idleDaysOf(S),
     /* accidents (v6.1): accepted-with-a-slip answers in a row, and which of

@@ -16,8 +16,9 @@
    stop the app writing to them a moment later) — tests/purity.test.js freezes
    them all the way down and builds every type, which is what holds the rule.
 
-     S           the saved state: skills (XP), words, cells, vocab
-     sess        the session: diff per skill, seen, exSeen, sinceTable …
+     S           the saved state: skills (XP), words, cells, word knowledge
+     sess        the session: diff per skill, seen, exSeen, sinceTable,
+                 lastAsked (the question just shown) …
      policy      core/policy.js — what this child may meet, narrowed to the
                  session's topic by whoever builds the view
      today       the day as a key ("2026-11-16"); builders never read the clock
@@ -81,8 +82,9 @@
          The word to ask about, from `pool` (lexicon entries), or null.
          With a strict `mustAsk` whose class is one of `classes`: that word,
          whether or not it is in the pool, and no number is drawn. With a
-         strict `mustAsk` of another class: null (this builder cannot ask
-         about it). Otherwise one word of the pool, by `pickByWord`.
+         strict `mustAsk` of another class, or one the last question asked
+         in this type (#10): null (this builder cannot ask about it now).
+         Otherwise one word of the pool, by `pickByWord`.
          A non-strict `mustAsk` is not looked at here.
 
      pickByWord(lex, items, wordOf, skill, rng, factor?)
@@ -93,11 +95,17 @@
          added here reaches them all. The weight is `wordWeight` in
          tasks/shared.js (frequency, the skill's level, the word's
          irregularity, what this pupil gets wrong, what the session has just
-         seen) times `factor(item)` if one is given. It does not look at
+         seen) times `factor(item)` if one is given. An item whose word the
+         last question asked in this type is never the answer (#10): if the
+         draw lands on one, it is drawn again from the rest (one more
+         number), which gives the odds of leaving it out from the start
+         while a seed keeps its meaning wherever the rule is silent. It does
+         not look at
          `mustAsk`: a builder that uses it has already narrowed its items to
-         the word that must be asked. Always draws exactly one number, also
-         from an empty list (then the answer is null) — as `wpick` always
-         has, so a seed means the same questions it meant before #45.
+         the word that must be asked. Draws exactly one number, also from
+         an empty list (then the answer is null) — as `wpick` always has, so
+         a seed means the same questions it meant before #45 — and a second
+         only when the spacing rule turns the first down.
 
      askedWord(classes?)
          The strict `mustAsk` word if its class is one of `classes` (any
@@ -118,19 +126,55 @@
      wordBoost(wordKeys)
          A weight multiplier for a builder that chooses a SENTENCE (or an
          item) first — analysis, syntax, the cloze's sentence — by the
-         words in it (`wordKey`s, core/state.js). Always 1 for now: #13
-         ("builders favour words in learning") switches it on, and #10
-         (the new spacing rule: not the same word in the same type twice in
-         a row) can read `typeId` beside it. A builder multiplies it into a
-         weight it already has; it must not turn a uniform `pick` into a
-         `wpick` just to call it, because the two read the same number
-         differently and a seed would stop meaning the same question.
+         words in it (`wordKey`s, core/state.js). 0 if one of them is the
+         word the last question asked in this type (`justAsked`), else 1:
+         #13 ("builders favour words in learning") raises it for words in
+         learning. A builder multiplies it into a weight it already has; it
+         must not turn a uniform `pick` into a `wpick` just to call it,
+         because the two read the same number differently and a seed would
+         stop meaning the same question.
 
-   #13 and #10 change the weight in `pickByWord` and `wordBoost`; no builder
-   needs to be opened for either. tests/pickword.test.js pins what is here
+   ---- The spacing rule (#10, docs/DLD-PLAN.md §1) -------------------------
+
+   The same word is never asked in the same question type in two
+   consecutive questions. The same word in another type — or another cell
+   of it in another type — may come straight after; and there is no wait in
+   days any more (the old gate, core/spacing.js: not the same day, not
+   within a week, not within a month after two showings, is gone with
+   `S.vocab`).
+
+   "The last question" is the SESSION's (`sess.lastAsked`, written by the
+   effect `FX.last` when a question is shown, tasks/effects.js), not read
+   back from Word knowledge. Word knowledge keeps one list per word, so it
+   does not know which word came last across words; and the next question
+   is often built before the last one is in it: a duel's questions are all
+   built before any is answered (core/duel.js `duelPlan`), "Þrjár í röð"
+   builds its three at once (tasks/drill.js `streakTasks`), a server-graded
+   answer is written when the grader answers, and a question left
+   unanswered is never written. What the session keeps is what Word
+   knowledge will file the question under — the same words
+   (core/wordknowledge.js `wordsOf`), the same type id.
+
+     justAsked(wordKey)
+         Did the last question ask about this word in the type now being
+         built (`typeId`)? `pickByWord` never returns such an item, `pickWord`
+         refuses such a strict word (null: this builder cannot ask it now),
+         and `wordBoost` gives a sentence with it weight 0.
+
+     repeatsLast(task)
+         Is this built question the last one's type with one of its words?
+         The net under all of the above, for builders that choose a
+         sentence or an item first and a word only by what is in it:
+         tasks/next.js builds the type again (and then moves on), and a
+         drill, a review and "Þrjár í röð" skip such a candidate.
+         tests/spacing.test.js holds the rule over many seeded sessions.
+
+   #10 changed `pickByWord`, `pickWord` and `wordBoost` without opening a
+   builder, and #13 changes the weight in the same places. tests/pickword.test.js pins what is here
    without building a question.                                              */
 
-import { effectivePolicy, todayKey } from "../core/state.js";
+import { effectivePolicy, todayKey, wordKey } from "../core/state.js";
+import { wordsOf } from "../core/wordknowledge.js";
 import { wpick, wordWeight } from "./shared.js";
 
 /** @this {any} @param {?readonly string[]} [classes] */
@@ -152,27 +196,56 @@ function retryWord() {
   return m && !m.strict ? m.word : null;
 }
 
+/** @this {any} @param {string|null|undefined} key */
+function justAsked(key) {
+  const last = this.sess && this.sess.lastAsked;
+  return !!(key && this.typeId && last && last.type === this.typeId && (last.words || []).includes(key));
+}
+
+/** @this {any} */
+function repeatsLast(task) {
+  const last = this.sess && this.sess.lastAsked;
+  if (!task || !last) return false;
+  const type = task.typeId || this.typeId || task.type;
+  if (type !== last.type) return false;
+  const words = last.words || [];
+  return wordsOf(task).some((w) => words.includes(w));
+}
+
+/** The lexicon entry's `wordKey`, or null. */
+const keyOf = (x) => (x && x.o ? wordKey(x.o, x.c) : null);
+
 /** @this {any} */
 function pickByWord(lex, items, wordOf, skill, rng, factor = null) {
-  const got = wpick(items, factor
+  const wf = factor
     ? (x) => wordWeight(lex, this, wordOf(x), skill) * factor(x)
-    : (x) => wordWeight(lex, this, wordOf(x), skill), rng);
-  return got === undefined ? null : got;
+    : (x) => wordWeight(lex, this, wordOf(x), skill);
+  const got = wpick(items, wf, rng);
+  if (got === undefined) return null;
+  /* The spacing rule (#10): not the word the last question asked in this
+     type. Drawn again from the rest only when the first draw landed on it —
+     the same odds as leaving it out from the start, and a seed means what
+     it meant whenever the rule has nothing to say. */
+  if (!this.justAsked(keyOf(wordOf(got)))) return got;
+  const rest = items.filter((x) => !this.justAsked(keyOf(wordOf(x))));
+  return rest.length ? wpick(rest, wf, rng) : null;
 }
 
 /** @this {any} */
 function pickWord(lex, pool, skill, rng, classes) {
   if (this.cannotAsk(classes)) return null;
-  return this.askedWord(classes) || this.pickByWord(lex, pool, (x) => x, skill, rng);
+  const asked = this.askedWord(classes);
+  /* A strict word that the last question asked in this type: not now. */
+  if (asked) return this.justAsked(keyOf(asked)) ? null : asked;
+  return this.pickByWord(lex, pool, (x) => x, skill, rng);
 }
 
 /** @this {any} @param {readonly (string|null)[]} [wordKeys] */
-// eslint-disable-next-line no-unused-vars
 function wordBoost(wordKeys) {
-  return 1;
+  return wordKeys && wordKeys.some((k) => this.justAsked(k)) ? 0 : 1;
 }
 
-const METHODS = { askedWord, cannotAsk, retryWord, pickByWord, pickWord, wordBoost };
+const METHODS = { askedWord, cannotAsk, retryWord, pickByWord, pickWord, wordBoost, justAsked, repeatsLast };
 
 /** The one `mustAsk` of what a host passes. */
 function mustAskOf(mustAsk, drillWord, forcedNoun) {

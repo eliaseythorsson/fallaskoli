@@ -293,7 +293,7 @@ test("an older copy: word records reset; XP, badges, levels and the rest kept", 
   assert.equal(S.bestLevel, 7);
   assert.deepEqual(S.skills.nafnord, old.skills.nafnord);
   assert.deepEqual(S.badges, old.badges);
-  assert.deepEqual(S.vocab, old.vocab, "S.vocab stays until #10");
+  assert.equal("vocab" in S, false, "S.vocab is gone since #10");
   assert.deepEqual(S.review.stats, old.review.stats);
 
   /* Loaded again — now a current copy — nothing more is reset. */

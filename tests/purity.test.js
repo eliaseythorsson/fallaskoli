@@ -28,7 +28,8 @@ import { createPolicy, narrowPolicy } from "../src/js/core/policy.js";
 import { skillNeed } from "../src/js/core/progress.js";
 import { seeded } from "../src/js/core/duel.js";
 import { pickTargeted } from "../src/js/core/diagnosis.js";
-import { TASKS, typeById, nextTask, drillTask, DRILL_PLAN, makeView, withView, applyEffects, FX }
+import { wordsOf } from "../src/js/core/wordknowledge.js";
+import { TASKS, typeById, nextTask, buildTask, drillTask, DRILL_PLAN, makeView, withView, applyEffects, FX }
   from "../src/js/tasks/index.js";
 
 const lex = buildLexicon(DATA);
@@ -63,16 +64,6 @@ function pupil(band, seed = 1) {
     S.words[wordKey(w.o, w.c)] = { c: ri(7), w: ri(5) };
     if (k < 40) Object.keys(w.forms || {}).forEach((m) => { S.cells[m] = { c: ri(6), w: ri(6) }; });
   }
-  S.vocab = {};
-  const defined = lex.all.filter((x) => x.d);
-  for (let k = 0; k < 200; k++) {
-    const w = defined[ri(defined.length)];
-    const last = daysAgo([0, 3, 10, 40][ri(4)]);
-    S.vocab[wordKey(w.o, w.c)] = { n: 1 + ri(2), dates: [last], first: last, last };
-  }
-  EX.wordInContext.forEach((x) => {
-    if (g() < 0.3) S.vocab[`samhengi:${x.t}`] = { n: 1, dates: [daysAgo(3)], first: daysAgo(3), last: daysAgo(3) };
-  });
   const sess = newSession(S);
   Object.keys(sess.diff).forEach((k) => { sess.diff[k] = band; });
   for (let k = 0; k < 10; k++) sess.seen.push(lex.all[ri(lex.all.length)].o);
@@ -182,53 +173,26 @@ test("the view is read-only, and deriving one leaves the first as it was", () =>
 
 /* ---------- effects: applied for the task that is shown, and only then ---- */
 
-test("a vocabulary item is marked as asked when its question is shown, not when it is built", () => {
-  /* Not to_samr and to_flt: since v6.13 the numeral items are grammar, not
-     vocabulary, and are not marked at all (tests/review.test.js). */
-  for (const id of ["meaning", "or_heiti", "or_samhengi", "or_myndun"]) {
+test("the question just shown is remembered when it is shown, not when it is built", () => {
+  /* The spacing rule (#10) compares the next question with the one shown
+     last (`sess.lastAsked`, tasks/effects.js "last"). Five candidates, as
+     pickTargeted builds them, change nothing; the one shown is remembered. */
+  for (const id of ["meaning", "or_heiti", "or_samhengi", "or_myndun", "fill", "tbl_no"]) {
     const p = pupil(3, 5);
-    const spec = typeById(id);
-    const before = copy(p.S.vocab);
-    /* five candidates, as pickTargeted builds them … */
+    p.sess.lastAsked = null;
     const cands = [];
     for (let seed = 0; seed < 5; seed++) {
-      const b = spec.build(lex, view(p), seeded(70 + seed));
+      const b = buildTask(lex, view(p), seeded(70 + seed), id);
       if (b) cands.push(b);
     }
     assert.ok(cands.length >= 3, `${id}: too few candidates to say anything`);
-    assert.deepEqual(p.S.vocab, before, `${id}: building marked something`);
-    cands.forEach((b) => {
-      const asked = b.effects.filter((e) => e.op === "asked");
-      assert.equal(asked.length, 1, `${id}: one item, one mark`);
-      assert.equal(asked[0].day, TODAY);
-    });
-    /* … and one is shown. */
+    assert.equal(p.sess.lastAsked, null, `${id}: building remembered something`);
+    cands.forEach((b) => assert.equal(b.effects.filter((e) => e.op === "last").length, 1, `${id}: one question, one "last"`));
     const shown = cands[cands.length - 1];
-    const key = shown.effects.find((e) => e.op === "asked").key;
-    const n0 = (before[key] || { n: 0 }).n;
     applyEffects(p, shown.effects);
-    assert.equal(p.S.vocab[key].n, n0 + 1);
-    assert.equal(p.S.vocab[key].last, TODAY);
-    const moved = Object.keys(p.S.vocab).filter((k) => JSON.stringify(p.S.vocab[k]) !== JSON.stringify(before[k]));
-    assert.deepEqual(moved, [key], `${id}: only the item that was shown is marked`);
-    /* the item just shown is not chosen again today */
-    for (let seed = 0; seed < 20; seed++) {
-      const again = spec.build(lex, view(p), seeded(300 + seed));
-      if (again) assert.notEqual(again.effects.find((e) => e.op === "asked").key, key, `${id}: asked twice in a day`);
-    }
+    assert.deepEqual(p.sess.lastAsked, { type: id, words: wordsOf(shown.task) });
+    if (shown.task.word) assert.ok(p.sess.lastAsked.words.includes(shown.task.word), `${id}: its word is remembered`);
   }
-});
-
-test("the meaning question shows the word's history as it stands once it is shown", () => {
-  const p = pupil(3, 6);
-  const b = typeById("meaning").build(lex, view(p), seeded(5));
-  const key = b.task.word;
-  const had = (p.S.vocab[key] || { n: 0 }).n;
-  assert.equal(b.task.spacing.n, had + 1);
-  assert.equal(b.task.spacing.last, TODAY);
-  applyEffects(p, b.effects);
-  assert.equal(p.S.vocab[key].n, b.task.spacing.n);
-  assert.deepEqual(p.S.vocab[key].dates, b.task.spacing.dates);
 });
 
 test("a hand-written item is remembered when it is shown, and at most forty of them", () => {
@@ -280,15 +244,14 @@ test("a noun waiting for another cloze is let go by the question that takes its 
 
 test("candidates that are thrown away use nothing up (the session as app.pickTask runs it)", () => {
   /* What the app does: several candidates through pickTargeted, the effects
-     of the one it returns. Every vocabulary mark must belong to a question
-     that was shown — the simulation behind critique item 4 counted 461 marks
-     for at most 273 questions. */
+     of the one it returns. Until #10 this counted the vocabulary marks (the
+     simulation behind critique item 4 found 461 marks for at most 273
+     questions); the session's memory of the last question is held the same
+     way now: it is always the question shown, never a candidate. */
   const p = pupil(3, 10);
-  p.S.vocab = {};
   const rng = seeded(2024);
   const ids = ["merking", "ef", "thf_thgf"];
   let shown = 0, candidates = 0;
-  const shownKeys = [];
   for (let q = 0; q < 300; q++) {
     const v = view(p, { inRun: true });
     const effects = new Map();
@@ -301,14 +264,10 @@ test("candidates that are thrown away use nothing up (the session as app.pickTas
     }, ids, { p: 0.85, tries: 8, rnd: rng });
     assert.ok(t);
     shown++;
-    effects.get(t).filter((e) => e.op === "asked").forEach((e) => shownKeys.push(e.key));
     applyEffects(p, effects.get(t));
+    assert.deepEqual(p.sess.lastAsked, { type: t.typeId, words: wordsOf(t) }, "remembered a question that was not shown");
   }
   assert.ok(candidates > shown * 1.5, `only ${candidates} candidates for ${shown} questions: nothing was thrown away`);
-  const marks = Object.values(p.S.vocab).reduce((a, r) => a + r.n, 0);
-  assert.ok(shownKeys.length > 10, "no vocabulary question came up");
-  assert.equal(marks, shownKeys.length, "marked as asked without being shown");
-  assert.deepEqual(Object.keys(p.S.vocab).sort(), [...new Set(shownKeys)].sort());
 });
 
 test("an effect nobody knows is an error, not a silence", () => {

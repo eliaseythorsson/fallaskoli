@@ -71,6 +71,8 @@ export function tableNumeral(lex, view, rng) {
   const able = fc && !view.askedWord(["to", "rt"]) ? pool.filter((x) => numeralCells(view, x, f[1], fc)) : pool;
   if (!able.length) return null;
   const w = view.pickWord(lex, able, "toluord", rng, ["to", "rt"]);
+  /* null: the spacing rule (#10) left no word to ask in this type now */
+  if (!w) return null;
   const kyn = f ? f[1] : pick(["KK", "KVK", "HK"], rng);
   const made = numeralCells(view, w, kyn, fc);
   if (!made) return null;

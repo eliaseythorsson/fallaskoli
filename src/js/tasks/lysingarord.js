@@ -64,6 +64,8 @@ export function tableAdj(lex, view, rng) {
      are asked in sentences, and here only when a review asks for them. */
   const withNoun = topByRank(lex.adjectives, 0.38).filter((x) => x.h && ["KK", "KVK", "HK"].some((k) => adjectiveHelperLemma(x, k)));
   const adj = view.pickWord(lex, withNoun.length ? withNoun : topByRank(lex.adjectives, 0.38), "lysingarord", rng, ["lo"]);
+  /* null: the spacing rule (#10) left no word to ask in this type now */
+  if (!adj) return null;
   /* A review (tasks/review.js) asks for the table its cell is in: that
      degree, gender and number, whatever the difficulty is now. */
   const fc = /^(FSB|FVB|MST|ESB|EVB)-(KK|KVK|HK)-(?:NF|ÞF|ÞGF|EF)(ET|FT)$/.exec(forcedCell(view) || "");
@@ -157,6 +159,7 @@ export function taskReverse(lex, view, rng) {
     const bag = only ? [only] : topByRank(lex.byClass[p.cls] || [], 0.35);
     if (!bag.length) continue;
     const w = only || view.pickByWord(lex, bag, (x) => x, p.skill, rng);
+    if (!w) continue;     // the spacing rule (#10) left none in this bag
 
     /* Only forms with a single analysis inside their own paradigm —
        otherwise the question has more than one correct answer. */
@@ -410,6 +413,8 @@ export function framedAdjective(lex, view, rng, want, { place = null, fc = null,
   /* the commonest adjectives at a low band; the rest come in a step at a time */
   const near = fc || fw ? all : all.filter((a) => adjLevel(a) <= Math.max(1, b));
   const w = view.pickByWord(lex, near.length ? near : all.slice(0, 12), (x) => x, "lysingarord", rng);
+  /* null: the spacing rule (#10) left no word to ask in this type now */
+  if (!w) return null;
   const { s, i } = textSentence(f.t);
   return { s, i, w, m, lvl: Math.max(f.lvl, Math.min(adjLevel(w), P.maxLevel)), framed: true };
 }

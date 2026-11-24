@@ -64,7 +64,7 @@ function newDates(b, l) {
 }
 
 /** A record of a count and its dates ({n, dates, first, last}): a badge, and
-    a word in core/spacing.js. */
+    once also a word in `S.vocab` (gone since #10). */
 export function mergeBadge(b, l, r, keep = 80) {
   if (!l) return r;
   if (!r) return l;

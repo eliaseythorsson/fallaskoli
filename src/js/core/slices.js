@@ -111,7 +111,6 @@ import { thisDevice } from "./slicerules.js";
 import { reviewSlice } from "./review.js";
 import { xpSlice, bestLevelSlice, runSlice, bestRunSlice, totalAnswersSlice, totalCorrectSlice,
   skillsSlice, cellsSlice } from "./progress.js";
-import { vocabSlice } from "./spacing.js";
 import { badgesSlice, multiSessionRunSlice, lastSessionSkillsSlice, countersSlice,
   periodsSlice, settledSlice } from "./badges.js";
 import { showcaseSlice, titleSlice, socialSlice } from "./social.js";
@@ -169,7 +168,6 @@ export const SLICES = [
   wordsSlice,
   skillsSlice,
   badgesSlice,
-  vocabSlice,
   goalSlice,
   runSlice,
   bestRunSlice,

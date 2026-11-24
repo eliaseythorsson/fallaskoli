@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bil milli endurtekninga: ein regla (#10)
+- **Sama orð kemur aldrei tvisvar í röð í sömu spurningagerð**, en má koma strax aftur í annarri
+  gerð. Biðin í dögum í Orðaforða (ekki sama dag, ekki innan viku) er horfin, og með henni `S.vocab`.
+
 ### Orðavalið á einum stað (#45)
 - **Engin breyting sést**: hvaða orð spurning er um velur nú einn staður (`view.pickWord`
   í `tasks/view.js`) í stað þess að hver spurningagerð velji sjálf, og „spurðu um þetta orð“ (björgunaræfing,
