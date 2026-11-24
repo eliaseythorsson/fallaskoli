@@ -354,7 +354,10 @@ server/               the optional multi-user server (Node, JSON files on disk):
                       calibrate.mjs (anonymous counts of answers → a weekly
                       table of adjustments; the opt-in sample of wrong answers),
                       classgoal.mjs, live.mjs (in memory, server-sent events),
-                      teamduel.mjs, privs.mjs (give up root)
+                      teamduel.mjs, privs.mjs (give up root), writing.mjs
+                      (Ritun vikunnar), reader.mjs (the text reader: limits,
+                      timeout, forgetting, the quote check, for every plug;
+                      plugs reader-greynir.mjs and reader-fake.mjs)
 Dockerfile, fly.toml  the server as a container, and where it runs
 Dockerfile.build, build-in-container.sh   the pinned build (see above)
 test-together.sh      four test pupils on your own computer, or the server for several testers

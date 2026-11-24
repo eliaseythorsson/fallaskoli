@@ -741,7 +741,8 @@ so GreynirCorrect cannot move the grammar libraries under the build.
 
 How it runs, so you know what to expect from the machine:
 
-- `server/writing.mjs` starts **one** Python process, `server/greynir_worker.py`,
+- `server/writing.mjs` (through the text reader, `server/reader.mjs`, and its
+  GreynirCorrect plug, `server/reader-greynir.mjs`) starts **one** Python process, `server/greynir_worker.py`,
   the first time a group with the check on needs it, and keeps it. It holds
   about **400 MB** of memory and takes a few seconds to start; after that a text
   takes a fraction of a second. On a small VPS give the machine 1 GB.

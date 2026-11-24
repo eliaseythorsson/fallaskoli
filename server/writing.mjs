@@ -30,158 +30,53 @@
  *     text will be kept.
  *
  * ---- the checker --------------------------------------------------------------
- * GreynirCorrect is Python and needs ~400 MB and a few seconds to load, so it
- * runs as ONE long-lived child process (server/greynir_worker.py) started on
- * the first need and kept, speaking one JSON line per text over stdin/stdout.
- * The simplest robust shape:
- *   - a strict timeout per text (WRITING.timeoutMs): past it the request gets
- *     504 and the worker is KILLED — a parse that runs away cannot hold the
- *     next pupil's text hostage — and the next text starts a fresh one;
- *   - a size limit twice over: the body (WRITING.maxBody) and the text
- *     (WRITING.maxChars) here, and the worker's own;
- *   - at most `maxQueue` texts in flight; past that 503 "busy";
- *   - a worker that cannot start (no Python, the package missing — as in the
- *     default Docker image) leaves the check unavailable, and the app offers
- *     the task without it; it is tried again after RETRY_MS.
+ * The text is read by the server's text reader (server/reader.mjs, #47) with
+ * its GreynirCorrect plug (server/reader-greynir.mjs): ONE long-lived Python
+ * worker (server/greynir_worker.py). The reader holds the limits for every
+ * plug: a strict timeout per text (WRITING.timeoutMs; past it 504, and the
+ * worker is killed and the next text starts a fresh one), at most `maxQueue`
+ * texts in flight (past that 503 "busy"), the text's size, and that a remark
+ * points at the pupil's own text. The body's size (WRITING.maxBody) and the
+ * text's (WRITING.maxChars) are also checked here first, with Ritun's words.
+ * A worker that cannot start leaves the check unavailable, and the app
+ * offers the task without it.
+ *
  * Configured by FALLASKOLI_WRITING_PYTHON (default `python3`),
  * FALLASKOLI_WRITING_WORKER (default this folder's greynir_worker.py),
  * FALLASKOLI_WRITING_TIMEOUT_MS, and FALLASKOLI_WRITING=off to switch the
  * whole feature off on this server (docs/SERVER.md). */
 
-import { spawn } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
 import { WRITING, cleanText, cleanAnnotations, topicFor } from "../src/js/core/writing.js";
 import { weekKey } from "../src/js/core/social.js";
-
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const START_MS = 90_000;          // loading GreynirCorrect the first time
-const RETRY_MS = 5 * 60_000;      // after a failed start, before trying again
-const LINE_MAX = 1 << 20;         // a line longer than this from the worker is a fault
-
-const fault = (code) => Object.assign(new Error(code), { code });
+import { createReader, fault } from "./reader.mjs";
+import { greynirPlug } from "./reader-greynir.mjs";
 
 /**
- * The worker, kept. `check(text)` → { sentences, annotations } or throws an
+ * Ritun's checker: the text reader with the GreynirCorrect plug.
+ * `read(text)` → { sentences, findings } | { fault } (server/reader.mjs);
+ * `check(text)` is the same throwing: → { sentences, annotations }, or an
  * Error whose `code` is "off", "unavailable", "busy", "timeout" or "failed".
  */
 export function createChecker({
-  command = "python3", args = [path.join(HERE, "greynir_worker.py")],
-  timeoutMs = WRITING.timeoutMs, startMs = START_MS, maxQueue = 4, off = false,
+  command, args, timeoutMs = WRITING.timeoutMs, startMs, maxQueue = 4, off = false,
 } = {}) {
-  let child = null, ready = null, state = off ? "off" : "idle", failedAt = 0;
-  let buf = "", seq = 0, inflight = 0;
-  const pending = new Map();      // id -> { resolve, reject, timer }
-
-  const failAll = (code) => {
-    for (const [, p] of pending) { clearTimeout(p.timer); p.reject(fault(code)); }
-    pending.clear();
-  };
-
-  function kill(next = "idle") {
-    const c = child;
-    child = null; ready = null; buf = "";
-    state = next;
-    if (next === "failed") failedAt = Date.now();
-    failAll("failed");
-    if (c) { try { c.kill("SIGKILL"); } catch { /* already gone */ } }
-  }
-
-  function start() {
-    if (state === "off") return Promise.reject(fault("off"));
-    if (state === "failed" && Date.now() - failedAt < RETRY_MS) return Promise.reject(fault("unavailable"));
-    if (ready) return ready;
-    state = "starting";
-    ready = new Promise((resolve, reject) => {
-      let c;
-      try {
-        c = spawn(command, args, {
-          /* stderr is thrown away: nothing a worker prints may carry a text
-             into a log. A minimal environment, and Python told to speak UTF-8. */
-          stdio: ["pipe", "pipe", "ignore"],
-          env: { PATH: process.env.PATH || "/usr/bin:/bin", PYTHONIOENCODING: "utf-8",
-            PYTHONDONTWRITEBYTECODE: "1", HOME: process.env.HOME || "/tmp" },
-        });
-      } catch { kill("failed"); reject(fault("unavailable")); return; }
-      child = c;
-      /* The worker must never keep the server (or a test) alive by itself. */
-      c.unref(); c.stdin.unref?.(); c.stdout.unref?.();
-      const startTimer = setTimeout(() => { if (state === "starting") { kill("failed"); reject(fault("unavailable")); } }, startMs);
-      startTimer.unref?.();
-      c.on("error", () => { clearTimeout(startTimer); if (child === c) kill("failed"); reject(fault("unavailable")); });
-      c.on("exit", () => {
-        clearTimeout(startTimer);
-        if (child !== c) return;
-        const wasStarting = state === "starting";
-        kill(wasStarting ? "failed" : "idle");
-        if (wasStarting) reject(fault("unavailable"));
-      });
-      c.stdin.on("error", () => { /* a dead pipe: the exit handler answers */ });
-      c.stdout.setEncoding("utf8");
-      c.stdout.on("data", (chunk) => {
-        if (child !== c) return;
-        buf += chunk;
-        if (buf.length > LINE_MAX) { kill("idle"); return; }
-        let nl;
-        while ((nl = buf.indexOf("\n")) >= 0) {
-          const line = buf.slice(0, nl); buf = buf.slice(nl + 1);
-          let msg;
-          try { msg = JSON.parse(line); } catch { continue; }
-          if (state === "starting" && "ready" in msg) {
-            clearTimeout(startTimer);
-            if (msg.ready === true) { state = "ready"; resolve(); }
-            else { kill("failed"); reject(fault("unavailable")); }
-            continue;
-          }
-          const p = pending.get(msg.id);
-          if (!p) continue;
-          pending.delete(msg.id);
-          clearTimeout(p.timer);
-          if (msg.error) p.reject(fault("failed"));
-          else p.resolve({ sentences: Number(msg.sentences) || 0, annotations: msg.annotations });
-        }
-      });
-    });
-    ready.catch(() => {});
-    return ready;
-  }
-
+  const greynir = greynirPlug({ command, args, startMs, off });
+  const reader = createReader({ plugs: { greynir }, maxChars: WRITING.maxChars, maxQueue, timeoutMs });
+  const read = (text) => reader.read("greynir", text);
   return {
     /** "off" | "idle" | "starting" | "ready" | "failed" */
-    get state() { return state; },
-    /** Start the worker in the background if it is not running. */
-    warm() { if (state === "idle" || (state === "failed" && Date.now() - failedAt >= RETRY_MS)) start().catch(() => {}); },
-    /** Is it up (true), down (false), or not known yet (null)? */
-    available() { return state === "ready" ? true : state === "off" || state === "failed" ? false : null; },
+    get state() { return greynir.state; },
+    warm: greynir.warm,
+    available: greynir.available,
+    stop: greynir.stop,
+    read,
     async check(text) {
-      /* Counted from the moment a text arrives, not from when it reaches the
-         worker: a burst while the worker is still starting is held too. */
-      if (inflight >= maxQueue) throw fault("busy");
-      inflight += 1;
-      try { return await send(text); } finally { inflight -= 1; }
+      const out = await read(text);
+      if (out.fault) throw fault(out.fault);
+      return { sentences: out.sentences, annotations: out.findings };
     },
-    stop() { if (state !== "off") kill("idle"); },
   };
-
-  async function send(text) {
-    await start();
-    if (!child) throw fault("unavailable");
-    const id = ++seq;
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        if (!pending.has(id)) return;
-        pending.delete(id);
-        reject(fault("timeout"));
-        /* A runaway parse: kill it, so the next text is not stuck behind it. */
-        kill("idle");
-      }, timeoutMs);
-      timer.unref?.();
-      pending.set(id, { resolve, reject, timer });
-      try { child.stdin.write(JSON.stringify({ id, text }) + "\n"); }
-      catch { pending.delete(id); clearTimeout(timer); kill("idle"); reject(fault("failed")); }
-    });
-  }
 }
 
 /** The checker as this server's environment configures it. */
@@ -191,7 +86,7 @@ export function checkerFromEnv(env = process.env) {
   return createChecker({
     off,
     command: env.FALLASKOLI_WRITING_PYTHON || "python3",
-    args: [env.FALLASKOLI_WRITING_WORKER || path.join(HERE, "greynir_worker.py")],
+    ...(env.FALLASKOLI_WRITING_WORKER ? { args: [env.FALLASKOLI_WRITING_WORKER] } : {}),
     timeoutMs: t > 0 ? Math.min(t, 60_000) : WRITING.timeoutMs,
   });
 }
@@ -271,17 +166,16 @@ export function createWriting({ store, groupOf, groupsNow, audit, env = process.
       if (text.length > WRITING.maxChars)
         return json(res, 413, { error: `Textinn má vera mest ${WRITING.maxChars} stafir.` });
       if (!allowed(u.id)) return json(res, 429, { error: "Of margir yfirlestrar í bili. Reyndu aftur eftir smástund." });
-      let out;
-      try { out = await ck.check(text); }
-      catch (e) {
-        const code = e && e.code;
+      const out = await ck.read(text);
+      if (out.fault) {
+        const code = out.fault;
         if (code === "timeout") return json(res, 504, { error: "Yfirlesturinn tók of langan tíma. Reyndu aftur, eða styttu textann." });
         if (code === "busy") return json(res, 503, { busy: true, error: "Margir eru að láta lesa yfir núna. Reyndu aftur eftir smástund." });
         /* Logged by its kind only: never the text. */
         console.error("yfirlestur:", code || "villa");
         return json(res, 503, { unavailable: true, error: "Yfirlestur er ekki í boði á þessum þjóni núna." });
       }
-      const annotations = cleanAnnotations(out.annotations, text);
+      const annotations = cleanAnnotations(out.findings, text);
       let kept = false;
       if (sw.keep) {
         const week = weekKey(new Date());
