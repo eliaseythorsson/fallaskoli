@@ -136,7 +136,10 @@ What the build does, in order:
 4. `pipeline/build_bundle.py` — lexicon + sentences + semantic classes + definitions
    → `data/data_bundle.js`; `pipeline/build_exercises.py` — the hand-written items in
    `content/*/*.tsv` (read by `pipeline/exercises.py`), every answer, option and cue
-   looked up in BÍN → `data/exercises.js`
+   looked up in BÍN → `data/exercises.js`. The sentences of „Hver gerði hvað?“
+   (`content/setningafraedi/hver-gerdi-hvad.tsv`) are parsed and guarded here as
+   bank sentences are, and `pipeline/who_did.py` refuses any whose parse does not
+   give the gerandi and the þolandi the file gives
 5. `tools/manifest.mjs` — a fingerprint of all of the above. If anything
    changed since the last accepted build the build stops and lists the change;
    `--accept` records it. This is what stops a parser upgrade from quietly
@@ -164,7 +167,8 @@ content/              ALL HAND-WRITTEN CONTENT, one TAB-separated file per list,
                       readable and editable without reading code (see "Efnið"):
                       setningar/ (the sentence bank), villuveidar/ (the real
                       errors), lysingarord/ fornofn/ toluord/ fallstjorn/
-                      obeygjanleg/ ordafordi/ (exercise items and frames);
+                      obeygjanleg/ ordafordi/ setningafraedi/ (exercise items
+                      and frames);
                       REVIEW-NOTES.md, what a native reader should check
 pipeline/             the Python half of the build (critique item 79), run from the
                       repository root by ./build.sh; the modules import one another
@@ -197,6 +201,11 @@ pipeline/             the Python half of the build (critique item 79), run from 
   phrases.py          kinds of subordinate clause and phrase, written into a
                       sentence only when the parse and a closed table of what
                       such a clause looks like agree (years 9–10)
+  who_did.py          „Hver gerði hvað?“ (issue 27): who did what to whom, worked
+                      out of the parse — in a passive the gerandi is not the
+                      frumlag — and compared with the hand-written key of
+                      content/setningafraedi/hver-gerdi-hvad.tsv; an item whose
+                      parse says otherwise is refused by build_exercises.py
   definitions.py      a handful of hand-written definitions; the rest are ÍNO
   exercises.py        reads the hand-written items for the v6.11 question types
                       (pronouns, numerals, dates, government, synonyms …) and
@@ -452,6 +461,7 @@ content/setningar/setningar.tsv     the sentence bank (1,130 sentences)
 content/setningar/lino-rammar.tsv   words allowed into one frame each (word, frame, checked by)
 content/villuveidar/villur.tsv      the real errors of Villuveiðar
 content/lysingarord/ …/ordafordi/   exercise items and frames, by category
+content/setningafraedi/             „Hver gerði hvað?“: sentences with who did what to whom
 content/REVIEW-NOTES.md             what a native reader should check first
 ```
 
@@ -474,8 +484,9 @@ git diff content/          # one changed line per changed item
 ```
 
 The build stops on a column moved or renamed, a field that is not what its
-column holds, a word BÍN does not have, a sentence Greynir cannot parse or a
-claim the government table contradicts, and names the file and line or the
+column holds, a word BÍN does not have, a sentence Greynir cannot parse, a
+claim the government table contradicts or — in „Hver gerði hvað?“ — a gerandi
+or þolandi the parse does not give, and names the file and line or the
 sentence. The manifest then stops once more on purpose: read what it lists and
 accept it (`./build.sh --accept`).
 

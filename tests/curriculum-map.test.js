@@ -187,7 +187,8 @@ test("what each year adds is what its description says", () => {
   assert.deepEqual(added(10), {
     skills: ["setningafraedi", "setningagerd"],
     /* item 28 added gerd_tegund, lid_finna, raeda and setn_lidir */
-    types: ["clause", "gerd_finna", "gerd_tegund", "gerd_upphaf", "lid_finna", "raeda",
+    /* issue 27 added hver_gerdi (on the node of the setningarhlutar) */
+    types: ["clause", "gerd_finna", "gerd_tegund", "gerd_upphaf", "hver_gerdi", "lid_finna", "raeda",
       "setn_flokka", "setn_hlut", "setn_lidir", "syntax"],
   });
   assert.deepEqual([8, 9, 10].map((y) => presetContent(y).topLevel), [5, 6, 7]);

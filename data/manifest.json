@@ -22,10 +22,11 @@
   "pipeline/build_sentences.py": "956df1d41b67c6ee90f3410b81acc5ecdf2f16f8ed28b505dc9462da55d9965d",
   "pipeline/build_bundle.py": "656e4622ec1426e7f9a3bb8a0c41661dc799c9191fa5620a4dededf695e7e25a",
   "pipeline/irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
-  "pipeline/exercises.py": "186276b81e7ea77aa3f3367f7e4e057565f7cfe86aa11c550477b4f4638e049d",
-  "pipeline/build_exercises.py": "56be14a1489d872850f5a1954c83d6dadba76a35eabfd62d009ede64b82c879b",
+  "pipeline/exercises.py": "14d365a4937697bb750d3bfbfcee4e09714950b1521d2fb9379844d2e72262e7",
+  "pipeline/build_exercises.py": "e247b9a92e50383f7afe13c949398448d1eaaceb95e84730124afd234014485d",
   "pipeline/adj_classes.py": "30dcdd1a715ac73c9325bcc327a043a78cd452cd9aa9164d934b25b565255b10",
   "pipeline/content_io.py": "f70116a2eb0031119ab311329a3912fe144d943b9a74583c9aab8902ad7566fe",
+  "pipeline/who_did.py": "1abfd3de384d81f7015f2c65ca007fb527f838f34a52034b6a513e931c8e3a46",
   "sources/lino2.csv": null,
   "pipeline/lino.py": "e3bef7f6b7b5d0d23d0bd0eb16fc5fe8ce07d815f8f63b40aeef7f2e486e668a",
   "pipeline/frame_allow.py": "1882339d84eb52b4db7bbb87e5d506f81342e7fc8035c9689219cabe9222a540",
@@ -60,6 +61,7 @@
   "content/ordafordi/samheiti.tsv": "8efa108707e6601d7c94769d23ae11cec564288e0ec6b792e433c421fc1f0f5e",
   "content/ordafordi/samhengi-rammar.tsv": "573b6e458888d14089f0ab4c49fbd65d61d2275bd219e019bf6e09c236bc8986",
   "content/ordafordi/samhengi.tsv": "5b49b7c62e6753cc024f9d23c40ec6108c7c12012a0000a419a5bbab9d3aec3b",
+  "content/setningafraedi/hver-gerdi-hvad.tsv": "62d330524d78a4fbd74ae84559228f9f95f65f5b21dc588f5e5db6f81acc4a20",
   "content/setningar/lino-rammar.tsv": "5ddd0bbf30d48073fa86416d32ce4c3c536eb4acd05568bfc1b7dde953d7a8f7",
   "content/setningar/setningar.tsv": "46c70350f104acde12a6db2ce60c79a7d11746f528eb8bcc22f28d0e2f3af0c6",
   "content/toluord/dagsetningar.tsv": "a1c95332f2dc18a4eb8369ef7fb496a37089eb7b9af4d6cd5ba0525e1dfa7a39",
@@ -75,7 +77,7 @@
   "data/lexicon.json": "b9e41b1b88e202702fc103c0049415c0eaa5051aac9c568cf3e5624aec584b3b",
   "data/sentences.json": "1fbb7a55c19923732dfb61c149bb4c4ddd6452a047eee88e7953a9c50737a669",
   "data/data_bundle.js": "01befcfc08e496e09bfe1e6c5b3a587cf93511455bb4fdde8963545a9b2b427c",
-  "data/exercises.js": "e6a7d13a83c3665db56e663e338b98c3ac2b1f57385a312acd1a5b4b68fb7d34"
+  "data/exercises.js": "85ca58e193a4c8807b3efdd5b3140d81b6ad7270e389e71a090f352ece07cfcf"
  },
  "counts": {
   "words": 6564,

@@ -1,0 +1,111 @@
+# Setningafræði: Hver gerði hvað?
+#
+# Nemandinn les setningu og svarar: hver gerði það sem sögnin segir (gerandinn) og hver
+# varð fyrir því (þolandinn)? Hér er spurt um MERKINGU, ekki um setningarhluta. Í þolmynd er
+# frumlagið ekki gerandinn: í „Hundurinn var bitinn af kettinum“ er hundurinn frumlag en
+# kötturinn beit. Þegar enginn af-liður er („Þjófurinn var handtekinn í gær“) segir setningin
+# ekki hver gerði það, og rétta svarið er „Það kemur ekki fram“.
+#
+# Hver lína er ein sögn í einni setningu. Setning með tveimur sögnum (tilvísunarsetning) á
+# tvær línur, og þá verða þyngd og gerð að vera eins í báðum.
+#
+# Dálkar:
+#   þyngd       1, 3 eða 5: ein gerð í einu
+#                 1  þolmynd, með af-lið eða án
+#                 3  tilvísunarsetning þar sem „sem“ er gerandinn (Strákurinn sem elti hundinn datt),
+#                    eða sem stendur aftast í setningunni
+#                 5  tilvísunarsetning þar sem „sem“ er þolandinn (Strákurinn sem hundurinn elti datt),
+#                    eða þolmynd inni í tilvísunarsetningu
+#   gerð        þolmynd eða tilvísun
+#   setning     setningin sjálf: stutt, hlutstæð, í þátíð
+#   sögn        sögnin sem spurt er um, í nafnhætti (bíta)
+#   gerandi     sá sem gerir, skrifaður eins og orðið stendur í setningunni (kettinum),
+#               eða (ekki sagt) ef setningin er í þolmynd og nefnir hann ekki
+#   þolandi     sá sem verður fyrir því, eins og orðið stendur í setningunni (Hundurinn),
+#               eða (enginn) ef sögnin tekur ekkert andlag (datt, hló)
+#   athugasemd  frjáls athugasemd, forritið les hana ekki
+#
+# Reglur um setningarnar:
+#   - Stuttar og hlutstæðar. Gerandi og þolandi eru hvor sitt nafnorð í eintölu, eitt orð
+#     (hundurinn, afa), og báðir lifandi verur, svo að spurt sé „Hver …?“.
+#   - Báðir gætu hafa gert það (hundur og köttur geta báðir bitið) þar sem það er einmitt
+#     vandinn. Þá ræður setningagerðin svarinu, ekki líkurnar.
+#   - Aðeins sagnir sem stýra þolfalli og eru eðlilegar í „Hver var …?“ (bitinn, eltur, sóttur).
+#   - Þolmynd með af-lið aðeins þar sem fólk segir hana í raun (bitinn af hundi, handtekinn af
+#     lögreglunni). Ekki „Gras er borðað af hestinum“. Ef þú ert í vafa, slepptu setningunni.
+#
+# Forritið tekur svörin ekki trúanleg. Þegar það er smíðað (./build.sh) greinir Greynir
+# hverja setningu, geranda og þolanda er leitað í greiningunni (pipeline/who_did.py), og
+# setningu er HAFNAÐ ef greiningin segir annað en stendur hér. Spurningarnar („Hver beit?“,
+# „Hver var bitinn?“) og einfalda setningin í skýringunni („Kötturinn beit hundinn.“) eru
+# búnar til úr BÍN.
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+
+þyngd	gerð	setning	sögn	gerandi	þolandi	athugasemd
+# ---- þolmynd með af-lið: frumlagið er þolandinn, gerandinn stendur á eftir „af“
+1	þolmynd	Hundurinn var bitinn af kettinum.	bíta	kettinum	Hundurinn
+1	þolmynd	Strákurinn var bitinn af hundinum.	bíta	hundinum	Strákurinn
+1	þolmynd	Barnið var bitið af hundi.	bíta	hundi	Barnið
+1	þolmynd	Strákurinn var stunginn af geitungi.	stinga	geitungi	Strákurinn
+1	þolmynd	Hesturinn var eltur af hundinum.	elta	hundinum	Hesturinn
+1	þolmynd	Stelpan var elt af stráknum.	elta	stráknum	Stelpan
+1	þolmynd	Lögreglumaðurinn var eltur af þjófnum.	elta	þjófnum	Lögreglumaðurinn
+1	þolmynd	Þjófurinn var handtekinn af lögreglunni.	handtaka	lögreglunni	Þjófurinn
+1	þolmynd	Maðurinn var stöðvaður af lögreglunni.	stöðva	lögreglunni	Maðurinn
+1	þolmynd	Sjúklingurinn var skoðaður af lækni.	skoða	lækni	Sjúklingurinn
+1	þolmynd	Fyrirliðinn var valinn af þjálfaranum.	velja	þjálfaranum	Fyrirliðinn
+1	þolmynd	Músin var veidd af kettinum.	veiða	kettinum	Músin
+1	þolmynd	Drengurinn var hvattur af þjálfaranum.	hvetja	þjálfaranum	Drengurinn
+# ---- þolmynd án af-liðar: setningin segir ekki hver gerði það
+1	þolmynd	Þjófurinn var handtekinn í gær.	handtaka	(ekki sagt)	Þjófurinn
+1	þolmynd	Hundurinn var bitinn í gær.	bíta	(ekki sagt)	Hundurinn
+1	þolmynd	Strákurinn var sóttur í skólann.	sækja	(ekki sagt)	Strákurinn
+1	þolmynd	Stelpan var valin í liðið.	velja	(ekki sagt)	Stelpan
+1	þolmynd	Maðurinn var stöðvaður á götunni.	stöðva	(ekki sagt)	Maðurinn
+1	þolmynd	Kennarinn var spurður um prófið.	spyrja	(ekki sagt)	Kennarinn
+1	þolmynd	Barnið var bólusett í gær.	bólusetja	(ekki sagt)	Barnið
+1	þolmynd	Stelpan var vakin snemma.	vekja	(ekki sagt)	Stelpan
+1	þolmynd	Kötturinn var eltur út í garð.	elta	(ekki sagt)	Kötturinn
+1	þolmynd	Leikmaðurinn var felldur í teignum.	fella	(ekki sagt)	Leikmaðurinn
+# ---- tilvísunarsetning, „sem“ er gerandinn: sá sem tilvísunarsetningin stendur með gerði það
+3	tilvísun	Strákurinn sem elti hundinn datt.	elta	Strákurinn	hundinn
+3	tilvísun	Strákurinn sem elti hundinn datt.	detta	Strákurinn	(enginn)
+3	tilvísun	Stelpan sem teiknaði strákinn brosti.	teikna	Stelpan	strákinn
+3	tilvísun	Stelpan sem teiknaði strákinn brosti.	brosa	Stelpan	(enginn)
+3	tilvísun	Kötturinn sem beit hundinn hljóp burt.	bíta	Kötturinn	hundinn
+3	tilvísun	Kötturinn sem beit hundinn hljóp burt.	hlaupa	Kötturinn	(enginn)
+3	tilvísun	Stelpan sem kitlaði strákinn hló.	kitla	Stelpan	strákinn
+3	tilvísun	Stelpan sem kitlaði strákinn hló.	hlæja	Stelpan	(enginn)
+3	tilvísun	Kennarinn sem spurði strákinn brosti.	spyrja	Kennarinn	strákinn
+3	tilvísun	Kennarinn sem spurði strákinn brosti.	brosa	Kennarinn	(enginn)
+# ---- tilvísunarsetning aftast í setningunni
+3	tilvísun	Konan sótti strákinn sem datt.	sækja	Konan	strákinn
+3	tilvísun	Konan sótti strákinn sem datt.	detta	strákinn	(enginn)
+3	tilvísun	Kennarinn spurði stelpuna sem brosti.	spyrja	Kennarinn	stelpuna
+3	tilvísun	Kennarinn spurði stelpuna sem brosti.	brosa	stelpuna	(enginn)
+3	tilvísun	Hundurinn elti köttinn sem beit músina.	elta	Hundurinn	köttinn
+3	tilvísun	Hundurinn elti köttinn sem beit músina.	bíta	köttinn	músina
+# ---- tilvísunarsetning, „sem“ er þolandinn: frumlag tilvísunarsetningarinnar gerði það
+5	tilvísun	Strákurinn sem hundurinn elti datt.	elta	hundurinn	Strákurinn
+5	tilvísun	Strákurinn sem hundurinn elti datt.	detta	Strákurinn	(enginn)
+5	tilvísun	Stelpan sem strákurinn teiknaði brosti.	teikna	strákurinn	Stelpan
+5	tilvísun	Stelpan sem strákurinn teiknaði brosti.	brosa	Stelpan	(enginn)
+5	tilvísun	Kötturinn sem hundurinn beit hljóp burt.	bíta	hundurinn	Kötturinn
+5	tilvísun	Kötturinn sem hundurinn beit hljóp burt.	hlaupa	Kötturinn	(enginn)
+5	tilvísun	Þjófurinn sem lögreglan elti datt.	elta	lögreglan	Þjófurinn
+5	tilvísun	Þjófurinn sem lögreglan elti datt.	detta	Þjófurinn	(enginn)
+5	tilvísun	Strákurinn sem stelpan kitlaði hló.	kitla	stelpan	Strákurinn
+5	tilvísun	Strákurinn sem stelpan kitlaði hló.	hlæja	Strákurinn	(enginn)
+5	tilvísun	Barnið sem hundurinn sleikti hló.	sleikja	hundurinn	Barnið
+5	tilvísun	Barnið sem hundurinn sleikti hló.	hlæja	Barnið	(enginn)
+5	tilvísun	Strákurinn sem kennarinn spurði hló.	spyrja	kennarinn	Strákurinn
+5	tilvísun	Strákurinn sem kennarinn spurði hló.	hlæja	Strákurinn	(enginn)
+5	tilvísun	Hundurinn sem strákurinn sótti hljóp burt.	sækja	strákurinn	Hundurinn
+5	tilvísun	Hundurinn sem strákurinn sótti hljóp burt.	hlaupa	Hundurinn	(enginn)
+# ---- þolmynd inni í tilvísunarsetningu
+5	tilvísun	Hundurinn sem var bitinn af kettinum hljóp burt.	bíta	kettinum	Hundurinn
+5	tilvísun	Hundurinn sem var bitinn af kettinum hljóp burt.	hlaupa	Hundurinn	(enginn)

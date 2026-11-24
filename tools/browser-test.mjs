@@ -349,7 +349,7 @@ async function answerOne(correct) {
     /* v6.11: a sentence with a blank, typed like the cloze. */
     await page.type("#ans", correct ? t.answers[0] : "xxrangt");
     await tap("#check");
-  } else if (t.type === "choice") {
+  } else if (t.type === "choice" || t.type === "hver") {
     /* A pair (item 43) has two `.opts` boxes, one per sentence; a wrong answer
        gets the first half wrong and the second right. */
     await page.evaluate((halves, correct) => {
@@ -3910,6 +3910,112 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
   const d = await find("syntax", 6, "none");
   ok(d && d.step === null && !d.button && !d.note && d.names.length === 0, `${w}px: a hint at þyngd 6: ` + JSON.stringify(d));
   ok(errors.length === 0, `${w}px: errors with the Setningafræði hint: ` + errors.join(" | "));
+  await page.close();
+}
+
+/* ---------- issue 27: „Hver gerði hvað?“ ---------------------------------
+ * A sentence, a question and the nouns to choose from. The structure hint
+ * follows item 26's rule: drawn from the start at þyngd 1, behind
+ * "Vísbending" at 4, absent at 7. After the answer the structure and the
+ * explanation are shown at every þyngd. */
+{
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  const find = (band, wantHint) => page.evaluate((band, wantHint) => {
+    const A = window.FALLASKOLI;
+    document.querySelectorAll(".tour, .scrim").forEach((x) => x.remove());
+    A.S.enabled.setningafraedi = true; A.reloadPolicy();
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null;
+    A.startRun("setningafraedi", 100000);
+    for (let i = 0; i < 3000 && A.run; i++) {
+      A.sess.diff.setningafraedi = band;
+      A.next();
+      const c = A.cur;
+      if (c && c.type === "hver" && !!document.getElementById("hint") === wantHint) break;
+    }
+    const c = A.cur;
+    if (!c || c.type !== "hver") return null;
+    const sent = document.getElementById("hversent");
+    return { coded: !!c.coding && c.coding.step === "shown", step: c.coding ? c.coding.step : null, kind: c.kind, answer: c.answer, options: c.options,
+      buttons: [...document.querySelectorAll("#hveropts button")].map((b) => b.textContent),
+      marks: sent.querySelectorAll(".sc, .sc-clause").length, bold: sent.querySelectorAll("b").length,
+      hint: !!document.getElementById("hint"),
+      question: (document.querySelector("#task .gloss").textContent || "").trim(),
+      scroll: document.documentElement.scrollWidth - innerWidth };
+  }, band, wantHint);
+
+  const first = await find(1, false);
+  ok(first, "no „Hver gerði hvað?“ question appeared at þyngd 1");
+  if (first) {
+    ok(first.kind === "þolmynd", `at þyngd 1 the question is about ${first.kind}, not the passive`);
+    ok(first.coded && first.marks > 0 && !first.hint, `at þyngd 1 the structure is not shown from the start (${first.marks} marks, hint ${first.hint})`);
+    ok(first.bold >= 2, "the verb asked about is not in bold");
+    ok(/^Hver .+\?$/.test(first.question), "no question on the card: " + first.question);
+    ok(first.buttons.join("|") === first.options.join("|") && first.buttons[first.buttons.length - 1] === "Það kemur ekki fram",
+      "the options are not the nouns and „Það kemur ekki fram“: " + first.buttons.join(" | "));
+    ok(first.scroll <= 1, `the card runs off a 390 px screen (${first.scroll}px)`);
+    const a = await page.evaluate(() => {
+      const A = window.FALLASKOLI, c = A.cur;
+      document.getElementById("check").click();
+      const pending = /Veldu eitt svar/.test(document.getElementById("verdict").textContent);
+      [...document.querySelectorAll("#hveropts button")].find((b) => b.textContent === c.answer).click();
+      document.getElementById("check").click();
+      return { pending, ok: !!document.querySelector("#verdict .verdict.ok"),
+        right: document.querySelectorAll("#hveropts button.right").length,
+        why: (document.querySelector("#verdict .why") || {}).textContent || "" };
+    });
+    ok(a.pending, "„Athuga“ with nothing chosen did not ask for a choice");
+    ok(a.ok && a.right === 1, "the right option was not accepted: " + JSON.stringify(a).slice(0, 160));
+    ok(/þolmynd/.test(a.why) && /germynd/.test(a.why), "the explanation does not name the passive: " + a.why.slice(0, 160));
+  }
+
+  const later = await find(4, true);
+  ok(later, "no „Hver gerði hvað?“ question with a hint button appeared at þyngd 4");
+  if (later) {
+    ok(later.step === "offered" && later.marks === 0, `at þyngd 4 the structure is shown before the hint is asked for (${later.marks} marks)`);
+    const h = await page.evaluate(() => {
+      document.getElementById("hint").click();
+      const sent = document.getElementById("hversent");
+      const out = [...sent.querySelectorAll(".sc, .sc-clause, .sc-name")]
+        .filter((x) => { const r = x.getBoundingClientRect(); return r.right > innerWidth + 1 || r.left < -1; }).length;
+      return { marks: sent.querySelectorAll(".sc, .sc-clause").length, out,
+        verdict: (document.getElementById("verdict").textContent || "").replace(/\s+/g, " "),
+        disabled: document.getElementById("hint").disabled };
+    });
+    ok(h.marks > 0 && h.out === 0, `the hint marked nothing or ran off the screen: ${h.marks} marks, ${h.out} outside`);
+    ok(/Vísbending/.test(h.verdict) && /helmingi minna XP/.test(h.verdict) && h.disabled, "the hint did not say what it costs: " + h.verdict.slice(0, 120));
+    const w = await page.evaluate(() => {
+      const A = window.FALLASKOLI, c = A.cur;
+      [...document.querySelectorAll("#hveropts button")].find((b) => b.textContent !== c.answer).click();
+      document.getElementById("check").click();
+      return { no: !!document.querySelector("#verdict .verdict.no"),
+        wrong: document.querySelectorAll("#hveropts button.wrongpick").length,
+        right: document.querySelectorAll("#hveropts button.right").length,
+        marks: document.querySelectorAll("#hversent .sc, #hversent .sc-clause").length,
+        text: (document.getElementById("verdict").textContent || "").includes(c.answer) };
+    });
+    ok(w.no && w.wrong === 1 && w.right === 1 && w.text, "a wrong pick was not shown as wrong beside the right one: " + JSON.stringify(w));
+    ok(w.marks > 0, "after the answer the structure is not shown");
+  }
+
+  const last = await find(7, false);
+  ok(last, "no „Hver gerði hvað?“ question appeared at þyngd 7");
+  if (last) {
+    ok(last.step === null && last.marks === 0 && !last.hint, `a structure hint at þyngd 7: ${JSON.stringify(last).slice(0, 160)}`);
+    const z = await page.evaluate(() => {
+      const A = window.FALLASKOLI, c = A.cur;
+      [...document.querySelectorAll("#hveropts button")].find((b) => b.textContent === c.answer).click();
+      document.getElementById("check").click();
+      return { ok: !!document.querySelector("#verdict .verdict.ok"),
+        marks: document.querySelectorAll("#hversent .sc, #hversent .sc-clause").length };
+    });
+    ok(z.ok && z.marks > 0, "at þyngd 7 the structure is not shown with the explanation: " + JSON.stringify(z));
+  }
+  ok(errors.length === 0, "errors in „Hver gerði hvað?“: " + errors.join(" | "));
   await page.close();
 }
 

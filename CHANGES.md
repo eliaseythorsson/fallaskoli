@@ -37,6 +37,13 @@
   hún sýnd frá byrjun, á þyngd 3–5 fæst hún með „Vísbending“ (helmingi minna XP), frá
   þyngd 6 er hún ekki í boði. Hún merkir aldrei það sem spurt er um né skilur svarið eitt
   eftir ómerkt; eftir svarið er það merkt líka (#26).
+- **Ný spurning, „Hver gerði hvað?“**: nemandinn les setningu og svarar hver gerði það og hver
+  varð fyrir því. Fyrst í þolmynd (*Hundurinn var bitinn af kettinum* — hver beit?), frá
+  þyngd 3 í tilvísunarsetningum (*Strákurinn sem elti hundinn datt*) og frá þyngd 5 þegar
+  *sem* er þolandinn (*Strákurinn sem hundurinn elti datt*). Bygging setningarinnar fylgir
+  sömu reglu og í öðrum spurningum Setningafræði, og er alltaf sýnd eftir svarið. Setningarnar eru í
+  `content/setningafraedi/hver-gerdi-hvad.tsv`, og smíðin hafnar setningu ef greiningin
+  segir annað um geranda og þolanda en þar stendur (#27).
 
 ### Plan: vocabulary, comprehension and stories
 - **`docs/DLD-RESEARCH.md`**: the evidence on interventions for teenagers with

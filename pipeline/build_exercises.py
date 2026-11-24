@@ -1184,6 +1184,121 @@ for it in X.HUNT:
 if len(items) < 80 and not ERR: fail(f"HUNT: {len(items)} items; the bank must hold at least 80")
 out["hunt"] = items
 
+# ---------------------------------------------------------------- Hver gerði hvað? (issue 27)
+# A sentence, a verb, and who did what to whom. The key in the file is NOT
+# taken on trust: each sentence is parsed and guarded exactly as a sentence
+# of the bank is (build_sentences.annotate), who_did.py works the gerandi and
+# the þolandi out of the tree, and an item whose parse says otherwise is
+# refused. What is asked is meaning: in a passive the answer is not the
+# frumlag (who_did.py, at the top).
+#
+# Everything the pupil reads beyond the sentence is put together here from
+# BÍN: the options in the nominative (*kötturinn* for *kettinum*), the two
+# questions (*Hver beit?*, *Hver var bitinn?*) and the plain active sentence
+# the explanation ends in (*Kötturinn beit hundinn.*). That plain sentence is
+# parsed too, and must give the same gerandi and þolandi.
+import who_did as WD
+
+ANIMATE = {"animal", "child", "critter", "job", "person", "group"}
+WHO_LEVELS = {"þolmynd": (1,), "tilvísun": (3, 5)}
+
+def who_did_items():
+    import build_sentences as BS
+    _g, _b, guard = BS.engines()
+    takes_acc, parsed = WD.takes_acc, WD.analyse
+
+    def noun_form(term, case, where):
+        """The same noun in another case: same number, same definiteness."""
+        m = term["m"] or ""
+        tail = re.sub(r"^(NF|ÞF|ÞGF|EF)", "", m)
+        gender = WD._gender(term)
+        if not gender or tail not in ("ET", "ETgr"):
+            fail(f"{where}: '{term['w']}' is not a singular noun whose form BÍN confirmed ({m})")
+            return "?"
+        return form(term["l"], gender, case + tail, where)[0]
+
+    by_sentence = collections.OrderedDict()
+    for lvl, kind, text, verb, who, whom, at in X._WHO_DID:
+        by_sentence.setdefault(text, []).append((lvl, kind, verb, who, whom, at))
+    items = []
+    for text, lines in by_sentence.items():
+        at = lines[0][5]
+        where = f"{at} ({text})"
+        lvl, kind = lines[0][0], lines[0][1]
+        if kind not in WHO_LEVELS: fail(f"{where}: gerð á að vera „þolmynd“ eða „tilvísun“, ekki {kind!r}"); continue
+        if lvl not in WHO_LEVELS[kind]:
+            fail(f"{where}: þyngd {lvl} á ekki við gerðina {kind} (þolmynd 1; tilvísun 3 eða 5)"); continue
+        if any((l[0], l[1]) != (lvl, kind) for l in lines):
+            fail(f"{where}: línur sömu setningar hafa ekki sömu þyngd og gerð / the lines of one sentence differ in level or kind"); continue
+        if len({l[2] for l in lines}) != len(lines):
+            fail(f"{where}: sama sögnin tvisvar í sömu setningu / the same verb twice"); continue
+        check_words(text, where)
+        if blocked_words(text): fail(f"{where}: blocked word {blocked_words(text)}"); continue
+        hard_before = len(guard.hard)
+        got = parsed(text)
+        if got is None: fail(f"{where}: setningin greinist ekki / the sentence does not parse"); continue
+        if len(guard.hard) != hard_before:
+            fail(f"{where}: the parse guard refused the analysis: {guard.hard[-1]}"); continue
+        rec, tree, terms = got
+        facts, people, bad = [], [], False
+        for _lvl, _kind, verb, who, whom, line_at in lines:
+            w = f"{line_at} ({text})"
+            try:
+                c = WD.check(tree, terms, takes_acc, verb, who, whom)
+            except WD.Refused as e:
+                fail(f"{w}: HAFNAÐ — {e}"); bad = True; continue
+            for j in (c["who"], c["whom"]):
+                if j is None: continue
+                if terms[j].get("rj"): fail(f"{w}: the analysis of '{terms[j]['w']}' was withdrawn"); bad = True
+                if NC.klass(terms[j]["l"]) not in ANIMATE:
+                    fail(f"{w}: „{terms[j]['w']}“ er ekki skráð sem lifandi vera (noun_classes.py), og spurt er „Hver …?“ / "
+                         "not listed as a living being"); bad = True
+                if j not in people: people.append(j)
+            v = terms[c["verb"]]
+            past = terms[c["verb"]]["w"].lower() if not c["passive"] else form(verb, "so", "GM-FH-ÞT-3P-ET", w)[0]
+            f = {"v": c["verb"], "l": verb, "who": c["who"], "whom": c["whom"], "qa": f"Hver {past}?"}
+            if c["passive"]: f["pas"] = 1; f["aux"] = c["aux"]
+            if c["rel"]: f["rel"] = c["rel"]
+            who_nf = cap1(noun_form(terms[c["who"]], "NF", w)) if c["who"] is not None else "Einhver"
+            if c["whom"] is not None:
+                f["qp"] = "Hver var %s?" % form(verb, "so", "LHÞT-SB-KK-NFET", w)[0]
+                f["p"] = "%s %s %s." % (who_nf, past, noun_form(terms[c["whom"]], "ÞF", w))
+            else:
+                f["p"] = "%s %s." % (who_nf, past)
+            # the plain sentence says the same thing, by the same rules
+            if not ERR or not bad:
+                again = parsed(f["p"])
+                if again is None: fail(f"{w}: einfalda setningin „{f['p']}“ greinist ekki"); bad = True
+                elif c["who"] is not None:
+                    _r2, tree2, terms2 = again
+                    cs = [x for x in WD.clauses(tree2, terms2, takes_acc) if terms2[x["verb"]]["l"] == verb]
+                    lem = lambda ts, j: None if j is None else ts[j]["l"]
+                    if len(cs) != 1 or cs[0].get("error") or cs[0]["passive"] \
+                            or lem(terms2, cs[0]["who"]) != lem(terms, c["who"]) \
+                            or lem(terms2, cs[0]["whom"]) != lem(terms, c["whom"]):
+                        fail(f"{w}: einfalda setningin „{f['p']}“ greinist ekki með sama geranda og þolanda / "
+                             "the plain sentence does not parse to the same answer"); bad = True
+            facts.append(f)
+        if bad: continue
+        if kind == "þolmynd" and not all(f.get("pas") and not f.get("rel") for f in facts):
+            fail(f"{where}: gerðin er þolmynd en sögnin stendur ekki í þolmynd í aðalsetningu"); continue
+        if kind == "tilvísun" and not any(f.get("rel") for f in facts):
+            fail(f"{where}: gerðin er tilvísun en engin sögnin stendur í tilvísunarsetningu"); continue
+        people.sort()
+        s = {k: rec[k] for k in ("t", "tok", "cl", "ph", "ku") if k in rec}
+        s["lvl"] = lvl
+        items.append({"lvl": lvl, "k": kind, "s": s, "f": facts,
+                      "n": [{"j": j, "nf": cap1(noun_form(terms[j], "NF", where))} for j in people]})
+    if guard.hard: fail(f"_WHO_DID: the parse guard has {len(guard.hard)} hard error(s)")
+    return items
+
+out["hver"] = who_did_items()
+print("hver gerði hvað: %d setningar, %d spurningar" % (
+    len(out["hver"]), sum(1 + ("qp" in f) for it in out["hver"] for f in it["f"])))
+for it in out["hver"]:
+    for f in it["f"]:
+        print("   þ%d %-9s %-52s %s %s → %s" % (it["lvl"], it["k"], it["s"]["t"], f["qa"], f.get("qp", ""), f["p"]))
+
 # ---------------------------------------------------------------- word lists
 # Words that are ONE word class whatever BÍN entry they are read as, for
 # sorting by word class without a sentence around them.

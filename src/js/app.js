@@ -36,6 +36,7 @@ import { DEFAULT_METRIC } from "./core/leaderboard.js";
 import { revealTopic } from "./ui/render.js";
 import { l2On, wireSecondLanguage } from "./ui/secondlang.js";
 import "./ui/render-more.js";
+import "./ui/hver.js";
 import { wireReports, captureCard, renderReportsPanel } from "./ui/reports.js";
 import { renderHeader, renderStats } from "./ui/progress.js";
 import { renderBadges, renderClass, renderSettings, renderData } from "./ui/panels.js";

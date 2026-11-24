@@ -216,7 +216,7 @@ export const NODES = [
 
   /* ---- Setningafræði ---- */
   { id: "setn-hlutar", nm: "Frumlag, umsögn, andlag og sagnfylling", cat: "setningafraedi",
-    year: 10, hv: "einkenni", types: ["syntax", "setn_hlut", "setn_flokka"],
+    year: 10, hv: "einkenni", types: ["syntax", "setn_hlut", "setn_flokka", "hver_gerdi"],
     lesson: "setningarhlutar", cover: "full" },
   { id: "setn-ordarod", nm: "Orðaröð", cat: "setningafraedi", year: 10, hv: "einkenni",
     types: ["umritun"], lesson: "malbeiting", cover: "part", item: 28 },

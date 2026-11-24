@@ -38,6 +38,7 @@ import { judge, judgeBonus, settle, parseRows, judgeSyntax, askedCells, JUDGED_T
          BONUS_XP } from "../src/js/core/answer.js";
 import { RENDER } from "../src/js/ui/render.js";
 import "../src/js/ui/render-more.js";
+import "../src/js/ui/hver.js";
 
 const lex = buildLexicon(DATA);
 

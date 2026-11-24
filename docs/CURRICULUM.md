@@ -210,7 +210,7 @@ evidence above. Later years keep practising it.
 | `or-ordhlutar` | Orðhlutar og samsett orð | Einkenni málsins | Orðaforði | none yet | none yet | **no** |
 | `or-hljodbreytingar` | Hljóðbreytingar og skyldleiki orða | Einkenni málsins | Orðaforði | none yet | none yet | **no** |
 | `mb-raeda` | Bein og óbein ræða | Einkenni málsins | Málbeiting | Bein og óbein ræða (`raeda`) | Bein og óbein ræða (`raeda`) | yes |
-| `setn-hlutar` | Frumlag, umsögn, andlag og sagnfylling | Einkenni málsins | Setningafræði | Smelltu á rétta orðið (`syntax`); Hvaða setningarhluti? (`setn_hlut`); Flokkaðu setningarhluta (`setn_flokka`) | Setningarhlutar (`setningarhlutar`) | yes |
+| `setn-hlutar` | Frumlag, umsögn, andlag og sagnfylling | Einkenni málsins | Setningafræði | Smelltu á rétta orðið (`syntax`); Hvaða setningarhluti? (`setn_hlut`); Flokkaðu setningarhluta (`setn_flokka`); Hver gerði hvað? (`hver_gerdi`) | Setningarhlutar (`setningarhlutar`) | yes |
 | `setn-ordarod` | Orðaröð | Einkenni málsins | Setningafræði | Umritun (`umritun`) | Málfræðin í notkun (`malbeiting`) | in part |
 | `setn-lidir` | Nafnliður, sagnliður og forsetningarliður | Einkenni málsins | Setningafræði | Hvers konar liður? (`setn_lidir`); Finndu forsetningarliðinn (`lid_finna`) | Nafnliður, sagnliður og forsetningarliður (`lidir`) | yes |
 | `gerd-adal-auka` | Aðalsetning, aukasetning og nafnháttarsetning | Einkenni málsins | Setningagerðir | Hvers konar setning er þetta? (`clause`); Finndu aukasetninguna (`gerd_finna`); Hvar hefst setningin? (`gerd_upphaf`) | Setningagerðir (`setningagerdir`) | yes |
@@ -457,9 +457,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 10 of 12 | 41 of 58 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
-| 9. bekkur | 10 of 12 | 48 of 58 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 12 of 12 | 58 of 58 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
+| 8. bekkur | 10 of 12 | 41 of 59 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
+| 9. bekkur | 10 of 12 | 48 of 59 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 12 of 12 | 59 of 59 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:

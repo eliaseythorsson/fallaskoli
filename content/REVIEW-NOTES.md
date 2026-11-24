@@ -273,6 +273,28 @@ kalla *þess vegna* atviksorð í bók fyrir unglinga? Er reglan um orðaröð
 (sögnin strax á eftir *þess vegna* og *síðan*; frumlagið fyrst á eftir *af
 því að*, *þegar* og *en*) rétt orðuð?
 
+## Hver gerði hvað: þolmynd með af-lið
+Leita: `skoðaður af lækni` · `valinn af þjálfaranum` · `hvattur af þjálfaranum` · `veidd af kettinum` · `eltur af þjófnum` · `eltur af hundinum` · `elt af stráknum`
+Úr: #27 (Hver gerði hvað?)
+
+Þolmynd með af-lið er sjaldgæfari í íslensku en í ensku, og hún er aðeins höfð
+hér þar sem hún þótti eðlileg (*bitinn af hundi*, *handtekinn af lögreglunni*).
+Þessar setningar eru réttar samkvæmt greiningunni, en móðurmálshafi ætti að
+segja til um hvort þær hljómi eðlilega eða stirðlega. Stirðri setningu á að
+sleppa. Setningar eins og *Strákurinn var sóttur af afa* og *Stelpan var vakin
+af mömmu* voru teknar út af þessari ástæðu.
+
+## Hver gerði hvað: „Hver …?“ um dýr, og spurningar sem forritið býr til
+Leita: `Músin var veidd` · `Barnið var bólusett` · `Barnið sem hundurinn sleikti` · `Stelpan sem teiknaði strákinn` · `Stelpan sem strákurinn teiknaði`
+Úr: #27 (Hver gerði hvað?)
+
+Spurningarnar eru búnar til úr sögninni: *Hver veiddi?* og *Hver var veiddur?*,
+*Hver var bólusettur?*, *Hver var sleiktur?*, *Hver var teiknaður?*. Spurt er
+með *hver* (í karlkyni) líka þegar svarið er dýr, kvenkynsorð eða *barnið*. Er
+það eðlilegt, eða ætti að spyrja öðruvísi um dýr (*hvað*)? Í skýringunni stendur
+svo einföld setning í germynd, til dæmis *Hundur beit barnið.* og *Einhver
+bólusetti barnið.*
+
 # Utan síðunnar
 
 Texti sem er ekki á yfirlitssíðunni. Skráin er nefnd við hvert atriði.
