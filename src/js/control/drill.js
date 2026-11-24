@@ -75,7 +75,7 @@ export function drillControl() {
       /* The word just answered, if it is in trouble … */
       const cur = this.cur && this.cur.word;
       let pick = null;
-      if (cur && fresh(cur) && statusOf(wordRecord(this.S, cur)) === "weak") {
+      if (cur && fresh(cur) && statusOf(wordRecord(this.S, cur)).status === "weak") {
         const [lemma, cls] = cur.split("|");
         if (drillable(this.lex, this.lex.lookup(lemma, cls))) pick = { key: cur, lemma };
       }

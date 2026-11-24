@@ -527,7 +527,7 @@ export function nodeDetail(node, S, now = Date.now()) {
     const [lemma, cls = ""] = w.key.split("|");
     /** @type {Partial<import("../types").RightWrong>} */
     const t = wordRecord(S, w.key) || {};
-    return { ...w, lemma, cls, right: t.c || 0, wrong: t.w || 0, weak: statusOf(t) === "weak" };
+    return { ...w, lemma, cls, right: t.c || 0, wrong: t.w || 0, weak: statusOf(t).status === "weak" };
   });
   if (node.id === NOUN_GRID_NODE) {
     const grid = {};

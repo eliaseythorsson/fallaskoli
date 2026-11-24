@@ -1,0 +1,21 @@
+{
+  "about": "Prófunargögn fyrir tools/word-history.mjs (#43): tilbúinn nemandi, engin raunveruleg gögn.",
+  "exportedAt": "2026-11-24T12:00:00.000Z",
+  "account": { "id": "u_test", "username": "prufa", "name": "Prufa", "role": "learner", "status": "active" },
+  "progressSavedAt": "2026-11-24T11:59:00.000Z",
+  "progress": {
+    "v": 12,
+    "words": {
+      "hugsa|so": { "c": 2, "w": 4, "h": "000101" },
+      "hestur|kk": { "c": 9, "w": 1, "h": "1111111011" },
+      "hestur|lo": { "c": 1, "w": 0, "h": "1" }
+    },
+    "wordKnowledge": {
+      "hugsa|so": { "c": 1, "w": 4, "e": [
+        ["2026-11-17", "verbslot", "w"], ["2026-11-17", "verbslot", "w"], ["2026-11-18", "tbl_so", "w"],
+        ["2026-11-18", "meaning", "s"], ["2026-11-19", "verbslot", "r"], ["2026-11-19", "verbslot", "w"]] },
+      "hestur|kk": { "c": 2, "w": 0, "e": [["2026-11-20", "fill", "r"], ["2026-11-21", "tbl_no", "r"]] }
+    },
+    "drills": { "hugsa|so": { "p": 1, "t": 1, "f": 0, "last": "2026-11-19", "at": 5 } }
+  }
+}

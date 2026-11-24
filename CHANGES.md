@@ -6,6 +6,10 @@
 - **Engin breyting sést**: hvaða orð spurning er um velur nú einn staður (`view.pickWord`
   í `tasks/view.js`) í stað þess að hver spurningagerð velji sjálf, og „spurðu um þetta orð“ (björgunaræfing,
   upprifjun, rétta fallið aftur) er eitt (`view.mustAsk`). Sama fræ gefur sömu spurningar (18.242 tilvik eins).
+### Orðaþekking: ástæða með hverri stöðu (#43)
+- **Hver staða orðs fylgir ástæða á mannamáli**, t.d. „Óstöðugt: 3 af síðustu 7 rétt, undir 50%“, og
+  `node tools/word-history.mjs <framvinda.json> <orð>` sýnir alla sögu eins orðs úr útfluttri framvindu
+  nemanda, án þjónsins. Engin breyting sést hjá nemanda.
 
 ### Orðaþekking: allt sem les orðin fer í gegnum hana (#42)
 - **Engin breyting sést**: orðaheilsa, björgunaræfingin, orðasafnið, sjaldgæfni, merkin, færnikortið og

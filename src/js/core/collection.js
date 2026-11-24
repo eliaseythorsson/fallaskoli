@@ -67,7 +67,7 @@ export function collectionByClass(S, lex) {
       s: entry ? entry.s || null : null,
       /* v6.6: how the word is doing now (core/wordhealth.js), and whether a
          rescue drill has ever saved it. */
-      status: statusOf(rec),
+      status: statusOf(rec).status,
       recent: recentOf(rec).acc,
       rescued: !!(drillRecord(S, key) && drillRecord(S, key).p),
     });

@@ -197,6 +197,10 @@ export type WordKnowledge = Record<string, WordHistory>;
 /** A word entry as `entriesOf` hands it out. */
 export interface WordEntry { day: DayKey; type: string; outcome: string }
 
+/** A status Word knowledge gives a word, with the reason in plain Icelandic
+    (core/wordknowledge.js, "statuses"): `{ status: "shaky", why: "3 af síðustu 7 rétt, undir 50%" }`. */
+export interface WordStatus { status: string; why: string }
+
 /**
  * One slice of the saved state and everything about its shape (core/slices.js,
  * where each field is explained). `T` is the slice's saved value.
