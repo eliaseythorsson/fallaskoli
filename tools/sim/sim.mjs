@@ -11,6 +11,7 @@ const ST = await import(R + "/src/js/core/state.js");
 const { SKILL_IDS, SKILLS } = await import(R + "/src/js/core/skills.js");
 const { TASKS, nextTask, makeView, withView, applyEffects, planOpening, nextOpening, scheduleReask, nextReask } = await import(R + "/src/js/tasks/index.js");
 const RV = await import(R + "/src/js/core/review.js");
+const WK = await import(R + "/src/js/core/wordknowledge.js");
 const { narrowPolicy } = await import(R + "/src/js/core/policy.js");
 const DG = await import(R + "/src/js/core/diagnosis.js");
 const PR = await import(R + "/src/js/core/progress.js");
@@ -120,6 +121,10 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
           const recs = t.type === "table" ? (t.cells || []).map((c, k) => ({ do: "record", cell: c.m, word: t.word, ok: ok || k > 0 })) : [];
           RV.noteReview(S, t, { ok, findings: [], effects: recs }, ST.todayKey());
         }
+        // as `settle`: one word entry for the question's word (core/wordknowledge.js, #8);
+        // the meaning question is seen, not judged. A question with several words
+        // (Villuveiðar) has no per-word answers in this model, so it makes none.
+        WK.noteWords(S, t, { ok: judged ? ok : null, finish: {}, effects: [{ do: "record", word: t.word, ok }] }, ST.todayKey());
         }
         run.i++;
         // diagnosis: pick one tested pattern as the miss

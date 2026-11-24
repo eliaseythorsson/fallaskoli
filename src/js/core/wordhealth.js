@@ -19,6 +19,7 @@
 
 import { isRareScore } from "./rarity.js";
 import { num, obj, keys, later, counters, n, dayStr, isObj, pairs, DAY } from "./slicerules.js";
+import { RESET_BEFORE } from "./wordknowledge.js";
 
 /* ---------- 1. The thresholds, in one place ------------------------------ */
 
@@ -296,12 +297,27 @@ function cleanWordKeys(words) {
   return out;
 }
 
+/* Issue #8, decision 6: progress saved before word knowledge
+   (core/wordknowledge.js) existed loses each word's short history `h`, so
+   that word health and word knowledge start on the same day. The counts
+   `c`/`w` stay: they are the collection, the ease and the leaderboard's
+   Orðaforði. */
+function withoutHistory(words) {
+  const out = {};
+  for (const [k, v] of Object.entries(words)) {
+    if (v && typeof v === "object" && !Array.isArray(v)) { const { h: _, ...rest } = v; out[k] = rest; }
+    else out[k] = v;
+  }
+  return out;
+}
+
 /** `S.words`: per word key ("hestur|kk") right, wrong and the last dozen
     outcomes, {c, w, h}. @type {Slice} */
 export const wordsSlice = {
   key: "words",
   blank: () => ({}),
-  migrate: (raw) => cleanWordKeys(raw),
+  migrate: (raw, whole) => (num(obj(whole).v) < RESET_BEFORE
+    ? withoutHistory(cleanWordKeys(raw)) : cleanWordKeys(raw)),
   merge(B, L, R) {
     const out = {};
     for (const k of keys(L, R)) {
