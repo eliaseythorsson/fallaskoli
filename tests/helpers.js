@@ -72,6 +72,7 @@ export function rightResponse(t) {
     case "govern": return { picked: t.fall };
     case "indecl": case "clause": return { picked: t.answer };
     case "choice": return t.second ? { picked: t.answer, picked2: t.second.answer } : { picked: t.answer };
+    case "hver": return { picked: t.answer };
     case "kenni": return t.askGen ? { picked: t.answer, text: t.gen[0] } : { picked: t.answer };
     case "slots": return { ...(t.options ? { picked: t.answer } : {}), texts: t.slots.map((sl) => sl.accepted[0]) };
     case "tap": return { sel: t.targets.slice() };
@@ -90,7 +91,7 @@ export function wrongResponse(t) {
   switch (t.type) {
     case "table": return { cells: askedCells(t).map(() => "xq") };
     case "parse": return { picks: { fl: "xq" } };
-    case "syntax": case "govern": case "indecl": case "clause": case "choice": return { picked: "xq" };
+    case "syntax": case "govern": case "indecl": case "clause": case "choice": case "hver": return { picked: "xq" };
     case "kenni": return { picked: "xq", text: "xq" };
     case "slots": return { picked: "xq", texts: t.slots.map(() => "xq") };
     case "tap": return { sel: [] };
