@@ -239,8 +239,15 @@ test("no class of word disappears at any level", () => {
     const by = [0, 0, 0, 0, 0, 0];
     pool.forEach((w) => { by[w.irr] += wordWeight(lex, v, w, skill); });
     const total = by.reduce((s, x) => s + x, 0);
+    /* 0.3% since #9 (was 0.4%). LÍNO-2 lifts academic words, and its
+       adjectives are mostly regular (of the 530 in the lexicon, 398 score
+       irregularity 1 and 6 score 4): adjectives of irregularity 4 went
+       from 0.41% to 0.34% of the weight at þyngd 1 (and to 0.38% even with the class size counted on corpus words only, so no
+       small change brings it back). More regular academic adjectives in the
+       pool is the point of LÍNO; hard adjectives together stay above their
+       1.5% guard below (2.2%). An owner question in the PR of #9. */
     for (let k = 1; k <= 5; k++)
-      assert.ok(by[k] / total >= 0.004, `${skill}: irregularity ${k} has ${(100 * by[k] / total).toFixed(2)}% of the weight at þyngd 1`);
+      assert.ok(by[k] / total >= 0.003, `${skill}: irregularity ${k} has ${(100 * by[k] / total).toFixed(2)}% of the weight at þyngd 1`);
     assert.ok((by[4] + by[5]) / total >= 0.015, `${skill}: hard words have under 1.5% of the weight at þyngd 1`);
   }
 });

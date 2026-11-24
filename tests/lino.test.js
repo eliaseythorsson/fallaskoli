@@ -6,9 +6,9 @@
      the frequency column, else the line order; a word class, a header or a
      rank it does not know stops it with the file and line named;
    - the licence: LÍNO-2 is named, CC BY 4.0, in the app's list and the README;
-   - the data: once the real file is in sources/, every LÍNO-2 entry that is in
-     the lexicon carries exactly the rank the reader gives it. Until then that
-     test is skipped and says so.
+   - the data: every LÍNO-2 entry that is in the lexicon carries exactly the
+     rank the reader gives sources/lino2.csv, and a few known words are named.
+     (Skipped, and says so, in a checkout without sources/lino2.csv.)
 
    tests/fixtures/NOT-LINO-test-fixture.csv is NOT LÍNO-2: five ordinary
    words in a made-up layout, for these tests only. Every test names it
@@ -179,4 +179,47 @@ test("every LÍNO-2 word in the lexicon carries the rank the list gives it",
       for (const w of hits) assert.equal(w.lino, rank, `${lemma}·${w.c}: lino ${w.lino}, list rank ${rank}`);
     }
     assert.ok(found >= 10, `only ${found} of ${probe.length} probed LÍNO-2 words are in the lexicon`);
+    /* Known words, read off LINO_frequency_list_1_0.csv: the first five on the
+       list, a domain word BÍN files under grammar (málfr), the last one (added
+       out of BÍN, as the subtitles never saw it), a lemma listed in two classes
+       with a rank for each, and a lemma listed only as a noun, whose verb
+       (*taka*, to take) is not an academic word and is not tagged. */
+    const lino = (o, c) => words.filter((w) => w.o === o && w.c === c).map((w) => w.lino ?? null);
+    assert.deepEqual(lino("einnig", "ao"), [1]);
+    assert.deepEqual(lino("hluti", "kk"), [2]);
+    assert.deepEqual(lino("áhrif", "hk"), [3]);
+    assert.deepEqual(lino("breyting", "kvk"), [4]);
+    assert.deepEqual(lino("mikilvægur", "lo"), [5]);
+    assert.deepEqual(lino("samheiti", "hk"), [1584]);
+    assert.deepEqual(lino("rýmka", "so"), [2294]);
+    assert.deepEqual(lino("blanda", "so"), [491]);
+    assert.deepEqual(lino("blanda", "kvk"), [1037]);
+    assert.deepEqual(lino("taka", "so"), [null]);
+    assert.ok(words.filter((w) => w.lino).length >= 2100, "LÍNO-2 words in the lexicon");
+  });
+
+test("a LÍNO-2 word the subtitles never saw is no rare find; an attested rare word still is",
+  { skip: !REAL ? "sources/lino2.csv is not in the repository" : false }, async () => {
+    const { DATA } = await import("../data/data_bundle.js");
+    const { buildLexicon } = await import("../src/js/core/lexicon.js");
+    const { collectionSummary } = await import("../src/js/core/collection.js");
+    const { isRareScore, wordTier, RARE_MAX_Q } = await import("../src/js/core/rarity.js");
+    const { blankState } = await import("../src/js/core/state.js");
+    const lex = buildLexicon(DATA);
+    /* rýmka: LÍNO-2's last word, added out of BÍN; ylur: in the subtitles, score 10 */
+    const added = lex.lookup("rýmka", "so"), attested = lex.lookup("ylur", "kk");
+    assert.equal(added.lino, 2294);
+    assert.equal(added.q, undefined, "no corpus score, not a made-up one");
+    assert.equal(isRareScore(added.q), false);
+    assert.equal(wordTier(added.q), null);
+    assert.ok(attested.q > 0 && attested.q < RARE_MAX_Q && !attested.lino, `ylur: ${attested.q}`);
+    assert.equal(isRareScore(attested.q), true);
+    /* What the rare-find badges count (badges.js: collection.rare). */
+    const S = blankState();
+    S.words["rýmka|so"] = { c: 1, w: 0 };
+    assert.equal(collectionSummary(S, lex).rare, 0);
+    S.words["ylur|kk"] = { c: 1, w: 0 };
+    assert.equal(collectionSummary(S, lex).rare, 1);
+    /* Every word without a score is a LÍNO-2 word. */
+    assert.deepEqual(lex.all.filter((w) => w.q == null && !w.lino).map((w) => w.o), []);
   });

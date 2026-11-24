@@ -184,6 +184,9 @@ test("rarity does not depend on which word class a word landed in", () => {
      same score must now get the same tier whatever their class. */
   const byScore = new Map();
   for (const w of lex.all) {
+    /* A LÍNO-2 word the subtitles never saw has no score and no tier (#9;
+       tests/lino.test.js holds that rule). */
+    if (w.q == null) continue;
     const t = wordTier(w.q);
     const seen = byScore.get(w.q);
     if (seen) assert.equal(t.id, seen, `score ${w.q} produced two different tiers`);

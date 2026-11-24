@@ -392,26 +392,49 @@ export const ODD_KINDS = Object.keys(KIND);
    Until v6.13 all four came from one cap of 600 + 500 × band, and a noun's
    rank (its place among the nouns) never goes above about 1,400 — so from
    þyngd 2 on every question drew from all of them alike (critique item 13).
-   The windows are on the nouns' own scale (shared.js `CLASS_RANK_CAP`):
-   each holds 50–150 nouns of the eleven kinds. The question is labelled by
-   its rarest word. */
+   The windows are counted among the nouns of the eleven kinds themselves
+   (#9): the commonest 70, 151, 220, 300 of them, then all. They used to be
+   ranks among all nouns (shared.js `CLASS_RANK_CAP`, 150/350/600/950), which
+   held exactly those numbers of kind nouns until LÍNO-2 lifted academic
+   nouns — none of them of a kind — into the same ranks, and the commonest
+   150 nouns then held 57 kind nouns instead of 70 (134 different questions
+   at þyngd 1 where item 23 asks for 150). Counted among the kind nouns, a
+   window no longer moves when an unclassed word is lifted. The question is
+   labelled by its rarest word, on the same count. */
+export const ODD_WINDOW = [0, 70, 151, 220, 300, Infinity];
+/** The kind nouns of the lexicon, commonest first, with their place: a Map
+    word → 1, 2, … Ties on rank are broken by lemma and class, so the order
+    is the same on every run. Kept per lexicon. */
+const oddPlaces = new WeakMap();
+function oddPlace(lex) {
+  let m = oddPlaces.get(lex);
+  if (m) return m;
+  const list = lex.nouns.filter((w) => oddMember(w, w.s))
+    .sort((a, b) => a.r - b.r || (a.o < b.o ? -1 : a.o > b.o ? 1 : 0) || (a.c < b.c ? -1 : a.c > b.c ? 1 : 0));
+  m = new Map(list.map((w, i) => [w, i + 1]));
+  oddPlaces.set(lex, m);
+  return m;
+}
+const oddLevel = (n) => { let L = 1; while (L < 5 && n > ODD_WINDOW[L]) L++; return L; };
 export function ordOdd(lex, view, rng) {
   const P = view.policy;
   const b = Math.min(bandFor(view, "ordaford"), 5);
-  const cap = CLASS_RANK_CAP[b], floor = CLASS_RANK_CAP[b - 1];
+  const cap = ODD_WINDOW[b], floor = ODD_WINDOW[b - 1];
+  const place = oddPlace(lex);
   /* The odd one out may be a band rarer than the three it stands out from
      (critique item 23): the eleven kinds hold only some eighty nouns among
      the commonest 150, and a pupil at þyngd 1 kept meeting the same eighty.
      The group of three stays in the band's window. */
-  const capOdd = CLASS_RANK_CAP[Math.min(b + 1, 5)];
+  const capOdd = ODD_WINDOW[Math.min(b + 1, 5)];
   const by = {}, byOdd = {};
   lex.nouns.forEach((w) => {
-    if (!oddMember(w, w.s)) return;
-    if (w.r <= cap) (by[w.s] ||= []).push(w);
-    if (w.r <= capOdd) (byOdd[w.s] ||= []).push(w);
+    const n = place.get(w);
+    if (!n) return;
+    if (n <= cap) (by[w.s] ||= []).push(w);
+    if (n <= capOdd) (byOdd[w.s] ||= []).push(w);
   });
   const kinds = ODD_KINDS.filter((k) => (by[k] || []).length >= 3);
-  const rare = (list) => list.filter((w) => w.r > floor);
+  const rare = (list) => list.filter((w) => place.get(w) > floor);
   for (let k = 0; k < 10; k++) {
     const A = pick(kinds, rng);
     if (!A) return null;
@@ -431,7 +454,7 @@ export function ordOdd(lex, view, rng) {
       why: `*${three[0].o}*, *${three[1].o}* og *${three[2].o}*: þetta ${KIND[A].all}. `
         + `*${cap1(odd.o)}* er ekki ${KIND[A].sg}.`,
       defs: [odd].filter((e) => e.d && !ODD_NO_DEF.has(e.o)),
-      base: 7, lvl: levelFor(P, classRankLevel(Math.max(odd.r, ...three.map((w) => w.r)))),
+      base: 7, lvl: levelFor(P, oddLevel(Math.max(...[odd, ...three].map((w) => place.get(w))))),
       cell: "orð:útundan", word: wordKey(odd.o, odd.c),
       tags: ["vocab"], miss: ["merking"], bonus: odd,
     });

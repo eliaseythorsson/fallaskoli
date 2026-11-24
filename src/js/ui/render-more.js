@@ -7,7 +7,7 @@
    `conclude`, which settles it and ends in app.finish. Nothing is graded or
    recorded here. */
 
-import { RENDER, sentenceHTML, whyBox, conclude, enterToSubmit, skillTag, slipNote,
+import { RENDER, sentenceHTML, wordHTML, whyBox, conclude, enterToSubmit, skillTag, slipNote,
          nearNote, multLine, PUNCT, offerRetry, endRetry, say, SAME_AGAIN, judgeTry, noteTry,
          compareHTML, retryRightHTML, RETRY_STILL_MISS } from "./render.js";
 import { judge, judgeBonus, settle, bonusVerdict, BONUS_XP } from "../core/answer.js";
@@ -533,9 +533,11 @@ const sortSentence = (t) => {
   if (!t.s) return "";
   const coded = codedHTML(t, pointedWord(t));
   if (coded != null) return `<p class="sentence coded">${coded}</p>`;
+  /* The words to sort are what the question is about: never glossed. The
+     rest carry the second-language gloss like any sentence (item 45). */
   const marked = new Set((t.items || []).map((x) => x.j).filter((j) => j != null));
   return `<p class="sentence">${t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w
-    : `${j ? " " : ""}${marked.has(j) ? `<span class="target">${esc(tok.w)}</span>` : esc(tok.w)}`).join("")}</p>`;
+    : `${j ? " " : ""}${marked.has(j) ? `<span class="target">${esc(tok.w)}</span>` : wordHTML(tok)}`).join("")}</p>`;
 };
 
 RENDER.sort = function (app) {

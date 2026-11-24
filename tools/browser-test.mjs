@@ -1189,8 +1189,13 @@ for (const want of ["indecl"]) {
   ok(box.links === 0,
     `${want}: dictionary links are still offered, and every dictionary prints the word class`);
 
-  /* Hover it for longer than any delay in ui/dom.js, then click it. Nothing
-     may open. */
+  /* Hover it for longer than any delay in ui/dom.js, then click it. No
+     DEFINITION may open: a definition's tip is keyed "dfn:<word>" (ui/dom.js
+     `keyOf`). A grammar term's tip ("eintala") is not one: the real pointer
+     rests where the last tap left it, and a term the question happens to draw
+     there opens its own tip, which #9's lexicon made happen here. Any open
+     tip is closed first. */
+  await page.evaluate(() => document.querySelectorAll(".tip").forEach((t) => { t.hidden = true; }));
   await page.evaluate(() => {
     /* Whatever the definition is wrapped in — the point is that pointing at it
        must do nothing, not that it carries a particular class. */
@@ -1202,9 +1207,10 @@ for (const want of ["indecl"]) {
   await new Promise((r) => setTimeout(r, 1700));
   const opened = await page.evaluate(() => {
     const t = document.querySelector(".tip");
-    return !!(t && !t.hidden);
+    return t && !t.hidden ? t.dataset.for || "?" : null;
   });
-  ok(!opened, `${want}: a window opened over the locked definition`);
+  ok(!opened || !(opened === "?" || opened.startsWith("dfn:")),
+    `${want}: a window opened over the locked definition (${opened})`);
 
   /* Answer it — correctly, it does not matter — and the definition comes back. */
   await answerOne(true);
@@ -3238,7 +3244,9 @@ await page.setViewport({ width: 1100, height: 900 });
     const c = A.cur;
     if (c.type === "umritun" && (c.fromTok || c.linesTok)) return c.fromTok || c.linesTok.flat();
     if (c.type === "umritun" && (c.from || c.lines)) return [];
-    return c.s ? c.s.tok.filter((t, j) => j !== c.i) : [];
+    /* A sort question is about every word it asks to sort: none is glossed. */
+    const about = new Set([c.i, ...(c.type === "sort" && c.items ? c.items.map((x) => x.j) : [])]);
+    return c.s ? c.s.tok.filter((t, j) => !about.has(j)) : [];
   }`;
   /* Answer until a question shows a sentence with a content word in it. */
   const toSentence = () => page.evaluate((SHOWN) => {

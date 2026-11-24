@@ -154,7 +154,9 @@ export async function compute() {
       definitions: lex.w.filter((w) => w.d).length,
       /* Words rare enough to earn the rare-find badges. A build that quietly
          changes this has quietly changed how hard those badges are. */
-      rare_words: lex.w.filter((w) => (w.q ?? 0) < 12).length,
+      /* A word with no score (a LÍNO-2 word the subtitles never saw, #9) is
+         no rare find (core/rarity.js isRareScore). */
+      rare_words: lex.w.filter((w) => w.q != null && w.q < 12).length,
       /* Words that carry a LÍNO-2 rank (issue #9). */
       lino_words: lex.w.filter((w) => w.lino).length,
       guard: report.guard ?? null,

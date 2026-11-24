@@ -35,7 +35,7 @@
     "6": 15,
     "7": 12
    },
-   "tokens": 2105,
+   "tokens": 2116,
    "missing": []
   },
   "lýsingarorð": {
@@ -134,7 +134,7 @@
     "6": 20,
     "7": 16
    },
-   "tokens": 2201,
+   "tokens": 2205,
    "missing": [
     "GM-FH-ÞT-2P-FT",
     "GM-VH-NT-1P-FT",
@@ -235,5 +235,5 @@
    ]
   }
  },
- "tokens": 5926
+ "tokens": 5941
 }

@@ -123,7 +123,14 @@ function digest(S, offers, rescues) {
   };
 }
 
-const runs = [[0.4, 11], [0.55, 12]].map(([a, s]) => pupil(a, s));
+/* Pupil 2 is seed 13 since #9. With LÍNO-2 (7,405 words) a middling pupil
+   meets each word fewer times, and seed 12 left that pupil with no weak word,
+   so the pin no longer read the drill paths. Eight seeds (12-19) of the 0.55
+   pupil: weak words 1 1 2 2 2 1 1 1 on main's data, 0 2 3 2 1 4 0 0 on
+   LÍNO's; 13 is the next seed and reads every path (2 weak, 2 rescued). With
+   main's data and this branch's code both tests passed unchanged, so the
+   move is the data. */
+const runs = [[0.4, 11], [0.55, 13]].map(([a, s]) => pupil(a, s));
 const got = runs.map((r) => digest(r.S, r.offers, r.rescues));
 
 /* Taken on 3ba33d0 (before #66) and identical on d016ffe (#66 without #27)
@@ -131,10 +138,12 @@ const got = runs.map((r) => digest(r.S, r.offers, r.rescues));
    question choice on purpose: the vocabulary types lost their wait of days,
    and no type asks the word of the question before it again; so the pupils
    meet other words, and other words go weak (the PR says how much); and
-   the rescue coin moved by one (see `pupil`). */
+   the rescue coin moved by one (see `pupil`). Re-pinned by #9: LÍNO-2
+   changes the lexicon (7,405 words, re-ranked), and pupil 2 is seed 13
+   (see `runs`). */
 const PINNED = [
-  {"vocab":{"score":130,"found":128,"weak":3,"shaky":15,"strong":2,"judged":24,"rescued":1,"kept":0,"health":25},"rescueCount":1,"summary":{"weak":3,"strong":2,"judged":24,"health":25,"score":130,"rescued":1,"kept":0,"letters":21,"lettersTotal":30,"total":128,"rare":1,"mastered":2,"byClass":{"kk":28,"kvk":16,"hk":18,"lo":17,"so":47,"fn":0,"pfn":0,"gr":0,"to":0,"rt":0,"ao":0,"fs":2,"st":0,"uh":0,"nhm":0},"coverage":{"kk":0.019635343618513323,"kvk":0.01237432327919567,"hk":0.018386108273748723,"lo":0.01752577319587629,"so":0.04639684106614018,"ao":0},"classesTouched":6,"fl":4,"corpus":6564,"everyWord":false},"card":{"vocab":130,"words":128},"offers":["skulu|so","athuga|so","skila|so","skulu|so","athuga|so","skila|so","skulu|so","athuga|so","skila|so","skulu|so","athuga|so","skila|so","skila|so","athuga|so","skulu|so","skila|so","athuga|so","skulu|so","skila|so","athuga|so","skulu|so","skila|so","athuga|so","skulu|so"],"rescues":[{"key":"skulu|so","passed":false,"endured":true,"n":20,"c":7,"perfect":false,"turnaround":false,"oldGhost":false,"firstForWord":false,"xp":30,"rescuesToday":0},{"key":"athuga|so","passed":true,"endured":false,"n":10,"c":9,"perfect":false,"turnaround":false,"oldGhost":false,"firstForWord":true,"xp":95,"rescuesToday":1}],"weak":[["athuga|so",7,0,true,true],["skila|so",6,166667,true,false],["skulu|so",6,166667,true,false]],"hash":"9c007d0b293dabff"},
-  {"vocab":{"score":135,"found":122,"weak":1,"shaky":17,"strong":6,"judged":36,"rescued":1,"kept":0,"health":50},"rescueCount":1,"summary":{"weak":1,"strong":6,"judged":36,"health":50,"score":135,"rescued":1,"kept":0,"letters":20,"lettersTotal":30,"total":122,"rare":2,"mastered":6,"byClass":{"kk":26,"kvk":22,"hk":15,"lo":17,"so":39,"fn":0,"pfn":0,"gr":0,"to":0,"rt":0,"ao":0,"fs":3,"st":0,"uh":0,"nhm":0},"coverage":{"kk":0.0182328190743338,"kvk":0.017014694508894045,"hk":0.015321756894790603,"lo":0.01752577319587629,"so":0.0384995064165844,"ao":0},"classesTouched":6,"fl":4,"corpus":6564,"everyWord":false},"card":{"vocab":135,"words":122},"offers":["kjánalegur|lo"],"rescues":[{"key":"kjánalegur|lo","passed":true,"endured":false,"n":10,"c":7,"perfect":false,"turnaround":false,"oldGhost":true,"firstForWord":true,"xp":85,"rescuesToday":1}],"weak":[["kjánalegur|lo",15,0,true,true]],"hash":"48d9f595b45999c8"},
+  {"vocab":{"score":133,"found":133,"weak":3,"shaky":19,"strong":1,"judged":30,"rescued":1,"kept":0,"health":27},"rescueCount":1,"summary":{"weak":3,"strong":1,"judged":30,"health":27,"score":133,"rescued":1,"kept":0,"letters":22,"lettersTotal":30,"total":133,"rare":1,"mastered":1,"byClass":{"kk":29,"kvk":22,"hk":20,"lo":23,"so":37,"fn":0,"pfn":0,"gr":0,"to":0,"rt":0,"ao":0,"fs":2,"st":0,"uh":0,"nhm":0},"coverage":{"kk":0.018880208333333332,"kvk":0.01445466491458607,"hk":0.01818181818181818,"lo":0.01838529176658673,"so":0.033393501805054154,"ao":0},"classesTouched":6,"fl":4,"corpus":7405,"everyWord":false},"card":{"vocab":133,"words":133},"offers":["draga|so","ræna|so","heyra|so","draga|so","heyra|so","ræna|so","draga|so","ræna|so","heyra|so","draga|so","ræna|so","heyra|so","draga|so","heyra|so","ræna|so","heyra|so","draga|so","ræna|so","ræna|so","draga|so","heyra|so"],"rescues":[{"key":"draga|so","passed":false,"endured":true,"n":20,"c":7,"perfect":false,"turnaround":false,"oldGhost":false,"firstForWord":false,"xp":30,"rescuesToday":0},{"key":"ræna|so","passed":true,"endured":false,"n":10,"c":9,"perfect":false,"turnaround":false,"oldGhost":false,"firstForWord":true,"xp":95,"rescuesToday":1}],"weak":[["draga|so",12,0,true,false],["ræna|so",6,0,true,true],["heyra|so",10,100000,true,false]],"hash":"fb8156b4dd1f81fe"},
+  {"vocab":{"score":145,"found":129,"weak":2,"shaky":11,"strong":9,"judged":31,"rescued":2,"kept":0,"health":58},"rescueCount":2,"summary":{"weak":2,"strong":9,"judged":31,"health":58,"score":145,"rescued":2,"kept":0,"letters":20,"lettersTotal":30,"total":129,"rare":0,"mastered":9,"byClass":{"kk":19,"kvk":22,"hk":18,"lo":17,"so":45,"fn":0,"pfn":0,"gr":0,"to":0,"rt":0,"ao":0,"fs":8,"st":0,"uh":0,"nhm":0},"coverage":{"kk":0.012369791666666666,"kvk":0.01445466491458607,"hk":0.016363636363636365,"lo":0.013589128697042365,"so":0.04061371841155235,"ao":0},"classesTouched":6,"fl":4,"corpus":7405,"everyWord":false},"card":{"vocab":145,"words":129},"offers":["til|fs","af|fs"],"rescues":[{"key":"til|fs","passed":true,"endured":false,"n":10,"c":6,"perfect":false,"turnaround":false,"oldGhost":false,"firstForWord":true,"xp":80,"rescuesToday":1},{"key":"af|fs","passed":true,"endured":false,"n":10,"c":7,"perfect":false,"turnaround":false,"oldGhost":false,"firstForWord":true,"xp":85,"rescuesToday":2}],"weak":[["af|fs",8,125000,true,true],["til|fs",6,166667,true,true]],"hash":"331f496b5b2575d2"},
 ];
 
 test("a seeded pupil's word health, drill offers and vocab score are as before the move (#42)", () => {

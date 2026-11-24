@@ -64,9 +64,13 @@
   yfirlitssíðunni; móðurmálshafi á eftir að lesa þau.
 - **Námsorðaforðalistinn LÍNO-2 í smíðinni** (#9): orð á listanum koma oftar fyrir í æfingum
   (×3 í tíðniröðun), orð sem textalistinn þekkir ekki koma inn úr BÍN, og hvert orð ber
-  sæti sitt á listanum (`lino`). LÍNO-2 (CC BY 4.0) er komið í leyfalistann. Skráin sjálf,
-  `sources/lino2.csv`, bætist við einu sinni (`python3 pipeline/lino.py` segir hvernig);
-  þangað til varar smíðin við og gögnin eru óbreytt.
+  sæti sitt á listanum (`lino`). LÍNO-2 (CC BY 4.0) er komið í leyfalistann.
+- **LÍNO-2 er komið inn** (#9): 2.177 orð orðasafnsins bera sæti sitt á listanum og 827 ný orð
+  komu úr BÍN (orðasafnið fer úr 6.564 orðum í 7.405). Námsorð eru um 13% af orðaspurningum
+  hermdra nemenda (voru 11%). Ný námsorð teljast ekki sjaldgæfur fundur. „Hvert á ekki heima í
+  hópnum?“ velur orð eftir röð innan flokkanna sjálfra, svo að fjölbreytnin heldur sér.
+  Í flokkunarspurningum fá orðin í kring skýringu þegar „Íslenska sem annað mál“ er á, eins og
+  í öðrum setningum.
 ### Setningafræði
 - **Vísbending sýnir byggingu málsgreinarinnar** í „Smelltu á rétta orðið“: frumlag, umsögn,
   andlag, sagnfylling, forsetningarliðir og samtengingar fá hvert sinn lit, sína línu og
