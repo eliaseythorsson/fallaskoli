@@ -364,6 +364,28 @@ test("the curriculum ceiling is the administrator's and only the administrator's
   assert.equal(back.data.policy.attrs.fall.EF, false);
 });
 
+test("server grading is switched on per pupil, never in the default (#46, docs/adr/0004)", async () => {
+  const admin = client();
+  await admin("POST", "/auth/login", { username: "umsjon", password: "lykilordid-mitt" });
+  const child = client();
+  await child("POST", "/auth/login", { username: "jon", password: "lykilordid-mitt" });
+  const jon = (await admin("GET", "/admin/users")).data.find((u) => u.username === "jon");
+
+  /* in the default for everybody it is not kept */
+  const def = await admin("PUT", "/admin/policy", { policy: { serverGrading: true } });
+  assert.equal(def.data.policy.serverGrading, undefined);
+  assert.equal((await child("GET", "/policy")).data.policy.serverGrading, undefined);
+
+  /* in one pupil's own ceiling it is, and that pupil reads it */
+  await admin("PUT", `/admin/users/${jon.id}/policy`, { policy: { serverGrading: true } });
+  assert.equal((await child("GET", "/policy")).data.policy.serverGrading, true);
+  /* missing is off: saved without it, it is gone */
+  await admin("PUT", `/admin/users/${jon.id}/policy`, { policy: {} });
+  assert.equal((await child("GET", "/policy")).data.policy.serverGrading, undefined);
+  await admin("PUT", `/admin/users/${jon.id}/policy`, { policy: null });
+  await admin("PUT", "/admin/policy", { policy: {} });
+});
+
 test("a child may not upload a data set", async () => {
   const c = client();
   await c("POST", "/auth/login", { username: "jon", password: "lykilordid-mitt" });

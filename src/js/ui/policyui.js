@@ -54,10 +54,15 @@ function restore(policy, saved) {
  * @param opts.ceiling  the layer above (null when there is none)
  * @param opts.onChange called after every accepted change
  * @param opts.intro    a line of prose at the top
+ * @param opts.showServerGrading  draw the administrator's per-pupil switch for
+ *                      server-graded questions (one pupil's ceiling only)
+ * @param opts.serverGrading  is server grading on for whoever this is? Without
+ *                      it the server-graded types are not drawn at all: they
+ *                      do not exist for this pupil (core/policy.js).
  */
 export function renderPolicyEditor(el, policy, {
   ceiling = null, onChange = () => {}, intro = "", showSafeVocab = false,
-  teacherFold = false,
+  showServerGrading = false, serverGrading = false, teacherFold = false,
 } = {}) {
   if (!el) return;
   const cap = ceiling || blankPolicy();
@@ -112,7 +117,9 @@ export function renderPolicyEditor(el, policy, {
      exactly as before. The administrator's own editor passes no fold. */
   const fine = `
     <h3 class="sec2">Tegundir spurninga</h3>
-    <div class="curriculum">${QUESTION_TYPES.map((t) => row("types", t.id,
+    <div class="curriculum">${QUESTION_TYPES
+      .filter((t) => t.grader !== "server" || serverGrading || policy.serverGrading === true)
+      .map((t) => row("types", t.id,
       esc(t.nm), esc(t.ds), capOn.types(t.id))).join("")}</div>
 
     <h3 class="sec2">Þyngd</h3>
@@ -168,6 +175,18 @@ export function renderPolicyEditor(el, policy, {
           ferðast með gögnunum, svo hann er sýnilegur og hægt að ræða hann.</small></span>
     </label>` : ""}
 
+    ${showServerGrading ? `
+    <h3 class="sec2">Spurningar sem þjónninn les</h3>
+    <p class="sub">Sumar spurningar eru metnar á þjóninum: svar nemandans er sent
+      til yfirlestrar áður en það er dæmt. Þær birtast aðeins nemanda sem
+      kveikt er á hér, og aðeins á vefnum. Sjálfgefið slökkt.</p>
+    <label class="polsw">
+      <input type="checkbox" id="pol-servergrading" ${policy.serverGrading === true ? "checked" : ""}>
+      <span><b>Leyfa spurningar sem þjónninn les</b><br>
+        <small>Svarið fer til yfirlestrar utan vafrans og það kostar. Notandinn
+          sjálfur getur ekki kveikt á þessu.</small></span>
+    </label>` : ""}
+
     <p class="sub warn" id="polwarn"></p>`;
 
   const warn = el.querySelector("#polwarn");
@@ -175,7 +194,8 @@ export function renderPolicyEditor(el, policy, {
   /* Everything is drawn again after a preset: up to sixty switches change at
      once, and one code path for drawing them is one fewer to get wrong. */
   const redraw = (message = "") => {
-    renderPolicyEditor(el, policy, { ceiling, onChange, intro, showSafeVocab, teacherFold });
+    renderPolicyEditor(el, policy, { ceiling, onChange, intro, showSafeVocab,
+      showServerGrading, serverGrading, teacherFold });
     const w = el.querySelector("#polwarn");
     if (w) w.textContent = message;
   };
@@ -235,4 +255,13 @@ export function renderPolicyEditor(el, policy, {
 
   const safe = el.querySelector("#pol-safevocab");
   if (safe) safe.onchange = () => { policy.safeVocab = safe.checked; onChange(); };
+  /* Written only as `true`, and deleted rather than written `false`: the key
+     is off when missing (core/policy.js `serverGradingOn`), so "off" needs
+     nothing stored. */
+  const sg = el.querySelector("#pol-servergrading");
+  if (sg) sg.onchange = () => {
+    if (sg.checked) policy.serverGrading = true; else delete policy.serverGrading;
+    onChange();
+    redraw();
+  };
 }

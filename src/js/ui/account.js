@@ -475,6 +475,8 @@ async function policyPanel(app) {
     renderPolicyEditor($("pol-editor"), policy, {
       ceiling: null,
       showSafeVocab: true,
+      /* Per pupil only (#46, docs/adr/0004): never in the default for all. */
+      showServerGrading: !!target,
       onChange: () => { dirty = true; $("pol-save").disabled = false; },
     });
 
