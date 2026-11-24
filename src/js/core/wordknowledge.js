@@ -259,6 +259,47 @@ export const isRecallEntry = (entry) => !!entry && isRecall(entry.type);
 /** Does this entry count toward learned or hard? "Seen" never does (decision 7). */
 export const isJudged = (entry) => !!entry && (entry.outcome === RIGHT || entry.outcome === WRONG);
 
+/* ---------- statuses, each with its reason (#43) --------------------------
+ *
+ * Every status the program gives a word comes with the reason for it, in
+ * plain Icelandic that a teacher or a parent can read, as core/spacing.js
+ * `eligible` gives its yes or no:
+ *
+ *   { status: "shaky", why: "3 af síðustu 7 rétt, undir 50%" }
+ *
+ * A reason names the numbers the rule looked at and, where they decided it,
+ * the line they were held to — taken from the rule's own constants, so the
+ * reason cannot drift from the rule.
+ *
+ *   word health   new · weak · shaky · ok · strong: core/wordhealth.js
+ *                 `statusOf`, from the word records, not the entries, on
+ *                 purpose (#42, decision 1)
+ *   later         in learning (#12), learned (#16) and hard (#17) live in
+ *                 this section and return the same shape, built with the
+ *                 helpers below, e.g. `because("learned", "rétt í 4 gerðum
+ *                 (1 upprifjun) á 3 dögum, síðustu 3 rétt")`
+ *
+ * `node tools/word-history.mjs <progress.json> <word>` prints a word's
+ * entries with its status and reason (README, "Why does the app think that
+ * about a word?").                                                        */
+
+/** @typedef {import("../types").WordStatus} WordStatus */
+
+/** A status with its reason. @param {string} status @param {string} why
+    @returns {WordStatus} */
+export const because = (status, why) => ({ status, why });
+
+/** A share as a whole percent, rounded DOWN, so that a reason never shows a
+    share on the other side of the line it was held to (19.9% is "19%", not
+    "20%" beside "undir 20%"). @param {number} x */
+export const percent = (x) => Math.floor(x * 100 + 1e-9);
+
+/** "1 svar", "2 svör", "21 svar". @param {number} k */
+export const answersText = (k) => `${k} ${k % 10 === 1 && k % 100 !== 11 ? "svar" : "svör"}`;
+
+/** "3 af síðustu 7 rétt". @param {number} right @param {number} of */
+export const lastRightText = (right, of) => `${right} af síðustu ${of} rétt`;
+
 /* ---------- the word records and the rescue ledger (#42) ------------------
  *
  * Saved as `words`, `drills` and `drillDays` (their slices are at the end of

@@ -6,7 +6,8 @@
 
      status      new · weak · shaky · ok · strong — one word, judged on its
                  recent answers rather than its whole life, so a word that went
-                 badly in September and well since is not held against anyone
+                 badly in September and well since is not held against anyone;
+                 always with its reason, `{ status, why }` (#43)
      weakWords   the words flagged for a rescue drill
      vocabScore  the number the leaderboard sorts by ("Orðaforði"): words found,
                  with more for words held well and nothing for words in trouble
@@ -21,7 +22,7 @@
 
 import { isRareScore } from "./rarity.js";
 import { RECENT_KEEP, pushHistory, wordRecords, drillRecord, drillRecords, noteRescue,
-  rescuesOn } from "./wordknowledge.js";
+  rescuesOn, because, percent, answersText, lastRightText } from "./wordknowledge.js";
 
 export { pushHistory };
 
@@ -93,15 +94,43 @@ export function recentOf(rec) {
   return { n: win, seen: n, acc: right / win };
 }
 
-/** "new" | "weak" | "shaky" | "ok" | "strong". */
+/**
+ * A word's health, with its reason (core/wordknowledge.js, "statuses", #43):
+ * `{ status, why }`, status "new" | "weak" | "shaky" | "ok" | "strong".
+ *
+ *   { status: "new",    why: "aldrei svarað" }
+ *   { status: "new",    why: "aðeins 2 svör, of fá til að meta" }
+ *   { status: "weak",   why: "1 af síðustu 7 rétt, undir 20%" }
+ *   { status: "shaky",  why: "2 af síðustu 5 rétt, undir 50%" }
+ *   { status: "ok",     why: "6 af síðustu 10 rétt" }
+ *   { status: "strong", why: "9 af síðustu 10 rétt, 80% eða meira" }
+ *
+ * When part of the window is filled at the word's older rate (`recentOf`),
+ * the reason gives the share instead of a count: "62% rétt af síðustu 10, að
+ * hluta metið af eldri svörum", or with no recent outcomes at all "62% rétt,
+ * 12 svör alls".
+ */
 export function statusOf(rec) {
   const r = recentOf(rec);
-  if (!r.seen) return "new";
-  if (r.seen >= HEALTH.weakMinSeen && r.acc < HEALTH.weakMaxAcc) return "weak";
-  if (r.seen >= HEALTH.strongMinSeen && r.acc >= HEALTH.strongMinAcc) return "strong";
-  if (r.seen >= HEALTH.shakyMinSeen && r.acc < HEALTH.shakyMaxAcc) return "shaky";
-  if (r.seen < HEALTH.shakyMinSeen) return "new";
-  return "ok";
+  if (!r.seen) return because("new", "aldrei svarað");
+  const score = scoreText(rec, r);
+  if (r.seen >= HEALTH.weakMinSeen && r.acc < HEALTH.weakMaxAcc)
+    return because("weak", `${score}, undir ${percent(HEALTH.weakMaxAcc)}%`);
+  if (r.seen >= HEALTH.strongMinSeen && r.acc >= HEALTH.strongMinAcc)
+    return because("strong", `${score}, ${percent(HEALTH.strongMinAcc)}% eða meira`);
+  if (r.seen >= HEALTH.shakyMinSeen && r.acc < HEALTH.shakyMaxAcc)
+    return because("shaky", `${score}, undir ${percent(HEALTH.shakyMaxAcc)}%`);
+  if (r.seen < HEALTH.shakyMinSeen) return because("new", `aðeins ${answersText(r.seen)}, of fá til að meta`);
+  return because("ok", score);
+}
+
+/** How the recent answers went, in words: a count when the window is all
+    recent outcomes, a share when part of it is the older rate. */
+function scoreText(rec, r) {
+  const h = String((rec && rec.h) || "").slice(-HEALTH.recent);
+  if (h.length >= r.n) return lastRightText([...h.slice(-r.n)].filter((x) => x === "1").length, r.n);
+  if (!h.length) return `${percent(r.acc)}% rétt, ${answersText(r.seen)} alls`;
+  return `${percent(r.acc)}% rétt af síðustu ${r.n}, að hluta metið af eldri svörum`;
 }
 
 export const STATUS_LABEL = {
@@ -124,7 +153,7 @@ export function drillable(lex, entry) {
 export function weakWords(S, lex) {
   const out = [];
   for (const [key, rec] of wordRecords(S)) {
-    if (statusOf(rec) !== "weak") continue;
+    if (statusOf(rec).status !== "weak") continue;
     const [lemma, cls] = key.split("|");
     const entry = lex ? lex.lookup(lemma, cls) : null;
     const r = recentOf(rec);
@@ -157,7 +186,7 @@ export function vocabScore(S, lex) {
     const n = (rec.c || 0) + (rec.w || 0);
     if (!n) continue;
     found++;
-    const st = statusOf(rec);
+    const st = statusOf(rec).status;
     const [lemma, cls] = key.split("|");
     const entry = lex ? lex.lookup(lemma, cls) : null;
     const base = entry && isRareScore(entry.q) ? 2 : 1;

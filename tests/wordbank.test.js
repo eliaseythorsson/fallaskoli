@@ -74,13 +74,13 @@ test("a word is judged on its recent answers, and old counts fill the gaps", () 
 });
 
 test("weak means six answers or more and under a fifth right", () => {
-  assert.equal(statusOf(rec(1, 6)), "weak");          // 7 seen, 14%
-  assert.equal(statusOf(rec(0, 5)), "shaky");         // only 5 seen: not flagged yet
-  assert.equal(statusOf(rec(2, 6)), "shaky");         // 25%: shaky, not weak
-  assert.equal(statusOf(rec(5, 0)), "strong");
-  assert.equal(statusOf(rec(1, 1)), "new");
-  assert.equal(statusOf(rec(2, 1)), "ok");
-  assert.equal(statusOf(undefined), "new");
+  assert.equal(statusOf(rec(1, 6)).status, "weak");          // 7 seen, 14%
+  assert.equal(statusOf(rec(0, 5)).status, "shaky");         // only 5 seen: not flagged yet
+  assert.equal(statusOf(rec(2, 6)).status, "shaky");         // 25%: shaky, not weak
+  assert.equal(statusOf(rec(5, 0)).status, "strong");
+  assert.equal(statusOf(rec(1, 1)).status, "new");
+  assert.equal(statusOf(rec(2, 1)).status, "ok");
+  assert.equal(statusOf(undefined).status, "new");
 });
 
 test("weakWords lists the flagged words, worst first", () => {

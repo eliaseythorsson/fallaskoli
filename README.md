@@ -415,7 +415,9 @@ tools/                build, version (the file name), manifest, coverage, pack,
                       pwa (manifest and icons), ÍNO converter, tests in
                       Chromium (browser-test, server-test), load-test,
                       try-sentences.py, task-snapshot.mjs (what the builders
-                      build from fixed seeds — to compare two versions) and
+                      build from fixed seeds — to compare two versions),
+                      word-history.mjs (one word in an exported progress, with
+                      the reason for its status; see below) and
                       sim/ (simulated pupils; see its README), review.mjs (the review
                       page), content-from-py.py (moved the content out of
                       Python; for branches made before)
@@ -428,6 +430,30 @@ docs/                 HOSTING.md (Fly.io), PRIVACY.md (GDPR: the record, consent
                       aðalnámskrá and the textbooks; its tables are written by
                       tools/curriculum-doc.mjs)
 ```
+
+## Why does the app think that about a word?
+
+Every status the program gives a word comes with its reason, in plain Icelandic
+(`core/wordknowledge.js`, "statuses"): word health (`core/wordhealth.js`
+`statusOf`) returns, for example, `{ status: "shaky", why: "3 af síðustu 7 rétt, undir 50%" }`.
+To see one word as a pupil's progress has it — without the server — take their
+exported progress (Stillingar → "Sækja gögnin mín", or an administrator's
+"Sækja gögn"; the bare progress from "Flytja framvindu" works too) and run
+
+```
+node tools/word-history.mjs fallaskoli-<username>.json "hestur|kk"
+node tools/word-history.mjs fallaskoli-<username>.json hestur      # every class of the lemma
+node tools/word-history.mjs fallaskoli-<username>.json hestur --json
+```
+
+It prints the word's health and the reason, the word record it was judged on
+(right, wrong and the recent outcomes), the rescue drills, and every word entry:
+day, question type, right/wrong/seen, and whether the type is recall. Word health
+is still judged on the word record, not on the entries (#42); the two can differ,
+because a ten-box table is ten records but one entry. The file is read as the
+app reads it, so progress saved before word knowledge shows no entries. The
+export holds a child's progress: keep it off shared folders and delete it when
+the question is answered.
 
 ## The data model, briefly
 
