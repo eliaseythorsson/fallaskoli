@@ -120,6 +120,10 @@ import { badgesSlice, multiSessionRunSlice, lastSessionSkillsSlice, countersSlic
   periodsSlice, settledSlice } from "./badges.js";
 import { showcaseSlice, titleSlice, socialSlice } from "./social.js";
 import { profileSlice } from "./profile.js";
+import { duelsSlice } from "./duel.js";
+import { diagSlice } from "./diagnosis.js";
+import { readSlice } from "./lessons.js";
+import { runsSlice } from "./runlog.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
 
 /** @typedef {import("../types").Slice} Slice */
@@ -183,10 +187,10 @@ export const SLICES = [
   socialSlice,
   drillsSlice,
   drillDaysSlice,
-  notYet("read"),
-  notYet("duels"),
-  notYet("diag"),
-  notYet("runs"),
+  readSlice,
+  duelsSlice,
+  diagSlice,
+  runsSlice,
   reviewSlice,
   notYet("difficulty"),
   notYet("frames"),

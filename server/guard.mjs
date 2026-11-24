@@ -86,30 +86,6 @@ export function cleanState(raw, { today = new Date() } = {}) {
   const ctx = cleanContext(today), { limit } = ctx;
 
 
-  /* Lesefni and duels (v6.7): page ids, and duel ids with one letter each. */
-  S.read = Object.fromEntries(pairs(S.read, 200, 40).map(([k]) => [k, true]));
-  S.duels = Object.fromEntries(pairs(S.duels, 5000, 40)
-    .filter(([, v]) => ["w", "l", "t", "f"].includes(v)));
-
-  /* Error diagnosis (v6.10): per pattern, numbers, a string of 1s and 0s, a
-     date and up to three examples made of a word key and two BÍN marks. */
-  const diag = {};
-  const short = (x, len) => (typeof x === "string" && x.length <= len ? x : null);
-  for (const [k, v] of pairs(S.diag, 60, 40)) {
-    if (!isObj(v)) continue;
-    diag[k] = { n: n(v.n), w: n(v.w),
-      h: typeof v.h === "string" ? v.h.replace(/[^01]/g, "").slice(-16) : "",
-      last: dayStr(v.last),
-      ex: (Array.isArray(v.ex) ? v.ex : []).filter(isObj).slice(0, 3)
-        .map((e) => ({ w: short(e.w, 80), m: short(e.m, 40), o: short(e.o, 40) })) };
-  }
-  S.diag = diag;
-  S.runs = (Array.isArray(S.runs) ? S.runs : []).filter(isObj).slice(-40).map((r) => ({
-    at: n(r.at, 1e13), d: dayStr(r.d), topic: short(r.topic, 40), n: n(r.n, 100), c: n(r.c, 100),
-    j: n(r.j, 100), xp: n(r.xp, 100000),
-    top: (Array.isArray(r.top) ? r.top : []).filter((x) => typeof x === "string" && x.length <= 40).slice(0, 5),
-  }));
-
   /* The converted slices (core/slices.js) check themselves: each slice's
      `clean`, with the date. The review queue (core/review.js `cleanReview`)
      is rebuilt by the function the browser loads with and held to the

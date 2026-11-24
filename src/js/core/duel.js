@@ -36,6 +36,7 @@ import { SKILLS } from "./skills.js";
 import { skillLevel, skillNeed } from "./progress.js";
 import { clamp } from "./difficulty.js";
 import { narrowPolicy } from "./policy.js";
+import { obj, pairs } from "./slicerules.js";
 
 export const DUEL = {
   sizes: [10, 15, 20],      // as practice sessions (ui/session.js RUN_SIZES)
@@ -732,3 +733,23 @@ export function settleDuels(S, views) {
   }
   return out;
 }
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.duels`: every settled duel, { duelId: "w"|"l"|"t" } — won, lost, tied.
+ * Written once, when this device first sees the result, which is what makes
+ * the XP and the badge count only once. A slice of the saved state
+ * (core/slices.js), moved here unchanged from core/state.js, core/merge.js
+ * and server/guard.mjs. */
+
+/** @type {import("../types").Slice} */
+export const duelsSlice = {
+  key: "duels",
+  blank: () => ({}),
+  migrate: (raw) => (raw && typeof raw === "object" ? { ...raw } : {}),
+  /* A duel settled anywhere is settled, and both devices agree on its result. */
+  merge: (B, L, R) => ({ ...obj(R), ...obj(L) }),
+  /* Duel ids with one letter each. */
+  clean: (value) => Object.fromEntries(pairs(value, 5000, 40)
+    .filter(([, v]) => ["w", "l", "t", "f"].includes(v))),
+  ownText: false,
+};

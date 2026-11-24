@@ -33,6 +33,7 @@
     "src/js/core/structure.js",
     "src/js/core/slicerules.js",
     "src/js/core/days.js",
+    "src/js/core/runlog.js",
     "src/js/tasks/registry.js",
     "src/js/tasks/shared.js"
   ]

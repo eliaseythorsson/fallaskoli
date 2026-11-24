@@ -55,20 +55,6 @@ export function blankState() {
     /* `badgeView`: which view of the badge cabinet is showing (ui/panels.js).
        A child with nothing on the shelf yet is shown the catalogue instead. */
     settings: { decay: false, settingsRev: 1, glossary: true, badgeView: "rarity" },
-    /* Lesefni (v6.7): the pages read, { pageId: true }. */
-    read: {},
-    /* Duels (v6.7, core/duel.js): every settled duel, { duelId: "w"|"l"|"t" }
-       — won, lost, tied. Written once, when this device first sees the
-       result, which is what makes the XP and the badge count only once. */
-    duels: {},
-    /* Error diagnosis (v6.10, core/diagnosis.js): per pattern
-       {n: chances, w: misses, h: the last 16 as "1"/"0", last: date,
-       ex: [{w: word key, m: the cell asked for, o: the cell given}]}.
-       No text the child typed. */
-    diag: {},
-    /* Practice sessions (v6.10): the last 40, newest last —
-       {at: ms, d: date, topic, n, c, j: judged, xp, top: [pattern ids]}. */
-    runs: [],
     /* `review`, the review queue (v6.13), is a converted slice: its blank,
        its migrate, its merge and its server check are core/review.js
        `reviewSlice`. */
@@ -124,30 +110,11 @@ export function cleanFrames(raw) {
 /** Bring any older saved blob up to the current shape without losing data.
     @param {any} raw  whatever was saved, of any age, or nothing
     @returns {State} */
-/* Lesefni pages whose id changed: the pupil's read mark moves with the page
-   (v6.13 review, S12: *setningalidir* → *setningarhlutar*). Kept here and
-   not imported from core/lessons.js, which this module must not depend on. */
-const READ_RENAMED = { setningalidir: "setningarhlutar" };
-function renamedRead(raw) {
-  const out = raw && typeof raw === "object" && !Array.isArray(raw) ? { ...raw } : {};
-  for (const [from, to] of Object.entries(READ_RENAMED)) {
-    if (from in out) {
-      if (!(to in out)) out[to] = out[from];
-      delete out[from];
-    }
-  }
-  return out;
-}
-
 export function migrate(raw) {
   const S = blankState();
   if (!raw || typeof raw !== "object") return S;
 
   Object.assign(S, {
-    read: renamedRead(raw.read),
-    duels: raw.duels && typeof raw.duels === "object" ? { ...raw.duels } : {},
-    diag: raw.diag && typeof raw.diag === "object" && !Array.isArray(raw.diag) ? { ...raw.diag } : {},
-    runs: Array.isArray(raw.runs) ? raw.runs.filter((r) => r && typeof r === "object").slice(-40) : [],
     /* Saved levels (v6.13). A state from before they existed is placed once
        from its skills' XP; from then on the saved levels are used and XP is
        not read again. */

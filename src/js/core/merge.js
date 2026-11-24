@@ -101,32 +101,6 @@ export function mergeStates(base, local, remote) {
   const out = { ...R, ...L };
 
 
-  /* Lesefni and duels (v6.7): a page read anywhere is read; a duel settled
-     anywhere is settled, and both devices agree on its result. */
-  out.read = { ...obj(R.read), ...obj(L.read) };
-  out.duels = { ...obj(R.duels), ...obj(L.duels) };
-
-  /* Error diagnosis (v6.10): chances and misses add like any counter; the
-     recent history and the examples are this device's if it has answered
-     anything for that pattern since `base`, otherwise the server's. */
-  out.diag = {};
-  for (const k of keys(L.diag, R.diag)) {
-    const b = obj(B.diag)[k], l = obj(L.diag)[k], r = obj(R.diag)[k];
-    if (!l) { out.diag[k] = r; continue; }
-    if (!r && !b) { out.diag[k] = l; continue; }
-    const m = counters(b, l, r, ["n", "w"]);
-    const moved = num(obj(l).n) !== num(obj(b).n);
-    m.h = moved ? obj(l).h : obj(r).h ?? obj(l).h;
-    m.ex = moved ? obj(l).ex : obj(r).ex ?? obj(l).ex;
-    m.last = later(obj(l).last, obj(r).last);
-    out.diag[k] = m;
-  }
-  /* Sessions: the union, by the moment each was finished. */
-  const runs = new Map();
-  [...(Array.isArray(R.runs) ? R.runs : []), ...(Array.isArray(L.runs) ? L.runs : [])]
-    .forEach((x) => { if (x && x.at) runs.set(x.at, x); });
-  out.runs = [...runs.values()].sort((a, b) => a.at - b.at).slice(-40);
-
   /* The converted slices (core/slices.js) merge themselves — the review
      queue (core/review.js `mergeReview`): one entry per thing missed,
      whichever device missed it. */
