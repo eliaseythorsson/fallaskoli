@@ -107,11 +107,5 @@ export function mergeStates(base, local, remote) {
   mergeSlices(out, B, L, R);
 
 
-  /* The child's own switches: whichever device changed them. */
-  for (const k of ["enabled", "policy", "settings"])
-    out[k] = choice(B[k], L[k], R[k]);
-
-  /* The ceiling is the administrator's and always comes from the server. */
-  out.allowed = R.allowed ?? L.allowed ?? null;
   return out;
 }

@@ -95,14 +95,6 @@ export function cleanState(raw, { today = new Date() } = {}) {
   /* Across slices: the showcase holds only badges the pupil has. */
   S.showcase = S.showcase.filter((id) => S.badges[id]);
 
-  const settings = {};
-  for (const [k, v] of pairs(S.settings, 30, 40)) {
-    if (typeof v === "boolean") settings[k] = v;
-    else if (typeof v === "string" && v.length <= 40) settings[k] = v;
-    else if (typeof v === "number" && Number.isFinite(v)) settings[k] = v;
-  }
-  S.settings = settings;
-  S.enabled = Object.fromEntries(pairs(S.enabled, 60, 40).map(([k, v]) => [k, !!v]));
 
   return S;
 }

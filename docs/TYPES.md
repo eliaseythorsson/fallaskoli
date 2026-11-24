@@ -65,6 +65,7 @@ The pure modules, where the shared shapes matter most:
 | `core/days.js` | the slices `days`, `goal`, `weekGoal`, `lastActive`; `cleanWeekGoal` |
 | `core/runlog.js` | the `runs` slice, the log of practice sessions |
 | `core/frametally.js` | the `frames` slice, `cleanFrames` |
+| `core/settings.js` | the `settings` slice |
 | `core/answer.js` | `judge`, `judgeRetry`, `judgeBonus`, `settle`, and the effects |
 | `core/review.js` | the review queue: `ReviewEntry`, `noteReview`, `dueEntries`, `dayOf` |
 | `core/difficulty.js` | saved levels (`LevelRecord`), `bumpDiff`, `levelRanges` (JSDoc only) |

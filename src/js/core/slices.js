@@ -131,6 +131,8 @@ import { byNodeSlice, mapBandSlice } from "./skillmap.js";
 import { seenTypesSlice } from "./examples.js";
 import { mendSlice } from "./mending.js";
 import { tourSlice } from "./placement.js";
+import { enabledSlice, policySlice, allowedSlice } from "./policy.js";
+import { settingsSlice } from "./settings.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
 
 /** @typedef {import("../types").Slice} Slice */
@@ -182,10 +184,10 @@ export const SLICES = [
   multiSessionRunSlice,
   lastSessionSkillsSlice,
   countersSlice,
-  notYet("enabled"),
-  notYet("policy"),
-  notYet("allowed"),
-  notYet("settings"),
+  enabledSlice,
+  policySlice,
+  allowedSlice,
+  settingsSlice,
   lastActiveSlice,
   periodsSlice,
   settledSlice,

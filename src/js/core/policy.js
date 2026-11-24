@@ -22,7 +22,8 @@
  * and the server (stores `allowed`). */
 
 import { readMark } from "./marks.js";
-import { SKILLS } from "./skills.js";
+import { SKILLS, defaultEnabled } from "./skills.js";
+import { choice, pairs } from "./slicerules.js";
 import { MIN, MAX } from "./difficulty.js";
 import { YEARS, presetContent } from "./curriculum.js";
 import { CATALOGUE, graderOf } from "./catalogue.js";
@@ -484,3 +485,57 @@ export function policyProblem(allowed, chosen) {
   }
   return null;
 }
+
+/* ---------- the slices (issue #50) -----------------------------------------
+ * The two halves of the policy as slices of the saved state (core/slices.js).
+ * `policy` is what the child switched on, `allowed` the ceiling the
+ * administrator set; kept apart so tightening and loosening the ceiling gives
+ * the child back exactly the choices they made. `enabled` is the skills half
+ * of `policy`, kept under its older name. Moved here unchanged from
+ * core/state.js `migrate`, core/merge.js `mergeStates` and server/guard.mjs
+ * `cleanState`. */
+
+/** `S.enabled`: { skill: true|false }. @type {import("../types").Slice} */
+export const enabledSlice = {
+  key: "enabled",
+  blank: () => defaultEnabled(),
+  migrate(raw, whole) {
+    const enabled = defaultEnabled();
+    if (raw) Object.assign(enabled, raw);
+    /* v4 knew only three switches. They are translated onto the skills. */
+    else if (whole.unlocked) {
+      enabled.setningafraedi = !!whole.unlocked.setningafraedi;
+      enabled.sagnord = whole.unlocked.sagnord !== false;
+    }
+    return enabled;
+  },
+  /* The child's own switches: whichever device changed them. */
+  merge: choice,
+  clean: (value) => Object.fromEntries(pairs(value, 60, 40).map(([k, v]) => [k, !!v])),
+  ownText: false,
+};
+
+/** `S.policy`: the child's own choices. @type {import("../types").Slice} */
+export const policySlice = {
+  key: "policy",
+  blank: () => blankPolicy(),
+  migrate: (raw) => sanitisePolicy(raw),
+  merge: choice,
+  /* `migrate` has rebuilt it (`sanitisePolicy`). */
+  clean: (value) => value,
+  ownText: false,
+};
+
+/** `S.allowed`: the administrator's ceiling, or null. @type {import("../types").Slice} */
+export const allowedSlice = {
+  key: "allowed",
+  blank: () => null,
+  /* The ceiling arrives from the server and is only cached here so that the
+     program still obeys it when the network is not there. The server never
+     trusts what comes back up — see `PUT /state/:id`. */
+  migrate: (raw) => (raw ? sanitisePolicy(raw) : null),
+  /* The ceiling is the administrator's and always comes from the server. */
+  merge: (base, local, remote) => remote ?? local ?? null,
+  clean: (value) => value,
+  ownText: false,
+};
