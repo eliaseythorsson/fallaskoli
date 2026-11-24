@@ -4019,6 +4019,91 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
   await page.close();
 }
 
+/* ---------- #48: a server-graded answer waits for the server, once ----------
+ * No real type is server-graded yet: a meaning question is turned into a
+ * made-up one in the page, and `app.serverRead` is a fake reader. Checked:
+ * the reading state, the checklist and its one question, one revision, ONE
+ * `app.finish`, a second click ignored while reading, and "not judged". */
+{
+  const p = await browser.newPage();
+  const errors = [];
+  p.on("pageerror", (e) => errors.push(e.message));
+  await p.goto(FILE);
+  await p.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess", { timeout: 60000 });
+  const toMeaning = () => p.evaluate(() => {
+    const A = window.FALLASKOLI;
+    /* The fifth question of a rescue drill is the meaning question. */
+    A.startDrill("hestur|kk");
+    if (A.drill) { A.drill.turn = 4; A.next(); }
+    const t = A.cur;
+    if (!t || t.type !== "meaning" || t.grader) return false;
+    Object.assign(t, { grader: "server", typeId: "fixture_server", read: { kind: "fixture", context: null },
+      rubric: { main: "meaning", points: [
+        { id: "meaning", label: "Merkingin er rétt", ask: "Hvað þýðir orðið?" },
+        { id: "own", label: "Með þínum eigin orðum", ask: "Segðu það með þínum orðum." }] } });
+    window.__finishes = 0;
+    if (!A.__wrapped) {
+      const f = A.finish.bind(A);
+      A.finish = (x) => { window.__finishes++; return f(x); };
+      A.__wrapped = true;
+    }
+    return true;
+  });
+  const send = (text, twice = false) => p.evaluate((text, twice) => {
+    document.getElementById("freetext").value = text;
+    document.getElementById("check").click();
+    if (twice) document.getElementById("check").click();
+    return document.querySelector("#verdict").textContent;
+  }, text, twice);
+  if (!(await toMeaning())) ok(false, "#48: no meaning question to stand in for a server-graded one");
+  else {
+    await p.evaluate(() => {
+      window.__reads = 0;
+      window.FALLASKOLI.serverRead = (req) => new Promise((ok) => setTimeout(() => {
+        window.__reads++;
+        ok({ findings: [{ point: "meaning", met: /dýr/.test(req.text) }, { point: "own", met: req.text.split(" ").length > 3 }] });
+      }, 150));
+    });
+    const reading = await send("Hann hleypur", true);
+    ok(/Les svarið yfir/.test(reading), "#48: no 'reading' state while the server reads: " + reading);
+    await p.waitForSelector("#verdict .revise", { timeout: 5000 });
+    const rev = await p.evaluate(() => ({
+      items: document.querySelectorAll("#verdict .checklist li").length,
+      ask: document.querySelector("#verdict .ask")?.textContent, box: !document.getElementById("freetext").disabled,
+      reads: window.__reads, fin: window.__finishes }));
+    ok(rev.items === 2 && rev.ask === "Hvað þýðir orðið?" && rev.box && rev.reads === 1 && rev.fin === 0,
+      "#48: the first reading did not offer one revision: " + JSON.stringify(rev));
+    await send("Hestur er stórt dýr á bæ");
+    await p.waitForFunction("window.__finishes > 0", { timeout: 5000 });
+    await new Promise((r) => setTimeout(r, 300));
+    const end = await p.evaluate(() => {
+      const A = window.FALLASKOLI;
+      const h = (A.S.wordKnowledge || {})[A.cur.word];
+      return { fin: window.__finishes, reads: window.__reads, ok: !!document.querySelector("#verdict .verdict.ok"),
+        next: document.getElementById("check").textContent, locked: document.getElementById("freetext").disabled,
+        last: h && h.e[h.e.length - 1] };
+    });
+    ok(end.fin === 1 && end.reads === 2 && end.ok && /Áfram/.test(end.next) && end.locked,
+      "#48: the revision did not end the question once: " + JSON.stringify(end));
+    ok(end.last && end.last[1] === "fixture_server" && end.last[2] === "r", "#48: no right word entry: " + JSON.stringify(end.last));
+
+    /* The grader down: "not judged", after one retry. */
+    await p.evaluate(() => { window.FALLASKOLI.stopDrill(); });
+    if (await toMeaning()) {
+      await p.evaluate(() => { window.__reads = 0;
+        window.FALLASKOLI.serverRead = async () => { window.__reads++; return { fault: "unavailable" }; }; });
+      await send("Hestur er dýr");
+      await p.waitForFunction("window.__finishes > 0", { timeout: 5000 });
+      const nj = await p.evaluate(() => ({ fin: window.__finishes, reads: window.__reads,
+        text: document.querySelector("#verdict").textContent }));
+      ok(nj.fin === 1 && nj.reads === 2 && /Ekki tókst að lesa svarið yfir/.test(nj.text),
+        "#48: the grader down did not end as 'not judged': " + JSON.stringify(nj));
+    } else ok(false, "#48: no second meaning question");
+  }
+  ok(errors.length === 0, "#48: errors on the server-graded path: " + errors.join(" | "));
+  await p.close();
+}
+
 await browser.close();
 
 console.log(`\n${checks} checks, ${problems.length} problems`);

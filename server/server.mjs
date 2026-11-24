@@ -51,6 +51,7 @@ import { utcDay } from "../src/js/core/calendar.js";
 import { createClassGoal } from "./classgoal.mjs";
 import { createSecondLanguage } from "./secondlang.mjs";
 import { createWriting } from "./writing.mjs";
+import { createGrading } from "./grading.mjs";
 import { seal, passphraseProblem } from "./backup.mjs";
 import { dropPrivileges } from "./privs.mjs";
 
@@ -99,6 +100,9 @@ export function createApp({
   secureCookies = env.FALLASKOLI_INSECURE !== "1",
   /* For the tests: a clock and limits for the live rounds (server/live.mjs). */
   liveOptions = {},
+  /* The text reader's plugs for server-graded questions (server/grading.mjs).
+     None on a real server yet (#37); the tests hand in the fake plug. */
+  graderPlugs = {},
 } = {}) {
   const store = createStore(dataDir);
   const lex = buildLexicon(DATA);
@@ -1524,6 +1528,10 @@ export function createApp({
     const all = await store.policies();
     return json(res, 200, { policy: await ceilingFor(u.id), own: !!all[u.id] });
   });
+
+  /* Server-graded questions (#48): GET /grader, POST /grader/read. Who may,
+     the limits, and that the text is forgotten: server/grading.mjs. */
+  createGrading({ plugs: graderPlugs, ceilingFor }).routes({ on, json, readBody, needUser });
 
   on("GET", "/admin/policy", async (req, res) => {
     if (!(await needAdmin(req, res, "canAdminUsers"))) return;

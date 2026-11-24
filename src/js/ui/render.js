@@ -20,6 +20,7 @@ import { firstMeeting, markTypeSeen } from "../core/examples.js";
 import { skillName } from "../core/skills.js";
 import { conjugationNoteFor } from "../tasks/explain.js";
 import { reportButtonHTML } from "./reports.js";
+import { awaitServer, serverVerdictHTML } from "./serverask.js";
 import { l2On, glossToken, decorateTask } from "./secondlang.js";
 import { codedOn, codedHTML, hintButtonHTML, wireHint, endHint } from "./hint.js";
 import {
@@ -214,8 +215,21 @@ function spend(app) {
  * The clock is read only when the judgement has a record that carries the
  * time: a table with no right cell never counted its time, and reading the
  * clock is what resets it.
+ *
+ * A server-graded answer (`pending: "server"`, core/answer.js) is not
+ * settled yet: it goes to ui/serverask.js, which has it read, offers the one
+ * revision, and comes back here with the final judgement — settled once, its
+ * verdict drawn by ui/serverask.js, and then `draw(j)` for whatever the
+ * renderer adds (locking its box).
  */
 function conclude(app, task, j, draw) {
+  if (j.pending === "server") {
+    awaitServer(app, task, j, (jf) => conclude(app, task, jf, () => {
+      $("verdict").innerHTML = serverVerdictHTML(jf);
+      draw(jf);
+    }));
+    return;
+  }
   const took = j.effects.some((e) => e.timed) ? spend(app) : 0;
   /* Item 17: a first answer to a fresh question is offered to the anonymous
      count (app.js `noteAnswer` decides whether it goes anywhere). Here, on
@@ -1174,6 +1188,9 @@ function submitMeaning(app) {
   /* Nothing grades the text, but the same sentence pasted every time, or a
      word or two, earns no XP (v6.10) — core/answer.js. */
   const j = judge(t, { text: $("freetext").value }, app);
+  /* A server-graded explanation (#48): read on the server, verdict drawn by
+     ui/serverask.js. */
+  if (j.pending === "server") return conclude(app, t, j, () => { $("freetext").disabled = true; });
   if (j.pending) return;
   const xp = j.xp, effort = j.detail.effort;
   conclude(app, t, j, () => {

@@ -11,6 +11,7 @@
 
 import { SKILL_IDS } from "./skills.js";
 import { createPolicy } from "./policy.js";
+import { serverGraderUp } from "./servergrader.js";
 import { overallLevel, skillLevel, easeOf } from "./progress.js";
 import { visitLevels } from "./difficulty.js";
 import { timeContext, mondayOf, weekKeys, isBreakWeek, prevKey } from "./calendar.js";
@@ -286,8 +287,10 @@ export const chosenPolicy = (S) => ({
   safeVocab: null,
 });
 
-/** Ceiling AND choice, ready to be asked questions. */
-export const effectivePolicy = (S) => createPolicy(S.allowed || null, chosenPolicy(S));
+/** Ceiling AND choice, ready to be asked questions. Server-graded types
+    also need the server's grader up for this visit (core/servergrader.js). */
+export const effectivePolicy = (S) =>
+  createPolicy(S.allowed || null, chosenPolicy(S), { serverGrader: serverGraderUp() });
 
 /** Key for per-word stats. Homographs are tracked separately by class. */
 export const wordKey = (lemma, cls) => (cls ? `${lemma}|${cls}` : String(lemma));

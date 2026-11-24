@@ -430,6 +430,30 @@ start, or `FALLASKOLI_WRITING=off`) or null (not started yet; GET starts it).
 `{ id, name, week, topic, text, n, at }`. Kept texts live in `writing.json`
 and are in the export as `keptTexts`; `docs/PRIVACY.md` §1f.
 
+## Server-graded questions: the grader reads, the browser judges (#48)
+
+Only for a pupil whose **own** ceiling has `serverGrading: true` (the
+administrator's per-pupil switch; the default `*` never lends it,
+docs/adr/0004), and only on a server with a reader for the question's kind
+(none on a real server yet; Claude comes with #37). `server/grading.mjs`.
+
+```
+GET  /grader                  -> { up }      anybody logged in; the app asks once at start-up
+POST /grader/read             { kind, text, context } -> { findings }
+                              401 not logged in · 403 { fault: "off" } not switched on, or no such reader
+                              502 { fault: "failed" } empty text, over 1200 characters, or the reader failed
+                              503 { fault: "busy" } over 120 an hour, or the reader's queue is full
+                              503 { fault: "unavailable" } · 504 { fault: "timeout" }
+```
+
+A finding is what the reader's plug says, after the quote check of
+`server/reader.mjs` (every `quote` is the pupil's own words, with its
+`start`/`end`): for a rubric `{ point, met, quote?, note? }`. **Only
+`findings` is sent back** — never a verdict or XP: `judge` in the browser
+decides (docs/adr/0002). The text is forgotten: no file, no log (docs/adr/0003;
+`tests/grading-server.test.js`). The browser tries each text twice before the
+question ends "not judged" (`src/js/control/serverask.js`).
+
 ## The class goal (v6.14)
 
 Item 59. A weekly target the whole group reaches together, set by its teacher

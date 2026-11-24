@@ -404,7 +404,9 @@ server/               the optional multi-user server (Node, JSON files on disk):
                       teamduel.mjs, privs.mjs (give up root), writing.mjs
                       (Ritun vikunnar), reader.mjs (the text reader: limits,
                       timeout, forgetting, the quote check, for every plug;
-                      plugs reader-greynir.mjs and reader-fake.mjs)
+                      plugs reader-greynir.mjs and reader-fake.mjs),
+                      grading.mjs (server-graded questions: the reader's
+                      findings for the browser to judge, #48)
 Dockerfile, fly.toml  the server as a container, and where it runs
 Dockerfile.build, build-in-container.sh   the pinned build (see above)
 test-together.sh      four test pupils on your own computer, or the server for several testers

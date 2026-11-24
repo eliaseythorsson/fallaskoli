@@ -21,6 +21,8 @@
     "src/js/core/catalogue.js",
     "src/js/core/review.js",
     "src/js/core/wordknowledge.js",
+    "src/js/core/servergrader.js",
+    "src/js/control/serverask.js",
     "src/js/core/difficulty.js",
     "src/js/core/mastery.js",
     "src/js/core/skillmap.js",
