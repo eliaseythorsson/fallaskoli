@@ -2244,11 +2244,17 @@ await page.setViewport({ width: 1100, height: 900 });
        first right answer would give it back (core/difficulty.js nextLevel)
        and the case's second question come from a higher þyngd. */
     A.sess.warm = {};
-    A.startRun("malbeiting", 40, null, { review: false });
+    /* 80 questions, not 40 (#28). About one question in eleven is a join and
+       one in twelve a question (tests/pools.js at þyngd 4: 202 and 181 of
+       1,500 Umritun, which is two questions in three here), so one run of 40
+       in twenty lacked one of them — and the seed's run did, once the
+       connectives' words had changed the order of the lexicon. The loop
+       stops as soon as all three have come. */
+    A.startRun("malbeiting", 80, null, { review: false });
   });
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
   const seenKinds = new Set();
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 80; i++) {
     const t = await page.evaluate(() => {
       const c = window.FALLASKOLI.cur;
       return c && { type: c.type, kind: c.kind, lines: c.lines || null, from: c.from || null,
@@ -2284,7 +2290,7 @@ await page.setViewport({ width: 1100, height: 900 });
     await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4000 });
     if (seenKinds.size === 3) break;
   }
-  ok(seenKinds.size === 3, `the new kinds of Umritun did not all come up in 40 questions: ${[...seenKinds]}`);
+  ok(seenKinds.size === 3, `the new kinds of Umritun did not all come up in 80 questions: ${[...seenKinds]}`);
   await page.evaluate(() => {
     const A = window.FALLASKOLI;
     delete A.S.policy.types.smidja; delete A.S.policy.types.villur;
