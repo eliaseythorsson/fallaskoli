@@ -142,7 +142,6 @@ export interface State {
   words: Record<string, WordStat>;
   skills: Record<SkillId, SkillStat>;
   badges: Record<string, any>;
-  vocab: Record<string, any>;
   goal: number;
   run: number;
   bestRun: number;
@@ -244,6 +243,8 @@ export interface Session {
   range: Record<SkillId, [number, number]> | null;
   skillRun: Record<SkillId, number>;
   seen: string[];
+  /** The question just shown (tasks/effects.js "last"), for the spacing rule (#10). */
+  lastAsked?: { type: string | null; words: string[] } | null;
   answers: number;
   correct: number;
   [more: string]: any;
@@ -312,7 +313,7 @@ export interface Built { task: Task; effects: BuildEffect[] }
 
 /** What showing a task does (tasks/effects.js FX). */
 export type BuildEffect =
-  | { op: "asked"; key: string; day: DayKey }
+  | { op: "last"; type: string | null; words: string[] }
   | { op: "exSeen"; key: string }
   | { op: "seen"; words: string[] }
   | { op: "since"; table: boolean; meaning: boolean }
@@ -345,8 +346,13 @@ export interface View {
   cannotAsk(classes?: readonly string[] | null): boolean;
   /** The non-strict `mustAsk` word (a cloze asked again), or null. */
   retryWord(): any;
-  /** A weight multiplier for a sentence by its words; 1 until #13. */
+  /** A weight multiplier for a sentence by its words: 0 for the word the
+      last question asked in this type (#10), otherwise 1 until #13. */
   wordBoost(wordKeys?: readonly (string | null)[]): number;
+  /** Did the last question ask this word in the type being built (#10)? */
+  justAsked(wordKey: string | null | undefined): boolean;
+  /** Is this built question the last one's word in the last one's type (#10)? */
+  repeatsLast(task: any): boolean;
 }
 
 /** One question type as core/catalogue.js declares it. */

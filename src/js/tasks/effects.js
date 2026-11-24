@@ -1,8 +1,8 @@
 /* What showing a question does to the state — as data.
 
    A builder changes nothing (tasks/view.js). What used to be written on the
-   way — the vocabulary word marked as asked, the hand-written item remembered
-   so it is not asked again straight away, the words the session has met — is
+   way — the hand-written item remembered so it is not asked again straight
+   away, the words the session has met, the question just shown — is
    returned beside the task as a list of effects, and whoever SHOWS the task
    applies them: the app (control/*.js) for practice, core/duel.js for a duel.
 
@@ -10,11 +10,14 @@
    anything up. Until v6.13 `pickTargeted` built up to five candidates and
    each one marked its vocabulary item as asked; over 30 simulated days 461
    items were marked and at most 273 shown, and every discarded one was then
-   locked for a week (critique items 4 and 70).
+   locked for a week (critique items 4 and 70). That week's lock is gone
+   since #10; the rule is the same.
 
    An effect is a plain object, so a test can read it and a server can ignore
    it:
-     { op: "asked", key, day }       core/spacing.js: this word was asked today
+     { op: "last", type, words }     the question just shown: its type and
+                                     the words it is about (#10, the spacing
+                                     rule: tasks/view.js `repeatsLast`)
      { op: "exSeen", key }           this hand-written item was just used
      { op: "seen", words }           lemmas the session has now met
      { op: "since", table, meaning } the gaps between tables and between
@@ -25,7 +28,7 @@
                                      not again this session, and one more in
                                      the pupil's tally (S.frames)            */
 
-import { markAsked } from "../core/spacing.js";
+import { wordsOf } from "../core/wordknowledge.js";
 
 /** How many hand-written items a session remembers having asked. */
 export const EX_SEEN_MAX = 40;
@@ -33,7 +36,9 @@ export const EX_SEEN_MAX = 40;
 export const FRAMES_SEEN_MAX = 200;
 
 export const FX = {
-  asked: (key, day) => ({ op: "asked", key, day }),
+  /** The question being shown, as the next one will compare itself with it.
+      @param {any} task  with its `typeId` written on it */
+  last: (task) => ({ op: "last", type: task.typeId || task.type || null, words: wordsOf(task) }),
   exSeen: (key) => ({ op: "exSeen", key }),
   seen: (words) => ({ op: "seen", words }),
   since: (table, meaning) => ({ op: "since", table: !!table, meaning: !!meaning }),
@@ -52,8 +57,10 @@ export const built = (task, effects = []) => ({ task, effects });
 export function applyEffects(host, effects) {
   for (const e of effects || []) {
     switch (e.op) {
-      case "asked":
-        markAsked(host.S, e.key, e.day);
+      case "last":
+        /* The session's memory of one question: the next question is built
+           against it (tasks/view.js `repeatsLast`). */
+        host.sess.lastAsked = { type: e.type, words: e.words };
         break;
       case "exSeen": {
         const seen = (host.sess.exSeen ||= []);

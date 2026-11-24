@@ -219,6 +219,29 @@ export function entriesFor(task, j) {
   return out;
 }
 
+/**
+ * The words a question will be filed under once it is answered, read from
+ * the question alone — before anybody has answered it. The same words
+ * `entriesFor` will find in the answer's `record` effects (core/answer.js):
+ * the task's `word`, every error of a Villuveiðar text, every card of a
+ * Setningasmiðja that is inflected, every mark of an Umritun. Used by the
+ * spacing rule (#10, tasks/view.js `repeatsLast`): the same word is never
+ * asked in the same question type twice in a row.
+ *
+ * @param {any} task @returns {string[]} `wordKey`s, each once
+ */
+export function wordsOf(task) {
+  if (!task) return [];
+  const out = new Set();
+  if (typeof task.word === "string" && task.word) out.add(task.word);
+  if (task.hunt && Array.isArray(task.hunt.lines))
+    for (const ln of task.hunt.lines) for (const tk of ln.toks || []) if (tk.err && tk.err.word) out.add(tk.err.word);
+  if (Array.isArray(task.cards))
+    for (const c of task.cards) if (!c.fixed && c.e && c.e.o) out.add(c.e.c ? `${c.e.o}|${c.e.c}` : String(c.e.o));
+  if (Array.isArray(task.marks)) for (const m of task.marks) if (m && m.word) out.add(m.word);
+  return [...out];
+}
+
 /** The word's history, made if it is not there. */
 function historyIn(S, word) {
   if (!S.wordKnowledge || typeof S.wordKnowledge !== "object" || Array.isArray(S.wordKnowledge))
@@ -288,8 +311,8 @@ export const isJudged = (entry) => !!entry && (entry.outcome === RIGHT || entry.
 /* ---------- statuses, each with its reason (#43) --------------------------
  *
  * Every status the program gives a word comes with the reason for it, in
- * plain Icelandic that a teacher or a parent can read, as core/spacing.js
- * `eligible` gives its yes or no:
+ * plain Icelandic that a teacher or a parent can read, as the vocabulary
+ * gate's `eligible` gave its yes or no (core/spacing.js, deleted in #10):
  *
  *   { status: "shaky", why: "3 af síðustu 7 rétt, undir 50%" }
  *

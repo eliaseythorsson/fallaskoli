@@ -34,7 +34,8 @@
    the state afterwards] — the state too, because what showing a question
    changes (tasks/effects.js) is part of what a builder means.
 
-   Run both sides on the same day: vocabulary spacing reads the date. */
+   Run both sides on the same day: the worn pupil's history is dated from
+   today. */
 
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -130,6 +131,9 @@ async function take() {
       const marks = [];
       for (let k = 0; k < 60; k++) marks.push(...Object.keys(lex.all[ri(lex.all.length)].forms || {}));
       marks.forEach((m) => { if (g() < 0.5) S.cells[m] = { c: ri(6), w: ri(6) }; });
+      /* The vocabulary gate's record. Nothing reads it since #10, which
+         deleted the gate; it stays so that a tree from before #10 is
+         snapshotted with the history it would have had. */
       S.vocab = {};
       const defined = lex.all.filter((x) => x.d);
       for (let k = 0; k < 300; k++) {
@@ -153,7 +157,9 @@ async function take() {
     }
     return { lex, S, sess, forcedNoun: null, policy: fullPolicy() };
   }
-  const stateOf = (c) => h({ vocab: c.S.vocab || {}, ex: c.sess.exSeen || [], seen: c.sess.seen,
+  /* Not `S.vocab` (gone since #10) nor `sess.lastAsked` (new in #10), so
+     that a tree from before #10 and one after compare on the rest. */
+  const stateOf = (c) => h({ ex: c.sess.exSeen || [], seen: c.sess.seen,
     st: c.sess.sinceTable, sm: c.sess.sinceMeaning, fn: c.forcedNoun ? c.forcedNoun.o : null });
 
   /* ---- the two ways of asking ---- */

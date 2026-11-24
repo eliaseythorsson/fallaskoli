@@ -9,7 +9,8 @@ Run from anywhere with Node 18+; nothing here writes to the project.
 | `node tools/sim/pools.mjs` | Every question type at band 1, 3, 5 × 600 builds: distinct questions, sentences, levels | ~30 s |
 | `node tools/sim/diagnosis.mjs` | Synthetic wrong answers of 22 kinds and the pattern each is filed under | ~10 s |
 | `node tools/sim/frames.mjs` | Which sentence frames and cases dominate the cloze types | ~10 s |
-| `node tools/sim/burn.mjs` | Vocabulary items marked asked vs. actually shown | ~10 s |
+| `node tools/sim/burn.mjs` | Vocabulary questions shown, and how many different words (until #10: items marked asked vs. shown) | ~10 s |
+| `node tools/sim/spacing.mjs [pupils] [days]` | The spacing rule (#10): the same word in the same type twice in a row, the same word straight back in another type, vocabulary words met again the same day or within a week | ~40 s |
 | `node tools/sim/production.mjs` | Samples of Villuveiðar, Umritun, Setningasmiðja at three bands | ~2 s |
 | `node tools/sim/levels.mjs [daysPerWeek] [sessionsPerDay]` | XP per active day and the day each overall level is reached, with every reward the app pays (`rewards: true`: day multiplier, retries, a perfect table's bonus). Default one session on four days a week (critique item 60) | ~2 min |
 | `node tools/sim/placement.mjs [pupils]` | The placement round of the guided first run (item 84): where a weak, a middle and a strong pupil are placed, and the year suggested, for a pupil who says 8. bekkur, 10. bekkur or nothing | ~25 s |
@@ -44,9 +45,10 @@ The weak pupil misses about ten questions a day and a session opens with three r
 miss can come back the next day; the queue asks the freshest first (see the top of `core/review.js`).
 
 v6.13: the builders are pure (`build(lex, view, rng)` → `{ task, effects }`), and `sim.mjs` applies the
-effects of the one question it shows, as `app.pickTask` does. `burn.mjs` should therefore print as many
-items marked as there were vocabulary questions shown (`or_utundan` is shown and marks nothing; the
-numeral items `to_samr` and `to_flt` are no longer vocabulary and are not counted — critique item 20).
+effects of the one question it shows, as `app.pickTask` does. Until #10 `burn.mjs` checked that as many
+vocabulary items were marked asked as were shown; #10 removed the mark (`S.vocab`) with the wait of days
+it served, and `burn.mjs` now counts the vocabulary questions and their words. `spacing.mjs` measures the
+rule that replaced the wait: never the same word in the same type twice in a row.
 
 Since item 72 a small version of these is a test: `tests/sim.test.js` (about ten seconds of CPU).
 It grades through `core/answer.js` `judge` and `settle`: `simulate({ respond, builderRng })` — the pupil

@@ -9,23 +9,20 @@
      or_myndun    word formation: ó-, -ari/-andi, -ing/-un, -lega, -ni
      or_utundan   the odd one out
 
-   Which word comes up, and how long it then waits, is core/spacing.js; the
-   window of rarity per band is `pickVocab` in tasks/shared.js. Marking a word
-   as asked is an effect: it happens when the question is shown. */
+   Which word comes up: the window of rarity per band is `pickVocab` in
+   tasks/shared.js. There is no wait in days (#10): the one rule is the
+   spacing rule of tasks/view.js — not the same word in the same type as the
+   question just shown. */
 
 import { EX } from "../../../data/exercises.js";
 import { wordKey } from "../core/state.js";
-import { chooseWord, historyIfAsked } from "../core/spacing.js";
 import { isGrammarGloss } from "../core/definitions.js";
 import { built, FX } from "./effects.js";
-import { pick, wpick, shuffle, bandFor, levelFor, cap1, textSentence, pickVocab, nearBand, RANK_CAP, CLASS_RANK_CAP,
+import { pick, wpick, shuffle, bandFor, levelFor, cap1, textSentence, pickVocab, pickAskable, nearBand, RANK_CAP, CLASS_RANK_CAP,
          classRankLevel } from "./shared.js";
 
 /* ================= Word meaning ========================================== */
 
-/* core/spacing.js decides which word may come up: a hard wait after each
-   showing and new words first. Words met this session get priority WITHIN
-   what is eligible; nothing eligible means null and another type steps in. */
 /**
  * Which words the vocabulary question may be asked about: those with a
  * definition that is a meaning, not a class label ("óákveðið fornafn" for
@@ -35,23 +32,21 @@ export const meaningPool = (words) =>
   words.filter((x) => x.d && !isGrammarGloss(x.d));
 
 export function taskMeaning(lex, view, rng) {
-  const { sess, S } = view;
+  const { sess } = view;
   const withDef = meaningPool(lex.all);
   if (!withDef.length) return null;
-  const { today } = view;
+  /* Words met this session first, any word with a meaning otherwise; one of
+     them at random. Not the word the last question asked here (#10). */
   const pool = withDef.map((x) => ({ x, key: wordKey(x.o, x.c) }));
-
   const seen = sess.seen.slice(-14);
   const nearby = pool.filter((p) => seen.includes(p.x.o));
-  const chosen = chooseWord(S, nearby, today, rng) || chooseWord(S, pool, today, rng);
+  const chosen = pickAskable(view, nearby, (p) => p.key, rng) || pickAskable(view, pool, (p) => p.key, rng);
   if (!chosen) return null;
 
   return built({
     type: "meaning", skill: "ordaford", n: chosen.x, base: 8, counts: false,
     word: chosen.key, lvl: 1,
-    /* the word's history as it stands once this question has been shown */
-    spacing: historyIfAsked(S, chosen.key, today),
-  }, [FX.asked(chosen.key, today)]);
+  });
 }
 
 /** The meaning question on the drilled word, or null if it has no meaning in
@@ -60,11 +55,11 @@ export function drillMeaning(lex, view, entry) {
   const full = (lex.lookup && lex.lookup(entry.o, entry.c)) || entry;
   if (!meaningPool([full]).length) return null;
   const key = wordKey(full.o, full.c);
-  return built({
+  const task = {
     type: "meaning", skill: "ordaford", n: full, base: 8, counts: false,
-    word: key, lvl: 1, spacing: historyIfAsked(view.S, key, view.today),
-    typeId: "meaning", drill: true,
-  }, [FX.asked(key, view.today)]);
+    word: key, lvl: 1, typeId: "meaning", drill: true,
+  };
+  return built(task, [FX.last(task)]);
 }
 
 /* ================= Graded questions (v6.11) ============================== */
@@ -103,10 +98,10 @@ export function ordSynAnt(lex, view, rng) {
     for (const [pos, gs] of Object.entries(EX.synonyms))
       for (const g of gs) for (const x of g) for (const right of g) if (x !== right) items.push({ pos, x, right, g });
   }
-  /* The key is the whole group (or pair): after *fimur → liðugur*,
-     *liðugur → fimur* is the same question. */
-  const v = pickVocab(view, rng, ant ? "andheiti" : "samheiti", items,
-    (y) => y.g.map((w) => w.o).sort().join("|") + "|" + y.pos, (y) => pairRank(y.x, y.right));
+  /* The question is filed under `x`, but its words are the whole group (or
+     pair): after *fimur → liðugur*, *liðugur → fimur* is the same question,
+     and does not come next (#10). */
+  const v = pickVocab(view, rng, items, (y) => pairRank(y.x, y.right), (y) => y.g.map((w) => wordKey(w.o, w.c)));
   if (!v) return null;
   const it = v.x;
   const { pos, x } = it;
@@ -138,7 +133,7 @@ export function ordSynAnt(lex, view, rng) {
     base: 8, lvl: levelFor(P, Math.min(5, bandFor(view, "ordaford"))), cell: ant ? "orð:andheiti" : "orð:samheiti",
     word: xe ? wordKey(xe.o, xe.c) : null, tags: ["vocab"], miss: ["merking"],
     bonus: xe || re || null,
-  }, [v.fx]);
+  });
 }
 
 /* Word in context: a sentence where exactly one of four nouns makes sense
@@ -158,10 +153,10 @@ export function ordContext(lex, view, rng) {
      and widens from there (critique item 13). Until v6.13 the rank was the
      answer word's alone, and nearly every answer is a common word. */
   /* Since critique item 23 also the generated items (WORD_IN_CONTEXT_FRAMES:
-     one per noun that fits, the same sentence with another answer), so the
-     key is the sentence and the answer; and the window is the items nearest
-     the band, at least VOCAB_FLOOR (`nearVocab`). */
-  const v = nearVocab(view, rng, "samhengi", items, (y) => (y.gen ? y.t + "|" + y.a.o : y.t), (y) => y.lvl);
+     one per noun that fits, the same sentence with another answer); the
+     window is the items nearest the band, at least VOCAB_FLOOR
+     (`nearVocab`). */
+  const v = nearVocab(view, rng, items, (y) => y.lvl, (y) => wordKey(y.a.o, y.a.c));
   if (!v) return null;
   const x = v.x;
   /* A generated item's wrong options: three of the nouns that cannot fit. */
@@ -181,7 +176,7 @@ export function ordContext(lex, view, rng) {
     why: x.d ? `*${x.a.o}*: ${x.d}` : `Aðeins *${x.a.f}* gefur setningunni merkingu.`,
     base: 8, lvl: levelFor(P, x.lvl), cell: "orð:samhengi", word: right ? wordKey(right.o, right.c) : null,
     tags: ["vocab"], miss: ["merking"], bonus: right,
-  }, [v.fx]);
+  });
 }
 
 /* ---------- the window of a vocabulary list (critique item 23) -----------
@@ -191,15 +186,15 @@ export function ordContext(lex, view, rng) {
  * level — or_myndun had two pairs at level 1, or_samhengi three items at
  * level 5 — a pupil at that band met the same handful again and again. Here
  * the window is the items nearest the band by level, at least
- * VOCAB_FLOOR of them (shared.js `nearBand`); within it the spacing gate
- * decides as before (new words first, none twice in a week). */
+ * VOCAB_FLOOR of them (shared.js `nearBand`); within it one at random, not
+ * the word the last question asked in this type (#10). */
 const VOCAB_FLOOR = 150;
-function nearVocab(view, rng, kind, items, keyOf, lvlOf, maxBand = 5, floor = VOCAB_FLOOR) {
+function nearVocab(view, rng, items, lvlOf, wordOf, maxBand = 5, floor = VOCAB_FLOOR) {
   const b = Math.min(bandFor(view, "ordaford"), maxBand);
   const near = nearBand(items, lvlOf, b, floor);
   /* every item of the window on the band's own rank, so `pickVocab` keeps
      them all in its first tier */
-  return pickVocab(view, rng, kind, near, keyOf, () => RANK_CAP[b], maxBand);
+  return pickVocab(view, rng, near, () => RANK_CAP[b], wordOf, maxBand);
 }
 
 /* Word formation, every pair checked in the lexicon (both words in BÍN) and,
@@ -269,7 +264,8 @@ export function ordFormation(lex, view, rng) {
   const b = Math.min(bandFor(view, "ordaford"), 5);
   const near = nearBand(all, lvlOf, b, VOCAB_FLOOR);
   const kind = wpick(FORM_KINDS, (k) => near.filter((y) => y.kind === k).length ** 0.75, rng);
-  const v = nearVocab(view, rng, "myndun", near.filter((y) => y.kind === kind), (y) => y.to.o, lvlOf);
+  const v = nearVocab(view, rng, near.filter((y) => y.kind === kind), lvlOf,
+    (y) => (y.lexTo === false ? wordKey(y.from.o, y.from.c) : wordKey(y.to.o, y.to.c)));
   if (!v) return null;
   const x = v.x;
   let answers = [x.to.o];
@@ -306,7 +302,7 @@ export function ordFormation(lex, view, rng) {
     base: 9, lvl: levelFor(P, lvlOf(x)), cell: "orð:myndun-" + kind,
     word: wordKey(entry.o, entry.c), tags: ["wordform"], missOther: ["ordmyndun"],
     bonus: entry,
-  }, [v.fx]);
+  });
 }
 
 /** Odd one out: three nouns of one kind and one of a kind far from it.

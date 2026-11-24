@@ -46,6 +46,8 @@ export function tablePronoun(lex, view, rng) {
   if (!pool.length) return null;
   if (view.cannotAsk(["fn", "pfn", "gr"])) return null;
   const w = view.pickWord(lex, pool, "fornofn", rng, ["fn", "pfn", "gr"]);
+  /* null: the spacing rule (#10) left no word to ask in this type now */
+  if (!w) return null;
   /* A review (tasks/review.js) asks for the table its cell is in. */
   const fc = forcedCell(view);
   const f = /^(?:(KK|KVK|HK)-)?(?:NF|ÞF|ÞGF|EF)(ET|FT)$/.exec(fc || "");

@@ -91,7 +91,7 @@ time: a "Þrjár í röð" on the word (`core/streak.js`). If it happens again: 
 the intensive phase, Orðakort included. The guardian's view gets a list of hard
 words; the pupil sees nothing different.
 
-**Spacing.** The "never the same day" rule (`core/spacing.js` GATE) is **dropped**.
+**Spacing.** The "never the same day" rule (the GATE of core/spacing.js) is **dropped**; #10 deleted that file and `S.vocab`.
 The one rule is never the same word in the same question type twice in a row. The
 same word in a different type, or in a different inflection question, may come
 straight after.

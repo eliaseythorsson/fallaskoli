@@ -14,6 +14,7 @@ import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { createPolicy } from "../src/js/core/policy.js";
 import * as MORE from "../src/js/tasks/ordaford.js";
+import { buildTask } from "../src/js/tasks/next.js";
 import { transformPassive, transformOpener, alsoRight } from "../src/js/tasks/malbeiting.js";
 import { gradeTransform, tailLeftOut } from "../src/js/core/answer.js";
 import { show } from "./helpers.js";
@@ -51,20 +52,32 @@ test("an antonym written without ó- is right too: kurteis → ókurteis or dón
   assert.ok(acc.includes("dónalegur"));
 });
 
-test("synonyms and antonyms: many words, and no group twice in a fortnight of practice", () => {
+test("synonyms and antonyms: many words, and never the same group twice in a row", () => {
+  /* Until #10 the vocabulary gate kept a group away for a week, and this
+     test held that no group came twice in a day. The rule now (DLD-PLAN §1)
+     is only that the same word is not asked in the same type twice in a row
+     — here the whole group: *fimur → liðugur* and then *liðugur → fimur* is
+     the same question (tasks/ordaford.js `ordSynAnt`). Coming back later the
+     same day is allowed, and the draw still ranges widely. */
   const n = (o) => Object.values(o).reduce((a, g) => a + g.length, 0);
   assert.ok(n(EX.synonyms) >= 150, `only ${n(EX.synonyms)} synonym groups`);
   assert.ok(n(EX.antonyms) >= 130, `only ${n(EX.antonyms)} antonym pairs`);
   assert.ok(EX.wordInContext.length >= 50);
   const ctx = ctxAt(3);
-  const seen = new Set();
+  const groupOf = (t) => {
+    const asked = t.question.match(/\*([^*]+)\*\?$/)[1];
+    const lists = Object.values(t.title === "Andheiti" ? EX.antonyms : EX.synonyms).flat();
+    const g = lists.find((l) => l.some((w) => w.o === asked) && l.some((w) => w.o === t.answer));
+    return t.title + "|" + (g ? g.map((w) => w.o).sort().join("|") : asked);
+  };
+  const keys = [];
   for (let k = 0; k < 60; k++) {
-    const t = show(ctx, MORE.ordSynAnt);
-    if (!t) continue;
-    const key = [t.title, ...[t.question.match(/\*([^*]+)\*\?$/)[1], t.answer].sort()].join("|");
-    assert.ok(!seen.has(key), `asked twice on one day: ${key}`);
-    seen.add(key);
+    const t = show(ctx, (l, v, r) => buildTask(l, v, r, "or_heiti"));
+    if (t) keys.push(groupOf(t));
   }
+  assert.ok(keys.length >= 50, `only ${keys.length} questions built`);
+  keys.forEach((k, i) => assert.ok(i === 0 || k !== keys[i - 1], `the same group twice in a row: ${k}`));
+  assert.ok(new Set(keys).size >= 30, `only ${new Set(keys).size} groups in ${keys.length} questions`);
 });
 
 test("the words get rarer as the level rises", () => {

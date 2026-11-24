@@ -4,8 +4,8 @@
  * Until v6.13 the program had no spaced repetition for grammar. After a wrong
  * answer the same inflection cell came back after a median of 37–41 questions
  * — two days of practice — and the very thing that was missed (this word in
- * this cell) came back the next day once in fifty times. core/spacing.js
- * spaces the vocabulary question only, and it spaces it APART.
+ * this cell) came back the next day once in fifty times. (core/spacing.js,
+ * deleted in #10, spaced the vocabulary question APART, by days.)
  *
  * This module is the opposite rule, for grammar:
  *

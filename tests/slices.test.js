@@ -147,6 +147,27 @@ test("the whole round: merge, then load, then the server", () => {
   none(compare("cleanState(migrate(merge(F, F, F)))", "clean", out, fullProgress(), { purpose: ON_PURPOSE.clean }));
 });
 
+/* A slice that is retired leaves its key in every copy saved before. #10
+   retired `vocab` (the days each vocabulary item was last asked, read only by
+   the gate core/spacing.js, which #10 deleted). Such a copy must still load,
+   merge and pass the server, with everything else kept and the old key gone. */
+test("a retired slice (vocab, #10) is dropped everywhere, and the rest of an old copy is kept", () => {
+  const old = () => ({ ...fullProgress(), vocab: {
+    "samheiti:frábær|stórkostlegur|æðislegur|lo": { n: 1, dates: ["2026-11-17"], first: "2026-11-17", last: "2026-11-17" },
+    "hestur|kk": { n: 2, dates: ["2026-11-17", "2026-11-19"], first: "2026-11-17", last: "2026-11-19" },
+  } });
+  const loaded = migrate(old());
+  assert.equal("vocab" in loaded, false, "migrate keeps the old key");
+  none(compare("migrate(old copy with vocab)", "migrate", loaded, fullProgress(), { purpose: ON_PURPOSE.migrate }));
+  /* mergeStates passes a key that is no slice through (it follows this
+     device); what is merged is loaded before it is used, and that drops it. */
+  const merged = migrate(mergeStates(old(), migrate(old()), old()));
+  assert.equal("vocab" in merged, false, "a merged copy keeps the old key once loaded");
+  const cleaned = cleanState(old(), { today: TODAY });
+  assert.equal("vocab" in cleaned, false, "cleanState stores the old key");
+  none(compare("cleanState(old copy with vocab)", "clean", cleaned, fullProgress(), { purpose: ON_PURPOSE.clean }));
+});
+
 test("no slice holds the pupil's own text yet; the helpers leave such progress alone", () => {
   assert.deepEqual(SLICES.filter((s) => s.ownText).map((s) => s.key), [],
     "a slice with ownText: true — check that tests/owntext.test.js and docs/PRIVACY.md §1g name it");

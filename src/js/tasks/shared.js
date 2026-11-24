@@ -12,7 +12,6 @@ import { bandOf, diffOf, hardnessWeight } from "../core/difficulty.js";
 import { skillLevel } from "../core/progress.js";
 import { wordKey } from "../core/state.js";
 import { wordRecord } from "../core/wordknowledge.js";
-import { chooseWord } from "../core/spacing.js";
 import { FX } from "./effects.js";
 
 /** @typedef {import("../types").View} View */
@@ -334,27 +333,25 @@ export function fresh(view, key, list) {
   return ok.length ? ok : list;
 }
 
-/* ---------- the vocabulary gate -------------------------------------------
+/* ---------- the vocabulary window -----------------------------------------
  *
- * Which word an Orðaforði question is about, across sessions and days.
- * Two rules, both from what children said: (1) the same word must not keep
- * coming back — knowing a word's meaning once is knowing it, so the
- * vocabulary question's gate applies (core/spacing.js: never twice in a day,
- * never within a week, new words first), under a key of its own per kind
- * of question; (2) the words get rarer as the level rises. A word's rank is
- * its place in the frequency list (1 = commonest). The band picks a window
- * of ranks; when nothing in it may be asked, the window widens, commonest
- * first, so a question still comes.
+ * Which item an Orðaforði question is about: the words get rarer as the
+ * level rises. A word's rank is its place in the frequency list
+ * (1 = commonest). The band picks a window of ranks and one item of it is
+ * asked, at random; when nothing in it may be asked, the window widens,
+ * commonest first, so a question still comes.
+ *
+ * What may not be asked is the word the last question asked in this type
+ * (the spacing rule, #10, tasks/view.js). Until #10 a gate of days stood
+ * here (core/spacing.js: never twice in a day, never within a week, new
+ * words first, kept in `S.vocab`); DLD-PLAN §1 drops it, because a word
+ * met again soon is a word learned, not a wasted question.
  *
  * Orðaforði only. Until v6.13 two Töluorð types (to_samr, to_flt) went
- * through it too; numeral agreement is grammar and needs repeating, so they
- * now use the review queue and a same-session gate (tasks/toluord.js,
- * critique item 20). It stays in this file because the rule is general.
+ * through it too; numeral agreement is grammar, and they now use the
+ * review queue and a same-session gate (tasks/toluord.js, critique item 20).
  *
- * Returns { x, fx }: the item, and the effect that marks it as asked once the
- * question is shown. The mark used to be written here, at once — so every
- * candidate that was built and thrown away locked its item for a week
- * (critique item 4). */
+ * Returns { x }, the item. */
 export const RANK_CAP = [0, 700, 1500, 2600, 4000, 6000, 9000, Infinity];
 /* A lexicon entry's `r` is its rank within its own class (the nouns run to
    about 1,400, the adjectives and verbs to about 1,000), not the place in
@@ -366,28 +363,46 @@ export const CLASS_RANK_CAP = [0, 150, 350, 600, 950, Infinity];
 export const classRankLevel = (r) => { let L = 1; while (L < 5 && r > CLASS_RANK_CAP[L]) L++; return L; };
 /**
  * @template T
- * @param {View} view @param {Rng} rng @param {string} kind @param {T[]} items
- * @param {(x: T) => string} keyOf @param {(x: T) => number} rankOf
+ * @param {View} view @param {Rng} rng @param {T[]} items
+ * @param {(x: T) => number} rankOf
+ * @param {(x: T) => (string|null|(string|null)[])} wordOf  the `wordKey`(s)
+ *        the item asks about, for the spacing rule
  * @param {number} [maxBand]
- * @returns {?{x: T, fx: import("../types").BuildEffect}}
+ * @returns {?{x: T}}
  */
-export function pickVocab(view, rng, kind, items, keyOf, rankOf, maxBand = 7) {
+export function pickVocab(view, rng, items, rankOf, wordOf, maxBand = 7) {
   if (!items.length) return null;
   /* `maxBand`: a list whose items stop at level 5 (or_samhengi, or_myndun)
      stays at band 5's window above it, instead of reaching the empty top
      window and widening back to everything. */
   const b = Math.min(bandFor(view, "ordaford"), maxBand);
   const cap = RANK_CAP[b] ?? Infinity, floor = b > 2 ? RANK_CAP[b - 2] : 0;
-  const wrap = items.map((x) => ({ x, key: `${kind}:${keyOf(x)}`, r: rankOf(x) }));
+  const wrap = items.map((x) => ({ x, r: rankOf(x) }));
   const tiers = [wrap.filter((p) => p.r > floor && p.r <= cap), wrap.filter((p) => p.r <= cap)];
   RANK_CAP.slice(b + 1).forEach((c) => tiers.push(wrap.filter((p) => p.r <= c)));
   for (const t of tiers) {
-    if (!t.length) continue;
-    const c = chooseWord(view.S, t, view.today, rng);
-    /* tasks/effects.js is not type-checked yet, so FX's `op` is a plain string to tsc. */
-    if (c) return { x: c.x, fx: /** @type {import("../types").BuildEffect} */ (FX.asked(c.key, view.today)) };
+    const got = pickAskable(view, t, (p) => wordOf(p.x), rng);
+    if (got) return { x: got.x };
   }
   return null;
+}
+
+/**
+ * One of `items` at random, never one whose word (or one of whose words) the
+ * last question asked in this type (the spacing rule, #10). Drawn from all of
+ * them first, and again from the rest only if that draw is turned down: the
+ * same odds as leaving it out, and the same draw as before #10 wherever the
+ * rule is silent. Null, with nothing drawn, if no item may be asked.
+ * @template T
+ * @param {View} view @param {readonly T[]} items
+ * @param {(x: T) => (string|null|undefined|(string|null|undefined)[])} wordOf
+ * @param {Rng} rng @returns {T|null}
+ */
+export function pickAskable(view, items, wordOf, rng) {
+  const ok = (x) => { const w = wordOf(x); return !(Array.isArray(w) ? w : [w]).some((k) => view.justAsked(k)); };
+  if (!items.some(ok)) return null;
+  const got = wpick(items, () => 1, rng);
+  return ok(got) ? got : wpick(items.filter(ok), () => 1, rng);
 }
 
 /* ---------- time phrases (v6.9) -------------------------------------------

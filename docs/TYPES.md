@@ -98,7 +98,7 @@ The pure modules, where the shared shapes matter most:
   next step: each returns a `Built`.
 - **The other `core/` modules**: `badges.js`, `calendar.js`, `definitions.js`,
   `duel.js`, `grading.js`, `leniency.js`, `lexicon.js`, `policy.js`,
-  `progress.js`, `spacing.js`, `marks.js`, `mending.js`, `examples.js` and the
+  `progress.js`, `marks.js`, `mending.js`, `examples.js` and the
   rest. They are read for inferred types, not checked.
 - **`server/`**, **`tools/`**, **`tests/`**, and the generated `data/`.
 

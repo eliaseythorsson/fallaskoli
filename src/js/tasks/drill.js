@@ -66,9 +66,14 @@ export function drillTask(lex, view, rng, entry, turn = 0) {
     const { task } = b;
     if (task.word !== key) continue;
     if (task.answers !== undefined && !(task.answers && task.answers.length)) continue;
+    /* The spacing rule (#10): the drilled word is in every question, so the
+       type just asked is skipped and the rotation moves on. A class with one
+       kind of question left (an indeclinable word with `parse` switched off)
+       ends its drill here rather than ask the same thing twice in a row. */
+    if (dv.repeatsLast({ ...task, typeId: id })) continue;
     task.typeId = id;
     task.drill = true;
-    return built(task, [...b.effects, FX.clearForcedNoun()]);
+    return built(task, [...b.effects, FX.last(task), FX.clearForcedNoun()]);
   }
   return null;
 }
@@ -117,7 +122,9 @@ export function patternTask(lex, view, rng, p, avoid = [], prefer = null) {
         b.task.typeId = own.id;
         const words = [b.task.n, b.task.w, b.task.v].filter(Boolean).map((x) => x.o);
         b = built(b.task, [...b.effects, FX.since(own.id.startsWith("tbl"), false),
-          ...(words.length ? [FX.seen(words)] : [])]);
+          ...(words.length ? [FX.seen(words)] : []), FX.last(b.task)]);
+        /* the spacing rule (#10), as tasks/next.js keeps it */
+        if (pv.repeatsLast(b.task)) b = null;
       }
     } else b = nextTask(lex, pv, rng);
     if (!b) { if (ownOk) continue; return fallback; }
@@ -142,11 +149,16 @@ export function patternTask(lex, view, rng, p, avoid = [], prefer = null) {
 export function streakTasks(lex, view, rng, p, from = {}, n = 3) {
   const out = [], avoid = [from.word || null];
   const type = from.typeId || from.type || null;
+  let v = view;
   for (let k = 0; k < n; k++) {
-    const b = patternTask(lex, view, rng, p, avoid, type);
+    const b = patternTask(lex, v, rng, p, avoid, type);
     if (!b) return null;
     out.push(b);
     avoid.push(b.task.word || null);
+    /* The three are built before any is shown: each is built against the one
+       before it, as the session will have it then (the spacing rule, #10). */
+    const last = b.effects.find((e) => e.op === "last");
+    if (last) v = withView(v, { sess: { ...v.sess, lastAsked: { type: last.type, words: last.words } } });
   }
   return out;
 }

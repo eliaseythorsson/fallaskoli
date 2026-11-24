@@ -78,6 +78,8 @@ export function reviewTask(lex, view, rng, entry, { avoid = null, wordFirst = fa
       const b = asked && spec.drill ? spec.drill(lex, v, rng, asked) : spec.build(lex, v, rng);
       if (!b) continue;
       if (b.task.answers !== undefined && !(b.task.answers && b.task.answers.length)) continue;
+      /* The spacing rule (#10): not the word the last question asked in this type. */
+      if (v.repeatsLast(b.task)) continue;
       if (ok(b.task)) return b;
     }
     return null;
@@ -111,6 +113,7 @@ export function reviewTask(lex, view, rng, entry, { avoid = null, wordFirst = fa
       ...b.effects,
       FX.since(spec.id.startsWith("tbl"), false),
       ...(words.length ? [FX.seen(words)] : []),
+      FX.last(task),
     ]), hit };
   }
   return null;

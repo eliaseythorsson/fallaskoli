@@ -37,6 +37,7 @@ import { skillLevel, skillNeed } from "./progress.js";
 import { clamp } from "./difficulty.js";
 import { narrowPolicy } from "./policy.js";
 import { obj, pairs } from "./slicerules.js";
+import { wordsOf } from "./wordknowledge.js";
 
 export const DUEL = {
   sizes: [10, 15, 20],      // as practice sessions (ui/session.js RUN_SIZES)
@@ -571,6 +572,18 @@ export function duelTasks(lex, duel, deps) {
     c.keys.word.forEach((x) => words.set(x, (words.get(x) || 0) + 1));
   };
 
+  /* Would `t` on line `i` be the same word in the same type as a line next
+     to it — what that line holds now, or the plan's own question? */
+  const typeOf = (x) => x.typeId || x.type;
+  const nextTo = (i, t) => {
+    const mine = wordsOf(t);
+    return [i - 1, i + 1].some((j) => {
+      if (j < 0 || j >= plan.length) return false;
+      const there = held[j] ? held[j].task : plan[j];
+      return typeOf(there) === typeOf(t) && wordsOf(there).some((w) => mine.includes(w));
+    });
+  };
+
   const types = [...new Set(wants.map((w) => w.type))];
   for (const type of types) {
     const lines = wants.map((w, i) => (w.type === type ? i : -1)).filter((i) => i >= 0);
@@ -601,6 +614,9 @@ export function duelTasks(lex, duel, deps) {
       for (const i of waiting) {
         /* Not if another line already shows this sentence. */
         if (keys.main.some((x) => heldBy.has(x) && heldBy.get(x) !== i)) continue;
+        /* The spacing rule (#10): not the word of the question before or
+           after it in the same type. */
+        if (nextTo(i, t)) continue;
         const cur = held[i];
         const elsewhere = keys.word.some((x) =>
           (words.get(x) || 0) - (cur && cur.keys.word.includes(x) ? 1 : 0) > 0);

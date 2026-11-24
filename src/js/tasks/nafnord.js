@@ -282,6 +282,8 @@ export function noDeclension(lex, view, rng) {
     const flat = b >= 5 ? (y) => 1 + y.n.r / 150 : () => 1;
     x = view.pickByWord(lex, pool, (y) => y.n, "nafnord", rng, flat);
   }
+  /* null: the spacing rule (#10) left no word to ask in this type now */
+  if (!x) return null;
   const { n, kind } = x;
   const ask = b >= 5;
   return built({

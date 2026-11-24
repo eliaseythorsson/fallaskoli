@@ -59,10 +59,6 @@ export function fullProgress() {
       tbl_clean: { n: 3, dates: ["2026-11-17", "2026-11-18", "2026-11-18"], first: "2026-11-17", last: "2026-11-18" },
       s_night: { n: 1, dates: ["2026-11-18"], first: "2026-11-18", last: "2026-11-18" },
     },
-    vocab: {
-      "samheiti:frábær|stórkostlegur|æðislegur|lo": { n: 1, dates: ["2026-11-17"], first: "2026-11-17", last: "2026-11-17" },
-      "myndun:tilkynning": { n: 2, dates: ["2026-11-17", "2026-11-19"], first: "2026-11-17", last: "2026-11-19" },
-    },
     goal: 15,
     run: 2,
     bestRun: 7,
