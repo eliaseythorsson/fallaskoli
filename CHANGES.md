@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## v6.15.0
 
 ### Færri GitHub Actions-mínútur
 - CI keyrir einu sinni á hverja beiðni um samruna (ekki á hverja sendingu), tegundaathugunin er skref í CI, vafraprófin keyra aðeins með „Run workflow“ og endursmíði gagnanna aðeins þegar breyting snertir gögnin.
