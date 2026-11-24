@@ -111,7 +111,6 @@ import { thisDevice } from "./slicerules.js";
 import { reviewSlice } from "./review.js";
 import { xpSlice, bestLevelSlice, runSlice, bestRunSlice, totalAnswersSlice, totalCorrectSlice,
   skillsSlice, cellsSlice } from "./progress.js";
-import { wordsSlice, drillsSlice, drillDaysSlice } from "./wordhealth.js";
 import { vocabSlice } from "./spacing.js";
 import { badgesSlice, multiSessionRunSlice, lastSessionSkillsSlice, countersSlice,
   periodsSlice, settledSlice } from "./badges.js";
@@ -131,7 +130,7 @@ import { tourSlice } from "./placement.js";
 import { enabledSlice, policySlice, allowedSlice } from "./policy.js";
 import { settingsSlice } from "./settings.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
-import { wordKnowledgeSlice } from "./wordknowledge.js";
+import { wordKnowledgeSlice, wordsSlice, drillsSlice, drillDaysSlice } from "./wordknowledge.js";
 
 /** @typedef {import("../types").Slice} Slice */
 /** @typedef {import("../types").CleanContext} CleanContext */
@@ -139,8 +138,8 @@ import { wordKnowledgeSlice } from "./wordknowledge.js";
 /* ---------- the version of the saved file ---------- */
 
 /* 12 (issue #8): word knowledge (core/wordknowledge.js). A copy saved
-   before it starts word knowledge empty and `S.words` without its short
-   history (`RESET_BEFORE` there). */
+   before it starts word knowledge empty and the word records without their
+   short history (`RESET_BEFORE` there). */
 export const STATE_VERSION = 12;
 
 /** `S.v`: the shape this program saves. A copy of any age is loaded into

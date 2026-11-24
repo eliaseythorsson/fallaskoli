@@ -7,12 +7,26 @@
  * word on one day: which question type, and right, wrong or seen-not-judged.
  *
  * This module is the one place that writes them and the place every reader
- * of a word's state is to go through. Today it only writes and offers the
- * history: word health, the rescue drill, `S.words` and `S.vocab` read and
- * write what they did before (decision 11 below: a pure move). Moving them
- * onto this module is #42, and word choice behind the view is #45; the rules
- * built on it are #10 (learned words), #12 (hard words), #17 and through them
- * #13 and #16; the size warning is #44.
+ * of a word's state goes through (#42). Besides the entries it owns the two
+ * older per-word records, unchanged in shape, and is the only module that
+ * touches them in the saved state:
+ *
+ *   the word records   per word, right and wrong answers counted record by
+ *                      record (a table counts every box) and the last dozen
+ *                      outcomes `h` — what word health, the collection, the
+ *                      ease and word choice read today
+ *   the rescue ledger  per word, the rescue drills run on it, and the rescues
+ *                      per day
+ *
+ * Every other module reads them through the functions under "the word
+ * records" below (`wordRecord`, `wordRecords`, `wordKeysMet`, `drillRecord`,
+ * `drillRecords`, `rescuesOn`) and writes them through `countAnswer` and
+ * `noteRescue`; core/merge.js and server/guard.mjs merge and check them
+ * through this module's slices. #42 moved the readers here without changing
+ * what any of them computes (decision 11: a pure move;
+ * tests/wordknowledge-readers.test.js). Word choice behind the view is #45;
+ * the rules built on the entries are #10 (learned words), #12 (hard words),
+ * #17 and through them #13 and #16; the size warning is #44.
  *
  * Pure: no DOM, no clock — the day is handed in. Nothing the pupil typed is
  * kept, only the type id, the day and the outcome (decision 10).
@@ -67,7 +81,7 @@
  *  6. RESET ON UPGRADE. Saved progress older than RESET_BEFORE (the
  *     STATE_VERSION this module arrived in, core/slices.js) starts word
  *     knowledge empty, and `S.words` loses its short history `h` (see
- *     core/wordhealth.js `wordsSlice`), so both start on the same day. XP,
+ *     `wordsSlice` at the end of this file), so both start on the same day. XP,
  *     badges, levels and everything else are kept.
  *
  *  7. WHAT COUNTS. Duels and live rounds count: an answer is an answer.
@@ -105,7 +119,7 @@
  */
 
 import { CATALOGUE_IDS, isRecall } from "./catalogue.js";
-import { add, num, obj, n, DAY } from "./slicerules.js";
+import { add, num, obj, n, DAY, keys, later, counters, dayStr, isObj, pairs } from "./slicerules.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Task} Task */
@@ -114,6 +128,9 @@ import { add, num, obj, n, DAY } from "./slicerules.js";
 /** @typedef {import("../types").WordEntry} WordEntry */
 /** @typedef {import("../types").WordHistory} WordHistory */
 /** @typedef {import("../types").WordKnowledge} WordKnowledge */
+/** @typedef {import("../types").WordStat} WordStat */
+/** @typedef {import("../types").DrillRecord} DrillRecord */
+/** @typedef {import("../types").Slice} Slice */
 
 /* ---------- the constants ---------------------------------------------------- */
 
@@ -133,8 +150,12 @@ export const ENTRIES_MAX = Infinity;
     STATE_VERSION is at least this; tests/wordknowledge.test.js holds it. */
 export const RESET_BEFORE = 12;
 
-/** The most words the server keeps, as for `S.words`. */
+/** The most words the server keeps, here and in the word records. */
 export const WORDS_MAX = 30000;
+
+/** How many outcomes a word record remembers (`h`), for word health
+    (core/wordhealth.js `HEALTH.keep`). */
+export const RECENT_KEEP = 12;
 
 /* ---------- writing ------------------------------------------------------- */
 
@@ -237,6 +258,94 @@ export const isRecallEntry = (entry) => !!entry && isRecall(entry.type);
 
 /** Does this entry count toward learned or hard? "Seen" never does (decision 7). */
 export const isJudged = (entry) => !!entry && (entry.outcome === RIGHT || entry.outcome === WRONG);
+
+/* ---------- the word records and the rescue ledger (#42) ------------------
+ *
+ * Saved as `words`, `drills` and `drillDays` (their slices are at the end of
+ * the file), in the shapes they have had since v6.6. The readers hand back
+ * the saved record itself, as the modules that read them always had it: a
+ * reader must not change it. */
+
+/** @type {(S: any) => Record<string, WordStat>} */
+const recordsOf = (S) => (S && S.words) || {};
+/** @type {(S: any) => Record<string, DrillRecord>} */
+const ledgerOf = (S) => (S && S.drills) || {};
+
+/** A word's record {c, w, h}, or undefined for a word never answered.
+    @param {State} S @param {string} word  a `wordKey` @returns {WordStat | undefined} */
+export const wordRecord = (S, word) => recordsOf(S)[word];
+
+/** Every word record, as [word, record] pairs in the saved order.
+    @param {State} S @returns {[string, WordStat][]} */
+export const wordRecords = (S) => Object.entries(recordsOf(S));
+
+/** Every word with a record: the words this pupil has met.
+    @param {State} S @returns {string[]} */
+export const wordKeysMet = (S) => Object.keys(recordsOf(S));
+
+/** Append one outcome to a word record's short history. Changes `rec`.
+    @param {Partial<WordStat>} rec @param {boolean} ok */
+export function pushHistory(rec, ok) {
+  rec.h = ((rec.h || "") + (ok ? "1" : "0")).slice(-RECENT_KEEP);
+  return rec;
+}
+
+/**
+ * Count one record of an answer (core/state.js `record`): right or wrong for
+ * the word, and — when it `counts` — one more outcome in its short history
+ * (the meaning question is not an outcome). Changes the word records.
+ * @param {State} S @param {string} word @param {boolean} ok @param {boolean} counts
+ * @returns {boolean} whether this was the first record of the word
+ */
+export function countAnswer(S, word, ok, counts) {
+  const words = recordsOf(S);
+  const first = !words[word];
+  const w = (words[word] ||= { c: 0, w: 0 });
+  if (ok) w.c++; else w.w++;
+  if (counts) pushHistory(w, ok);
+  return first;
+}
+
+/** A word's rescue record {p, t, f, last, at}, or undefined for a word
+    never drilled. @param {State} S @param {string} word @returns {DrillRecord | undefined} */
+export const drillRecord = (S, word) => ledgerOf(S)[word];
+
+/** Every rescue record, as [word, record] pairs.
+    @param {State} S @returns {[string, DrillRecord][]} */
+export const drillRecords = (S) => Object.entries(ledgerOf(S));
+
+/** Words rescued on one day (only the last fortnight is kept).
+    @param {State} S @param {DayKey} day @returns {number} */
+export const rescuesOn = (S, day) => ((S && S.drillDays) || {})[day] || 0;
+
+/**
+ * Write a finished rescue drill into the ledger (core/wordhealth.js
+ * `settleDrill`): one more drill on the word, passed or endured, the day, and
+ * the word's answer count at its end; a pass also counts on the day.
+ * @param {State} S @param {string} word
+ * @param {{passed: boolean, at: number, today: DayKey}} drill
+ */
+export function noteRescue(S, word, { passed, at, today }) {
+  const drills = (S.drills ||= {});
+  const rec = (drills[word] ||= { p: 0, t: 0, f: 0, last: null, at: 0 });
+  rec.t++;
+  if (passed) rec.p++; else rec.f++;
+  rec.last = today;
+  rec.at = at;
+  if (passed) {
+    const day = (S.drillDays ||= {});
+    day[today] = (day[today] || 0) + 1;
+    /* Only the last fortnight is kept; the badge asks about one day. */
+    for (const k of Object.keys(day)) if (k < daysBefore(today, 14)) delete day[k];
+  }
+}
+
+/** @param {string} key @param {number} n */
+function daysBefore(key, n) {
+  const [y, m, d] = String(key).split("-").map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d - n));
+  return t.toISOString().slice(0, 10);
+}
 
 /* ---------- what may be saved -------------------------------------------- */
 
@@ -367,5 +476,126 @@ export const wordKnowledgeSlice = {
     (num(obj(whole).v) < RESET_BEFORE ? {} : sanitiseWordKnowledge(raw)),
   merge: (base, local, remote) => mergeWordKnowledge(base, local, remote),
   clean: cleanWordKnowledge,
+  ownText: false,
+};
+
+/* ---------- the slices of the word records (issues #50, #42) ---------------
+ * The word records and the rescue ledger as slices of the saved state
+ * (core/slices.js), so core/merge.js and server/guard.mjs merge and check
+ * them through this module. Moved here unchanged from core/wordhealth.js
+ * (#42), where #50 had put them. */
+
+/* Word classes a per-word key may legitimately carry. This is the lexicon's
+   own set; anything else is a key nothing can look up. */
+const WORD_CLASSES = new Set([
+  "kk", "kvk", "hk", "lo", "so", "fn", "pfn", "gr", "to", "rt",
+  "ao", "fs", "st", "uh", "nhm",
+]);
+
+/**
+ * Drop per-word keys that no lookup can resolve: older builds filed nouns
+ * under Greynir's short code (`vindur|no`), a class the lexicon does not know.
+ * Removed rather than repaired (the gender is not in the key); only the ease
+ * history is lost.
+ */
+function cleanWordKeys(words) {
+  const out = {};
+  for (const [k, v] of Object.entries(words || {})) {
+    const cls = String(k).split("|")[1];
+    if (cls && !WORD_CLASSES.has(cls)) continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+/* Issue #8, decision 6: progress saved before word knowledge
+   (core/wordknowledge.js) existed loses each word's short history `h`, so
+   that word health and word knowledge start on the same day. The counts
+   `c`/`w` stay: they are the collection, the ease and the leaderboard's
+   Orðaforði. */
+function withoutHistory(words) {
+  const out = {};
+  for (const [k, v] of Object.entries(words)) {
+    if (v && typeof v === "object" && !Array.isArray(v)) { const { h: _, ...rest } = v; out[k] = rest; }
+    else out[k] = v;
+  }
+  return out;
+}
+
+/** The word records, saved as `words`: per word key ("hestur|kk") right, wrong and the last dozen
+    outcomes, {c, w, h}. @type {Slice} */
+export const wordsSlice = {
+  key: "words",
+  blank: () => ({}),
+  migrate: (raw, whole) => (num(obj(whole).v) < RESET_BEFORE
+    ? withoutHistory(cleanWordKeys(raw)) : cleanWordKeys(raw)),
+  merge(B, L, R) {
+    const out = {};
+    for (const k of keys(L, R)) {
+      const l = obj(L)[k], r = obj(R)[k];
+      out[k] = !l ? r : !r && !obj(B)[k] ? l : counters(obj(B)[k], l, r, ["c", "w"]);
+      /* A word's last dozen outcomes (`h`) follow whichever device answered it
+         since `base`; a device that did not touch the word must not put its
+         older history over the other's (found by tests/state-property.test.js). */
+      const b = obj(B)[k];
+      if (l && r && b && typeof r.h === "string"
+          && num(l.c) + num(l.w) === num(b.c) + num(b.w)) out[k].h = r.h;
+    }
+    return out;
+  },
+  clean(value) {
+    const out = {};
+    for (const [k, v] of pairs(value, WORDS_MAX)) {
+      if (!isObj(v)) continue;
+      out[k] = { c: n(v.c), w: n(v.w) };
+      /* A word's last dozen outcomes (v6.6): ones and zeros and nothing else. */
+      if (typeof v.h === "string" && /^[01]{1,12}$/.test(v.h)) out[k].h = v.h;
+    }
+    return out;
+  },
+  ownText: false,
+};
+
+/** The rescue ledger, saved as `drills`: per word {p: rescues, t: drills started and finished, f: drills
+    endured without passing, last: date, at: the word's answer count when the
+    last one ended}. @type {Slice} */
+export const drillsSlice = {
+  key: "drills",
+  blank: () => ({}),
+  migrate: (raw) => (raw && typeof raw === "object" ? { ...raw } : {}),
+  /* Counts are added like any counter; the date and the answer count at the
+     last rescue are the later of the two. */
+  merge(B, L, R) {
+    const out = {};
+    for (const k of keys(L, R)) {
+      const b = obj(B)[k], l = obj(L)[k], r = obj(R)[k];
+      const m = !l ? { ...r } : !r && !b ? { ...l } : counters(b, l, r, ["p", "t", "f"]);
+      m.last = later(obj(l).last, obj(r).last);
+      m.at = Math.max(num(obj(l).at), num(obj(r).at));
+      out[k] = m;
+    }
+    return out;
+  },
+  /* Per word, numbers and one date. */
+  clean(value) {
+    const drills = {};
+    for (const [k, v] of pairs(value, 30000)) {
+      if (!isObj(v)) continue;
+      drills[k] = { p: n(v.p, 10000), t: n(v.t, 10000), f: n(v.f, 10000),
+        last: dayStr(v.last), at: n(v.at) };
+    }
+    return drills;
+  },
+  ownText: false,
+};
+
+/** Saved as `drillDays`: rescues per day, for one badge, a fortnight deep. @type {Slice} */
+export const drillDaysSlice = {
+  key: "drillDays",
+  blank: () => ({}),
+  migrate: (raw) => (raw && typeof raw === "object" ? { ...raw } : {}),
+  merge: (B, L, R) => counters(B, L, R, keys(L, R)),
+  clean: (value) => Object.fromEntries(pairs(value, 40, 10)
+    .filter(([k]) => DAY.test(k)).map(([k, v]) => [k, n(v, 1000)])),
   ownText: false,
 };

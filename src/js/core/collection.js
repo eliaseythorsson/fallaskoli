@@ -9,6 +9,7 @@ import { wordKey } from "./state.js";
 import { wordTier, isRareScore } from "./rarity.js";
 import { statusOf, recentOf, vocabScore, rescueCount, keptAfloat } from "./wordhealth.js";
 import { readSets } from "./wordsets.js";
+import { wordRecord, wordRecords, drillRecord, drillRecords } from "./wordknowledge.js";
 
 export const COLLECT_ORDER = [
   "kk", "kvk", "hk", "lo", "so", "fn", "pfn", "gr", "to", "rt",
@@ -46,7 +47,7 @@ export function collectionByClass(S, lex) {
   const totals = corpusTotals(lex);
   const held = new Map();
 
-  for (const [key, rec] of Object.entries(S.words)) {
+  for (const [key, rec] of wordRecords(S)) {
     const [lemma, cls] = key.split("|");
     if (!cls) continue;
     const n = (rec.c || 0) + (rec.w || 0);
@@ -68,7 +69,7 @@ export function collectionByClass(S, lex) {
          rescue drill has ever saved it. */
       status: statusOf(rec),
       recent: recentOf(rec).acc,
-      rescued: !!(S.drills && S.drills[key] && S.drills[key].p),
+      rescued: !!(drillRecord(S, key) && drillRecord(S, key).p),
     });
     held.set(cls, list);
   }
@@ -116,13 +117,12 @@ export function collectionSummary(S, lex) {
      and how the collection is doing (core/wordsets.js, core/wordhealth.js). */
   const held = groups.flatMap((g) => g.words);
   const health = vocabScore(S, lex);
-  const drills = S.drills || {};
   return {
     sets: readSets(held),
     weak: health.weak, strong: health.strong, judged: health.judged,
     health: health.health, score: health.score,
     rescued: rescueCount(S),
-    kept: Object.entries(drills).filter(([k, d]) => keptAfloat(S.words[k], d)).length,
+    kept: drillRecords(S).filter(([k, d]) => keptAfloat(wordRecord(S, k), d)).length,
     letters: lettersHeld.size, lettersTotal: lettersAll.size,
     total, rare, mastered, byClass, coverage,
     classesTouched: groups.filter((g) => g.seen > 0).length,
@@ -137,5 +137,5 @@ export function collectionSummary(S, lex) {
 
 /** Is this the first time the child has met this word? Call before record(). */
 export function isNewWord(S, lemma, cls) {
-  return !S.words[wordKey(lemma, cls)];
+  return !wordRecord(S, wordKey(lemma, cls));
 }

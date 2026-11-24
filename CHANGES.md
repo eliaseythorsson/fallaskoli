@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Orðaþekking: allt sem les orðin fer í gegnum hana (#42)
+- **Engin breyting sést**: orðaheilsa, björgunaræfingin, orðasafnið, sjaldgæfni, merkin, færnikortið og
+  orðavalið lesa orðin og björgunarskrána í gegnum `core/wordknowledge.js`, sem sameinar líka og athugar þær.
+  Hermdur nemandi fær sömu orðaheilsu, sömu björgunarboð og sama Orðaforða og áður (próf).
+
 ### Orðaþekking: ein saga fyrir hvert orð (#8)
 - **Hvert svar um orð er skráð með degi og spurningagerð** (rétt, rangt eða séð), ein færsla á
   spurningu, í nýrri einingu (`core/wordknowledge.js`) sem lærðu orðin og erfiðu orðin byggja á.

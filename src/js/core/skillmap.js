@@ -81,6 +81,7 @@ import {
 import { storedLevel, MIN, MAX } from "./difficulty.js";
 import { skillSummary } from "./progress.js";
 import { statusOf } from "./wordhealth.js";
+import { wordRecord } from "./wordknowledge.js";
 import { lessonById } from "./lessons.js";
 
 /** @typedef {import("../types").State} State */
@@ -525,7 +526,7 @@ export function nodeDetail(node, S, now = Date.now()) {
   out.words = [...words.values()].sort(worst).slice(0, 10).map((w) => {
     const [lemma, cls = ""] = w.key.split("|");
     /** @type {Partial<import("../types").RightWrong>} */
-    const t = (S.words || {})[w.key] || {};
+    const t = wordRecord(S, w.key) || {};
     return { ...w, lemma, cls, right: t.c || 0, wrong: t.w || 0, weak: statusOf(t) === "weak" };
   });
   if (node.id === NOUN_GRID_NODE) {
