@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Færri GitHub Actions-mínútur
+- CI keyrir einu sinni á hverja beiðni um samruna (ekki á hverja sendingu), tegundaathugunin er skref í CI, vafraprófin keyra aðeins með „Run workflow“ og endursmíði gagnanna aðeins þegar breyting snertir gögnin.
+
 ### Yfirlestur eiganda á efninu (24.11.2026)
 - **Athugasemdir móðurmálshafa eru komnar inn**: í „Sameina og skipta“ telst svar sem er rétt en óvenjulegt (*Af því að það var kalt úti fór ég í úlpu.*, *Ég sá það. Hurðin var opin.*) áfram rétt, en nemandinn sér líka algengari röðina; setningin *Músin var veidd af kettinum.* er farin; orðalag lagað á þremur síðum í Lesefni (Föllin fjögur, Kyn og tala nafnorða, Greinir).
 - **Boðháttur af *spyrja* er alls staðar *spyrðu***, ekki *spurðu* (sem er þátíð, *þau spurðu*): í Föllin fjögur, í fimm reglum villugreiningar, í vísbendingu á svarskjá og í einni setningu í Villuveiðum.

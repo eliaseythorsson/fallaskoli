@@ -1,12 +1,21 @@
-# Runs on every push and every pull request. A branch is merged into main only
-# when this is green (turn on branch protection: Settings → Branches → main →
-# "Require status checks to pass" → `test` and `reproducible`).
+# Runs once per pull request into main (and again on each new push to it).
+# A branch is merged into main only when this is green.
+#
+# Actions minutes cost money, so (24 Nov 2026):
+#   - no run on a plain push: a branch is checked when its PR is opened, and
+#     main is checked by deploy.yml, which runs the tests before deploying;
+#   - the type check is a step here, not a workflow of its own (every job is
+#     billed at least one minute);
+#   - the three real-browser checks (informational, never blocking) run only
+#     from the "Run workflow" button; run them on your own computer instead;
+#   - the data rebuild in the container is reproducible.yml, which runs only
+#     when a PR touches the data or the code that makes it.
 name: CI
 
 on:
-  push:
-    branches: ["**"]
   pull_request:
+    branches: [main]
+  workflow_dispatch:      # the "Run workflow" button: also runs the browser checks
 
 # A newer push to the same branch makes the older run pointless.
 concurrency:
@@ -41,22 +50,30 @@ jobs:
       - name: Unit tests
         run: node --test tests/*.test.js
 
+      - name: Type check (tsc --noEmit, docs/TYPES.md)
+        run: npm run typecheck
+
       - name: Bundle
         run: node tools/build.mjs
 
-      # The two real-browser checks from ./build.sh steps 7–8. Not yet
+      # The real-browser checks from ./build.sh steps 7–8: only from the
+      # "Run workflow" button (they take most of this job's time). Not
       # required: remove `continue-on-error` once they have passed here.
       - name: Browser test (Chromium)
+        if: github.event_name == 'workflow_dispatch'
         continue-on-error: true
         run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/browser-test.mjs
       - name: Guided first run (Chromium)
+        if: github.event_name == 'workflow_dispatch'
         continue-on-error: true
         run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/tour-test.mjs
       - name: Server + app test (Chromium)
+        if: github.event_name == 'workflow_dispatch'
         continue-on-error: true
         run: CHROME_PATH="$(command -v google-chrome || command -v chromium)" node tools/server-test.mjs
 
       - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
         with:
           name: fallaskoli-html
           # The single file, and dist/web/ — the folder for a web host (item 54).
@@ -64,30 +81,3 @@ jobs:
             dist/*.html
             dist/web/
           retention-days: 14
-
-  # Item 80: the whole ./build.sh — the data out of BÍN and Greynir included —
-  # inside the build container (Dockerfile.build: platform, Python, Node and
-  # the grammar libraries pinned), and then the proof that it is
-  # reproducible: the rebuilt data must be byte for byte what is committed.
-  # A difference here means either the data was committed from an
-  # environment other than the pinned one, or a change to the data was not
-  # rebuilt and accepted (CLAUDE.md: ./build.sh --accept, with the diff
-  # explained). The browser checks are left to the `test` job above.
-  reproducible:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v4
-      - name: ./build.sh in the build container
-        run: CHROME_PATH=none ./build-in-container.sh
-      - name: The rebuilt data is what is committed, byte for byte
-        run: |
-          changed="$(git status --porcelain --untracked-files=no)"
-          if [ -n "$changed" ]; then
-            echo "The build in the pinned container does not reproduce the committed files:"
-            echo "$changed"
-            git diff --stat
-            git diff -- data/manifest.json data/licenses.js | head -80
-            exit 1
-          fi
-          echo "byte-identical: $(git ls-files data | wc -l) generated files"

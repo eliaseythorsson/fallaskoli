@@ -10,7 +10,7 @@ npm run typecheck        # tsc -p tsconfig.json  (writes nothing)
 ```
 
 It runs in `./build.sh` (step 5, after the unit tests) and in CI as a
-workflow of its own (`.github/workflows/typecheck.yml`). `typescript` is a
+step of `.github/workflows/ci.yml`. `typescript` is a
 pinned devDependency. It is not in the built file or in the server image.
 
 ## How it works

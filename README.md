@@ -107,8 +107,9 @@ package by its hash (`requirements-build.txt` — change it together with
 `requirements.txt`). Your source folder is mounted, so the results land where
 `./build.sh` puts them; your own `node_modules` is not touched. The licence
 list keeps its date while it is unchanged, so a rebuild changes no byte. CI
-(`.github/workflows/ci.yml`, job `reproducible`) runs this on every push and
-fails if the rebuilt data differs from what is committed. Two things the
+(`.github/workflows/reproducible.yml`) runs this on every pull request that
+touches the data or what makes it, and fails if the rebuilt data differs from
+what is committed. Two things the
 container could not check where it was written (no access to Docker Hub): it
 was never built, only read and linted (hadolint), and the image tags carry no
 digest yet — `docker buildx imagetools inspect python:3.13.18-slim-bookworm`
@@ -154,9 +155,8 @@ What the build does, in order:
 
 `node tools/pack.mjs` writes `dist/fallaskoli-v<version>-src.zip` with everything
 the build needs. CI (`.github/workflows/ci.yml`) also runs the unit tests, the
-bundle and the data manifest on every push, and refuses a commit that contains
-personal data or a built file; `.github/workflows/typecheck.yml` runs the type
-check on its own, so a type error is reported as one;
+type check, the bundle and the data manifest on every pull request into main,
+and refuses a commit that contains personal data or a built file;
 `.github/workflows/release.yml` builds a tag and
 attaches the HTML, the zip and the web folder to a release.
 
@@ -413,9 +413,9 @@ server/               the optional multi-user server (Node, JSON files on disk):
 Dockerfile, fly.toml  the server as a container, and where it runs
 Dockerfile.build, build-in-container.sh   the pinned build (see above)
 test-together.sh      four test pupils on your own computer, or the server for several testers
-.github/workflows/    ci.yml (tests, bundle, manifest, the reproducible build),
-                      typecheck.yml (tsc, docs/TYPES.md)
-                      and release.yml (a tag → a release)
+.github/workflows/    ci.yml (tests, types, bundle, manifest — on pull requests),
+                      reproducible.yml (the data rebuilt in the container),
+                      deploy.yml (main → the website), release.yml (a tag → a release)
 tools/                build, version (the file name), manifest, coverage, pack,
                       pwa (manifest and icons), ÍNO converter, tests in
                       Chromium (browser-test, server-test), load-test,

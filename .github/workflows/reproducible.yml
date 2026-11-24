@@ -1,0 +1,48 @@
+# Item 80: the whole ./build.sh — the data out of BÍN and Greynir included —
+# inside the build container (Dockerfile.build: platform, Python, Node and the
+# grammar libraries pinned), and then the proof that it is reproducible: the
+# rebuilt data must be byte for byte what is committed.
+#
+# About ten minutes, so it runs only for a pull request that touches the data
+# or what makes it (the paths below), and from the "Run workflow" button.
+name: Reproducible data
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "content/**"
+      - "pipeline/**"
+      - "data/**"
+      - "sources/**"
+      - "tools/manifest.mjs"
+      - "requirements*.txt"
+      - "Dockerfile.build"
+      - "Dockerfile.build.dockerignore"
+      - "build.sh"
+      - "build-in-container.sh"
+  workflow_dispatch:
+
+concurrency:
+  group: reproducible-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reproducible:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: ./build.sh in the build container
+        run: CHROME_PATH=none ./build-in-container.sh
+      - name: The rebuilt data is what is committed, byte for byte
+        run: |
+          changed="$(git status --porcelain --untracked-files=no)"
+          if [ -n "$changed" ]; then
+            echo "The build in the pinned container does not reproduce the committed files:"
+            echo "$changed"
+            git diff --stat
+            git diff -- data/manifest.json data/licenses.js | head -80
+            exit 1
+          fi
+          echo "byte-identical: $(git ls-files data | wc -l) generated files"

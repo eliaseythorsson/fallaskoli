@@ -16,6 +16,13 @@ deployed. Nobody commits to `main` directly; everything arrives by pull request.
 4. Before opening the PR: `git fetch && git rebase origin/main`, then run the checks below.
 5. Open a pull request. CI must be green before it is merged. Prefer *squash merge*.
 
+**GitHub Actions minutes are paid for by the owner.** CI runs once per pull
+request (not on plain pushes), so: run the checks below on your own computer
+first, open the PR when the branch is finished, and push to it again only to fix
+what CI found. Batch small fixes into one PR. The browser checks are not in CI:
+run `tools/browser-test.mjs` (and `tour-test.mjs`, `server-test.mjs` when you
+touch what they cover) locally.
+
 Several agents on one computer: give each its own worktree, so they never share
 a working folder — `git worktree add ../fallaskoli-78 -b fix/78-git-setup`.
 
@@ -34,7 +41,7 @@ Run it whenever you touch a `*.py` file, anything under `content/` or anything
 under `data/`. `python3 pipeline/content_io.py` is the one-second check of `content/`
 on its own (every file read, or the file and line that is wrong). On a Mac, or
 anywhere the result must match CI byte for byte, run `./build-in-container.sh`
-instead (same arguments; needs Docker): CI's `reproducible` job rebuilds the
+instead (same arguments; needs Docker): CI's `reproducible` workflow rebuilds the
 data in that container and fails on any difference.
 
 ## Do not

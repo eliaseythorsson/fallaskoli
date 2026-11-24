@@ -55,7 +55,11 @@ test("the build container pins the platform, Python, Node and installs only the 
     assert.ok(versions.length >= 1, wf);
     for (const v of versions) assert.equal(v, node[1], `${wf} runs Node ${v}, the build container ${node[1]}`);
   }
-  assert.match(read(".github/workflows/ci.yml"), /\.\/build-in-container\.sh/, "CI must run the container build");
+  /* Its own workflow since 24 Nov 2026, run when a PR touches the data. */
+  const rep = read(".github/workflows/reproducible.yml");
+  assert.match(rep, /\.\/build-in-container\.sh/, "CI must run the container build");
+  for (const p of ["content/**", "pipeline/**", "data/**", "sources/**", "build.sh"])
+    assert.ok(rep.includes(`"${p}"`), `reproducible.yml must run when ${p} changes`);
   const wrapper = fs.statSync(path.join(ROOT, "build-in-container.sh"));
   assert.ok(wrapper.mode & 0o100, "build-in-container.sh must be executable");
 });

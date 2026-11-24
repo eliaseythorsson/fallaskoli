@@ -6,7 +6,7 @@
  * `npm run typecheck` stayed green. These tests stop that, and keep the list
  * in tsconfig.json, the files themselves and docs/TYPES.md saying the same
  * thing. They do not run tsc (that is `npm run typecheck`, in build.sh and in
- * .github/workflows/typecheck.yml); they are quick and need no TypeScript. */
+ * .github/workflows/ci.yml); they are quick and need no TypeScript. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -103,17 +103,11 @@ test("docs/TYPES.md names every checked module", () => {
   for (const f of listed) assert.ok(doc.includes(f.replace(/^src\/js\//, "")), `docs/TYPES.md does not mention ${f}`);
 });
 
-test("the type-check workflow runs on the same Node as ci.yml, from the lockfile", () => {
-  /* typecheck.yml is a workflow of its own (a type error is named as one),
-     but it must not drift from ci.yml: the same exact Node (that of
-     Dockerfile.build), `npm ci` so the pinned typescript is the one used. */
-  const nodeOf = (f) => {
-    const m = read(f).match(/node-version:\s*["']?([\d.]+)/);
-    assert.ok(m, `${f} names no node-version`);
-    return m[1];
-  };
-  assert.equal(nodeOf(".github/workflows/typecheck.yml"), nodeOf(".github/workflows/ci.yml"));
-  const wf = read(".github/workflows/typecheck.yml");
+test("CI runs the type check, from the lockfile", () => {
+  /* Since 24 Nov 2026 the type check is a step of ci.yml (a workflow of its
+     own cost a billed minute per run). `npm ci` so the pinned typescript is
+     the one used. */
+  const wf = read(".github/workflows/ci.yml");
   assert.match(wf, /npm ci\b/);
   assert.match(wf, /npm run typecheck\b/);
   assert.match(read("build.sh"), /npm run -s typecheck\b/, "build.sh no longer runs the type check");
