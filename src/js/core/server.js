@@ -210,6 +210,11 @@ export function createServer(base = "", { fetchImpl = globalThis.fetch } = {}) {
 
     /** The ceiling that applies to ME. Every logged-in user may ask. */
     myPolicy: () => call("GET", "/policy"),
+    /** Is the server's grader up for me (#48)? `{ up }`. */
+    grader: () => call("GET", "/grader"),
+    /** Have my answer read by the server's grader: `{ findings }`, or an
+        Error whose `data.fault` says why not (control/serverask.js). */
+    graderRead: (kind, text, context) => call("POST", "/grader/read", { kind, text, context }),
   };
 }
 

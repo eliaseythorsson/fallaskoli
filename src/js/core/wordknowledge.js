@@ -189,7 +189,7 @@ export const RECENT_KEEP = 12;
  * not an answer to a question (pending, a second try, the bonus sentence).
  *
  * @param {Task} task
- * @param {Pick<Judgement, "ok"|"effects"|"finish"> & {retry?: boolean, pending?: boolean}} j
+ * @param {Pick<Judgement, "ok"|"effects"|"finish"> & {retry?: boolean, pending?: Judgement["pending"]}} j
  * @returns {{word: string, type: string, outcome: string}[]}
  */
 export function entriesFor(task, j) {
@@ -200,9 +200,11 @@ export function entriesFor(task, j) {
   /** @type {Map<string, boolean[]>} */
   const words = new Map();
   for (const e of j.effects || []) {
-    if (!e || e.do !== "record" || !e.word) continue;
+    /* `seen`: a server-graded question nobody could judge (core/answer.js,
+       #48) — its word is named, and the outcome is SEEN (ok is null). */
+    if (!e || (e.do !== "record" && e.do !== "seen") || !e.word) continue;
     const list = words.get(e.word) || [];
-    list.push(e.ok !== false);
+    list.push(e.do === "record" && e.ok !== false);
     words.set(e.word, list);
   }
   const out = [];
@@ -233,7 +235,7 @@ function historyIn(S, word) {
  *
  * @param {State} S
  * @param {Task} task
- * @param {Pick<Judgement, "ok"|"effects"|"finish"> & {retry?: boolean, pending?: boolean}} j
+ * @param {Pick<Judgement, "ok"|"effects"|"finish"> & {retry?: boolean, pending?: Judgement["pending"]}} j
  * @param {DayKey} today  the pupil's day (core/state.js `todayKey`)
  * @returns {{word: string, type: string, outcome: string}[]} the entries written
  */

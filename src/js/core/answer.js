@@ -68,6 +68,10 @@
  *   pending   true when there is nothing to settle yet: an empty box, a row
  *             without a pick, several forms written in the hope that one is
  *             right. The renderer says so and waits; nothing is recorded.
+ *             A server-graded question has two more (section 6 below):
+ *             "server" — the answer must be read on the server first — and
+ *             "revise" — read, and the pupil may revise it once. Both are
+ *             truthy, so everything that skips a pending result skips them.
  *   effects   what `settle` is to write, in order. An answer is not always
  *             one record: a table records every cell and is tallied once, a
  *             hunt records every error, a rewrite every mark it tested. The
@@ -82,6 +86,42 @@
  *             result, the leniency verdict, per-cell and per-card results.
  *   resp      the answer in the shape `diagnose` reads. `findings` is made
  *             from it; it is kept so a caller can see why.
+ *
+ * ---- server-graded questions (issue #48, docs/adr/0002) ------------------
+ *
+ * A question type with `grader: "server"` (core/catalogue.js, or `grader` on
+ * the task) is judged by this same `judge`, in two steps, and settled by
+ * this same `settle`, ONCE:
+ *
+ *   judge(task, { text })            → { pending: "server", detail.read }
+ *        the caller sends `detail.read` ({ kind, text, context }) to the
+ *        server's text reader (server/reader.mjs, POST /grader/read) and gets
+ *        back CHECKED FINDINGS only — never a verdict, never XP;
+ *   judge(task, { text, reading })   pure again: the findings tick the
+ *        rubric's points (`task.rubric`), and the rubric's MAIN point decides
+ *        right or wrong. Then either
+ *          { pending: "revise", detail.checklist, detail.ask }   the first
+ *             reading, with something left to do: a checklist and ONE
+ *             follow-up question. The pupil may revise once;
+ *          a judgement to settle: after the revision (`first` in the
+ *             response), when the pupil keeps the first answer (`keep`), or
+ *             at once when nothing is left to revise.
+ *   judge(task, { text, reading: { fault } })   the grader did not answer
+ *        (after one automatic retry): "not judged" — ok null, verdict
+ *        `notjudged`, XP for finishing, a SEEN entry in word knowledge.
+ *
+ * XP is for finishing (and for revising), never for the verdict: a right and
+ * a wrong answer earn the same. The loop that sends, retries and waits is
+ * control/serverask.js; the screen's part is ui/serverask.js.
+ *
+ *   task.rubric   { main: pointId, points: [{ id, label, ask }] } — `label`
+ *                 is the line of the checklist, `ask` the follow-up question
+ *                 when the point is not there yet. Both are OUR words, from
+ *                 the builder: nothing a model wrote is shown as a question.
+ *   task.read     { kind, context } — which reader, and what it is told
+ *   response      { text, reading?, first?, keep? }
+ *   a finding     { point, met: boolean, quote?, note? } — a point is there
+ *                 when a finding says `met: true` for it.
  *
  * ---- XP needs a pupil ----------------------------------------------------
  *
@@ -105,6 +145,7 @@ import { noteNodeAnswer, partsOf } from "./skillmap.js";
 import { noteReview } from "./review.js";
 import { noteReviewsPassed } from "./mending.js";
 import { noteWords } from "./wordknowledge.js";
+import { graderOf } from "./catalogue.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Session} Session */
@@ -539,7 +580,7 @@ const pending = (verdict, detail = {}) => ({
     @returns {Judgement} */
 function result(task, { ok, verdict, effects, resp = null, finish = {}, detail = {} }) {
   const xp = effects.reduce((n, e) =>
-    n + (e.do === "record" || e.do === "grant" ? e.xp || 0 : 0), 0);
+    n + (e.do === "record" || e.do === "grant" || e.do === "seen" ? e.xp || 0 : 0), 0);
   return {
     ok, verdict, pending: false,
     findings: diagnose(task, resp),
@@ -1127,7 +1168,88 @@ JUDGES.umritun = (t, response, hist) => {
 };
 
 /* ========================================================================
- * 6. The two entry points
+ * 6. Server-graded questions (issue #48): see "server-graded questions" at
+ *    the top of this file.
+ * ====================================================================== */
+
+/** What revising earns, as a share of what finishing earns. */
+export const REVISE_XP = 0.5;
+
+/** Is this task's answer read on the server before it is judged? */
+export const serverGraded = (task) =>
+  !!task && (task.grader === "server" || graderOf(task.typeId || task.type) === "server");
+
+/** The rubric's points, each ticked or not by the findings. */
+export function checklistOf(task, findings) {
+  const list = Array.isArray(findings) ? findings : [];
+  const points = (task.rubric && Array.isArray(task.rubric.points)) ? task.rubric.points : [];
+  return points.map((p) => ({
+    id: p.id, label: p.label, ask: p.ask || null,
+    main: !!task.rubric && p.id === task.rubric.main,
+    met: list.some((f) => f && f.point === p.id && f.met === true),
+    /* What the reader quoted, for drawing; already checked to be the
+       pupil's own words (server/reader.mjs `checkQuotes`). */
+    quotes: list.filter((f) => f && f.point === p.id && typeof f.quote === "string").map((f) => f.quote),
+  }));
+}
+
+/** XP for finishing, and for revising: the same whatever the verdict.
+    @type {(task: Task, revised: boolean, hist: any) => {finish: number, revise: number}} */
+function serverXp(task, revised, hist) {
+  const mult = dayMult(hist.streak);
+  const base = task.base || 0;
+  return { finish: Math.round(base * mult), revise: revised ? Math.round(base * REVISE_XP * mult) : 0 };
+}
+
+/** @param {Task} t @param {Record<string, any>} response @returns {Judgement} */
+function judgeServer(t, response, hist) {
+  const text = String(response.text ?? "").trim();
+  if (!text) return pending("empty");
+  const first = response.first == null ? null : String(response.first);
+  /* A revision that is the first answer again is not a revision. */
+  if (first != null && normalise(first) === normalise(text)) return pending("same", { first });
+  const reading = response.reading;
+  const read = { kind: (t.read && t.read.kind) || t.typeId || t.type, text, context: (t.read && t.read.context) || null };
+  if (!reading || typeof reading !== "object")
+    return { ...pending("reading", { read }), pending: "server" };
+  const revised = first != null;
+  const skill = t.skill;
+  const word = t.word || null;
+
+  /* The grader did not answer: not judged. XP for finishing, a seen entry. */
+  if (reading.fault || !Array.isArray(reading.findings)) {
+    const x = serverXp(t, revised, hist);
+    return result(t, {
+      ok: null, verdict: "notjudged",
+      effects: [{ do: "seen", skill, word, xp: x.finish + x.revise, timed: true }],
+      detail: { server: true, fault: String(reading.fault || "failed"), xpFinish: x.finish, xpRevise: x.revise },
+    });
+  }
+
+  const checklist = checklistOf(t, reading.findings);
+  const main = checklist.find((p) => p.main);
+  const ok = !!(main && main.met);
+  const open = checklist.filter((p) => !p.met);
+  /* The first reading, with something left to do: one revision is offered.
+     Not in a duel (one attempt each), and not once the pupil keeps it. */
+  if (!revised && !response.keep && open.length && !t.duel) {
+    const next = (main && !main.met ? main : open[0]);
+    return { ...pending("revise", { server: true, checklist, ask: next.ask || null }),
+      pending: "revise" };
+  }
+  const x = serverXp(t, revised, hist);
+  return result(t, {
+    ok, verdict: VERDICT(ok),
+    effects: [
+      rec({ skill, word, ok, xp: x.finish + x.revise, timed: true }),
+      bump(skill, ok),
+    ],
+    detail: { server: true, checklist, revised, xpFinish: x.finish, xpRevise: x.revise },
+  });
+}
+
+/* ========================================================================
+ * 7. The two entry points
  * ====================================================================== */
 
 /** The question types `judge` knows. */
@@ -1142,7 +1264,7 @@ export const JUDGED_TYPES = Object.keys(JUDGES);
  * @returns {Judgement}
  */
 export function judge(task, response = {}, pupil = null) {
-  const fn = task && JUDGES[task.type];
+  const fn = serverGraded(task) ? judgeServer : task && JUDGES[task.type];
   if (!fn) throw new Error("Enginn dómari fyrir " + (task && task.type));
   const j = fn(task, response || {}, historyOf(pupil));
   /* The response that was judged, kept beside the judgement — a duel sends
@@ -1179,7 +1301,7 @@ export function judgeBonus(task, text, pupil = null) {
 }
 
 /* ========================================================================
- * 7. A second try (critique item 42)
+ * 8. A second try (critique item 42)
  * ======================================================================
  *
  * A wrong WRITTEN answer is not answered for the pupil at once. The verdict
@@ -1372,6 +1494,19 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
       /* A text that has earned its XP once this visit. */
       case "remember": (sess[e.list] ||= []).push(e.key); break;
       case "bump": bumpDiff(sess, S, e.skill, e.ok); break;
+      /* Not judged (a server-graded question the grader could not read):
+         XP for finishing and the time, and neither right nor wrong — no
+         tally, no record of the word; word knowledge makes it a SEEN entry
+         (core/wordknowledge.js `entriesFor`). */
+      case "seen": {
+        const day = dayRec(S);
+        if (e.timed && ms > 0) day.ms = (day.ms || 0) + ms;
+        S.xp += e.xp || 0;
+        day.xp += e.xp || 0;
+        if (e.skill) (S.skills[e.skill] ||= { xp: 0, c: 0, w: 0, bestRun: 0 }).xp += e.xp || 0;
+        S.lastActive = todayKey();
+        break;
+      }
       default: throw new Error("Óþekkt áhrif: " + /** @type {any} */ (e).do);
     }
   }

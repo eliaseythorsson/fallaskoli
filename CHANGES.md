@@ -20,6 +20,11 @@
   orðavalið lesa orðin og björgunarskrána í gegnum `core/wordknowledge.js`, sem sameinar líka og athugar þær.
   Hermdur nemandi fær sömu orðaheilsu, sömu björgunarboð og sama Orðaforða og áður (próf).
 
+### Svör sem þjónninn les áður en þau eru dæmd (#48)
+- **Spurningar sem þjónninn les** (enn engin í notkun) fara sömu leið og aðrar: nemandinn fær gátlista og eina
+  spurningu, má bæta svarið einu sinni, og svarið er skráð einu sinni. XP fyrir að ljúka og bæta, ekki fyrir rétt.
+  Svari þjónninn ekki (tvær tilraunir) telst spurningin „ekki dæmd“ og slíkar spurningar hverfa út heimsóknina.
+
 ### Orðaþekking: ein saga fyrir hvert orð (#8)
 - **Hvert svar um orð er skráð með degi og spurningagerð** (rétt, rangt eða séð), ein færsla á
   spurningu, í nýrri einingu (`core/wordknowledge.js`) sem lærðu orðin og erfiðu orðin byggja á.

@@ -55,6 +55,8 @@ import { noteMending } from "./core/mending.js";
 import { syncSessionLayout } from "./ui/session.js";
 import { LESSONS, readCount } from "./core/lessons.js";
 import { showFindings, showReview, showMended, armNext } from "./ui/verdict.js";
+import { setServerGrader } from "./core/servergrader.js";
+import { serverReader } from "./control/serverask.js";
 import { sessionControl } from "./control/session.js";
 import { drillControl } from "./control/drill.js";
 import { duelControl } from "./control/duel.js";
@@ -75,6 +77,9 @@ const app = {
   clock,
   defs: null,
   server: null,
+  /* How a server-graded answer is sent to be read (control/serverask.js);
+     null without a server or with server grading off. */
+  serverRead: null,
   profile: null,
   rights: null,
   roster: [],
@@ -679,6 +684,14 @@ async function init() {
       app.server.calibration().catch(() => null),
     ]);
     if (ceiling) app.S.allowed = ceiling.policy || null;
+    /* Server-graded questions (#48, docs/adr/0004): only when the
+       administrator switched them on for this pupil is the server asked
+       whether its grader is up. Until it says yes, they do not exist. */
+    if (app.S.allowed && app.S.allowed.serverGrading === true) {
+      const g = await app.server.grader().catch(() => null);
+      setServerGrader(!!g && g.up === true);
+      app.serverRead = serverReader(app.server);
+    }
     app.calInfo = cal && typeof cal === "object" && cal.on === true ? cal : null;
     const table = app.calInfo ? cleanTable(app.calInfo.table) : null;
     app.cal = tableIsEmpty(table) ? null : table;

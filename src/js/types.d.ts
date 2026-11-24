@@ -397,7 +397,8 @@ export type Effect =
   | { do: "grant"; skill: SkillId; xp: number }
   | { do: "count"; counter: string }
   | { do: "remember"; list: string; key: string }
-  | { do: "bump"; skill: SkillId; ok: boolean | null };
+  | { do: "bump"; skill: SkillId; ok: boolean | null }
+  | { do: "seen"; skill?: SkillId; word?: string | null; xp?: number; timed?: boolean };
 
 /** The one effect that writes an answer (core/state.js `record`). */
 export type RecordEffect = Extract<Effect, { do: "record" }>;
@@ -407,7 +408,9 @@ export type RecordEffect = Extract<Effect, { do: "record" }>;
 export interface Judgement {
   ok: boolean | null;
   verdict: string;
-  pending: boolean;
+  /** true, or for a server-graded question "server" (read it first) or
+      "revise" (read; one revision offered). core/answer.js. */
+  pending: boolean | "server" | "revise";
   findings: Finding[];
   xp: number;
   effects: Effect[];
