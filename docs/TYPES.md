@@ -75,6 +75,7 @@ The pure modules, where the shared shapes matter most:
 | `core/today.js` | today's session plan |
 | `core/run.js` | a practice session without its screen: the record (`Run`), its policy, counting an answer, the summary |
 | `core/structure.js` | what of a sentence is marked (item 25): `Structure`, `Part`, `Clause` (JSDoc only) |
+| `core/hint.js` | the structure hint on Setningafræði questions and its fading by þyngd (item 26): `Coding` (JSDoc only) |
 | `core/diagnosis.js` | findings, `S.diag`, the pattern standings |
 | `core/merge.js` | the three-way merge, typed at its edges (`State` in and out) |
 | `core/catalogue.js` | every question type, declared once (`CatalogueEntry`), in duel order |

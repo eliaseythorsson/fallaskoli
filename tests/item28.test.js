@@ -278,7 +278,8 @@ test("setn_lidir: the answer is among the options, and the words underlined are 
 });
 
 test("setn_lidir: at least 150 different questions at every step it declares", () => {
-  assert.deepEqual(typeById("setn_lidir").bands, [1, 3, 5]);
+  /* 6: the structure hint stops there (item 26, tests/hint.test.js) */
+  assert.deepEqual(typeById("setn_lidir").bands, [1, 3, 5, 6]);
   for (const band of typeById("setn_lidir").bands) {
     const n = distinct(PHR.get(band), sigPhr);
     assert.ok(n >= 150, `þyngd ${band}: ${n} different questions`);
@@ -378,8 +379,9 @@ test("lid_finna: the words to click are every forsetningarliður of the sentence
 });
 
 test("lid_finna: at least 150 different questions at each step; two phrases and long sentences only from þyngd 4", () => {
-  assert.deepEqual(typeById("lid_finna").bands, [1, 4]);
-  for (const band of [1, 4]) {
+  /* 3 and 6: the structure hint is offered from 3 and stops at 6 (item 26) */
+  assert.deepEqual(typeById("lid_finna").bands, [1, 3, 4, 6]);
+  for (const band of [1, 3, 4, 6]) {
     const n = distinct(FIND.get(band), sigFind);
     assert.ok(n >= 150, `þyngd ${band}: ${n} different questions`);
   }

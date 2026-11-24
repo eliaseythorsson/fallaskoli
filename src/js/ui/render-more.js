@@ -12,6 +12,7 @@ import { RENDER, sentenceHTML, whyBox, conclude, enterToSubmit, skillTag, slipNo
          compareHTML, retryRightHTML, RETRY_STILL_MISS } from "./render.js";
 import { judge, judgeBonus, settle, bonusVerdict, BONUS_XP } from "../core/answer.js";
 import { $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO, freshEnter } from "./dom.js";
+import { codedOn, codedHTML, hintButtonHTML, shownNoteHTML, wireHint, endHint } from "./hint.js";
 
 const eyebrow = (t) =>
   `<p class="eyebrow"><span>${esc(t.title)}</span>${skillTag(t)}<b>þyngd ${t.lvl}</b></p>`;
@@ -20,8 +21,25 @@ const eyebrow = (t) =>
 const blankHTML = (t) =>
   `<span class="blank">?</span>${t.cue ? ` <span class="cue">(${esc(t.cue)})</span>` : ""}`;
 
+/* Item 26: a Setningafræði question may draw its sentence with the structure
+   marked (ui/hint.js). The words the question points at keep their own look. */
+const pointedWord = (t) => (tok, j) => {
+  const span = t.markSpan && t.span && j >= t.span.from && j <= t.span.to;
+  const target = (t.marks && t.marks.includes(j)) || (!t.marks && (t.mark || t.mode === "replace") && j === t.i)
+    || (t.items || []).some((x) => x.j === j);
+  return span ? `<span class="clausemark">${esc(tok.w)}</span>` : target ? `<span class="target">${esc(tok.w)}</span>` : esc(tok.w);
+};
+
+/** Draw the question's sentence again (the hint opened, or the answer is in). */
+const redrawSentence = (t, html) => {
+  const el = document.querySelector("#task .sentence");
+  if (el) el.outerHTML = html(t);
+};
+
 function questionSentence(t) {
   if (!t.s) return "";
+  const coded = codedHTML(t, pointedWord(t));
+  if (coded != null) return `<p class="sentence coded">${coded}</p>`;
   /* Several words marked as one (item 27: the verb phrase *var byggt*). */
   if (t.marks) return `<p class="sentence">${t.s.tok.map((x, j) => (PUNCT.has(x.w) ? x.w
     : (j ? " " : "") + (t.marks.includes(j) ? `<span class="target">${esc(x.w)}</span>` : esc(x.w)))).join("")}</p>`;
@@ -154,7 +172,8 @@ RENDER.choice = function (app) {
     ${eyebrow(t)}
     ${t.second && t.lead ? `<p class="gloss">${fmt(t.lead)}</p>` : ""}
     ${halves.map((h, n) => (n ? '<hr class="pairrule">' : "") + choiceHalf(h, n)).join("")}
-    <div class="answer"><button class="go" id="check">Athuga</button></div>
+    ${shownNoteHTML(t)}
+    <div class="answer"><button class="go" id="check">Athuga</button>${hintButtonHTML(t)}</div>
     <div id="verdict"></div>
   </div>`;
   document.querySelectorAll(".opts").forEach((box) => {
@@ -175,16 +194,20 @@ RENDER.choice = function (app) {
     });
   });
   $("check").onclick = () => submitChoice(app);
+  wireHint(t, () => redrawSentence(t, questionSentence));
 };
 
 function submitChoice(app) {
   const t = app.cur;
   const halves = t.second ? [t, t.second] : [t];
-  const j = judge(t, { picked: t.picked, picked2: t.picked2 }, app);
+  const j = judge(t, { picked: t.picked, picked2: t.picked2, ...(t.hinted ? { hinted: true } : {}) }, app);
   if (j.pending) {
     $("verdict").innerHTML = `<div class="verdict neutral"><p>${t.second ? "Veldu eitt svar í hvorri setningu." : "Veldu eitt svar."}</p></div>`;
     return;
   }
+  t.done = true;
+  endHint();
+  if (codedOn(t)) redrawSentence(t, questionSentence);
   const ok = j.ok, xp = j.xp;
   document.querySelectorAll(".opts").forEach((box) => {
     const h = halves[+box.dataset.q];
@@ -421,22 +444,22 @@ function drawSlots(app, t, j, ins) {
 
 /* ================= tap ================================================== */
 
-RENDER.tap = function (app) {
-  const t = app.cur;
-  t.sel = new Set();
-  $("task").innerHTML = `
-  <div class="card">
-    ${eyebrow(t)}
-    <p class="sentence" id="picker">${t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w
-      : `${j ? " " : ""}<span class="pickw" data-j="${j}" role="button" tabindex="0" aria-pressed="false">${esc(tok.w)}</span>`).join("")}</p>
-    <p class="gloss">${fmt(t.question)}</p>
-    <div class="answer"><button class="go" id="check">Athuga</button></div>
-    <div id="verdict"></div>
-  </div>`;
+/* The words of a tap question, clickable; with the structure drawn when the
+   question has it (item 26: lid_finna). */
+const tapWord = (tok, j) => `<span class="pickw" data-j="${j}" role="button" tabindex="0" aria-pressed="false">${esc(tok.w)}</span>`;
+const tapSentence = (t) => {
+  const coded = codedHTML(t, tapWord);
+  return `<p class="sentence${coded != null ? " coded" : ""}" id="picker">${coded != null ? coded
+    : t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w : `${j ? " " : ""}${tapWord(tok, j)}`).join("")}</p>`;
+};
+
+function wireTap(t) {
   document.querySelectorAll(".pickw").forEach((el) => {
+    const j = +el.dataset.j;
+    el.classList.toggle("sel", t.sel.has(j));
+    el.setAttribute("aria-pressed", t.sel.has(j));
     const toggle = () => {
       if (t.done) return;
-      const j = +el.dataset.j;
       if (t.sel.has(j)) t.sel.delete(j); else t.sel.add(j);
       el.classList.toggle("sel", t.sel.has(j));
       el.setAttribute("aria-pressed", t.sel.has(j));
@@ -444,12 +467,28 @@ RENDER.tap = function (app) {
     el.onclick = toggle;
     el.onkeydown = (e) => { if (e.key === " ") { e.preventDefault(); toggle(); } };
   });
+}
+
+RENDER.tap = function (app) {
+  const t = app.cur;
+  t.sel = new Set();
+  $("task").innerHTML = `
+  <div class="card">
+    ${eyebrow(t)}
+    ${tapSentence(t)}
+    ${shownNoteHTML(t)}
+    <p class="gloss">${fmt(t.question)}</p>
+    <div class="answer"><button class="go" id="check">Athuga</button>${hintButtonHTML(t)}</div>
+    <div id="verdict"></div>
+  </div>`;
+  wireTap(t);
   $("check").onclick = () => submitTap(app);
+  wireHint(t, () => { redrawSentence(t, tapSentence); wireTap(t); });
 };
 
 function submitTap(app) {
   const t = app.cur;
-  const jd = judge(t, { sel: [...t.sel] }, app);
+  const jd = judge(t, { sel: [...t.sel], ...(t.hinted ? { hinted: true } : {}) }, app);
   if (jd.pending) {
     $("verdict").innerHTML = `<div class="verdict neutral"><p>Smelltu á að minnsta kosti eitt orð.</p></div>`;
     return;
@@ -458,6 +497,8 @@ function submitTap(app) {
   const { extra, missed } = jd.detail;
   const ok = jd.ok, xp = jd.xp;
   t.done = true;
+  endHint();
+  if (codedOn(t)) redrawSentence(t, tapSentence);
   document.querySelectorAll(".pickw").forEach((el) => {
     const j = +el.dataset.j;
     el.classList.remove("sel");
@@ -482,20 +523,27 @@ function submitTap(app) {
 
 /* ================= sort ================================================= */
 
+const sortSentence = (t) => {
+  if (!t.s) return "";
+  const coded = codedHTML(t, pointedWord(t));
+  if (coded != null) return `<p class="sentence coded">${coded}</p>`;
+  const marked = new Set((t.items || []).map((x) => x.j).filter((j) => j != null));
+  return `<p class="sentence">${t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w
+    : `${j ? " " : ""}${marked.has(j) ? `<span class="target">${esc(tok.w)}</span>` : esc(tok.w)}`).join("")}</p>`;
+};
+
 RENDER.sort = function (app) {
   const t = app.cur;
   t.picks = {};
-  const marked = new Set((t.items || []).map((x) => x.j).filter((j) => j != null));
-  const sent = t.s ? `<p class="sentence">${t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w
-    : `${j ? " " : ""}${marked.has(j) ? `<span class="target">${esc(tok.w)}</span>` : esc(tok.w)}`).join("")}</p>` : "";
   $("task").innerHTML = `
   <div class="card">
     ${eyebrow(t)}
-    ${sent}
+    ${sortSentence(t)}
+    ${shownNoteHTML(t)}
     <p class="gloss">${fmt(t.question)}</p>
     <div class="sortrows">${t.items.map((it, k) => `<div class="sortrow"><span class="sortw forms">${esc(it.w)}</span>
       <div class="opts" data-q="${k}">${t.buckets.map((b) => `<button type="button" data-v="${esc(b)}">${esc(b)}</button>`).join("")}</div></div>`).join("")}</div>
-    <div class="answer"><button class="go" id="check">Athuga</button></div>
+    <div class="answer"><button class="go" id="check">Athuga</button>${hintButtonHTML(t)}</div>
     <div id="verdict"></div>
   </div>`;
   document.querySelectorAll(".sortrow .opts").forEach((box) => {
@@ -507,15 +555,19 @@ RENDER.sort = function (app) {
     };
   });
   $("check").onclick = () => submitSort(app);
+  wireHint(t, () => redrawSentence(t, sortSentence));
 };
 
 function submitSort(app) {
   const t = app.cur;
-  const j = judge(t, { picks: t.picks }, app);
+  const j = judge(t, { picks: t.picks, ...(t.hinted ? { hinted: true } : {}) }, app);
   if (j.pending) {
     $("verdict").innerHTML = `<div class="verdict neutral"><p>Settu hvert orð í flokk fyrst.</p></div>`;
     return;
   }
+  t.done = true;
+  endHint();
+  if (codedOn(t)) redrawSentence(t, sortSentence);
   const { good, wrong } = j.detail;
   const ok = j.ok, xp = j.xp;
   document.querySelectorAll(".sortrow .opts").forEach((box) => {

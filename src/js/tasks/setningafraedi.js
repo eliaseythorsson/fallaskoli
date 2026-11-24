@@ -12,6 +12,7 @@
 import { bandOf } from "../core/difficulty.js";
 import { built, FX } from "./effects.js";
 import { pick, wpick, bandFor, forcedCell, fresh, PUNCT } from "./shared.js";
+import { planHint, SETNINGARHLUTAR } from "../core/hint.js";
 
 /* ================= Setningarhlutar ======================================= */
 
@@ -326,14 +327,51 @@ export function synFindPP(lex, view, rng) {
   }, [FX.exSeen("finna:" + x.s.t)]);
 }
 
+/* ================= The structure hint (item 26) ===========================
+ *
+ * Every question here may carry `coding`: the structure of its sentence
+ * (core/structure.js) as a hint — shown, offered or left out by the pupil's
+ * þyngd, and never the answer (core/hint.js, where the rule and its reasons
+ * are). What each type ASKS decides what the hint must not show:
+ *
+ *   syntax       the role asked for; every word that is a right click
+ *   setn_hlut    every setningarhluti (they are the options), and nothing on
+ *                the marked word
+ *   setn_flokka  every setningarhluti (they are the buckets), nothing on the
+ *                underlined words
+ *   setn_lidir   the setningarhlutar and the forsetningarliðir (a frumlag is
+ *                a nafnliður, an umsögn opens the sagnliður: either would
+ *                name the answer), nothing on the underlined words
+ *   lid_finna    the forsetningarliðir; every word of them is a right click
+ *
+ * A new type in this file wraps its builder in `withHint` with its own line. */
+const ASKS = {
+  syntax: (t) => ({ hide: [t.askRole],
+    right: t.s.tok.map((x, j) => (x.r === t.askRole || (x.ra || []).includes(t.askRole) ? j : -1)).filter((j) => j >= 0) }),
+  setn_hlut: (t) => ({ hide: SETNINGARHLUTAR, pointed: [t.i] }),
+  setn_flokka: (t) => ({ hide: SETNINGARHLUTAR, pointed: t.items.map((x) => x.j) }),
+  setn_lidir: (t) => ({ hide: [...SETNINGARHLUTAR, "forsetningarliður"],
+    pointed: Array.from({ length: t.span.to - t.span.from + 1 }, (_, k) => t.span.from + k) }),
+  lid_finna: (t) => ({ hide: ["forsetningarliður"], right: t.targets }),
+};
+
+/** A builder whose task carries the hint its type allows at the pupil's þyngd. */
+const withHint = (id, build) => (lex, view, rng) => {
+  const b = build(lex, view, rng);
+  if (!b || !b.task.s) return b;
+  const coding = planHint(b.task.s, { thyngd: bandFor(view, "setningafraedi"), ...ASKS[id](b.task) });
+  if (coding) b.task.coding = coding;
+  return b;
+};
+
 /** The builders of this category, by question type id. What each type is —
    its name, renderer, tags, bands and weight — is declared in
    core/catalogue.js; tasks/registry.js joins the two.
    @type {Record<string, import("../types").Builder>} */
 export const BUILDERS = {
-  syntax: { build: taskSyntax },
-  setn_hlut: { build: synRole },
-  setn_flokka: { build: synSort },
-  setn_lidir: { build: synPhrase },
-  lid_finna: { build: synFindPP },
+  syntax: { build: withHint("syntax", taskSyntax) },
+  setn_hlut: { build: withHint("setn_hlut", synRole) },
+  setn_flokka: { build: withHint("setn_flokka", synSort) },
+  setn_lidir: { build: withHint("setn_lidir", synPhrase) },
+  lid_finna: { build: withHint("lid_finna", synFindPP) },
 };

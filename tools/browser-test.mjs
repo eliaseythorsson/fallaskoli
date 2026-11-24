@@ -3644,6 +3644,8 @@ await page.setViewport({ width: 1100, height: 900 });
     A.S.enabled.setningafraedi = true; A.reloadPolicy();
     A.run = null; A.runDone = null; A.drill = null; A.drillDone = null;
     A.startRun("setningafraedi", 100000);
+    /* item 26: at þyngd 3–5 the hint is offered (at 1–2 it is shown from the start) */
+    A.sess.diff.setningafraedi = 4;
     /* a sentence with a clause in it, so that a box is on the screen too */
     for (let i = 0; i < 3000 && A.run; i++) {
       A.next();
@@ -3706,6 +3708,122 @@ await page.setViewport({ width: 1100, height: 900 });
     ok(a.names.includes(got.role), `after the answer the ${got.role} is still not marked`);
   }
   ok(errors.length === 0, "errors with the structure hint: " + errors.join(" | "));
+  await page.close();
+}
+
+/* ---------- item 26: the structure hint on every Setningafræði question ------
+ * Fading with þyngd: at þyngd 1 the structure is drawn from the start (no
+ * button), at 4 it is behind "Vísbending", at 6 it is not there. Checked on
+ * the choice, tap and sort questions at a phone's and a desktop's width:
+ * nothing asked is marked, the words stay clickable, nothing runs off the
+ * screen, half the XP with the button, and after the answer everything is
+ * marked. Screenshots go to $SHOTS when it is set. */
+for (const [w, h] of [[390, 844], [1100, 900]]) {
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.setViewport({ width: w, height: h, isMobile: w < 600, hasTouch: w < 600, deviceScaleFactor: 1 });
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  const shot = async (name) => { if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/26-${w}-${name}.png`, fullPage: true }); };
+  /* the next question of one type at one þyngd, with or without a hint */
+  const find = (type, band, want) => page.evaluate((type, band, want) => {
+    const A = window.FALLASKOLI;
+    document.querySelectorAll(".tour, .scrim").forEach((x) => x.remove());
+    A.S.enabled.setningafraedi = true; A.reloadPolicy();
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null;
+    A.startRun("setningafraedi", 100000);
+    for (let i = 0; i < 3000 && A.run; i++) {
+      A.sess.diff.setningafraedi = band;
+      A.next();
+      const c = A.cur;
+      if (c && c.typeId === type && (want === "none" ? !c.coding : c.coding && c.coding.step === want)) break;
+    }
+    const c = A.cur;
+    if (!c || c.typeId !== type) return null;
+    const names = [...document.querySelectorAll("#task .sentence .sc-name")].map((x) => x.textContent);
+    const out = [...document.querySelectorAll("#task .sentence .sc, #task .sentence .sc-clause")]
+      .filter((x) => { const r = x.getBoundingClientRect(); return r.right > innerWidth + 1 || r.left < -1; }).length;
+    return { type: c.typeId, step: c.coding ? c.coding.step : null, hide: c.coding ? c.coding.hide : [], names,
+      boxes: document.querySelectorAll("#task .sentence .sc-clause").length,
+      button: !!document.getElementById("hint"), note: !!document.querySelector("#task .codednote"),
+      targets: document.querySelectorAll("#task .sentence .target, #task .sentence .clausemark").length,
+      out, scroll: document.documentElement.scrollWidth - innerWidth };
+  }, type, band, want);
+  const fits = (g, what) => ok(g.out === 0 && g.scroll <= 1, `${what} runs off a ${w} px screen (${g.out} marks, ${g.scroll}px)`);
+
+  /* þyngd 1: setn_hlut, the structure drawn from the start, no roles in it */
+  const a = await find("setn_hlut", 1, "shown");
+  ok(a, `${w}px: no „Hvaða setningarhluti?“ with the structure shown at þyngd 1`);
+  if (a) {
+    ok(!a.button && a.note && a.names.length + a.boxes > 0 && a.targets === 1, `${w}px: þyngd 1 does not show the structure plainly: ` + JSON.stringify(a));
+    ok(!a.names.some((n) => ["frumlag", "umsögn", "andlag", "óbeint andlag", "sagnfylling"].includes(n)), `${w}px: a setningarhluti is marked on „Hvaða setningarhluti?“: ${a.names}`);
+    fits(a, "setn_hlut");
+    await shot("setn_hlut-shown");
+    const r = await page.evaluate(() => {
+      const c = window.FALLASKOLI.cur;
+      [...document.querySelectorAll(".opts button")].find((b) => b.textContent === c.answer).click();
+      document.getElementById("check").click();
+      const rec = window.FALLASKOLI.S.log ? window.FALLASKOLI.S.log[window.FALLASKOLI.S.log.length - 1] : null;
+      return { ok: !!document.querySelector("#verdict .verdict.ok"), answer: c.answer, hinted: !!c.hinted,
+        names: [...document.querySelectorAll("#task .sentence .sc-name")].map((x) => x.textContent),
+        target: document.querySelectorAll("#task .sentence .target").length };
+    });
+    ok(r.ok && !r.hinted && r.target === 1, `${w}px: answering with the structure shown went wrong: ` + JSON.stringify(r));
+    await shot("setn_hlut-after");
+  }
+
+  /* þyngd 4: lid_finna behind the button; the words stay clickable */
+  const b = await find("lid_finna", 4, "offered");
+  ok(b, `${w}px: no „Finndu forsetningarliðinn“ with the hint offered at þyngd 4`);
+  if (b) {
+    ok(b.button && !b.note && b.names.length === 0 && b.boxes === 0, `${w}px: the hint is drawn before it is asked for: ` + JSON.stringify(b));
+    const words = await page.evaluate(() => document.querySelectorAll("#picker .pickw").length);
+    const g = await page.evaluate(() => {
+      document.getElementById("hint").click();
+      const out = [...document.querySelectorAll("#picker .sc, #picker .sc-clause")]
+        .filter((x) => { const r = x.getBoundingClientRect(); return r.right > innerWidth + 1 || r.left < -1; }).length;
+      return { names: [...document.querySelectorAll("#picker .sc-name")].map((x) => x.textContent),
+        words: document.querySelectorAll("#picker .pickw").length, out, scroll: document.documentElement.scrollWidth - innerWidth,
+        verdict: document.getElementById("verdict").textContent.replace(/\s+/g, " "), disabled: document.getElementById("hint").disabled };
+    });
+    ok(g.names.length > 0 && !g.names.includes("forsetningarliður"), `${w}px: the lid_finna hint shows ${g.names}`);
+    ok(g.words === words && g.disabled && /helmingi minna XP/.test(g.verdict), `${w}px: the lid_finna hint broke the question: ` + JSON.stringify(g).slice(0, 200));
+    fits(g, "lid_finna with the hint");
+    await shot("lid_finna-hint");
+    const r = await page.evaluate(() => {
+      const c = window.FALLASKOLI.cur;
+      for (const j of c.targets) document.querySelector(`#picker .pickw[data-j="${j}"]`).click();
+      const sel = document.querySelectorAll("#picker .pickw.sel").length;
+      document.getElementById("check").click();
+      return { sel, n: c.targets.length, ok: !!document.querySelector("#verdict .verdict.ok"),
+        names: [...document.querySelectorAll("#picker .sc-name")].map((x) => x.textContent),
+        right: document.querySelectorAll("#picker .pickw.right").length };
+    });
+    ok(r.sel === r.n && r.ok && r.right === r.n, `${w}px: lid_finna could not be answered with the hint open: ` + JSON.stringify(r));
+    ok(r.names.includes("forsetningarliður"), `${w}px: after the answer the forsetningarliður is not marked`);
+    await shot("lid_finna-after");
+  }
+
+  /* þyngd 4: setn_flokka behind the button */
+  const c = await find("setn_flokka", 4, "offered");
+  ok(c, `${w}px: no „Flokkaðu setningarhlutana“ with the hint offered at þyngd 4`);
+  if (c) {
+    const g = await page.evaluate(() => {
+      document.getElementById("hint").click();
+      return { names: [...document.querySelectorAll("#task .sentence .sc-name")].map((x) => x.textContent),
+        boxes: document.querySelectorAll("#task .sentence .sc-clause").length,
+        targets: document.querySelectorAll("#task .sentence .target").length, n: window.FALLASKOLI.cur.items.length };
+    });
+    ok(g.names.length + g.boxes > 0 && g.targets === g.n, `${w}px: the setn_flokka hint: ` + JSON.stringify(g));
+    ok(!g.names.some((n) => ["frumlag", "umsögn", "andlag", "óbeint andlag", "sagnfylling"].includes(n)), `${w}px: a setningarhluti is marked on setn_flokka: ${g.names}`);
+    await shot("setn_flokka-hint");
+  }
+
+  /* þyngd 6: no hint at all */
+  const d = await find("syntax", 6, "none");
+  ok(d && d.step === null && !d.button && !d.note && d.names.length === 0, `${w}px: a hint at þyngd 6: ` + JSON.stringify(d));
+  ok(errors.length === 0, `${w}px: errors with the Setningafræði hint: ` + errors.join(" | "));
   await page.close();
 }
 

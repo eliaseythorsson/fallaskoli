@@ -38,16 +38,17 @@
  *                               object keyed by BÍN mark
  *   parse                       { picks: { fl, kyn, tala, … } } — the class
  *                               (`fl`) first and alone; see JUDGES.parse
- *   sort                        { picks: { 0: bucket, 1: bucket, … } }
+ *   sort                        { picks: { 0: bucket, 1: bucket, … }, hinted? }
  *   syntax                      { picked: tokenIndex, hinted? }
  *   govern, indecl, clause,
- *   choice                      { picked: value }
+ *   choice                      { picked: value, hinted? }   (hinted: item 26,
+ *                               the structure hint of a Setningafræði question)
  *   kenni                       { picked: "sterk" | "veik", text? } — the
  *                               genitive singular when the task `askGen`
  *   slots                       { texts: [text, …], picked? } — one text per
  *                               box of `task.slots`; `picked` when the task
  *                               has `options`
- *   tap                         { sel: [tokenIndex, …] }
+ *   tap                         { sel: [tokenIndex, …], hinted? }
  *   villur                      { edits: { "line:token": text } }
  *
  * ---- the result ----------------------------------------------------------
@@ -789,7 +790,10 @@ function onePick(t, response, hist, { answer, word = true, respFor }) {
   const picked = response.picked;
   if (picked == null || picked === "") return pending("incomplete");
   const ok = picked === answer;
-  const spec = { skill: t.skill, cell: t.cell, ok, xp: xpFor(hist, t, { ok }), timed: true };
+  /* Item 26: the structure hint of a Setningafræði question halves the XP, like every hint. */
+  const hinted = !!response.hinted;
+  /** @type {{ skill: any, cell: any, ok: boolean, xp: number, timed: boolean, hinted?: boolean, word?: any }} */
+  const spec = { skill: t.skill, cell: t.cell, ok, xp: xpFor(hist, t, { ok, hinted }), timed: true, ...(hinted ? { hinted } : {}) };
   /* A clause has no word of its own; the others record theirs. */
   if (word) spec.word = t.word;
   return result(t, {
@@ -982,6 +986,7 @@ JUDGES.tap = (t, response, hist) => {
   const extra = sel.filter((j) => !want.has(j));
   const missed = t.targets.filter((j) => !has.has(j));
   const ok = !extra.length && !missed.length;
+  const hinted = !!response.hinted;     // item 26: the structure hint, half XP
   /* `miss`: the builder names the pattern (item 28: the phrases). */
   const ids = ok ? [] : t.miss ? t.miss : t.tags.includes("clause") ? ["setningagerd"]
     : (AO_FS.includes(t.cls) && [...extra, ...missed].some((j) => AO_FS.includes(t.s.tok[j].c))
@@ -989,7 +994,7 @@ JUDGES.tap = (t, response, hist) => {
   return result(t, {
     ok, verdict: VERDICT(ok),
     effects: [
-      rec({ skill: t.skill, cell: t.cell, ok, xp: xpFor(hist, t, { ok }), timed: true }),
+      rec({ skill: t.skill, cell: t.cell, ok, xp: xpFor(hist, t, { ok, hinted }), timed: true, ...(hinted ? { hinted } : {}) }),
       bump(t.skill, ok),
     ],
     resp: { kind: "patterns", ids,
@@ -1005,13 +1010,14 @@ JUDGES.sort = (t, response, hist) => {
   const wrong = [];
   t.items.forEach((it, k) => { if (picks[k] !== it.cls) wrong.push({ it, said: picks[k] }); });
   const ok = !wrong.length;
+  const hinted = !!response.hinted;     // item 26: the structure hint, half XP
   const ids = ok ? [] : t.tags.includes("syn") ? ["setningalidir"]
     : wrong.some((x) => AO_FS.includes(x.it.cls) && AO_FS.includes(x.said))
       ? ["ao_fs"] : ["ordflokkur"];
   return result(t, {
     ok, verdict: VERDICT(ok),
     effects: [
-      rec({ skill: t.skill, cell: t.cell, ok, xp: xpFor(hist, t, { ok }), timed: true }),
+      rec({ skill: t.skill, cell: t.cell, ok, xp: xpFor(hist, t, { ok, hinted }), timed: true, ...(hinted ? { hinted } : {}) }),
       bump(t.skill, ok),
     ],
     resp: { kind: "patterns", ids,
