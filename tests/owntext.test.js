@@ -252,6 +252,7 @@ test("every place in server/ that reads progress is called by the test above", (
     "server/server.mjs": 8,      // dossier (both exports), GET and PUT /state, visibleStates (board,
                                  // roster, social, duels), rarity (/badges/stats), POST /duels,
                                  // pupilsOf (patterns, assignments), /teacher/skillmap
+    "server/guard.mjs": 1,       // /health: the size of the largest file, no content (#44)
     "server/classgoal.mjs": 1,   // GET /classgoal, /teacher/classgoal
     "server/live.mjs": 1,        // POST /teacher/live
     "server/teamduel.mjs": 1,    // POST /teacher/teamduels and its accept

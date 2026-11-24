@@ -50,7 +50,31 @@
  * are stored apart so that the totals survive if ENTRIES_MAX ever drops the
  * oldest entries. A "seen" entry counts in neither.
  *
- * About 220 KB per typical pupil per school year (docs/adr/0001).
+ * ---- how big it gets, and the one limit (#44, docs/adr/0001) ------------
+ *
+ *   ENTRIES_MAX   the most entries one word keeps. It is Infinity: every
+ *                 entry is kept. A limit is a one-line change here (the oldest
+ *                 entries of a word go first, `c` and `w` keep the totals).
+ *
+ * An entry is about 29 bytes in the saved file (`["2026-11-24","fill","r"]`
+ * with its comma). A typical pupil: ≈220 KB of word knowledge per school
+ * year (docs/adr/0001), ≈7 MB a year for 30 pupils. The server refuses any one pupil's progress over
+ * MAX_STATE_BYTES, 2 MB (server/guard.mjs), so saving would fail for a pupil
+ * whose whole file reaches it.
+ *
+ * A heavy year — 150 questions a day for 180 days, 27 000 answers — measured
+ * with tests/progress-size.test.js (tools/sim, the real answer path): the
+ * whole progress file is 943 KB, 45% of the limit, of which word knowledge
+ * is 670 KB; it grows about 5 KB a day. Such a pupil reaches the limit in
+ * roughly two years, a typical pupil in many more. The test fails when a
+ * heavy year comes within 50% of the limit, and /health and /heilsa report
+ * the largest progress file and its share of the limit (`progress`), so the
+ * owner sees it coming long before saving fails.
+ *
+ * What to do when the share nears 0.5: lower ENTRIES_MAX, which changes
+ * nothing else in the file's shape — but first check what the rules built on
+ * the entries need (#10, #12, #17) and that tests/wordknowledge*.test.js
+ * still agree.
  *
  * ---- the decisions (owner, 2026-11-24), and how they are kept ------------
  *
@@ -142,7 +166,7 @@ export const SEEN = "s";
 const OUTCOMES = new Set([RIGHT, WRONG, SEEN]);
 
 /** The most entries a word keeps (decision 5, docs/adr/0001): every one.
-    The size warning is #44. */
+    The numbers behind that, and the size warning, are in the header (#44). */
 export const ENTRIES_MAX = Infinity;
 
 /** Saved progress older than this STATE_VERSION starts word knowledge empty

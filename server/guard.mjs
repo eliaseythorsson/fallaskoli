@@ -28,6 +28,35 @@ import { XP_MAX } from "../src/js/core/progress.js";
 
 export const MAX_STATE_BYTES = 2 * 1024 * 1024;
 
+/**
+ * The size of the largest progress file and its share of MAX_STATE_BYTES, for
+ * /health (#44). Word knowledge keeps every entry (core/wordknowledge.js
+ * ENTRIES_MAX), so a pupil's file only grows; this is how the owner hears of it
+ * years before saving would start to fail. Bytes as the browser sends them
+ * (the JSON of the state), which is what `readBody(req, MAX_STATE_BYTES)`
+ * limits. Counts only: no id, no name. The size of a state is worked out once
+ * per revision, so a health check every few seconds costs nothing.
+ * Takes the store, not the states: reading progress is counted per place in
+ * server/ (tests/owntext.test.js), and this is one more place, kept here.
+ * @param {{ allStates: () => Promise<{id:string, rev:number, state:object}[]> }} store
+ */
+export function progressSizeWatch(store) {
+  const known = new Map(); // id -> { rev, bytes }
+  return async function largestProgress() {
+    const all = await store.allStates();
+    const seen = new Set();
+    let largest = 0;
+    for (const { id, rev, state } of all) {
+      seen.add(id);
+      let k = known.get(id);
+      if (!k || k.rev !== rev) known.set(id, k = { rev, bytes: Buffer.byteLength(JSON.stringify(state)) });
+      if (k.bytes > largest) largest = k.bytes;
+    }
+    for (const id of known.keys()) if (!seen.has(id)) known.delete(id);
+    return { largestBytes: largest, maxBytes: MAX_STATE_BYTES, share: Math.round(largest / MAX_STATE_BYTES * 1000) / 1000 };
+  };
+}
+
 /* An active day is 150–250 XP (core/progress.js). These are far above what
    practice produces and far below what somebody showing off would type.
    The two day limits are kept in step: an answer is worth about 5–16 XP

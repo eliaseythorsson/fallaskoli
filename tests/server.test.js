@@ -646,3 +646,39 @@ test("and 200 with a profile when somebody is", async () => {
   assert.equal(r.server, true);
   assert.equal(r.me.profile.id, "u1");
 });
+
+/* #44: /health and /heilsa say how big the largest progress file is and what
+   share of MAX_STATE_BYTES that is — counts only, nothing that names a pupil. */
+test("/health reports the largest progress size and its share of the limit, with no pupil in it", async () => {
+  const { MAX_STATE_BYTES } = await import("../server/guard.mjs");
+  const big = await makeUser("storipupil");
+  const small = await makeUser("litilpupil");
+  const bigState = { ...blankState(), xp: 7 };
+  await app.store.putState(small.id, { ...blankState(), xp: 1 });
+  await app.store.putState(big.id, bigState);
+  const bytes = (s) => Buffer.byteLength(JSON.stringify(s));
+  const want = Math.max(bytes(bigState), bytes({ ...blankState(), xp: 1 }));
+  /* the biggest file in the test data is whatever the other tests left, so
+     check it is at least ours, and that the share is the size over the limit. */
+  const h = (await (await fetch(base + "/health")).json()).progress;
+  assert.equal(h.maxBytes, MAX_STATE_BYTES);
+  assert.ok(h.largestBytes >= want, "the largest is at least this pupil's");
+  assert.equal(h.share, Math.round(h.largestBytes / MAX_STATE_BYTES * 1000) / 1000);
+
+  /* it follows the file: a bigger one becomes the largest, and /heilsa agrees */
+  const before = h.largestBytes;
+  const filler = blankState();
+  filler.wordKnowledge = {};
+  for (let i = 0; i < 400; i++) filler.wordKnowledge["orð" + i + "|kk"] = { c: 1, w: 0, e: [["2026-01-01", "fill", "r"]] };
+  await app.store.putState(big.id, filler);
+  const a = (await (await fetch(base + "/health")).json()).progress;
+  const b = (await (await fetch(base + "/heilsa")).json()).progress;
+  assert.deepEqual(a, b);
+  assert.ok(a.largestBytes >= bytes(filler));
+  assert.ok(a.largestBytes > before);
+
+  /* nothing that names a pupil */
+  const text = JSON.stringify(a);
+  for (const u of [big, small]) { assert.equal(text.includes(u.id), false); assert.equal(text.includes(u.username), false); }
+  assert.deepEqual(Object.keys(a).sort(), ["largestBytes", "maxBytes", "share"]);
+});
