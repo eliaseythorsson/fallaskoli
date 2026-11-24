@@ -200,8 +200,11 @@ test("questions aimed at a pattern come more often", () => {
     ctx.policy = effectivePolicy(S);
     let hit = 0;
     let x = 99; const rnd = () => ((x = (x * 16807) % 2147483647) / 2147483647);
+    // The builders draw from a seeded source too: with Math.random here the
+    // test failed about one run in fifty (CI, 2026-11-23: aimed 38 vs plain 22).
+    let y = 7; const qrnd = () => ((y = (y * 48271) % 2147483647) / 2147483647);
     for (let k = 0; k < 120; k++) {
-      const t = pickTargeted(() => ask(ctx), ids, { p, tries: 6, rnd });
+      const t = pickTargeted(() => ask(ctx, qrnd), ids, { p, tries: 6, rnd });
       if (t && targets(t, ids)) hit++;
     }
     return hit;

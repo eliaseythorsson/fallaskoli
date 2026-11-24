@@ -1,6 +1,7 @@
 /* The spacing between repeats — the rules the owner set, tested with fixed
    dates so they do not depend on when the test is run. */
 import { test } from "node:test";
+import { seededRng } from "./helpers.js";
 import assert from "node:assert/strict";
 import {
   eligible, weight, chooseWord, markAsked, poolStatus, history, daysSince,
@@ -60,7 +61,7 @@ test("new words come ahead of repeats", () => {
   markAsked(S, KEY, "2026-01-01");           // the wait is long past
   const pool = [{ key: KEY }, { key: "nýtt|hk" }];
   for (let i = 0; i < 25; i++) {
-    const c = chooseWord(S, pool, "2026-06-01", Math.random);
+    const c = chooseWord(S, pool, "2026-06-01", seededRng(3));
     assert.equal(c.key, "nýtt|hk", "a repeat was chosen even though a new word was available");
   }
 });
