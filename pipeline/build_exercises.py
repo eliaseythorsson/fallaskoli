@@ -833,6 +833,72 @@ for first, then, then2, first2 in X.CONJ_ORDER:
               f"*Eftir að* segir hvað gerðist á undan: fyrst {first2}, svo {then2}.", 1); k += 1
 out["conjunction"] = items
 
+# Connectives of cause, time and contrast (issue #28). What can be checked is
+# checked: the five words, four different options, every word in BÍN, every
+# completed sentence parsed, and the verb straight after *þess vegna* and
+# *síðan*. That each wrong option really fails is the reader's part: the
+# reason beside it is on the review page.
+def reasons(wrong, where):
+    opts = [o for o, _ in wrong]
+    if len(wrong) != 3: fail(f"{where}: three wrong options")
+    for o, why_not in wrong:
+        check_words(re.sub(r"[*…]", " ", why_not), where)
+    return opts
+items = []
+for t, right, why, wrong in X.CONNECTIVE:
+    where = f"CONNECTIVE {t}"
+    if t.count("___") != 1: fail(f"{where}: exactly one blank")
+    opts = [right] + reasons(wrong, where)
+    if len(set(opts)) != len(opts): fail(f"{where}: an option twice")
+    for o in opts:
+        if o not in X.CONNECTIVES: fail(f"{where}: '{o}' is not one of the five connectives")
+    start = t.startswith("___") or bool(re.search(r"[.!?] ___", t))
+    full = t.replace("___", cap1(right) if start else right)
+    check_words(full + " " + re.sub(r"[*…]", " ", why), where)
+    for part in re.findall(r"[^.!?]+[.!?]", full):
+        if not parses_once(part.strip()): fail(f"{where}: Greynir cannot parse '{part.strip()}'")
+    # the verb straight after an adverb in first place, never after a conjunction
+    after = re.search(r"___ ([^\s.,!?]+)", t)
+    nxt = classes_of(after.group(1)) if after else set()
+    if X.CONNECTIVES.get(right) and "so" not in nxt:
+        fail(f"{where}: after '{right}' the verb comes first, and '{after and after.group(1)}' is not a verb in BÍN")
+    if X.CONNECTIVES.get(right) is False and nxt == {"so"}:
+        fail(f"{where}: after '{right}' the subject comes first, and '{after.group(1)}' is only a verb in BÍN")
+    items.append({"t": t, "a": right, "w": [o for o, _ in wrong], "why": why,
+                  "no": {o: n for o, n in wrong}, "lvl": sentence_level(t)})
+if len({x["t"] for x in items}) != len(items): fail("CONNECTIVE: a sentence twice")
+out["connective"] = items
+
+# Understanding hvorki … né and ekki aðeins … heldur einnig (issue #28): the
+# whole sentence, a question, and the same four answers every time — only the
+# first, only the second, both, neither.
+items = []
+for t, question, right, why, wrong in X.CONNECTIVE_SENSE:
+    where = f"CONNECTIVE_SENSE {t}"
+    opts = [right] + reasons(wrong, where)
+    if len(set(opts)) != len(opts): fail(f"{where}: an option twice")
+    if "___" in t: fail(f"{where}: the sentence is shown whole, without a blank")
+    if not question.endswith("?"): fail(f"{where}: the question must end with ?")
+    kinds = sorted("bara" if o.startswith("bara ") else o for o in opts)
+    if kinds != ["bara", "bara", "bæði", "hvorugt"]:
+        fail(f"{where}: the options must be bara …, bara …, bæði, hvorugt")
+    for o in opts:
+        if o.startswith("bara ") and o[5:] not in t: fail(f"{where}: '{o[5:]}' is not in the sentence")
+    check_words(" ".join([t, question, re.sub(r"[*…]", " ", why)] + opts), where)
+    if not parses_once(t): fail(f"{where}: Greynir cannot parse '{t}'")
+    if not parses_once(question): fail(f"{where}: Greynir cannot parse '{question}'")
+    # what the pair of connectives in the sentence means decides the answer
+    want = ("hvorugt" if re.search(r"\bhvorki\b.*\bné\b", t) else
+            "bæði" if re.search(r"\bekki aðeins\b.*\bheldur einnig\b", t) else
+            "bara" if re.search(r"\bekki\b.*\bheldur\b|\ben ekki\b", t) else None)
+    if want is None: fail(f"{where}: none of hvorki … né, ekki aðeins … heldur einnig, ekki … heldur, … en ekki …")
+    elif not (right == want or (want == "bara" and right.startswith("bara "))):
+        fail(f"{where}: the sentence says '{want}', the answer says '{right}'")
+    items.append({"t": t, "q": question, "a": right, "w": [o for o, _ in wrong], "why": why,
+                  "no": {o: n for o, n in wrong}, "lvl": sentence_level(t)})
+if len({x["t"] for x in items}) != len(items): fail("CONNECTIVE_SENSE: a sentence twice")
+out["connectiveSense"] = items
+
 # ---------------------------------------------------------------- Orðaforði
 def pos_of(lemma, pos, where):
     if pos == "no":

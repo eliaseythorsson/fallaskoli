@@ -1,0 +1,66 @@
+# Óbeygjanleg orð: að skilja hvorki … né og ekki aðeins … heldur einnig
+#
+# Nemandinn les eina stutta setningu og svarar spurningu um hvað hún segir.
+# Kostirnir eru alltaf fjórir: bara það fyrra, bara það seinna, bæði, hvorugt.
+#
+# Reglurnar sem atriðin eru skrifuð eftir:
+#   * *Hvorki A né B* → hvorugt. *Ekki aðeins A heldur einnig B* → bæði.
+#   * Til samanburðar eru líka setningar með *ekki A heldur B* (bara B) og
+#     *A en ekki B* (bara A). Án þeirra væri „bara …“ aldrei rétt svar og orðið
+#     *ekki* þýddi aldrei neitun.
+#   * Liðirnir tveir eru aldrei frumlag: þá þarf enginn að ákveða hvort sögnin
+#     á að vera í eintölu eða fleirtölu (Hvorki Anna né Sara kom / komu).
+#   * Sama fólk gerir ekki ólíka hluti í tveimur atriðum (Afi talar hvorki
+#     ensku né dönsku / Amma talar ekki aðeins ensku heldur einnig dönsku).
+#   * Stuttar setningar og algeng orð.
+#
+# Dálkar:
+#   setning             setningin sem nemandinn les
+#   spurning            spurningin
+#   svar                rétta svarið
+#   skýring             skýringin sem nemandinn les
+#   rangt 1             fyrsti rangi kosturinn
+#   af hverju ekki 1    hvers vegna hann er rangur; nemandinn les það ef hann velur hann
+#   rangt 2, af hverju ekki 2, rangt 3, af hverju ekki 3    eins
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Understanding the paired connectives (issue #28, docs/DLD-PLAN.md §3): the
+# whole sentence is shown, nothing is blanked. The build checks every word
+# against BÍN, parses every sentence with Greynir and holds each item to the
+# four options above. The level is the sentence's length (exercises.py LEVELS).
+#
+
+setning	spurning	svar	skýring	rangt 1	af hverju ekki 1	rangt 2	af hverju ekki 2	rangt 3	af hverju ekki 3
+# hvorki … né: hvorugt
+Anna á hvorki hund né kött.	Hvort á Anna hund eða kött?	hvorugt	*Hvorki … né* þýðir: ekki þetta og ekki hitt. Anna á ekki hund og hún á ekki kött.	bara hund	*Hvorki* stendur á undan *hund*: Anna á ekki hund.	bara kött	*Né* neitar líka því seinna: Anna á ekki kött.	bæði	*Hvorki … né* þýðir ekki *bæði … og*. Það þýðir hið gagnstæða.
+Jón borðar hvorki fisk né kjöt.	Hvort borðar Jón fisk eða kjöt?	hvorugt	*Hvorki … né* þýðir: ekki þetta og ekki hitt. Jón borðar ekki fisk og hann borðar ekki kjöt.	bara fisk	*Hvorki* stendur á undan *fisk*: Jón borðar ekki fisk.	bara kjöt	*Né* neitar líka því seinna: Jón borðar ekki kjöt.	bæði	*Hvorki … né* þýðir ekki *bæði … og*. Það þýðir hið gagnstæða.
+Sara drekkur hvorki mjólk né safa.	Hvort drekkur Sara mjólk eða safa?	hvorugt	*Hvorki … né* þýðir: ekki þetta og ekki hitt. Sara drekkur ekki mjólk og hún drekkur ekki safa.	bara mjólk	*Hvorki* stendur á undan *mjólk*: Sara drekkur ekki mjólk.	bara safa	*Né* neitar líka því seinna: Sara drekkur ekki safa.	bæði	*Hvorki … né* þýðir ekki *bæði … og*. Það þýðir hið gagnstæða.
+Afi talar hvorki ensku né dönsku.	Hvort talar afi ensku eða dönsku?	hvorugt	*Hvorki … né* þýðir: ekki þetta og ekki hitt. Afi talar ekki ensku og hann talar ekki dönsku.	bara ensku	*Hvorki* stendur á undan *ensku*: afi talar ekki ensku.	bara dönsku	*Né* neitar líka því seinna: afi talar ekki dönsku.	bæði	*Hvorki … né* þýðir ekki *bæði … og*. Það þýðir hið gagnstæða.
+Óli fann hvorki húfuna né vettlingana.	Hvort fann Óli húfuna eða vettlingana?	hvorugt	*Hvorki … né* þýðir: ekki þetta og ekki hitt. Óli fann ekki húfuna og hann fann ekki vettlingana.	bara húfuna	*Hvorki* stendur á undan *húfuna*: Óli fann ekki húfuna.	bara vettlingana	*Né* neitar líka því seinna: Óli fann ekki vettlingana.	bæði	*Hvorki … né* þýðir ekki *bæði … og*. Það þýðir hið gagnstæða.
+Mamma keypti hvorki brauð né ost.	Hvort keypti mamma brauð eða ost?	hvorugt	*Hvorki … né* þýðir: ekki þetta og ekki hitt. Mamma keypti ekki brauð og hún keypti ekki ost.	bara brauð	*Hvorki* stendur á undan *brauð*: mamma keypti ekki brauð.	bara ost	*Né* neitar líka því seinna: mamma keypti ekki ost.	bæði	*Hvorki … né* þýðir ekki *bæði … og*. Það þýðir hið gagnstæða.
+Emma fór hvorki í sund né í bíó.	Hvort fór Emma í sund eða í bíó?	hvorugt	*Hvorki … né* þýðir: ekki þetta og ekki hitt. Emma fór ekki í sund og hún fór ekki í bíó.	bara í sund	*Hvorki* stendur á undan *í sund*: Emma fór ekki í sund.	bara í bíó	*Né* neitar líka því seinna: Emma fór ekki í bíó.	bæði	*Hvorki … né* þýðir ekki *bæði … og*. Það þýðir hið gagnstæða.
+Pabbi drekkur hvorki kaffi né te.	Hvort drekkur pabbi kaffi eða te?	hvorugt	*Hvorki … né* þýðir: ekki þetta og ekki hitt. Pabbi drekkur ekki kaffi og hann drekkur ekki te.	bara kaffi	*Hvorki* stendur á undan *kaffi*: pabbi drekkur ekki kaffi.	bara te	*Né* neitar líka því seinna: pabbi drekkur ekki te.	bæði	*Hvorki … né* þýðir ekki *bæði … og*. Það þýðir hið gagnstæða.
+# ekki aðeins … heldur einnig: bæði
+Jón keypti ekki aðeins mjólk heldur einnig brauð.	Hvort keypti Jón mjólk eða brauð?	bæði	*Ekki aðeins … heldur einnig* þýðir: þetta og hitt líka. Jón keypti mjólk og hann keypti líka brauð.	bara mjólk	*Heldur einnig* bætir við: Jón keypti líka brauð.	bara brauð	*Ekki aðeins* þýðir *ekki bara*. Það neitar engu: Jón keypti mjólk.	hvorugt	*Ekki aðeins* þýðir *ekki bara*. Hér er engu neitað.
+Sara á ekki aðeins hund heldur einnig kött.	Hvort á Sara hund eða kött?	bæði	*Ekki aðeins … heldur einnig* þýðir: þetta og hitt líka. Sara á hund og hún á líka kött.	bara hund	*Heldur einnig* bætir við: Sara á líka kött.	bara kött	*Ekki aðeins* þýðir *ekki bara*. Það neitar engu: Sara á hund.	hvorugt	*Ekki aðeins* þýðir *ekki bara*. Hér er engu neitað.
+Amma talar ekki aðeins ensku heldur einnig dönsku.	Hvort talar amma ensku eða dönsku?	bæði	*Ekki aðeins … heldur einnig* þýðir: þetta og hitt líka. Amma talar ensku og hún talar líka dönsku.	bara ensku	*Heldur einnig* bætir við: amma talar líka dönsku.	bara dönsku	*Ekki aðeins* þýðir *ekki bara*. Það neitar engu: amma talar ensku.	hvorugt	*Ekki aðeins* þýðir *ekki bara*. Hér er engu neitað.
+Emma spilar ekki aðeins á gítar heldur einnig á píanó.	Hvort spilar Emma á gítar eða á píanó?	bæði	*Ekki aðeins … heldur einnig* þýðir: þetta og hitt líka. Emma spilar á gítar og hún spilar líka á píanó.	bara á gítar	*Heldur einnig* bætir við: Emma spilar líka á píanó.	bara á píanó	*Ekki aðeins* þýðir *ekki bara*. Það neitar engu: Emma spilar á gítar.	hvorugt	*Ekki aðeins* þýðir *ekki bara*. Hér er engu neitað.
+Pabbi bakaði ekki aðeins köku heldur einnig brauð.	Hvort bakaði pabbi köku eða brauð?	bæði	*Ekki aðeins … heldur einnig* þýðir: þetta og hitt líka. Pabbi bakaði köku og hann bakaði líka brauð.	bara köku	*Heldur einnig* bætir við: pabbi bakaði líka brauð.	bara brauð	*Ekki aðeins* þýðir *ekki bara*. Það neitar engu: pabbi bakaði köku.	hvorugt	*Ekki aðeins* þýðir *ekki bara*. Hér er engu neitað.
+Óli æfir ekki aðeins fótbolta heldur einnig sund.	Hvort æfir Óli fótbolta eða sund?	bæði	*Ekki aðeins … heldur einnig* þýðir: þetta og hitt líka. Óli æfir fótbolta og hann æfir líka sund.	bara fótbolta	*Heldur einnig* bætir við: Óli æfir líka sund.	bara sund	*Ekki aðeins* þýðir *ekki bara*. Það neitar engu: Óli æfir fótbolta.	hvorugt	*Ekki aðeins* þýðir *ekki bara*. Hér er engu neitað.
+Mamma drekkur ekki aðeins kaffi heldur einnig te.	Hvort drekkur mamma kaffi eða te?	bæði	*Ekki aðeins … heldur einnig* þýðir: þetta og hitt líka. Mamma drekkur kaffi og hún drekkur líka te.	bara kaffi	*Heldur einnig* bætir við: mamma drekkur líka te.	bara te	*Ekki aðeins* þýðir *ekki bara*. Það neitar engu: mamma drekkur kaffi.	hvorugt	*Ekki aðeins* þýðir *ekki bara*. Hér er engu neitað.
+Lísa fór ekki aðeins í sund heldur einnig í bíó.	Hvort fór Lísa í sund eða í bíó?	bæði	*Ekki aðeins … heldur einnig* þýðir: þetta og hitt líka. Lísa fór í sund og hún fór líka í bíó.	bara í sund	*Heldur einnig* bætir við: Lísa fór líka í bíó.	bara í bíó	*Ekki aðeins* þýðir *ekki bara*. Það neitar engu: Lísa fór í sund.	hvorugt	*Ekki aðeins* þýðir *ekki bara*. Hér er engu neitað.
+# til samanburðar — ekki … heldur: bara það seinna
+Lísa keypti ekki mjólk heldur safa.	Hvort keypti Lísa mjólk eða safa?	bara safa	*Ekki … heldur* þýðir: ekki það fyrra, heldur það seinna. Lísa keypti ekki mjólk. Hún keypti safa.	bara mjólk	*Ekki* stendur á undan *mjólk*: Lísa keypti ekki mjólk.	bæði	Hér stendur ekki *ekki aðeins*. *Ekki mjólk* er neitun: Lísa keypti ekki mjólk.	hvorugt	*Heldur* segir hvað er rétt í staðinn: Lísa keypti safa.
+Emma á ekki hund heldur kött.	Hvort á Emma hund eða kött?	bara kött	*Ekki … heldur* þýðir: ekki það fyrra, heldur það seinna. Emma á ekki hund. Hún á kött.	bara hund	*Ekki* stendur á undan *hund*: Emma á ekki hund.	bæði	Hér stendur ekki *ekki aðeins*. *Ekki hund* er neitun: Emma á ekki hund.	hvorugt	*Heldur* segir hvað er rétt í staðinn: Emma á kött.
+Óli fór ekki í sund heldur í bíó.	Hvort fór Óli í sund eða í bíó?	bara í bíó	*Ekki … heldur* þýðir: ekki það fyrra, heldur það seinna. Óli fór ekki í sund. Hann fór í bíó.	bara í sund	*Ekki* stendur á undan *í sund*: Óli fór ekki í sund.	bæði	Hér stendur ekki *ekki aðeins*. *Ekki í sund* er neitun: Óli fór ekki í sund.	hvorugt	*Heldur* segir hvað er rétt í staðinn: Óli fór í bíó.
+Afi drekkur ekki kaffi heldur te.	Hvort drekkur afi kaffi eða te?	bara te	*Ekki … heldur* þýðir: ekki það fyrra, heldur það seinna. Afi drekkur ekki kaffi. Hann drekkur te.	bara kaffi	*Ekki* stendur á undan *kaffi*: afi drekkur ekki kaffi.	bæði	Hér stendur ekki *ekki aðeins*. *Ekki kaffi* er neitun: afi drekkur ekki kaffi.	hvorugt	*Heldur* segir hvað er rétt í staðinn: afi drekkur te.
+# til samanburðar — … en ekki …: bara það fyrra
+Sara borðar fisk en ekki kjöt.	Hvort borðar Sara fisk eða kjöt?	bara fisk	*En ekki* neitar því sem kemur á eftir. Sara borðar fisk. Hún borðar ekki kjöt.	bara kjöt	*Ekki* stendur á undan *kjöt*: Sara borðar ekki kjöt.	bæði	*En ekki kjöt* er neitun: Sara borðar ekki kjöt.	hvorugt	*Ekki* á aðeins við *kjöt*. Sara borðar fisk.
+Amma keypti brauð en ekki ost.	Hvort keypti amma brauð eða ost?	bara brauð	*En ekki* neitar því sem kemur á eftir. Amma keypti brauð. Hún keypti ekki ost.	bara ost	*Ekki* stendur á undan *ost*: amma keypti ekki ost.	bæði	*En ekki ost* er neitun: amma keypti ekki ost.	hvorugt	*Ekki* á aðeins við *ost*. Amma keypti brauð.
+Pabbi talar dönsku en ekki ensku.	Hvort talar pabbi dönsku eða ensku?	bara dönsku	*En ekki* neitar því sem kemur á eftir. Pabbi talar dönsku. Hann talar ekki ensku.	bara ensku	*Ekki* stendur á undan *ensku*: pabbi talar ekki ensku.	bæði	*En ekki ensku* er neitun: pabbi talar ekki ensku.	hvorugt	*Ekki* á aðeins við *ensku*. Pabbi talar dönsku.
+Jón fann húfuna en ekki vettlingana.	Hvort fann Jón húfuna eða vettlingana?	bara húfuna	*En ekki* neitar því sem kemur á eftir. Jón fann húfuna. Hann fann ekki vettlingana.	bara vettlingana	*Ekki* stendur á undan *vettlingana*: Jón fann ekki vettlingana.	bæði	*En ekki vettlingana* er neitun: Jón fann ekki vettlingana.	hvorugt	*Ekki* á aðeins við *vettlingana*. Jón fann húfuna.

@@ -201,6 +201,78 @@ Níu ný sýnidæmi, eitt fyrir hverja gerð umritunar. Lestu orðalagið í *Sv
 línunum, sérstaklega skýringuna á þolmynd („Það má bæta við *af smiðunum*“)
 og á tengingu með *þegar*.
 
+## Tengiorð (#28): öll atriðin eru ný og hafa ekki verið lesin af móðurmálshafa
+Skrá: `content/obeygjanleg/tengiord.tsv`
+Úr: feat/28-connectives (#28)
+
+Atriðin eru skrifuð fyrir nemendur með málþroskaröskun: stuttar setningar úr
+daglegu lífi og EINN kostur sem gengur. Við hvern rangan kost stendur hvers
+vegna hann gengur ekki, og nemandinn les það ef hann velur hann. Lestu hvert
+atriði með öllum fjórum kostum í eyðunni: er einhver rangur kostur sem
+kennari gæti varið? Er einhver skýring röng eða of flókin? Ef svo er á
+atriðið að fara út. Athugasemdirnar hér á eftir benda á það sem höfundurinn
+var síst viss um.
+
+## Tengiorð: *þegar* sem rangur kostur þar sem sögnin kemur strax
+Leita: `veikur. ___ fer` · `mikið. ___ förum` · `bilaði. ___ komum` · `lyklinum. ___ komst` · `hita. ___ fer` · `lokuð. ___ keyptum`
+Úr: feat/28-connectives (#28)
+
+Rétt er *Þess vegna*. *Þegar* er boðið sem rangur kostur með þeirri skýringu
+að á eftir samtengingunni *þegar* komi frumlagið á undan sögninni. En *þegar*
+er líka atviksorð (*þegar í stað*, *nú þegar*). Er *Þegar fer ég ekki í
+skólann* eða *Þegar komum við of seint* örugglega fráleitt í eyrum kennara?
+Þess vegna er *þegar* aldrei boðið á móti *síðan* (*Þegar fórum við í bíó*
+mætti lesa sem „strax“), og hér aðeins þar sem neitun eða *of seint* gerir
+þann lestur merkingarlausan.
+
+## Tengiorð: *síðan* sem rangur kostur þar sem frumlagið kemur á undan sögninni
+Leita: `datt ___ það var hálka` · `___ Sara er veik` · `hljóp ___ hún kom samt` · `hár ___ mamma er lítil`
+Úr: feat/28-connectives (#28)
+
+*Síðan* er líka tíðartenging (*síðan ég kom heim*). Er *Ég datt síðan það var
+hálka* eða *Síðan Sara er veik fer hún ekki í skólann* örugglega rangt, líka
+í máli unglinga sem þekkja enska *since*?
+
+## Tengiorð: *þess vegna* á móti *síðan* þegar aðeins merkingin skilur á milli
+Leita: `sokka. ___ fór` · `klæddi mig. ___ borðaði`
+Úr: feat/28-connectives (#28)
+
+Orðaröðin er sú sama á eftir *síðan* og *þess vegna*, svo aðeins merkingin
+útilokar *þess vegna* þar sem *síðan* er rétt. Í fjórum atriðum hjálpar
+*Fyrst*; í tveimur (*Ég fór í sokka. ___ fór ég í skó.* og *Ég klæddi mig.
+___ borðaði ég morgunmat.*) er ekkert slíkt orð. Er *Þess vegna* fráleitt í
+þeim öllum?
+
+## Tengiorð: *en* og *þegar* sem rangir kostir á móti *af því að*
+Leita: `svangur ___ ég borðaði` · `þreytt ___ ég svaf` · `grætur ___ hann meiddi` · `inn ___ ég gleymdi` · `blautt ___ ég hellti`
+Úr: feat/28-connectives (#28)
+
+*Þegar* er hér útilokað með tíðinni (afleiðingin er núna, orsökin var áður:
+*Ég er svangur þegar ég borðaði ekki morgunmat* gengur ekki) og *en* með því
+að engin andstæða sé á milli setninganna. Stenst það í öllum fimm? *Þegar* er
+ekki boðið þar sem það gæti gengið (*Ég datt þegar það var hálka*).
+
+## Að skilja *hvorki … né* og *ekki aðeins … heldur einnig* (#28): spurningin og svörin
+Skrá: `content/obeygjanleg/tengiord-skilningur.tsv`
+Úr: feat/28-connectives (#28)
+
+Öll atriðin eru ný. Spurt er *Hvort á Anna hund eða kött?* og svörin eru
+alltaf fjögur: *bara hund*, *bara kött*, *bæði*, *hvorugt*. Er spurningin
+eðlileg þegar rétta svarið er *bæði* eða *hvorugt*? Eru *bæði* og *hvorugt*
+eðlileg svör þegar liðirnir eru forsetningarliðir (*Hvort fór Emma í sund
+eða í bíó?* — *Hvorugt.*)? Engin komma er á undan *heldur* (ritreglur 2018,
+21. kafli: komma aðeins milli setninga sem eru ekki tengdar með samtengingu).
+
+## Lesefni og sýnidæmi um tengiorð (#28)
+Leita: `kallast einu nafni` · `Tvö pör þarf að lesa vel` · `Það var kalt. ___ fór ég í úlpu` · `Óli á hvorki bróður né systur`
+Úr: feat/28-connectives (#28)
+
+Nýr kafli í Lesefni um óbeygjanleg orð og tvö sýnidæmi. Er *tengiorð* rétta
+samheitið yfir samtengingar og atviksorð sem tengja setningar, og er rétt að
+kalla *þess vegna* atviksorð í bók fyrir unglinga? Er reglan um orðaröð
+(sögnin strax á eftir *þess vegna* og *síðan*; frumlagið fyrst á eftir *af
+því að*, *þegar* og *en*) rétt orðuð?
+
 # Utan síðunnar
 
 Texti sem er ekki á yfirlitssíðunni. Skráin er nefnd við hvert atriði.
