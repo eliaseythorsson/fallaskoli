@@ -188,17 +188,7 @@ export interface Slice<T = any> {
   clean(value: any, ctx: CleanContext): T;
   /** Text the pupil wrote in their own words: only for the pupil (ADR 0003). */
   ownText: boolean;
-  notYet?: false;
 }
-
-/** A key of the saved state whose code is still in the four places (#50). */
-export interface SliceNotYet {
-  key: string;
-  notYet: true;
-  ownText: false;
-}
-
-export type SliceEntry = Slice | SliceNotYet;
 
 /** What a slice's server check is told (core/slices.js `cleanContext`). */
 export interface CleanContext {

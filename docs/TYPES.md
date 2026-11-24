@@ -60,12 +60,12 @@ The pure modules, where the shared shapes matter most:
 | module | what it holds |
 |---|---|
 | `core/state.js` | the saved state and the session: `blankState`, `migrate`, `newSession`, `record` |
-| `core/slices.js` | the list of the saved state's slices (`Slice`, `SliceEntry`, `CleanContext`) and the walks over it |
+| `core/slices.js` | the list of the saved state's slices (`Slice`, `CleanContext`) and the walks over it |
 | `core/slicerules.js` | the merge and server-check rules the slices share (`add`, `choice`, `pairs`, `dayStr` …) |
 | `core/days.js` | the slices `days`, `goal`, `weekGoal`, `lastActive`; `cleanWeekGoal` |
+| `core/settings.js` | the `settings` slice |
 | `core/runlog.js` | the `runs` slice, the log of practice sessions |
 | `core/frametally.js` | the `frames` slice, `cleanFrames` |
-| `core/settings.js` | the `settings` slice |
 | `core/answer.js` | `judge`, `judgeRetry`, `judgeBonus`, `settle`, and the effects |
 | `core/review.js` | the review queue: `ReviewEntry`, `noteReview`, `dueEntries`, `dayOf` |
 | `core/difficulty.js` | saved levels (`LevelRecord`), `bumpDiff`, `levelRanges` (JSDoc only) |
@@ -144,8 +144,8 @@ against; in short:
    the server's check would lose it.
 
 `blankState`, `migrate`, `mergeStates` and `cleanState` need no change: they
-walk the list. A slice that is still `notYet(…)` in the list (until #50) keeps
-its code in those four places.
+walk the list (since #50 every slice is in it; the rules most of them share
+are `core/slicerules.js`).
 
 A few things that trip up TypeScript 7 in JSDoc:
 

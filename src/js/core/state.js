@@ -2,23 +2,24 @@
 /* User state and session state.
 
    Everything that is persisted goes through here. The functions take the state
-   as an argument (no global), so tests can build their own. */
+   as an argument (no global), so tests can build their own.
 
-import { SKILL_IDS, defaultEnabled } from "./skills.js";
-import { createPolicy, blankPolicy, sanitisePolicy } from "./policy.js";
+   What is saved is a list of slices (core/slices.js); each slice's shape —
+   what a new pupil has, how an old copy is loaded, how two devices' copies
+   are merged, what the server keeps — is in the module that owns it.
+   `blankState` and `migrate` only walk that list. */
+
+import { SKILL_IDS } from "./skills.js";
+import { createPolicy } from "./policy.js";
 import { overallLevel, skillLevel, easeOf } from "./progress.js";
-import { visitLevels, cleanLevels, levelsFromXp } from "./difficulty.js";
-import { cleanTour } from "./placement.js";
+import { visitLevels } from "./difficulty.js";
 import { timeContext, mondayOf, weekKeys, isBreakWeek, prevKey } from "./calendar.js";
-import { checkDayEnd, legacyStreakCredit } from "./badges.js";
+import { checkDayEnd } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
-import { assembleBlank, migrateSlices, STATE_VERSION } from "./slices.js";
+import { blankSlices, migrateSlices, STATE_VERSION } from "./slices.js";
 import { cleanWeekGoal, WEEK_GOAL_DEFAULT, WEEK_GOAL_MIN, WEEK_GOAL_MAX } from "./days.js";
-import { cleanByType, masteryOf } from "./mastery.js";
-import { cleanByNode } from "./skillmap.js";
-import { cleanSeenTypes } from "./examples.js";
-import { cleanMapBand } from "./skillmap.js";
-import { blankMend, sanitiseMend, patternsMended, reviewsOnTime } from "./mending.js";
+import { masteryOf } from "./mastery.js";
+import { patternsMended, reviewsOnTime } from "./mending.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Session} Session */
@@ -37,14 +38,10 @@ export const todayKey = () => dkey(new Date());
 /* `prevKey`, the day before a day key, is core/calendar.js. */
 export { prevKey };
 
-/** A new pupil's state. Assembled in the order of core/slices.js: the
-    converted slices make their own blank, and the literal below holds the
-    ones not converted yet (#50). A key here that the list does not name, or
-    one the list says is converted, throws — see the trap at the top of
-    core/slices.js.
-    @returns {State} */
+/** A new pupil's state: every slice's blank, in the order of
+    core/slices.js. @returns {State} */
 export function blankState() {
-  return /** @type {State} */ (assembleBlank({}));
+  return /** @type {State} */ (blankSlices());
 }
 
 /* The frame tally, `frames`, is core/frametally.js. */

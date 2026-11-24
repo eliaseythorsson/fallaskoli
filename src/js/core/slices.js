@@ -82,22 +82,19 @@
  * pupil keeps the stored text with `keepOwnText`. tests/owntext.test.js
  * checks every route that reads other pupils' progress with a fixture slice.
  *
- * ---- slices not converted yet -----------------------------------------------
+ * ---- where the slices live -------------------------------------------------
  *
- * `notYet(key)` below: the key is named (so the list is whole and the safety
- * net covers it), but its four pieces of code are still where they were —
- * the literal in `blankState`, a line in `migrate`, a line in `mergeStates`,
- * a block in `cleanState`. Issue #50 converts them, one at a time:
+ * Every slice is described in the module that owns its concept (issue #50
+ * moved the last of them out of state.js, merge.js and guard.mjs); the
+ * imports below are the index. A slice core/state.js used to own has a
+ * small module of its own: core/days.js, core/settings.js, core/runlog.js,
+ * core/frametally.js. The rules most slices share (a counter both devices
+ * add to, a setting whoever changed it wins, a bounded whole number, a day
+ * key) are core/slicerules.js.
  *
- *   1. In the module that owns the slice (core/mastery.js for `byType` …;
- *      for a slice core/state.js owns, a module of its own under core/),
- *      export a `Slice` built from the code in those four places — moved,
- *      not rewritten, so nothing about the saved file changes.
- *   2. Replace `notYet("key")` here with it, in the same place in the list.
- *   3. Delete the four old pieces of code. `blankState` throws if the
- *      literal still has the key; the safety net fails if a piece is lost.
- *   4. `node --test tests/slices.test.js tests/merge.test.js
- *      tests/state*.test.js tests/state-property.test.js`.
+ * So `blankState`, `migrate`, `mergeStates` and `cleanState` do nothing but
+ * walk this list — except the checks across slices, which stay in
+ * server/guard.mjs with their comment.
  *
  * A module with a slice must not import core/state.js or core/merge.js:
  * they import this list, and the cycle would leave the list half-built.
@@ -136,12 +133,7 @@ import { settingsSlice } from "./settings.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
 
 /** @typedef {import("../types").Slice} Slice */
-/** @typedef {import("../types").SliceEntry} SliceEntry */
 /** @typedef {import("../types").CleanContext} CleanContext */
-
-/** A slice whose code is still in the four places (until #50).
-    @param {string} key @returns {SliceEntry} */
-const notYet = (key) => ({ key, notYet: true, ownText: false });
 
 /* ---------- the version of the saved file ---------- */
 
@@ -149,7 +141,7 @@ export const STATE_VERSION = 11;
 
 /** `S.v`: the shape this program saves. A copy of any age is loaded into
     this shape, so a loaded copy always has it. @type {Slice} */
-const versionSlice = {
+export const versionSlice = {
   key: "v",
   blank: () => STATE_VERSION,
   migrate: () => STATE_VERSION,
@@ -162,7 +154,7 @@ const versionSlice = {
  * Every key of the saved state, in the order of the saved file. Exported as
  * a plain array so that a test can add a fixture slice (tests/owntext.test.js);
  * nothing in the program changes it.
- * @type {SliceEntry[]}
+ * @type {Slice[]}
  */
 export const SLICES = [
   versionSlice,
@@ -211,21 +203,13 @@ export const SLICES = [
   tourSlice,
 ];
 
-/** Is this entry a converted slice (rather than one named by `notYet`)?
-    @param {SliceEntry} s @returns {s is Slice} */
-export const isSlice = (s) => !("notYet" in s && s.notYet);
-
-/** The converted slices, in order. Read the list afresh each time: a test
-    may have added one. @returns {Slice[]} */
-export const convertedSlices = () => SLICES.filter(isSlice);
-
 /** The keys of the slices that hold the pupil's own text. @returns {string[]} */
 export const ownTextKeys = () => SLICES.filter((s) => s.ownText).map((s) => s.key);
 
 /* A description that is not whole is a mistake to find at load, not when a
    pupil's progress is merged. */
 const FIELDS = ["blank", "migrate", "merge", "clean"];
-/** @param {SliceEntry[]} list */
+/** @param {Slice[]} list */
 export function checkSlices(list = SLICES) {
   const seen = new Set();
   for (const entry of list) {
@@ -235,53 +219,36 @@ export function checkSlices(list = SLICES) {
     if (seen.has(s.key)) throw new Error(`core/slices.js: the slice "${s.key}" is in the list twice`);
     seen.add(s.key);
     if (typeof s.ownText !== "boolean") throw new Error(`core/slices.js: the slice "${s.key}" must say ownText: true or false`);
-    if (!isSlice(s)) continue;
     for (const f of FIELDS)
       if (typeof s[f] !== "function") throw new Error(`core/slices.js: the slice "${s.key}" has no ${f}()`);
   }
 }
 checkSlices();
 
-/* ---------- the four walks ------------------------------------------------- */
+/* ---------- the four walks -------------------------------------------------
+ * Each reads the list afresh: a test may have added a slice. */
 
-/**
- * `blankState`: the whole state, in the list's order — each converted slice's
- * `blank()`, each one not yet converted from `legacy` (the literal still in
- * core/state.js). Throws if `legacy` has a key the list does not name, or
- * lacks one it should have: that is the trap, caught where it is made.
- * @param {Record<string, any>} legacy
- * @returns {Record<string, any>}
- */
-export function assembleBlank(legacy) {
-  const named = new Set(SLICES.map((s) => s.key));
-  for (const k of Object.keys(legacy))
-    if (!named.has(k)) throw new Error(`blankState has "${k}", which core/slices.js does not list: add it there`);
+/** `blankState`: every slice's `blank()`, in the list's order.
+    @returns {Record<string, any>} */
+export function blankSlices() {
   /** @type {Record<string, any>} */
   const out = {};
-  for (const s of SLICES) {
-    if (isSlice(s)) {
-      if (s.key in legacy) throw new Error(`blankState still has "${s.key}", which is a converted slice: delete it from the literal`);
-      out[s.key] = s.blank();
-    } else {
-      if (!(s.key in legacy)) throw new Error(`blankState has no "${s.key}", which core/slices.js lists as not converted yet`);
-      out[s.key] = legacy[s.key];
-    }
-  }
+  for (const s of SLICES) out[s.key] = s.blank();
   return out;
 }
 
-/** `migrate`: every converted slice rebuilt from the saved copy, into `S`.
+/** `migrate`: every slice rebuilt from the saved copy, into `S`.
     @param {Record<string, any>} S  the state being built (from blankState)
     @param {Record<string, any>} raw  what was saved */
 export function migrateSlices(S, raw) {
-  for (const s of convertedSlices()) S[s.key] = s.migrate(raw[s.key], raw);
+  for (const s of SLICES) S[s.key] = s.migrate(raw[s.key], raw);
 }
 
-/** `mergeStates`: every converted slice merged, into `out`.
+/** `mergeStates`: every slice merged, into `out`.
     @param {Record<string, any>} out
     @param {Record<string, any>} B @param {Record<string, any>} L @param {Record<string, any>} R */
 export function mergeSlices(out, B, L, R) {
-  for (const s of convertedSlices()) out[s.key] = s.merge(B[s.key], L[s.key], R[s.key]);
+  for (const s of SLICES) out[s.key] = s.merge(B[s.key], L[s.key], R[s.key]);
 }
 
 /**
@@ -294,10 +261,10 @@ export function cleanContext(today) {
   return { today, limit: new Date(today.getTime() + 36 * 3600000).toISOString().slice(0, 10) };
 }
 
-/** `cleanState`: every converted slice checked, in `S` (already migrated).
+/** `cleanState`: every slice checked, in `S` (already migrated).
     @param {Record<string, any>} S @param {CleanContext} ctx */
 export function cleanSlices(S, ctx) {
-  for (const s of convertedSlices()) S[s.key] = s.clean(S[s.key], ctx);
+  for (const s of SLICES) S[s.key] = s.clean(S[s.key], ctx);
 }
 
 /* ---------- the pupil's own text ------------------------------------------- */
@@ -325,8 +292,7 @@ export function withoutOwnText(state) {
  * @param {Record<string, any>|null} prev  what is stored now, or null
  */
 export function keepOwnText(next, prev) {
-  /* Only a converted slice can say ownText: true (`notYet` says false). */
-  for (const s of convertedSlices()) {
+  for (const s of SLICES) {
     if (!s.ownText) continue;
     next[s.key] = prev && s.key in prev ? prev[s.key] : s.blank();
   }

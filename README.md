@@ -330,7 +330,11 @@ src/js/core/slices.js the saved state as one list of slices, each with its
                       the pupil's own text (`ownText`); blankState, migrate,
                       mergeStates and cleanState walk it. The top of the file
                       explains the trap it guards against and how to add a
-                      slice; tests/slices.test.js is the safety net
+                      slice; tests/slices.test.js is the safety net. Each
+                      slice is described in the module that owns it; the
+                      rules most share are slicerules.js, and the ones
+                      state.js used to own are days.js, settings.js,
+                      runlog.js and frametally.js
 src/js/core/merge.js, server.js, social.js, leaderboard.js  progress from two
                       devices put together, the program's one view of the
                       server, and what pupils see of each other

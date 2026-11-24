@@ -21,17 +21,10 @@
  * program.
  */
 
-import { migrate, FRAMES_MAX } from "../src/js/core/state.js";
-import { BADGES } from "../src/js/core/badges.js";
-import { SKILL_IDS } from "../src/js/core/skills.js";
+import { migrate } from "../src/js/core/state.js";
 import { cleanContext, cleanSlices } from "../src/js/core/slices.js";
+import { isObj } from "../src/js/core/slicerules.js";
 import { XP_MAX } from "../src/js/core/progress.js";
-import { cleanLevels } from "../src/js/core/difficulty.js";
-import { cleanByType } from "../src/js/core/mastery.js";
-import { cleanByNode, cleanMapBand } from "../src/js/core/skillmap.js";
-import { cleanSeenTypes } from "../src/js/core/examples.js";
-import { sanitiseMend } from "../src/js/core/mending.js";
-import { cleanTour } from "../src/js/core/placement.js";
 
 export const MAX_STATE_BYTES = 2 * 1024 * 1024;
 
@@ -45,57 +38,27 @@ export const LIMITS = {
   dayAnswers: 3000,      // answers in one day
   dayXp: 3000 * 12,      // XP in one day — in step with dayAnswers
   dayMs: 16 * 3600000,   // time at the screen in one day
-  xpTotal: XP_MAX,     // core/progress.js
+  xpTotal: XP_MAX,       // the most XP a state may hold (core/progress.js)
   lateDays: 21,          // a day older than this should no longer be growing
 };
-
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
-const BADGE_IDS = new Set(BADGES.map((b) => b.id));
-const SKILLS = new Set(SKILL_IDS);
-
-const n = (x, max = 1e9) =>
-  (typeof x === "number" && Number.isFinite(x) ? Math.min(Math.max(0, Math.round(x)), max) : 0);
-const dayStr = (x) => (typeof x === "string" && DAY.test(x) ? x : null);
-const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
-
-function pairs(o, maxKeys, keyLen = 80) {
-  return Object.entries(isObj(o) ? o : {})
-    .filter(([k]) => k.length > 0 && k.length <= keyLen)
-    .slice(0, maxKeys);
-}
-
-/** Small free-form objects the program keeps for itself (`periods`, `social`):
-    kept only if they are plain data and small. */
-function smallJSON(o, maxBytes) {
-  if (!isObj(o)) return null;
-  try {
-    const text = JSON.stringify(o);
-    return text.length <= maxBytes ? JSON.parse(text) : null;
-  } catch { return null; }
-}
 
 /**
  * Rebuild a state out of what arrived. Never throws on odd content; returns
  * null only when what arrived is not a state at all.
+ *
+ * `migrate` brings it to the current shape, then every slice checks itself
+ * (core/slices.js: each slice's `clean`, in the module that owns it, told the
+ * server's date — tomorrow is allowed, for time zones; the day after is not a
+ * day yet). What is left here reads more than one slice.
  */
 export function cleanState(raw, { today = new Date() } = {}) {
   if (!isObj(raw)) return null;
   const S = migrate(raw);
+  cleanSlices(S, cleanContext(today));
 
-  /* Tomorrow is allowed (time zones); the day after is not a day yet. */
-  const ctx = cleanContext(today), { limit } = ctx;
-
-
-  /* The converted slices (core/slices.js) check themselves: each slice's
-     `clean`, with the date. The review queue (core/review.js `cleanReview`)
-     is rebuilt by the function the browser loads with and held to the
-     calendar. */
-  cleanSlices(S, ctx);
-
-  /* Across slices: the showcase holds only badges the pupil has. */
+  /* Across slices: the showcase holds only badges the pupil has (an id the
+     program does not have is already gone: core/social.js `showcaseSlice`). */
   S.showcase = S.showcase.filter((id) => S.badges[id]);
-
-
   return S;
 }
 
