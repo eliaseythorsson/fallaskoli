@@ -45,7 +45,7 @@ seems to show less in inflection and more in vocabulary, syntax and discourse
 **Source.** LÍNO-2, the Icelandic academic word list: 2,294 Tier-2 lemmas
 (Ólafsdóttir & Pálsdóttir 2023, CLARIN-IS handle 20.500.12537/307, **CC BY 4.0**;
 add it to `data/licenses.js` and the README's licence list). Put the CSV in
-`sources/` with its checksum, like `freq_raw.txt`.
+`sources/` with its checksum, like `sources/freq_raw.txt`.
 
 **Everywhere.** `pipeline/build_freq.py` ranks LÍNO-2 lemmas up, just as it ranks up
 words from the program's own sentences, so they show up in inflection, analysis,
@@ -126,7 +126,7 @@ one-off authoring pass whose output is committed content.
 Storage: accepted pairs go in a new `content/setningar/lino-rammar.tsv` (lemma,
 frame id, checked by), read by the build as an allowlist on top of the noun
 classes. New sentences go into `setningar.tsv`. Everything still passes Greynir
-and `parse_guard.py`. Each batch is its own `data/…` PR with the manifest diff.
+and `pipeline/parse_guard.py`. Each batch is its own `data/…` PR with the manifest diff.
 Estimated cost of the whole pass: roughly $100–150, about half with the Batch API.
 
 ## 3. Sentence comprehension
