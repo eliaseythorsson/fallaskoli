@@ -122,7 +122,8 @@ What the build does, in order:
    sentences, exercises and definitions use ×3, words on LÍNO-2, the academic word
    list (`sources/lino2.csv`, read by `pipeline/lino.py`), ×3 (not both), film register
    (pipeline/vocab_filter.py `SUBTITLE_REGISTER`, and ÍNO's *niðrandi*/*gróft*) ×0.1.
-   It lists the LÍNO-2 lemmas BÍN does not have.
+   It lists the LÍNO-2 lemmas BÍN does not have. Until `sources/lino2.csv` is added the
+   build warns and goes on as if the list were empty (the data is then what it was before).
 2. `pipeline/build_lexicon.py` — every attested lemma's paradigm out of BÍN → `data/lexicon.json`
    (and, by `pipeline/irregularity.py`, how irregular each paradigm is, `irr` 1–5, and
    how hard each cell is, `cellh` — the second axis of difficulty)

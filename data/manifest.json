@@ -1,5 +1,5 @@
 {
- "version": "6.12.0",
+ "version": "6.14.1",
  "deps": {
   "islenska": "1.3.2",
   "reynir": "3.8.0",
@@ -17,8 +17,8 @@
   "pipeline/government.py": "855b64fe163a3548b4590e60503de2ca6a702a0e4ed053bea6552de6e104fe72",
   "pipeline/parse_guard.py": "e7fa87891c0a4cebec431c2aac84383a6c2b4cfa3b5ae07ecb679d4da4da6dea",
   "pipeline/parse_overrides.py": "8c247a4c2379695f21114ad2c37a4dfa1a853616787e473d976d761dbdfad03d",
-  "pipeline/build_freq.py": "d11815d54814290e92c81007769761fc86a353c901e2345cbbe2e2ca60998307",
-  "pipeline/build_lexicon.py": "b168a6216bf2f497c55b80ad053fbe5e216c83ee8d3ffef4ed1721f53ed8df6c",
+  "pipeline/build_freq.py": "a498bb7646c6b2279335d131b9d96576cb409025025fc3f0e2a18e6c1a5d0a5c",
+  "pipeline/build_lexicon.py": "db2cb874033802c57c3533272eb0db3a3e3c1c4f47f436e210907972d90f0046",
   "pipeline/build_sentences.py": "9b93d5aa2aa4b49782d6f8621e469d3ad027ad6affb12e2bd05423925ea2e07a",
   "pipeline/build_bundle.py": "656e4622ec1426e7f9a3bb8a0c41661dc799c9191fa5620a4dededf695e7e25a",
   "pipeline/irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
@@ -26,6 +26,8 @@
   "pipeline/build_exercises.py": "21a03920c06e4a961fc383f0b7bb5233e4c1cf3063b36f2f403a409bda375efb",
   "pipeline/adj_classes.py": "30dcdd1a715ac73c9325bcc327a043a78cd452cd9aa9164d934b25b565255b10",
   "pipeline/content_io.py": "8ea1e1036ba436e094e67d4f0bf2d188e5c567fa8ef3bb7207a7b0594874f61f",
+  "sources/lino2.csv": null,
+  "pipeline/lino.py": "e3bef7f6b7b5d0d23d0bd0eb16fc5fe8ce07d815f8f63b40aeef7f2e486e668a",
   "content/fallstjorn/hreyfing-sett.tsv": "076a6ee92e32eecfe13cc27dccaedab43be938a6d65ad1549a9cdc1fe7bb481f",
   "content/fallstjorn/hreyfing.tsv": "e8c50725b1570b14a5627e244b54a99cc4258218c12e45db97eb8e9497d70b8a",
   "content/fallstjorn/opersonulegar-frumlog.tsv": "902efb7b382c3cc921e796b66c9961e948cb30b5e548a062be409e54d9e5f4a3",
@@ -79,6 +81,7 @@
   "clause_unsure": 0,
   "definitions": 6509,
   "rare_words": 449,
+  "lino_words": 0,
   "guard": {
    "hard": 0,
    "soft": {

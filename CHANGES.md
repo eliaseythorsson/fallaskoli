@@ -11,7 +11,8 @@
 - **Námsorðaforðalistinn LÍNO-2 í smíðinni** (#9): orð á listanum koma oftar fyrir í æfingum
   (×3 í tíðniröðun), orð sem textalistinn þekkir ekki koma inn úr BÍN, og hvert orð ber
   sæti sitt á listanum (`lino`). LÍNO-2 (CC BY 4.0) er komið í leyfalistann. Skráin sjálf,
-  `sources/lino2.csv`, bætist við einu sinni (`python3 pipeline/lino.py` segir hvernig).
+  `sources/lino2.csv`, bætist við einu sinni (`python3 pipeline/lino.py` segir hvernig);
+  þangað til varar smíðin við og gögnin eru óbreytt.
 
 ### Plan: vocabulary, comprehension and stories
 - **`docs/DLD-RESEARCH.md`**: the evidence on interventions for teenagers with

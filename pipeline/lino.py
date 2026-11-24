@@ -9,6 +9,8 @@
 The file is committed as it was downloaded, like the frequency list:
 `sources/lino2.csv` with its checksum `sources/lino2.sha256`, checked by
 build.sh before anything reads it. How to get it is in `MISSING` below.
+Until it is there the build warns and goes on as if the list were empty:
+the data is then exactly what it was before LÍNO-2.
 
 What the build does with it:
   build_freq.py     ranks every LÍNO-2 word up (LINO_FACTOR), as it ranks up
@@ -146,9 +148,21 @@ def parse(text, name=LINO_CSV):
     return words
 
 
-def load(path=LINO_CSV):
-    """parse() of the committed file, or a build error that says how to get it."""
-    if not os.path.exists(path): raise LinoError(MISSING)
+def load(path=LINO_CSV, required=False):
+    """parse() of the file at `path`.
+
+    Missing file: with `required` a build error that says how to get it;
+    without (the build, until the owner has added the file) a one-line note
+    and an empty list (build.sh gives the loud warning), so the build goes on exactly as before LÍNO-2: no
+    word lifted, no `lino` rank, the data byte for byte what it was. A file
+    that IS there is read as strictly as ever (and build.sh then requires
+    its checksum)."""
+    if not os.path.exists(path):
+        if required: raise LinoError(MISSING)
+        # build.sh has already said it loudly, with the instructions
+        print(f'  LÍNO-2: {path} not found; taken as an empty list '
+              f'(python3 pipeline/lino.py says how to add it)', file=sys.stderr)
+        return []
     raw = open(path, 'rb').read()
     try:
         text = raw.decode('utf-8')
@@ -156,6 +170,31 @@ def load(path=LINO_CSV):
         raise LinoError(f'{path} is not UTF-8. Save it again as UTF-8 text '
                         f'(do not re-type it), then update {LINO_SHA}.')
     return parse(text, path)
+
+
+FACTOR = 3   # the lift in build_freq.py; the same as its SCHOOL_FACTOR
+
+
+def boost(pairs, words, already=frozenset()):
+    """(lemma, BÍN class) -> FACTOR, for the pairs in `pairs` that are on the
+    list (in the class it gives) and not in `already` (the school material,
+    lifted by the same factor: a word that is both is lifted once)."""
+    on = ranks(words, {c for _o, c in pairs})
+    return {p: FACTOR for p in pairs if p in on and p not in already}
+
+
+def tag(W, words, say=print):
+    """Give every lexicon entry in W that is on the list its LÍNO rank, `lino`.
+    Only the class(es) the list gives; a list with no word-class column tags
+    the lemma in every class BÍN gives it here, and says so. -> how many."""
+    rank = ranks(words, {x['c'] for x in W})
+    n = 0
+    for x in W:
+        r = rank.get((x['o'], x['c']))
+        if r: x['lino'] = r; n += 1
+    if any(cls is None for _l, cls, _r in words):
+        say('LÍNO-2: the list gives no word class; every class of a listed lemma is tagged')
+    return n
 
 
 def ranks(words, classes):
@@ -191,7 +230,7 @@ if __name__ == '__main__':
     # python3 pipeline/lino.py --json [file]  -> [[lemma, [classes] or null, rank], …]
     import json
     args = [a for a in sys.argv[1:] if a != '--json']
-    w = load(args[0] if args else LINO_CSV)
+    w = load(args[0] if args else LINO_CSV, required=True)
     if '--json' in sys.argv:
         json.dump([[l, sorted(c) if c else None, r] for l, c, r in w], sys.stdout, ensure_ascii=False)
     else:

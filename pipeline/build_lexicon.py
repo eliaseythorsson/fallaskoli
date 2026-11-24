@@ -290,16 +290,13 @@ for x in W:
 print('  adjectives shown in the positive degree only:',len(_stripped))
 
 # Every word on LÍNO-2 carries its LÍNO rank, `lino` (1 = the commonest on the
-# list); the app knows it as an academic word by that field alone. Homograph
-# readings count when the list gives no class or that class.
-_lino_rank=lino.ranks(LINO_WORDS,{x['c'] for x in W})
-for x in W:
-    r=_lino_rank.get((x['o'],x['c']))
-    if r: x['lino']=r
+# list); the app knows it as an academic word by that field alone. Only the
+# class(es) the list gives; with no class column, every class (lino.tag).
+_n=lino.tag(W,LINO_WORDS)
 _in={x['o'] for x in W if x.get('lino')}
 _lino_out=[t for t in _lino_out if t[1] not in _in]
 print('LÍNO-2: %d lexicon words carry a LÍNO rank; %d entries are not in the lexicon%s'
-      % (sum(1 for x in W if x.get('lino')), len(_lino_out), ':' if _lino_out else ''))
+      % (_n, len(_lino_out), ':' if _lino_out else ''))
 for r,o,why in sorted(_lino_out): print('    %4d  %s (%s)' % (r,o,why))
 
 # The second axis of difficulty (v6.13, critique item 16): how irregular each
