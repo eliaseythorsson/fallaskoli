@@ -1,0 +1,122 @@
+# Sameina og skipta: tvær stuttar setningar verða ein, og ein verður tvær
+#
+# Hver lína er EITT par: tvær stuttar setningar og sama efni í einni setningu með
+# aukasetningu. Forritið spyr í báðar áttir: nemandinn fær stuttu setningarnar og
+# skrifar eina (sameina), eða fær löngu setninguna og skrifar tvær (skipta).
+#
+# Setningarnar eiga að vera stuttar og úr daglegu lífi. Þær eru ætlaðar öllum, og
+# sérstaklega nemendum sem eiga erfitt með langar setningar. Ein formgerð í einu,
+# í þessari röð: atvikssetning (orsök, tíð), svo skýringarsetning (að), svo
+# tilvísunarsetning (sem).
+#
+# Svar nemandans telst rétt ef það er ein af setningunum sem standa hér í línunni.
+# Annað svar er EKKI merkt rangt: nemandinn sér þá fyrirmyndina og svarið telst
+# hvorki rétt né rangt. Þess vegna á að skrá hér allar eðlilegar leiðir til að
+# segja það sama. Því fleiri sem eru skráðar, því oftar fær nemandinn „rétt“.
+#
+# Þegar forritið er smíðað greinir Greynir hverja einustu setningu í línunni, og
+# forritið er ekki smíðað nema:
+#   - hvor stutta setningin sé ein aðalsetning, án aukasetningar,
+#   - „saman“ og allt í „líka saman“ sé ein málsgrein með nákvæmlega einni
+#     aukasetningu af þeirri gerð sem dálkurinn „gerð“ segir, og hún hefjist á
+#     tengingunni í dálkinum „tenging“,
+#   - hvert orð sé til í BÍN.
+#
+# Dálkar:
+#   þyngd        1, 2 eða 3: frá hvaða þyngd parið er spurt
+#   gerð         orsök (atvikssetning, af því að), tíð (atvikssetning, þegar),
+#                skýring (skýringarsetning, að) eða tilvísun (tilvísunarsetning, sem)
+#   tenging      tengingin sem nemandinn á að nota þegar hann sameinar
+#   fyrri        fyrri stutta setningin, eins og nemandinn sér hana
+#   seinni       seinni stutta setningin
+#   saman        setningarnar sameinaðar í eina: fyrirmyndin sem nemandinn sér
+#   líka saman   aðrar réttar leiðir til að sameina, aðskildar með „ / “
+#   líka sundur  aðrar réttar leiðir til að skipta (tvær setningar hver), aðskildar
+#                með „ / “. Röðin á setningunum tveimur skiptir ekki máli: forritið
+#                tekur báðar raðir gildar án þess að þær séu skráðar hér.
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# Issue #29 (docs/DLD-PLAN.md §3: sentence combining and decomposing, "vertical
+# structuring"). pipeline/exercises.py COMBINE reads this file;
+# pipeline/build_exercises.py checks every sentence against the Greynir parse
+# (pipeline/clause_shape.py: CP-ADV-CAUSE, CP-ADV-TEMP, CP-THT, CP-REL) and
+# writes EX.combine;
+# src/js/tasks/malbeiting.js `taskCombine` asks it (question type `sameina`).
+#
+# Rules the items were written by:
+#   - No first-person adjective (*ég var þreyttur*): the pupil may be a girl.
+#   - Indicative only. No *ef* (split in two, a condition becomes two claims),
+#     no *þótt*, *svo að*, *áður en* (subjunctive), no *segja að* / *halda að*
+#     (indirect speech: the verb changes mood when the clause stands alone).
+#   - A skýring pair is "X. Ég sá það." <-> "Ég sá að X.": the clause takes the
+#     place of *það*.
+#   - With *þegar* either half can often be the clause (*Ég var í baði þegar
+#     síminn hringdi* / *Síminn hringdi þegar ég var í baði*): list both where
+#     both are natural and mean the same.
+#   - Greynir misreads some *af því að* sentences (*… af því að mér var kalt*:
+#     *að* as a preposition; *… af því að það rigndi*: two main clauses joined
+#     by *því að*). The build refuses them; they were reworded (*það var kalt
+#     úti*, *það var rigning*).
+#   - build_freq.py lifts the rank of every word the hand-written material uses
+#     (SCHOOL_FACTOR). A word that is in no other content file moves the
+#     frequency list, the lexicon and the bundle, and with them other question
+#     types. The 49 pairs here use only words the material already had; a new
+#     word is fine, but then say so in the pull request.
+#   - A clause that opens the sentence is followed by the verb (*Þegar ég kom
+#     heim var pabbi …*): list that order under "líka saman" for every orsök and
+#     tíð pair.
+þyngd	gerð	tenging	fyrri	seinni	saman	líka saman	líka sundur
+1	orsök	af því að	Ég fór í úlpu.	Það var kalt úti.	Ég fór í úlpu af því að það var kalt úti.	Af því að það var kalt úti fór ég í úlpu.
+1	orsök	af því að	Við vorum inni.	Það var rigning.	Við vorum inni af því að það var rigning.	Af því að það var rigning vorum við inni.
+1	orsök	af því að	Hundurinn drakk vatn.	Hann var þyrstur.	Hundurinn drakk vatn af því að hann var þyrstur.	Af því að hundurinn var þyrstur drakk hann vatn. / Af því að hann var þyrstur drakk hundurinn vatn.	Hundurinn var þyrstur. Hann drakk vatn.
+1	orsök	af því að	Ég kom of seint.	Strætó var seinn.	Ég kom of seint af því að strætó var seinn.	Af því að strætó var seinn kom ég of seint.
+1	orsök	af því að	Við fórum ekki út.	Veðrið var vont.	Við fórum ekki út af því að veðrið var vont.	Af því að veðrið var vont fórum við ekki út.
+1	orsök	af því að	Pabbi fór snemma að sofa.	Hann var þreyttur.	Pabbi fór snemma að sofa af því að hann var þreyttur.	Af því að pabbi var þreyttur fór hann snemma að sofa. / Af því að hann var þreyttur fór pabbi snemma að sofa.	Pabbi var þreyttur. Hann fór snemma að sofa.
+1	orsök	af því að	Barnið grét.	Það datt.	Barnið grét af því að það datt.	Af því að barnið datt grét það.	Barnið datt. Það grét.
+1	orsök	af því að	Kötturinn mjálmaði.	Hann var svangur.	Kötturinn mjálmaði af því að hann var svangur.	Af því að kötturinn var svangur mjálmaði hann. / Af því að hann var svangur mjálmaði kötturinn.	Kötturinn var svangur. Hann mjálmaði.
+1	orsök	af því að	Sara kom ekki í skólann.	Hún var veik.	Sara kom ekki í skólann af því að hún var veik.	Af því að Sara var veik kom hún ekki í skólann. / Af því að hún var veik kom Sara ekki í skólann.	Sara var veik. Hún kom ekki í skólann.
+1	orsök	af því að	Ég opnaði gluggann.	Það var heitt inni.	Ég opnaði gluggann af því að það var heitt inni.	Af því að það var heitt inni opnaði ég gluggann.
+1	orsök	af því að	Við fórum heim.	Leikurinn var búinn.	Við fórum heim af því að leikurinn var búinn.	Af því að leikurinn var búinn fórum við heim.
+1	orsök	af því að	Ég tók strætó.	Það var langt að ganga.	Ég tók strætó af því að það var langt að ganga.	Af því að það var langt að ganga tók ég strætó.
+1	tíð	þegar	Pabbi var að elda.	Ég kom heim.	Pabbi var að elda þegar ég kom heim.	Þegar ég kom heim var pabbi að elda.
+1	tíð	þegar	Það var snjór úti.	Við vöknuðum.	Það var snjór úti þegar við vöknuðum.	Þegar við vöknuðum var snjór úti.
+1	tíð	þegar	Við fórum inn.	Bjallan hringdi.	Við fórum inn þegar bjallan hringdi.	Þegar bjallan hringdi fórum við inn.
+1	tíð	þegar	Mamma átti kött.	Hún var lítil.	Mamma átti kött þegar hún var lítil.	Þegar mamma var lítil átti hún kött. / Þegar hún var lítil átti mamma kött.	Mamma var lítil. Hún átti kött.
+1	tíð	þegar	Við fórum að sofa.	Myndin var búin.	Við fórum að sofa þegar myndin var búin.	Þegar myndin var búin fórum við að sofa.
+1	tíð	þegar	Ég var að borða.	Síminn hringdi.	Ég var að borða þegar síminn hringdi.	Þegar síminn hringdi var ég að borða. / Síminn hringdi þegar ég var að borða. / Þegar ég var að borða hringdi síminn.
+1	tíð	þegar	Við kveikjum ljósin.	Það dimmir.	Við kveikjum ljósin þegar það dimmir.	Þegar það dimmir kveikjum við ljósin. / Við kveikjum ljósin þegar dimmir. / Þegar dimmir kveikjum við ljósin.
+1	tíð	þegar	Við bökuðum pönnukökur.	Afi kom í heimsókn.	Við bökuðum pönnukökur þegar afi kom í heimsókn.	Þegar afi kom í heimsókn bökuðum við pönnukökur.
+1	tíð	þegar	Ég meiddi mig.	Ég datt.	Ég meiddi mig þegar ég datt.	Þegar ég datt meiddi ég mig.
+1	tíð	þegar	Allir þögnuðu.	Kennarinn kom inn.	Allir þögnuðu þegar kennarinn kom inn.	Þegar kennarinn kom inn þögnuðu allir.
+2	skýring	að	Hurðin var opin.	Ég sá það.	Ég sá að hurðin var opin.
+2	skýring	að	Stelpan er veik.	Ég veit það.	Ég veit að stelpan er veik.
+2	skýring	að	Hundurinn gelti.	Ég heyrði það.	Ég heyrði að hundurinn gelti.
+2	skýring	að	Gólfið var blautt.	Ég fann það.	Ég fann að gólfið var blautt.
+2	skýring	að	Það var kalt úti.	Ég man það.	Ég man að það var kalt úti.
+2	skýring	að	Bíllinn er bilaður.	Pabbi veit það.	Pabbi veit að bíllinn er bilaður.
+2	skýring	að	Mjólkin var búin.	Mamma sá það.	Mamma sá að mjólkin var búin.
+2	skýring	að	Kennarinn er veikur.	Við vitum það.	Við vitum að kennarinn er veikur.
+2	skýring	að	Það er frí á morgun.	Allir vita það.	Allir vita að það er frí á morgun.
+2	skýring	að	Síminn hringdi.	Ég heyrði það.	Ég heyrði að síminn hringdi.
+2	skýring	að	Ljósið var kveikt.	Ég sá það.	Ég sá að ljósið var kveikt.
+2	skýring	að	Prófið er á föstudaginn.	Ég man það.	Ég man að prófið er á föstudaginn.
+3	tilvísun	sem	Ég á hund.	Hann heitir Kátur.	Ég á hund sem heitir Kátur.		Ég á hund. Hundurinn heitir Kátur.
+3	tilvísun	sem	Við búum í húsi.	Það stendur við sjóinn.	Við búum í húsi sem stendur við sjóinn.		Við búum í húsi. Húsið stendur við sjóinn.
+3	tilvísun	sem	Ég las bókina.	Amma gaf mér hana.	Ég las bókina sem amma gaf mér.		Ég las bókina. Amma gaf mér bókina.
+3	tilvísun	sem	Ég á vin.	Hann býr á Akureyri.	Ég á vin sem býr á Akureyri.
+3	tilvísun	sem	Ég sá mynd.	Myndin var mjög fyndin.	Ég sá mynd sem var mjög fyndin.		Ég sá mynd. Hún var mjög fyndin.
+3	tilvísun	sem	Mamma bakaði köku.	Kakan var mjög góð.	Mamma bakaði köku sem var mjög góð.		Mamma bakaði köku. Hún var mjög góð.
+3	tilvísun	sem	Ég fann lykil.	Hann lá á gólfinu.	Ég fann lykil sem lá á gólfinu.		Ég fann lykil. Lykillinn lá á gólfinu.
+3	tilvísun	sem	Þetta er strákurinn.	Hann vann hlaupið.	Þetta er strákurinn sem vann hlaupið.		Þetta er strákurinn. Strákurinn vann hlaupið.
+3	tilvísun	sem	Ég týndi húfunni.	Þú gafst mér hana.	Ég týndi húfunni sem þú gafst mér.		Ég týndi húfunni. Þú gafst mér húfuna.
+3	tilvísun	sem	Við eigum kött.	Hann sefur allan daginn.	Við eigum kött sem sefur allan daginn.		Við eigum kött. Kötturinn sefur allan daginn.
+3	tilvísun	sem	Ég þekki stelpu.	Hún spilar á gítar.	Ég þekki stelpu sem spilar á gítar.		Ég þekki stelpu. Stelpan spilar á gítar.
+3	tilvísun	sem	Ég borðaði eplið.	Það lá á borðinu.	Ég borðaði eplið sem lá á borðinu.		Ég borðaði eplið. Eplið lá á borðinu.
+3	tilvísun	sem	Stelpan er í mínum bekk.	Hún vann hlaupið.	Stelpan sem vann hlaupið er í mínum bekk.	Stelpan sem er í mínum bekk vann hlaupið.	Stelpan er í mínum bekk. Stelpan vann hlaupið.
+3	tilvísun	sem	Maðurinn er afi minn.	Hann stendur þarna.	Maðurinn sem stendur þarna er afi minn.		Maðurinn er afi minn. Maðurinn stendur þarna.
+3	tilvísun	sem	Bíllinn er bilaður.	Pabbi keypti hann.	Bíllinn sem pabbi keypti er bilaður.		Bíllinn er bilaður. Pabbi keypti bílinn.

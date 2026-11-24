@@ -81,6 +81,7 @@ print(json.dumps(out))`);
   const want = {
     S: lines("setningar/setningar.tsv"),
     HUNT: lines("villuveidar/villur.tsv"),
+    COMBINE: lines("malbeiting/sameina.tsv"),
     ADJ_NOUN_GROUPS: lines("lysingarord/nafnordahopar.tsv"),
     ADJ_FRAMES: lines("lysingarord/rammar.tsv"),
     PRONOUN_GAP: lines("fornofn/eyda.tsv"),

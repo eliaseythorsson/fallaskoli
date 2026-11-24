@@ -484,3 +484,46 @@ _WHO_DID = [(r["þyngd"], r["gerð"], r["setning"], r["sögn"], r["gerandi"], r[
             for r in _C.rows("setningafraedi/hver-gerdi-hvad.tsv", [
                 ("þyngd", "int"), ("gerð", "text"), ("setning", "text"), ("sögn", "text"),
                 ("gerandi", "text"), ("þolandi", "text"), ("athugasemd", "str")])]
+
+# ---------------------------------------------------------------- Sameina og skipta
+
+# COMBINE (issue #29): two short sentences and the same thing said in one
+# sentence with a subordinate clause, one pair per line of
+# content/malbeiting/sameina.tsv. Asked in both directions. The file's header
+# says what each column holds and what the build checks: build_exercises.py
+# has Greynir parse every sentence of a pair and refuses the pair unless each
+# short sentence is one main clause and each joined sentence holds exactly one
+# subordinate clause of the kind the pair names, opened by its conjunction
+# (clause_shape.py).
+#   COMBINE  (level, kind, conjunction, a, b, [joined, also …], [[a, b], also …], line)
+#            kind: orsök | tíð | skýring | tilvísun; line: the line of the file
+# (Tuples and a line NUMBER on purpose: build_freq.py reads every string in
+# this module as school material, a dict's keys and a file path included.)
+COMBINE_KINDS = ("orsök", "tíð", "skýring", "tilvísun")
+
+
+def _two(text):
+    """"A. B." -> ["A.", "B."]: the two sentences of one cell, or None."""
+    parts = [x.strip() for x in text.replace(". ", ".\n").split("\n")]
+    return parts if len(parts) == 2 and all(parts) else None
+
+
+def _combine():
+    out = []
+    for r in _C.rows("malbeiting/sameina.tsv", [
+            ("þyngd", "int"), ("gerð", "text"), ("tenging", "text"), ("fyrri", "text"), ("seinni", "text"),
+            ("saman", "text"), ("líka saman", "str"), ("líka sundur", "str")]):
+        if r["gerð"] not in COMBINE_KINDS:
+            _bad(r, "„gerð“ á að vera %s / expected one of these" % ", ".join(COMBINE_KINDS))
+        apart = [[r["fyrri"], r["seinni"]]]
+        for alt in [x.strip() for x in r["líka sundur"].split(" / ") if x.strip()]:
+            two = _two(alt)
+            if not two:
+                _bad(r, "„líka sundur“: hver leið á að vera tvær setningar / each way must be two sentences (%r)" % alt)
+            apart.append(two)
+        joined = [r["saman"]] + [x.strip() for x in r["líka saman"].split(" / ") if x.strip()]
+        out.append((r["þyngd"], r["gerð"], r["tenging"], r["fyrri"], r["seinni"], joined, apart, r.line))
+    return out
+
+
+COMBINE = _combine()

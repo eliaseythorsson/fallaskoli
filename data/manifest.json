@@ -22,11 +22,12 @@
   "pipeline/build_sentences.py": "956df1d41b67c6ee90f3410b81acc5ecdf2f16f8ed28b505dc9462da55d9965d",
   "pipeline/build_bundle.py": "656e4622ec1426e7f9a3bb8a0c41661dc799c9191fa5620a4dededf695e7e25a",
   "pipeline/irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
-  "pipeline/exercises.py": "14d365a4937697bb750d3bfbfcee4e09714950b1521d2fb9379844d2e72262e7",
-  "pipeline/build_exercises.py": "e247b9a92e50383f7afe13c949398448d1eaaceb95e84730124afd234014485d",
+  "pipeline/exercises.py": "88419ad19bf71e093566446ff6d858e3579865e057438663ba4d041fb90264b7",
+  "pipeline/build_exercises.py": "4fa116847fc848e7af7f65f342268948a8cb9c0bce2efc3cc45107173666ef5c",
   "pipeline/adj_classes.py": "30dcdd1a715ac73c9325bcc327a043a78cd452cd9aa9164d934b25b565255b10",
   "pipeline/content_io.py": "f70116a2eb0031119ab311329a3912fe144d943b9a74583c9aab8902ad7566fe",
   "pipeline/who_did.py": "1abfd3de384d81f7015f2c65ca007fb527f838f34a52034b6a513e931c8e3a46",
+  "pipeline/clause_shape.py": "c621aff33c85e96bf2a85df4adb288a74d2d07b640f7afeefeb6055b210104f0",
   "sources/lino2.csv": null,
   "pipeline/lino.py": "e3bef7f6b7b5d0d23d0bd0eb16fc5fe8ce07d815f8f63b40aeef7f2e486e668a",
   "pipeline/frame_allow.py": "1882339d84eb52b4db7bbb87e5d506f81342e7fc8035c9689219cabe9222a540",
@@ -47,6 +48,7 @@
   "content/fornofn/eyda.tsv": "5d92dd9ff534f7a97314057ac5fcecaafd5fb538651657a03c7ee5fa26629085",
   "content/lysingarord/nafnordahopar.tsv": "7932e964e00b62bfa15a5a23ca4f832efd8c6fd6361dc419cfeaba76d088da58",
   "content/lysingarord/rammar.tsv": "330bc4cae44f442ae9cf06284decc612deee85765496c27222141594139fb18b",
+  "content/malbeiting/sameina.tsv": "3712f7e6d57d42800e29907c63821d067966122c529b52c2ac7721cb4003d835",
   "content/obeygjanleg/fs-ao-rammar.tsv": "77ea8a6b280b3da3cd39d3ef820b693ad40948f13e86fc2f29e8b26598bf95f5",
   "content/obeygjanleg/fs-ao.tsv": "260acc5166812cdade5896deaa2504b6065ed40c6e5c213bca09a7d0cf351efc",
   "content/obeygjanleg/samtengingar-orsok.tsv": "6fb00f9db9b6a685a17e2649fa98820780104055d8f55f8b72b25af198ec49ea",
@@ -77,7 +79,7 @@
   "data/lexicon.json": "b9e41b1b88e202702fc103c0049415c0eaa5051aac9c568cf3e5624aec584b3b",
   "data/sentences.json": "1fbb7a55c19923732dfb61c149bb4c4ddd6452a047eee88e7953a9c50737a669",
   "data/data_bundle.js": "01befcfc08e496e09bfe1e6c5b3a587cf93511455bb4fdde8963545a9b2b427c",
-  "data/exercises.js": "85ca58e193a4c8807b3efdd5b3140d81b6ad7270e389e71a090f352ece07cfcf"
+  "data/exercises.js": "4b1f7ed440bf74c5a991b7c13e0611e9645b580437b5703e558559089099bcc3"
  },
  "counts": {
   "words": 6564,

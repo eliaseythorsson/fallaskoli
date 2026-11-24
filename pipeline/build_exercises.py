@@ -1298,6 +1298,29 @@ print("hver gerði hvað: %d setningar, %d spurningar" % (
 for it in out["hver"]:
     for f in it["f"]:
         print("   þ%d %-9s %-52s %s %s → %s" % (it["lvl"], it["k"], it["s"]["t"], f["qa"], f.get("qp", ""), f["p"]))
+# ---------------------------------------------------------------- Sameina og skipta
+# Issue #29: two short sentences <-> one sentence with a subordinate clause
+# (content/malbeiting/sameina.tsv, exercises.py COMBINE). The browser has no
+# parser, so the parse is asked HERE, of every sentence a pupil's answer can
+# be matched against (clause_shape.py says what is asked and why): each short
+# sentence one main clause, each joined sentence exactly one subordinate
+# clause of the pair's kind, opened by the pair's conjunction. And every
+# word in BÍN and off the block list, as everywhere.
+import clause_shape as CS
+items = []
+seen_pairs = set()
+for lvl, kind, conj, first, second, joined, apart, line in X.COMBINE:
+    where = f"COMBINE content/malbeiting/sameina.tsv:{line} {first} {second}"
+    if lvl not in (1, 2, 3): fail(f"{where}: þyngd must be 1, 2 or 3")
+    if (first, second) in seen_pairs: fail(f"{where}: the pair twice")
+    seen_pairs.add((first, second))
+    for t in joined + [t for pair in apart for t in pair]:
+        check_words(t, where)
+        if blocked_words(t): fail(f"{where}: a word on the block list ({t})")
+    for why in CS.problems({"kind": kind, "conj": conj, "joined": joined, "apart": apart}): fail(f"{where}: {why}")
+    items.append({"lvl": lvl, "kind": kind, "conj": conj, "a": first, "b": second,
+                  "joined": joined, "apart": apart})
+out["combine"] = items
 
 # ---------------------------------------------------------------- word lists
 # Words that are ONE word class whatever BÍN entry they are read as, for

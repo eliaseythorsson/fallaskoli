@@ -306,12 +306,17 @@ test("item 63: where the same cell means the same answer, the two players' cells
       const cells = new Map();
       built.forEach((x) => cells.set(x.cell, (cells.get(x.cell) || new Set()).add(x.q)));
       measured.get(id).push({
+        n: built.length,
         perCell: [...cells.values()].reduce((a, x) => a + x.size, 0) / (cells.size || 1),
         gain: samePairs ? sameHits / samePairs - anyHits / (anyPairs || 1) : 0,
       });
     }
   }
   for (const [id, m] of measured) {
+    /* A type none of whose questions a duel takes (`counts: false` on every
+       task — issue #29, sameina: an answer off its list is not judged) has
+       no cells to give away. */
+    if (m.every((x) => x.n === 0)) { assert.ok(!CELL_IS_ANSWER.has(id), id); continue; }
     const told = `${id}: ` + m.map((x) => `gain ${x.gain.toFixed(2)}, ${x.perCell.toFixed(1)} questions a cell`).join(" · ");
     const items = m.every((x) => x.perCell < 1.4);
     const mustBe = items || m.some((x) => x.gain >= 0.3);

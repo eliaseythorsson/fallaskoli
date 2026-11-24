@@ -14,6 +14,9 @@
                  from v6.13 also: a passive back to the active, a statement
                  to a yes/no question, two sentences joined with a given
                  conjunction, and direct speech to indirect
+     sameina     Sameina og skipta (issue #29) — two short sentences made
+                 into one with a subordinate clause, and one such sentence
+                 split in two; hand-written pairs (content/malbeiting/)
 
    The rule behind every builder here is the program's rule: a wrong question
    is worse than no question. Every form these builders produce is read out of
@@ -34,7 +37,7 @@ import { wordKey } from "../core/state.js";
 import { secondLanguage as pupilIsL2 } from "../core/profile.js";
 import { explainVerbForm } from "./explain.js";
 import { built, FX } from "./effects.js";
-import { pick, shuffle, askable, bandFor, sentPool, levelFor, fresh, forcedCell } from "./shared.js";
+import { pick, shuffle, askable, bandFor, sentPool, levelFor, fresh, forcedCell, forcedItem, itemsForBand } from "./shared.js";
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -1736,6 +1739,158 @@ export function taskSpeech(lex, view, rng) {
   }, [FX.exSeen(x.key)]);
 }
 
+/* ============================================ SAMEINA OG SKIPTA (issue #29) ==
+ *
+ * Two short sentences made into one with a subordinate clause ("combine"),
+ * and one such sentence split into two ("split") — docs/DLD-PLAN.md §3, the
+ * "vertical structuring" of SKILL. One structure at a time, in the plan's
+ * order:
+ *
+ *   þyngd 1   adverbial clauses: *af því að* (orsök), *þegar* (tíð)
+ *   þyngd 2   and complement clauses: *að* (skýring) — *Hurðin var opin. Ég
+ *             sá það.* ↔ *Ég sá að hurðin var opin.*
+ *   þyngd 3+  and relative clauses: *sem* (tilvísun); a sentence to split
+ *             may now open with its clause (*Þegar ég kom heim var …*)
+ *
+ * Why a type of its own and not a kind of Umritun. Umritun's *tenging* makes
+ * its questions from the sentence bank: it cuts a bank sentence at its
+ * conjunction, so it can only ask for clauses that stand as sentences when
+ * cut loose (its JOIN_SUB list says which, and why *að* and *sem* are not
+ * among them), its sentences are as long as the bank's, and its one right
+ * answer is the bank sentence. These are hand-written pairs
+ * (content/malbeiting/sameina.tsv → EX.combine), short on purpose, they go
+ * both ways, they reach *að* and *sem*, and they are graded by another rule.
+ *
+ * THE RULE (the issue's second criterion): the browser has no parser, so the
+ * parse was asked at build time, of every sentence listed for a pair — each
+ * short sentence is one main clause, each joined one holds exactly one
+ * subordinate clause of the pair's kind (pipeline/build_exercises.py,
+ * "Sameina og skipta"). An answer is RIGHT only if it is one of those. Any
+ * other answer is not wrong: the pupil is shown the model, and the answer
+ * counts neither way (`open: true`; core/answer.js JUDGES.umritun). The one
+ * answer that IS wrong is what was shown, written back unchanged.
+ *
+ * Drawn by the Umritun renderer (the task's `type`), as Bein og óbein ræða
+ * is. */
+
+const COMBINE_NAME = { orsök: "atvikssetning (orsök)", tíð: "atvikssetning (tíð)",
+  skýring: "skýringarsetning", tilvísun: "tilvísunarsetning" };
+
+/** What each kind of clause is, for the *af hverju* box: [combine, split]. */
+function combineWhy(x, fronted) {
+  const c = x.conj, C = capFirst(c);
+  const front = fronted
+    ? ` Aukasetningin má líka standa fremst. Þá kemur sögnin í aðalsetningunni strax á eftir henni: *${fronted}*`
+    : "";
+  switch (x.kind) {
+    case "orsök": return [
+      `*${C}* segir **hvers vegna**. Setningin sem byrjar á *${c}* er aukasetning: hún getur ekki staðið ein.${front}`,
+      `*${C}* segir hvers vegna. Þegar tengingunni er sleppt verða til tvær setningar sem geta báðar staðið einar.`];
+    case "tíð": return [
+      `*${C}* segir **hvenær**. Setningin sem byrjar á *${c}* er aukasetning: hún getur ekki staðið ein.${front}`,
+      `*${C}* segir hvenær. Þegar tengingunni er sleppt verða til tvær setningar sem geta báðar staðið einar.`];
+    case "skýring": return [
+      `*${C}* tengir það sem maður sér, veit, heyrir eða man við sögnina. Aukasetningin kemur í staðinn fyrir *það*.`,
+      `Aukasetningin sem byrjar á *${c}* segir **hvað** það var. Þegar hún verður að sérstakri setningu kemur *það* í staðinn fyrir hana.`];
+    default: return [
+      `*${C}* tengir setningu við nafnorðið sem stendur á undan og segir meira um það. Þá þarf ekki að nefna það aftur.`,
+      `Aukasetningin sem byrjar á *${c}* segir meira um nafnorðið á undan. Þegar hún verður að sérstakri setningu kemur fornafn (*hann*, *hún*, *það*) eða nafnorðið sjálft í staðinn fyrir *${c}*.`];
+  }
+}
+
+const COMBINE_HINT = {
+  orsök: (c) => `Byrjaðu á setningunni sem segir **hvað gerðist**. Settu svo *${c}* og setninguna sem segir **hvers vegna**.`,
+  tíð: (c) => `Settu *${c}* fremst í setninguna sem segir **hvenær**. Hin setningin stendur óbreytt.`,
+  skýring: (c) => `Önnur setningin endar á *það*. Taktu *það* burt og settu *${c}* og hina setninguna í staðinn.`,
+  tilvísun: (c) => `Sama orðið er nefnt í báðum setningum. Settu *${c}* strax á eftir því og slepptu því í seinni setningunni.`,
+};
+const SPLIT_HINT = {
+  orsök: (c) => `Finndu *${c}*. Það sem stendur öðrum megin við það er ein setning og það sem stendur hinum megin er önnur. Slepptu *${c}*.`,
+  tíð: (c) => `Finndu *${c}*. Það sem stendur öðrum megin við það er ein setning og það sem stendur hinum megin er önnur. Slepptu *${c}*.`,
+  skýring: (c) => `Það sem stendur á eftir *${c}* er ein setning. Hin setningin endar á *það*.`,
+  tilvísun: (c) => `Það sem stendur á eftir *${c}* verður sérstök setning. Hún byrjar á fornafni (*hann*, *hún*, *það*) eða á nafnorðinu sjálfu.`,
+};
+
+/** The first word of a conjunction that no short sentence of the pair has:
+    what tells an answer that still holds the conjunction, or lacks it. */
+function conjMark(x) {
+  const used = new Set(x.apart.flat().flatMap((t) => normalise(t).split(" ")));
+  return x.conj.split(" ").find((w) => !used.has(w)) || null;
+}
+
+/** One pair asked one way. `dir`: "combine" | "split"; `shown`: for a split,
+    which of the pair's joined sentences is shown. Exported for the tests
+    and the review page. */
+export function combineTask(x, dir, shown = 0) {
+  const fronted = x.joined.find((t) => normalise(t).startsWith(x.conj + " ")) || null;
+  const [whyJoin, whySplit] = combineWhy(x, fronted);
+  const mark = conjMark(x);
+  /* `open`: an answer off the list is not judged (core/answer.js).
+     `counts: false`: so the question has no place in a duel (core/duel.js
+     leaves such a task out), where an answer that is not judged would
+     simply lose the point. */
+  const common = { kind: dir, clause: x.kind, conj: x.conj, open: true, counts: false,
+    item: `${dir}|${x.a} ${x.b}`, cell: "sameina:" + dir, word: null };
+  if (dir === "combine") {
+    return { ...common,
+      title: "Sameina setningar",
+      lines: [x.a, x.b], from: `${x.a} ${x.b}`,
+      instruction: `Gerðu **eina setningu** úr þessum tveimur. Notaðu **${x.conj}**.`,
+      placeholder: "skrifaðu eina setningu…",
+      answers: x.joined, model: x.joined[0],
+      hint: COMBINE_HINT[x.kind](x.conj), why: whyJoin,
+      checks: mark ? [{ lacks: [mark], note: `Hér átti að nota *${x.conj}* til að tengja setningarnar.` }] : [],
+      copyNote: `Þetta eru enn tvær setningar. Tengdu þær saman í eina með *${x.conj}*.`,
+    };
+  }
+  const from = x.joined[shown] || x.joined[0];
+  /* Either order of the two is two sentences. */
+  const answers = [...new Set(x.apart.flatMap(([a, b]) => [`${a} ${b}`, `${b} ${a}`]))];
+  return { ...common,
+    title: "Skipta setningu",
+    from,
+    instruction: "Skiptu setningunni í **tvær stuttar setningar** sem segja það sama.",
+    placeholder: "skrifaðu tvær setningar…",
+    answers, model: `${x.a} ${x.b}`,
+    hint: SPLIT_HINT[x.kind](x.conj), why: whySplit,
+    checks: mark ? [{ hasAny: [mark], note: `Slepptu *${x.conj}*: hvor setning á að geta staðið ein.` }] : [],
+    copyNote: "Þetta er enn sama setningin. Úr henni eiga að verða tvær setningar sem geta báðar staðið einar.",
+  };
+}
+
+const COMBINE_DIRS = ["combine", "split"];
+
+export function taskCombine(lex, view, rng) {
+  if (view.cannotAsk([])) return null;             // a rescue drill is about one word; this asks about none
+  const band = bandFor(view, PROD);
+  const fc = forcedCell(view);
+  const fi = forcedItem(view);
+  if (fc && !fc.startsWith("sameina:")) return null;
+  let dir = fc ? fc.slice(8) : null;
+  let x;
+  if (fi) {
+    /* A review asks for the very pair, the same way round. */
+    const at = fi.indexOf("|");
+    dir = fi.slice(0, at);
+    x = EX.combine.find((y) => `${y.a} ${y.b}` === fi.slice(at + 1));
+    if (!x) return null;
+  }
+  if (dir && !COMBINE_DIRS.includes(dir)) return null;
+  dir ||= pick(COMBINE_DIRS, rng);
+  /* One structure at a time: nothing above the pupil's þyngd. */
+  const upTo = EX.combine.filter((y) => y.lvl <= band);
+  x ||= pick(itemsForBand(view, PROD, upTo, (y) => `${dir}|${y.a} ${y.b}`), rng);
+  if (!x) return null;
+  const shown = dir === "split" && band >= 3 ? Math.floor(rng() * x.joined.length) : 0;
+  const t = combineTask(x, dir, shown);
+  return built({
+    type: "umritun", skill: PROD, ...t,
+    base: dir === "combine" ? 14 : 12, lvl: levelFor(view.policy, x.lvl),
+  }, [FX.exSeen(t.item)]);
+}
+
+export { COMBINE_NAME };
+
 /** The builders of this category, by question type id. What each type is —
    its name, renderer, tags, bands and weight — is declared in
    core/catalogue.js; tasks/registry.js joins the two.
@@ -1745,4 +1900,5 @@ export const BUILDERS = {
   smidja: { build: taskWorkshop },
   villur: { build: taskHunt },
   raeda: { build: taskSpeech },
+  sameina: { build: taskCombine },
 };

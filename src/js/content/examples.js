@@ -402,6 +402,27 @@ export const EXAMPLES = {
     how: "Gæsalappirnar hverfa og setningin byrjar á *að*. Af því að *sagði* er í þátíð fer sögnin í viðtengingarhátt þátíðar: *liggur* verður *lægi*.",
     forms: ["liggja|so|GM-FH-NT-3P-ET=liggur", "liggja|so|GM-VH-ÞT-3P-ET=lægi"],
   },
+  /* Issue #29: the example goes the way the question goes (`kind`). */
+  sameina: {
+    q: "Gerðu **eina setningu** úr þessum tveimur og notaðu *þegar*: *Við fórum inn. Bjallan hringdi.*",
+    a: "Við fórum inn þegar bjallan hringdi.",
+    how: "*Þegar* segir hvenær. Það fer fremst í setninguna sem segir hvenær: *þegar bjallan hringdi*. Hin setningin stendur óbreytt.",
+    forms: ["hringja|so|GM-FH-ÞT-3P-ET=hringdi"],
+    byKind: {
+      combine: {
+        q: "Gerðu **eina setningu** úr þessum tveimur og notaðu *þegar*: *Við fórum inn. Bjallan hringdi.*",
+        a: "Við fórum inn þegar bjallan hringdi.",
+        how: "*Þegar* segir hvenær. Það fer fremst í setninguna sem segir hvenær: *þegar bjallan hringdi*. Hin setningin stendur óbreytt.",
+        forms: ["hringja|so|GM-FH-ÞT-3P-ET=hringdi"],
+      },
+      split: {
+        q: "Skiptu setningunni í **tvær stuttar setningar**: *Við fórum inn þegar bjallan hringdi.*",
+        a: "Við fórum inn. Bjallan hringdi.",
+        how: "Finndu tenginguna: *þegar*. Öðrum megin við hana er ein setning og hinum megin önnur. Tengingunni er sleppt og hvor setning fær punkt.",
+        forms: ["hringja|so|GM-FH-ÞT-3P-ET=hringdi"],
+      },
+    },
+  },
 
   /* ---- Setningafræði ---- */
   syntax: {

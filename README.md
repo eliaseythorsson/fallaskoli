@@ -166,7 +166,8 @@ attaches the HTML, the zip and the web folder to a release.
 content/              ALL HAND-WRITTEN CONTENT, one TAB-separated file per list,
                       readable and editable without reading code (see "Efnið"):
                       setningar/ (the sentence bank), villuveidar/ (the real
-                      errors), lysingarord/ fornofn/ toluord/ fallstjorn/
+                      errors), malbeiting/ (pairs to combine and split),
+                      lysingarord/ fornofn/ toluord/ fallstjorn/
                       obeygjanleg/ ordafordi/ setningafraedi/ (exercise items
                       and frames);
                       REVIEW-NOTES.md, what a native reader should check
@@ -206,6 +207,8 @@ pipeline/             the Python half of the build (critique item 79), run from 
                       frumlag — and compared with the hand-written key of
                       content/setningafraedi/hver-gerdi-hvad.tsv; an item whose
                       parse says otherwise is refused by build_exercises.py
+  clause_shape.py     what Greynir says about the clauses of a sentence: the
+                      check every pair of Sameina og skipta passes (issue #29)
   definitions.py      a handful of hand-written definitions; the rest are ÍNO
   exercises.py        reads the hand-written items for the v6.11 question types
                       (pronouns, numerals, dates, government, synonyms …) and
@@ -488,6 +491,7 @@ can read it, correct it and add to it without reading Python:
 content/setningar/setningar.tsv     the sentence bank (1,130 sentences)
 content/setningar/lino-rammar.tsv   words allowed into one frame each (word, frame, checked by)
 content/villuveidar/villur.tsv      the real errors of Villuveiðar
+content/malbeiting/sameina.tsv      pairs for Sameina og skipta: two short sentences and one joined
 content/lysingarord/ …/ordafordi/   exercise items and frames, by category
 content/setningafraedi/             „Hver gerði hvað?“: sentences with who did what to whom
 content/REVIEW-NOTES.md             what a native reader should check first

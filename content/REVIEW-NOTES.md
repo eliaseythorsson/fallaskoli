@@ -272,6 +272,33 @@ samheitið yfir samtengingar og atviksorð sem tengja setningar, og er rétt að
 kalla *þess vegna* atviksorð í bók fyrir unglinga? Er reglan um orðaröð
 (sögnin strax á eftir *þess vegna* og *síðan*; frumlagið fyrst á eftir *af
 því að*, *þegar* og *en*) rétt orðuð?
+## Sameina og skipta: öll pörin eru ný
+Skrá: `content/malbeiting/sameina.tsv`
+Úr: feat/29-combine-split (#29)
+
+49 pör skrifuð fyrir nýju spurningagerðina „Sameina og skipta setningum“. Greynir
+greinir hverja setningu, en hann segir ekki hvort hún er eðlilegt mál. Þrennt þarf
+að skoða í hverri línu: (1) Eru stuttu setningarnar og sú langa eðlilegar og segja
+þær það sama? (2) Er hver setning í „líka saman“ og „líka sundur“ rétt? Forritið
+tekur þær gildar sem svar. (3) Vantar eðlilega leið til að segja það sama? Svar sem
+vantar er ekki merkt rangt, en nemandinn fær þá ekki „rétt“ fyrir það.
+
+## Sameina og skipta: orsakarsetning fremst
+Leita: `Af því að barnið datt grét það.` · `Af því að kötturinn var svangur mjálmaði hann.` · `Af því að hann var svangur mjálmaði kötturinn.`
+Úr: feat/29-combine-split (#29)
+
+Þessar setningar eru aðeins teknar gildar sem svar; fyrirmyndin sem nemandinn sér
+hefur aðalsetninguna fremst. Þær geta þó birst undir „Líka rétt“. Eru þær of
+stirðar til að sýna þær, þótt þær séu réttar?
+
+## Sameina og skipta: skýringarsetningu skipt með „það“
+Leita: `Ég sá það.` · `Ég veit það.` · `Ég man það.` · `Ég fann það.`
+Úr: feat/29-combine-split (#29)
+
+Setningu með *að* er skipt þannig að *það* kemur í stað aukasetningarinnar: *Ég sá
+að hurðin var opin.* verður *Hurðin var opin. Ég sá það.* Er þetta eðlileg leið til
+að sýna nemanda hvað aukasetningin gerir, eða á hin röðin (*Ég sá það. Hurðin var
+opin.*) að vera fyrirmyndin? Forritið tekur báðar raðir gildar.
 
 ## Hver gerði hvað: þolmynd með af-lið
 Leita: `skoðaður af lækni` · `valinn af þjálfaranum` · `hvattur af þjálfaranum` · `veidd af kettinum` · `eltur af þjófnum` · `eltur af hundinum` · `elt af stráknum`

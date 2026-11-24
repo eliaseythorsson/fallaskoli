@@ -457,7 +457,17 @@ const LIST = [
     ds: "Hver gerði það og hver varð fyrir því? Fyrst í þolmynd (var bitinn af …), frá þyngd 3 í tilvísunarsetningum (sem …), frá þyngd 5 þegar sem er þolandinn",
     renderer: "hver", weight: 6, recall: false, grader: "app",
     tags: [],
-    bands: [1, 3, 5, 6] },];
+    bands: [1, 3, 5, 6] },
+  /* sameina (issue #29): two short sentences into one with a subordinate
+     clause, and one into two. An answer the build did not list is shown the
+     model and counted neither right nor wrong (tasks/malbeiting.js). */
+  { id: "sameina", skill: "malbeiting",
+    nm: "Sameina og skipta setningum",
+    ds: "Gerðu eina setningu úr tveimur stuttum (af því að, þegar, að, sem) eða skiptu einni setningu í tvær",
+    renderer: "umritun", weight: 6, recall: false, grader: "app",
+    tags: [],
+    bands: [1, 2, 3] },
+];
 
 /** What is wrong with a list of declarations, as sentences; empty when
     nothing is. Read as untrusted: a test passes broken ones.
