@@ -295,6 +295,16 @@ src/js/core/curriculum.js  the curriculum map as data: the official
                       criteria, the nodes (one thing a pupil learns, with its
                       year, question types and Lesefni page) and what the
                       8., 9. and 10. bekkur presets switch on
+src/js/core/structure.js  the structure of a sentence for SHOWING it (item 25):
+                      `sentenceStructure(s)` → the setningarhlutar, the
+                      forsetningarliðir, the samtengingar and the boxed
+                      aukasetningar, read out of the parse and only where the
+                      build vouches for them; an unmarked word is "not
+                      shown", never "has no role". Pure, no DOM.
+                      ui/structure.js draws it (`structureHTML`): every mark
+                      has a colour, a kind of line and its name under it, on
+                      paper and on the board. Used by the hint of „Smelltu á
+                      rétta orðið“, which marks every part but the one asked for
 src/js/core/skillmap.js  the skill map (item 83): every node with how well
                       (the mastery mark), when it was last trained and
                       whether it needs work (an active pattern, reviews due);

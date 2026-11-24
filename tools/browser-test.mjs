@@ -3625,6 +3625,90 @@ await page.setViewport({ width: 1100, height: 900 });
   await page.close();
 }
 
+/* ---------- item 25: the structure hint on „Smelltu á rétta orðið“ ----------
+ * "Vísbending" marks the sentence's structure in the picker — every part but
+ * the one asked for — each with its own colour, kind of line and name. The
+ * words stay clickable, nothing runs off a phone's screen, the colours are
+ * chalk on the board and ink on paper, and after the answer the asked part
+ * is marked as well. */
+{
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
+  await page.goto(FILE, { waitUntil: "domcontentloaded" });
+  await startPractice(page, 15000);
+  const got = await page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    document.querySelectorAll(".tour, .scrim").forEach((x) => x.remove());
+    A.S.enabled.setningafraedi = true; A.reloadPolicy();
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null;
+    A.startRun("setningafraedi", 100000);
+    /* a sentence with a clause in it, so that a box is on the screen too */
+    for (let i = 0; i < 3000 && A.run; i++) {
+      A.next();
+      const c = A.cur;
+      if (c && c.type === "syntax" && (c.s.cl || []).length && document.getElementById("hint")) break;
+    }
+    const c = A.cur;
+    if (!c || c.type !== "syntax" || !document.getElementById("hint")) return null;
+    return { role: c.askRole, words: c.s.tok.filter((t) => !/^[.,!?;:]$/.test(t.w)).length,
+      marksBefore: document.querySelectorAll("#picker .sc, #picker .sc-clause").length };
+  });
+  ok(got, "no „Smelltu á rétta orðið“ question with a hint button appeared");
+  if (got) {
+    ok(got.marksBefore === 0, "the structure is marked before the hint is asked for");
+    await page.evaluate(() => document.getElementById("hint").click());
+    const h = await page.evaluate(() => {
+      const names = [...document.querySelectorAll("#picker .sc-name")].map((x) => x.textContent);
+      const pick = document.getElementById("picker").getBoundingClientRect();
+      const out = [...document.querySelectorAll("#picker .sc, #picker .sc-clause, #picker .sc-name")]
+        .filter((x) => { const r = x.getBoundingClientRect(); return r.right > innerWidth + 1 || r.left < -1; }).length;
+      const line = (cls) => { const e = document.querySelector(`#picker .${cls} .sc-w`); if (!e) return null;
+        const cs = getComputedStyle(e); return [cs.borderBottomStyle, cs.borderTopStyle, cs.borderBottomLeftRadius, cs.textDecorationStyle].join("/"); };
+      const name = document.querySelector("#picker .sc-name");
+      const onBoard = name ? getComputedStyle(name).color : null;
+      /* the same mark on paper: inside the verdict, the note held to the board */
+      let onPaper = null;
+      const v = document.querySelector("#verdict .verdict");
+      if (name && v) { const c = name.closest(".sc").cloneNode(true); v.appendChild(c); onPaper = getComputedStyle(c.querySelector(".sc-name")).color; c.remove(); }
+      return { names, boxes: document.querySelectorAll("#picker .sc-clause").length,
+        boxNames: [...document.querySelectorAll("#picker .sc-cname")].map((x) => x.textContent),
+        words: document.querySelectorAll("#picker .pickw").length, out, wide: pick.width,
+        scroll: document.documentElement.scrollWidth - innerWidth,
+        verdict: (document.getElementById("verdict").textContent || "").replace(/\s+/g, " "),
+        disabled: document.getElementById("hint").disabled, hinted: window.FALLASKOLI.cur.hinted === true,
+        lines: ["sc-frumlag", "sc-umsogn", "sc-andlag", "sc-samtenging", "sc-forsetningarlidur"].map(line).filter(Boolean),
+        onBoard, onPaper };
+    });
+    ok(h.names.length > 0 && h.boxes > 0, `the hint marked nothing: ${h.names.length} parts, ${h.boxes} boxes`);
+    ok(!h.names.includes(got.role), `the hint marks the ${got.role}, which is what the question asks for`);
+    ok(h.boxNames.length === h.boxes && h.boxNames.every((x) => /setning$/.test(x)), "a boxed clause has no name: " + h.boxNames);
+    ok(h.words === got.words, `with the hint ${h.words} of ${got.words} words can be clicked`);
+    ok(h.out === 0 && h.scroll <= 1, `the marked sentence runs off a 390 px screen (${h.out} marks, ${h.scroll}px)`);
+    ok(new Set(h.lines).size === h.lines.length, "two marks are drawn with the same kind of line: " + h.lines.join(" | "));
+    ok(h.onBoard && h.onPaper && h.onBoard !== h.onPaper, `the marks have one colour for board and paper: ${h.onBoard} / ${h.onPaper}`);
+    ok(/Vísbending/.test(h.verdict) && /helmingi minna XP/.test(h.verdict) && h.disabled && h.hinted,
+      "the hint did not say what it is and what it costs: " + h.verdict.slice(0, 120));
+    /* answer right: half the XP, and the asked part is now marked too */
+    const a = await page.evaluate(() => {
+      const A = window.FALLASKOLI, c = A.cur;
+      const j = c.s.tok.findIndex((x) => x.r === c.askRole);
+      document.querySelector(`#picker .pickw[data-j="${j}"]`).click();
+      const sel = document.querySelectorAll("#picker .pickw.sel").length;
+      document.getElementById("check").click();
+      return { sel, names: [...document.querySelectorAll("#picker .sc-name")].map((x) => x.textContent),
+        right: document.querySelectorAll("#picker .pickw.right").length,
+        ok: !!document.querySelector("#verdict .verdict.ok"),
+        last: A.S.log && A.S.log.length ? A.S.log[A.S.log.length - 1] : null };
+    });
+    ok(a.sel === 1 && a.ok && a.right >= 1, "a word could not be chosen and answered with the hint open: " + JSON.stringify(a).slice(0, 160));
+    ok(a.names.includes(got.role), `after the answer the ${got.role} is still not marked`);
+  }
+  ok(errors.length === 0, "errors with the structure hint: " + errors.join(" | "));
+  await page.close();
+}
+
 await browser.close();
 
 console.log(`\n${checks} checks, ${problems.length} problems`);

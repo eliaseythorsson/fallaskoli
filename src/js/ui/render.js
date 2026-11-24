@@ -21,6 +21,8 @@ import { skillName } from "../core/skills.js";
 import { conjugationNoteFor } from "../tasks/explain.js";
 import { reportButtonHTML } from "./reports.js";
 import { l2On, glossToken, decorateTask } from "./secondlang.js";
+import { sentenceStructure, withoutMarks, hasMarks } from "../core/structure.js";
+import { structureHTML } from "./structure.js";
 import {
   $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO, CHEERS_TRY, hideTip,
   defBox, unlockDefBox, freshEnter, stopConfetti,
@@ -934,44 +936,82 @@ function submitParse(app) {
 
 /* ================= 4. Setningarhlutar ================================== */
 
+/* Item 25: the hint. "Vísbending" marks the structure of the sentence in the
+   picker — every part the build vouches for (core/structure.js) EXCEPT the one
+   asked for, which stays for the pupil to find. Like every hint it halves the
+   XP and is not an error. After the answer the asked part is marked too. */
+const ROLE_DEFINITE = { frumlag: ["Frumlagið", "það"], "umsögn": ["Umsögnin", "hana"], andlag: ["Andlagið", "það"],
+  "óbeint andlag": ["Óbeina andlagið", "það"], sagnfylling: ["Sagnfyllingin", "hana"] };
+
+const pickWord = (tok, j) => `<span class="pickw" data-j="${j}">${esc(tok.w)}</span>`;
+
+function drawPicker(t, { hide = [] } = {}) {
+  const el = $("picker");
+  el.classList.toggle("coded", !!t.hinted);
+  el.innerHTML = t.hinted
+    ? structureHTML(t.s, { word: pickWord, hide })
+    : t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w : `${j ? " " : ""}${pickWord(tok, j)}`).join("");
+  if (t.picked != null && !t.done)
+    el.querySelectorAll(".pickw").forEach((x) => x.classList.toggle("sel", +x.dataset.j === t.picked));
+}
+
 RENDER.syntax = function (app) {
   const t = app.cur;
+  /* The hint is offered only where it has something to show. */
+  const canHint = hasMarks(withoutMarks(sentenceStructure(t.s), { hide: [t.askRole] }));
   $("task").innerHTML = `
   <div class="card">
     <p class="eyebrow"><span>Smelltu á rétta orðið</span>${skillTag(t)}</p>
-    <p class="sentence" id="picker">${t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w
-      : `${j ? " " : ""}<span class="pickw" data-j="${j}">${esc(tok.w)}</span>`)
-      .join("")}</p>
+    <p class="sentence" id="picker"></p>
     <p class="gloss">Hvaða orð er ${fmt(t.askRole)} í málsgreininni? Ef þau eru fleiri en eitt dugar að smella á eitt þeirra.</p>
-    <div class="answer"><button class="go" id="check">Athuga</button></div>
+    <div class="answer"><button class="go" id="check">Athuga</button>${
+      canHint ? `<button class="ghost" id="hint">Vísbending</button>` : ""}</div>
     <div id="verdict"></div>
   </div>`;
-  document.querySelectorAll(".pickw").forEach((el) => {
-    el.onclick = () => {
-      if (t.done) return;
-      document.querySelectorAll(".pickw").forEach((x) => x.classList.remove("sel"));
-      el.classList.add("sel");
-      t.picked = +el.dataset.j;
-    };
-  });
+  drawPicker(t, { hide: [t.askRole] });
+  $("picker").onclick = (e) => {
+    const el = e.target.closest(".pickw");
+    if (!el || t.done) return;
+    document.querySelectorAll(".pickw").forEach((x) => x.classList.remove("sel"));
+    el.classList.add("sel");
+    t.picked = +el.dataset.j;
+  };
   $("check").onclick = () => submitSyntax(app);
+  if (canHint) {
+    $("hint").disabled = !!t.hinted;
+    $("hint").onclick = () => {
+      if (t.done) return;
+      t.hinted = true;
+      $("hint").disabled = true;
+      drawPicker(t, { hide: [t.askRole] });
+      const [the, it] = ROLE_DEFINITE[t.askRole] || [t.askRole, "það"];
+      $("verdict").innerHTML = `<div class="verdict neutral"><h3>Vísbending</h3>
+      <p>Nú er bygging málsgreinarinnar sýnd: hver hluti hefur sinn lit, sína línu og sitt heiti.
+        Aðeins það sem er öruggt er merkt.
+        <b>${esc(the)}</b> er ekki merkt — ${esc(it)} átt þú að finna.</p>
+      <p class="streakline">Vísbending gefur helmingi minna XP — hún telst ekki sem villa.</p></div>`;
+    };
+  }
 };
 
 function submitSyntax(app) {
   const t = app.cur;
-  const j = judge(t, { picked: t.picked }, app);
+  const j = judge(t, { picked: t.picked, hinted: !!t.hinted }, app);
   if (j.pending) {
     $("verdict").innerHTML = `<div class="verdict neutral"><p>Smelltu á orð fyrst.</p></div>`;
     return;
   }
   const { good } = j.detail;
   const ok = j.ok, xp = j.xp;
+  t.done = true;
+  if ($("hint")) $("hint").disabled = true;
+  /* With the hint open, the part that was asked for is now marked as well. */
+  if (t.hinted) drawPicker(t);
   document.querySelectorAll(".pickw").forEach((el) => {
     const k = +el.dataset.j;
     if (good.includes(k)) el.classList.add("right");
     else if (k === t.picked && j.verdict === "wrong") el.classList.add("wrongpick");
   });
-  t.done = true;
   /* "Frumlag er …" — a sentence begins with a capital, also when its first
      word is a term with a glossary link. */
   const roleName = t.askRole.charAt(0).toUpperCase() + t.askRole.slice(1);
