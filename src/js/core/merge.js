@@ -106,30 +106,6 @@ export function mergeStates(base, local, remote) {
      whichever device missed it. */
   mergeSlices(out, B, L, R);
 
-  /* Saved levels (v6.13, core/difficulty.js): a position, not a count — per
-     skill the record changed last wins whole. */
-  out.difficulty = mergeLevels(B.difficulty, L.difficulty, R.difficulty);
-
-  /* Sentences seen as frames (v6.13): counts that only ever grow, added like
-     any counter. */
-  out.frames = counters(B.frames, L.frames, R.frames, keys(L.frames, R.frames));
-  /* Per question type (v6.13, item 44, core/mastery.js): the counts add, the
-     recent history is the side answered last. Types met (item 41): met on
-     either device is met, on the earlier day. */
-  out.byType = mergeByType(B.byType, L.byType, R.byType);
-  /* The same record per curriculum node (item 83, core/skillmap.js). */
-  out.byNode = mergeByNode(B.byNode, L.byNode, R.byNode);
-  out.seenTypes = mergeSeenTypes(L.seenTypes, R.seenTypes);
-  /* The skill map's steps (owner feedback 6.14): shown on either, shown. */
-  out.mapBand = mergeMapBand(L.mapBand, R.mapBand);
-  /* Getting better (items 56 and 58, core/mending.js): a pattern mended on
-     either device is no longer waiting, and the counts add. */
-  out.mend = mergeMend(B.mend, L.mend, R.mend);
-
-  /* The guided first run (item 84, core/placement.js): ended on either
-     device is ended on both — nobody is walked through it twice. */
-  out.tour = mergeTour(L.tour, R.tour);
-
 
   /* The child's own switches: whichever device changed them. */
   for (const k of ["enabled", "policy", "settings"])

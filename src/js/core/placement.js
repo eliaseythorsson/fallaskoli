@@ -417,3 +417,30 @@ export function noteTour(S, how, { now = Date.now(), day = null, placed = null, 
   };
   return S.tour;
 }
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.tour`, the record of the guided first run (item 84), or null, as a slice of the saved state (core/slices.js): moved here from
+ * core/state.js `migrate`, core/merge.js `mergeStates` and server/guard.mjs
+ * `cleanState`, unchanged. */
+
+/** @type {import("../types").Slice} */
+export const tourSlice = {
+  key: "tour",
+  blank: () => null,
+  migrate: (raw) => cleanTour(raw),
+  /* Ended on either device is ended on both: nobody is walked through it
+     twice. */
+  merge: (base, local, remote) => mergeTour(local, remote),
+  /* One of three states, a time, a day, a flag and a year, rebuilt by the
+     function the browser loads with; here the day and the time are held to
+     the calendar like every other date in the state. */
+  clean(value, { today, limit }) {
+    const tour = cleanTour(value);
+    if (tour) {
+      if (tour.d && tour.d > limit) tour.d = null;
+      tour.at = Math.min(tour.at, today.getTime() + 2 * 86400000);
+    }
+    return tour;
+  },
+  ownText: false,
+};

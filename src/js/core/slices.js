@@ -124,6 +124,13 @@ import { duelsSlice } from "./duel.js";
 import { diagSlice } from "./diagnosis.js";
 import { readSlice } from "./lessons.js";
 import { runsSlice } from "./runlog.js";
+import { difficultySlice } from "./difficulty.js";
+import { framesSlice } from "./frametally.js";
+import { byTypeSlice } from "./mastery.js";
+import { byNodeSlice, mapBandSlice } from "./skillmap.js";
+import { seenTypesSlice } from "./examples.js";
+import { mendSlice } from "./mending.js";
+import { tourSlice } from "./placement.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
 
 /** @typedef {import("../types").Slice} Slice */
@@ -192,14 +199,14 @@ export const SLICES = [
   diagSlice,
   runsSlice,
   reviewSlice,
-  notYet("difficulty"),
-  notYet("frames"),
-  notYet("byType"),
-  notYet("byNode"),
-  notYet("seenTypes"),
-  notYet("mapBand"),
-  notYet("mend"),
-  notYet("tour"),
+  difficultySlice,
+  framesSlice,
+  byTypeSlice,
+  byNodeSlice,
+  seenTypesSlice,
+  mapBandSlice,
+  mendSlice,
+  tourSlice,
 ];
 
 /** Is this entry a converted slice (rather than one named by `notYet`)?

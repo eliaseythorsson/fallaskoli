@@ -343,3 +343,21 @@ export function masteryLine(m) {
   if (m.overdue) bits.push(`${m.overdue} ${m.overdue % 10 === 1 && m.overdue % 100 !== 11 ? "upprifjun bíður" : "upprifjanir bíða"} of lengi`);
   return bits.join(" · ");
 }
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.byType`, per question type {n, c, h, at} (item 44), as a slice of the saved state (core/slices.js): moved here from
+ * core/state.js `migrate`, core/merge.js `mergeStates` and server/guard.mjs
+ * `cleanState`, unchanged. */
+
+/** @type {import("../types").Slice} */
+export const byTypeSlice = {
+  key: "byType",
+  blank: () => ({}),
+  /* Rebuilt field by field, known types only. */
+  migrate: (raw) => cleanByType(raw),
+  /* The counts add, the recent history is the side answered last. */
+  merge: (base, local, remote) => mergeByType(base, local, remote),
+  /* Known types only, two counts, twenty letters and a time. */
+  clean: (value) => cleanByType(value),
+  ownText: false,
+};

@@ -683,3 +683,31 @@ export function nodeSession(node, S, now = Date.now(), n = NODE_RUN) {
     review: due.slice(0, openingSize(n)).map((e) => e.k),
     label: "Færnikort: " + node.nm, lesson: node.lesson || null };
 }
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.byNode` (the record per curriculum node, item 83) and `S.mapBand`
+ * (the highest step the map has shown per skill, owner feedback 6.14) as a slice of the saved state (core/slices.js): moved here from
+ * core/state.js `migrate`, core/merge.js `mergeStates` and server/guard.mjs
+ * `cleanState`, unchanged. */
+
+/** @type {import("../types").Slice} */
+export const byNodeSlice = {
+  key: "byNode",
+  blank: () => ({}),
+  migrate: (raw) => cleanByNode(raw),
+  merge: (base, local, remote) => mergeByNode(base, local, remote),
+  /* Known nodes only — seven of them. */
+  clean: (value) => cleanByNode(value),
+  ownText: false,
+};
+
+/** @type {import("../types").Slice} */
+export const mapBandSlice = {
+  key: "mapBand",
+  blank: () => ({}),
+  migrate: (raw) => cleanMapBand(raw),
+  /* Shown on either device, shown. */
+  merge: (base, local, remote) => mergeMapBand(local, remote),
+  clean: (value) => cleanMapBand(value),
+  ownText: false,
+};

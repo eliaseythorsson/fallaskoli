@@ -92,47 +92,6 @@ export function cleanState(raw, { today = new Date() } = {}) {
      calendar. */
   cleanSlices(S, ctx);
 
-  /* Saved levels (v6.13, core/difficulty.js): known skills only, the level
-     inside 1–7, the run 0–1, a dozen 1s and 0s, a time and one of three
-     sources. `migrate` already did this; it is said again here because this
-     file is where the server's trust is decided. */
-  S.difficulty = cleanLevels(S.difficulty);
-
-  /* Sentences seen as frames (v6.13): `migrate` has already kept only short
-     keys and whole counts (core/state.js `cleanFrames`); here the counts are
-     held to the same ceiling as every other counter. */
-  S.frames = Object.fromEntries(pairs(S.frames, FRAMES_MAX, 8).map(([k, v]) => [k, n(v, 100000)]));
-  /* Per question type (v6.13, item 44): known types only, two counts, twenty
-     letters and a time. Types met (item 41): known types only, one day each,
-     not after tomorrow. Both bounded by the number of question types. */
-  S.byType = cleanByType(S.byType);
-  /* The same record for the curriculum nodes that keep one (item 83,
-     core/skillmap.js): known nodes only — seven of them. */
-  S.byNode = cleanByNode(S.byNode);
-  S.mapBand = cleanMapBand(S.mapBand);
-  S.seenTypes = Object.fromEntries(Object.entries(cleanSeenTypes(S.seenTypes))
-    .filter(([, d]) => d <= limit));
-
-  /* Getting better (items 56 and 58, core/mending.js): pattern ids, days
-     and counts, rebuilt by the same function the browser loads with — and
-     here no day after tomorrow, because "Framfarir" is read off these days
-     and a day in the future would sit in next week's board. */
-  const mend = sanitiseMend(raw.mend);
-  for (const k of Object.keys(mend.open)) if (mend.open[k] > limit) delete mend.open[k];
-  mend.log = mend.log.filter((x) => x.d <= limit);
-  for (const k of Object.keys(mend.rv)) if (k > limit) delete mend.rv[k];
-  S.mend = mend;
-
-  /* The guided first run (item 84, core/placement.js): one of three states,
-     a time, a day, a flag and a year. `migrate` has rebuilt it with the
-     function the browser loads with; here the day and the time are held to
-     the calendar like every other date in the state. */
-  S.tour = cleanTour(S.tour);
-  if (S.tour) {
-    if (S.tour.d && S.tour.d > limit) S.tour.d = null;
-    S.tour.at = Math.min(S.tour.at, today.getTime() + 2 * 86400000);
-  }
-
   /* Across slices: the showcase holds only badges the pupil has. */
   S.showcase = S.showcase.filter((id) => S.badges[id]);
 

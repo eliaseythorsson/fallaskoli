@@ -58,54 +58,11 @@ export function blankState() {
     /* `review`, the review queue (v6.13), is a converted slice: its blank,
        its migrate, its merge and its server check are core/review.js
        `reviewSlice`. */
-    /* Each skill's level of difficulty, kept between visits (v6.13, critique
-       item 11): { skill: {d, r, h, at, src} } — see core/difficulty.js. */
-    difficulty: {},
-    /* Which bank sentences have carried a question for this pupil, and how
-       often: { frame key: count } (tasks/frames.js `frameKey`). The reverse
-       analysis prefers the ones seen least (v6.13, critique item 24). */
-    frames: {},
-    /* Per question type (v6.13, item 44): answers ever, right ones, and the
-       last twenty with the step of difficulty each was asked at —
-       { typeId: {n, c, h, at} }. What the mastery mark reads; see
-       core/mastery.js. */
-    byType: {},
-    /* The same record for the few curriculum nodes that are not simply
-       their question types — the past tense, the subjunctive, the middle
-       voice … share the verb types (item 83): { nodeId: {n, c, h, at} }.
-       See core/skillmap.js. */
-    byNode: {},
-    /* The question types this pupil has met, { typeId: day } (item 41): a
-       type not in it shows one worked example on its first card
-       (core/examples.js). */
-    seenTypes: {},
-    /* Owner feedback 6.14: the highest step of difficulty the skill map has
-       shown for each skill (core/skillmap.js `ringBand`). */
-    mapBand: {},
-    /* Getting better, counted (items 56 and 58, core/mending.js): the error
-       patterns active and waiting to be mended, the patterns mended (with
-       the day, the last sixty) and the reviews passed per day (five weeks).
-       Pattern ids, days and counts. */
-    mend: blankMend(),
-    /* The guided first run (item 84, core/placement.js): null until it has
-       begun; then { st: "open"|"done"|"skipped", at, d, placed, year }. A
-       pupil with no answers and no record is offered it once. */
-    tour: null,
   }));
 }
 
-/** The frame tally (`frames` above): short keys and whole counts, nothing else. */
-export const FRAME_KEY = /^f[0-9a-z]{1,7}$/;
-export const FRAMES_MAX = 4000;
-export function cleanFrames(raw) {
-  const out = {};
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
-  for (const [k, v] of Object.entries(raw).slice(0, FRAMES_MAX)) {
-    const c = Number.isFinite(v) ? Math.floor(v) : 0;
-    if (FRAME_KEY.test(k) && c >= 1) out[k] = Math.min(c, 100000);
-  }
-  return out;
-}
+/* The frame tally, `frames`, is core/frametally.js. */
+export { FRAME_KEY, FRAMES_MAX, cleanFrames } from "./frametally.js";
 
 /** Bring any older saved blob up to the current shape without losing data.
     @param {any} raw  whatever was saved, of any age, or nothing
@@ -115,21 +72,6 @@ export function migrate(raw) {
   if (!raw || typeof raw !== "object") return S;
 
   Object.assign(S, {
-    /* Saved levels (v6.13). A state from before they existed is placed once
-       from its skills' XP; from then on the saved levels are used and XP is
-       not read again. */
-    difficulty: raw.difficulty && typeof raw.difficulty === "object"
-      ? cleanLevels(raw.difficulty) : levelsFromXp(raw.skills),
-    frames: cleanFrames(raw.frames),
-    /* Items 44 and 41 (v6.13): rebuilt field by field, known types only. */
-    byType: cleanByType(raw.byType),
-    byNode: cleanByNode(raw.byNode),
-    seenTypes: cleanSeenTypes(raw.seenTypes),
-    mapBand: cleanMapBand(raw.mapBand),
-    /* Items 56 and 58: rebuilt field by field (core/mending.js). */
-    mend: sanitiseMend(raw.mend),
-    /* Item 84: the record of the first run, or null (core/placement.js). */
-    tour: cleanTour(raw.tour),
   });
   /* The converted slices (core/slices.js) rebuild themselves. */
   migrateSlices(S, raw);

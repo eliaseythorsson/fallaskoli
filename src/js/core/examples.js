@@ -69,3 +69,21 @@ export function mergeSeenTypes(local, remote) {
   for (const [k, d] of Object.entries(L)) out[k] = !out[k] || d < out[k] ? d : out[k];
   return out;
 }
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.seenTypes`, the question types met, { typeId: day } (item 41), as a slice of the saved state (core/slices.js): moved here from
+ * core/state.js `migrate`, core/merge.js `mergeStates` and server/guard.mjs
+ * `cleanState`, unchanged. */
+
+/** @type {import("../types").Slice} */
+export const seenTypesSlice = {
+  key: "seenTypes",
+  blank: () => ({}),
+  migrate: (raw) => cleanSeenTypes(raw),
+  /* Met on either device is met, on the earlier day. */
+  merge: (base, local, remote) => mergeSeenTypes(local, remote),
+  /* Known types only, one day each, not after tomorrow. */
+  clean: (value, { limit }) => Object.fromEntries(Object.entries(cleanSeenTypes(value))
+    .filter(([, d]) => d <= limit)),
+  ownText: false,
+};
