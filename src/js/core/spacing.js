@@ -8,6 +8,8 @@
  *
  * Pure: takes the state as an argument, so it is testable with fixed dates. */
 
+import { obj, keys, mergeBadge, n, dayStr, isObj, pairs } from "./slicerules.js";
+
 export const DAY = 86400000;
 
 /* The hard thresholds, in days. In one table so that they are readable and
@@ -125,3 +127,35 @@ export function poolStatus(S, pool, today, keyOf = (x) => x.key) {
   });
   return { ready, fresh, waiting, total: pool.length };
 }
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.vocab`, when each word was last asked about in the vocabulary skill, as
+ * a slice of the saved state (core/slices.js). Kept apart from `words`
+ * (which is right/wrong) because the wait is about dates, not about
+ * correctness. Moved here unchanged from core/state.js, core/merge.js and
+ * server/guard.mjs. */
+
+/** @type {import("../types").Slice} */
+export const vocabSlice = {
+  key: "vocab",
+  blank: () => ({}),
+  migrate: (raw) => raw || {},
+  /* The same record per word as a badge has: a count and its dates. */
+  merge(B, L, R) {
+    const out = {};
+    for (const k of keys(L, R)) out[k] = mergeBadge(obj(B)[k], obj(L)[k], obj(R)[k], 40);
+    return out;
+  },
+  /* The same shape as a badge, with a shorter list of dates. */
+  clean(value) {
+    const vocab = {};
+    for (const [k, v] of pairs(value, 30000)) {
+      if (!isObj(v)) continue;
+      const dates = (Array.isArray(v.dates) ? v.dates : []).map(dayStr).filter(Boolean).slice(-40);
+      vocab[k] = { n: n(v.n, 100000), dates, first: dayStr(v.first) || dates[0] || null,
+        last: dayStr(v.last) };
+    }
+    return vocab;
+  },
+  ownText: false,
+};

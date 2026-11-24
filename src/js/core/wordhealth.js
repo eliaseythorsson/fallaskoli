@@ -18,6 +18,7 @@
    `today` arguments, so the server and the tests see the same thing.      */
 
 import { isRareScore } from "./rarity.js";
+import { num, obj, keys, later, counters, n, dayStr, isObj, pairs, DAY } from "./slicerules.js";
 
 /* ---------- 1. The thresholds, in one place ------------------------------ */
 
@@ -264,3 +265,110 @@ function daysBefore(key, n) {
   return t.toISOString().slice(0, 10);
 }
 
+
+/* ---------- the slices (issue #50) -----------------------------------------
+ * The word records and the rescue drill's records as slices of the saved
+ * state (core/slices.js). Moved here unchanged from core/state.js
+ * `migrate`, core/merge.js `mergeStates` and server/guard.mjs `cleanState`. */
+
+/** @typedef {import("../types").Slice} Slice */
+
+/* Word classes a per-word key may legitimately carry. This is the lexicon's
+   own set; anything else is a key nothing can look up. */
+const WORD_CLASSES = new Set([
+  "kk", "kvk", "hk", "lo", "so", "fn", "pfn", "gr", "to", "rt",
+  "ao", "fs", "st", "uh", "nhm",
+]);
+
+/**
+ * Drop per-word keys that no lookup can resolve: older builds filed nouns
+ * under Greynir's short code (`vindur|no`), a class the lexicon does not know.
+ * Removed rather than repaired (the gender is not in the key); only the ease
+ * history is lost.
+ */
+function cleanWordKeys(words) {
+  const out = {};
+  for (const [k, v] of Object.entries(words || {})) {
+    const cls = String(k).split("|")[1];
+    if (cls && !WORD_CLASSES.has(cls)) continue;
+    out[k] = v;
+  }
+  return out;
+}
+
+/** `S.words`: per word key ("hestur|kk") right, wrong and the last dozen
+    outcomes, {c, w, h}. @type {Slice} */
+export const wordsSlice = {
+  key: "words",
+  blank: () => ({}),
+  migrate: (raw) => cleanWordKeys(raw),
+  merge(B, L, R) {
+    const out = {};
+    for (const k of keys(L, R)) {
+      const l = obj(L)[k], r = obj(R)[k];
+      out[k] = !l ? r : !r && !obj(B)[k] ? l : counters(obj(B)[k], l, r, ["c", "w"]);
+      /* A word's last dozen outcomes (`h`) follow whichever device answered it
+         since `base`; a device that did not touch the word must not put its
+         older history over the other's (found by tests/state-property.test.js). */
+      const b = obj(B)[k];
+      if (l && r && b && typeof r.h === "string"
+          && num(l.c) + num(l.w) === num(b.c) + num(b.w)) out[k].h = r.h;
+    }
+    return out;
+  },
+  clean(value) {
+    const out = {};
+    for (const [k, v] of pairs(value, 30000)) {
+      if (!isObj(v)) continue;
+      out[k] = { c: n(v.c), w: n(v.w) };
+      /* A word's last dozen outcomes (v6.6): ones and zeros and nothing else. */
+      if (typeof v.h === "string" && /^[01]{1,12}$/.test(v.h)) out[k].h = v.h;
+    }
+    return out;
+  },
+  ownText: false,
+};
+
+/** `S.drills`: per word {p: rescues, t: drills started and finished, f: drills
+    endured without passing, last: date, at: the word's answer count when the
+    last one ended}. @type {Slice} */
+export const drillsSlice = {
+  key: "drills",
+  blank: () => ({}),
+  migrate: (raw) => (raw && typeof raw === "object" ? { ...raw } : {}),
+  /* Counts are added like any counter; the date and the answer count at the
+     last rescue are the later of the two. */
+  merge(B, L, R) {
+    const out = {};
+    for (const k of keys(L, R)) {
+      const b = obj(B)[k], l = obj(L)[k], r = obj(R)[k];
+      const m = !l ? { ...r } : !r && !b ? { ...l } : counters(b, l, r, ["p", "t", "f"]);
+      m.last = later(obj(l).last, obj(r).last);
+      m.at = Math.max(num(obj(l).at), num(obj(r).at));
+      out[k] = m;
+    }
+    return out;
+  },
+  /* Per word, numbers and one date. */
+  clean(value) {
+    const drills = {};
+    for (const [k, v] of pairs(value, 30000)) {
+      if (!isObj(v)) continue;
+      drills[k] = { p: n(v.p, 10000), t: n(v.t, 10000), f: n(v.f, 10000),
+        last: dayStr(v.last), at: n(v.at) };
+    }
+    return drills;
+  },
+  ownText: false,
+};
+
+/** `S.drillDays`: rescues per day, for one badge, a fortnight deep. @type {Slice} */
+export const drillDaysSlice = {
+  key: "drillDays",
+  blank: () => ({}),
+  migrate: (raw) => (raw && typeof raw === "object" ? { ...raw } : {}),
+  merge: (B, L, R) => counters(B, L, R, keys(L, R)),
+  clean: (value) => Object.fromEntries(pairs(value, 40, 10)
+    .filter(([k]) => DAY.test(k)).map(([k, v]) => [k, n(v, 1000)])),
+  ownText: false,
+};

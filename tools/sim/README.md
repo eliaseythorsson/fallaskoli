@@ -14,6 +14,7 @@ Run from anywhere with Node 18+; nothing here writes to the project.
 | `node tools/sim/levels.mjs [daysPerWeek] [sessionsPerDay]` | XP per active day and the day each overall level is reached, with every reward the app pays (`rewards: true`: day multiplier, retries, a perfect table's bonus). Default one session on four days a week (critique item 60) | ~2 min |
 | `node tools/sim/placement.mjs [pupils]` | The placement round of the guided first run (item 84): where a weak, a middle and a strong pupil are placed, and the year suggested, for a pupil who says 8. bekkur, 10. bekkur or nothing | ~25 s |
 | `node tools/sim/vocab.mjs` | The block list and the frequency rank of a list of coarse words | ~1 s |
+| `node tools/sim/progress-fixture.mjs inputs\|expected [root]` | Writes the saved-progress fixture of tests/saved-progress.test.js (#50): one simulated pupil on two devices, and what the code under `root` makes of it (loaded, merged, checked by the server) | ~5 s |
 
 `sim.mjs` is the shared engine: `simulate({ ability, learn, days, perDay, size, topic, allSkills, seed })`.
 The pupil answers right with probability `ability − 0.04·(level−1) − a penalty for tables and

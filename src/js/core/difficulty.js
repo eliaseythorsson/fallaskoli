@@ -438,3 +438,25 @@ export function hardnessWeight(level, score) {
   const over = clamp(score, HARD_MIN, HARD_MAX) - hardReach(level);
   return over <= 0 ? 1 : Math.max(HARD_FLOOR, Math.pow(HARD_DECAY, over));
 }
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.difficulty`, each skill's saved level ({ skill: {d, r, h, at, src} }), as a slice of the saved state (core/slices.js): moved here from
+ * core/state.js `migrate`, core/merge.js `mergeStates` and server/guard.mjs
+ * `cleanState`, unchanged. */
+
+/** @type {import("../types").Slice} */
+export const difficultySlice = {
+  key: "difficulty",
+  blank: () => ({}),
+  /* A state from before saved levels existed (v6.13) is placed once from its
+     skills' XP; from then on the saved levels are used and XP is not read
+     again. */
+  migrate: (raw, whole) => (raw && typeof raw === "object" ? cleanLevels(raw) : levelsFromXp(whole.skills)),
+  /* A position, not a count: per skill the record changed last wins whole. */
+  merge: (base, local, remote) => mergeLevels(base, local, remote),
+  /* Known skills only, the level inside 1–7, the run 0–1, a dozen 1s and 0s,
+     a time and one of three sources. `migrate` already did this; it is said
+     again because the server's check is where its trust is decided. */
+  clean: (value) => cleanLevels(value),
+  ownText: false,
+};

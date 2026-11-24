@@ -21,16 +21,10 @@
  * program.
  */
 
-import { migrate, FRAMES_MAX } from "../src/js/core/state.js";
-import { BADGES } from "../src/js/core/badges.js";
-import { SKILL_IDS } from "../src/js/core/skills.js";
+import { migrate } from "../src/js/core/state.js";
 import { cleanContext, cleanSlices } from "../src/js/core/slices.js";
-import { cleanLevels } from "../src/js/core/difficulty.js";
-import { cleanByType } from "../src/js/core/mastery.js";
-import { cleanByNode, cleanMapBand } from "../src/js/core/skillmap.js";
-import { cleanSeenTypes } from "../src/js/core/examples.js";
-import { sanitiseMend } from "../src/js/core/mending.js";
-import { cleanTour } from "../src/js/core/placement.js";
+import { isObj } from "../src/js/core/slicerules.js";
+import { XP_MAX } from "../src/js/core/progress.js";
 
 export const MAX_STATE_BYTES = 2 * 1024 * 1024;
 
@@ -44,206 +38,27 @@ export const LIMITS = {
   dayAnswers: 3000,      // answers in one day
   dayXp: 3000 * 12,      // XP in one day — in step with dayAnswers
   dayMs: 16 * 3600000,   // time at the screen in one day
-  xpTotal: 5_000_000,
+  xpTotal: XP_MAX,       // the most XP a state may hold (core/progress.js)
   lateDays: 21,          // a day older than this should no longer be growing
 };
-
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
-const BADGE_IDS = new Set(BADGES.map((b) => b.id));
-const SKILLS = new Set(SKILL_IDS);
-
-const n = (x, max = 1e9) =>
-  (typeof x === "number" && Number.isFinite(x) ? Math.min(Math.max(0, Math.round(x)), max) : 0);
-const dayStr = (x) => (typeof x === "string" && DAY.test(x) ? x : null);
-const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
-
-function pairs(o, maxKeys, keyLen = 80) {
-  return Object.entries(isObj(o) ? o : {})
-    .filter(([k]) => k.length > 0 && k.length <= keyLen)
-    .slice(0, maxKeys);
-}
-
-/** Small free-form objects the program keeps for itself (`periods`, `social`):
-    kept only if they are plain data and small. */
-function smallJSON(o, maxBytes) {
-  if (!isObj(o)) return null;
-  try {
-    const text = JSON.stringify(o);
-    return text.length <= maxBytes ? JSON.parse(text) : null;
-  } catch { return null; }
-}
 
 /**
  * Rebuild a state out of what arrived. Never throws on odd content; returns
  * null only when what arrived is not a state at all.
+ *
+ * `migrate` brings it to the current shape, then every slice checks itself
+ * (core/slices.js: each slice's `clean`, in the module that owns it, told the
+ * server's date — tomorrow is allowed, for time zones; the day after is not a
+ * day yet). What is left here reads more than one slice.
  */
 export function cleanState(raw, { today = new Date() } = {}) {
   if (!isObj(raw)) return null;
   const S = migrate(raw);
+  cleanSlices(S, cleanContext(today));
 
-  /* Tomorrow is allowed (time zones); the day after is not a day yet. */
-  const ctx = cleanContext(today), { limit } = ctx;
-
-  S.xp = n(S.xp, LIMITS.xpTotal);
-  S.bestLevel = n(S.bestLevel, 999) || 1;
-  S.goal = Math.min(Math.max(n(S.goal, 499), 1), 499);
-  S.bestRun = n(S.bestRun); S.totalAnswers = n(S.totalAnswers); S.totalCorrect = n(S.totalCorrect);
-  S.multiSessionRun = n(S.multiSessionRun);
-  S.lastSessionSkills = S.lastSessionSkills == null ? null : n(S.lastSessionSkills, 99);
-  S.lastActive = dayStr(S.lastActive);
-  S.settled = dayStr(S.settled);
-
-  const days = {};
-  for (const [k, d] of pairs(S.days, 5000, 10)) {
-    if (!DAY.test(k) || k > limit || !isObj(d)) continue;
-    const sk = {};
-    for (const [id, v] of pairs(d.sk, 40)) if (SKILLS.has(id)) sk[id] = n(v);
-    days[k] = { a: n(d.a), c: n(d.c), xp: n(d.xp), ms: n(d.ms, 86400000), nw: n(d.nw),
-      sk, g: d.g == null ? null : n(d.g, 499), lg: d.lg ? 1 : 0,
-      wg: d.wg == null ? null : Math.min(Math.max(n(d.wg, 7), 2), 7) };
-  }
-  S.days = days;
-
-  for (const part of ["cells", "words"]) {
-    const out = {};
-    for (const [k, v] of pairs(S[part], 30000)) {
-      if (!isObj(v)) continue;
-      out[k] = { c: n(v.c), w: n(v.w) };
-      /* A word's last dozen outcomes (v6.6, core/wordhealth.js): ones and
-         zeros and nothing else. */
-      if (part === "words" && typeof v.h === "string" && /^[01]{1,12}$/.test(v.h)) out[k].h = v.h;
-    }
-    S[part] = out;
-  }
-
-  const skills = {};
-  for (const id of SKILL_IDS) {
-    const s = isObj(S.skills[id]) ? S.skills[id] : {};
-    skills[id] = { xp: n(s.xp, LIMITS.xpTotal), c: n(s.c), w: n(s.w), bestRun: n(s.bestRun) };
-  }
-  S.skills = skills;
-
-  /* Only badges the program has. An invented id would otherwise be counted by
-     the leaderboard and by the rarity statistics. */
-  const badges = {};
-  for (const [id, b] of pairs(S.badges, 2000)) {
-    if (!BADGE_IDS.has(id) || !isObj(b)) continue;
-    const dates = (Array.isArray(b.dates) ? b.dates : []).map(dayStr).filter(Boolean).slice(-80);
-    const first = dayStr(b.first) || dates[0] || null;
-    badges[id] = { n: Math.max(1, n(b.n, 100000)), dates, first, last: dayStr(b.last) || first };
-  }
-  S.badges = badges;
-
-  /* core/spacing.js: when each word was last asked — the same shape as a
-     badge, with a shorter list of dates. */
-  const vocab = {};
-  for (const [k, v] of pairs(S.vocab, 30000)) {
-    if (!isObj(v)) continue;
-    const dates = (Array.isArray(v.dates) ? v.dates : []).map(dayStr).filter(Boolean).slice(-40);
-    vocab[k] = { n: n(v.n, 100000), dates, first: dayStr(v.first) || dates[0] || null,
-      last: dayStr(v.last) };
-  }
-  S.vocab = vocab;
-
-  /* The rescue drill (v6.6): per word, numbers and one date. */
-  const drills = {};
-  for (const [k, v] of pairs(S.drills, 30000)) {
-    if (!isObj(v)) continue;
-    drills[k] = { p: n(v.p, 10000), t: n(v.t, 10000), f: n(v.f, 10000),
-      last: dayStr(v.last), at: n(v.at) };
-  }
-  S.drills = drills;
-  S.drillDays = Object.fromEntries(pairs(S.drillDays, 40, 10)
-    .filter(([k]) => DAY.test(k)).map(([k, v]) => [k, n(v, 1000)]));
-
-  /* Lesefni and duels (v6.7): page ids, and duel ids with one letter each. */
-  S.read = Object.fromEntries(pairs(S.read, 200, 40).map(([k]) => [k, true]));
-  S.duels = Object.fromEntries(pairs(S.duels, 5000, 40)
-    .filter(([, v]) => ["w", "l", "t", "f"].includes(v)));
-
-  /* Error diagnosis (v6.10): per pattern, numbers, a string of 1s and 0s, a
-     date and up to three examples made of a word key and two BÍN marks. */
-  const diag = {};
-  const short = (x, len) => (typeof x === "string" && x.length <= len ? x : null);
-  for (const [k, v] of pairs(S.diag, 60, 40)) {
-    if (!isObj(v)) continue;
-    diag[k] = { n: n(v.n), w: n(v.w),
-      h: typeof v.h === "string" ? v.h.replace(/[^01]/g, "").slice(-16) : "",
-      last: dayStr(v.last),
-      ex: (Array.isArray(v.ex) ? v.ex : []).filter(isObj).slice(0, 3)
-        .map((e) => ({ w: short(e.w, 80), m: short(e.m, 40), o: short(e.o, 40) })) };
-  }
-  S.diag = diag;
-  S.runs = (Array.isArray(S.runs) ? S.runs : []).filter(isObj).slice(-40).map((r) => ({
-    at: n(r.at, 1e13), d: dayStr(r.d), topic: short(r.topic, 40), n: n(r.n, 100), c: n(r.c, 100),
-    j: n(r.j, 100), xp: n(r.xp, 100000),
-    top: (Array.isArray(r.top) ? r.top : []).filter((x) => typeof x === "string" && x.length <= 40).slice(0, 5),
-  }));
-
-  /* The converted slices (core/slices.js) check themselves: each slice's
-     `clean`, with the date. The review queue (core/review.js `cleanReview`)
-     is rebuilt by the function the browser loads with and held to the
-     calendar. */
-  cleanSlices(S, ctx);
-
-  /* Saved levels (v6.13, core/difficulty.js): known skills only, the level
-     inside 1–7, the run 0–1, a dozen 1s and 0s, a time and one of three
-     sources. `migrate` already did this; it is said again here because this
-     file is where the server's trust is decided. */
-  S.difficulty = cleanLevels(S.difficulty);
-
-  /* Sentences seen as frames (v6.13): `migrate` has already kept only short
-     keys and whole counts (core/state.js `cleanFrames`); here the counts are
-     held to the same ceiling as every other counter. */
-  S.frames = Object.fromEntries(pairs(S.frames, FRAMES_MAX, 8).map(([k, v]) => [k, n(v, 100000)]));
-  /* Per question type (v6.13, item 44): known types only, two counts, twenty
-     letters and a time. Types met (item 41): known types only, one day each,
-     not after tomorrow. Both bounded by the number of question types. */
-  S.byType = cleanByType(S.byType);
-  /* The same record for the curriculum nodes that keep one (item 83,
-     core/skillmap.js): known nodes only — seven of them. */
-  S.byNode = cleanByNode(S.byNode);
-  S.mapBand = cleanMapBand(S.mapBand);
-  S.seenTypes = Object.fromEntries(Object.entries(cleanSeenTypes(S.seenTypes))
-    .filter(([, d]) => d <= limit));
-
-  /* Getting better (items 56 and 58, core/mending.js): pattern ids, days
-     and counts, rebuilt by the same function the browser loads with — and
-     here no day after tomorrow, because "Framfarir" is read off these days
-     and a day in the future would sit in next week's board. */
-  const mend = sanitiseMend(raw.mend);
-  for (const k of Object.keys(mend.open)) if (mend.open[k] > limit) delete mend.open[k];
-  mend.log = mend.log.filter((x) => x.d <= limit);
-  for (const k of Object.keys(mend.rv)) if (k > limit) delete mend.rv[k];
-  S.mend = mend;
-
-  /* The guided first run (item 84, core/placement.js): one of three states,
-     a time, a day, a flag and a year. `migrate` has rebuilt it with the
-     function the browser loads with; here the day and the time are held to
-     the calendar like every other date in the state. */
-  S.tour = cleanTour(S.tour);
-  if (S.tour) {
-    if (S.tour.d && S.tour.d > limit) S.tour.d = null;
-    S.tour.at = Math.min(S.tour.at, today.getTime() + 2 * 86400000);
-  }
-
-  S.counters = Object.fromEntries(pairs(S.counters, 20, 40).map(([k, v]) => [k, n(v)]));
-  S.periods = smallJSON(S.periods, 60000) || {};
-  S.social = smallJSON(S.social, 20000);
-  S.title = typeof S.title === "string" ? S.title.slice(0, 60) : null;
-  S.showcase = S.showcase.filter((id) => BADGE_IDS.has(id) && badges[id]).slice(0, 3);
-
-  const settings = {};
-  for (const [k, v] of pairs(S.settings, 30, 40)) {
-    if (typeof v === "boolean") settings[k] = v;
-    else if (typeof v === "string" && v.length <= 40) settings[k] = v;
-    else if (typeof v === "number" && Number.isFinite(v)) settings[k] = v;
-  }
-  S.settings = settings;
-  S.enabled = Object.fromEntries(pairs(S.enabled, 60, 40).map(([k, v]) => [k, !!v]));
-
-  /* The name on the board comes from the user record, never from here. */
-  S.profile = { id: "local", name: "" };
+  /* Across slices: the showcase holds only badges the pupil has (an id the
+     program does not have is already gone: core/social.js `showcaseSlice`). */
+  S.showcase = S.showcase.filter((id) => S.badges[id]);
   return S;
 }
 

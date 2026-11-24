@@ -17,6 +17,15 @@ export const utcDay = (when = Date.now()) => new Date(when).toISOString().slice(
 
 export const keyOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
+/** The day before this one, as a key. String in, string out — no time zones.
+    (Moved from core/state.js, which re-exports it, so that core/badges.js can
+    use it without importing state.js: issue #50.) */
+export function prevKey(key) {
+  const [y, m, d] = String(key).split("-").map(Number);
+  if (!y || !m || !d) return key;
+  return keyOf(new Date(y, m - 1, d - 1));
+}
+
 /** Easter Sunday (Meeus/Jones/Butcher). Returns a local-time Date. */
 export function easter(year) {
   const a = year % 19, b = Math.floor(year / 100), c = year % 100;

@@ -4,6 +4,8 @@
  * HttpOnly cookie. What lives here is the rights table, the permission check
  * the server shares, the crest, and the password rule. */
 
+import { thisDevice } from "./slicerules.js";
+
 /* Rights are enumerated, not derived from the role's name — so administrator
    rights cannot be obtained by choosing a clever name. */
 export const ROLES = {
@@ -103,3 +105,24 @@ export function secondLanguageSource(S) {
 
 /** Is the second-language mode on for this pupil? */
 export const secondLanguage = (S) => secondLanguageSource(S) !== null;
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.profile`, the name in the saved progress, as a slice of the saved state
+ * (core/slices.js). The name on the board comes from the user record, never
+ * from here: the server stores a blank one. Moved here unchanged from
+ * core/state.js, core/merge.js and server/guard.mjs. */
+
+/** @type {import("../types").Slice} */
+export const profileSlice = {
+  key: "profile",
+  blank: () => ({ id: "local", name: "" }),
+  migrate(raw) {
+    const p = profileSlice.blank();
+    if (raw) Object.assign(p, raw);
+    return p;
+  },
+  /* No rule of its own: this device's (`{ ...remote, ...local }`). */
+  merge: thisDevice,
+  clean: () => ({ id: "local", name: "" }),
+  ownText: false,
+};

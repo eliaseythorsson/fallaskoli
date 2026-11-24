@@ -2,28 +2,31 @@
 /* User state and session state.
 
    Everything that is persisted goes through here. The functions take the state
-   as an argument (no global), so tests can build their own. */
+   as an argument (no global), so tests can build their own.
 
-import { SKILL_IDS, defaultEnabled } from "./skills.js";
-import { createPolicy, blankPolicy, sanitisePolicy } from "./policy.js";
+   What is saved is a list of slices (core/slices.js); each slice's shape —
+   what a new pupil has, how an old copy is loaded, how two devices' copies
+   are merged, what the server keeps — is in the module that owns it.
+   `blankState` and `migrate` only walk that list. */
+
+import { SKILL_IDS } from "./skills.js";
+import { createPolicy } from "./policy.js";
 import { overallLevel, skillLevel, easeOf } from "./progress.js";
-import { visitLevels, cleanLevels, levelsFromXp } from "./difficulty.js";
-import { cleanTour } from "./placement.js";
-import { timeContext, mondayOf, weekKeys, isBreakWeek } from "./calendar.js";
-import { checkDayEnd, legacyStreakCredit } from "./badges.js";
+import { visitLevels } from "./difficulty.js";
+import { timeContext, mondayOf, weekKeys, isBreakWeek, prevKey } from "./calendar.js";
+import { checkDayEnd } from "./badges.js";
 import { pushHistory } from "./wordhealth.js";
-import { assembleBlank, migrateSlices } from "./slices.js";
-import { cleanByType, masteryOf } from "./mastery.js";
-import { cleanByNode } from "./skillmap.js";
-import { cleanSeenTypes } from "./examples.js";
-import { cleanMapBand } from "./skillmap.js";
-import { blankMend, sanitiseMend, patternsMended, reviewsOnTime } from "./mending.js";
+import { blankSlices, migrateSlices, STATE_VERSION } from "./slices.js";
+import { cleanWeekGoal, WEEK_GOAL_DEFAULT, WEEK_GOAL_MIN, WEEK_GOAL_MAX } from "./days.js";
+import { masteryOf } from "./mastery.js";
+import { patternsMended, reviewsOnTime } from "./mending.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Session} Session */
 /** @typedef {import("../types").DayKey} DayKey */
 
-export const STATE_VERSION = 11;
+/* The version of the saved file is the `v` slice, core/slices.js. */
+export { STATE_VERSION };
 
 /** @param {Date} d @returns {DayKey} */
 export const dkey = (d) =>
@@ -32,285 +35,27 @@ export const dkey = (d) =>
 
 export const todayKey = () => dkey(new Date());
 
-/** The day before this one, as a key. String in, string out — no time zones. */
-export function prevKey(key) {
-  const [y, m, d] = String(key).split("-").map(Number);
-  if (!y || !m || !d) return key;
-  return dkey(new Date(y, m - 1, d - 1));
-}
+/* `prevKey`, the day before a day key, is core/calendar.js. */
+export { prevKey };
 
-/** A new pupil's state. Assembled in the order of core/slices.js: the
-    converted slices make their own blank, and the literal below holds the
-    ones not converted yet (#50). A key here that the list does not name, or
-    one the list says is converted, throws — see the trap at the top of
-    core/slices.js.
-    @returns {State} */
+/** A new pupil's state: every slice's blank, in the order of
+    core/slices.js. @returns {State} */
 export function blankState() {
-  const skills = {};
-  SKILL_IDS.forEach((id) => { skills[id] = { xp: 0, c: 0, w: 0, bestRun: 0 }; });
-  return /** @type {State} */ (assembleBlank({
-    v: STATE_VERSION,
-    profile: { id: "local", name: "" },
-    xp: 0, bestLevel: 1,
-    days: {}, cells: {}, words: {}, skills, badges: {},
-    /* When each word was last asked about in the vocabulary skill. Kept apart
-       from `words` (which is right/wrong) because the wait is about dates, not
-       about correctness. See core/spacing.js. */
-    vocab: {},
-    goal: 10, run: 0, bestRun: 0,
-    /* The weekly goal (item 57): days of seven on which the daily goal is met.
-       The main streak counts weeks in which it was met. See `weekStreak`. */
-    weekGoal: WEEK_GOAL_DEFAULT,
-    totalAnswers: 0, totalCorrect: 0,
-    /* Consecutive sessions touching three or more skills (multi-skill badges). */
-    multiSessionRun: 0, lastSessionSkills: null,
-    /* `retries`, `retryFixed`: second tries made, and right (item 42,
-       core/answer.js `judgeRetry`). */
-    counters: { perfectTables: 0, perfectParses: 0, meanings: 0, retries: 0, retryFixed: 0 },
-    enabled: defaultEnabled(),
-    /* `policy` is what the child switched on, `allowed` the ceiling the
-       administrator set; kept apart so tightening and loosening the ceiling
-       gives the child back exactly the choices they made. `enabled` is the
-       skills half of `policy`, kept under its older name. */
-    policy: blankPolicy(),
-    allowed: null,
-    /* `badgeView`: which view of the badge cabinet is showing (ui/panels.js).
-       A child with nothing on the shelf yet is shown the catalogue instead. */
-    settings: { decay: false, settingsRev: 1, glossary: true, badgeView: "rarity" },
-    lastActive: null,
-    /* `periods`: the once-per-day / once-per-night ledger (core/badges.js).
-       `settled`: the last day whose day-end badges have been judged. */
-    periods: {},
-    settled: null,
-    /* What other users see beside the name (core/social.js): up to three
-       pinned badge ids and a title id. `social` remembers who was ahead on
-       this week's board, which is how overtaking is noticed. */
-    showcase: [],
-    title: null,
-    social: null,
-    /* The rescue drill (core/wordhealth.js, v6.6). `drills` is per word:
-       {p: rescues, t: drills started and finished, f: drills endured without
-       passing, last: date, at: the word's answer count when the last one
-       ended}. `drillDays` counts rescues per day, for one badge, a fortnight
-       deep. */
-    drills: {},
-    drillDays: {},
-    /* Lesefni (v6.7): the pages read, { pageId: true }. */
-    read: {},
-    /* Duels (v6.7, core/duel.js): every settled duel, { duelId: "w"|"l"|"t" }
-       — won, lost, tied. Written once, when this device first sees the
-       result, which is what makes the XP and the badge count only once. */
-    duels: {},
-    /* Error diagnosis (v6.10, core/diagnosis.js): per pattern
-       {n: chances, w: misses, h: the last 16 as "1"/"0", last: date,
-       ex: [{w: word key, m: the cell asked for, o: the cell given}]}.
-       No text the child typed. */
-    diag: {},
-    /* Practice sessions (v6.10): the last 40, newest last —
-       {at: ms, d: date, topic, n, c, j: judged, xp, top: [pattern ids]}. */
-    runs: [],
-    /* `review`, the review queue (v6.13), is a converted slice: its blank,
-       its migrate, its merge and its server check are core/review.js
-       `reviewSlice`. */
-    /* Each skill's level of difficulty, kept between visits (v6.13, critique
-       item 11): { skill: {d, r, h, at, src} } — see core/difficulty.js. */
-    difficulty: {},
-    /* Which bank sentences have carried a question for this pupil, and how
-       often: { frame key: count } (tasks/frames.js `frameKey`). The reverse
-       analysis prefers the ones seen least (v6.13, critique item 24). */
-    frames: {},
-    /* Per question type (v6.13, item 44): answers ever, right ones, and the
-       last twenty with the step of difficulty each was asked at —
-       { typeId: {n, c, h, at} }. What the mastery mark reads; see
-       core/mastery.js. */
-    byType: {},
-    /* The same record for the few curriculum nodes that are not simply
-       their question types — the past tense, the subjunctive, the middle
-       voice … share the verb types (item 83): { nodeId: {n, c, h, at} }.
-       See core/skillmap.js. */
-    byNode: {},
-    /* The question types this pupil has met, { typeId: day } (item 41): a
-       type not in it shows one worked example on its first card
-       (core/examples.js). */
-    seenTypes: {},
-    /* Owner feedback 6.14: the highest step of difficulty the skill map has
-       shown for each skill (core/skillmap.js `ringBand`). */
-    mapBand: {},
-    /* Getting better, counted (items 56 and 58, core/mending.js): the error
-       patterns active and waiting to be mended, the patterns mended (with
-       the day, the last sixty) and the reviews passed per day (five weeks).
-       Pattern ids, days and counts. */
-    mend: blankMend(),
-    /* The guided first run (item 84, core/placement.js): null until it has
-       begun; then { st: "open"|"done"|"skipped", at, d, placed, year }. A
-       pupil with no answers and no record is offered it once. */
-    tour: null,
-  }));
+  return /** @type {State} */ (blankSlices());
 }
 
-/* Word classes a per-word key may legitimately carry. This is the lexicon's
-   own set; anything else is a key nothing can look up. */
-const WORD_CLASSES = new Set([
-  "kk", "kvk", "hk", "lo", "so", "fn", "pfn", "gr", "to", "rt",
-  "ao", "fs", "st", "uh", "nhm",
-]);
-
-/**
- * Drop per-word keys that no lookup can resolve: older builds filed nouns
- * under Greynir's short code (`vindur|no`), a class the lexicon does not know.
- * Removed rather than repaired (the gender is not in the key); only the ease
- * history is lost.
- */
-function cleanWordKeys(words) {
-  const out = {};
-  for (const [k, v] of Object.entries(words || {})) {
-    const cls = String(k).split("|")[1];
-    if (cls && !WORD_CLASSES.has(cls)) continue;
-    out[k] = v;
-  }
-  return out;
-}
-
-/** The frame tally (`frames` above): short keys and whole counts, nothing else. */
-export const FRAME_KEY = /^f[0-9a-z]{1,7}$/;
-export const FRAMES_MAX = 4000;
-export function cleanFrames(raw) {
-  const out = {};
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
-  for (const [k, v] of Object.entries(raw).slice(0, FRAMES_MAX)) {
-    const c = Number.isFinite(v) ? Math.floor(v) : 0;
-    if (FRAME_KEY.test(k) && c >= 1) out[k] = Math.min(c, 100000);
-  }
-  return out;
-}
+/* The frame tally, `frames`, is core/frametally.js. */
+export { FRAME_KEY, FRAMES_MAX, cleanFrames } from "./frametally.js";
 
 /** Bring any older saved blob up to the current shape without losing data.
     @param {any} raw  whatever was saved, of any age, or nothing
     @returns {State} */
-/* Lesefni pages whose id changed: the pupil's read mark moves with the page
-   (v6.13 review, S12: *setningalidir* → *setningarhlutar*). Kept here and
-   not imported from core/lessons.js, which this module must not depend on. */
-const READ_RENAMED = { setningalidir: "setningarhlutar" };
-function renamedRead(raw) {
-  const out = raw && typeof raw === "object" && !Array.isArray(raw) ? { ...raw } : {};
-  for (const [from, to] of Object.entries(READ_RENAMED)) {
-    if (from in out) {
-      if (!(to in out)) out[to] = out[from];
-      delete out[from];
-    }
-  }
-  return out;
-}
-
 export function migrate(raw) {
   const S = blankState();
   if (!raw || typeof raw !== "object") return S;
 
-  Object.assign(S, {
-    xp: raw.xp || 0,
-    /* `g` is the daily goal as it stood on that day, so a day is judged
-       against the goal in force then rather than today's setting. Days
-       recorded before it existed get null and fall back to the current goal. */
-    days: Object.fromEntries(Object.entries(raw.days || {}).map(([k, d]) => [k, {
-      a: d.a || 0, c: d.c || 0, xp: d.xp || 0, ms: d.ms || 0, nw: d.nw || 0,
-      sk: d.sk || {}, g: d.g ?? null,
-      /* `lg` — the program was opened on this day, whether or not anything was
-         answered. A day with answers also counts as opened (`loginStreak`). */
-      lg: d.lg ? 1 : 0,
-      /* `wg` — the weekly goal in force on that day, as `g` is for the daily
-         one: raising the goal later must not un-meet a week already won. */
-      wg: d.wg ?? null,
-    }])),
-    cells: raw.cells || {},
-    words: cleanWordKeys(raw.words),
-    /* Item 57: whoever won a day-streak badge keeps it, and is credited the
-       week badges it stands for (`legacyStreakCredit`, core/badges.js). */
-    badges: (() => {
-      const own = raw.badges && typeof raw.badges === "object" ? raw.badges : {};
-      return { ...legacyStreakCredit(own), ...own };
-    })(),
-    goal: raw.goal || 10,
-    weekGoal: cleanWeekGoal(raw.weekGoal),
-    bestRun: raw.bestRun || 0,
-    totalAnswers: raw.totalAnswers || 0,
-    totalCorrect: raw.totalCorrect || 0,
-    lastActive: raw.lastActive || null,
-    vocab: raw.vocab || {},
-    multiSessionRun: raw.multiSessionRun || 0,
-    lastSessionSkills: raw.lastSessionSkills ?? null,
-    periods: (raw.periods && typeof raw.periods === "object") ? { ...raw.periods } : {},
-    /* A state saved before `settled` existed has an unjudged history. Everything
-       before the last active day is declared settled, so a returning child is
-       not greeted with a stack of windows for days they have forgotten. */
-    settled: raw.settled || (raw.lastActive ? prevKey(raw.lastActive) : null),
-    showcase: Array.isArray(raw.showcase)
-      ? raw.showcase.filter((x) => typeof x === "string").slice(0, 3) : [],
-    title: typeof raw.title === "string" ? raw.title : null,
-    social: raw.social && typeof raw.social === "object" ? raw.social : null,
-    drills: raw.drills && typeof raw.drills === "object" ? { ...raw.drills } : {},
-    drillDays: raw.drillDays && typeof raw.drillDays === "object" ? { ...raw.drillDays } : {},
-    read: renamedRead(raw.read),
-    duels: raw.duels && typeof raw.duels === "object" ? { ...raw.duels } : {},
-    diag: raw.diag && typeof raw.diag === "object" && !Array.isArray(raw.diag) ? { ...raw.diag } : {},
-    runs: Array.isArray(raw.runs) ? raw.runs.filter((r) => r && typeof r === "object").slice(-40) : [],
-    /* Saved levels (v6.13). A state from before they existed is placed once
-       from its skills' XP; from then on the saved levels are used and XP is
-       not read again. */
-    difficulty: raw.difficulty && typeof raw.difficulty === "object"
-      ? cleanLevels(raw.difficulty) : levelsFromXp(raw.skills),
-    frames: cleanFrames(raw.frames),
-    /* Items 44 and 41 (v6.13): rebuilt field by field, known types only. */
-    byType: cleanByType(raw.byType),
-    byNode: cleanByNode(raw.byNode),
-    seenTypes: cleanSeenTypes(raw.seenTypes),
-    mapBand: cleanMapBand(raw.mapBand),
-    /* Items 56 and 58: rebuilt field by field (core/mending.js). */
-    mend: sanitiseMend(raw.mend),
-    /* Item 84: the record of the first run, or null (core/placement.js). */
-    tour: cleanTour(raw.tour),
-  });
-  /* The converted slices (core/slices.js) rebuild themselves. */
+  /* Every slice (core/slices.js) rebuilds itself from what was saved. */
   migrateSlices(S, raw);
-  S.run = 0;
-
-  S.counters = {
-    perfectTables: raw.counters?.perfectTables ?? raw.perfectTables ?? 0,
-    perfectParses: raw.counters?.perfectParses ?? raw.perfectParses ?? 0,
-    meanings: raw.counters?.meanings ?? raw.meanings ?? 0,
-    retries: raw.counters?.retries ?? 0,
-    retryFixed: raw.counters?.retryFixed ?? 0,
-  };
-
-  SKILL_IDS.forEach((id) => {
-    const s = raw.skills?.[id];
-    if (s) S.skills[id] = { xp: s.xp || 0, c: s.c || 0, w: s.w || 0, bestRun: s.bestRun || 0 };
-  });
-
-  /* v4 knew only three switches. They are translated onto the skills. */
-  if (raw.enabled) Object.assign(S.enabled, raw.enabled);
-  else if (raw.unlocked) {
-    S.enabled.setningafraedi = !!raw.unlocked.setningafraedi;
-    S.enabled.sagnord = raw.unlocked.sagnord !== false;
-  }
-
-  S.policy = sanitisePolicy(raw.policy);
-  /* The ceiling arrives from the server and is only cached here so that the
-     program still obeys it when the network is not there. The server never
-     trusts what comes back up — see `PUT /state/:id`. */
-  S.allowed = raw.allowed ? sanitisePolicy(raw.allowed) : null;
-
-  if (raw.settings) Object.assign(S.settings, raw.settings);
-  /* Item 55: `settings.audio` was saved as true and never read by anything.
-     Dropped from every state that carries it. */
-  delete S.settings.audio;
-  /* Item 22: XP decay is off by default now ("N atriði bíða upprifjunar"
-     replaces it). Every state saved before had `decay: true`, which was the
-     old default and not a choice anybody made, so it is switched off once;
-     `settingsRev` records that, and a pupil who then ticks the box again
-     (or a teacher who does) keeps it. */
-  if (raw.settings && !(raw.settings.settingsRev >= 1)) S.settings.decay = false;
-  if (raw.profile) Object.assign(S.profile, raw.profile);
-  S.bestLevel = Math.max(raw.bestLevel || 1, overallLevel(S.xp).level);
   return S;
 }
 
@@ -446,14 +191,8 @@ function streakBack(S, from, qualifies) {
  * breaking; and a week is judged against the weekly goal in force during it
  * (the lowest stamped on its days), so raising the goal cannot undo a week.
  */
-export const WEEK_GOAL_DEFAULT = 4, WEEK_GOAL_MIN = 2, WEEK_GOAL_MAX = 7;
-
-/** A saved or typed weekly goal as a whole number from 2 to 7. */
-export function cleanWeekGoal(v) {
-  const n = Math.round(Number(v));
-  if (!Number.isFinite(n) || n < 1) return WEEK_GOAL_DEFAULT;
-  return Math.max(WEEK_GOAL_MIN, Math.min(WEEK_GOAL_MAX, n));
-}
+/* The weekly goal as saved, and `cleanWeekGoal`, are core/days.js. */
+export { cleanWeekGoal, WEEK_GOAL_DEFAULT, WEEK_GOAL_MIN, WEEK_GOAL_MAX };
 export const weekGoalOf = (S) => cleanWeekGoal(S && S.weekGoal);
 
 /* The three things a day can be, for the three week counters. */

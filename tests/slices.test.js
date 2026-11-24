@@ -18,30 +18,19 @@ import { fileURLToPath } from "node:url";
 import { blankState, migrate } from "../src/js/core/state.js";
 import { mergeStates } from "../src/js/core/merge.js";
 import { cleanState } from "../server/guard.mjs";
-import { SLICES, isSlice, checkSlices, assembleBlank, withoutOwnText, keepOwnText } from "../src/js/core/slices.js";
+import { SLICES, checkSlices, withoutOwnText, keepOwnText } from "../src/js/core/slices.js";
 import { fullProgress, TODAY } from "./fixtures/full-progress.js";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const FIXTURE = "tests/fixtures/full-progress.js";
 
-/* Where a slice's code is: the module that exports its description, or —
-   for a slice not converted yet (#50) — the place its line still is. */
+/* Where a slice's code is: the module that exports its description. */
 const homes = new Map();
 for (const f of fs.readdirSync(path.join(ROOT, "src/js/core")).filter((x) => x.endsWith(".js"))) {
   const mod = await import(path.join(ROOT, "src/js/core", f));
   for (const v of Object.values(mod)) if (SLICES.includes(v)) homes.set(v.key, "src/js/core/" + f);
 }
-const STAGE = {
-  blank: "src/js/core/state.js `blankState`",
-  migrate: "src/js/core/state.js `migrate`",
-  merge: "src/js/core/merge.js `mergeStates`",
-  clean: "server/guard.mjs `cleanState`",
-};
-const fileFor = (key, stage) => {
-  const s = SLICES.find((x) => x.key === key);
-  if (s && isSlice(s)) return `${homes.get(key) || "its module"} (\`${key}\` slice, ${stage}())`;
-  return STAGE[stage];
-};
+const fileFor = (key, stage) => `${homes.get(key) || "its module"} (\`${key}\` slice, ${stage}())`;
 
 /** Nothing in it: no number but 0, no text, no list, no object with anything in it. */
 const emptied = (v) => v == null || v === 0 || v === "" || v === false ||
@@ -59,10 +48,10 @@ const ON_PURPOSE = {
     profile: "the server writes the name from the account, never from the upload (PUT /state)",
   },
   /* merge(base=blank, local=blank, remote=F): these follow THIS device even
-     when only the other one changed them — the `{ ...R, ...L }` at the top
-     of mergeStates, for keys that have no line of their own there. Found by
-     this test; behaviour kept as it is (#49 is a pure refactor). #50 decides
-     each one when it converts the slice. */
+     when only the other one changed them (`thisDevice`, core/slicerules.js:
+     what the `{ ...R, ...L }` at the top of mergeStates gave them before they
+     were slices). Found by this test; kept as they were, since #49 and #50
+     are pure moves — the PR for #50 lists them for the owner to decide. */
   mergeFromRemote: {
     profile: "this device's id and name; the server writes both from the account anyway",
     multiSessionRun: "the other device's run of multi-skill sessions is not taken (#50)",
@@ -94,13 +83,17 @@ test("the list names every key of blankState, in order, and each slice is whole"
     "blankState and SLICES in src/js/core/slices.js must name the same keys in the same order");
 });
 
-test("blankState refuses a key the list does not name (the trap, caught where it is made)", () => {
-  const legacy = Object.fromEntries(SLICES.filter((s) => !isSlice(s)).map((s) => [s.key, 0]));
-  assert.doesNotThrow(() => assembleBlank(legacy));
-  assert.throws(() => assembleBlank({ ...legacy, wordCards: {} }), /wordCards.*core\/slices\.js/);
-  assert.throws(() => assembleBlank({ ...legacy, review: {} }), /review.*converted/);
-  const { days, ...short } = legacy;
-  assert.throws(() => assembleBlank(short), /days/);
+test("every slice is described in the module that owns it (#50)", () => {
+  const homeless = SLICES.filter((s) => !homes.has(s.key)).map((s) => s.key);
+  assert.deepEqual(homeless, [], "a slice in SLICES that no module under src/js/core exports");
+});
+
+test("a list that is not whole is refused at load", () => {
+  const ok = { key: "x", blank: () => 0, migrate: () => 0, merge: () => 0, clean: () => 0, ownText: false };
+  assert.doesNotThrow(() => checkSlices([ok]));
+  assert.throws(() => checkSlices([ok, { ...ok }]), /"x" is in the list twice/);
+  assert.throws(() => checkSlices([{ ...ok, merge: undefined }]), /"x" has no merge\(\)/);
+  assert.throws(() => checkSlices([{ ...ok, ownText: undefined }]), /"x" must say ownText/);
 });
 
 test(`the fixture fills every slice of blankState (${FIXTURE})`, () => {

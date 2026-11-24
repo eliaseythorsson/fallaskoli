@@ -10,6 +10,7 @@
 
 import { LESSONS } from "../content/lessons.js";
 import { NODES } from "./curriculum.js";
+import { obj, pairs } from "./slicerules.js";
 
 /** The word class a category is about, where it is one. */
 const CLASS_OF_CAT = /** @type {Record<string, string>} */ ({
@@ -307,3 +308,34 @@ export function markRead(S, id) {
   return true;
 }
 export const readCount = (S) => Object.keys((S && S.read) || {}).filter((k) => BY_ID.has(k)).length;
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.read`, the pages read, { pageId: true }, as a slice of the saved state
+ * (core/slices.js). Moved here unchanged from core/state.js, core/merge.js
+ * and server/guard.mjs. */
+
+/* Pages whose id changed: the pupil's read mark moves with the page
+   (v6.13 review, S12: *setningalidir* → *setningarhlutar*). */
+const READ_RENAMED = { setningalidir: "setningarhlutar" };
+function renamedRead(raw) {
+  const out = raw && typeof raw === "object" && !Array.isArray(raw) ? { ...raw } : {};
+  for (const [from, to] of Object.entries(READ_RENAMED)) {
+    if (from in out) {
+      if (!(to in out)) out[to] = out[from];
+      delete out[from];
+    }
+  }
+  return out;
+}
+
+/** @type {import("../types").Slice} */
+export const readSlice = {
+  key: "read",
+  blank: () => ({}),
+  migrate: (raw) => renamedRead(raw),
+  /* A page read anywhere is read. */
+  merge: (B, L, R) => ({ ...obj(R), ...obj(L) }),
+  /* Page ids. */
+  clean: (value) => Object.fromEntries(pairs(value, 200, 40).map(([k]) => [k, true])),
+  ownText: false,
+};

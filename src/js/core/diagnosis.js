@@ -26,6 +26,7 @@
 
 import { readMark } from "./marks.js";
 import { normalise, stripAccents } from "./grading.js";
+import { num, obj, keys, later, counters, n, dayStr, isObj, short, pairs } from "./slicerules.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Task} Task */
@@ -969,3 +970,50 @@ export function runReport(run, S, only = null) {
   const focus = hard[0] || found[0] || (old ? { ...old, fromBefore: true } : null);
   return { found, mended, clean, focus };
 }
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.diag` as a slice of the saved state (core/slices.js): per pattern
+ * {n: chances, w: misses, h: the last 16 as "1"/"0", last: date,
+ * ex: [{w: word key, m: the cell asked for, o: the cell given}]}. No text
+ * the child typed. Moved here unchanged from core/state.js, core/merge.js
+ * and server/guard.mjs. */
+
+/** @type {import("../types").Slice} */
+export const diagSlice = {
+  key: "diag",
+  blank: () => ({}),
+  migrate: (raw) => (raw && typeof raw === "object" && !Array.isArray(raw) ? { ...raw } : {}),
+  /* Chances and misses add like any counter; the recent history and the
+     examples are this device's if it has answered anything for that pattern
+     since `base`, otherwise the server's. */
+  merge(B, L, R) {
+    const out = {};
+    for (const k of keys(L, R)) {
+      const b = obj(B)[k], l = obj(L)[k], r = obj(R)[k];
+      if (!l) { out[k] = r; continue; }
+      if (!r && !b) { out[k] = l; continue; }
+      const m = counters(b, l, r, ["n", "w"]);
+      const moved = num(obj(l).n) !== num(obj(b).n);
+      m.h = moved ? obj(l).h : obj(r).h ?? obj(l).h;
+      m.ex = moved ? obj(l).ex : obj(r).ex ?? obj(l).ex;
+      m.last = later(obj(l).last, obj(r).last);
+      out[k] = m;
+    }
+    return out;
+  },
+  /* Per pattern, numbers, a string of 1s and 0s, a date and up to three
+     examples made of a word key and two BÍN marks. */
+  clean(value) {
+    const diag = {};
+    for (const [k, v] of pairs(value, 60, 40)) {
+      if (!isObj(v)) continue;
+      diag[k] = { n: n(v.n), w: n(v.w),
+        h: typeof v.h === "string" ? v.h.replace(/[^01]/g, "").slice(-16) : "",
+        last: dayStr(v.last),
+        ex: (Array.isArray(v.ex) ? v.ex : []).filter(isObj).slice(0, 3)
+          .map((e) => ({ w: short(e.w, 80), m: short(e.m, 40), o: short(e.o, 40) })) };
+    }
+    return diag;
+  },
+  ownText: false,
+};

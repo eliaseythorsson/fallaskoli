@@ -254,3 +254,30 @@ export function mergeMend(base, local, remote) {
   }
   return sanitiseMend(out);
 }
+
+/* ---------- the slice (issue #50) -------------------------------------------
+ * `S.mend`: the patterns waiting to be mended, those mended and the reviews
+ * passed per day, as a slice of the saved state (core/slices.js): moved here from
+ * core/state.js `migrate`, core/merge.js `mergeStates` and server/guard.mjs
+ * `cleanState`, unchanged. */
+
+/** @type {import("../types").Slice} */
+export const mendSlice = {
+  key: "mend",
+  blank: () => blankMend(),
+  /* Rebuilt field by field. */
+  migrate: (raw) => sanitiseMend(raw),
+  /* A pattern mended on either device is no longer waiting; the counts add. */
+  merge: (base, local, remote) => mergeMend(base, local, remote),
+  /* Rebuilt by the same function the browser loads with — and here no day
+     after tomorrow, because "Framfarir" is read off these days and a day in
+     the future would sit in next week's board. */
+  clean(value, { limit }) {
+    const mend = sanitiseMend(value);
+    for (const k of Object.keys(mend.open)) if (mend.open[k] > limit) delete mend.open[k];
+    mend.log = mend.log.filter((x) => x.d <= limit);
+    for (const k of Object.keys(mend.rv)) if (k > limit) delete mend.rv[k];
+    return mend;
+  },
+  ownText: false,
+};
