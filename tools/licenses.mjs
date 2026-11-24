@@ -58,6 +58,10 @@ const DATA_SOURCES = [
     who: "Hermit Dave, byggt á OpenSubtitles", lic: "MIT / CC BY-SA 4.0",
     url: "https://github.com/hermitdave/FrequencyWords",
     what: "Tíðniröðun orða — hvaða orð barnið sér fyrst. Afritið er í zip-inu með sha256." },
+  { nm: "Listi yfir íslenskan námsorðaforða (LÍNO-2)",
+    who: "Auður Pálsdóttir og Sigríður Ólafsdóttir, 2023",
+    lic: "CC BY 4.0", url: "http://hdl.handle.net/20.500.12537/307",
+    what: "Námsorðaforði: hvaða orð eru námsorð og í hvaða röð. Skráin er í sources/ með sha256." },
   /* The three typefaces are inside the built file since v6.3 (src/fonts/,
      tools/build.mjs). The OFL asks that its notice travels with them: it is
      in src/fonts/OFL.txt, and named here. */
