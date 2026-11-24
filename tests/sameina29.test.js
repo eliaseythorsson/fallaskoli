@@ -66,15 +66,20 @@ test("the bank: short everyday pairs, each kind, each sentence one sentence", ()
     assert.ok(!seen.has(at), `twice: ${at}`); seen.add(at);
     assert.ok(KINDS.includes(x.kind), at);
     assert.deepEqual(x.apart[0], [x.a, x.b], at);
-    for (const t of [...x.joined, ...x.apart.flat()]) assert.match(t, one, t);
+    const odd = x.odd || [];
+    for (const t of [...x.joined, ...odd, ...x.apart.flat()]) assert.match(t, one, t);
     /* short: a short sentence is at most 6 words, a joined one at most 11 */
     for (const t of x.apart.flat()) assert.ok(normalise(t).split(" ").length <= 6, t);
-    for (const t of x.joined) assert.ok(normalise(t).split(" ").length <= 11, t);
+    for (const t of [...x.joined, ...odd]) assert.ok(normalise(t).split(" ").length <= 11, t);
     /* every joined sentence holds the conjunction; the first is the model */
-    for (const t of x.joined) assert.ok(` ${normalise(t)} `.includes(` ${x.conj} `), `${t}: no "${x.conj}"`);
-    /* a clause that opens the sentence is listed for every adverbial pair */
+    for (const t of [...x.joined, ...odd]) assert.ok(` ${normalise(t)} `.includes(` ${x.conj} `), `${t}: no "${x.conj}"`);
+    /* a clause that opens the sentence is listed for every adverbial pair:
+       as an answer like any other, or as right-but-unusual („óvenjulegt“) */
     if (x.kind === "orsök" || x.kind === "tíð")
-      assert.ok(x.joined.some((t) => normalise(t).startsWith(x.conj + " ")), `${at}: the clause-first order is not listed`);
+      assert.ok([...x.joined, ...odd].some((t) => normalise(t).startsWith(x.conj + " ")), `${at}: the clause-first order is not listed`);
+    /* the model never opens with its clause, and no sentence is listed twice */
+    assert.ok(!normalise(x.joined[0]).startsWith(x.conj + " "), at);
+    assert.equal(new Set([...x.joined, ...odd].map(normalise)).size, x.joined.length + odd.length, at);
     /* one structure at a time, in the plan's order */
     assert.equal(x.lvl, { orsök: 1, tíð: 1, skýring: 2, tilvísun: 3 }[x.kind], at);
   }
@@ -91,15 +96,16 @@ test("both directions exist: every pair is a question each way", () => {
     /* split: a joined sentence is shown, the two short ones answer, in either order */
     assert.equal(s.from, x.joined[0]);
     assert.equal(s.model, `${x.a} ${x.b}`);
+    /* (a skýring pair's other order is right but unusual: `odd`, tested below) */
     for (const [a, b] of x.apart) {
       assert.ok(s.answers.includes(`${a} ${b}`), `${a} ${b}`);
-      assert.ok(s.answers.includes(`${b} ${a}`), `${b} ${a}`);
+      assert.ok((x.kind === "skýring" ? s.odd.answers : s.answers).includes(`${b} ${a}`), `${b} ${a}`);
     }
     for (const t of [c, s]) {
       assert.equal(t.open, true);
       assert.ok(t.hint && t.why && t.copyNote && t.title, x.a);
       /* no answer is what was shown: a copy can never pass */
-      for (const a of t.answers) assert.notEqual(normalise(a), normalise(t.from), a);
+      for (const a of [...t.answers, ...(t.odd ? t.odd.answers : [])]) assert.notEqual(normalise(a), normalise(t.from), a);
     }
     /* any listed joined sentence can be the one shown for a split */
     x.joined.forEach((j, k) => assert.equal(combineTask(x, "split", k).from, j));
@@ -142,7 +148,8 @@ test("an answer on the list is right — every one of them, capitals and stops a
   let n = 0;
   for (const x of PAIRS) for (const dir of ["combine", "split"]) {
     const t = { type: "umritun", skill: "malbeiting", base: 12, lvl: 1, ...combineTask(x, dir) };
-    for (const a of t.answers) {
+    /* the right-but-unusual answers (`t.odd`) are right too, with the same XP */
+    for (const a of [...t.answers, ...(t.odd ? t.odd.answers : [])]) {
       for (const typed of [a, a.toLowerCase(), a.replace(/\./g, ""), a.replace(/\.$/, "") + " "]) {
         const j = judge(t, { text: typed });
         assert.equal(j.ok, true, `${dir}: "${typed}"`);
@@ -163,6 +170,133 @@ test("an answer on the list is right — every one of them, capitals and stops a
   const s = { type: "umritun", skill: "malbeiting", base: 12, lvl: 1, ...combineTask(x, "split") };
   assert.equal(judge(s, { text: "Við fórum inn. Bjallan hringdi." }).detail.note, null);
   assert.match(judge(s, { text: "við fórum inn bjallan hringdi" }).detail.note, /punkti á milli/);
+});
+
+/* ---------- right, but unusual (the owner's native review, November 2026) ----
+   Two kinds of answer are good Icelandic that is seldom said: a joined
+   sentence that opens with its *af því að* clause (and *Þegar ég datt meiddi
+   ég mig.*), and a skýring pair split in the other order (*Ég sá það. Hurðin
+   var opin.*). They are RIGHT, with the XP of any right answer, and the pupil
+   is shown the usual way in one sentence. */
+
+const asked = (x, dir) => ({ type: "umritun", typeId: "sameina", skill: "malbeiting", base: dir === "combine" ? 14 : 12, lvl: 1,
+  ...combineTask(x, dir) });
+const pair = (a) => PAIRS.find((y) => y.a === a);
+
+test("which answers are right but unusual: every af því að pair's clause-first order, one þegar pair, a skýring pair turned round", () => {
+  for (const x of PAIRS) {
+    const c = combineTask(x, "combine"), s = combineTask(x, "split");
+    const fronted = (t) => normalise(t).startsWith(x.conj + " ");
+    if (x.kind === "orsök") {
+      /* every clause-first order is unusual, none is an ordinary answer */
+      assert.ok(x.odd && x.odd.length >= 1, x.a);
+      assert.ok(x.odd.every(fronted), x.a);
+      assert.ok(!x.joined.some(fronted), x.a);
+    }
+    if (x.kind === "skýring" || x.kind === "tilvísun") assert.equal(x.odd, undefined, x.a);
+    /* combine: the file's column, with the model in the note */
+    assert.deepEqual(c.odd ? c.odd.answers : [], x.odd || [], x.a);
+    if (c.odd) assert.equal(c.odd.note, `Rétt — en oftast er þetta sagt í þessari röð: *${x.joined[0]}*`);
+    /* split: only a skýring pair has an unusual order, and it is the other one */
+    if (x.kind === "skýring") {
+      assert.deepEqual(s.answers, x.apart.map(([a, b]) => `${a} ${b}`), x.a);
+      assert.deepEqual(s.odd.answers, x.apart.map(([a, b]) => `${b} ${a}`), x.a);
+      assert.equal(s.odd.note, `Rétt — en þetta hljómar eðlilegra í þessari röð: *${x.a} ${x.b}*`);
+    } else assert.equal(s.odd, undefined, x.a);
+    /* an unusual sentence is never an ordinary answer too, and never the one shown for a split */
+    for (const t of [c, s]) for (const a of (t.odd ? t.odd.answers : []))
+      assert.ok(!t.answers.map(normalise).includes(normalise(a)), a);
+    x.joined.forEach((_, k) => assert.ok(!(x.odd || []).includes(combineTask(x, "split", k).from)));
+  }
+  /* the þegar pairs the owner passed keep their clause-first order as an ordinary answer … */
+  const tid = PAIRS.filter((x) => x.kind === "tíð");
+  const withOdd = tid.filter((x) => x.odd);
+  assert.deepEqual(withOdd.map((x) => x.a), ["Ég meiddi mig."]);
+  assert.deepEqual(withOdd[0].odd, ["Þegar ég datt meiddi ég mig."]);
+  for (const x of tid.filter((y) => !y.odd))
+    assert.ok(x.joined.some((t) => normalise(t).startsWith("þegar ")), x.a);
+});
+
+test("the four verdicts of one question: model, another listed answer, right but unusual, not judged", () => {
+  /* combine, an af því að pair with an ordinary alternative split and two unusual orders */
+  const x = pair("Hundurinn drakk vatn.");
+  const c = asked(x, "combine");
+  const model = judge(c, { text: "Hundurinn drakk vatn af því að hann var þyrstur." });
+  assert.equal(model.verdict, "right");
+  assert.equal(model.detail.note, null);
+  assert.equal(model.detail.unusual, undefined);
+  for (const typed of ["Af því að hundurinn var þyrstur drakk hann vatn.", "af því að hann var þyrstur drakk hundurinn vatn"]) {
+    const j = judge(c, { text: typed });
+    assert.equal(j.ok, true, typed);
+    assert.equal(j.verdict, "right", typed);
+    assert.equal(j.xp, model.xp, "full XP");
+    assert.equal(j.detail.unusual, true);
+    assert.equal(j.detail.note, "Rétt — en oftast er þetta sagt í þessari röð: *Hundurinn drakk vatn af því að hann var þyrstur.*");
+    assert.equal(retryAllowed(c, j), false);
+  }
+  const off = judge(c, { text: "Hundurinn drakk vatn vegna þess að hann var þyrstur." });
+  assert.equal(off.verdict, "unjudged");
+  assert.equal(off.xp, 0);
+  assert.equal(off.detail.unusual, undefined);
+
+  /* a þegar pair the owner passed: the clause-first order is an ordinary right answer, no note */
+  const t = asked(pair("Við fórum inn."), "combine");
+  const plain = judge(t, { text: "Þegar bjallan hringdi fórum við inn." });
+  assert.equal(plain.verdict, "right");
+  assert.equal(plain.detail.note, null);
+  assert.equal(plain.detail.unusual, undefined);
+  /* … and the one he did not */
+  const fell = judge(asked(pair("Ég meiddi mig."), "combine"), { text: "Þegar ég datt meiddi ég mig." });
+  assert.equal(fell.verdict, "right");
+  assert.equal(fell.detail.note, "Rétt — en oftast er þetta sagt í þessari röð: *Ég meiddi mig þegar ég datt.*");
+
+  /* split, a skýring pair: the natural order is the model; the other order is right, with a note */
+  const s = asked(pair("Hurðin var opin."), "split");
+  assert.equal(s.model, "Hurðin var opin. Ég sá það.");
+  const natural = judge(s, { text: "Hurðin var opin. Ég sá það." });
+  assert.equal(natural.verdict, "right");
+  assert.equal(natural.detail.note, null);
+  for (const typed of ["Ég sá það. Hurðin var opin.", "ég sá það hurðin var opin"]) {
+    const j = judge(s, { text: typed });
+    assert.equal(j.ok, true, typed);
+    assert.equal(j.verdict, "right");
+    assert.equal(j.xp, natural.xp, "full XP");
+    assert.equal(j.detail.unusual, true);
+    /* one thing at a time: the order, not the missing full stop */
+    assert.equal(j.detail.note, "Rétt — en þetta hljómar eðlilegra í þessari röð: *Hurðin var opin. Ég sá það.*");
+  }
+  assert.equal(judge(s, { text: "Ég sá hurðina. Hún var opin." }).verdict, "unjudged");
+  /* a missing accent in an unusual answer is still the usual slip */
+  const slip = judge(s, { text: "Eg sá það. Hurðin var opin." });
+  assert.equal(slip.ok, true);
+  assert.equal(slip.verdict, "near");
+  assert.equal(slip.detail.unusual, true);
+
+  /* the other kinds: either order of a split is an ordinary right answer, silently */
+  for (const a of ["Við fórum inn.", "Hundurinn drakk vatn.", "Ég á hund."]) {
+    const y = pair(a), sp = asked(y, "split");
+    for (const typed of [`${y.a} ${y.b}`, `${y.b} ${y.a}`]) {
+      const j = judge(sp, { text: typed });
+      assert.equal(j.verdict, "right", typed);
+      assert.equal(j.detail.note, null, typed);
+      assert.equal(j.detail.unusual, undefined);
+    }
+  }
+});
+
+test("a right-but-unusual answer is recorded as any right answer is", () => {
+  const x = pair("Ég fór í úlpu.");
+  const t = asked(x, "combine");
+  const settled = (typed) => {
+    const S = blankState(), sess = newSession(S);
+    const j = judge(t, { text: typed });
+    const out = settle(S, sess, t, j, { ms: 3000 });
+    return { correct: out.correct, kept: JSON.stringify([S.cells, S.skills, S.xp, S.run, S.totalAnswers, S.totalCorrect, sess.correct]) };
+  };
+  const usual = settled("Ég fór í úlpu af því að það var kalt úti.");
+  const odd = settled("Af því að það var kalt úti fór ég í úlpu.");
+  assert.equal(odd.correct, true);
+  assert.equal(odd.kept, usual.kept);
 });
 
 test("an answer that is not on the list is never wrong: the model is shown and nothing is counted", () => {

@@ -14,10 +14,23 @@
 # hvorki rétt né rangt. Þess vegna á að skrá hér allar eðlilegar leiðir til að
 # segja það sama. Því fleiri sem eru skráðar, því oftar fær nemandinn „rétt“.
 #
+# Sum svör eru rétt mál en óvenjuleg í daglegu tali. Þau teljast RÉTT og nemandinn
+# fær full stig, en forritið bendir honum um leið vinsamlega á algengari leiðina og
+# sýnir fyrirmyndina. Þetta á við tvennt (yfirlestur eiganda, nóvember 2026):
+#   - sameinaða setningu sem byrjar á aukasetningunni þar sem það er óvenjulegt:
+#     „Af því að það var kalt úti fór ég í úlpu.“ Slíkar setningar eru skráðar í
+#     dálkinn „óvenjulegt“. Allar „af því að“-setningar sem byrja á „af því að“ eiga
+#     heima þar. Setning sem byrjar á „þegar“ er oftast alveg eðlileg („Þegar ég
+#     kom heim var pabbi að elda.“) og stendur þá í „líka saman“.
+#   - skýringarsetningu (gerð: skýring) sem er skipt í öfugri röð: „Ég sá það.
+#     Hurðin var opin.“ Eðlilega röðin er „Hurðin var opin. Ég sá það.“, eins og
+#     stendur í „fyrri“ og „seinni“. Þetta gerir forritið sjálft; öfuga röðin er
+#     ekki skráð hér.
+#
 # Þegar forritið er smíðað greinir Greynir hverja einustu setningu í línunni, og
 # forritið er ekki smíðað nema:
 #   - hvor stutta setningin sé ein aðalsetning, án aukasetningar,
-#   - „saman“ og allt í „líka saman“ sé ein málsgrein með nákvæmlega einni
+#   - „saman“ og allt í „líka saman“ og „óvenjulegt“ sé ein málsgrein með nákvæmlega einni
 #     aukasetningu af þeirri gerð sem dálkurinn „gerð“ segir, og hún hefjist á
 #     tengingunni í dálkinum „tenging“,
 #   - hvert orð sé til í BÍN.
@@ -33,7 +46,11 @@
 #   líka saman   aðrar réttar leiðir til að sameina, aðskildar með „ / “
 #   líka sundur  aðrar réttar leiðir til að skipta (tvær setningar hver), aðskildar
 #                með „ / “. Röðin á setningunum tveimur skiptir ekki máli: forritið
-#                tekur báðar raðir gildar án þess að þær séu skráðar hér.
+#                tekur báðar raðir gildar án þess að þær séu skráðar hér. Undantekning
+#                er gerðin skýring: þar er öfuga röðin rétt en óvenjuleg (sjá ofar).
+#   óvenjulegt   leiðir til að sameina sem eru rétt mál en óvenjulegar í daglegu tali,
+#                aðskildar með „ / “. Svarið telst rétt, en nemandinn sér líka
+#                algengari leiðina (fyrirmyndina í „saman“). Má vera autt.
 #
 # Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
 # aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
@@ -68,21 +85,28 @@
 #     types. The 49 pairs here use only words the material already had; a new
 #     word is fine, but then say so in the pull request.
 #   - A clause that opens the sentence is followed by the verb (*Þegar ég kom
-#     heim var pabbi …*): list that order under "líka saman" for every orsök and
-#     tíð pair.
-þyngd	gerð	tenging	fyrri	seinni	saman	líka saman	líka sundur
-1	orsök	af því að	Ég fór í úlpu.	Það var kalt úti.	Ég fór í úlpu af því að það var kalt úti.	Af því að það var kalt úti fór ég í úlpu.
-1	orsök	af því að	Við vorum inni.	Það var rigning.	Við vorum inni af því að það var rigning.	Af því að það var rigning vorum við inni.
-1	orsök	af því að	Hundurinn drakk vatn.	Hann var þyrstur.	Hundurinn drakk vatn af því að hann var þyrstur.	Af því að hundurinn var þyrstur drakk hann vatn. / Af því að hann var þyrstur drakk hundurinn vatn.	Hundurinn var þyrstur. Hann drakk vatn.
-1	orsök	af því að	Ég kom of seint.	Strætó var seinn.	Ég kom of seint af því að strætó var seinn.	Af því að strætó var seinn kom ég of seint.
-1	orsök	af því að	Við fórum ekki út.	Veðrið var vont.	Við fórum ekki út af því að veðrið var vont.	Af því að veðrið var vont fórum við ekki út.
-1	orsök	af því að	Pabbi fór snemma að sofa.	Hann var þreyttur.	Pabbi fór snemma að sofa af því að hann var þreyttur.	Af því að pabbi var þreyttur fór hann snemma að sofa. / Af því að hann var þreyttur fór pabbi snemma að sofa.	Pabbi var þreyttur. Hann fór snemma að sofa.
-1	orsök	af því að	Barnið grét.	Það datt.	Barnið grét af því að það datt.	Af því að barnið datt grét það.	Barnið datt. Það grét.
-1	orsök	af því að	Kötturinn mjálmaði.	Hann var svangur.	Kötturinn mjálmaði af því að hann var svangur.	Af því að kötturinn var svangur mjálmaði hann. / Af því að hann var svangur mjálmaði kötturinn.	Kötturinn var svangur. Hann mjálmaði.
-1	orsök	af því að	Sara kom ekki í skólann.	Hún var veik.	Sara kom ekki í skólann af því að hún var veik.	Af því að Sara var veik kom hún ekki í skólann. / Af því að hún var veik kom Sara ekki í skólann.	Sara var veik. Hún kom ekki í skólann.
-1	orsök	af því að	Ég opnaði gluggann.	Það var heitt inni.	Ég opnaði gluggann af því að það var heitt inni.	Af því að það var heitt inni opnaði ég gluggann.
-1	orsök	af því að	Við fórum heim.	Leikurinn var búinn.	Við fórum heim af því að leikurinn var búinn.	Af því að leikurinn var búinn fórum við heim.
-1	orsök	af því að	Ég tók strætó.	Það var langt að ganga.	Ég tók strætó af því að það var langt að ganga.	Af því að það var langt að ganga tók ég strætó.
+#     heim var pabbi …*): list that order for every orsök and tíð pair — under
+#     "líka saman" where it is as natural as the model (most *þegar* pairs),
+#     under "óvenjulegt" where it is grammatical but not what people usually
+#     say (every *af því að* pair; *Þegar ég datt meiddi ég mig.*). The owner's
+#     native review of November 2026 drew that line; an "óvenjulegt" answer is
+#     right, with full XP, and the pupil is shown the model with one kind
+#     sentence (src/js/tasks/malbeiting.js `combineTask`, `task.odd`;
+#     core/answer.js `transformFeedback`). An "óvenjulegt" sentence is never
+#     the sentence shown for a split.
+þyngd	gerð	tenging	fyrri	seinni	saman	líka saman	líka sundur	óvenjulegt
+1	orsök	af því að	Ég fór í úlpu.	Það var kalt úti.	Ég fór í úlpu af því að það var kalt úti.			Af því að það var kalt úti fór ég í úlpu.
+1	orsök	af því að	Við vorum inni.	Það var rigning.	Við vorum inni af því að það var rigning.			Af því að það var rigning vorum við inni.
+1	orsök	af því að	Hundurinn drakk vatn.	Hann var þyrstur.	Hundurinn drakk vatn af því að hann var þyrstur.		Hundurinn var þyrstur. Hann drakk vatn.	Af því að hundurinn var þyrstur drakk hann vatn. / Af því að hann var þyrstur drakk hundurinn vatn.
+1	orsök	af því að	Ég kom of seint.	Strætó var seinn.	Ég kom of seint af því að strætó var seinn.			Af því að strætó var seinn kom ég of seint.
+1	orsök	af því að	Við fórum ekki út.	Veðrið var vont.	Við fórum ekki út af því að veðrið var vont.			Af því að veðrið var vont fórum við ekki út.
+1	orsök	af því að	Pabbi fór snemma að sofa.	Hann var þreyttur.	Pabbi fór snemma að sofa af því að hann var þreyttur.		Pabbi var þreyttur. Hann fór snemma að sofa.	Af því að pabbi var þreyttur fór hann snemma að sofa. / Af því að hann var þreyttur fór pabbi snemma að sofa.
+1	orsök	af því að	Barnið grét.	Það datt.	Barnið grét af því að það datt.		Barnið datt. Það grét.	Af því að barnið datt grét það.
+1	orsök	af því að	Kötturinn mjálmaði.	Hann var svangur.	Kötturinn mjálmaði af því að hann var svangur.		Kötturinn var svangur. Hann mjálmaði.	Af því að kötturinn var svangur mjálmaði hann. / Af því að hann var svangur mjálmaði kötturinn.
+1	orsök	af því að	Sara kom ekki í skólann.	Hún var veik.	Sara kom ekki í skólann af því að hún var veik.		Sara var veik. Hún kom ekki í skólann.	Af því að Sara var veik kom hún ekki í skólann. / Af því að hún var veik kom Sara ekki í skólann.
+1	orsök	af því að	Ég opnaði gluggann.	Það var heitt inni.	Ég opnaði gluggann af því að það var heitt inni.			Af því að það var heitt inni opnaði ég gluggann.
+1	orsök	af því að	Við fórum heim.	Leikurinn var búinn.	Við fórum heim af því að leikurinn var búinn.			Af því að leikurinn var búinn fórum við heim.
+1	orsök	af því að	Ég tók strætó.	Það var langt að ganga.	Ég tók strætó af því að það var langt að ganga.			Af því að það var langt að ganga tók ég strætó.
 1	tíð	þegar	Pabbi var að elda.	Ég kom heim.	Pabbi var að elda þegar ég kom heim.	Þegar ég kom heim var pabbi að elda.
 1	tíð	þegar	Það var snjór úti.	Við vöknuðum.	Það var snjór úti þegar við vöknuðum.	Þegar við vöknuðum var snjór úti.
 1	tíð	þegar	Við fórum inn.	Bjallan hringdi.	Við fórum inn þegar bjallan hringdi.	Þegar bjallan hringdi fórum við inn.
@@ -91,7 +115,7 @@
 1	tíð	þegar	Ég var að borða.	Síminn hringdi.	Ég var að borða þegar síminn hringdi.	Þegar síminn hringdi var ég að borða. / Síminn hringdi þegar ég var að borða. / Þegar ég var að borða hringdi síminn.
 1	tíð	þegar	Við kveikjum ljósin.	Það dimmir.	Við kveikjum ljósin þegar það dimmir.	Þegar það dimmir kveikjum við ljósin. / Við kveikjum ljósin þegar dimmir. / Þegar dimmir kveikjum við ljósin.
 1	tíð	þegar	Við bökuðum pönnukökur.	Afi kom í heimsókn.	Við bökuðum pönnukökur þegar afi kom í heimsókn.	Þegar afi kom í heimsókn bökuðum við pönnukökur.
-1	tíð	þegar	Ég meiddi mig.	Ég datt.	Ég meiddi mig þegar ég datt.	Þegar ég datt meiddi ég mig.
+1	tíð	þegar	Ég meiddi mig.	Ég datt.	Ég meiddi mig þegar ég datt.			Þegar ég datt meiddi ég mig.
 1	tíð	þegar	Allir þögnuðu.	Kennarinn kom inn.	Allir þögnuðu þegar kennarinn kom inn.	Þegar kennarinn kom inn þögnuðu allir.
 2	skýring	að	Hurðin var opin.	Ég sá það.	Ég sá að hurðin var opin.
 2	skýring	að	Stelpan er veik.	Ég veit það.	Ég veit að stelpan er veik.

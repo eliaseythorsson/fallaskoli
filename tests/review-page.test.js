@@ -81,8 +81,11 @@ test("review page: an item shows its answer, explanation and level where it has 
 });
 
 test("REVIEW-NOTES.md: every note for the page finds its items, every phrase at least one", () => {
+  /* 24 November 2026: the owner, a native speaker, read every flagged item
+     and his notes were applied, so the notes about items on the page were
+     taken out of the file. It may hold none now; whatever it holds must
+     still find its items. (That a note does attach is the next test.) */
   const onPage = notes.filter((n) => !n.outside);
-  assert.ok(onPage.length >= 10, onPage.length);
   for (const n of onPage) {
     assert.ok(n.items.length > 0, "finds nothing: " + n.title);
     for (const [phrase, hits] of Object.entries(n.hits)) assert.ok(hits > 0, `${n.title}: ${phrase}`);
@@ -90,8 +93,28 @@ test("REVIEW-NOTES.md: every note for the page finds its items, every phrase at 
   /* the flag the page filters by */
   const flagged = col.items.filter((it) => it.notes.length);
   assert.ok(flagged.length >= onPage.length);
-  /* the worked examples are flagged as a whole file */
-  assert.ok(col.items.filter((it) => it.kind === "synidaemi").every((it) => it.notes.length));
+  if (!onPage.length) assert.equal(flagged.length, 0);
+  /* the notes about text that is not on the page are kept, and flag nothing */
+  const off = notes.filter((n) => n.outside);
+  assert.ok(off.length >= 10, off.length);
+  for (const n of off) assert.equal(n.items.length, 0, n.title);
+});
+
+test("REVIEW-NOTES.md: a note written the documented way flags its items — a phrase, and a whole file", () => {
+  const items = col.items.map((it) => ({ ...it, notes: [] }));
+  const ns = attachNotes(items, parseNotes([
+    "## Eitt atriði", "Leita: `Ég sá að hurðin var opin`", "Úr: prófun", "", "Texti.",
+    "## Heil skrá", "Skrá: `src/js/content/examples.js`", "", "Texti.",
+    "# Utan síðunnar", "## Ekki á síðunni", "Texti."].join("\n")));
+  assert.deepEqual(ns.map((n) => n.outside), [false, false, true]);
+  assert.ok(ns[0].hits["Ég sá að hurðin var opin"] >= 1);
+  const door = items.find((it) => it.file === "content/malbeiting/sameina.tsv" && it.text === "Ég sá að hurðin var opin.");
+  assert.deepEqual(door.notes.length, 1);
+  /* the worked examples, flagged as a whole file */
+  const ex = items.filter((it) => it.kind === "synidaemi");
+  assert.ok(ex.length > 0 && ex.every((it) => it.notes.length === 1));
+  assert.equal(ns[1].items.length, ex.length);
+  assert.equal(ns[2].items.length, 0);
 });
 
 test("REVIEW-NOTES.md: a phrase that matches nothing is reported, not ignored", () => {

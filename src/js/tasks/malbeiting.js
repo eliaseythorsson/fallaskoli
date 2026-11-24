@@ -1770,6 +1770,25 @@ export function taskSpeech(lex, view, rng) {
  * counts neither way (`open: true`; core/answer.js JUDGES.umritun). The one
  * answer that IS wrong is what was shown, written back unchanged.
  *
+ * RIGHT, BUT UNUSUAL (the owner's native review, November 2026). Two kinds of
+ * answer are good Icelandic that people seldom say, and a pupil who writes
+ * one should hear the usual way too — kindly, and without losing anything:
+ *
+ *   combine   a sentence that opens with its clause where that is unusual:
+ *             *Af því að það var kalt úti fór ég í úlpu.* (every *af því að*
+ *             pair, and *Þegar ég datt meiddi ég mig.*). The file lists them
+ *             in the column „óvenjulegt“ → `x.odd`; the build parses them as
+ *             it does every joined sentence.
+ *   split     a skýring pair in the other order: *Ég sá það. Hurðin var
+ *             opin.* The natural order is the model, *Hurðin var opin. Ég sá
+ *             það.* (*það* points back). For the other kinds either order is
+ *             an answer like any other.
+ *
+ * Such an answer is in `task.odd.answers`, not in `task.answers`: it is
+ * graded RIGHT with full XP (core/answer.js `gradeTransform`), and the note
+ * `task.odd.note` shows the model (`transformFeedback`). An odd sentence is
+ * never the one shown for a split.
+ *
  * Drawn by the Umritun renderer (the task's `type`), as Bein og óbein ræða
  * is. */
 
@@ -1811,6 +1830,12 @@ const SPLIT_HINT = {
   tilvísun: (c) => `Það sem stendur á eftir *${c}* verður sérstök setning. Hún byrjar á fornafni (*hann*, *hún*, *það*) eða á nafnorðinu sjálfu.`,
 };
 
+/* What a pupil is told with a right answer that is unusual in everyday
+   speech (`task.odd`): right first, then the usual way, shown. Plain words,
+   no grammar terms. */
+const ODD_JOINED = (model) => `Rétt — en oftast er þetta sagt í þessari röð: *${model}*`;
+const ODD_APART = (model) => `Rétt — en þetta hljómar eðlilegra í þessari röð: *${model}*`;
+
 /** The first word of a conjunction that no short sentence of the pair has:
     what tells an answer that still holds the conjunction, or lacks it. */
 function conjMark(x) {
@@ -1838,20 +1863,28 @@ export function combineTask(x, dir, shown = 0) {
       instruction: `Gerðu **eina setningu** úr þessum tveimur. Notaðu **${x.conj}**.`,
       placeholder: "skrifaðu eina setningu…",
       answers: x.joined, model: x.joined[0],
+      ...(x.odd && x.odd.length ? { odd: { answers: x.odd, note: ODD_JOINED(x.joined[0]) } } : {}),
       hint: COMBINE_HINT[x.kind](x.conj), why: whyJoin,
       checks: mark ? [{ lacks: [mark], note: `Hér átti að nota *${x.conj}* til að tengja setningarnar.` }] : [],
       copyNote: `Þetta eru enn tvær setningar. Tengdu þær saman í eina með *${x.conj}*.`,
     };
   }
   const from = x.joined[shown] || x.joined[0];
-  /* Either order of the two is two sentences. */
-  const answers = [...new Set(x.apart.flatMap(([a, b]) => [`${a} ${b}`, `${b} ${a}`]))];
+  /* Either order of the two is two sentences. For a skýring pair the order
+     of the file is the natural one (*Hurðin var opin. Ég sá það.*) and the
+     other order is right but unusual (`odd`, above). */
+  const turned = x.kind === "skýring";
+  const model = `${x.a} ${x.b}`;
+  const answers = [...new Set(x.apart.flatMap(([a, b]) => turned ? [`${a} ${b}`] : [`${a} ${b}`, `${b} ${a}`]))];
+  const odd = turned
+    ? [...new Set(x.apart.map(([a, b]) => `${b} ${a}`))].filter((t) => !answers.includes(t)) : [];
   return { ...common,
     title: "Skipta setningu",
     from,
     instruction: "Skiptu setningunni í **tvær stuttar setningar** sem segja það sama.",
     placeholder: "skrifaðu tvær setningar…",
-    answers, model: `${x.a} ${x.b}`,
+    answers, model,
+    ...(odd.length ? { odd: { answers: odd, note: ODD_APART(model) } } : {}),
     hint: SPLIT_HINT[x.kind](x.conj), why: whySplit,
     checks: mark ? [{ hasAny: [mark], note: `Slepptu *${x.conj}*: hvor setning á að geta staðið ein.` }] : [],
     copyNote: "Þetta er enn sama setningin. Úr henni eiga að verða tvær setningar sem geta báðar staðið einar.",

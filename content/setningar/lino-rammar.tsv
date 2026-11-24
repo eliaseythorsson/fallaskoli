@@ -26,6 +26,7 @@
 #   orð           nafnorðið í uppflettimynd. Ef orðið er til í fleiri en einu kyni: orð|kyn (t.d. skúr|kk)
 #   rammi         setningin úr setningar.tsv, nákvæmlega eins og hún stendur þar
 #   yfirfarið af  hver las setninguna með orðinu og samþykkti parið
+#                 (eigandinn, sem er móðurmálshafi, las öll pörin á yfirlitssíðunni 24.11.2026)
 #   athugasemd    frjáls athugasemd, forritið les hana ekki
 #
 # Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
@@ -35,20 +36,20 @@
 
 orð	rammi	yfirfarið af	athugasemd
 # ---- það sem kennari útskýrir: ramminn tekur annars aðeins við texta og bókum ----
-hugtak	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-aðferð	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-regla	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-niðurstaða	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-lausn	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-hugtak	Kennarinn útskýrði dæmið aftur svo allir skildu það.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+hugtak	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	eigandi, 24.11.2026
+aðferð	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	eigandi, 24.11.2026
+regla	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	eigandi, 24.11.2026
+niðurstaða	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	eigandi, 24.11.2026
+lausn	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	eigandi, 24.11.2026
+hugtak	Kennarinn útskýrði dæmið aftur svo allir skildu það.	eigandi, 24.11.2026
 # ---- það sem maður man: ramminn tekur annars aðeins við tíma og viðburðum ----
-ástæða	Ég man daginn vel.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-regla	Ég man daginn vel.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-niðurstaða	Ég man daginn vel.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-ástæða	Ég man dagana vel.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-regla	Ég man dagana vel.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+ástæða	Ég man daginn vel.	eigandi, 24.11.2026
+regla	Ég man daginn vel.	eigandi, 24.11.2026
+niðurstaða	Ég man daginn vel.	eigandi, 24.11.2026
+ástæða	Ég man dagana vel.	eigandi, 24.11.2026
+regla	Ég man dagana vel.	eigandi, 24.11.2026
 # ---- orsök: rammarnir taka ekki við hugmyndum almennt (noun_classes.py, NEED_FIX) ----
-bilun	Ferðin tafðist vegna bílsins.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-misskilningur	Þetta gerðist allt vegna bílsins.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-bilun	Leiknum var frestað vegna veðurs.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
-misskilningur	Leiknum var frestað vegna veðurs.	Claude (Fable 5.2); móðurmálshafi á eftir að lesa
+bilun	Ferðin tafðist vegna bílsins.	eigandi, 24.11.2026
+misskilningur	Þetta gerðist allt vegna bílsins.	eigandi, 24.11.2026
+bilun	Leiknum var frestað vegna veðurs.	eigandi, 24.11.2026
+misskilningur	Leiknum var frestað vegna veðurs.	eigandi, 24.11.2026

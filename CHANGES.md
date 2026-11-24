@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Yfirlestur eiganda á efninu (24.11.2026)
+- **Athugasemdir móðurmálshafa eru komnar inn**: í „Sameina og skipta“ telst svar sem er rétt en óvenjulegt (*Af því að það var kalt úti fór ég í úlpu.*, *Ég sá það. Hurðin var opin.*) áfram rétt, en nemandinn sér líka algengari röðina; setningin *Músin var veidd af kettinum.* er farin; orðalag lagað á þremur síðum í Lesefni (Föllin fjögur, Kyn og tala nafnorða, Greinir).
+
 ### Bil milli endurtekninga: ein regla (#10)
 - **Sama orð kemur aldrei tvisvar í röð í sömu spurningagerð**, en má koma strax aftur í annarri
   gerð. Biðin í dögum í Orðaforða (ekki sama dag, ekki innan viku) er horfin, og með henni `S.vocab`.

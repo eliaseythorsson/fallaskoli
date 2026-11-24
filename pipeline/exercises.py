@@ -495,8 +495,11 @@ _WHO_DID = [(r["þyngd"], r["gerð"], r["setning"], r["sögn"], r["gerandi"], r[
 # short sentence is one main clause and each joined sentence holds exactly one
 # subordinate clause of the kind the pair names, opened by its conjunction
 # (clause_shape.py).
-#   COMBINE  (level, kind, conjunction, a, b, [joined, also …], [[a, b], also …], line)
-#            kind: orsök | tíð | skýring | tilvísun; line: the line of the file
+#   COMBINE  (level, kind, conjunction, a, b, [joined, also …], [[a, b], also …], line, [odd …])
+#            kind: orsök | tíð | skýring | tilvísun; line: the line of the file;
+#            odd: the column "óvenjulegt" — joined sentences that are right but
+#            unusual in everyday speech (owner's review, November 2026): accepted,
+#            and the pupil is pointed to the model. Checked like every joined one.
 # (Tuples and a line NUMBER on purpose: build_freq.py reads every string in
 # this module as school material, a dict's keys and a file path included.)
 COMBINE_KINDS = ("orsök", "tíð", "skýring", "tilvísun")
@@ -512,7 +515,7 @@ def _combine():
     out = []
     for r in _C.rows("malbeiting/sameina.tsv", [
             ("þyngd", "int"), ("gerð", "text"), ("tenging", "text"), ("fyrri", "text"), ("seinni", "text"),
-            ("saman", "text"), ("líka saman", "str"), ("líka sundur", "str")]):
+            ("saman", "text"), ("líka saman", "str"), ("líka sundur", "str"), ("óvenjulegt", "str")]):
         if r["gerð"] not in COMBINE_KINDS:
             _bad(r, "„gerð“ á að vera %s / expected one of these" % ", ".join(COMBINE_KINDS))
         apart = [[r["fyrri"], r["seinni"]]]
@@ -522,7 +525,11 @@ def _combine():
                 _bad(r, "„líka sundur“: hver leið á að vera tvær setningar / each way must be two sentences (%r)" % alt)
             apart.append(two)
         joined = [r["saman"]] + [x.strip() for x in r["líka saman"].split(" / ") if x.strip()]
-        out.append((r["þyngd"], r["gerð"], r["tenging"], r["fyrri"], r["seinni"], joined, apart, r.line))
+        odd = [x.strip() for x in r["óvenjulegt"].split(" / ") if x.strip()]
+        for t in odd:
+            if t in joined:
+                _bad(r, "„óvenjulegt“: setningin stendur líka í „saman“ eða „líka saman“ / listed twice (%r)" % t)
+        out.append((r["þyngd"], r["gerð"], r["tenging"], r["fyrri"], r["seinni"], joined, apart, r.line, odd))
     return out
 
 
