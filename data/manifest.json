@@ -22,8 +22,8 @@
   "pipeline/build_sentences.py": "956df1d41b67c6ee90f3410b81acc5ecdf2f16f8ed28b505dc9462da55d9965d",
   "pipeline/build_bundle.py": "656e4622ec1426e7f9a3bb8a0c41661dc799c9191fa5620a4dededf695e7e25a",
   "pipeline/irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
-  "pipeline/exercises.py": "a1fa2324c279138eec27b1ec5e55c467acd2bda27a7854bdf168fa80dfbb77f6",
-  "pipeline/build_exercises.py": "21a03920c06e4a961fc383f0b7bb5233e4c1cf3063b36f2f403a409bda375efb",
+  "pipeline/exercises.py": "186276b81e7ea77aa3f3367f7e4e057565f7cfe86aa11c550477b4f4638e049d",
+  "pipeline/build_exercises.py": "56be14a1489d872850f5a1954c83d6dadba76a35eabfd62d009ede64b82c879b",
   "pipeline/adj_classes.py": "30dcdd1a715ac73c9325bcc327a043a78cd452cd9aa9164d934b25b565255b10",
   "pipeline/content_io.py": "f70116a2eb0031119ab311329a3912fe144d943b9a74583c9aab8902ad7566fe",
   "sources/lino2.csv": null,
@@ -54,6 +54,8 @@
   "content/obeygjanleg/samtengingar-rod.tsv": "ff13b7dc54732dc4d39e332b9b8e11bc96d1a5d7554bd67fa9a782ea464ed479",
   "content/obeygjanleg/samtengingar-samanburdur.tsv": "31b18bc63178881e10caaf5561a5bb97936c28d2465da2271aa5eaf313849035",
   "content/obeygjanleg/samtengingar.tsv": "b05fc68c2d821c6fa8f0a23849144436c315051fb9dab511870fb79669fc6380",
+  "content/obeygjanleg/tengiord-skilningur.tsv": "3871b022c1c5c524e5eb8488ea28f4aad0ceb36098274fc562f6b9b52578874d",
+  "content/obeygjanleg/tengiord.tsv": "e634b08d5fb10b08d465337036109d406ab56b6cdbdfeb9da2fd7ee7b96ab465",
   "content/ordafordi/andheiti.tsv": "450ea09dd5f9ba63d7f511fabb6e7f7801b4cfbc94093b9c8cd00d70f93b0aef",
   "content/ordafordi/samheiti.tsv": "8efa108707e6601d7c94769d23ae11cec564288e0ec6b792e433c421fc1f0f5e",
   "content/ordafordi/samhengi-rammar.tsv": "573b6e458888d14089f0ab4c49fbd65d61d2275bd219e019bf6e09c236bc8986",
@@ -69,11 +71,11 @@
   "content/villuveidar/villur.tsv": "3960bbff68ce25a326f6c9d9194680da97654a3c9a5da2befa26abf469abe92c"
  },
  "artifacts": {
-  "data/freq_lemmas.json": "5dbe002774fca52db716a9c57a9f65ecf7e362484d9ab3e28e8d773c0b64948a",
-  "data/lexicon.json": "0404806a302d6c186a81f54cdc250d11742fb4f8924d1c3586da17c1792ed5c8",
+  "data/freq_lemmas.json": "403e6c8770d20cb3023308d3a606ff817ce33de74eb76ac876defe1d22f0bf6b",
+  "data/lexicon.json": "b9e41b1b88e202702fc103c0049415c0eaa5051aac9c568cf3e5624aec584b3b",
   "data/sentences.json": "1fbb7a55c19923732dfb61c149bb4c4ddd6452a047eee88e7953a9c50737a669",
-  "data/data_bundle.js": "a485cfc5630f5f2c5e3aca0a4e744f443e0824f1abc4bb3293e65ebfa52ff8b6",
-  "data/exercises.js": "8106c2158a68e64be0553a5b992e83d7007b49c5950cc4d6e103542f52230278"
+  "data/data_bundle.js": "01befcfc08e496e09bfe1e6c5b3a587cf93511455bb4fdde8963545a9b2b427c",
+  "data/exercises.js": "e6a7d13a83c3665db56e663e338b98c3ac2b1f57385a312acd1a5b4b68fb7d34"
  },
  "counts": {
   "words": 6564,
