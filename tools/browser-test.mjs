@@ -3944,7 +3944,7 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
       buttons: [...document.querySelectorAll("#hveropts button")].map((b) => b.textContent),
       marks: sent.querySelectorAll(".sc, .sc-clause").length, bold: sent.querySelectorAll("b").length,
       hint: !!document.getElementById("hint"),
-      question: (document.querySelector("#task .gloss").textContent || "").trim(),
+      question: (document.getElementById("hverq").textContent || "").trim(),
       scroll: document.documentElement.scrollWidth - innerWidth };
   }, band, wantHint);
 

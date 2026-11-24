@@ -86,6 +86,10 @@ const ASKED = {
   setn_lidir: (t) => ({ kinds: [...SETNINGARHLUTAR, "forsetningarliður"],
     words: t.s.tok.map((_, j) => j).filter((j) => j >= t.span.from && j <= t.span.to) }),
   lid_finna: (t) => ({ kinds: ["forsetningarliður"], right: t.targets }),
+  /* #27 asks who DID it — meaning, answered by picking a name — so no kind of
+     mark is its answer and nothing is hidden (tasks/setningafraedi.js ASKS;
+     tests/hver.test.js holds that the frumlag of a passive is not the answer). */
+  hver_gerdi: () => ({ kinds: [] }),
 };
 
 test("26: no hint marks what its question asks, marks the words it points at, or leaves only the answer open", () => {
@@ -192,5 +196,9 @@ test("26: the shared renderers draw the hint where a task has one, and send `hin
   /* the half-XP line is the one every hint in the program shows */
   assert.match(HINT, /Vísbending gefur helmingi minna XP — hún telst ekki sem villa\./);
   /* Setningafræði types are drawn by these renderers and syntax */
-  for (const id of SETN_TYPES) assert.ok(["choice", "tap", "sort", "syntax"].includes(CATALOGUE.find((t) => t.id === id).renderer), id);
+  /* … and „Hver gerði hvað?“ (#27) by its own, ui/hver.js, with the same helpers */
+  for (const id of SETN_TYPES) assert.ok(["choice", "tap", "sort", "syntax", "hver"].includes(CATALOGUE.find((t) => t.id === id).renderer), id);
+  const HVER = readFileSync(new URL("../src/js/ui/hver.js", import.meta.url), "utf8");
+  for (const use of [/hintButtonHTML\(t\)/, /wireHint\(t,/, /codedHTML\(t, word\)/, /hinted: !!t\.hinted/, /endHint\(\)/])
+    assert.match(HVER, use, "ui/hver.js: " + use);
 });

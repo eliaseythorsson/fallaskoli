@@ -330,7 +330,8 @@ export function synFindPP(lex, view, rng) {
   }, [FX.exSeen("finna:" + x.s.t)]);
 }
 
-/* ================= The structure hint (item 26) ==================== *
+/* ================= The structure hint (item 26) ===========================
+ *
  * Every question here may carry `coding`: the structure of its sentence
  * (core/structure.js) as a hint — shown, offered or left out by the pupil's
  * þyngd, and never the answer (core/hint.js, where the rule and its reasons
@@ -371,7 +372,7 @@ const withHint = (id, build) => (lex, view, rng) => {
   if (coding) b.task.coding = coding;
   return b;
 };
-=======
+
 /* ================= Hver gerði hvað? (issue 27) ===========================
  *
  * A comprehension question: the pupil reads a sentence and says WHO did what

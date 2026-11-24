@@ -70,6 +70,7 @@ test("the type is the last of the catalogue, in Setningafræði, drawn by its ow
   /* Appended, never inserted: the order is the duel order. (Other types may
      be appended after it; it must stay after everything that was there.) */
   assert.ok(CATALOGUE_IDS.indexOf("hver_gerdi") > CATALOGUE_IDS.indexOf("raeda"));
+  assert.ok(CATALOGUE_IDS.indexOf("hver_gerdi") > CATALOGUE_IDS.indexOf("ob_skilja"));
   const t = typeById("hver_gerdi");
   assert.equal(t.skill, "setningafraedi");
   assert.equal(t.renderer, "hver");

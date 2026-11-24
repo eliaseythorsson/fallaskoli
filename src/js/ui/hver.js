@@ -55,7 +55,7 @@ RENDER.hver = function (app) {
     <p class="eyebrow"><span>${esc(t.title)}</span>${skillTag(t)}<b>þyngd ${t.lvl}</b></p>
     <p class="sentence" id="hversent"></p>
     ${t.coding && t.coding.step === "shown" ? `<p class="gloss codednote">${SHOWN}</p>` : ""}
-    <p class="gloss">${fmt("**" + t.question + "**")}</p>
+    <p class="gloss" id="hverq">${fmt("**" + t.question + "**")}</p>
     <div class="qrow"><div class="opts" id="hveropts">
       ${t.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>
     <div class="answer"><button class="go" id="check">Athuga</button>${hintButtonHTML(t)}</div>
