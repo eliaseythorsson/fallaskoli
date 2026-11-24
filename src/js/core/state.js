@@ -272,7 +272,6 @@ export function noteLogin(S, today = todayKey()) {
   const d = dayRec(S, today);
   const first = !d.lg;
   d.lg = 1;
-  S.lastLogin = today;
   return { day: d, first };
 }
 

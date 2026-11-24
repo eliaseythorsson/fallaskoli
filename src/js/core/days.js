@@ -47,7 +47,9 @@ export const daysSlice = {
   /* `g` is the daily goal as it stood on that day, so a day is judged
      against the goal in force then rather than today's setting. Days
      recorded before it existed get null and fall back to the current goal. */
-  migrate: (raw) => Object.fromEntries(Object.entries(raw || {}).map(([k, d]) => [k, {
+  /* A record that is not an object (null in a damaged or hand-edited file) is
+     no day: it is dropped, so that loading never throws. */
+  migrate: (raw) => Object.fromEntries(Object.entries(isObj(raw) ? raw : {}).filter(([, d]) => isObj(d)).map(([k, d]) => [k, {
     a: d.a || 0, c: d.c || 0, xp: d.xp || 0, ms: d.ms || 0, nw: d.nw || 0,
     sk: d.sk || {}, g: d.g ?? null,
     /* `lg` — the program was opened on this day, whether or not anything was
