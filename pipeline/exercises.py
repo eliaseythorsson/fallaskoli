@@ -461,3 +461,26 @@ def _hunt():
 
 
 HUNT = _hunt()
+
+# ---------------------------------------------------------------- Setningafræði
+
+# „Hver gerði hvað?“ (issue 27): a sentence, a verb in it, and who did what to
+# whom — the gerandi and the þolandi, which in a passive are NOT the frumlag
+# and the andlag. One line per verb; a sentence with a relative clause has
+# two. The key is checked against the parse (who_did.py, where the rules
+# are); build_exercises.py refuses an item whose parse says otherwise.
+#   (level, kind, sentence, verb lemma, gerandi, þolandi, file:line)
+# Level = the structure, one at a time: 1 passive, 3 a relative clause whose
+# *sem* is the doer (or that ends the sentence), 5 one whose *sem* is the one
+# it is done to, or a passive inside a relative clause.
+#
+# The leading _ keeps these sentences out of build_freq.py's "school
+# material" lift (as _NUMERAL_SKIP above): with it, adding an item here adds
+# an item and nothing else; without it the new words (*geitungur*,
+# *bólusetja*) would move in the frequency ranking, and with them the
+# vocabulary and every data file.
+_WHO_DID = [(r["þyngd"], r["gerð"], r["setning"], r["sögn"], r["gerandi"], r["þolandi"],
+             "%s:%d" % (r.file, r.line))
+            for r in _C.rows("setningafraedi/hver-gerdi-hvad.tsv", [
+                ("þyngd", "int"), ("gerð", "text"), ("setning", "text"), ("sögn", "text"),
+                ("gerandi", "text"), ("þolandi", "text"), ("athugasemd", "str")])]

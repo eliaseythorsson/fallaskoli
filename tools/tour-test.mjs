@@ -236,7 +236,7 @@ async function answer(page, correct) {
       const hit = words.find((w) => good.includes(+w.dataset.j));
       return right ? hit : words.find((w) => w !== hit) || hit;
     }, t.good, correct);
-  } else if (t.type === "choice") {
+  } else if (t.type === "choice" || t.type === "hver") {
     const halves = t.second ? [t, t.second] : [t];
     for (let n = 0; n < halves.length; n++)
       await pickNth(n, halves[n].options.indexOf(halves[n].answer), correct || n > 0);

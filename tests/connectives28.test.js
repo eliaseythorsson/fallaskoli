@@ -33,7 +33,11 @@ const VERB_NEXT = new Set(["þess vegna", "síðan"]);
 /* ---------- the catalogue --------------------------------------------------- */
 
 test("both types are declared at the end of the catalogue, in Óbeygjanleg orð, graded by the app", () => {
-  assert.deepEqual(CATALOGUE_IDS.slice(-2), ["ob_tengiord", "ob_skilja"]);
+  /* appended after everything that was there (raeda), side by side; types
+     added since (#27) come after them */
+  const at = CATALOGUE_IDS.indexOf("ob_tengiord");
+  assert.equal(CATALOGUE_IDS[at - 1], "raeda");
+  assert.equal(CATALOGUE_IDS[at + 1], "ob_skilja");
   for (const id of ["ob_tengiord", "ob_skilja"]) {
     const c = catalogueEntry(id);
     assert.equal(c.skill, "obeygjanleg");

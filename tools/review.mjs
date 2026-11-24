@@ -46,6 +46,7 @@ export const KINDS = [
   ["fallstjorn", "Fallstjórn"],
   ["obeygjanleg", "Óbeygjanleg orð"],
   ["ordafordi", "Orðaforði"],
+  ["setningafraedi", "Setningafræði"],
   ["lesefni", "Lesefni"],
   ["synidaemi", "Sýnidæmi"],
 ];

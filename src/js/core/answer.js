@@ -43,6 +43,7 @@
  *   govern, indecl, clause,
  *   choice                      { picked: value, hinted? }   (hinted: item 26,
  *                               the structure hint of a Setningafræði question)
+ *   hver                        { picked: value, hinted? }
  *   kenni                       { picked: "sterk" | "veik", text? } — the
  *                               genitive singular when the task `askGen`
  *   slots                       { texts: [text, …], picked? } — one text per
@@ -862,6 +863,27 @@ function pairPick(t, r, h) {
 
 JUDGES.choice = (t, r, h) => t.second ? pairPick(t, r, h) : onePick(t, r, h, { answer: t.answer,
   respFor: (picked, ok) => choiceResp(t, t, picked, ok) });
+
+/* ---- hver: who did what to whom (issue 27) ---------------------------------
+ *
+ * One pick among the nouns of the sentence and "Það kemur ekki fram". The
+ * structure hint (core/hint.js, ui/hver.js) halves the XP, like every hint;
+ * where the marks are shown from the start there is no hint to take. */
+JUDGES.hver = (t, r, h) => {
+  const picked = r.picked;
+  if (picked == null || picked === "") return pending("incomplete");
+  const ok = picked === t.answer;
+  const hinted = !!r.hinted;
+  return result(t, {
+    ok, verdict: VERDICT(ok),
+    effects: [
+      rec({ skill: t.skill, cell: t.cell, ok, xp: xpFor(h, t, { ok, hinted }), ...(hinted ? { hinted } : {}), timed: true }),
+      bump(t.skill, ok),
+    ],
+    resp: { kind: "patterns", ids: [], ex: { said: picked, right: t.answer } },
+    detail: { picked, answer: t.answer },
+  });
+};
 
 /* ---- kenni: strong or weak noun (item 27) --------------------------------
  *

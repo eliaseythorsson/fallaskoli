@@ -38,6 +38,7 @@ import { judge, judgeBonus, settle, parseRows, judgeSyntax, askedCells, JUDGED_T
          BONUS_XP } from "../src/js/core/answer.js";
 import { RENDER } from "../src/js/ui/render.js";
 import "../src/js/ui/render-more.js";
+import "../src/js/ui/hver.js";
 
 const lex = buildLexicon(DATA);
 
@@ -200,6 +201,7 @@ function rightResponse(t) {
     case "govern": return { picked: t.fall };
     case "indecl": case "clause": return { picked: t.answer };
     case "choice": return t.second ? { picked: t.answer, picked2: t.second.answer } : { picked: t.answer };
+    case "hver": return { picked: t.answer };
     case "kenni": return t.askGen ? { picked: t.answer, text: t.gen[0] } : { picked: t.answer };
     case "slots": return { picked: t.options ? t.answer : undefined, texts: t.slots.map((sl) => sl.accepted[0]) };
     case "tap": return { sel: t.targets.slice() };
@@ -251,6 +253,9 @@ function wrongResponse(t) {
     case "choice":
       /* A pair (item 43): the first half wrong, the second right. */
       return { response: { picked: t.options.find((o) => o !== t.answer), picked2: t.second && t.second.answer }, found: t.miss || [] };
+    case "hver":
+      /* issue 27: no error pattern yet; the miss goes to the review queue */
+      return { response: { picked: t.options.find((o) => o !== t.answer) }, found: [] };
     case "kenni":
       return { response: { picked: t.options.find((o) => o !== t.answer), text: t.askGen ? t.gen[0] : undefined },
                found: ["beyging_no"] };
@@ -459,7 +464,7 @@ test("an unfinished answer is pending for every type that can be unfinished", ()
   const empty = {
     fill: { text: "" }, verb: { text: "" }, verbslot: { text: " " }, gap: { text: "" },
     umritun: { text: "" }, smidja: { text: "  " }, meaning: { text: "" },
-    parse: { picks: {} }, syntax: {}, govern: {}, indecl: {}, clause: {}, choice: {}, kenni: {}, slots: {},
+    parse: { picks: {} }, syntax: {}, govern: {}, indecl: {}, clause: {}, choice: {}, hver: {}, kenni: {}, slots: {},
     tap: { sel: [] }, sort: { picks: {} },
   };
   for (const t of BANK) {

@@ -5,6 +5,8 @@
      setn_flokka  sort the heads of the parts of one sentence
      setn_lidir   what kind of phrase the marked words are (item 28)
      lid_finna    click every word of the forsetningarliður (item 28)
+     hver_gerdi   who did what to whom, in a passive or a relative clause
+                  (issue 27)
 
    The roles (`r` on each token) come from the parse and passed the guard; the
    builders read them and infer nothing. */
@@ -13,6 +15,7 @@ import { bandOf } from "../core/difficulty.js";
 import { built, FX } from "./effects.js";
 import { pick, wpick, bandFor, forcedCell, fresh, PUNCT } from "./shared.js";
 import { planHint, SETNINGARHLUTAR } from "../core/hint.js";
+import { EX } from "../../../data/exercises.js";
 
 /* ================= Setningarhlutar ======================================= */
 
@@ -343,6 +346,11 @@ export function synFindPP(lex, view, rng) {
  *                a nafnliður, an umsögn opens the sagnliður: either would
  *                name the answer), nothing on the underlined words
  *   lid_finna    the forsetningarliðir; every word of them is a right click
+ *   hver_gerdi   nothing is hidden. It asks who DID it, which is meaning,
+ *                and the marks are the grammatical parts: the frumlag of a
+ *                passive is marked and is not the one who did it, and telling
+ *                the two apart is the question. Its answer is a pick among
+ *                names, not a click on a word, so no mark can be the answer.
  *
  * A new type in this file wraps its builder in `withHint` with its own line. */
 const ASKS = {
@@ -353,6 +361,7 @@ const ASKS = {
   setn_lidir: (t) => ({ hide: [...SETNINGARHLUTAR, "forsetningarliður"],
     pointed: Array.from({ length: t.span.to - t.span.from + 1 }, (_, k) => t.span.from + k) }),
   lid_finna: (t) => ({ hide: ["forsetningarliður"], right: t.targets }),
+  hver_gerdi: () => ({ hide: [] }),
 };
 
 /** A builder whose task carries the hint its type allows at the pupil's þyngd. */
@@ -364,6 +373,123 @@ const withHint = (id, build) => (lex, view, rng) => {
   return b;
 };
 
+/* ================= Hver gerði hvað? (issue 27) ===========================
+ *
+ * A comprehension question: the pupil reads a sentence and says WHO did what
+ * the verb says, or who it was done to. What is asked is meaning, not a
+ * setningarhluti — and in a passive the two come apart, which is the point:
+ * in *Hundurinn var bitinn af kettinum* the frumlag is the dog and the cat
+ * bit. (The roles `r` on the tokens are the grammatical ones and are never
+ * read here; the answers are `who` and `whom` of each fact.)
+ *
+ * The items are hand-written (content/setningafraedi/hver-gerdi-hvad.tsv) and
+ * the build refused every one whose parse did not give the same gerandi and
+ * þolandi (pipeline/who_did.py). An item is a sentence in the bank's own
+ * shape (so its structure can be drawn, core/structure.js), the nouns that
+ * can be the answer in the nominative (`n`), and one fact per verb (`f`): the
+ * verb, who did it (`who`, a token index, or null when a passive does not
+ * say), who it was done to (`whom`, or null when the verb has no þolandi),
+ * the two questions (`qa`: *Hver beit?*, `qp`: *Hver var bitinn?*) and the
+ * same thing as a plain active sentence (`p`: *Kötturinn beit hundinn.*).
+ *
+ * One structure at a time (docs/DLD-PLAN.md §3), by the item's level:
+ *
+ *   þyngd 1–2  þolmynd, with an *af* phrase or without
+ *   þyngd 3–4  and relative clauses whose *sem* is the doer (*Strákurinn sem
+ *              elti hundinn datt*), or that end the sentence
+ *   þyngd 5–7  and relative clauses whose *sem* is the one it is done to
+ *              (*Strákurinn sem hundurinn elti datt*), and a passive inside
+ *              a relative clause
+ *
+ * The newest structure is asked most; the earlier ones stay as review.
+ *
+ * The scaffold is the structure of the sentence, drawn (item 25), and it
+ * fades by the one rule of every Setningafræði question (core/hint.js,
+ * `withHint` above): shown from the start at þyngd 1–2, behind "Vísbending"
+ * for half the XP at 3–5, gone from 6. So the passive is met with its
+ * structure drawn, and the relative clauses, which come at 3 and 5, with
+ * the hint on offer.
+ *
+ * The options are the nouns of the sentence that did or suffered something,
+ * in the nominative and in the order they stand, and always "Það kemur ekki
+ * fram" last — which is the right answer when a passive names no gerandi. */
+
+export const WHO_NOT_SAID = "Það kemur ekki fram";
+const whoStep = (band) => (band >= 5 ? 5 : band >= 3 ? 3 : 1);
+/* How much more often a question of the newest structure is asked than one
+   of an earlier step. */
+const WHO_NEW = 3;
+
+const WHO_QUESTIONS = (EX.hver || []).flatMap((it) => it.f.flatMap((f) => [
+  { it, f, ask: "who", key: `hver:${it.s.t}#${f.v}a` },
+  ...(f.qp ? [{ it, f, ask: "whom", key: `hver:${it.s.t}#${f.v}p` }] : []),
+]));
+
+/* A noun inside an explanation: as the option names it, but small unless it
+   is a name (its lemma has the capital too). */
+const whoNoun = (it, j) => {
+  const n = it.n.find((x) => x.j === j);
+  const l = it.s.tok[j].l || "";
+  return l.charAt(0) !== l.charAt(0).toLowerCase() ? n.nf : n.nf.charAt(0).toLowerCase() + n.nf.slice(1);
+};
+
+function whoWhy(it, f) {
+  const s = it.s;
+  const w = (j) => s.tok[j].w;
+  const out = [];
+  /* The relative clause this fact is in, or the one standing in the way. */
+  const other = it.f.find((x) => x.rel);
+  if (f.rel) {
+    /* the noun the clause stands with is the word right before *sem* */
+    const head = f.rel[0] - 1;
+    out.push(`*${spanText(s, f.rel[0], f.rel[1])}* er **tilvísunarsetning**: hún segir meira um orðið *${w(head)}*, og *sem* vísar til þess.`);
+  } else if (other) {
+    /* the main clause is what is left when the relative clause is taken out */
+    const rest = s.tok.filter((_, j) => j < other.rel[0] || j > other.rel[1])
+      .map((t, j) => (PUNCT.has(t.w) || !j ? "" : " ") + t.w).join("");
+    out.push(`*${spanText(s, other.rel[0], other.rel[1])}* er **tilvísunarsetning** um orðið *${w(other.rel[0] - 1)}*. Taktu hana út og þá stendur aðalsetningin eftir: *${rest}*`);
+  }
+  if (f.pas) {
+    out.push(`*${w(f.aux)} ${w(f.v)}* er **þolmynd**. Í þolmynd er frumlagið ekki gerandinn heldur **þolandinn**: ${whoNoun(it, f.whom)} varð fyrir því.`);
+    out.push(f.who != null
+      ? `Gerandinn stendur á eftir *af*: *af ${w(f.who)}*.`
+      : "Enginn gerandi er nefndur, svo setningin segir ekki hver gerði það.");
+    out.push(`Í germynd: *${f.p}*`);
+  } else if (f.rel) {
+    out.push(`Hún segir því: *${f.p}*`);
+  }
+  return out.join(" ");
+}
+
+/** "Hver beit?" — who did it, or who it was done to. */
+export function whoDid(lex, view, rng) {
+  const P = view.policy;
+  const band = bandFor(view, "setningafraedi");
+  const step = whoStep(band);
+  const fc = forcedCell(view);
+  if (fc && !fc.startsWith("hver:")) return null;
+  const avoid = view.force && view.force.avoid;
+  const allowed = WHO_QUESTIONS.filter((q) => P.level(q.it.lvl) && q.it.s.t !== avoid);
+  /* A review asks for the structure that was missed, at any þyngd. */
+  const pool = fc ? allowed.filter((q) => "hver:" + q.it.k === fc) : allowed.filter((q) => q.it.lvl <= step);
+  if (!pool.length) return null;
+  const top = Math.max(...pool.map((q) => q.it.lvl));
+  const q = wpick(fresh(view, (x) => x.key, pool), (x) => (x.it.lvl === top ? WHO_NEW : 1), rng);
+  const { it, f } = q;
+  const j = q.ask === "who" ? f.who : f.whom;
+  const answer = j == null ? WHO_NOT_SAID : it.n.find((x) => x.j === j).nf;
+  return built({
+    type: "hver", skill: "setningafraedi", s: it.s, kind: it.k, ask: q.ask,
+    verb: f.pas ? [f.aux, f.v] : [f.v],
+    title: "Hver gerði hvað?",
+    question: q.ask === "who" ? f.qa : f.qp,
+    options: [...it.n.map((x) => x.nf), WHO_NOT_SAID], answer,
+    why: whoWhy(it, f),
+    base: it.lvl >= 5 ? 14 : it.lvl >= 3 ? 12 : 10,
+    lvl: it.lvl, cell: "hver:" + it.k, word: null, tags: [],
+  }, [FX.exSeen(q.key)]);
+}
+
 /** The builders of this category, by question type id. What each type is —
    its name, renderer, tags, bands and weight — is declared in
    core/catalogue.js; tasks/registry.js joins the two.
@@ -374,4 +500,5 @@ export const BUILDERS = {
   setn_flokka: { build: withHint("setn_flokka", synSort) },
   setn_lidir: { build: withHint("setn_lidir", synPhrase) },
   lid_finna: { build: withHint("lid_finna", synFindPP) },
+  hver_gerdi: { build: withHint("hver_gerdi", whoDid) },
 };

@@ -434,6 +434,24 @@ export const EXAMPLES = {
     how: "Forsetningarliður hefst á forsetningu og nær yfir fallorðin sem hún stýrir: *undir* + *stóra borðinu*.",
     forms: ["stór|lo|FVB-HK-ÞGFET=stóra", "borð|hk|ÞGFETgr=borðinu"],
   },
+  /* issue 27: who did it is a question about meaning, and in a passive the
+     answer is not the frumlag */
+  hver_gerdi: {
+    q: "*Hundurinn var bitinn af kettinum.* Hver beit?",
+    a: "Kötturinn",
+    how: "*var bitinn* er þolmynd. Þá er frumlagið, *Hundurinn*, sá sem varð fyrir því. Sá sem gerði það stendur á eftir *af*: *af kettinum*. Í germynd: *Kötturinn beit hundinn.*",
+    forms: ["hundur|kk|NFETgr=hundurinn", "hundur|kk|ÞFETgr=hundinn", "köttur|kk|NFETgr=kötturinn",
+      "köttur|kk|ÞGFETgr=kettinum", "bíta|so|GM-FH-ÞT-3P-ET=beit"],
+    byKind: {
+      tilvísun: {
+        q: "*Strákurinn sem hundurinn elti datt.* Hver datt?",
+        a: "Strákurinn",
+        how: "*sem hundurinn elti* er tilvísunarsetning, innskot um orðið *Strákurinn*. Taktu hana út og þá stendur eftir: *Strákurinn datt.* Hundurinn elti, en strákurinn datt.",
+        forms: ["strákur|kk|NFETgr=strákurinn", "hundur|kk|NFETgr=hundurinn", "elta|so|GM-FH-ÞT-3P-ET=elti",
+          "detta|so|GM-FH-ÞT-3P-ET=datt"],
+      },
+    },
+  },
 
   /* ---- Setningagerðir ---- */
   clause: {

@@ -447,7 +447,17 @@ const LIST = [
     ds: "Að skilja hvorki … né og ekki aðeins … heldur einnig",
     renderer: "choice", weight: 2, recall: false, grader: "app",
     tags: ["tengi"],
-    bands: [1] },];
+    bands: [1] },
+  /* issue 27: comprehension — who did what to whom. One structure at a time:
+     1 the passive, 3 relative clauses whose *sem* is the doer, 5 those whose
+     *sem* is the one it is done to. 6 is where the structure hint goes
+     (core/hint.js: shown to þyngd 2, offered to 5 — which is also a step at 3). */
+  { id: "hver_gerdi", skill: "setningafraedi",
+    nm: "Hver gerði hvað?",
+    ds: "Hver gerði það og hver varð fyrir því? Fyrst í þolmynd (var bitinn af …), frá þyngd 3 í tilvísunarsetningum (sem …), frá þyngd 5 þegar sem er þolandinn",
+    renderer: "hver", weight: 6, recall: false, grader: "app",
+    tags: [],
+    bands: [1, 3, 5, 6] },];
 
 /** What is wrong with a list of declarations, as sentences; empty when
     nothing is. Read as untrusted: a test passes broken ones.

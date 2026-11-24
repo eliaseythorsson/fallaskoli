@@ -18,6 +18,7 @@ import { PATTERNS, tagsOf } from "../src/js/core/diagnosis.js";
 import { seeded } from "../src/js/core/duel.js";
 import { RENDER } from "../src/js/ui/render.js";
 import "../src/js/ui/render-more.js";
+import "../src/js/ui/hver.js";
 import { TASKS, CATEGORIES, typeById, enabled, weightOf, makeView } from "../src/js/tasks/index.js";
 import { registryFaults } from "../src/js/tasks/registry.js";
 import { CATALOGUE, catalogueFaults, isRecall, graderOf } from "../src/js/core/catalogue.js";

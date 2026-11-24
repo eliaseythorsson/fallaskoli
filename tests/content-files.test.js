@@ -32,7 +32,7 @@ const read = (rel) => parseTsv(readFileSync(path.join(root, rel), "utf8"));
 test("content/: every kind of hand-written content has its files", () => {
   const kinds = new Set(FILES.map((f) => f.split("/")[1]));
   for (const k of ["setningar", "villuveidar", "lysingarord", "fornofn", "toluord", "fallstjorn",
-    "obeygjanleg", "ordafordi"]) assert.ok(kinds.has(k), "no content/" + k);
+    "obeygjanleg", "ordafordi", "setningafraedi"]) assert.ok(kinds.has(k), "no content/" + k);
   assert.ok(FILES.length >= 30, FILES.length);
 });
 
@@ -120,6 +120,7 @@ print(json.dumps(out))`);
     ANTONYM_PAIRS: lines("ordafordi/andheiti.tsv"),
     WORD_IN_CONTEXT: lines("ordafordi/samhengi.tsv"),
     WORD_IN_CONTEXT_FRAMES: lines("ordafordi/samhengi-rammar.tsv"),
+    _WHO_DID: lines("setningafraedi/hver-gerdi-hvad.tsv"),
   };
   for (const [k, n] of Object.entries(want)) assert.equal(got[k], n, k);
   /* the sizes at the move (v6.13): a file that suddenly reads short is a bug */
