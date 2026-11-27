@@ -1,0 +1,26 @@
+# Tillögur: LÍNO-2-nafnorð í nafnorðarömmum (tools/lino-frames/run.mjs, mál #21)
+#
+# EKKI yfirfarið. Líkanið taldi að MERKINGIN gengi upp; enginn maður hefur lesið
+# setningarnar. Sjálfsprófunin (#22) og eigandinn ákveða hvað fer í
+# content/setningar/lino-rammar.tsv. Dálkarnir orð og rammi eru skrifaðir
+# nákvæmlega eins og þar.
+#
+# Dálkar: orð, kyn, rammi (setningin úr setningar.tsv), nr (númer rammans í
+# þessari keyrslu), mynd (BÍN-mark eyðunnar), í eyðunni (orðið sem stendur þar
+# núna), rök (líkansins, á ensku), líkan, keyrsla (forskeyti + útgáfa fyrirmæla)
+#
+orð	kyn	rammi	nr	mynd	í eyðunni	rök	líkan	keyrsla
+breyting	kvk	Þetta gerðist allt vegna bílsins.	178	EFETgr	bílsins	a change can cause what happened	claude-opus-5-5	1ea0754103aa7832-v1
+breyting	kvk	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	328	ÞFETgr	dæmið	a teacher can explain a change	claude-opus-5-5	1ea0754103aa7832-v1
+starf	hk	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	328	ÞFETgr	dæmið	a teacher can explain a job	claude-opus-5-5	1ea0754103aa7832-v1
+heimild	kvk	Við bíðum eftir svari frá skólanum.	335	ÞGFET	svari	waiting for permission from the school	claude-opus-5-5	1ea0754103aa7832-v1
+hugmynd	kvk	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	328	ÞFETgr	dæmið	a teacher can explain an idea	claude-opus-5-5	1ea0754103aa7832-v1
+hlutverk	hk	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	328	ÞFETgr	dæmið	a teacher can explain a role	claude-opus-5-5	1ea0754103aa7832-v1
+hlutverk	hk	Kennarinn útskýrði dæmið aftur svo allir skildu það.	356	ÞFETgr	dæmið	explaining a role again so all understand	claude-opus-5-5	1ea0754103aa7832-v1
+þjóð	kvk	Þetta er saga um vináttu.	70	ÞFET	vináttu	a story about a nation	claude-opus-5-5	1ea0754103aa7832-v1
+tillaga	kvk	Þetta gerðist allt vegna bílsins.	178	EFETgr	bílsins	a proposal can cause what happened	claude-opus-5-5	1ea0754103aa7832-v1
+tillaga	kvk	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	328	ÞFETgr	dæmið	a teacher can explain a proposal	claude-opus-5-5	1ea0754103aa7832-v1
+samningur	kk	Þetta gerðist allt vegna bílsins.	178	EFETgr	bílsins	an agreement can cause what happened	claude-opus-5-5	1ea0754103aa7832-v1
+samningur	kk	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	328	ÞFETgr	dæmið	a teacher can explain an agreement	claude-opus-5-5	1ea0754103aa7832-v1
+þróun	kvk	Þetta gerðist allt vegna bílsins.	178	EFETgr	bílsins	a development can cause what happened	claude-opus-5-5	1ea0754103aa7832-v1
+þróun	kvk	Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.	328	ÞFETgr	dæmið	a teacher can explain a development	claude-opus-5-5	1ea0754103aa7832-v1
