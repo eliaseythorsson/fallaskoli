@@ -177,6 +177,10 @@ export const PATTERNS = [
   { id: "tengiord", ok: "tengiorð", nm: "Tengiorð: orsök, tími og andstæða",
     rule: "*Af því að* segir hvers vegna og *þess vegna* hvað leiddi af því. *Þegar* segir hvenær og *síðan* hvað gerðist næst. *En* tengir andstæður. *Hvorki … né* þýðir hvorugt og *ekki aðeins … heldur einnig* þýðir bæði.",
     lesson: "obeygjanleg", tags: ["tengi"], types: ["ob_tengiord", "ob_skilja"] },
+  /* issue #30: the main idea of a short text */
+  { id: "adalatridi", ok: "aðalatriði texta", nm: "Aðalatriði texta",
+    rule: "**Aðalatriðið** er það sem **allur** textinn fjallar um. Smáatriði stendur bara í einni setningu. Spyrðu: um hvað eru flestar setningarnar?",
+    lesson: "lesskilningur", tags: ["les"], types: ["les_adal"] },
   { id: "merking", ok: "merkingu orða", nm: "Merking orða",
     rule: "Lestu alla setninguna og spyrðu: hvað passar við merkinguna? Ef þú ert ekki viss, flettu orðinu upp — 📖 hnappurinn er við hverja spurningu.",
     lesson: "ordafordi", tags: ["vocab"], types: ["or_heiti", "or_samhengi", "or_utundan", "or_merking"] },

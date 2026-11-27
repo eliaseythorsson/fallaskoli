@@ -92,6 +92,7 @@ export function lessonFor(task) {
       return /^tegund:/.test(task.cell || "") ? first("aukasetningar", "setningagerdir") : first("setningagerdir");
     case "malbeiting":
       return task.kind === "indirect" ? first("raeda", "malbeiting") : first("malbeiting");
+    case "lesskilningur": return first("lesskilningur");
     default: return null;
   }
 }

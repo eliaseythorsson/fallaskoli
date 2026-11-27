@@ -117,7 +117,9 @@ test("an empty Námsorð is never planned: Lota dagsins is what it was without i
   for (const P of [ALL, P8]) {
     for (const opts of [{}, { due: 6, active: ["thf_thgf"] }, { active: ["ef"] }, { due: 9 }]) {
       const S = pupil(opts);
-      const plan = planToday(S, P, D0, { canType: canType(P) });
+      /* Námsorð alone: the other new skills (Lesskilningur, #30) take their
+         share whatever Námsorð has */
+      const plan = planToday(S, P, D0, { canType: canType(P), newSkills: ["namsord"] });
       const without = planToday(S, P, D0, { canType: canType(P), newSkills: [] });
       assert.equal(plan.n, TODAY_SIZE);
       assert.equal(plan.counts.newSkill, 0);

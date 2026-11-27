@@ -5,7 +5,8 @@
                         builders: every question type, ready to build
      <skill>.js         one file per category, its BUILDERS by type id: nafnord, lysingarord, sagnord,
                         fornofn, toluord, obeygjanleg, greining, fallstjorn,
-                        ordaford, setningafraedi, malbeiting, setningagerd
+                        ordaford, setningafraedi, malbeiting, setningagerd,
+                        lesskilningur
      view.js            what a builder may look at: (lex, view, rng); and
                         which word it asks about (`view.pickWord`)
      effects.js         what showing a question changes, as data

@@ -513,4 +513,11 @@ export const EXAMPLES = {
     how: "Hún hefst á *sem* og segir nánar frá nafnorðinu á undan, *kakan*. Það gerir tilvísunarsetning.",
     forms: [],
   },
+  /* issue #30: the main idea is what the whole text is about */
+  les_adal: {
+    q: "*Sara vaknaði of seint og missti af strætó. Hún hljóp alla leið í skólann. Hún kom samt of seint í fyrsta tímann.* Um hvað er sagan?",
+    a: "Sara missir af strætó og kemur of seint í skólann.",
+    how: "Aðalatriðið nær yfir alla söguna: vandann og hvernig fór. *Sara er fljót að hlaupa* stendur hvergi í sögunni.",
+    forms: [],
+  },
 };

@@ -1309,4 +1309,33 @@ export const LESSONS = [
     ],
     related: ["hattur", "malbeiting", "aukasetningar"],
   },
+  /* ------------------------------------------- (issue #30, Lesskilningur) */
+  {
+    id: "lesskilningur",
+    skill: "lesskilningur",
+    nm: "Að finna aðalatriðið í texta",
+    lead: "Þegar þú lest texta þarftu ekki að muna hvert orð. Þú þarft að vita um hvað textinn er. Það kallast aðalatriði textans.",
+    blocks: [
+      { h: "Aðalatriði og smáatriði" },
+      { p: "**Aðalatriðið** er það sem allur textinn fjallar um. **Smáatriði** segja meira um aðalatriðið: þau útskýra það eða gefa dæmi." },
+      { ex: [
+        "Svefn er mjög mikilvægur fyrir unglinga. Flestir unglingar þurfa að sofa í átta til tíu tíma á hverri nóttu. Í svefni vinnur heilinn úr því sem gerðist um daginn.",
+      ] },
+      { p: "Hér er aðalatriðið að **svefn er mikilvægur fyrir unglinga**. Hinar setningarnar eru smáatriði. Þær segja hvað unglingar þurfa mikinn svefn og hvað heilinn gerir í svefni." },
+      { tip: "Spyrðu þig: Um hvað eru **flestar** setningarnar? Ef svarið á bara við eina setningu er það smáatriði." },
+      { h: "Aðalatriði í sögu" },
+      { p: "Í sögu gerist eitthvað. Aðalatriðið segir í stuttu máli **hver** lenti í **hvaða vanda** og **hvernig fór**." },
+      { ex: [
+        "Sara vaknaði of seint og missti af strætó. Hún hljóp alla leið í skólann. Hún kom samt of seint í fyrsta tímann.",
+      ] },
+      { p: "Aðalatriðið er: *Sara missir af strætó og kemur of seint í skólann.* Að hún hljóp er smáatriði. Það segir bara frá einu af því sem gerðist." },
+      { warn: "Svar getur verið satt og samt ekki aðalatriðið. Það getur líka hljómað vel en staðið hvergi í textanum. Lestu textann aftur og gáðu." },
+    ],
+    check: [
+      { q: "Hvað er aðalatriði texta?", a: "Það sem allur textinn fjallar um." },
+      { q: "Hvað gera smáatriðin?", a: "Þau segja meira um aðalatriðið: útskýra það eða gefa dæmi." },
+      { q: "Hvað segir aðalatriði sögu?", a: "Hver lenti í hvaða vanda og hvernig fór." },
+    ],
+    related: ["ordafordi", "obeygjanleg"],
+  },
 ];

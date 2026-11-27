@@ -492,6 +492,17 @@ const LIST = [
     renderer: "choice", weight: 10, recall: false, grader: "app",
     tags: ["vocab"],
     bands: [1, 3, 4] },
+  /* les_adal (issue #30): the first question type on the texts of
+     content/textar/ — what a short story or subject text is mainly about,
+     on a question written with the text. Three texts so far, so it does not
+     follow the band yet (tasks/lesskilningur.js); when there are more than
+     four, tests/registry.test.js will ask for the bands here. */
+  { id: "les_adal", skill: "lesskilningur",
+    nm: "Um hvað er textinn?",
+    ds: "Lestu stutta sögu eða fræðitexta og veldu aðalatriðið",
+    renderer: "choice", weight: 6, recall: false, grader: "app",
+    tags: ["les"],
+    bands: [1] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when
