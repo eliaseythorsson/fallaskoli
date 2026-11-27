@@ -195,7 +195,7 @@ export const NODES = [
 
   /* ---- Orðaforði ---- */
   { id: "or-merking", nm: "Merking orða, samheiti og andheiti", cat: "ordaford", year: 8,
-    hv: "fjolbreytt", types: ["meaning", "or_heiti", "or_samhengi", "or_utundan", "or_eyda", "or_merking"],
+    hv: "fjolbreytt", types: ["meaning", "or_heiti", "or_samhengi", "or_utundan", "or_eyda", "or_merking", "or_eigin"],
     lesson: "ordafordi", cover: "full" },
   { id: "or-myndun", nm: "Orðmyndun með forskeytum og viðskeytum", cat: "ordaford", year: 8,
     hv: "skopun", types: ["or_myndun"], lesson: "ordafordi", cover: "full" },

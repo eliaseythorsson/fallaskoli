@@ -455,6 +455,9 @@ test("every type can be reviewed: the same cell where the type has few, else the
   const hits = {};
   for (const spec of TASKS) {
     if (spec.id === "meaning") continue;            // has no wrong answer, so never an entry
+    /* A server-graded type (#37) is off in this pupil's policy: a review of
+       it is built only for a pupil with server grading on (`enabled`). */
+    if (spec.grader === "server") { assert.equal(reviewTask(lex, view(pupil(3)), seeded(1), { t: spec.id, k: "x" }), null); continue; }
     const p = pupil(3);
     for (let seed = 0; seed < 6; seed++) {
       const first = spec.build(lex, view(p), seeded(500 + seed));
