@@ -117,8 +117,10 @@ test("subject texts with gist questions, its kinds one of each", () => {
 
 /* ---------- the three types --------------------------------------------------- */
 
-test("the three types are declared at the end of the catalogue, on the main-idea node", () => {
-  assert.deepEqual(CATALOGUE_IDS.slice(-3), TYPES);
+test("the three types are declared in merge order at the end of the catalogue, on the main-idea node", () => {
+  /* in merge order: right after #35's fr_setning */
+  const at = CATALOGUE_IDS.indexOf("fr_setning") + 1;
+  assert.deepEqual(CATALOGUE_IDS.slice(at, at + 3), TYPES);
   assert.deepEqual(TYPES.map((id) => catalogueEntry(id).renderer), ["tap", "tap", "choice"]);
   for (const id of TYPES) {
     const c = catalogueEntry(id);
