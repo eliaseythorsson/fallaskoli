@@ -11,11 +11,13 @@
    ---- which word -----------------------------------------------------------
 
    A word in learning (core/wordknowledge.js `wordsInLearning`) that has a
-   sentence it can be asked in now. The view chooses among them
-   (`view.pickWord`, tasks/view.js), so the spacing rule (#10) and whatever
-   #13 does to the weights reach this type too. A review or a drill that
-   asks for one word (`mustAsk`, strict) gets it if it is in learning or
-   learned, and nothing otherwise. A pupil with no such word is built no
+   sentence it can be asked in now; each of them as likely as the next, and
+   never the one this type asked last (`view.wordBoost`, the spacing rule
+   of #10). #13's share ("a third of the questions that could be about a
+   word in learning are") has nothing to decide here: every question of
+   this type is about one. A review or a drill that asks for one word
+   (`mustAsk`, strict) gets it if it is in learning or learned (and was not
+   the word just asked here), and nothing otherwise. A pupil with no such word is built no
    question: the type is silent in a duel (built against a blank pupil), and
    for a pupil none of whose six words stands in a usable sentence yet.
    Without a word in learning it is not even drawn (`recallReady`), so a
@@ -127,7 +129,7 @@ import { entriesOf, isRecallEntry, isJudged, RIGHT, WRONG, wordsInLearning, word
          LEARNING_SKILL, LEARNING_CLASSES } from "../core/wordknowledge.js";
 import { built, FX } from "./effects.js";
 import { frameIndex, acceptsNoun, fillFrame, frameKey, sharesStem } from "./frames.js";
-import { pick, askable, bandFor, levelFor, cap1, forcedCell } from "./shared.js";
+import { pick, wpick, askable, bandFor, levelFor, cap1, forcedCell } from "./shared.js";
 
 /* ---------- the constants ---------------------------------------------------- */
 
@@ -420,8 +422,20 @@ export function recallGap(lex, view, rng) {
     const gaps = gapsNow(lex, view, w);
     if (gaps.length) now.set(wordKey(w.o, w.c), { w, gaps });
   }
-  const got = view.pickWord(lex, [...now.values()].map((x) => x.w), LEARNING_SKILL, rng, [...LEARNING_CLASSES]);
-  const chosen = got && now.get(wordKey(got.o, got.c));
+  /* Which word: the one asked for by name, or one of those that can be
+     asked now — each as likely as the next (#13: among the six words the
+     pupil is meant to learn, rarity is no reason to see one less), and by
+     the view's own rule never the word this type asked last (#10,
+     `wordBoost`). */
+  let chosen = null;
+  if (asked) {
+    const k = wordKey(asked.o, asked.c);
+    if (view.cannotAsk([...LEARNING_CLASSES]) || view.justAsked(k)) return null;
+    chosen = now.get(k);
+  } else {
+    const open = [...now.keys()].filter((k) => view.wordBoost([k]) > 0);
+    if (open.length) chosen = now.get(wpick(open, (k) => view.wordBoost([k]), rng));
+  }
   if (!chosen) return null;
   const { w } = chosen;
   /* The stage the word has earned if a sentence allows it; then a sentence
