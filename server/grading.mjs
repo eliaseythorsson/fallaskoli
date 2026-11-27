@@ -29,7 +29,8 @@
  *
  * ---- the readers ----------------------------------------------------------------
  * `plugs` are the text reader's plugs by kind (server/reader.mjs). On a real
- * server that is Claude (server/reader-claude.mjs, #37) for `or_eigin`, and
+ * server that is Claude (server/reader-claude.mjs, #37) for `or_eigin`, `or_setning`
+ * and `or_tengsl` (#38; `or_skyring` is read as `or_eigin`), and
  * only when ANTHROPIC_API_KEY is set; without it `up` is false everywhere and
  * server-graded questions stay hidden. Tests hand in the fake plug
  * (server/reader-fake.mjs) or the Claude plug with recorded answers.

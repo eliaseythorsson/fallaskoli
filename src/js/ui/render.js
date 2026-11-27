@@ -20,7 +20,7 @@ import { firstMeeting, markTypeSeen } from "../core/examples.js";
 import { skillName } from "../core/skills.js";
 import { conjugationNoteFor } from "../tasks/explain.js";
 import { reportButtonHTML } from "./reports.js";
-import { awaitServer, serverVerdictHTML } from "./serverask.js";
+import { awaitServer, serverVerdictHTML, linksFormHTML, linksFrom } from "./serverask.js";
 import { l2On, glossToken, decorateTask } from "./secondlang.js";
 import { codedOn, codedHTML, hintButtonHTML, wireHint, endHint } from "./hint.js";
 import {
@@ -1166,19 +1166,26 @@ function submitTable(app) {
 /* ================= 6. Word meaning ===================================== */
 
 RENDER.meaning = function (app) {
-  const n = app.cur.n;
+  const t = app.cur, n = t.n;
+  /* #38: a server-graded type may ask something else of the word (my
+     sentence, three related words): its own words in `t.prompt`, and for
+     the related words a row per word (`t.links`). */
+  const p = t.prompt || null;
   $("task").innerHTML = `
   <div class="card">
-    <p class="eyebrow"><span>Útskýrðu orðið með þínum eigin orðum</span>${skillTag(app.cur)}</p>
-    <p class="sentence">Hvað þýðir orðið <span class="target">${esc(n.o)}</span>?</p>
-    <p class="gloss">Skrifaðu heila setningu. Það er engin ein rétt leið til að útskýra orð.</p>
-    <div style="margin-top:16px"><textarea id="freetext" rows="3" placeholder="${esc(n.o)} er…"></textarea></div>
+    <p class="eyebrow"><span>${esc(p ? p.eyebrow : "Útskýrðu orðið með þínum eigin orðum")}</span>${skillTag(t)}</p>
+    ${p ? `<p class="sentence">${fmt(p.question)}</p>`
+      : `<p class="sentence">Hvað þýðir orðið <span class="target">${esc(n.o)}</span>?</p>`}
+    <p class="gloss">${esc(p ? p.hint : "Skrifaðu heila setningu. Það er engin ein rétt leið til að útskýra orð.")}</p>
+    <div style="margin-top:16px">${t.links ? linksFormHTML(n.o, t.links)
+      : `<textarea id="freetext" rows="3" placeholder="${esc(p ? (p.placeholder || "") : `${n.o} er…`)}"></textarea>`}</div>
     <div class="keys" id="keys"></div>
     <div class="answer"><button class="go" id="check">Senda</button></div>
     <div id="verdict"></div>
   </div>`;
   wireKeys();
-  $("freetext").focus();
+  const first = /** @type {HTMLElement} */ (document.querySelector("#task textarea, #task input"));
+  if (first) first.focus();
   $("check").onclick = () => submitMeaning(app);
 };
 
@@ -1187,10 +1194,18 @@ function submitMeaning(app) {
   const n = t.n;
   /* Nothing grades the text, but the same sentence pasted every time, or a
      word or two, earns no XP (v6.10) — core/answer.js. */
-  const j = judge(t, { text: $("freetext").value }, app);
+  /* Three related words (#38) are one text, and only once all three are there. */
+  const text = t.links ? linksFrom($("task")).text : $("freetext").value;
+  if (t.links && !text) {
+    $("verdict").innerHTML = `<div class="verdict neutral"><p>Skrifaðu þrjú orð.</p></div>`;
+    return;
+  }
+  const j = judge(t, { text }, app);
   /* A server-graded explanation (#48): read on the server, verdict drawn by
      ui/serverask.js. */
-  if (j.pending === "server") return conclude(app, t, j, () => { $("freetext").disabled = true; });
+  if (j.pending === "server") return conclude(app, t, j, () => {
+    document.querySelectorAll("#task textarea, #task input").forEach((b) => { /** @type {HTMLInputElement} */ (b).disabled = true; });
+  });
   if (j.pending) return;
   const xp = j.xp, effort = j.detail.effort;
   conclude(app, t, j, () => {

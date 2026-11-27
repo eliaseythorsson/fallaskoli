@@ -334,6 +334,26 @@ export const EXAMPLES = {
     how: "Segðu aðalatriðið í merkingunni með þínum orðum, ekki bara orðið sjálft aftur. Þú færð gátlista og eina spurningu og mátt bæta svarið einu sinni.",
     forms: [],
   },
+  /* #38: the same, for the graded meaning question and the Orðakort's two
+     other free-text steps. Words that are not on LÍNO-2. */
+  or_skyring: {
+    q: "Hvað þýðir orðið *sög*?",
+    a: "Sög er verkfæri með tönnum sem maður notar til að skera spýtur í sundur.",
+    how: "Segðu aðalatriðið í merkingunni með þínum orðum. Þú færð gátlista og eina spurningu og mátt bæta svarið einu sinni.",
+    forms: [],
+  },
+  or_setning: {
+    q: "Skrifaðu setningu um þitt eigið líf þar sem þú notar orðið *hamar*.",
+    a: "Ég notaði hamar þegar ég hjálpaði pabba að smíða fuglahús.",
+    how: "Notaðu orðið þannig að merkingin sjáist, og segðu frá einhverju sem þú hefur sjálf eða sjálfur gert eða séð.",
+    forms: [],
+  },
+  or_tengsl: {
+    q: "Skrifaðu þrjú orð sem tengjast orðinu *hamar* og segðu hvernig hvert þeirra tengist því.",
+    a: "nagli – maður neglir nagla með hamri · sög – annað verkfæri · smiður – sá sem notar hamar í vinnunni",
+    how: "Veldu orð sem tengjast merkingu orðsins og segðu við hvert orð hvernig það tengist.",
+    forms: [],
+  },
 
   /* ---- Málbeiting ---- */
   villur: {

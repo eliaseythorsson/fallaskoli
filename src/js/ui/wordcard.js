@@ -15,17 +15,21 @@
  * is `{ c: [ids], ok }` (and `t`, the pupil's text, for a free-text step),
  * or null for a step that has nothing to keep — when the pupil may go on.
  *
- * "server" (#37) is the free-text step: the pupil writes, the server reads
+ * "server" (#37) is a free-text step: the pupil writes, the server reads
  * it (`opts.ask(task)`, control/serverask.js: one automatic retry, one
  * revision), and the final judgement is settled once (`opts.settle`) — XP
  * for finishing and for revising, whatever the verdict. The definition is
  * not on the screen while the pupil writes; it comes after the reading.
+ * The explanation (`eigin`) and my sentence (`min`, #38) are one box; the
+ * three related words (`tengsl`, #38) are three rows of a word and how it
+ * connects, sent as one text, and "Senda" waits until all three words are
+ * there.
  */
 
 import { esc, fmt, hideTip } from "./dom.js";
 import { RATINGS } from "../core/wordcard.js";
 import { judgeStep } from "../tasks/wordcard.js";
-import { checklistHTML } from "./serverask.js";
+import { checklistHTML, linksFormHTML, linksFrom } from "./serverask.js";
 import { serverGraderLost } from "../core/servergrader.js";
 
 const text = (s) => fmt(s, { gloss: false });
@@ -121,18 +125,27 @@ const KINDS = {
     if (check) check.onclick = settle;
   },
 
-  /* Free text read by the server (#37). */
-  server(el, step, done, { last, ask, settle }) {
+  /* Free text read by the server (#37, #38). */
+  server(el, step, done, { last, ask, settle, lemma }) {
+    const rows = step.links || 0;
     el.innerHTML = `<p class="wcq">${text(step.question)}</p>
-      <p class="wcnote">Það er engin ein rétt leið til að útskýra orð.</p>
-      <textarea class="wctext" rows="3" maxlength="1200" aria-label="Skýringin þín"></textarea>
-      <div class="answer"><button type="button" class="go" data-wc="send">Senda</button></div>
+      ${step.note ? `<p class="wcnote">${esc(step.note)}</p>` : ""}
+      ${rows ? linksFormHTML(lemma, rows)
+        : `<textarea class="wctext" rows="3" maxlength="1200" aria-label="Svarið þitt"></textarea>`}
+      <div class="answer"><button type="button" class="go" data-wc="send"${rows ? " disabled" : ""}>Senda</button></div>
       <div class="wcafter" aria-live="polite"></div>`;
-    const box = el.querySelector("textarea");
+    const boxes = /** @type {(HTMLInputElement|HTMLTextAreaElement)[]} */ ([...el.querySelectorAll("textarea, input")]);
     const send = /** @type {HTMLButtonElement} */ (el.querySelector("[data-wc=send]"));
     const after = el.querySelector(".wcafter");
+    /* The text the server reads: the box, or the three rows as one. */
+    const answer = () => (rows ? linksFrom(el).text : boxes[0].value.trim());
+    /* The three words as written, kept on the card beside the text. */
+    const words = () => (rows ? linksFrom(el).rows.map((r) => r.word.replace(/\s+/g, " ").trim()) : []);
+    const lockBoxes = (on) => boxes.forEach((b) => { b.disabled = on; });
+    /* Three words, never fewer: "Senda" waits for them (step 5 is not skipped). */
+    if (rows) el.addEventListener("input", () => { if (!boxes[0].disabled) send.disabled = !answer(); });
     const q = ask(step.task);
-    let sent = "", first = null;
+    let sent = "", first = null, sentWords = [], firstWords = [];
     const say = (html) => {
       const at = after.querySelector(".wcmsg");
       if (at) at.innerHTML = html; else after.innerHTML = `<p class="wcmsg">${html}</p>`;
@@ -140,24 +153,26 @@ const KINDS = {
     const finish = (j, kept) => {
       settle(step.task, j);
       if (j.verdict === "notjudged") serverGraderLost();
-      box.disabled = true;
+      lockBoxes(true);
       send.parentElement.remove();
       after.innerHTML = `${ownVerdictHTML(j, step)}
         <div class="answer"><button type="button" class="go" data-wc="next">${last ? "Ljúka orðakorti →" : "Áfram →"}</button></div>`;
       const next = /** @type {HTMLButtonElement} */ (after.querySelector("[data-wc=next]"));
-      /* Kept in the pupil's own card (core/wordcard.js): the text that was judged. */
-      next.onclick = () => done({ c: [], t: kept ? first : sent, ok: j.ok === true });
+      /* Kept in the pupil's own card (core/wordcard.js): the text that was
+         judged, and for the related words the three words themselves. */
+      next.onclick = () => done({ c: kept ? firstWords : sentWords, t: kept ? first : sent, ok: j.ok === true });
       next.focus();
     };
     send.onclick = async () => {
-      sent = box.value.trim();
-      send.disabled = box.disabled = true;
+      sent = answer() || ""; sentWords = words();
+      if (!sent) { say(rows ? "Skrifaðu þrjú orð." : "Skrifaðu svarið í reitinn."); return; }
+      send.disabled = true; lockBoxes(true);
       say(`<span class="reading">Les svarið yfir …</span>`);
       const r = await q.send({ text: sent });
       if (!r) return;
-      send.disabled = box.disabled = false;
+      send.disabled = false; lockBoxes(false);
       if (r.pending === "revise") {
-        first = sent;
+        first = sent; firstWords = sentWords;
         after.innerHTML = `<div class="why wcwhy">${checklistHTML(r.detail.checklist)}
           ${r.detail.ask ? `<p class="ask"><b>${esc(r.detail.ask)}</b></p>` : ""}
           <p class="wcmsg">Þú mátt bæta svarið einu sinni: breyttu því og sendu aftur — eða haltu því eins og það er.</p>
@@ -165,7 +180,7 @@ const KINDS = {
         /** @type {HTMLButtonElement} */ (after.querySelector("[data-wc=keep]")).onclick = () => {
           const k = q.keep(); if (k) finish(k, true);
         };
-        box.focus();
+        boxes[0].focus();
         return;
       }
       if (r.pending) {
@@ -214,7 +229,7 @@ export function openWordCard(card, onDone, opts = {}) {
       document.removeEventListener("keydown", key, true);
       scrim.remove();
       onDone(result);
-    }, { last: i === steps.length - 1, ask: opts.ask, settle: opts.settle });
+    }, { last: i === steps.length - 1, ask: opts.ask, settle: opts.settle, lemma: card.lemma });
     body.scrollTop = 0;
     const first = body.querySelector("button:not([disabled])");
     if (first) first.focus();

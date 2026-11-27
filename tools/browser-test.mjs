@@ -3394,21 +3394,28 @@ await page.setViewport({ width: 1100, height: 900 });
      sentence (item 29): a passive to turn back (germynd) and two sentences
      to join (tenging). Asked for by name, as the item-29 check above does,
      until each has come: every content word of what is shown is glossed, a
-     second tap on a gloss opens it, and the words are the ones shown. */
+     second tap on a gloss opens it, and the words are the ones shown.
+     NOT SEED-LUCKY (#38): the session is seeded (#89), so every new question
+     type moved which questions these 60 were, and a run could lack one kind.
+     Now Umritun is the only type on (Ræða and Sameina off too), and the loop
+     draws until both kinds have come, up to 200 questions: a join is about
+     one Umritun in eleven, so missing one in 200 is less likely than one in
+     a million. It stops as soon as both are there. */
   await page.evaluate(() => {
     const A = window.FALLASKOLI;
     A.S.enabled.malbeiting = true;
     A.S.policy = A.S.policy || {};
-    A.S.policy.types = { ...(A.S.policy.types || {}), smidja: false, villur: false };
+    A.S.policy.types = { ...(A.S.policy.types || {}), smidja: false, villur: false, raeda: false, sameina: false };
     A.reloadPolicy(); A.save();
     A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.drillOffer = null;
     Object.keys(A.sess.diff).forEach((k) => { A.sess.diff[k] = 4; });
     A.sess.warm = {};
-    A.startRun("malbeiting", 60, null, { review: false });
+    A.startRun("malbeiting", 200, null, { review: false });
   });
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
   const l2kinds = new Set();
-  for (let i = 0; i < 60 && l2kinds.size < 2; i++) {
+  let l2asked = 0;
+  for (; l2asked < 200 && l2kinds.size < 2; l2asked++) {
     const r = await page.evaluate((SHOWN) => {
       const A = window.FALLASKOLI;
       const c = A.cur;
@@ -3425,10 +3432,11 @@ await page.setViewport({ width: 1100, height: 900 });
     await page.evaluate(() => { const A = window.FALLASKOLI; A.finish({ correct: true }); A.next(); });
     await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4000 });
   }
-  ok(l2kinds.size === 2, `item 45: germynd and tenging did not both come up in 60 questions: ${[...l2kinds]}`);
+  ok(l2kinds.size === 2, `item 45: germynd and tenging did not both come up in ${l2asked} questions: ${[...l2kinds]}`);
   await page.evaluate(() => {
     const A = window.FALLASKOLI;
     delete A.S.policy.types.smidja; delete A.S.policy.types.villur;
+    delete A.S.policy.types.raeda; delete A.S.policy.types.sameina;
     A.run = null; A.runDone = null;
     A.reloadPolicy(); A.save();
   });

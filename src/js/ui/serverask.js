@@ -22,7 +22,8 @@
 
 import { serverQuestion, noReader } from "../control/serverask.js";
 import { serverGraderLost } from "../core/servergrader.js";
-import { $, fmt } from "./dom.js";
+import { $, fmt, esc } from "./dom.js";
+import { linksText, LINK_WORD_LEN, LINK_HOW_LEN } from "../tasks/wordcard.js";
 
 const asks = new WeakMap();
 
@@ -32,6 +33,30 @@ const SAME_AGAIN = "Þetta er sama svarið og áðan. Breyttu því — eða sme
 function lock(on) {
   document.querySelectorAll("#task textarea, #task input, #check, #keepanswer")
     .forEach((el) => { el.disabled = on; });
+}
+
+/**
+ * The boxes of "three related words" (#38): a row per word, the word and
+ * how it connects. Used on the Orðakort and in practice.
+ * @param {string} lemma @param {number} n
+ */
+export function linksFormHTML(lemma, n) {
+  return `<ol class="linkrows">${Array.from({ length: n }, (_, k) => `<li class="linkrow">
+    <input type="text" class="linkword" maxlength="${LINK_WORD_LEN}" autocomplete="off" spellcheck="false"
+      aria-label="Orð ${k + 1}" placeholder="Orð ${k + 1}">
+    <input type="text" class="linkhow" maxlength="${LINK_HOW_LEN}" autocomplete="off"
+      aria-label="Hvernig tengist orð ${k + 1} orðinu ${esc(lemma)}?" placeholder="Hvernig tengist það orðinu ${esc(lemma)}?">
+  </li>`).join("")}</ol>`;
+}
+
+/** What the rows hold, as the one text the server reads, or null until
+    every word is there (tasks/wordcard.js `linksText`). @param {ParentNode} root */
+export function linksFrom(root) {
+  const rows = [...root.querySelectorAll(".linkrow")].map((li) => ({
+    word: /** @type {HTMLInputElement} */ (li.querySelector(".linkword")).value,
+    how: /** @type {HTMLInputElement} */ (li.querySelector(".linkhow")).value,
+  }));
+  return { rows, text: linksText(rows) };
 }
 
 export function checklistHTML(list) {

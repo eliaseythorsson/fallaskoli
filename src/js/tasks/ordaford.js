@@ -17,6 +17,12 @@
                   "server"`: only for a pupil the administrator switched on
                   (core/policy.js, docs/adr/0004). Also the Orðakort's
                   "eigin" step (tasks/wordcard.js `eiginTask`).
+     or_skyring   (#38) "Hvað þýðir orðið?" read by the server: the meaning
+                  question graded, on a word met in this session first
+     or_setning   (#38) the pupil's own sentence with the word, about their
+                  own life; the Orðakort's "min" step
+     or_tengsl    (#38) three related words and how each connects; the
+                  Orðakort's "tengsl" step. All three server-graded.
 
    Which word comes up: the window of rarity per band is `pickVocab` in
    tasks/shared.js. There is no wait in days (#10): the one rule is the
@@ -30,7 +36,7 @@ import { built, FX } from "./effects.js";
 import { pick, wpick, shuffle, bandFor, levelFor, cap1, textSentence, pickVocab, pickAskable, nearBand, RANK_CAP, CLASS_RANK_CAP,
          classRankLevel } from "./shared.js";
 import { recallGap, recallReady } from "./recall.js";
-import { eiginTask } from "./wordcard.js";
+import { eiginTask, setningTask, tengslTask } from "./wordcard.js";
 
 /* ================= Word meaning ========================================== */
 
@@ -525,20 +531,51 @@ export function ordOdd(lex, view, rng) {
   return null;
 }
 
-/* or_eigin (#37): a LÍNO-2 word with a trusted ÍNO definition, the words in
-   learning a share of the time (`pickAskable`). */
-const EIGIN_POOL = new WeakMap();
-function ordOwn(lex, view, rng) {
-  let pool = EIGIN_POOL.get(lex);
+/* or_eigin (#37), or_setning and or_tengsl (#38): a LÍNO-2 word the task
+   can be made for, the words in learning a share of the time
+   (`pickAskable`). A review or a drill asks about one word: that word, or
+   nothing. */
+const POOLS = new Map();
+function linoPool(lex, make) {
+  let byLex = POOLS.get(make);
+  if (!byLex) { byLex = new WeakMap(); POOLS.set(make, byLex); }
+  let pool = byLex.get(lex);
   if (!pool) {
-    pool = lex.all.filter((x) => typeof x.lino === "number").map((x) => eiginTask(x)).filter(Boolean);
-    EIGIN_POOL.set(lex, pool);
+    pool = lex.all.filter((x) => typeof x.lino === "number").map((x) => make(x)).filter(Boolean);
+    byLex.set(lex, pool);
   }
-  /* A review or a drill asks about one word: that word, or nothing. */
+  return pool;
+}
+/** A fresh copy of a pooled task: a builder hands out a task the session may write on. */
+const fresh = (t) => built({ ...t, read: { ...t.read, context: { ...t.read.context } } });
+const lino = (make) => (lex, view, rng) => {
+  const pool = linoPool(lex, make);
   const asked = view.askedWord();
   const t = asked ? pool.find((x) => x.word === `${asked.o}|${asked.c}`) || null
     : pickAskable(view, pool, (x) => x.word, rng);
-  return t ? built({ ...t, read: { ...t.read, context: { ...t.read.context } } }) : null;
+  return t ? fresh(t) : null;
+};
+const makeEigin = (w) => eiginTask(w);
+const ordOwn = lino(makeEigin);
+const ordOwnSentence = lino((w) => setningTask(w));
+const ordLinks = lino((w) => tengslTask(w));
+
+/* or_skyring (#38): the meaning question, graded by the server against the
+   word's ÍNO sense (the rubric of or_eigin). As the free-text `meaning`
+   does, it asks first about a word met in this session — any word with a
+   trusted definition, of any frequency — and otherwise about a LÍNO-2 word. */
+const asSkyring = (t) => ({ ...t, typeId: "or_skyring" });
+export function ordMeaningRead(lex, view, rng) {
+  const asked = view.askedWord();
+  if (asked) {
+    const w = lex.lookup(asked.o, asked.c);
+    const t = w && `${w.o}|${w.c}` === `${asked.o}|${asked.c}` ? eiginTask(w) : null;
+    return t ? fresh(asSkyring(t)) : null;
+  }
+  const seen = new Set(((view.sess && view.sess.seen) || []).slice(-14));
+  const nearby = seen.size ? lex.all.filter((x) => seen.has(x.o)).map((x) => eiginTask(x)).filter(Boolean) : [];
+  const t = pickAskable(view, nearby, (x) => x.word, rng) || pickAskable(view, linoPool(lex, makeEigin), (x) => x.word, rng);
+  return t ? fresh(asSkyring(t)) : null;
 }
 
 /** The builders of this category, by question type id. What each type is —
@@ -554,4 +591,7 @@ export const BUILDERS = {
   or_eyda: { build: recallGap, ready: recallReady },
   or_merking: { build: ordMeaning },
   or_eigin: { build: ordOwn },
+  or_skyring: { build: ordMeaningRead },
+  or_setning: { build: ordOwnSentence },
+  or_tengsl: { build: ordLinks },
 };

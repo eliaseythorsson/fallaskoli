@@ -18,7 +18,7 @@ import { narrowPolicy } from "../core/policy.js";
 import { visitLevels } from "../core/difficulty.js";
 import { fillLearning, wordsInLearning, learningLevel, nextToLearn, owesCard, LEARNING_SIZE } from "../core/wordknowledge.js";
 import { cardDone, cardOf, saveCard } from "../core/wordcard.js";
-import { buildCard, EIGIN } from "../tasks/wordcard.js";
+import { buildCard } from "../tasks/wordcard.js";
 import { settle } from "../core/answer.js";
 import { serverQuestion, noReader } from "./serverask.js";
 import { openWordCard } from "../ui/wordcard.js";
@@ -157,10 +157,13 @@ export function sessionControl() {
       if (this.cardOpen) return;
       this.fillLearning();
       const word = this.cardDue();
-      /* #37: with server grading on for this pupil, the explanation in their
-         own words, read by the server, takes the place of the choice. */
-      const eigin = !!word && enabled(effectivePolicy(this.S), typeById(EIGIN));
-      const card = word ? buildCard(this.lex, word, { eigin }) : null;
+      /* #37, #38: with server grading on for this pupil (the administrator's
+         switch, and a grader that is up), steps 3–5 are free text read by
+         the server: the explanation, my sentence, three related words. The
+         card asks the policy's switch, not the types' own: the card is not
+         optional, and step 5 is never skipped. */
+      const free = !!word && effectivePolicy(this.S).serverGrading === true;
+      const card = word ? buildCard(this.lex, word, { free }) : null;
       if (!card) { then(); return; }
       this.cardOpen = true;
       openWordCard(card, (done) => {

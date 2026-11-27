@@ -24,15 +24,19 @@
  *         skyld:   { c: ["umskipti"], ok: false },
  *         flokkur: { c: ["no"], ok: true },
  *         eigin:   { c: [], ok: true, t: "Þegar eitthvað verður …" },
+ *         min:     { c: [], ok: true, t: "Það var mikil breyting …" },
+ *         tengsl:  { c: ["breyta", "umskipti", "stöðugleiki"], ok: true,
+ *                    t: "1. breyta – …\n2. umskipti – …\n3. stöðugleiki – …" },
  *       },
  *     }, …
  *   }
  *   c   what the pupil chose the FIRST time they answered the step, as the
  *       ids of the options (a word key, a sentence, a lemma, a class)
  *   ok  whether that was right
- *   t   (#37, a free-text step) what the pupil wrote — the text that was
- *       judged: the revision, or the first answer if they kept it. `ok` is
- *       the server-read verdict; false when it could not be read
+ *   t   (#37, #38, a free-text step) what the pupil wrote — the text that
+ *       was judged: the revision, or the first answer if they kept it. `ok`
+ *       is the server-read verdict; false when it could not be read. For
+ *       the three related words (`tengsl`) `c` holds the three words
  *
  * A step the card did not have for this word (not enough checked material)
  * has no answer. A step this program does not know is KEPT as long as its

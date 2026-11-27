@@ -95,6 +95,18 @@ about one sense, so only sentences tied to that sense are shown.
 `node tools/wordcards.mjs` prints the cards for review. The answers are kept in
 `S.wordCards` (`src/js/core/wordcard.js`), a slice marked as the pupil's own text.
 
+*The free-text version as built (#37, #38).* For a pupil with server grading
+on, steps 3–5 are free text, each in place of its structured step: `eigin`
+(the explanation, graded against the card's sense), `min` (a sentence about my
+own life that uses the word) and `tengsl` (three related words, a row each
+with how it connects, sent as one numbered text). Each is a question type of
+its own (`or_eigin`, `or_setning`, `or_tengsl`), with a rubric of our words
+and a server rubric beside it (`server/rubric-*.mjs`). **Step 5 never
+skipped** is read as: the structured step 5 is dropped for a word with no
+synonym group, but `tengsl` needs no material, so it is on every card of a
+switched-on pupil, and "Senda" waits for all three words. A thin answer gets
+one follow-up question and one revision (`core/answer.js`).
+
 **The intensive phase.** The word comes up in many question types, mixed together,
 grammar included: recall in a sentence gap (first-letter hint, then none), choosing
 the meaning, a synonym or antonym, choosing the sentence that fits, inflection,
@@ -122,6 +134,9 @@ straight after.
 all words and counts toward the session (today: `weightInRun: 0`, an ungraded
 bonus). With the LLM on, the explanation is graded against the ÍNO definition;
 with it off, the pupil picks which of three sentences uses the word correctly.
+*As built (#38):* with the LLM on, `or_skyring` asks "Hvað þýðir orðið?" about
+a word met in the session first and has it read with the explanation's rubric;
+it counts. `or_merking` (#11) stays as it is, for everybody.
 
 ## 2. Sentences for the LÍNO-2 words (authoring pass, outside the build)
 
