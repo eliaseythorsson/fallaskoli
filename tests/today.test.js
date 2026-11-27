@@ -299,7 +299,7 @@ test("NEW_SKILL_MAX: Lesskilningur alone takes two slots of the share, not all t
   /* While Námsorð has no question type, Lesskilningur was the only new skill
      that counted, and took the whole share: the main idea of its three
      texts, every day. #30's fix capped it at one; #31 gave it four types and
-     19 items on five texts, and the cap is two. */
+     19 items on five texts, and the cap is two; #32 kept it at two. */
   assert.equal(NEW_SKILL_MAX.lesskilningur, 2);
   const P8 = createPolicy(null, presetPolicy(8));
   const cases = [[{}, [0, 0, 8]], [{ due: 3, active: ["thf_thgf"] }, [2, 3, 3]], [{ due: 8 }, [3, 0, 5]]];
