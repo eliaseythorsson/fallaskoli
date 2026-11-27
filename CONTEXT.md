@@ -110,5 +110,9 @@ The pupil's notebook page for a word in learning: their own explanation, their o
 A short story (saga) or subject text (fræðitexti) written for comprehension questions, marked with its story-map parts or main idea and its pronoun references.
 _Avoid_: passage, article, reading
 
+**Main idea** (aðalatriði):
+What a whole text is mainly about; in a subject text one sentence says it, and the others are details (smáatriði) that support it.
+_Avoid_: topic, theme, gist (a gist is the pupil's own short summary)
+
 **Story map**:
 The six parts of an episode used throughout the program: aðstæður, kveikja/vandi, markmið, tilraun, útkoma, viðbrögð/tilfinning.

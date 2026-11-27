@@ -60,6 +60,36 @@ fyrir *heit*). Þetta eru þær línur sem höfundurinn var síst viss um að æ
 spurningunni. Ef þær virka illa má eyða öllum línum með `so` og `lo`; nafnorðin standa
 ein og sér.
 
+## Fyrstu þrír textarnir í Lesskilningi
+Skrá: `content/textar/saga-straeto.txt`, `content/textar/fraedi-svefn.txt`, `content/textar/saga-tyndur-hundur.txt`
+Leita: `Að finna aðalatriðið í texta`, `Um hvað er sagan?`
+Úr: feat/30-texts-lesskilningur (atriði 30)
+
+Textarnir, spurningarnar og skýringarnar eru samin af gervigreind og hafa ekki
+verið lesin af móðurmálshafa. Greynir greinir hverja setningu og BÍN þekkir
+hvert orð, en það segir ekkert um hvort málið er eðlilegt. Þetta ætti að
+skoða sérstaklega:
+
+- *Sara kom samt of seint í fyrsta tímann*: er *í fyrsta tímann* eðlilegt hér,
+  eða ætti að standa *í fyrsta tíma*?
+- *Þess vegna á þreyttur nemandi erfiðara með að læra og muna*: er orðaröðin
+  eðlileg, og er *eiga erfiðara með* rétt notað?
+- *Birtan frá símum og tölvum hefur slæm áhrif á svefninn. Hún getur haldið
+  fólki vakandi langt fram á nótt*: *Hún* vísar til *birtan*. Er það skýrt?
+- *skalf af kulda*, *tók hundinn í fangið*, *fór næstum því að gráta*: eðlilegt
+  mál fyrir unglinga?
+- Í sögunni um hundinn vísar *Hún* í síðustu setningunni til *gömul kona*, þó
+  að *Sara* standi líka framar. Það er með vilja (fornafnavísanir, atriði 33),
+  en sagan á samt að vera ótvíræð fyrir lesanda.
+- Röngu svörin við hverri spurningu: er eitthvert þeirra líka rétt aðalatriði
+  að mati lesanda? Þá þarf að skipta því út.
+- Dæmin á Lesefnissíðunni og í sýnidæminu eru önnur en textarnir þrír (svo að
+  dæmi gefi ekki upp svar): sagan um Kára og nestið og textinn um hvali.
+  *Þeir fæða lifandi afkvæmi og gefa þeim mjólk* — er það eðlilega orðað?
+- Fræðitextinn: *Flestir unglingar þurfa að sofa í átta til tíu tíma á hverri
+  nóttu* er almenn ráðlegging um svefn unglinga. Tölurnar ætti að bera saman
+  við ráðleggingar embættis landlæknis.
+
 # Utan síðunnar
 
 Texti sem er ekki á yfirlitssíðunni. Skráin er nefnd við hvert atriði.
@@ -181,3 +211,14 @@ vinsamlegir og auðskildir?
 lesnir við gerð þeirra, en ekki af móðurmálshafa. `node tools/wordcards.mjs 330`
 prentar kortin. Gæti einhver röng skýring átt við orðið? Er einhver
 skipting röng?
+
+## Lesefnissíðan og reglan um aðalatriði (Lesskilningur)
+Úr: feat/30-texts-lesskilningur (atriði 30)
+
+Lesefnissíðan *Að finna aðalatriðið í texta* (src/js/content/lessons.js,
+`lesskilningur`) er á yfirlitssíðunni. Þetta er það ekki: reglan
+*Aðalatriði texta* í src/js/core/diagnosis.js (`adalatridi`), heiti hnútsins
+*Aðalatriði texta* í src/js/core/curriculum.js, lýsing flokksins í
+src/js/core/skills.js (*Að finna aðalatriðið í stuttum sögum og fræðitextum*)
+og fyrirsagnirnar *Um hvað er textinn?* og *Um hvað er sagan?* í
+src/js/tasks/lesskilningur.js.

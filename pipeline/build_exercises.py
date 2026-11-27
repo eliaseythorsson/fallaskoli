@@ -1373,6 +1373,90 @@ for lvl, kind, conj, first, second, joined, apart, line, odd in X.COMBINE:
                   "joined": joined, "apart": apart, **({"odd": odd} if odd else {})})
 out["combine"] = items
 
+# ---------------------------------------------------------------- Textar (issue #30)
+# content/textar/*.txt: short stories and subject texts for Lesskilningur.
+# content_io.texts() is the one reader and holds every check on the format
+# and its marks (the header, the length, the story-map parts, the pronoun
+# referents against BÍN, the questions). What is added HERE is only what
+# needs the parser: every sentence of every text is parsed and guarded
+# exactly as a sentence of the bank is (build_sentences.annotate, with
+# parse_guard.py), every word of it and of its questions is a word BÍN knows
+# and none is on the block list. A sentence that does not parse stops the
+# build with its file and line.
+#
+# The reader counts words without punctuation; the app draws tokens. A
+# pronoun's place and its referent's are therefore turned into token indices
+# here (`ref`), against the tokens the parse gave.
+#
+# The texts are read straight from content_io and not through exercises.py:
+# build_freq.py lifts every string of that module as school material, and a
+# new text must add a text and nothing else (the same reason _WHO_DID has
+# its underscore).
+import content_io as CIO
+
+def text_items():
+    import build_sentences as BS
+    _g, _b, guard = BS.engines()
+    try:
+        read = CIO.texts(lambda w: [(e.ord, e.ofl, e.mark) for e in b.lookup(w)[1]])
+    except CIO.ContentError as e:
+        fail(str(e)); return []
+    items = []
+    for tx in read:
+        sents, bad = [], False
+        for s in tx["setningar"]:
+            where = f"{tx.file}:{s['line']} ({s['t']})"
+            check_words(s["t"], where)
+            if blocked_words(s["t"]): fail(f"{where}: blocked word {blocked_words(s['t'])}"); bad = True; continue
+            hard_before = len(guard.hard)
+            rec = BS.annotate(tx["þyngd"], s["t"], None, "none")
+            if rec is None: fail(f"{where}: setningin greinist ekki / the sentence does not parse"); bad = True; continue
+            if len(guard.hard) != hard_before:
+                fail(f"{where}: the parse guard refused the analysis: {guard.hard[-1]}"); bad = True; continue
+            # word index (the reader's) -> token index (the parse's)
+            at, covered = [], []
+            for j, tk in enumerate(rec["tok"]):
+                for part in tk["w"].split(" "):
+                    if part.strip(CIO._EDGE):
+                        at.append(j); covered.append(part.strip(CIO._EDGE))
+            if covered != s["words"]:
+                fail(f"{where}: orðin og tókarnir standast ekki á / the words and the parse's tokens differ: "
+                     f"{s['words']} / {covered}"); bad = True; continue
+            out = {k: rec[k] for k in ("t", "tok", "cl", "ph", "ku") if k in rec}
+            out["p"] = s["part"]
+            sents.append((out, at, s))
+        if bad: continue
+        for (out, at, s) in sents:
+            refs = []
+            for r in s["refs"]:
+                where = f"{tx.file}:{s['line']} ({s['t']})"
+                j = at[r["at"]]
+                if out["tok"][j].get("c") != "fornafn":
+                    fail(f"{where}: Greynir greinir „{out['tok'][j]['w']}“ ekki sem fornafn / "
+                         "the parse does not read the marked word as a pronoun"); bad = True
+                si, first, n = r["to"]
+                to_at = sents[si][1]
+                refs.append({"i": j, "to": [si, to_at[first], to_at[first + n - 1]]})
+            if refs: out["ref"] = refs
+        for q in tx["spurningar"]:
+            where = f"{tx.file}:{q['line']} ({q['q']})"
+            for t in [q["q"], q["a"], q["why"]] + q["w"]:
+                check_words(t, where)
+                if blocked_words(t): fail(f"{where}: blocked word {blocked_words(t)}"); bad = True
+        if bad: continue
+        items.append({"id": tx["id"], "lvl": tx["þyngd"], "k": tx["tegund"], "orð": tx["orð"],
+                      "s": [o for o, _a, _s in sents],
+                      "q": [{"k": q["mark"], "q": q["q"], "a": q["a"], "w": q["w"], "why": q["why"]}
+                            for q in tx["spurningar"]]})
+        print("   texti þ%d %-10s %-22s %d setningar, %d spurning(ar), %d vísanir fornafna; orð: %s"
+              % (tx["þyngd"], tx["tegund"], tx["id"], len(sents), len(tx["spurningar"]),
+                 sum(len(o.get("ref", [])) for o, _a, _s in sents),
+                 ", ".join(tx["orð"]) or "—"))
+    return items
+
+out["textar"] = text_items()
+print("textar: %d" % len(out["textar"]))
+
 # ---------------------------------------------------------------- word lists
 # Words that are ONE word class whatever BÍN entry they are read as, for
 # sorting by word class without a sentence around them.

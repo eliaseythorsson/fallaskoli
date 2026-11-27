@@ -1,0 +1,21 @@
+# Svefn unglinga — stuttur fræðitexti (ein efnisgrein).
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [aðalatriði] er setningin sem segir um hvað textinn er (nákvæmlega ein),
+#   [smáatriði] eru setningarnar sem styðja hana,
+#   Hún{Birtan} segir til hvers fornafnið vísar,
+#   ? er spurning (rétta svarið fremst) og ! skýringin sem nemandinn les á eftir.
+#
+# þyngd: 2
+# tegund: fræðitexti
+# orð: mikilvægur, heili, áhrif
+
+[aðalatriði] Svefn er mjög mikilvægur fyrir unglinga.
+[smáatriði] Flestir unglingar þurfa að sofa í átta til tíu tíma á hverri nóttu.
+[smáatriði] Í svefni vinnur heilinn úr því sem gerðist um daginn.
+[smáatriði] Þess vegna á þreyttur nemandi erfiðara með að læra og muna.
+[smáatriði] Birtan frá símum og tölvum hefur slæm áhrif á svefninn.
+[smáatriði] Hún{Birtan} getur haldið fólki vakandi langt fram á nótt.
+
+? [aðalatriði] Hvert er aðalatriði textans? | Unglingar þurfa góðan svefn. | Heilinn vinnur á nóttunni. | Símar og tölvur gefa frá sér birtu. | Unglingar eiga ekki að nota síma.
+! Allar setningarnar segja eitthvað um svefn unglinga, og fyrsta setningin segir það beint. Hin svörin eru smáatriði eða standa ekki í textanum.

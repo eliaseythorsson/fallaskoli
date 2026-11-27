@@ -109,6 +109,16 @@ kafli 19). Wording as retrieved; see the caution above.
 | Gögn og hjálpartæki | Mál og málnotkun | nýtt fjölbreytt hjálpartæki til að afla sér upplýsinga um tungumálið og styðja við notkun þess |
 | Stafsetning og greinarmerkjasetning | Ritun | beitt helstu atriðum stafsetningar og greinarmerkjasetningar og notað til þess reglur um réttritun og önnur hjálpartæki |
 
+**Lesskilningur** (issue #30) is the one criterion on the map from another
+section, *Lestur og bókmenntir*: the texts of the skill Lesskilningur fall
+under it. Its heading was read in a school plan for 2025–2026 (Víkurskóli),
+which gives the year-10 wording as *skilið og fjallað um fjölbreytta texta,
+greint þá og borið saman á margvíslegan hátt og lagt rökstutt og gagnrýnið
+mat á inntak þeirra og eiginleika*. **Neither the heading nor the wording was
+read on the official page**; compare both before relying on them. The other
+criteria of that section (lesfimi, lestraraðferðir, bókmenntir …) are not on
+the map: the app does nothing about them.
+
 For comparison, the year-7 criterion *Orðflokkar* expects the pupil to see how
 the vocabulary divides into sagnorð, fallorð and óbeygjanleg orð and to
 describe their role and main features. A pupil entering year 8 is therefore
@@ -130,6 +140,7 @@ every year.
 | Orðtök og málshættir | Mál og málnotkun | partly | 1 | 0 | 0 |
 | Gögn og hjálpartæki | Mál og málnotkun | no: outside what a drill program does | 0 | 0 | 0 |
 | Stafsetning og greinarmerkjasetning | Ritun | partly | 4 | 0 | 0 |
+| Lesskilningur | Lestur og bókmenntir | partly | 1 | 1 | 1 |
 <!-- curriculum:criteria:end -->
 
 Reading the table: *Orðflokkar* is the app's home ground. *Einkenni málsins*
@@ -182,6 +193,7 @@ evidence above. Later years keep practising it.
 | `mb-smidja` | Setningasmiðja | Einkenni málsins | Málbeiting | Setningasmiðja (`smidja`) | Málfræðin í notkun (`malbeiting`) | yes |
 | `mb-umritun` | Umritun | Einkenni málsins | Málbeiting | Umritun (`umritun`) | Málfræðin í notkun (`malbeiting`) | yes |
 | `mb-sameina` | Að sameina og skipta setningum | Einkenni málsins | Málbeiting | Sameina og skipta setningum (`sameina`) | Málfræðin í notkun (`malbeiting`) | yes |
+| `les-adalatridi` | Aðalatriði texta | Lesskilningur | Lesskilningur | Um hvað er textinn? (`les_adal`) | Að finna aðalatriðið í texta (`lesskilningur`) | yes |
 | `st-n-nn` | n eða nn | Stafsetning og greinarmerkjasetning | Stafsetning og greinarmerki | none yet | none yet | **no** |
 | `st-y` | y, ý og ey | Stafsetning og greinarmerkjasetning | Stafsetning og greinarmerki | none yet | none yet | **no** |
 | `st-stor-stafur` | Stór og lítill stafur | Stafsetning og greinarmerkjasetning | Stafsetning og greinarmerki | none yet | none yet | **no** |
@@ -460,9 +472,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 11 of 13 | 44 of 62 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Námsorð, Málbeiting |
-| 9. bekkur | 11 of 13 | 51 of 62 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 13 of 13 | 62 of 62 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
+| 8. bekkur | 12 of 14 | 45 of 63 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Námsorð, Málbeiting, Lesskilningur |
+| 9. bekkur | 12 of 14 | 52 of 63 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 14 of 14 | 63 of 63 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:

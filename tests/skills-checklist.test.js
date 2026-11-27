@@ -104,7 +104,9 @@ test("what is derived from core/skills.js really is", () => {
   assert.deepEqual(PLACEMENT_ORDER, ["nafnord", "sagnord", "lysingarord", "greining", "fornofn",
     "fallstjorn", "toluord", "obeygjanleg", "ordaford", "malbeiting", "setningafraedi", "setningagerd",
     /* #19: last, and asked only once it has a question type (core/placement.js placementTypes) */
-    "namsord"]);
+    "namsord",
+    /* #30: after it — and taken only once a type of it follows the level (core/placement.js) */
+    "lesskilningur"]);
 });
 
 test("a skill with nothing filled in is told, file by file, what to add", () => {

@@ -59,6 +59,11 @@ export const SKILLS = [
      everything that plans questions passes it by (`skillHasTypes`). */
   { id: "namsord",      nm: "Námsorð",          cur: "8.b", ico: "🌱", placement: 13,
     ds: "Orðin sem þú ert að læra: merking og notkun" },
+  /* Issue #30 (docs/DLD-PLAN.md §4): reading short stories and subject texts
+     (content/textar/). For every year, so year 8 and on by default. Last in
+     the placement round: it is the one question there with a text to read. */
+  { id: "lesskilningur", nm: "Lesskilningur",   cur: "8.b", ico: "📖", placement: 14,
+    ds: "Að finna aðalatriðið í stuttum sögum og fræðitextum" },
 ];
 
 export const SKILL_IDS = SKILLS.map((s) => s.id);

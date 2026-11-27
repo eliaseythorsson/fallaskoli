@@ -513,4 +513,13 @@ export const EXAMPLES = {
     how: "Hún hefst á *sem* og segir nánar frá nafnorðinu á undan, *kakan*. Það gerir tilvísunarsetning.",
     forms: [],
   },
+  /* issue #30: the main idea is what the whole text is about. The story is
+     NOT one of content/textar/: an example that is also a question would
+     hand the pupil its answer. */
+  les_adal: {
+    q: "*Kári gleymdi nestinu sínu heima. Vinur hans gaf honum helminginn af samlokunni sinni.* Um hvað er sagan?",
+    a: "Kári gleymir nestinu en vinur hans hjálpar honum.",
+    how: "Aðalatriðið nær yfir alla söguna: vandann og hvernig fór. *Vinur Kára á samloku* er bara smáatriði.",
+    forms: [],
+  },
 };

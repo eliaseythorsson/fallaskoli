@@ -165,8 +165,13 @@ function drawGap(app, t, j, val) {
 /* One half of a choice card: the sentence, the gloss, the question, the two
    options. A plain choice has one; a pair (item 43, tasks/shared.js `pairOf`)
    has two, one under the other, each with its own `.opts`. */
+/* A whole text above the question (Lesskilningur, issue #30): the sentences
+   of a short story or subject text as one paragraph. */
+const textBlock = (h) => (Array.isArray(h.text) && h.text.length
+  ? `<p class="sentence readtext">${h.text.map(esc).join(" ")}</p>` : "");
+
 const choiceHalf = (h, n) => `
-    ${questionSentence(h)}
+    ${textBlock(h)}${questionSentence(h)}
     ${h.gloss ? `<p class="gloss choicegloss">💬 ${fmt(h.gloss)}</p>` : ""}
     <p class="gloss">${fmt(h.question)}</p>
     <div class="qrow"><div class="opts" data-q="${n}">
