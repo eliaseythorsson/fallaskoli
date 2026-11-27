@@ -133,7 +133,7 @@ og röðin að sjást af efninu. Þetta ætti að skoða sérstaklega:
 
 - *Ari kom fyrstur heim úr skólanum á föstudaginn*: segir *fyrstur* nógu
   skýrt að enginn var heima?
-- *Hann vildi komast inn og fá sér eitthvað að borða*, *Ari var feginn og
+- *Hann var svangur og vildi komast inn*, *Ari var feginn og
   ákvað að geyma lykilinn alltaf í töskunni*: eðlilegt?
 - *Katla vildi búa til stærsta snjókarlinn í götunni*, *En snjórinn var of
   þurr og hélst ekki saman*, *Þá hélst snjórinn saman og snjókarlinn varð

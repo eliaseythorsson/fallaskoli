@@ -17,7 +17,7 @@
 
 [aðstæður] Ari kom fyrstur heim úr skólanum á föstudaginn.
 [vandi] Hann{Ari} fann ekki lykilinn sinn og komst ekki inn.
-[markmið] Hann{Ari} vildi komast inn og fá sér eitthvað að borða.
+[markmið] Hann{Ari} var svangur og vildi komast inn.
 [tilraun] Ari hringdi í pabba sinn og bað hann{pabba} um hjálp.
 [útkoma] Pabbi hans{Ari} kom stuttu síðar með annan lykil.
 [viðbrögð] Ari var feginn og ákvað að geyma lykilinn alltaf í töskunni.
