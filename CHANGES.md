@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Orðakortið með frjálsum texta, og merkingarspurningin lesin yfir (#38)
+- **Fyrir nemanda sem stjórnandinn hefur kveikt á** („Leyfa spurningar sem þjónninn les“) eru skref 3–5
+  á Orðakortinu frjáls texti sem þjónninn lætur Claude lesa yfir eftir matskvarða: skýringin með eigin
+  orðum (#37), **mín setning** (setning um eigið líf sem notar orðið) og **þrjú skyld orð** og hvernig
+  hvert tengist orðinu. Hvert kemur í stað samsvarandi valspurningar. Skref 5 fellur aldrei niður: það
+  þarf ekkert efni og er á hverju korti slíks nemanda, og „Senda“ bíður þar til öll þrjú orðin eru komin.
+- Endurgjöfin er gátlisti og **ein** spurning þegar svarið er rýrt; nemandinn má bæta svarið **einu
+  sinni**. Hver fullyrðing verður að vitna í texta nemandans, annars fellur hún brott.
+- **Merkingarspurningin, lesin yfir** („Hvað þýðir orðið? (lesið yfir)“, `or_skyring`): um orð úr
+  lotunni fyrst, metin eftir sama matskvarða og skýringin, og telur í lotunni. Ásamt „Mín setning“
+  (`or_setning`) og „Þrjú skyld orð“ (`or_tengsl`) kemur hún líka í æfingu, aðeins fyrir þessa nemendur.
+  Allir aðrir fá Orðakortið og „Merking orðs í setningu“ óbreytt.
+- Lota sem beðið er um eftir gerð spurninga („Æfa þetta“, hnútur á færnikortinu) fær nú líka
+  spurningar sem þjónninn les, fyrir nemanda sem kveikt er á.
+- Prófin nota handskrifuð svör á nákvæmu sniði Messages API (`tests/fixtures/claude/`);
+  `tools/record-grading.mjs --kind or_setning|or_tengsl` tekur upp raunveruleg. Prófin kalla aldrei á Claude.
 ### Sögukortið í Lesskilningi (#31)
 - **Sögukortið**: sex hlutar sögu — aðstæður, vandi (kveikja), markmið, tilraun, útkoma og viðbrögð
   (tilfinning) — hver með sína mynd. Heitin og myndirnar eru skilgreind á einum stað
