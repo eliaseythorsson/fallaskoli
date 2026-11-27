@@ -242,6 +242,25 @@ test("a guardian opens the skill map of a pupil of their own group", async () =>
   assert.equal((await C.admin("GET", `/teacher/skillmap?group=${GA}&pupil=${U.anna.id}`)).status, 200);
 });
 
+test("#17: beside the map, the pupil's hard words — the words only, each with a reason and no date", async () => {
+  const was = (await app.store.stateRec(U.anna.id)).state;
+  const S = blankState();
+  const d1 = inDays(-3), d2 = inDays(-2);
+  S.wordKnowledge = {
+    "fjörður|kk": { c: 0, w: 3, e: [[d1, "fill", "w"], [d1, "tbl_no", "w"], [d2, "fill", "w"]] },
+    "hestur|kk": { c: 1, w: 2, e: [[d1, "fill", "w"], [d2, "fill", "w"], [d2, "fill", "r"]] },
+  };
+  await app.store.putState(U.anna.id, S);
+  const r = await C.kennA("GET", `/teacher/skillmap?pupil=${U.anna.id}`);
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.data.hard, [{ lemma: "fjörður", cls: "kk",
+    why: "3 röng svör innan 14 daga, í 2 gerðum spurninga; ekkert svar síðan" }]);
+  for (const secret of ["hestur", d1, d2, '"e":', "tbl_no"])
+    assert.ok(!r.text.includes(secret), `the teacher's view carries ${secret}`);
+  /* Back to what the other tests expect. */
+  await app.store.putState(U.anna.id, was);
+});
+
 test("a pupil who has not practised has a map too: every node 'Of fá svör'", async () => {
   const r = await C.kennB("GET", `/teacher/skillmap?pupil=${U.cecilia.id}`);
   assert.equal(r.status, 200);

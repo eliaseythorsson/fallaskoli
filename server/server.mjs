@@ -67,6 +67,7 @@ import { sanitisePolicy, createPolicy } from "../src/js/core/policy.js";
 import { chosenPolicy } from "../src/js/core/state.js";
 import { pupilStandings, classColumns, patternCSV, byName } from "../src/js/core/classview.js";
 import { teacherMap } from "../src/js/core/skillmap.js";
+import { hardWords } from "../src/js/core/wordknowledge.js";
 import { effectivePolicy, migrate } from "../src/js/core/state.js";
 import { ASSIGN, cleanTarget, patternsOf, dueProblem, isOpen, prune as pruneAssignments,
          openCount as openAssignments, cleanResult, recordResult, viewForPupil }
@@ -1304,7 +1305,9 @@ export function createApp({
      `teacherMap` (core/skillmap.js) leaves in: per curriculum node the
      mastery mark and the counts it rests on, reviews due and waiting, the
      active error patterns, and the cells missed, as grammar. Not when
-     anything was practised, not the words missed, no XP — see `teacherMap`.
+     anything was practised, no XP — see `teacherMap`. Not the words missed
+     either, except the words that are HARD (#17, docs/PRIVACY.md §1a):
+     their list is beside the map, never inside it.
 
      Authorised exactly as the class table: `needTeacher` holds a guardian to
      their own group, and the pupil must be an active learner OF THAT GROUP.
@@ -1324,7 +1327,10 @@ export function createApp({
     const S = migrate(rec ? rec.state : null);
     return json(res, 200, { group: { id: t.group, name: t.name },
       pupil: { id: u.id, name: u.name || u.username, practised: !!rec },
-      map: teacherMap(S, Date.now(), effectivePolicy(S)) });
+      map: teacherMap(S, Date.now(), effectivePolicy(S)),
+      /* #17: the words that are hard for this pupil, each with its reason,
+         which never names a day (core/wordknowledge.js `hardWords`). */
+      hard: hardWords(S).map(({ lemma, word, why }) => ({ lemma, cls: word.slice(lemma.length + 1), why })) });
   });
 
   /* Item 65: the assignments of a group, with who has done them, their

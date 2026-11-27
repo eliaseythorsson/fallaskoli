@@ -16,8 +16,8 @@ import { nextTask, makeView, withView, applyEffects, planOpening, nextOpening,
 import { planToday } from "../core/today.js";
 import { narrowPolicy } from "../core/policy.js";
 import { visitLevels } from "../core/difficulty.js";
-import { fillLearning, wordsInLearning, learningLevel, nextToLearn, LEARNING_SIZE } from "../core/wordknowledge.js";
-import { cardDone, saveCard } from "../core/wordcard.js";
+import { fillLearning, wordsInLearning, learningLevel, nextToLearn, owesCard, LEARNING_SIZE } from "../core/wordknowledge.js";
+import { cardDone, cardOf, saveCard } from "../core/wordcard.js";
 import { buildCard, EIGIN } from "../tasks/wordcard.js";
 import { settle } from "../core/answer.js";
 import { serverQuestion, noReader } from "./serverask.js";
@@ -129,10 +129,18 @@ export function sessionControl() {
        `cardOpen` is true while a card is on the screen. */
     cardOpen: false,
 
-    /** The word whose card is due: the next word to enter the six, when
-        there is room for it and its card is not done. A `wordKey` or null. */
+    /** The word whose card is due: first a word that came back to the six
+        because it was hard (#17, core/wordknowledge.js `comeBack`) and has
+        not done its card again — if a card can be made for it — then the
+        next word to enter the six, when there is room for it and its card
+        is not done. A `wordKey` or null. */
     cardDue() {
-      if (!this.S || !this.lex || wordsInLearning(this.S).length >= LEARNING_SIZE) return null;
+      if (!this.S || !this.lex) return null;
+      const done = (w) => { const c = cardOf(this.S, w); return c ? c.n : 0; };
+      const back = wordsInLearning(this.S).find((w) => owesCard(this.S, w, done(w))
+        && !!buildCard(this.lex, w));
+      if (back) return back;
+      if (wordsInLearning(this.S).length >= LEARNING_SIZE) return null;
       const word = nextToLearn(this.S, this.lex, learningLevel(this.S));
       return word && !cardDone(this.S, word) ? word : null;
     },

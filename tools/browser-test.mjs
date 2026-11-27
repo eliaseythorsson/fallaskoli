@@ -2436,8 +2436,9 @@ await page.setViewport({ width: 1100, height: 900 });
       ok(bonus, "Orðaforði: no bonus sentence offered under a graded question");
       /* The word-formation rule (Orðmyndun, core/diagnosis.js) is Orðaforði's
          own and says "-ing/-un gera nafnorð úr sögn"; that phrase is not a
-         verb tip. */
-      ok(!/sögn|Sögnin|þátíð|nútíð/.test(sum.text.replace(/nafnorð úr sögn/g, "")),
+         verb tip. Nor is "sögn" inside a word (*frásögn* in a sentence the
+         pupil was shown, #17). */
+      ok(!/(?<![a-záðéíóúýþæö])sögn|Sögnin|þátíð|nútíð/i.test(sum.text.replace(/nafnorð úr sögn/g, "")),
         "Orðaforði: a verb tip in the summary: " + sum.text.slice(0, 120));
     }
   }

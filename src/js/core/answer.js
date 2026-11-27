@@ -144,7 +144,8 @@ import { noteTypeAnswer } from "./mastery.js";
 import { noteNodeAnswer, partsOf } from "./skillmap.js";
 import { noteReview, queueWord } from "./review.js";
 import { noteReviewsPassed } from "./mending.js";
-import { noteWords, noteLearned } from "./wordknowledge.js";
+import { noteWords, noteLearned, noteHard } from "./wordknowledge.js";
+import { cardOf } from "./wordcard.js";
 import { catalogueEntry, graderOf } from "./catalogue.js";
 
 /** @typedef {import("../types").State} State */
@@ -1570,7 +1571,7 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
      question was about. Here, once per answered question; a second try and
      the bonus sentence returned above (no `finish`), so only a first try is
      an entry. A duel's and a live round's answers count. */
-  noteWords(S, task, j, todayKey());
+  const made = noteWords(S, task, j, todayKey());
   /* The learned rule (#16, core/wordknowledge.js `noteLearned`): a word in
      learning that has now earned it leaves the six and joins the review
      queue, asked in the recall type it was last right in. Here, because the
@@ -1581,9 +1582,15 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
     if (!recallType) continue;
     queueWord(S, { w: word, t: recallType, sk: (catalogueEntry(recallType) || {}).skill || null }, todayKey());
   }
+  /* Hard words (#17, core/wordknowledge.js `noteHard`): a wrong answer that
+     makes a word hard. The second time and after, the word goes back to
+     the intensive phase here, its Orðakort owed again; the first time,
+     `hard` tells the screen to offer "Þrjár í röð" on it (control/drill.js). */
+  const hard = noteHard(S, made, todayKey(), (w) => { const c = cardOf(S, w); return c ? c.n : 0; });
   /** @type {Record<string, any>} */
   const out = { ...j.finish, findings: j.findings, review };
   if (learned.length) out.learned = learned.map((x) => x.word);
+  if (hard.length) out.hard = hard;
   /* The badges for a quick or a curious answer read its time and its shape
      together; both only when the answer was right. */
   if ("answer" in j.finish) out.answerMs = j.ok ? ms : 0;

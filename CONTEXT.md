@@ -75,7 +75,7 @@ A word in learning that has been answered right in at least four question types,
 _Avoid_: mastered word, known word
 
 **Hard word**:
-Any word a pupil has answered wrong three times across question types within fourteen days.
+Any word a pupil has answered wrong three times, in any question types, within fourteen days. The first time it is offered as Þrjár í röð; the second time it goes back to the words in learning, its word card included. It stops being hard after three right answers in a row, one of them on a later day. Only the guardian sees the list.
 _Avoid_: problem word, weak word
 
 **Word health**:
@@ -89,7 +89,7 @@ What a pupil missed, brought back after 1, 3, 7 and 21 days.
 _Avoid_: spaced repetition list
 
 **Þrjár í röð**:
-Three questions straight away on something the pupil just got wrong, offered and never imposed.
+Three questions straight away on something the pupil just got wrong — an error pattern, or a word that has just become hard — offered and never imposed.
 
 ## Progress and privacy
 

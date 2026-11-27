@@ -247,7 +247,7 @@ const app = {
        findings (core/answer.js) and they arrive here; a caller that still
        hands over the raw `resp` gets it diagnosed as before. Neither goes
        further than here — the badge context below is built from `extra`. */
-    const { resp, findings: judged, review, ...rest } = extra;
+    const { resp, findings: judged, review, hard, ...rest } = extra;
     extra = rest;
     const findings = judged || diagnose(this.cur, resp);
     const chances = noteDiagnosis(this.S, this.cur, findings, extra.correct ?? null, todayKey());
@@ -261,8 +261,9 @@ const app = {
     /* A question of the session: counted once (control/session.js). */
     const runQuestion = this.runAnswered(extra.correct, findings, chances);
     /* Item 36: one of "Þrjár í röð" answered — or a diagnosed miss in the
-       session, which may offer them (control/drill.js). */
-    this.streakAnswered(extra.correct, findings, runQuestion);
+       session, which may offer them (control/drill.js); #17: so may a word
+       that this miss made hard (`hard`, core/answer.js). */
+    this.streakAnswered(extra.correct, findings, runQuestion, hard);
     const comeback = noteQuestion(this.sess, extra.correct ?? null);
     const accidents = noteAccidents(this.S, this.sess, this.cur, extra);
 

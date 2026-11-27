@@ -14,9 +14,9 @@
    `streakNext`, `streakAnswered` and `drillAnswered` at their turn. */
 
 import { todayKey, effectivePolicy, grantXp } from "../core/state.js";
-import { drillTask, makeView, applyEffects, streakTasks } from "../tasks/index.js";
+import { drillTask, makeView, applyEffects, streakTasks, wordStreakTasks } from "../tasks/index.js";
 import { queuePattern } from "../core/review.js";
-import { STREAK_N, streakPattern, startStreak, stepStreak, streakEntry, streakLine } from "../core/streak.js";
+import { STREAK_N, streakPattern, startStreak, startWordStreak, stepStreak, streakEntry, streakLine } from "../core/streak.js";
 import { statusOf, weakWords, drillable, startDrill, drillStep, settleDrill } from "../core/wordhealth.js";
 import { renderTask } from "../ui/render.js";
 import { renderDrillBar } from "../ui/drill.js";
@@ -162,13 +162,43 @@ export function drillControl() {
       showStreakOffer(this, p);
     },
 
-    /** The offer taken: the rule first (`next` draws it), then the three. */
+    /**
+     * #17: the first time a word is hard (core/wordknowledge.js `noteHard`,
+     * reported by `settle` as `hard`), three questions on that word, offered
+     * under the verdict like the pattern's — the same offer, the same line,
+     * nothing that says "hard". Made only when all three can be built; a
+     * word is offered once per session.
+     * @returns {boolean} offered
+     */
+    offerWordStreak(word) {
+      const r = this.run;
+      if (!r || !word || this.streak || this.drill || this.duelRun || this.liveRun) return false;
+      if (r.streaked.includes(`w:${word}`)) return false;
+      const [lemma, cls] = String(word).split("|");
+      const entry = this.lex.lookup(lemma, cls);
+      if (!entry) return false;
+      const three = (policy) => wordStreakTasks(this.lex,
+        makeView({ S: this.S, sess: this.sess, policy, inRun: true }), rng, entry, STREAK_N);
+      const tasks = three(this.reviewPolicy()) || three(effectivePolicy(this.S));
+      if (!tasks) return false;
+      this.streakOffer = { p: null, w: word, nm: entry.o, tasks };
+      showStreakOffer(this, null);
+      return true;
+    },
+
+    /** The offer taken: the rule first (`next` draws it), then the three.
+        On a word (#17) there is no rule: straight to the first question. */
     startStreak() {
       const o = this.streakOffer;
       if (!o || !this.run || this.streak) return;
       this.streakOffer = null;
-      this.run.streaked.push(o.p);
-      this.streak = { ...startStreak(o.p, { t: o.t, sk: o.sk }), queue: o.tasks };
+      if (o.w) {
+        this.run.streaked.push(`w:${o.w}`);
+        this.streak = { ...startWordStreak(o.w, o.nm), queue: o.tasks };
+      } else {
+        this.run.streaked.push(o.p);
+        this.streak = { ...startStreak(o.p, { t: o.t, sk: o.sk }), queue: o.tasks };
+      }
       this.next();
     },
 
@@ -194,6 +224,9 @@ export function drillControl() {
           queuePattern(this.S, e, todayKey());
           if (this.run) this.run.streaks.push({ p: st.p, c: st.c, n: st.i });
           this.save();
+        } else if (st.w && st.i > 0 && this.run) {
+          /* On a word (#17): nothing to queue — the miss already is. */
+          this.run.streaks.push({ p: null, w: st.nm, c: st.c, n: st.i });
         }
       }
       if (st.done) return;          // the last verdict is still on the screen
@@ -250,7 +283,7 @@ export function drillControl() {
      * — or a diagnosed miss in the session (`runQuestion`: it was counted
      * there just now), which may offer them.
      */
-    streakAnswered(correct, findings, runQuestion) {
+    streakAnswered(correct, findings, runQuestion, hard = []) {
       const r = this.run;
       const st = this.streak;
       if (st && this.cur && this.cur.streak && !this.cur.closed &&
@@ -262,7 +295,27 @@ export function drillControl() {
           this.endStreak();
           showStreakEnd(streakLine(st), r && r.i >= r.n);
         }
-      } else if (runQuestion && correct === false && !r.placement) this.offerStreak(findings);
+      } else if (runQuestion && correct === false && !r.placement) {
+        /* A word hard for the first time (#17) comes before the pattern:
+           it is rarer, and it is the word itself that is the trouble. */
+        const first = (hard || []).find((h) => h.action === "streak");
+        if (!(first && this.offerWordStreak(first.word))) this.offerStreak(findings);
+      } else if (!r && !st && correct === false) this.offerHardDrill(hard);
+    },
+
+    /**
+     * #17 outside a session, where there is no "Þrjár í röð": a word hard
+     * for the first time is offered as the rescue drill on it (the same
+     * offer `considerOffer` makes), if nothing is offered already.
+     */
+    offerHardDrill(hard) {
+      if (this.duelRun || this.liveRun || this.drill || this.drillOffer) return;
+      const first = (hard || []).find((h) => h.action === "streak");
+      if (!first || this.drillOffered.has(first.word)) return;
+      const [lemma, cls] = String(first.word).split("|");
+      if (!drillable(this.lex, this.lex.lookup(lemma, cls))) return;
+      this.drillOffered.add(first.word);
+      this.drillOffer = { key: first.word, lemma };
     },
   };
 }
