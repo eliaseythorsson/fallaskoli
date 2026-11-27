@@ -117,8 +117,12 @@ function submitGap(app) {
   if (t.retrying) return endRetry(app, t, j, draw);
   /* Item 42. The tip behind the hint button (word formation: the affix) is
      opened with the rule: the pupil is trying again with help in view. */
+  /* `retryWhy` (tasks/recall.js): the *af hverju* line names the word that
+     was to be recalled, so the second try is shown this instead — the first
+     letter, or nothing when it was there already. */
   if (offerRetry(app, t, j, {
     response, note: nearNote(j.detail.v), inputs: [$("ans")], lock: [$("hint")], reveal: draw,
+    ...(t.retryWhy !== undefined ? { why: t.retryWhy, label: "vísbending" } : {}),
     onMiss: () => { if ($("tip")) $("tip").hidden = false; },
   })) return;
   conclude(app, t, j, draw);
@@ -126,6 +130,8 @@ function submitGap(app) {
 
 /* `plain` — tvær buxur for tvennar buxur: the one mistake this question
    is about. */
+/* `whyLabel`: the label of the line under the answer when it is not a
+   reason (recall: "orðið", the word that was missing). */
 function drawGap(app, t, j, val) {
   const { v, xpFull, plain } = j.detail;
   const ok = j.ok, xp = j.xp;
@@ -139,12 +145,12 @@ function drawGap(app, t, j, val) {
     ? `<div class="verdict ${v.klass}"><span class="xpop">+${xp} XP</span>
     <h3>${v.slip ? esc(v.slip.head) : cheer(CHEERS_OK)}</h3>${solved}
     ${v.slip ? `<p>Þú skrifaðir <span class="forms">${esc(val.trim())}</span>. Rétt er <span class="forms">${right}</span>.</p>` : ""}
-    ${slipNote(v.slip, xp, xpFull)}${whyBox(t.why)}
+    ${slipNote(v.slip, xp, xpFull)}${whyBox(t.why, t.whyLabel)}
     <p class="streakline">${app.S.run} í röð${multLine(app, xp)}. Enter fyrir næstu.</p></div>`
     : `<div class="verdict ${ok ? v.klass : "no"}">${ok ? retryRightHTML(xp) : `<h3>${cheer(CHEERS_NO)}</h3>`}
     ${compareHTML(t, t.tries || [])}
     ${plainTyped ? `<div class="why"><b>athugið</b>${fmt(`*${t.answers[0]}* — ekki *${plainTyped.trim()}*: orðið á eftir er aðeins til í fleirtölu.`)}</div>` : ""}
-    ${ok ? slipNote(v.slip, xp, xp) : nearNote(v)}${solved}${whyBox(t.why)}
+    ${ok ? slipNote(v.slip, xp, xp) : nearNote(v)}${solved}${whyBox(t.why, t.whyLabel)}
     ${ok ? RETRY_STILL_MISS : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
   $("ans").disabled = true;
