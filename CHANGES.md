@@ -1,5 +1,14 @@
 # Changes
 
+## Unreleased
+
+### Orðin mín: sex orð í námi (#12)
+- **Hver nemandi hefur alltaf sex orð af LÍNO-2 í námi**, valin eftir röð á listanum (algengustu fyrst)
+  innan þyngdar nemandans í Orðaforða. Undir Orðasafni sér nemandinn „Orðin mín“: orðin sem hann er að
+  læra og orðin sem hann kann. Ekkert annað breytist enn; næstu skref (#13, #15, #16) nota hópinn.
+- Hópurinn er vistaður í framvindunni (`S.learning`), sameinaður milli tækja, hreinsaður á þjóninum og
+  fylgir útflutningi. `tools/word-history.mjs` sýnir stöðu orðs í hópnum.
+
 ## v6.15.0
 
 ### Færri GitHub Actions-mínútur

@@ -12,6 +12,7 @@ import { crestOf } from "../core/profile.js";
 import { renderClassGoal } from "./classgoal.js";
 import { ALL_CLASSES } from "../core/marks.js";
 import { collectionByClass } from "../core/collection.js";
+import { wordsInLearning, wordsLearned } from "../core/wordknowledge.js";
 import { vocabScore, weakWords, HEALTH, DRILL, STATUS_LABEL } from "../core/wordhealth.js";
 import { $, esc, keypadOn, keypadEnv } from "./dom.js";
 import { renderPolicyEditor } from "./policyui.js";
@@ -665,7 +666,34 @@ function weekLine(app, rows, me) {
     champs.length ? ` <span class="champ">🥇 Vikumeistari síðustu viku: <b>${champs.map(esc).join(" og ")}</b>.</span>` : ""}</p>`;
 }
 
+/**
+ * Issue #12: "Orðin mín" — the words the pupil is learning and the words they
+ * have learned, each with its meaning on hover. Nothing here says why these
+ * words were chosen (CONTEXT.md "Word in learning").
+ */
+function renderMyWords(app) {
+  const el = $("mywords");
+  if (!el) return;
+  const chip = (key) => {
+    const at = key.lastIndexOf("|");
+    const w = app.lex && app.lex.lookup ? app.lex.lookup(key.slice(0, at), key.slice(at + 1)) : null;
+    const lemma = w ? w.o : key.slice(0, at);
+    return `<span class="chip word"${w && w.d ? ` title="${esc(w.d)}"` : ""}>${esc(lemma)}</span>`;
+  };
+  const now = wordsInLearning(app.S), known = wordsLearned(app.S).reverse();
+  el.innerHTML = `<div class="collgroup">
+      <div class="collhead"><b>Ég er að læra</b></div>
+      ${now.length ? `<div class="chips">${now.map(chip).join("")}</div>` : `<p class="collnone">Engin orð enn.</p>`}
+    </div>
+    <div class="collgroup">
+      <div class="collhead"><b>Ég kann</b>${known.length ? ` <span class="collcount">${known.length}</span>` : ""}</div>
+      ${known.length ? `<div class="chips">${known.map(chip).join("")}</div>`
+        : `<p class="collnone">Orðin sem þú lærir færast hingað.</p>`}
+    </div>`;
+}
+
 function renderCollection(app) {
+  renderMyWords(app);
   const groups = collectionByClass(app.S, app.lex);
   const stats = app.badgeStats || null;
   const sum = groups.reduce((a, g) => a + g.seen, 0);

@@ -129,7 +129,7 @@ import { tourSlice } from "./placement.js";
 import { enabledSlice, policySlice, allowedSlice } from "./policy.js";
 import { settingsSlice } from "./settings.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
-import { wordKnowledgeSlice, wordsSlice, drillsSlice, drillDaysSlice } from "./wordknowledge.js";
+import { wordKnowledgeSlice, wordsSlice, drillsSlice, drillDaysSlice, learningSlice } from "./wordknowledge.js";
 
 /** @typedef {import("../types").Slice} Slice */
 /** @typedef {import("../types").CleanContext} CleanContext */
@@ -203,6 +203,7 @@ export const SLICES = [
   mendSlice,
   tourSlice,
   wordKnowledgeSlice,
+  learningSlice,
 ];
 
 /** The keys of the slices that hold the pupil's own text. @returns {string[]} */

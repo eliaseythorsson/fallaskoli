@@ -144,6 +144,7 @@
 
 import { CATALOGUE_IDS, isRecall } from "./catalogue.js";
 import { add, num, obj, n, DAY, keys, later, counters, dayStr, isObj, pairs } from "./slicerules.js";
+import { hardReach } from "./difficulty.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Task} Task */
@@ -323,8 +324,10 @@ export const isJudged = (entry) => !!entry && (entry.outcome === RIGHT || entry.
  *   word health   new · weak · shaky · ok · strong: core/wordhealth.js
  *                 `statusOf`, from the word records, not the entries, on
  *                 purpose (#42, decision 1)
- *   later         in learning (#12), learned (#16) and hard (#17) live in
- *                 this section and return the same shape, built with the
+ *   in learning   learning · learned · put-back: `learningStatus` below,
+ *                 from `S.learning` (#12)
+ *   later         the learned rule (#16) and hard (#17) live in this
+ *                 section and return the same shape, built with the
  *                 helpers below, e.g. `because("learned", "rétt í 4 gerðum
  *                 (1 upprifjun) á 3 dögum, síðustu 3 rétt")`
  *
@@ -348,6 +351,201 @@ export const answersText = (k) => `${k} ${k % 10 === 1 && k % 100 !== 11 ? "svar
 
 /** "3 af síðustu 7 rétt". @param {number} right @param {number} of */
 export const lastRightText = (right, of) => `${right} af síðustu ${of} rétt`;
+
+/** "27.11.2026" from a day key. @param {string} day */
+const dayText = (day) => {
+  const [y, m, d] = String(day).split("-").map(Number);
+  return y && m && d ? `${d}.${m}.${y}` : String(day);
+};
+
+/* ---------- the words in learning (#12, docs/DLD-PLAN.md §1) ----------------
+ *
+ * A pupil always has LEARNING_SIZE (six) LÍNO-2 words in an intensive phase,
+ * fewer only when the list runs out. The pupil sees them as "Orðin mín",
+ * beside the words they have learned, and nothing else: no label, no mode
+ * (CONTEXT.md "Word in learning"). The set is saved as `S.learning`, a slice
+ * of its own that this module owns (`learningSlice` at the end of the file):
+ *
+ *   S.learning = {
+ *     "hluti|kk": { s: "l", d: "2026-11-27", n: 1 },   a word: `wordKey`
+ *     …
+ *   }
+ *   s  "l" in learning
+ *      "k" learned: the pupil knows it ("kann"); #16 moves a word here
+ *      "o" out without being learned: put back because two devices had
+ *          filled the six with different words (see `fillLearning`); it may
+ *          enter again later
+ *   d  the day the word got that status
+ *   n  how many times its status has changed (1 when it first enters). Two
+ *      devices: the record with more changes wins (`mergeLearning`).
+ *
+ * CHOOSING (`learningCandidates`): the LÍNO-2 words (`w.lino`, issue #9) of
+ * the classes in LEARNING_CLASSES that the lexicon has — the vocabulary
+ * filter has already taken out what the administrator hid — and that are
+ * neither in learning nor learned, whose hardness `w.irr` is within reach
+ * of the pupil's level by the rule word choice already uses
+ * (core/difficulty.js `hardReach`: 1 at þyngd 1, everything from 5), in
+ * LÍNO rank order, commonest first. The level is the saved þyngd of
+ * LEARNING_SKILL; the caller reads it (control/session.js `fillLearning`).
+ *
+ * THE SEAMS the next issues plug into:
+ *   #13  word choice prefers `wordsInLearning(S)`.
+ *   #15  the Orðakort comes before a word enters: `fillLearning`'s `ready`
+ *        says whether a candidate may enter now (its card is done); the
+ *        first that may not stops the filling, and `nextToLearn` names it.
+ *   #16  the learned rule calls `leaveLearning`; the next `fillLearning`
+ *        puts a new word in its place.
+ *   #17  a hard word comes back with `enterLearning` (a learned word may).
+ *   #19  LEARNING_SKILL becomes the Námsorð skill.
+ * `enterLearning` and `leaveLearning` are the only writes; both are pure
+ * apart from changing `S.learning`, with the day handed in.            */
+
+/** How many words are in learning at once (owner, docs/DLD-PLAN.md §1). */
+export const LEARNING_SIZE = 6;
+
+/** The word classes a word in learning may have: the open classes LÍNO-2
+    lists. Its nine conjunctions (`st`: *heldur*, *hvorki* …) are left out:
+    they are grammar, practised in Óbeygjanleg orð, not vocabulary. */
+export const LEARNING_CLASSES = new Set(["kk", "kvk", "hk", "lo", "so", "ao"]);
+
+/** The skill whose saved þyngd chooses the words (core/difficulty.js). #19
+    makes the word track a skill of its own (Námsorð); until then it is
+    Orðaforði. */
+export const LEARNING_SKILL = "ordaford";
+
+/** The most records `S.learning` keeps: more than LÍNO-2 has words. */
+export const LEARNING_MAX = 3000;
+
+const IN_LEARNING = "l", LEARNED = "k", PUT_BACK = "o";
+const LEARNING_STATES = new Set([IN_LEARNING, LEARNED, PUT_BACK]);
+
+/** @type {(S: any) => Record<string, import("../types").LearningRecord>} */
+const learningOf = (S) => obj(S && S.learning);
+
+/** The words with status `s`, by the day they got it, then by key. */
+const learningWith = (S, s) => Object.entries(learningOf(S))
+  .filter(([, r]) => r && r.s === s)
+  .sort(([a, x], [b, y]) => (x.d < y.d ? -1 : x.d > y.d ? 1 : a < b ? -1 : a > b ? 1 : 0))
+  .map(([k]) => k);
+
+/** The words in learning, the first to enter first. A fresh array.
+    @param {State} S @returns {string[]} `wordKey`s */
+export const wordsInLearning = (S) => learningWith(S, IN_LEARNING);
+
+/** The words learned in the intensive phase, the first learned first.
+    @param {State} S @returns {string[]} `wordKey`s */
+export const wordsLearned = (S) => learningWith(S, LEARNED);
+
+/** Is this word in learning now? @param {State} S @param {string} word */
+export const isInLearning = (S, word) => obj(learningOf(S)[word]).s === IN_LEARNING;
+
+/**
+ * The word's place in the intensive phase with its reason (#43), or null
+ * for a word that has never been in it.
+ * @param {State} S @param {string} word @returns {WordStatus | null}
+ */
+export function learningStatus(S, word) {
+  const r = learningOf(S)[word];
+  if (!r) return null;
+  if (r.s === IN_LEARNING)
+    return because("learning", `eitt af ${LEARNING_SIZE} orðum sem verið er að læra, frá ${dayText(r.d)}`);
+  if (r.s === LEARNED) return because("learned", `lært ${dayText(r.d)}`);
+  return because("put-back", `tekið úr hópnum ${dayText(r.d)} án þess að vera lært; getur komið aftur`);
+}
+
+/** Write a status. @param {State} S @param {string} word @param {string} s @param {DayKey} today */
+function setLearning(S, word, s, today) {
+  if (!isObj(S.learning)) S.learning = {};
+  const was = S.learning[word];
+  S.learning[word] = { s, d: today, n: num(was && was.n) + 1 };
+}
+
+/**
+ * A word enters the intensive phase today. The one way in: the filling
+ * below, and later a hard word coming back (#17). Changes `S.learning`;
+ * nothing for a word already in learning.
+ * @param {State} S @param {string} word  a `wordKey` @param {DayKey} today
+ * @returns {boolean} whether it entered
+ */
+export function enterLearning(S, word, today) {
+  if (!isWordKey(word) || !DAY.test(String(today)) || isInLearning(S, word)) return false;
+  setLearning(S, word, IN_LEARNING, today);
+  return true;
+}
+
+/**
+ * A word in learning is learned today and leaves the six (#16 calls it when
+ * its rule says so). Changes `S.learning`; nothing for a word not in learning.
+ * @param {State} S @param {string} word @param {DayKey} today
+ * @returns {boolean} whether it left
+ */
+export function leaveLearning(S, word, today) {
+  if (!DAY.test(String(today)) || !isInLearning(S, word)) return false;
+  setLearning(S, word, LEARNED, today);
+  return true;
+}
+
+/**
+ * The words that would enter next, in the order they would: see CHOOSING
+ * above. Pure. `lex` is the pupil's lexicon (core/lexicon.js).
+ * @param {State} S @param {{all: any[]}} lex @param {number} level  þyngd, 1–7
+ * @returns {any[]} lexicon entries
+ */
+export function learningCandidates(S, lex, level) {
+  const reach = hardReach(level);
+  const book = learningOf(S);
+  return (lex && Array.isArray(lex.all) ? lex.all : [])
+    .filter((w) => typeof w.lino === "number" && LEARNING_CLASSES.has(w.c)
+      && (typeof w.irr !== "number" || w.irr <= reach))
+    .filter((w) => { const r = book[`${w.o}|${w.c}`]; return !r || r.s === PUT_BACK; })
+    .sort((a, b) => a.lino - b.lino || (a.o < b.o ? -1 : a.o > b.o ? 1 : 0));
+}
+
+/** The word that would enter next, or null when the list has run out.
+    @param {State} S @param {{all: any[]}} lex @param {number} level @returns {string | null} */
+export function nextToLearn(S, lex, level) {
+  const w = learningCandidates(S, lex, level)[0];
+  return w ? `${w.o}|${w.c}` : null;
+}
+
+/**
+ * Keep the six full: words enter in LÍNO rank order until LEARNING_SIZE
+ * are in learning or the list runs out. More than six — two devices filled
+ * the set with different words before they merged — puts the newest back,
+ * the rarer first, until six are left. Changes `S.learning`; safe to call
+ * as often as wanted (nothing changes when the six are full).
+ *
+ * @param {State} S @param {{all: any[]}} lex
+ * @param {{level: number, today: DayKey, ready?: (word: string) => boolean}} o
+ *   `ready`: may this word enter now? (#15: has its Orðakort been done).
+ *   The filling stops at the first that may not.
+ * @returns {{entered: string[], putBack: string[]}}
+ */
+export function fillLearning(S, lex, { level, today, ready = () => true }) {
+  const entered = [], putBack = [];
+  if (!DAY.test(String(today))) return { entered, putBack };
+  const rank = new Map((lex && Array.isArray(lex.all) ? lex.all : [])
+    .filter((w) => typeof w.lino === "number").map((w) => [`${w.o}|${w.c}`, w.lino]));
+  const now = wordsInLearning(S);
+  if (now.length > LEARNING_SIZE) {
+    /* Keep the first to enter; on the same day the commoner word. */
+    const keep = [...now].sort((a, b) => {
+      const da = learningOf(S)[a].d, db = learningOf(S)[b].d;
+      return da < db ? -1 : da > db ? 1 : (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity) || (a < b ? -1 : 1);
+    });
+    for (const k of keep.slice(LEARNING_SIZE)) { setLearning(S, k, PUT_BACK, today); putBack.push(k); }
+    return { entered, putBack };
+  }
+  let room = LEARNING_SIZE - now.length;
+  if (room <= 0) return { entered, putBack };
+  for (const w of learningCandidates(S, lex, level)) {
+    if (room <= 0) break;
+    const k = `${w.o}|${w.c}`;
+    if (!ready(k)) break;
+    if (enterLearning(S, k, today)) { entered.push(k); room--; }
+  }
+  return { entered, putBack };
+}
 
 /* ---------- the word records and the rescue ledger (#42) ------------------
  *
@@ -566,6 +764,62 @@ export const wordKnowledgeSlice = {
     (num(obj(whole).v) < RESET_BEFORE ? {} : sanitiseWordKnowledge(raw)),
   merge: (base, local, remote) => mergeWordKnowledge(base, local, remote),
   clean: cleanWordKnowledge,
+  ownText: false,
+};
+
+/* ---------- the slice of the words in learning (#12) ----------------------- */
+
+/**
+ * `S.learning` rebuilt record by record out of whatever was saved: what is
+ * not a word key with a known status, a day and a change count is dropped.
+ * Never throws. @param {any} raw @returns {import("../types").Learning}
+ */
+export function sanitiseLearning(raw) {
+  /** @type {import("../types").Learning} */
+  const out = {};
+  for (const [k, v] of Object.entries(obj(raw))) {
+    if (Object.keys(out).length >= LEARNING_MAX) break;
+    if (!isWordKey(k) || !isObj(v) || !LEARNING_STATES.has(v.s) || !DAY.test(String(v.d))) continue;
+    out[k] = { s: v.s, d: v.d, n: Math.max(1, n(v.n, 1000)) };
+  }
+  return out;
+}
+
+/* Which of two records of one word stands: more changes, then the further
+   status (learned over in learning over put back), then the later day. */
+const STATUS_ORDER = { [PUT_BACK]: 0, [IN_LEARNING]: 1, [LEARNED]: 2 };
+const laterRecord = (l, r) => (l.n !== r.n ? (l.n > r.n ? l : r)
+  : l.s !== r.s ? (STATUS_ORDER[l.s] > STATUS_ORDER[r.s] ? l : r)
+  : l.d >= r.d ? l : r);
+
+/**
+ * Two devices: per word, the record with more status changes (a status only
+ * moves on, and every move counts one). The base is not needed. More than
+ * six in learning afterwards is put right by the next `fillLearning`. Pure.
+ * @returns {import("../types").Learning}
+ */
+export function mergeLearning(base, local, remote) {
+  const L = sanitiseLearning(local), R = sanitiseLearning(remote);
+  /** @type {import("../types").Learning} */
+  const out = {};
+  for (const k of keys(R, L)) {
+    const l = L[k], r = R[k];
+    out[k] = { ...(!l ? r : !r ? l : laterRecord(l, r)) };
+  }
+  return out;
+}
+
+/** `S.learning`: which LÍNO-2 words the pupil is learning and has learned,
+    with the day each moved. Nothing the pupil typed.
+    @type {import("../types").Slice<import("../types").Learning>} */
+export const learningSlice = {
+  key: "learning",
+  blank: () => ({}),
+  migrate: (raw) => sanitiseLearning(raw),
+  merge: (base, local, remote) => mergeLearning(base, local, remote),
+  /* The server: the same rebuilding, and no day after tomorrow. */
+  clean: (value, { limit }) => Object.fromEntries(Object.entries(sanitiseLearning(value))
+    .filter(([, r]) => r.d <= limit)),
   ownText: false,
 };
 
