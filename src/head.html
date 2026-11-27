@@ -827,6 +827,12 @@ th.th{text-align:left;font-size:11.5px;
 .okort .wcopts button.wrongpick{background:var(--rust-soft);border-color:var(--rust);color:var(--rust)}
 .okort .wcopts button:disabled{cursor:default}
 .okort .wcwhy{font-size:14.5px;line-height:1.5}
+/* #38: three related words, a row each: the word, and how it connects. */
+.linkrows{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.linkrow{display:flex;flex-wrap:wrap;gap:6px}
+.linkrow input[type=text]{font-family:var(--body);font-size:16px;padding:8px 10px}
+.linkrow .linkword{flex:0 1 150px;min-width:110px}
+.linkrow .linkhow{flex:1 1 220px}
 .collnote{margin:8px 0 0;font-size:11px;color:var(--slate)}
 .chip.word{cursor:default}
 .chip.word i{font-style:normal;font-size:11px;margin-left:5px;color:var(--slate)}

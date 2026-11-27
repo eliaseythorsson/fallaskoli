@@ -17,6 +17,7 @@
 
 import { effectivePolicy, chosenPolicy } from "./state.js";
 import { createPolicy, narrowPolicy, openFor } from "./policy.js";
+import { serverGraderUp } from "./servergrader.js";
 import { assignmentPolicy } from "./assignment.js";
 import { activePatterns, focusTypes, runReport } from "./diagnosis.js";
 import { SKILL_IDS } from "./skills.js";
@@ -128,8 +129,11 @@ export function notePick(S, topic, n, opts) {
     @param {{skills?: string[]|null, types: string[], attrs?: any}} on
     @returns {Policy} */
 export function typesPolicy(S, { skills, types, attrs }) {
+  /* #38: the grader as `effectivePolicy` sees it — without it a session
+     asked for by type ("Æfa þetta", a skill-map node) never had a
+     server-graded type, even for a pupil switched on. */
   const open = createPolicy(S.allowed || null,
-    openFor(chosenPolicy(S), { skills: skills || [], types }));
+    openFor(chosenPolicy(S), { skills: skills || [], types }), { serverGrader: serverGraderUp() });
   return narrowPolicy(open, { skills, types, attrs });
 }
 
