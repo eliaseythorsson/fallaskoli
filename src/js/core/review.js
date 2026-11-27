@@ -416,6 +416,33 @@ export function queuePattern(S, { p, t, sk = null }, now) {
   return k;
 }
 
+/**
+ * Put a learned word in the queue (#16): a word that has left the intensive
+ * phase (core/wordknowledge.js `noteLearned`) is reviewed from then on like
+ * anything else here, 1 → 3 → 7 → 21 days, and starts again at one day when
+ * it is missed. `t` is the question type to ask it in — the recall type it
+ * was last right in, so that the review makes the pupil produce the word;
+ * the entry is that type and the word (`w:<type>|<word>`), and tasks/review.js
+ * asks for the word by name. If it is already there it is left alone.
+ * @param {State} S
+ * @param {{w: string, t: string, sk?: ?string}} what
+ * @param {When} now
+ * @returns {string} the entry's key
+ */
+export function queueWord(S, { w, t, sk = null }, now) {
+  const today = dayOf(now);
+  const R = book(S);
+  const k = keyFor({ t, w });
+  if (!R.items.some((x) => x.k === k)) {
+    const made = { k, t, sk, p: null, c: null, w, i: null, s: 0,
+      due: addDays(today, INTERVALS[0]), add: today, last: today, l: 0, ok: 0 };
+    R.items.push(made);
+    bump(R.stats, made, "a");
+    tidyReview(S, today);
+  }
+  return k;
+}
+
 /* ---------- asking ---------------------------------------------------------- */
 
 /**
