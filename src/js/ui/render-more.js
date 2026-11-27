@@ -40,9 +40,13 @@ function questionSentence(t) {
   if (!t.s) return "";
   const coded = codedHTML(t, pointedWord(t));
   if (coded != null) return `<p class="sentence coded">${coded}</p>`;
-  /* Several words marked as one (item 27: the verb phrase *var byggt*). */
+  /* Several words marked as one (item 27: the verb phrase *var byggt*). The
+     marked words are what the question is about and are never glossed; the
+     rest carry the second-language gloss like any sentence (item 45 — they
+     were plain text here, so a Germynd/miðmynd/þolmynd question showed no
+     glosses with the mode on). */
   if (t.marks) return `<p class="sentence">${t.s.tok.map((x, j) => (PUNCT.has(x.w) ? x.w
-    : (j ? " " : "") + (t.marks.includes(j) ? `<span class="target">${esc(x.w)}</span>` : esc(x.w)))).join("")}</p>`;
+    : (j ? " " : "") + (t.marks.includes(j) ? `<span class="target">${esc(x.w)}</span>` : wordHTML(x)))).join("")}</p>`;
   /* item 28: a run of words underlined (a clause, a phrase), as the clause
      question marks its clause. */
   if (t.markSpan && t.span) {
@@ -51,7 +55,8 @@ function questionSentence(t) {
       const inside = j >= t.span.from && j <= t.span.to;
       /* the space between two marked words is underlined with them */
       const sp = j === 0 ? "" : inside && j > t.span.from ? `<span class="clausemark"> </span>` : " ";
-      return sp + (inside ? `<span class="clausemark">${esc(tok.w)}</span>` : esc(tok.w));
+      /* glossed inside the mark too, as RENDER.clause does (item 45) */
+      return sp + (inside ? `<span class="clausemark">${wordHTML(tok)}</span>` : wordHTML(tok));
     }).join("")}</p>`;
   }
   if (t.i == null || t.i < 0) return `<p class="sentence">${sentenceHTML(t.s, -1, "")}</p>`;
