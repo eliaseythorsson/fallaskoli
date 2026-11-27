@@ -370,6 +370,9 @@ export const classRankLevel = (r) => { let L = 1; while (L < 5 && r > CLASS_RANK
  * @param {number} [maxBand]
  * @returns {?{x: T}}
  */
+/** The `wordKey`s an item gives, as a list. */
+const keysOf = (w) => (Array.isArray(w) ? w : [w]);
+
 export function pickVocab(view, rng, items, rankOf, wordOf, maxBand = 7) {
   if (!items.length) return null;
   /* `maxBand`: a list whose items stop at level 5 (or_samhengi, or_myndun)
@@ -380,6 +383,13 @@ export function pickVocab(view, rng, items, rankOf, wordOf, maxBand = 7) {
   const wrap = items.map((x) => ({ x, r: rankOf(x) }));
   const tiers = [wrap.filter((p) => p.r > floor && p.r <= cap), wrap.filter((p) => p.r <= cap)];
   RANK_CAP.slice(b + 1).forEach((c) => tiers.push(wrap.filter((p) => p.r <= c)));
+  /* #13: an item about a word in learning may be asked whatever its rarity
+     (`pickAskable` then draws it a share of the time). Nothing changes in a
+     view without words in learning. */
+  if (view.learning) {
+    const mine = wrap.filter((p) => keysOf(wordOf(p.x)).some((k) => view.inLearning(k)));
+    if (mine.length) tiers.forEach((t, i) => { tiers[i] = [...t, ...mine.filter((p) => !t.includes(p))]; });
+  }
   for (const t of tiers) {
     const got = pickAskable(view, t, (p) => wordOf(p.x), rng);
     if (got) return { x: got.x };
@@ -399,10 +409,13 @@ export function pickVocab(view, rng, items, rankOf, wordOf, maxBand = 7) {
  * @param {Rng} rng @returns {T|null}
  */
 export function pickAskable(view, items, wordOf, rng) {
-  const ok = (x) => { const w = wordOf(x); return !(Array.isArray(w) ? w : [w]).some((k) => view.justAsked(k)); };
+  const ok = (x) => !keysOf(wordOf(x)).some((k) => view.justAsked(k));
   if (!items.some(ok)) return null;
+  /* #13: the items about a word in learning a share of the time
+     (tasks/view.js `preferLearning`; no number drawn outside ordinary practice). */
+  if (view.learning) items = view.preferLearning(items, (x) => keysOf(wordOf(x)).some((k) => view.inLearning(k)), rng);
   const got = wpick(items, () => 1, rng);
-  return ok(got) ? got : wpick(items.filter(ok), () => 1, rng);
+  return ok(got) ? got : (wpick(items.filter(ok), () => 1, rng) ?? null);
 }
 
 /* ---------- time phrases (v6.9) -------------------------------------------

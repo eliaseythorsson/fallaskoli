@@ -103,7 +103,13 @@ export function ordSynAnt(lex, view, rng) {
      and does not come next (#10). */
   const v = pickVocab(view, rng, items, (y) => pairRank(y.x, y.right), (y) => y.g.map((w) => wordKey(w.o, w.c)));
   if (!v) return null;
-  const it = v.x;
+  let it = v.x;
+  /* #13: a group with a word in learning in it was drawn for that word, so
+     the question asks it (not its synonym). */
+  if (view.learning) {
+    const mine = items.filter((y) => y.g === it.g && view.inLearning(wordKey(y.x.o, y.x.c)));
+    if (mine.length && !mine.includes(it)) it = pick(mine, rng);
+  }
   const { pos, x } = it;
   const right = ant ? it.right : pick(items.filter((y) => y.x === x), rng).right;
   const all = [...(EX.synonyms[pos] || []).flat(), ...(EX.antonyms[pos] || []).flat()];

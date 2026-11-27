@@ -110,7 +110,8 @@ export function taskVerb(lex, view, rng) {
   if (view.cannotAsk(["so"])) return null;
   const pool = topByRank(lex.verbs, shareForLevel(L, 0.21, 0.09));
   if (forcedCell(view)) return forcedVerb(lex, view, rng, pool);
-  const v = view.pickWord(lex, pool, "sagnord", rng, ["so"]);
+  /* `lex.verbs`: a verb in learning may be rarer than the pool (#13). */
+  const v = view.pickWord(lex, pool, "sagnord", rng, ["so"], lex.verbs);
   /* null: the spacing rule (#10) left no word to ask in this type now */
   if (!v) return null;
 
@@ -281,7 +282,8 @@ export function tableVerb(lex, view, rng) {
   /* A table has six cells, and a verb said only of the weather has one. */
   if (view.cannotAsk(["so"])) return null;
   if (view.askedWord(["so"]) && view.askedWord(["so"]).t3) return null;
-  const v = view.pickWord(lex, topByRank(lex.verbs, 0.36).filter((x) => !x.t3), "sagnord", rng, ["so"]);
+  const v = view.pickWord(lex, topByRank(lex.verbs, 0.36).filter((x) => !x.t3), "sagnord", rng, ["so"],
+    lex.verbs.filter((x) => !x.t3));
   /* null: the spacing rule (#10) left no word to ask in this type now */
   if (!v) return null;
   let prefs = ["GM-FH-NT", "GM-FH-ÞT"];

@@ -29,13 +29,22 @@ const PARSE_PREF = {
 
 export function taskParse(lex, view, rng) {
   const { sess, S } = view;
+  const candsOf = (s) => s.tok
+    .map((t, j) => ({ t, j }))
+    .filter(({ t }) => t.c && !t.rj && (!view.policy.wordClass || view.policy.wordClass(t.c)) &&
+      !isAmbiguousForm(lex, t) && askable(view.policy, t.m));
+  const learning = ({ t }) => view.inLearning(tokenKey(lex, t));
   for (let k = 0; k < 80; k++) {
-    const s = pick(sentPool(lex, view, "greining"), rng);
-    const cands = s.tok
-      .map((t, j) => ({ t, j }))
-      .filter(({ t }) => t.c && !t.rj && (!view.policy.wordClass || view.policy.wordClass(t.c)) &&
-        !isAmbiguousForm(lex, t) && askable(view.policy, t.m));
+    /* #13: a sentence with a word in learning that could be asked, a share
+       of the time (tasks/view.js `preferLearning`; the pool itself, and no
+       number drawn, outside ordinary practice). */
+    const pool = sentPool(lex, view, "greining");
+    const side = view.preferLearning(pool, (x) => candsOf(x).some(learning), rng);
+    const s = pick(side, rng);
+    let cands = candsOf(s);
     if (!cands.length) continue;
+    /* The learning side was drawn: the question is about that word. */
+    if (side !== pool && cands.some(learning)) cands = cands.filter(learning);
 
     const chosen = wpick(cands, ({ t }) => {
       let w = PARSE_PREF[t.c] ?? 1;
@@ -46,7 +55,7 @@ export function taskParse(lex, view, rng) {
         if (n >= 3) w *= 0.6 + 2.4 * (rec.w / n);   // what goes wrong comes back
       } else w *= 1.5;                              // ósnert kemur fyrr
       /* The word the token is (tasks/view.js `wordBoost`: 0 for the word the
-         last question asked here, #10; otherwise 1 until #13). */
+         last question asked here, #10; otherwise 1). */
       return w * view.wordBoost([tokenKey(lex, t)]);
     }, rng);
 

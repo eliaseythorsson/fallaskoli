@@ -30,6 +30,9 @@
      D  rescue drills: four words of every class, ten turns
      E  reviews (tasks/review.js): a question of every type asked again,
         cell first and word first, with its sentence avoided (#45)
+   The pupil has six words in learning (#12). C's views pass them, as
+   ordinary practice does (#13); D's and E's pass them too, and a drill and
+   a review must not let them change a thing.
    Each line is [fingerprint of the task(s), a readable hint, fingerprint of
    the state afterwards] — the state too, because what showing a question
    changes (tasks/effects.js) is part of what a builder means.
@@ -91,6 +94,8 @@ async function take() {
   const { skillNeed } = await import(R + "/src/js/core/progress.js");
   const DU = await import(R + "/src/js/core/duel.js");
   const T = await import(R + "/src/js/tasks/index.js");
+  /* #12/#13: the words in learning. A tree from before #12 has none. */
+  const WK = await import(R + "/src/js/core/wordknowledge.js");
   const { seeded, duelTasks, DUEL_TOPICS } = DU;
   const lex = buildLexicon(DATA);
   const dlex = buildLexicon(DATA, { hide: new Set(DATA.blocked || []) });
@@ -144,6 +149,9 @@ async function take() {
         if (g() < 0.4) { const last = dayBack([0, 3, 10, 40][ri(4)]); S.vocab[`${kind}:${x.t}`] = { n: 1, dates: [last], first: last, last }; }
       }
     }
+    /* Six words in learning (#12), as the app fills them; only the views
+       of C, D and E pass them on (`learn`), see viewOf. */
+    if (WK.fillLearning) WK.fillLearning(S, lex, { level: 1, today });
     const sess = ST.newSession(S);
     Object.keys(sess.diff).forEach((k) => { sess.diff[k] = diff; });
     if (worn) {
@@ -165,7 +173,10 @@ async function take() {
   /* ---- the two ways of asking ---- */
   const withSeed = (rng, f) => { const real = Math.random; Math.random = rng; try { return f(); } finally { Math.random = real; } };
   const viewOf = (c) => T.makeView({ S: c.S, sess: c.sess, policy: c.policy, today,
-    forcedNoun: c.forcedNoun, mix: c.mix || null, inRun: !!c.run, huntPrefer: c.huntPrefer || null });
+    forcedNoun: c.forcedNoun, mix: c.mix || null, inRun: !!c.run, huntPrefer: c.huntPrefer || null,
+    /* #13: as control/session.js passes them in ordinary practice (C); a
+       drill (D) and a review (E) are handed them too, and must ignore them. */
+    learning: c.learn && WK.wordsInLearning ? WK.wordsInLearning(c.S) : null });
   const land = (c, b) => { if (!b) return null; T.applyEffects(c, b.effects); return b.task; };
   const api = old ? {
     type: (spec, c, rng) => withSeed(rng, () => spec.gen(c)),
@@ -202,6 +213,7 @@ async function take() {
   for (const topic of [null, ...SKILL_IDS]) for (let seed = 0; seed < 12; seed++) {
     const c = host(seed + 50, [1, 2.5, 4][seed % 3], seed % 2 === 0);
     c.run = {};
+    c.learn = true;
     if (topic) c.policy = narrowPolicy(c.policy, { skills: [topic] });
     const rng = seeded(31337 + seed);
     const counts = {};
@@ -220,6 +232,7 @@ async function take() {
     const words = (lex.byClass[cls] || []).slice().sort((a, b) => a.r - b.r);
     for (const w of [words[0], words[3], words[11], words[40]].filter(Boolean)) for (let turn = 0; turn < 10; turn++) for (const seed of [1, 2]) {
       const c = host(seed + 80, 3, seed === 2);
+      c.learn = true;
       c.policy = old ? undefined : ST.effectivePolicy(c.S);     // a drill runs under the child's own policy
       if (turn === 6) c.forcedNoun = lex.nouns[5];
       put(`D|${cls}|${w.o}|${turn}|${seed}`, api.drill(c, w, turn, seeded(555 + turn * 3 + seed)), c);
@@ -232,6 +245,7 @@ async function take() {
     const c = host(seed + 120, d, seed % 2 === 1);
     const t = api.type(spec, c, seeded(8100 + seed * 17 + d));
     if (!t) continue;
+    c.learn = true;          // after the question it reviews was built (A's way)
     const entry = { t: spec.id, c: t.cell || null, w: t.word || null, i: t.item || null,
       p: (t.miss && t.miss[0]) || null, k: `${spec.id}#${seed}` };
     for (const wordFirst of [false, true]) {

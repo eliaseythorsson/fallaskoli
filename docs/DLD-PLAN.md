@@ -55,6 +55,11 @@ sentences for abstract words come from §2.
 **Six words in learning.** There are always six LÍNO-2 words in an intensive phase,
 taken in LÍNO frequency order within the pupil's þyngd. The pupil only sees this as
 *Orðin mín* (words in learning, words I know).
+In ordinary practice (Lota dagsins, a session the pupil chose) about one in three
+of the questions that could be about a word in learning are about one, in every
+category (#13: `LEARNING_SHARE` in `src/js/tasks/view.js`). A word in learning may
+be asked though it is rarer than the question's frequency pool, when it fits the
+frame. Duels, live rounds, rescue drills and reviews have no preference.
 
 **First meeting: Orðakort (required card).** Builds on Word Discovery (Lowe 2019, §B).
 1. Read: the ÍNO definition, 2–3 sentences, syllables, and an abbreviated inflection table.
