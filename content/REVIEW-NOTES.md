@@ -83,6 +83,9 @@ skoða sérstaklega:
   en sagan á samt að vera ótvíræð fyrir lesanda.
 - Röngu svörin við hverri spurningu: er eitthvert þeirra líka rétt aðalatriði
   að mati lesanda? Þá þarf að skipta því út.
+- Dæmin á Lesefnissíðunni og í sýnidæminu eru önnur en textarnir þrír (svo að
+  dæmi gefi ekki upp svar): sagan um Kára og nestið og textinn um hvali.
+  *Þeir fæða lifandi afkvæmi og gefa þeim mjólk* — er það eðlilega orðað?
 - Fræðitextinn: *Flestir unglingar þurfa að sofa í átta til tíu tíma á hverri
   nóttu* er almenn ráðlegging um svefn unglinga. Tölurnar ætti að bera saman
   við ráðleggingar embættis landlæknis.

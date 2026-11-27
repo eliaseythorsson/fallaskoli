@@ -1312,7 +1312,7 @@ const skillCount = await page.evaluate(
 /* Since item 83 a skill's card is the head of its trail on the skill map. */
 const skillCards = await page.$$eval("#skillmap .smlane:not(.planned)", (e) => e.length);
 ok(skillCards === skillCount, `${skillCards} skill cards but ${skillCount} skills`);
-ok(skillCount === 13, `${skillCount} skills — 12 before Námsorð (#19)`);
+ok(skillCount === 14, `${skillCount} skills — 12 before Námsorð (#19) and Lesskilningur (#30)`);
 
 /* v5.8: the same editor also carries the question types, the difficulty levels
    and the inflectional features. Counted from the catalogue rather than written

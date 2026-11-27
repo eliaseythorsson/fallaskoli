@@ -35,6 +35,8 @@ import { patternsOfNode } from "../src/js/core/skillmap.js";
 import { typeById, applyEffects } from "../src/js/tasks/index.js";
 import { freshView, poolLex, buildFresh } from "./pools.js";
 import { collect } from "../tools/review.mjs";
+import { EXAMPLES } from "../src/js/content/examples.js";
+import { LESSONS } from "../src/js/content/lessons.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const lex = poolLex();
@@ -353,6 +355,14 @@ test("les_adal: a text is remembered when it is shown, and a review brings back 
   assert.equal(spec.build(lex, freshView(1, { force: { item: "les:ekki-til#0" } }), () => 0.5), null);
   /* a forced cell of another kind of question builds nothing */
   assert.equal(spec.build(lex, freshView(1, { force: { cell: "tengi:en" } }), () => 0.5), null);
+});
+
+test("the worked example and the Lesefni page do not use a text the pupil is asked about", () => {
+  const taught = JSON.stringify(EXAMPLES.les_adal) + JSON.stringify(LESSONS.find((l) => l.id === "lesskilningur"));
+  for (const tx of EX.textar) {
+    for (const s of tx.s) assert.ok(!taught.includes(s.t), `${tx.id}: "${s.t}" is shown with its answer before it is asked`);
+    for (const q of tx.q) assert.ok(!taught.includes(q.a), `${tx.id}: the answer "${q.a}" is given away`);
+  }
 });
 
 /* ---------- the review page ------------------------------------------------------ */

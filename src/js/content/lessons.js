@@ -1319,16 +1319,16 @@ export const LESSONS = [
       { h: "Aðalatriði og smáatriði" },
       { p: "**Aðalatriðið** er það sem allur textinn fjallar um. **Smáatriði** segja meira um aðalatriðið: þau útskýra það eða gefa dæmi." },
       { ex: [
-        "Svefn er mjög mikilvægur fyrir unglinga. Flestir unglingar þurfa að sofa í átta til tíu tíma á hverri nóttu. Í svefni vinnur heilinn úr því sem gerðist um daginn.",
+        "Hvalir eru spendýr en ekki fiskar. Þeir anda með lungum og þurfa að koma upp á yfirborðið til að anda. Þeir fæða lifandi afkvæmi og gefa þeim mjólk.",
       ] },
-      { p: "Hér er aðalatriðið að **svefn er mikilvægur fyrir unglinga**. Hinar setningarnar eru smáatriði. Þær segja hvað unglingar þurfa mikinn svefn og hvað heilinn gerir í svefni." },
+      { p: "Hér er aðalatriðið að **hvalir eru spendýr**. Hinar setningarnar eru smáatriði. Þær segja hvernig hvalir anda og hvernig þeir ala upp afkvæmi sín, og það sýnir að þeir eru spendýr." },
       { tip: "Spyrðu þig: Um hvað eru **flestar** setningarnar? Ef svarið á bara við eina setningu er það smáatriði." },
       { h: "Aðalatriði í sögu" },
       { p: "Í sögu gerist eitthvað. Aðalatriðið segir í stuttu máli **hver** lenti í **hvaða vanda** og **hvernig fór**." },
       { ex: [
-        "Sara vaknaði of seint og missti af strætó. Hún hljóp alla leið í skólann. Hún kom samt of seint í fyrsta tímann.",
+        "Kári gleymdi nestinu sínu heima. Vinur hans gaf honum helminginn af samlokunni sinni.",
       ] },
-      { p: "Aðalatriðið er: *Sara missir af strætó og kemur of seint í skólann.* Að hún hljóp er smáatriði. Það segir bara frá einu af því sem gerðist." },
+      { p: "Aðalatriðið er: *Kári gleymir nestinu en vinur hans hjálpar honum.* Að vinurinn átti samloku er smáatriði. Það segir bara frá einu af því sem kemur fyrir í sögunni." },
       { warn: "Svar getur verið satt og samt ekki aðalatriðið. Það getur líka hljómað vel en staðið hvergi í textanum. Lestu textann aftur og gáðu." },
     ],
     check: [
