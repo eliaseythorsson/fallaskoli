@@ -324,9 +324,11 @@ is killed and restarted.
 Since issue #15 a card holds what the pupil chose on it: how well they said
 they knew the word (aldrei heyrt / heyrt það / get notað það) and, for each
 step, which of the offered options they picked first and whether it was
-right, with the day the card was finished. Nothing is typed yet; the pupil's
-own explanation, sentence and related words come with #18 and #38, into the
-same slice (`S.wordCards`, `src/js/core/wordcard.js`). The notice
+right, with the day the card was finished. Since #37, for a pupil the
+administrator switched on for server grading (§1h), it also holds the
+pupil's own explanation of the word, as typed (at most 1,200 characters); the
+sentence and related words come with #38, into the same slice
+(`S.wordCards`, `src/js/core/wordcard.js`). The notice
 (`/personuvernd`) still needs its paragraph: add it, and move
 `PRIVACY_VERSION`, with the release that carries the cards.*
 
@@ -348,6 +350,50 @@ pupil can read it**:
 Opening any of this up — letting a guardian or a teacher read word cards —
 would be a deliberate, separate decision, with its own line in the notice.
 
+## 1h. Claude reads a pupil's own explanation — per pupil, off by default (issue #37)
+
+*Not in the notice yet. **Before you switch it on for any pupil:** do the
+four things in "Before switching it on" below, add a paragraph to the notice
+(`/personuvernd`) and move `PRIVACY_VERSION`, so the families of those pupils
+consent to it. Without the key nothing below happens at all.*
+
+For a few pupils the program can ask Claude (Anthropic's model) to read
+**what the pupil wrote in their own words** and tick a rubric. The first and
+only such question today is the explanation of a word on the Orðakort (and
+the same question, *Orð útskýrt með eigin orðum*, in practice).
+
+| | |
+|---|---|
+| **Who** | Only a pupil the **administrator** switched on, one by one (the pupil's curriculum settings on the admin page: "Leyfa spurningar sem þjónninn les", `allowed.serverGrading`; missing means off, docs/adr/0004). Not a guardian, not a teacher, not a default. Everybody else never sees the question, and on a file or a plain host it does not exist. |
+| **What is sent** | The pupil's explanation (at most 1,200 characters) with **names stripped** first: every name and username of an account in the pupil's group, and every word with a capital letter inside a sentence, is replaced by *[nafn1]*, *[nafn2]* … before it leaves the server (`server/reader-claude.mjs` `stripNames`). With it: the word and its definition from the dictionary (ÍNO), and the rubric. **Never** the pupil's name, id, group, age or anything else from the account. |
+| **From where** | From **this server**, with the key as a server secret. The browser never talks to Anthropic, and the key is never in the page. |
+| **What comes back** | For each point of the rubric: met or not, with a quote from the text. The server drops any claim whose quote is not in the pupil's text, and returns only that; right/wrong and XP are decided in the browser. Claude writes nothing the pupil reads: the checklist and the one follow-up question are the program's own words. |
+| **What is kept** | On the server: **nothing** of the text — held in memory for one request, written to no file and no log (`server/reader.mjs`). In the pupil's own progress: the explanation as typed, on their word card (§1g: only the pupil sees it, in their export, erased with the account). A cost line per call, **anonymous**: the day, the model, the effort, the number of tokens and the price (`claude-cost.jsonl` in the data folder; no account, group or text). |
+| **At Anthropic** | Under Anthropic's commercial terms, what is sent through the API is not used to train models. **Zero data retention** — nothing stored after the answer — is an arrangement for the *organisation* the key belongs to; it is not something a request can ask for. See below. |
+| **Model** | Claude Opus 5.5 at low effort (default), or Claude Fable 5.2 (`FALLASKOLI_CLAUDE_MODEL=fable`). **Fable 5.2 requires 30-day retention at Anthropic and cannot run under zero data retention**: use it to compare on made-up texts, not for pupils, unless you accept and say that. |
+
+**Before switching it on:**
+
+1. **Zero data retention.** Ask Anthropic's sales team to enable zero data
+   retention for the organisation the key belongs to (it is enabled per
+   organisation, by Anthropic, and does not carry over to another
+   organisation). Use a key of that organisation only. Keep the confirmation.
+   Even then Anthropic may keep a request flagged for abuse for up to two
+   years; the names are stripped for that reason too.
+2. **Processor.** Anthropic becomes a processor (§4): accept their commercial
+   terms and data processing addendum, keep the copy, and add Anthropic to
+   §2's recipients and transfers (a US company).
+3. **The notice.** A paragraph: which pupils, what is sent (their own
+   explanation, without names), to whom, that it is not kept by the server
+   and not used for training, and that the explanation stays on their own card.
+   Then move `PRIVACY_VERSION` so those families consent again.
+4. **The key.** `fly secrets set ANTHROPIC_API_KEY=…` — never in `fly.toml` or a
+   file. Without it the server has no grader and the question does not exist.
+
+Cost: roughly 2–9 US cents a reading at the planned settings; add up
+`claude-cost.jsonl` to see the real figure. Limits: 120 readings an hour per
+pupil, 1,200 characters, 15 seconds a reading (`server/grading.mjs`).
+
 ---
 
 ## 2. Record of processing (Art. 30) — *vinnsluskrá*
@@ -361,7 +407,7 @@ asks for it they may want it in Icelandic; the content is what matters.
 | **Purpose** | Running an Icelandic grammar trainer for invited children and their families: logging in, keeping progress across devices, an optional leaderboard within a group, (v6.14) letting the group's teacher or guardian see the group's error patterns and a pupil's skill map, set and check assignments and set a weekly class goal, (v6.14) live rounds in class and team duels set by the teacher, (v6.14) setting the difficulty of the questions from anonymous counts of right and wrong answers and checking the error diagnosis against an anonymous sample of wrong word forms, (v6.14) adapting the practice for a learner of Icelandic as a second language, and (v6.14) reading over a few sentences a pupil writes, where the group's guardian switches it on. |
 | **Legal basis** | Consent, Art. 6(1)(a) — the user's own from 16, a parent's or guardian's below. Recorded per account. |
 | **Data subjects** | Invited learners (mostly teenagers); their parents or guardians (name only, as the consent record); administrators. |
-| **Data** | Username; nickname; password hash; role, group, status; date created; day last seen; consent record (who, when, how, notice version); visibility choices; progress (XP, levels, badges with dates, which words and inflection cells were practised and how often right or wrong, answers and minutes per day, settings); a dated history per word — for every answer about a word, the day, the kind of question and whether it was right, wrong or only seen, never what was typed (issue #8; in the learner's export, erased with the account, shown to nobody else); which words of the LÍNO-2 academic word list the learner is learning now and which they have learned, with the day each moved (issue #12; in the learner's export, erased with the account, shown to nobody else); the learner's word cards — per word, the day the card was finished, the learner's own rating of how well they knew the word and which options they chose on the card (issue #15; the learner's own text, §1g: in the learner's own export only, erased with the account, shown to nobody else, the administrator included); results of assignments set by the group's guardian (answered, right, finished); team duels (team, right answers); during a live round only, in memory, right answers and points; the learner's own choice about being counted in the statistics; whether Icelandic is the learner's second language (one yes/no, §1e); the Monday of the week the learner finished Ritun vikunnar, and — only where the group's guardian switched keeping on — the text the learner wrote there, with week and topic (§1f). For one day: how many of the account's answers have been counted that day (§1b). Transiently: IP address, for rate-limiting, in memory only. **Anonymous, not personal data:** the counts of right and wrong answers; and, only for groups whose teacher switched it on, the sample of wrong word forms (§1b). |
+| **Data** | Username; nickname; password hash; role, group, status; date created; day last seen; consent record (who, when, how, notice version); visibility choices; progress (XP, levels, badges with dates, which words and inflection cells were practised and how often right or wrong, answers and minutes per day, settings); a dated history per word — for every answer about a word, the day, the kind of question and whether it was right, wrong or only seen, never what was typed (issue #8; in the learner's export, erased with the account, shown to nobody else); which words of the LÍNO-2 academic word list the learner is learning now and which they have learned, with the day each moved (issue #12; in the learner's export, erased with the account, shown to nobody else); the learner's word cards — per word, the day the card was finished, the learner's own rating of how well they knew the word and which options they chose on the card, and — for a learner the administrator switched on for server grading — their own explanation of the word (issues #15, #37; the learner's own text, §1g: in the learner's own export only, erased with the account, shown to nobody else, the administrator included); results of assignments set by the group's guardian (answered, right, finished); team duels (team, right answers); during a live round only, in memory, right answers and points; the learner's own choice about being counted in the statistics; whether Icelandic is the learner's second language (one yes/no, §1e); the Monday of the week the learner finished Ritun vikunnar, and — only where the group's guardian switched keeping on — the text the learner wrote there, with week and topic (§1f). For one day: how many of the account's answers have been counted that day (§1b). Transiently: IP address, for rate-limiting, in memory only. **Anonymous, not personal data:** the counts of right and wrong answers; and, only for groups whose teacher switched it on, the sample of wrong word forms (§1b). |
 | **Not collected** | Email, real name, date of birth, kennitala, phone, photos, free text (the sample of §1b keeps single word forms that resemble the word asked about; the one exception is Ritun vikunnar, and only where keeping is switched on, §1f). No special categories (the second-language flag is not one, but is treated with care, §1e). |
 | **Recipients** | Other users of the same group, only what the user switches on. The guardian(s) of the user's own group: the error-pattern figures, the skill map, assignment and team-duel results (§1a, §1d), the second-language flag (§1e), and kept Ritun vikunnar texts where keeping is on (§1f). The whole group, only when its guardian sets a weekly goal: one total for the week that the user's right answers or sessions are part of (§1c). The group, on the projector in a live round: the nickname of a pupil on the leaderboard among the top five, otherwise an alias (§1d). Processor: Fly.io, Inc. (hosting). Nobody else. |
 | **Transfers outside the EEA** | Data is stored in Amsterdam. The processor is a US company certified under the EU–US Data Privacy Framework and bound by its data processing agreement (check the signed copy for the transfer terms). |
@@ -426,6 +472,7 @@ never be later than the notice that is live (a test holds it).
 |---|---|---|
 | **Fly.io, Inc.** | Runs the server and holds the disk | Sign their Data Processing Agreement: Fly dashboard → your organisation → *Compliance* / documents. Keep the PDF. |
 | Your domain registrar (if you use your own domain) | DNS only; sees no user data | Nothing |
+| **Anthropic** — only if you set `ANTHROPIC_API_KEY` (§1h) | Claude reads the own-words explanation of pupils you switched on, names stripped | Zero data retention for the key's organisation, their DPA, a paragraph in the notice — §1h, before the first pupil |
 
 **Do not add** analytics, error-tracking services, an email provider or font
 CDNs without adding them here, to §2 and to the notice. The content-security
@@ -479,6 +526,8 @@ Note each request and what you did; a line in a notebook is enough.
 | The anonymous counts of right and wrong answers | They fade: ×0.85 every week, and a count that has faded to nothing is dropped | Automatic |
 | The log of what calibration changed | The last 60 weekly runs; no people in it | Automatic |
 | A sampled wrong answer (only if a teacher switched it on) | 12 months (`SAMPLE.months`, printed in the notice), at most 500 at a time | Automatic; *Eyða sýninu* erases all at once |
+| An explanation Claude read (§1h) | Not on the server: one request in memory. On the pupil's own word card, as their progress. At Anthropic: nothing, under zero data retention (30 days for Fable 5.2) | Automatic, given §1h's arrangement |
+| The cost log of Claude readings | Anonymous lines (day, model, tokens, price); until you delete `claude-cost.jsonl` | You |
 | A text written in Ritun vikunnar | Not kept, unless the group's guardian switched keeping on: then at most 12 per pupil and 60 days (`WRITING.keepPerPupil`, `WRITING.keepDays`, printed in the notice) | Automatic; switching keeping or the check off erases the group's texts at once |
 
 ---
@@ -558,6 +607,7 @@ the honest answer to "what could go wrong" is short enough to write down here:
 | Something personal typed into an answer box and kept in the sample | Off by default, per group, a teacher's audited choice; only single words resembling a form of the word asked about pass; no account, group or day beside them; 500 at most, 12 months |
 | Somebody flooding the count to make the program easier or harder | Caps per account per day and per number; shrinkage; a quarter step a week, one level at most; accounts held for review are not counted |
 | The host misusing data | DPA; EEA region; nothing but this app on the machine |
+| A pupil's own words sent to an outside model (§1h) | Off unless the administrator switches one pupil on; names stripped; nothing kept on the server; zero data retention at Anthropic; the model only ticks a rubric and writes nothing the pupil reads |
 
 If you would rather be certain, Persónuvernd publishes a list of processing that
 requires an assessment; check it against the above.
