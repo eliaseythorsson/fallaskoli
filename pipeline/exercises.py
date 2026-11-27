@@ -414,6 +414,16 @@ WORD_IN_CONTEXT = _table("ordafordi/samhengi.tsv", [
 WORD_IN_CONTEXT_FRAMES = _table("ordafordi/samhengi-rammar.tsv", [
     ("bónus", "int"), ("setning", "text"), ("mark", "text"), ("passar", "list"), ("passar ekki", "list")])
 
+# The graded meaning question (issue #11): which of three sentences uses the
+# word with the right meaning. One right sentence and two or three where the
+# word stands in another word's place (content/ordafordi/merking.tsv).
+#   MEANING_CHOICE  (level, word, class, sense, origin, right, [wrong, wrong(, wrong)])
+MEANING_CHOICE = [
+    (lvl, o, c, sense, origin, right, [w for w in wrong if w])
+    for lvl, o, c, sense, origin, right, *wrong in _table("ordafordi/merking.tsv", [
+        ("þyngd", "int"), ("orð", "text"), ("orðflokkur", "text"), ("merking", "str"), ("uppruni", "text"),
+        ("setning", "text"), ("rangt 1", "text"), ("rangt 2", "text"), ("rangt 3", "str")])]
+
 # Words never offered for sorting without a sentence: the vocabulary filter
 # (vocab_filter.py) is about lemmas in exercises; these are fine words that
 # only occur in fixed phrases (í gær, alls konar) or are odd for 8th grade.
