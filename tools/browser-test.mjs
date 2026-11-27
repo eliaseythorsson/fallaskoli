@@ -4374,6 +4374,8 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
   const errors = [];
   p.on("pageerror", (e) => errors.push(e.message));
   await p.setViewport({ width: 1100, height: 900 });
+  /* A new pupil: the sections above left their pupils in this file's storage. */
+  await p.evaluateOnNewDocument(() => { localStorage.clear(); });
   await p.goto(FILE, { waitUntil: "domcontentloaded" });
   await p.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess && document.querySelector('#task .card')", { timeout: 20000 });
   const WORD = "útskýra|so";
@@ -4385,6 +4387,8 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
     A.S.wordCards[WORD] = { d: today, n: 1, r: 1, a: { flokkur: { c: ["no"], ok: false } } };
     A.S.learning[WORD] = { s: "k", d: today, n: 1 };
     const k = "w:or_eyda|" + WORD;
+    /* Only this review is due, so it is the one the session opens with. */
+    A.S.review.items = [];
     A.S.review.items.push({ k, t: "or_eyda", sk: "ordaford", p: null, c: null, w: WORD, i: null, s: 0,
       due: today, add: today, last: today, l: 0, ok: 0 });
     let tries = 0, marked = 0, reviews = 0;
