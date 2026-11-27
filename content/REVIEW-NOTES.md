@@ -120,6 +120,30 @@ og hafa ekki verið lesin af móðurmálshafa. Þetta ætti að skoða sérstakl
 - Í *Lína var úti að leika sér … Hún slapp við að blotna* er síðasta setningin
   útkoman: er það skýrt?
 
+## Frásögn: tvær nýjar sögur, Lesefnissíðan og sýnidæmin
+Skrá: `content/textar/saga-lykillinn.txt`, `content/textar/saga-snjokarlinn.txt`
+Leita: `Dísa átti að passa litla bróður sinn`, `Gummi vaknaði of seint`, `Af hverju getur setning sem byrjar á`
+Úr: feat/35-frasogn (atriði 35)
+
+Sögurnar tvær (Ari og lykillinn, Katla og snjókarlinn), samantektirnar við
+þær, Lesefnissíðan *Að byggja upp sögu* og sýnidæmin þrjú eru samin af
+gervigreind og hafa ekki verið lesin af móðurmálshafa. Í Frásögn er sögunum
+ruglað og setning tekin úr þeim, svo hver setning þarf að segja eitt skref
+og röðin að sjást af efninu. Þetta ætti að skoða sérstaklega:
+
+- *Ari kom fyrstur heim úr skólanum á föstudaginn*: segir *fyrstur* nógu
+  skýrt að enginn var heima?
+- *Hann vildi komast inn og fá sér eitthvað að borða*, *Ari var feginn og
+  ákvað að geyma lykilinn alltaf í töskunni*: eðlilegt?
+- *Katla vildi búa til stærsta snjókarlinn í götunni*, *En snjórinn var of
+  þurr og hélst ekki saman*, *Þá hélst snjórinn saman og snjókarlinn varð
+  næstum jafn hár og hún*: eðlilegt, og rétt um snjó?
+- *Allt í einu var hann horfinn*, *Dísa bað konu á kassanum um hjálp*,
+  *Þær fundu hann hjá sælgætinu* (Lesefnissíðan).
+- Í *Hvaða setning vantar?* eru röngu svörin setningar úr öðrum sögum, af
+  sama hluta sögukortsins ef hægt er. Setning sem byrjar á fornafni er
+  aldrei notuð þannig. Getur einhver slík setning samt passað í eyðuna?
+
 # Utan síðunnar
 
 Texti sem er ekki á yfirlitssíðunni. Skráin er nefnd við hvert atriði.
@@ -271,3 +295,23 @@ hlutum sögukortsins*; við ranga samantekt *Þessi samantekt passar ekki við
 en í sögunni*. Einnig reglan *Sögukortið* í src/js/core/diagnosis.js, heiti
 hnútsins *Sögukort: hlutar sögu* og lýsingar spurningategundanna þriggja í
 src/js/core/catalogue.js.
+
+## Frásögn: textar í spurningunum sjálfum
+Úr: feat/35-frasogn (atriði 35)
+
+Texti sem forritið býr til í spurningum Frásagnar (src/js/tasks/frasogn.js)
+og er því ekki á yfirlitssíðunni: fyrirsagnirnar *Raðaðu sögunni*, *Hvað
+vantar í söguna?* og *Hvaða setning vantar?*; spurningarnar *Setningarnar eru
+í rangri röð. Í hvaða röð gerist sagan? Gefðu hverri setningu sitt númer.*,
+*Einn hluta sögukortsins vantar í söguna. Hvaða hluta vantar?*, *Eina setningu
+vantar í söguna. Hún er markmið í sögukortinu. Hvaða setning á heima þar?*;
+skýringarnar *Setningin sem vantaði er markmið: Hvað vill persónan? Allir hinir
+hlutarnir eru í sögunni.*, *Rétta setningin passar við það sem kemur á undan og
+á eftir: sömu persónur, sami vandi.*, *Þessi setning er úr annarri sögu. Hún
+passar ekki við persónurnar og það sem gerist hér.*; merkið *Hér vantar
+setningu* í eyðunni, *sagan í heild* undir svarinu og *Sagan sem þú vannst
+með* í yfirliti lotunnar (src/js/ui/storyicons.js, src/js/ui/session.js).
+Einnig reglan *Bygging sögu* í src/js/core/diagnosis.js, heiti flokksins
+*Frásögn* og lýsing hans (*Að byggja upp sögu: röð atburða og hlutar
+sögukortsins*) í src/js/core/skills.js, heiti hnútsins *Bygging sögu: röð og
+hlutar* og lýsingar spurningategundanna þriggja í src/js/core/catalogue.js.

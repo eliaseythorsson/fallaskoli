@@ -1341,7 +1341,7 @@ const skillCount = await page.evaluate(
 /* Since item 83 a skill's card is the head of its trail on the skill map. */
 const skillCards = await page.$$eval("#skillmap .smlane:not(.planned)", (e) => e.length);
 ok(skillCards === skillCount, `${skillCards} skill cards but ${skillCount} skills`);
-ok(skillCount === 14, `${skillCount} skills — 12 before Námsorð (#19) and Lesskilningur (#30)`);
+ok(skillCount === 15, `${skillCount} skills — 12 before Námsorð (#19), Lesskilningur (#30) and Frásögn (#35)`);
 
 /* v5.8: the same editor also carries the question types, the difficulty levels
    and the inflectional features. Counted from the catalogue rather than written
@@ -3278,7 +3278,7 @@ await page.setViewport({ width: 1100, height: 900 });
     mark: c.querySelector(".smmark .mastery b")?.innerText || "", line: c.querySelector(".mline")?.innerText || "",
     pips: c.querySelectorAll(".mastery .mpips i").length, stig: c.querySelector(".smstig")?.innerText || "",
   })));
-  ok(marks.length === 14 && marks.every((m) => m.mark && m.line && m.pips === 4 && m.level >= 0 && m.level <= 4 && /^Stig \d+$/.test(m.stig)),
+  ok(marks.length === 15 && marks.every((m) => m.mark && m.line && m.pips === 4 && m.level >= 0 && m.level <= 4 && /^Stig \d+$/.test(m.stig)),
     `every category should carry a mastery mark beside its stig: ${JSON.stringify(marks.slice(0, 3))}`);
   const no = marks.find((m) => m.skill === "nafnord");
   ok(no && /rétt á þyngd|svör á þyngd|vantar/.test(no.line), `Nafnorð's mark does not say what it rests on: ${JSON.stringify(no)}`);

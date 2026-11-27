@@ -106,27 +106,29 @@ test("what is derived from core/skills.js really is", () => {
     /* #19: last, and asked only once it has a question type (core/placement.js placementTypes) */
     "namsord",
     /* #30: after it — and taken only once a type of it follows the level (core/placement.js) */
-    "lesskilningur"]);
+    "lesskilningur",
+    /* #35: the same */
+    "frasogn"]);
 });
 
 test("a skill with nothing filled in is told, file by file, what to add", () => {
   const broken = {
     ...REAL,
-    skills: [...SKILLS, { id: "frasogn", nm: "Frásögn", cur: "8.b", ico: "📖", ds: "Að segja sögu" }],
+    skills: [...SKILLS, { id: "ritun", nm: "Ritun", cur: "8.b", ico: "📝", ds: "Að skrifa texta" }],
   };
-  const got = skillChecklist("frasogn", broken);
+  const got = skillChecklist("ritun", broken);
   assert.deepEqual(got, [
-    "frasogn has no turn in the placement round: add `placement` to it in src/js/core/skills.js",
-    "frasogn has no question type: add one at the end of src/js/core/catalogue.js",
-    "frasogn has no builders: add src/js/tasks/frasogn.js and import its BUILDERS in src/js/tasks/registry.js",
-    "frasogn has no lesson page: add it in src/js/content/lessons.js",
-    "frasogn has no lesson an answer can point to: add a case for it to lessonFor in src/js/core/lessons.js",
-    "frasogn has no curriculum nodes: add them in src/js/core/curriculum.js",
-    "frasogn has no error pattern: add one that names its types in src/js/core/diagnosis.js",
-    "frasogn has no skill-map node with error patterns: add its node to NODE_PATTERNS in src/js/core/skillmap.js",
+    "ritun has no turn in the placement round: add `placement` to it in src/js/core/skills.js",
+    "ritun has no question type: add one at the end of src/js/core/catalogue.js",
+    "ritun has no builders: add src/js/tasks/ritun.js and import its BUILDERS in src/js/tasks/registry.js",
+    "ritun has no lesson page: add it in src/js/content/lessons.js",
+    "ritun has no lesson an answer can point to: add a case for it to lessonFor in src/js/core/lessons.js",
+    "ritun has no curriculum nodes: add them in src/js/core/curriculum.js",
+    "ritun has no error pattern: add one that names its types in src/js/core/diagnosis.js",
+    "ritun has no skill-map node with error patterns: add its node to NODE_PATTERNS in src/js/core/skillmap.js",
   ]);
   /* filled in one at a time, each message goes away */
-  const withLesson = { ...broken, lessons: [...LESSONS, { id: "fras", skill: "frasogn" }] };
-  assert.ok(!skillChecklist("frasogn", withLesson).some((m) => /no lesson page/.test(m)));
+  const withLesson = { ...broken, lessons: [...LESSONS, { id: "fras", skill: "ritun" }] };
+  assert.ok(!skillChecklist("ritun", withLesson).some((m) => /no lesson page/.test(m)));
   assert.deepEqual(skillChecklist("ekki", REAL), ["ekki is not a skill: add it in src/js/core/skills.js"]);
 });

@@ -85,9 +85,15 @@ export function simulatePlacement({ ability, seed = 1, year = null, now = 1_800_
   return { S, sess, st, result, suggested: suggestYear(result, { chosen: year }), asked };
 }
 
-/** The mean of the levels a simulated pupil was placed at, over the skills written. */
+/** The mean of the levels a simulated pupil was placed at, over the skills
+    the round asked. A switched-on skill it does not ask (one whose types
+    ignore the level: Lesskilningur, Frásögn) is written half a step under
+    the general level whoever the pupil is, so counting it measured only how
+    many such skills there are (#35). */
 export const meanLevel = (run) => {
-  const v = Object.values(run.result.levels).map((x) => x.level);
+  const all = Object.values(run.result.levels);
+  const asked = all.filter((x) => x.asked !== false);
+  const v = (asked.length ? asked : all).map((x) => x.level);
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 1;
 };
 

@@ -185,6 +185,10 @@ test("item 23: exact repeats in single-topic sessions stay under a ceiling per c
        else repeats them, and says so. The ceiling is its to keep once the
        twenty texts of docs/DLD-PLAN.md §4 are in (#32). */
     if (s.id === "lesskilningur") { assert.ok(EX.textar.length < 20, "enough texts now: hold Lesskilningur to the ceiling"); continue; }
+    /* Frásögn (#35) asks about the same few stories, and a question's
+       signature (core/run.js questionSig) is its title when it has no
+       sentence: every story ordered counts as the same question. */
+    if (s.id === "frasogn") { assert.ok(EX.textar.length < 20, "enough texts now: hold Frásögn to the ceiling"); continue; }
     const ceil = CEILING[s.id] ?? 0.08;
     assert.ok(t.own <= ceil, `${s.id}: ${(100 * t.own).toFixed(1)}% exact repeats (ceiling ${100 * ceil}%)`);
     /* Reviews and re-asks are repeats on purpose, three at most to a session
