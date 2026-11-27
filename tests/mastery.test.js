@@ -16,6 +16,7 @@ import { setSkillLevel } from "../src/js/core/difficulty.js";
 import { settle } from "../src/js/core/answer.js";
 import { TYPE_IDS } from "../src/js/core/policy.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
+import { skillHasTypes } from "../src/js/core/catalogue.js";
 import { NODES } from "../src/js/core/curriculum.js";
 
 const NOW = new Date(2026, 10, 16, 12).getTime();
@@ -231,7 +232,8 @@ test("the server keeps the answers per type and the types met, and nothing else"
   const big = blankState();
   for (const id of TYPE_IDS) for (let k = 0; k < 30; k++) noteTypeAnswer(big, id, 7, true, NOW);
   assert.ok(JSON.stringify(cleanState(big, { today: new Date(NOW) }).byType).length < 100 * TYPE_IDS.length, "under 100 bytes a type");
-  assert.ok(SKILL_IDS.every((s) => typeesOk(s)));
+  /* … but for a skill with no question type yet (Námsorð before its first, #19). */
+  assert.ok(SKILL_IDS.filter(skillHasTypes).every((s) => typeesOk(s)));
 });
 
 /* Every category has at least one type to read its mark from. */

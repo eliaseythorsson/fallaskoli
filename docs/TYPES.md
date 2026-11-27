@@ -82,6 +82,7 @@ The pure modules, where the shared shapes matter most:
 | `core/diagnosis.js` | findings, `S.diag`, the pattern standings |
 | `core/merge.js` | the three-way merge, typed at its edges (`State` in and out) |
 | `core/catalogue.js` | every question type, declared once (`CatalogueEntry`), in duel order |
+| `tasks/namsord.js` | Námsorð's builders (#19): none yet, typed as `Builder` for the first to come |
 | `tasks/registry.js` | the catalogue joined with each category's `BUILDERS` (`Builder`): every type must fit `TaskType` |
 | `tasks/shared.js` | the builders' helpers: `View`, `Rng`, `Lexicon` |
 

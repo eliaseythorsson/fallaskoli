@@ -132,7 +132,9 @@ test("item 18: without the queue it is a small minority (so the figure above is 
 
 /* ---- single-topic sessions: 12 categories × 2 pupils × 4 days × 2 sessions --- */
 const topics = {};
-for (const s of SKILLS) {
+/* A skill with no question type yet (Námsorð before its first, #19) has no session. */
+const ASKED = SKILLS.filter((s) => TASKS.some((t) => t.skill === s.id));
+for (const s of ASKED) {
   let rows = [], nulls = 0, repeats = 0, own = 0;
   for (let k = 0; k < 2; k++) {
     const r = run({ ability: 0.8, days: 4, perDay: 2, topic: s.id, seed: 7 + k, builderRng: seeded(50 + k) });
@@ -153,7 +155,7 @@ test("item 12 (and 11): in a single-topic session a pupil who knows the work cli
   /* Measured (ability 0.8): on the first day the level goes 1.5 → 1.7 over the
      ten questions; from the third day on, a session starts at 2.6 — not at 1.3
      as in v6.12, which spent the first half of every session below the pupil. */
-  const rows = SKILLS.flatMap((s) => topics[s.id].rows);
+  const rows = ASKED.flatMap((s) => topics[s.id].rows);
   const at = (f, from, to) => mean(rows.filter((x) => f(x) && x.i >= from && x.i <= to).map((x) => x.lvl));
   const day0 = (x) => x.d === 0 && x.r === 0, later = (x) => x.d >= 2;
   assert.ok(at(day0, 4, 9) - at(day0, 0, 1) >= 0.1, `day 0: ${at(day0, 0, 1)} → ${at(day0, 4, 9)}`);
@@ -174,7 +176,7 @@ const CEILING = {   // measured % of the questions that repeat one asked before,
   ordaford: 0.14,        // 3.8 since or_merking (#11): 67 words, and the same word again is a repeat
 };                       // every other category: measured 0–3%; ceiling 8%
 test("item 23: exact repeats in single-topic sessions stay under a ceiling per category", () => {
-  for (const s of SKILLS) {
+  for (const s of ASKED) {
     const t = topics[s.id];
     assert.equal(t.nulls, 0, `${s.id}: ran out of questions`);
     assert.equal(t.n, 160, `${s.id}: ${t.n} questions`);
