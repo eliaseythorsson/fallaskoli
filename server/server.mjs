@@ -83,6 +83,8 @@ import { nextTask, buildTask, makeView, applyEffects } from "../src/js/tasks/ind
 /* #37: Claude reads an explanation in the pupil's own words, when the key is set. */
 import { claudePlugs } from "./reader-claude.mjs";
 import { eiginRubric } from "./rubric-eigin.mjs";
+import { setningRubric } from "./rubric-setning.mjs";
+import { tengslRubric } from "./rubric-tengsl.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 /** The question types of a category, from the registry — for the patterns an
@@ -1544,7 +1546,7 @@ export function createApp({
   /* #37: the names a plug strips — everyone in the pupil's group. */
   const namesAround = async (u) => (await store.users()).filter((x) => groupOf(x) === groupOf(u))
     .flatMap((x) => [x.name, x.username]).filter((x) => typeof x === "string" && x);
-  createGrading({ plugs: graderPlugs ?? claudePlugs(env, [eiginRubric(lex)],
+  createGrading({ plugs: graderPlugs ?? claudePlugs(env, [eiginRubric(lex), setningRubric(lex), tengslRubric(lex)],
     { logFile: path.join(dataDir, "claude-cost.jsonl") }), ceilingFor, namesFor: namesAround })
     .routes({ on, json, readBody, needUser });
 

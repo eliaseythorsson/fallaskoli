@@ -1,0 +1,29 @@
+{
+  "recorded": "HAND-WRITTEN in the exact shape of a Messages API response: no API key existed where #38 was built. Replace with a real recording: node tools/record-grading.mjs --kind ... (see its header).",
+  "model": "opus",
+  "effort": "low",
+  "kind": "or_setning",
+  "word": "breyting|kvk",
+  "names": [],
+  "text": "Þegar ég flutti til Akureyrar í fyrra var það mikil breyting fyrir mig.",
+  "response": {
+    "id": "msg_01HandWrittenSetning000001",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-opus-5-5",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"findings\": [{\"point\": \"notkun\", \"met\": true, \"quote\": \"var það mikil breyting fyrir mig\"}, {\"point\": \"eigin\", \"met\": true, \"quote\": \"Þegar ég flutti til [nafn1] í fyrra\"}]}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 812,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 121
+    }
+  }
+}
