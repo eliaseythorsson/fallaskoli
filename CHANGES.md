@@ -13,6 +13,22 @@
 - `node tools/word-history.mjs` sýnir hve langt orð í námi á eftir, t.d. „rétt í 2 af 4 gerðum spurninga,
   þar af 1 án þess að sjá orðið, á 1 af 2 dögum; síðustu 3 svör rétt“.
 
+### Claude les skýringu nemandans á þjóninum (#37)
+- **Ný spurningagerð, „Orð útskýrt með eigin orðum“ (`or_eigin`)**, sem þjónninn lætur Claude lesa yfir
+  eftir matskvarða: er merkingin rétt, og er hún sögð með eigin orðum? Hún er aðeins til fyrir nemanda
+  sem stjórnandinn hefur kveikt á („Leyfa spurningar sem þjónninn les“) og aðeins þegar lykillinn
+  `ANTHROPIC_API_KEY` er settur á þjóninum. Allir aðrir sjá hana aldrei.
+- **Á Orðakortinu** kemur hún í stað þess að velja rétta skýringu, fyrir þá nemendur. Skýringin sést
+  ekki á meðan nemandinn skrifar. Endurgjöfin er gátlisti og ein spurning, aldrei endurskrifaður texti;
+  nemandinn má bæta svarið einu sinni. XP fæst fyrir að ljúka og fyrir að bæta, ekki fyrir dóminn.
+  Skýringin er vistuð á korti nemandans (eigin texti hans).
+- Á þjóninum: nöfn eru fjarlægð áður en textinn fer, textinn er hvergi geymdur, kostnaður hvers kalls er
+  skráður nafnlaust (`claude-cost.jsonl`). Claude Opus 5.5 á lágri fyrirhöfn er sjálfgefið; Claude
+  Fable 5.2 er stilling (`FALLASKOLI_CLAUDE_MODEL=fable`). Lesið `docs/PRIVACY.md` §1h áður en kveikt er
+  á þessu fyrir nokkurn nemanda.
+- Prófin nota upptekin svör (`tests/fixtures/claude/`); `tools/record-grading.mjs` tekur upp ný með
+  raunverulegum lykli. Prófin kalla aldrei á Claude.
+
 ### Orðakort: fyrstu kynni af orði (#15)
 - **Orð kemst ekki í hóp orðanna sex fyrr en nemandinn hefur lokið orðakortinu þess.** Kortið kemur á undan
   lotu sem nemandinn velur sjálfur (Lota dagsins, lota úr valinu), eitt í einu, og því er ekki hægt að loka.

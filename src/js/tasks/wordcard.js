@@ -15,6 +15,9 @@
  *   skyld     choose the words that mean nearly the same, from a list
  *   flokkur   the word class
  *   kyn       a noun's gender
+ *   eigin     (#37) only for a pupil with server grading on: the word
+ *             explained in their own words, read on the server against the
+ *             card's ÍNO definition (`eiginTask`); it replaces `skyring`
  *
  * ---- every option is checked, or the step is dropped ---------------------
  *
@@ -210,6 +213,64 @@ function stepRate({ w }) {
     question: `Hversu vel þekkir þú orðið *${w.o}*?`,
     options: RATINGS.map((id) => ({ id, text: RATING_TEXT[id] })),
   };
+}
+
+/* ---------- eigin: in my own words (#37) ------------------------------------ */
+
+/** The type id of the explanation in the pupil's own words: a question type
+    of its own (core/catalogue.js, `grader: "server"`), asked on the card and
+    in a session. */
+export const EIGIN = "or_eigin";
+
+/**
+ * The rubric the server's reader ticks (core/answer.js `checklistOf`). The
+ * labels and the follow-up questions are OUR words: nothing a model writes
+ * is shown to the pupil as a question. `merking` is the main point: it alone
+ * decides right or wrong. The server's prompt (server/rubric-eigin.mjs)
+ * says what each id means.
+ * @param {string} lemma
+ */
+export const eiginRubric = (lemma) => ({
+  main: "merking",
+  points: [
+    { id: "merking", label: "Merkingin er rétt",
+      ask: `Hvert er aðalatriðið í merkingu orðsins ${lemma}?` },
+    { id: "eigin", label: "Með þínum eigin orðum",
+      ask: `Geturðu sagt þetta á annan hátt, án þess að nota orðið ${lemma} sjálft?` },
+  ],
+});
+
+/**
+ * The explanation question on one word, graded against the card's sense
+ * (`senseOf`). Null for a word without a trusted ÍNO definition: there is
+ * nothing to grade it against. The server looks the definition up again by
+ * the word key (server/rubric-eigin.mjs): what the browser sends is the word,
+ * never the definition.
+ * @param {any} w  a lexicon entry @param {{ex?: any}} [o]
+ */
+export function eiginTask(w, { ex = EX } = {}) {
+  const sense = w ? senseOf(w, ex) : null;
+  if (!sense || !sense.def || !sense.ino) return null;
+  const word = `${w.o}|${w.c}`;
+  return {
+    type: "meaning", typeId: EIGIN, grader: "server", skill: "ordaford",
+    n: w, word, base: 10, lvl: 1,
+    /* What the answer is graded against; shown after the reading. */
+    def: sense.def,
+    read: { kind: EIGIN, context: { word } },
+    rubric: eiginRubric(w.o),
+  };
+}
+
+/* With server grading on for this pupil (`ctx.eigin`) the pupil explains
+   the word in their own words, and the structured choice of the right
+   explanation (`skyring`) is left out (DLD-PLAN §1: steps 3–5 are free text
+   with the LLM on). The definition is not on the screen while they write. */
+function stepOwn({ w, ex, eigin }) {
+  const task = eigin ? eiginTask(w, { ex }) : null;
+  if (!task) return null;
+  return { id: "eigin", kind: "server", task, def: task.def,
+    question: `Hvað merkir orðið *${w.o}*? Segðu það með þínum eigin orðum.` };
 }
 
 /* ---------- skyring: the right explanation -------------------------------- */
@@ -427,6 +488,7 @@ function stepGender({ lex, w }) {
 export const STEPS = [
   { id: "lesa", build: stepRead },
   { id: "mat", build: stepRate },
+  { id: "eigin", build: stepOwn },
   { id: "skyring", build: stepExplain },
   { id: "setning", build: stepSentence },
   { id: "skyld", build: stepRelated },
@@ -438,17 +500,21 @@ export const STEPS = [
  * The card of one word, or null for a word the lexicon does not have.
  * @param {any} lex  the pupil's lexicon (core/lexicon.js)
  * @param {string} word  a `wordKey`, "breyting|kvk"
- * @param {{ex?: any}} [o]  `ex`: the exercise lists (data/exercises.js), for a test
+ * @param {{ex?: any, eigin?: boolean}} [o]  `ex`: the exercise lists (data/exercises.js), for a
+ *   test. `eigin`: the pupil may have their own explanation read by the
+ *   server (core/policy.js: the type `or_eigin` is on for them).
  * @returns {{word: string, lemma: string, cls: string, steps: any[]} | null}
  */
-export function buildCard(lex, word, { ex = EX } = {}) {
+export function buildCard(lex, word, { ex = EX, eigin = false } = {}) {
   const at = String(word || "").lastIndexOf("|");
   const w = at > 0 ? lex.lookup(word.slice(0, at), word.slice(at + 1)) : null;
   if (!w || `${w.o}|${w.c}` !== word) return null;
-  const ctx = { lex, w, key: word, ex, sense: senseOf(w, ex) };
+  const ctx = { lex, w, key: word, ex, eigin, sense: senseOf(w, ex) };
   /* Each step draws from its own stream, so adding a step later does not
      change the options of the others. */
-  const steps = STEPS.map((s) => s.build({ ...ctx, rng: rngFor(`${word}/${s.id}`) })).filter(Boolean);
+  let steps = STEPS.map((s) => s.build({ ...ctx, rng: rngFor(`${word}/${s.id}`) })).filter(Boolean);
+  /* The free-text step replaces the structured one after it (#37). */
+  if (steps.some((s) => s.id === "eigin")) steps = steps.filter((s) => s.id !== "skyring");
   return { word, lemma: w.o, cls: w.c, steps };
 }
 

@@ -32,6 +32,10 @@ COPY src/js/content/examples.js ./src/js/content/examples.js
 # computed on the server by the very function the pupil's own map is drawn
 # from, and that function reads the Lesefni pages for a node's rule.
 COPY src/js/content/lessons.js ./src/js/content/lessons.js
+# The Orðakort's sense rules (#37): the server looks up the definition an
+# explanation is graded against with the card's own function
+# (tasks/wordcard.js), which reads these two lists.
+COPY src/js/content/wordcards.js src/js/content/syllables.js ./src/js/content/
 COPY data/data_bundle.js data/exercises.js ./data/
 COPY tools/version.mjs ./tools/version.mjs
 # Installing the program (item 54): the server makes the manifest, the icons

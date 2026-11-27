@@ -12,6 +12,11 @@
                   sentence gap (tasks/recall.js, issue #14)
      or_merking   the graded meaning question (#11): which of three
                   sentences uses the word with the right meaning
+     or_eigin     (#37) the word explained in the pupil's own words, read
+                  by the server against its ÍNO definition. `grader:
+                  "server"`: only for a pupil the administrator switched on
+                  (core/policy.js, docs/adr/0004). Also the Orðakort's
+                  "eigin" step (tasks/wordcard.js `eiginTask`).
 
    Which word comes up: the window of rarity per band is `pickVocab` in
    tasks/shared.js. There is no wait in days (#10): the one rule is the
@@ -25,6 +30,7 @@ import { built, FX } from "./effects.js";
 import { pick, wpick, shuffle, bandFor, levelFor, cap1, textSentence, pickVocab, pickAskable, nearBand, RANK_CAP, CLASS_RANK_CAP,
          classRankLevel } from "./shared.js";
 import { recallGap, recallReady } from "./recall.js";
+import { eiginTask } from "./wordcard.js";
 
 /* ================= Word meaning ========================================== */
 
@@ -519,6 +525,22 @@ export function ordOdd(lex, view, rng) {
   return null;
 }
 
+/* or_eigin (#37): a LÍNO-2 word with a trusted ÍNO definition, the words in
+   learning a share of the time (`pickAskable`). */
+const EIGIN_POOL = new WeakMap();
+function ordOwn(lex, view, rng) {
+  let pool = EIGIN_POOL.get(lex);
+  if (!pool) {
+    pool = lex.all.filter((x) => typeof x.lino === "number").map((x) => eiginTask(x)).filter(Boolean);
+    EIGIN_POOL.set(lex, pool);
+  }
+  /* A review or a drill asks about one word: that word, or nothing. */
+  const asked = view.askedWord();
+  const t = asked ? pool.find((x) => x.word === `${asked.o}|${asked.c}`) || null
+    : pickAskable(view, pool, (x) => x.word, rng);
+  return t ? built({ ...t, read: { ...t.read, context: { ...t.read.context } } }) : null;
+}
+
 /** The builders of this category, by question type id. What each type is —
    its name, renderer, tags, bands and weight — is declared in
    core/catalogue.js; tasks/registry.js joins the two.
@@ -531,4 +553,5 @@ export const BUILDERS = {
   or_utundan: { build: ordOdd },
   or_eyda: { build: recallGap, ready: recallReady },
   or_merking: { build: ordMeaning },
+  or_eigin: { build: ordOwn },
 };

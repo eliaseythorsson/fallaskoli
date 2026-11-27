@@ -118,17 +118,17 @@ test("registryFaults: a declaration without a builder, a builder without a decla
   assert.match(registryFaults([ok], {}).join(" | "), /import that file's BUILDERS in tasks\/registry\.js/);
 });
 
-test("recall and grader are declared on every type: one recall type, no server grading yet", () => {
+test("recall and grader are declared on every type: one recall type, one server-graded", () => {
   for (const t of CATALOGUE) {
     assert.equal(typeof t.recall, "boolean", `${t.id}: recall`);
     assert.ok(["app", "server"].includes(t.grader), `${t.id}: grader`);
   }
-  /* #14 added the first recall type (tasks/recall.js); the first
-     server-graded type comes after #47, and until then every type is the
-     browser's. */
+  /* #14 added the first recall type (tasks/recall.js); #37 the first
+     server-graded one (the explanation in the pupil's own words). */
   assert.deepEqual(CATALOGUE.filter((t) => t.recall).map((t) => t.id), ["or_eyda"]);
   assert.equal(isRecall("or_eyda"), true);
-  assert.deepEqual(CATALOGUE.filter((t) => t.grader !== "app").map((t) => t.id), []);
+  assert.deepEqual(CATALOGUE.filter((t) => t.grader !== "app").map((t) => t.id), ["or_eigin"]);
+  assert.equal(graderOf("or_eigin"), "server");
   assert.equal(isRecall("fill"), false);
   assert.equal(isRecall("ekki-til"), false);
   assert.equal(graderOf("fill"), "app");

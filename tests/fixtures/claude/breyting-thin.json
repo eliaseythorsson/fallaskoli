@@ -1,0 +1,28 @@
+{
+  "recorded": "HAND-WRITTEN in the exact shape of a Messages API response: no API key existed where #37 was built. Replace with a real recording: node tools/record-grading.mjs (see its header).",
+  "model": "opus",
+  "effort": "low",
+  "word": "breyting|kvk",
+  "names": [],
+  "text": "breyting er að breyta",
+  "response": {
+    "id": "msg_01HandWrittenThin00000002",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-opus-5-5",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"findings\": [{\"point\": \"merking\", \"met\": false, \"quote\": \"\"}, {\"point\": \"eigin\", \"met\": false, \"quote\": \"breyting er að breyta\"}]}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 701,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 74
+    }
+  }
+}

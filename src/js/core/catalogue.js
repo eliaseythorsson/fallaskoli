@@ -503,6 +503,17 @@ const LIST = [
     renderer: "choice", weight: 6, recall: false, grader: "app",
     tags: ["les"],
     bands: [1] },
+  /* #37 (DLD-PLAN §6): the explanation in the pupil's own words, read by
+     the server against the ÍNO definition. Only for a pupil whose
+     administrator switched server grading on, on a server whose grader is
+     up (docs/adr/0004); invisible to everybody else. Also the Orðakort's
+     free-text step (tasks/wordcard.js). The word is shown: not recall. */
+  { id: "or_eigin", skill: "ordaford",
+    nm: "Orð útskýrt með eigin orðum",
+    ds: "Merking orðs skrifuð með eigin orðum og lesin yfir á þjóninum",
+    renderer: "meaning", weight: 4, recall: false, grader: "server",
+    tags: [],
+    bands: [1] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when

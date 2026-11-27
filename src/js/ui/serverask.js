@@ -34,7 +34,7 @@ function lock(on) {
     .forEach((el) => { el.disabled = on; });
 }
 
-function checklistHTML(list) {
+export function checklistHTML(list) {
   if (!list || !list.length) return "";
   return `<ul class="checklist" style="list-style:none;padding-left:0">${list.map((p) => `<li class="${p.met ? "met" : "open"}">
     <span aria-hidden="true">${p.met ? "✓" : "○"}</span>

@@ -1,0 +1,36 @@
+{
+  "recorded": "HAND-WRITTEN in the exact shape of a Messages API response: no API key existed where #37 was built. Replace with a real recording: node tools/record-grading.mjs (see its header).",
+  "model": "opus",
+  "effort": "low",
+  "word": "breyting|kvk",
+  "names": [
+    "Jón Jónsson",
+    "jonni"
+  ],
+  "text": "Breyting er þegar eitthvað verður öðruvísi en það var áður. Jón breytti herberginu sínu og það varð allt annað.",
+  "response": {
+    "id": "msg_01HandWrittenRight0000001",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-opus-5-5",
+    "content": [
+      {
+        "type": "thinking",
+        "thinking": "The definition: það að e-ð breytist. The pupil says something becomes different than before: the core meaning. Own words, with an example.",
+        "signature": "EqQBCkYIBxgCKkDhandwrittenfixture"
+      },
+      {
+        "type": "text",
+        "text": "{\"findings\": [{\"point\": \"merking\", \"met\": true, \"quote\": \"þegar eitthvað verður öðruvísi en það var áður\"}, {\"point\": \"eigin\", \"met\": true, \"quote\": \"[nafn1] breytti herberginu sínu\"}]}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 742,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 186
+    }
+  }
+}
