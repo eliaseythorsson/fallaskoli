@@ -41,7 +41,7 @@ const STORIES = EX.textar.filter((t) => t.k === "saga");
 test("the six parts are the text format's marks, in the same order", () => {
   const py = readFileSync(path.join(root, "pipeline/content_io.py"), "utf8");
   const m = /^STORY_PARTS = \(([^)]*)\)/m.exec(py);
-  assert.ok(m, "STORY_PARTS in content_io.py");
+  assert.ok(m, "STORY_PARTS in pipeline/content_io.py");
   assert.deepEqual(STORY_PART_IDS, [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]));
   assert.deepEqual(STORY_PARTS.map((p) => p.also).filter(Boolean), ["kveikja", "tilfinning"]);
   for (const p of STORY_PARTS) assert.ok(p.nm && p.acc && p.ask.endsWith("?"), p.id);
