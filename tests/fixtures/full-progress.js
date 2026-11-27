@@ -54,6 +54,7 @@ export function fullProgress() {
       greining: skill(90, 6, 4, 2), fallstjorn: skill(80, 7, 3, 3), ordaford: skill(60, 5, 2, 2),
       setningafraedi: skill(50, 4, 3, 2), malbeiting: skill(40, 3, 2, 1), setningagerd: skill(40, 3, 1, 2),
       namsord: skill(20, 2, 1, 1),
+      lesskilningur: skill(30, 3, 1, 1),
     },
     badges: {
       run5: { n: 1, dates: ["2026-11-17"], first: "2026-11-17", last: "2026-11-17" },
@@ -72,6 +73,7 @@ export function fullProgress() {
     enabled: {
       nafnord: true, lysingarord: true, sagnord: true, fornofn: true, toluord: false, obeygjanleg: true,
       greining: true, fallstjorn: true, ordaford: true, setningafraedi: false, malbeiting: true, setningagerd: false, namsord: true,
+      lesskilningur: true,
     },
     policy: { skills: { toluord: false }, types: { lo_stig: true }, levels: {}, attrs: { fall: { EF: false } }, safeVocab: null },
     allowed: { skills: {}, types: {}, levels: {}, attrs: {}, safeVocab: true },
