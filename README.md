@@ -378,7 +378,11 @@ src/js/tasks/         the question builders, one file per category:
                       frames.js the sentence frames, explain.js the
                       explanations; recall.js the recall question (a word
                       in learning typed into a sentence gap) and its rules
-                      for which sentences and which forms count
+                      for which sentences and which forms count;
+                      wordcard.js the Orðakort of a word (#15:
+                      what the card shows and asks, every option checked
+                      or the step dropped; core/wordcard.js keeps the
+                      pupil's answers, ui/wordcard.js draws it)
 src/js/ui/            rendering: render.js (one renderer per task type;
                       render-more.js for gap, choice, tap, sort and the
                       Orðaforði bonus),
@@ -395,7 +399,9 @@ src/js/ui/            rendering: render.js (one renderer per task type;
                       GreynirCorrect check in server/writing.mjs and
                       server/greynir_worker.py)
 src/js/content/       hand-written texts in the program: the worked examples
-                      and the Lesefni pages
+                      and the Lesefni pages; for the Orðakort (#15), the
+                      wrong explanations (wordcards.js) and the syllable
+                      joints (syllables.js)
 src/head.html         the stylesheet
 src/sw.js             the service worker: caches the program, never an answer
 src/fonts/            the three typefaces, inlined into the built file
@@ -588,7 +594,9 @@ phrase stops finding one). LÍNO-2 pairs waiting for the owner's verdict
 **What is still in code.** The Lesefni pages and the worked examples
 (`src/js/content/lessons.js`, `examples.js`) are plain data in JavaScript that
 the app imports as it is; they are on the review page, and are edited where
-they are. The closed grammatical tables (ordinals, months, multi-word
+they are. So are the Orðakort lists (`src/js/content/wordcards.js`,
+`syllables.js`), which are not on the review page: `node tools/wordcards.mjs`
+prints the cards as a pupil meets them. The closed grammatical tables (ordinals, months, multi-word
 conjunctions, `sentences.GROUPS`), the clause and phrase rules of `pipeline/phrases.py`
 and the short list of adjectives that fit a kind of noun in
 `src/js/tasks/frames.js` stay in code too.

@@ -233,6 +233,29 @@ const seenTypes = new Set();
    is on the screen. */
 let worstQueue = 0;
 
+/** Issue #15: a session the pupil starts themselves (the picker, Lota
+    dagsins, "again" on the summary) opens with the Orðakort of the next word
+    while fewer than six words are in learning. The checks that start a
+    session that way are about the session: walk the card to its end, as a
+    pupil would, and go on. True if a card was open. The card itself is
+    checked in the last section of this file. */
+async function finishCard(pg = page) {
+  return pg.evaluate(() => {
+    const card = () => document.querySelector(".okort");
+    const was = !!card();
+    for (let guard = 0; guard < 30 && card(); guard++) {
+      const body = card().querySelector(".wcbody");
+      const opts = [...body.querySelectorAll(".wcopts button")];
+      if (opts.length) opts[0].click();
+      const check = body.querySelector("[data-wc=check]");
+      if (check) check.click();
+      const next = body.querySelector("[data-wc=next]");
+      if (next) next.click();
+    }
+    return was;
+  });
+}
+
 /** A badge window can lie over the screen and swallow clicks. Close it first. */
 async function dismissModals() {
   /* The queue can be long: one answer can win a dozen badges at once, and with
@@ -1045,6 +1068,9 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
   await new Promise((r) => setTimeout(r, 600));
   await page.keyboard.press("Enter");
   await new Promise((r) => setTimeout(r, 600));
+  /* #15: this pupil has no word in learning yet, so the session they asked
+     for opens with a card — the Enter worked — and starts when it is done. */
+  ok(await finishCard(), "Enter on the summary's first button did not bring the Orðakort that is due");
   await dismissModals();
   ok(await page.evaluate(() => !!window.FALLASKOLI.run || !!window.FALLASKOLI.cur),
     "Enter on the summary's first button did nothing — the mouse was still required");
@@ -1373,14 +1399,23 @@ ok(coll.words > 0, "no words in the collection after a hundred answers");
 ok(coll.mystery > 0, "no hidden badges — everything is visible in advance");
 ok(/%/.test(coll.sub), "the collected-words percentage is missing");
 
-/* Issue #12: "Orðin mín" shows the six words in learning, and says nothing more. */
+/* Issue #12: "Orðin mín" shows the words in learning, and says nothing more.
+   Issue #15: a word enters only when its Orðakort is done. Most of this
+   page's sessions were started by the test (`startRun`); the one the pupil
+   started from the summary (Enter, above) opened with one card. So exactly
+   the words whose cards are done are in, fewer than six, and the pane offers
+   the next card. The cards themselves, and six words after six cards, are
+   section #15 at the end of this file. */
 const mine = await page.evaluate(() => ({
   shown: [...document.querySelectorAll("#mywords .chip.myword")].map((e) => e.textContent.trim()),
   saved: Object.values(window.FALLASKOLI.S.learning || {}).filter((r) => r.s === "l").length,
+  cards: Object.keys(window.FALLASKOLI.S.wordCards || {}).length,
+  offer: (document.getElementById("mywordnew") || {}).textContent || "",
   text: document.getElementById("pane-words").innerText,
 }));
-ok(mine.saved === 6, `${mine.saved} words in learning, not six`);
+ok(mine.saved === mine.cards && mine.saved < 6, `${mine.saved} words in learning, ${mine.cards} cards done`);
 ok(mine.shown.length === mine.saved, `Orðin mín shows ${mine.shown.length} words, ${mine.saved} are in learning`);
+ok(mine.offer === "Kynnast nýju orði", `Orðin mín does not offer the next word's card: "${mine.offer}"`);
 ok(!/DLD|málþroska/i.test(mine.text), "the word pane names DLD");
 
 const shownWords = await page.$$eval(".chip.word", (els) => els.map((e) => e.textContent.trim()));
@@ -1946,6 +1981,7 @@ await page.setViewport({ width: 1100, height: 900 });
   await tap(`.topic[data-topic="${pickTopic}"]`);
   await tap('.sizeb[data-size="10"]');
   await tap("#runstart");
+  await finishCard();          // #15
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
   ok(await page.$("#runbar .runline") !== null, "no line above a session in progress");
   const skills = new Set();
@@ -2519,6 +2555,7 @@ await page.setViewport({ width: 1100, height: 900 });
     `the line under the button does not say what the session holds: "${setup.line}"`);
   const graded0 = await page.evaluate(() => Object.values(window.FALLASKOLI.S.byType || {}).reduce((a, x) => a + x.n, 0));
   await tap("#todaystart");
+  await finishCard();          // #15
   await page.waitForFunction("window.FALLASKOLI.cur", { timeout: 4000 });
   const kinds = [];
   for (let i = 0; i < 10; i++) {
@@ -4132,6 +4169,143 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
     } else ok(false, "#48: no second meaning question");
   }
   ok(errors.length === 0, "#48: errors on the server-graded path: " + errors.join(" | "));
+  await p.close();
+}
+
+/* ---------- Issue #15: the Orðakort --------------------------------------
+ *
+ * A new pupil starts Lota dagsins from the picker: the card of the first
+ * word comes first and cannot be left; the definition is off the screen
+ * while the explanation is chosen; when the card is finished it is saved,
+ * the word is in learning and the session starts. "Orðin mín" then offers
+ * the next cards until six words are in. */
+{
+  const p = await browser.newPage();
+  const errors = [];
+  p.on("pageerror", (e) => errors.push(e.message));
+  await p.setViewport({ width: 1100, height: 900 });
+  await p.goto(FILE, { waitUntil: "domcontentloaded" });
+  await p.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess && document.querySelector('#task .card')", { timeout: 20000 });
+
+  const opened = await p.evaluate(() => {
+    const A = window.FALLASKOLI;
+    document.querySelectorAll(".scrim").forEach((s) => s.remove());
+    const before = { learning: Object.keys(A.S.learning).length, due: A.cardDue() };
+    (document.getElementById("todaystart") || document.getElementById("runstart")).click();
+    const card = document.querySelector(".okort");
+    const out = { before, card: !!card, run: !!A.run, x: !!document.querySelector(".okort .sheetx, .okort [aria-label=Loka]"),
+      word: card ? card.querySelector(".wcword").textContent : "", step: card ? card.querySelector(".wcstep").textContent : "",
+      def: card && card.querySelector(".wcdef") ? card.querySelector(".wcdef").textContent : "",
+      heads: card ? [...card.querySelectorAll(".wcsec h4")].map((h) => h.textContent) : [],
+      syllables: card && card.querySelector(".wcsyl") ? card.querySelector(".wcsyl").textContent.replace(/\s+/g, " ").trim() : "",
+      focus: document.activeElement && document.activeElement.textContent };
+    /* No way out: Escape, and a click beside the card. */
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    const scrim = document.querySelector(".wcscrim");
+    if (scrim) scrim.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    out.still = !!document.querySelector(".okort");
+    return out;
+  });
+  ok(opened.before.learning === 0 && opened.before.due === "einnig|ao", "#15: a new pupil's first card is not einnig: " + JSON.stringify(opened.before));
+  ok(opened.card && !opened.run, "#15: starting Lota dagsins did not show the card first: " + JSON.stringify(opened));
+  ok(!opened.x && opened.still, "#15: the card can be closed (a ✕, Escape or a click beside it)");
+  ok(opened.word === "einnig" && /^Skref 1 af \d$/.test(opened.step), "#15: the card's head: " + JSON.stringify(opened));
+  ok(opened.def === "auk þess, líka, jafnframt" && opened.heads.join("|") === "Skýring|Dæmi|Atkvæði|Beyging",
+    "#15: the read step does not show definition, sentence, syllables and inflection: " + JSON.stringify(opened));
+  ok(opened.syllables === "einn · ig 2 atkvæði", `#15: the syllables: "${opened.syllables}"`);
+  ok(/Áfram/.test(opened.focus || ""), "#15: the keyboard is not on the card's button");
+
+  /* Walk a card to its end, in the page. `pick`: which option to tap in a
+     single-choice step (0 = the first, "right" = the right one is not known
+     to the page, so the first is tapped and the marks are read). */
+  const walk = () => p.evaluate(() => {
+    const log = [];
+    const card = () => document.querySelector(".okort");
+    for (let guard = 0; guard < 30 && card(); guard++) {
+      const body = card().querySelector(".wcbody"), id = body.dataset.step;
+      const opts = [...body.querySelectorAll(".wcopts button")];
+      const next = body.querySelector("[data-wc=next]");
+      const entry = { id, text: card().innerText, defOnScreen: !!body.querySelector(".wcdef"), options: opts.map((b) => b.textContent) };
+      if (id === "lesa") { log.push(entry); next.click(); continue; }
+      if (id === "mat") { log.push(entry); opts[1].click(); continue; }
+      const multi = !!body.querySelector(".wcopts.multi");
+      opts[0].click();
+      if (multi) body.querySelector("[data-wc=check]").click();
+      entry.right = body.querySelectorAll(".wcopts .right").length;
+      entry.locked = opts.every((b) => b.disabled);
+      entry.why = (body.querySelector(".wcwhy") || {}).textContent || "";
+      entry.button = body.querySelector("[data-wc=next]").textContent;
+      log.push(entry);
+      body.querySelector("[data-wc=next]").click();
+    }
+    const A = window.FALLASKOLI;
+    return { log, open: !!card(), run: !!A.run, cur: !!A.cur, cards: A.S.wordCards,
+      learning: Object.entries(A.S.learning).filter(([, r]) => r.s === "l").map(([k]) => k),
+      stored: (JSON.parse(localStorage.getItem("fallaskoli.v5." + A.S.profile.id) || "{}").wordCards) || null };
+  });
+
+  const first = await walk();
+  const ids = first.log.map((x) => x.id);
+  ok(ids.join(",") === "lesa,mat,skyring,skyld,flokkur", "#15: the steps of einnig's card: " + ids.join(","));
+  const explain = first.log.find((x) => x.id === "skyring");
+  ok(explain && !explain.defOnScreen && explain.options.length === 3
+    && explain.options.filter((o) => o === opened.def).length === 1
+    && explain.text.split(opened.def).length === 2,
+    "#15: the definition is on the screen while the explanation is chosen: " + JSON.stringify(explain));
+  ok(first.log.filter((x) => x.right != null).every((x) => x.right >= 1 && x.locked && x.why.length > 10),
+    "#15: a choice was not marked, locked and explained: " + JSON.stringify(first.log.filter((x) => x.right != null).map((x) => [x.id, x.right, x.locked, x.why])));
+  ok(/^(Rétt!|Ekki alveg\.)\*?einnig/.test((explain || {}).why || ""), "#15: the feedback gives the definition back: " + (explain || {}).why);
+  ok(/Ljúka orðakorti/.test(first.log[first.log.length - 1].button) && /Áfram/.test(explain.button), "#15: the last step's button");
+  const saved = first.cards["einnig|ao"];
+  ok(!first.open && saved && saved.r === 1 && saved.n === 1 && /^\d{4}-\d\d-\d\d$/.test(saved.d)
+    && Object.keys(saved.a).join(",") === "skyring,skyld,flokkur" && saved.a.flokkur.c[0] === "no" && saved.a.flokkur.ok === false,
+    "#15: the card was not kept with its rating and answers: " + JSON.stringify(saved));
+  ok(first.learning.join() === "einnig|ao", "#15: the word did not enter the words in learning: " + first.learning.join());
+  ok(first.run && first.cur, "#15: the session did not start after the card");
+  ok(first.stored && first.stored["einnig|ao"], "#15: the card is not in the saved progress");
+
+  /* "Orðin mín" offers the next card; six cards, six words, and then none. */
+  const six = await p.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.openView("progress");
+    const words = [];
+    for (let n = 0; n < 8; n++) {
+      const add = document.getElementById("mywordnew");
+      if (!add) break;
+      add.click();
+      const card = () => document.querySelector(".okort");
+      if (!card()) break;
+      words.push(card().querySelector(".wcword").textContent);
+      for (let guard = 0; guard < 30 && card(); guard++) {
+        const body = card().querySelector(".wcbody");
+        const opts = [...body.querySelectorAll(".wcopts button")];
+        if (body.dataset.step === "lesa") { body.querySelector("[data-wc=next]").click(); continue; }
+        opts[opts.length - 1].click();
+        const check = body.querySelector("[data-wc=check]");
+        if (check) check.click();
+        const next = body.querySelector("[data-wc=next]");
+        if (next) next.click();
+      }
+    }
+    return { words, chips: [...document.querySelectorAll("#mywords .chip.myword")].map((e) => e.textContent.trim()),
+      offer: !!document.getElementById("mywordnew"), due: A.cardDue(), cards: Object.keys(A.S.wordCards).length,
+      learning: Object.values(A.S.learning).filter((r) => r.s === "l").length,
+      text: document.getElementById("pane-words").innerText };
+  });
+  ok(six.words.length === 5 && six.learning === 6 && six.cards === 6 && six.chips.length === 6,
+    "#15: six cards did not make six words in learning: " + JSON.stringify(six));
+  ok(!six.offer && six.due === null, "#15: a seventh card is offered while six words are in learning");
+  ok(!/DLD|málþroska/i.test(six.text), "#15: the word pane names DLD");
+
+  /* With six in learning a session starts at once. */
+  const direct = await p.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    A.startChosen("blandad", 5);
+    return { card: !!document.querySelector(".okort"), run: !!A.run };
+  });
+  ok(!direct.card && direct.run, "#15: a card came though six words are in learning: " + JSON.stringify(direct));
+  ok(errors.length === 0, "#15: errors on the Orðakort: " + errors.join(" | "));
   await p.close();
 }
 

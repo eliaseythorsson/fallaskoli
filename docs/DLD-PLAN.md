@@ -78,6 +78,23 @@ list (`content/ordafordi/samheiti.tsv`, noun classes). The pupil's answers are
 own card again and add to it. PRIVACY.md gets a line on this; the cards go out with
 the pupil's data on export and are erased with it.
 
+*The structured version as built (#15).* A word enters the six only when its card
+is done; the card comes before a session the pupil chose, one at a time, and cannot
+be closed (*Orðin mín* also offers the next one). Its steps: read · self-rating ·
+the right explanation of three (the definition is off the screen) · the sentence
+that uses the word correctly · the words that mean nearly the same · word class ·
+a noun's gender. **Every option comes from BÍN, ÍNO or a hand-written list, and a
+step without enough checked material is dropped for that word** rather than filled
+in; the rule for each step is at the top of `src/js/tasks/wordcard.js`. In short:
+the wrong explanations are ÍNO definitions of two other words, proposed by the
+program and then read by a person (`src/js/content/wordcards.js`); the sentence
+step exists for words with a line in `content/ordafordi/merking.tsv` (#11); the
+related words are the synonym groups of `samheiti.tsv`; the syllables are shown for
+words whose joints are written down (`src/js/content/syllables.js`); a card is
+about one sense, so only sentences tied to that sense are shown.
+`node tools/wordcards.mjs` prints the cards for review. The answers are kept in
+`S.wordCards` (`src/js/core/wordcard.js`), a slice marked as the pupil's own text.
+
 **The intensive phase.** The word comes up in many question types, mixed together,
 grammar included: recall in a sentence gap (first-letter hint, then none), choosing
 the meaning, a synonym or antonym, choosing the sentence that fits, inflection,

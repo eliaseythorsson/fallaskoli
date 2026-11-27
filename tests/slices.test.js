@@ -168,10 +168,18 @@ test("a retired slice (vocab, #10) is dropped everywhere, and the rest of an old
   none(compare("cleanState(old copy with vocab)", "clean", cleaned, fullProgress(), { purpose: ON_PURPOSE.clean }));
 });
 
-test("no slice holds the pupil's own text yet; the helpers leave such progress alone", () => {
-  assert.deepEqual(SLICES.filter((s) => s.ownText).map((s) => s.key), [],
-    "a slice with ownText: true — check that tests/owntext.test.js and docs/PRIVACY.md §1g name it");
+test("the word cards are the one slice with the pupil's own text; the helpers take it out and keep it", () => {
+  assert.deepEqual(SLICES.filter((s) => s.ownText).map((s) => s.key), ["wordCards"],
+    "another slice with ownText: true — check that tests/owntext.test.js and docs/PRIVACY.md §1g name it");
   const F = fullProgress();
-  assert.equal(withoutOwnText(F), F, "with no own text there is nothing to take out");
-  assert.deepEqual(keepOwnText(fullProgress(), null), F);
+  const shown = withoutOwnText(F);
+  assert.equal("wordCards" in shown, false, "what others are shown has no word cards");
+  assert.deepEqual({ ...shown, wordCards: F.wordCards }, F, "and nothing else is taken out");
+  assert.equal("wordCards" in F, true, "withoutOwnText must not change what it is given");
+  /* A write by somebody else: the stored cards stay, whatever it carries. */
+  assert.deepEqual(keepOwnText({ ...fullProgress(), wordCards: {} }, F), F);
+  assert.deepEqual(keepOwnText(fullProgress(), null), { ...F, wordCards: {} });
+  /* Progress with no own text in it is handed on as it is. */
+  const { wordCards, ...rest } = F;
+  assert.equal(withoutOwnText(rest), rest);
 });

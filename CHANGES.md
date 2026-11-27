@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Orðakort: fyrstu kynni af orði (#15)
+- **Orð kemst ekki í hóp orðanna sex fyrr en nemandinn hefur lokið orðakortinu þess.** Kortið kemur á undan
+  lotu sem nemandinn velur sjálfur (Lota dagsins, lota úr valinu), eitt í einu, og því er ekki hægt að loka.
+  Undir „Orðin mín“ er hnappurinn „Kynnast nýju orði“ meðan pláss er í hópnum.
+- Á kortinu les nemandinn skýringu orðsins úr ÍNO, dæmi, atkvæðaskiptingu og stutta beygingartöflu, metur
+  hve vel hann þekkir orðið (aldrei heyrt / heyrt það / get notað það) og velur síðan rétta skýringu
+  (skýringin sést ekki á meðan), setninguna þar sem orðið er notað rétt, orð sem merkja nánast það sama,
+  orðflokk og kyn. Ekkert mállíkan kemur við sögu.
+- **Hver valkostur er sóttur í BÍN, ÍNO eða handskrifaðan lista. Skref sem ekki er til nægt yfirfarið efni
+  fyrir er sleppt fyrir það orð**; reglurnar eru efst í `src/js/tasks/wordcard.js`. Röngu skýringarnar
+  (`src/js/content/wordcards.js`) og atkvæðaskiptingin (`src/js/content/syllables.js`) eru handskráðar fyrir
+  fyrstu 330 orðin. `node tools/wordcards.mjs` prentar kortin til yfirlestrar.
+- Svörin og sjálfsmatið eru vistuð í framvindunni (`S.wordCards`) sem **eigin texti nemandans**: enginn
+  annar sér þau, þau fylgja útflutningi nemandans og er eytt með aðganginum.
+
 ### Námsorð: orðaferillinn verður flokkur (#19)
 - **Nýr flokkur, Námsorð**, fyrir orðin sem nemandinn er að læra (Orðin mín). Hann er á Færnikortinu
   með stig og vald eins og aðrir flokkar, er kveiktur í 8., 9. og 10. bekk og hefur eigin þyngd: orðin sex

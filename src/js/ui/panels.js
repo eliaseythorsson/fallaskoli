@@ -681,15 +681,21 @@ function renderMyWords(app) {
     return `<span class="chip myword"${w && w.d ? ` title="${esc(w.d)}"` : ""}>${esc(lemma)}</span>`;
   };
   const now = wordsInLearning(app.S), known = wordsLearned(app.S).reverse();
+  /* #15: a word enters when its Orðakort is done. While there is room for
+     one, the next card is offered here (it also comes before a session). */
+  const due = app.cardDue ? app.cardDue() : null;
   el.innerHTML = `<div class="collgroup">
       <div class="collhead"><b>Ég er að læra</b></div>
       ${now.length ? `<div class="chips">${now.map(chip).join("")}</div>` : `<p class="collnone">Engin orð enn.</p>`}
+      ${due ? `<div class="answer"><button type="button" class="ghost" id="mywordnew">Kynnast nýju orði</button></div>` : ""}
     </div>
     <div class="collgroup">
       <div class="collhead"><b>Ég kann</b>${known.length ? ` <span class="collcount">${known.length}</span>` : ""}</div>
       ${known.length ? `<div class="chips">${known.map(chip).join("")}</div>`
         : `<p class="collnone">Orðin sem þú lærir færast hingað.</p>`}
     </div>`;
+  const add = $("mywordnew");
+  if (add) add.onclick = () => app.withCard(() => renderMyWords(app));
 }
 
 function renderCollection(app) {

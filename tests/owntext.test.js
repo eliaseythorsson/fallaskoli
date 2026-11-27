@@ -7,11 +7,13 @@
    administrator's screen, the leaderboard, the roster, the badge statistics
    or any log; it is erased with the account.
 
-   No real slice holds such text yet. This test adds a FIXTURE slice to the
-   list, saves a pupil's progress carrying a marker in it through the real
-   route, and then calls every server route that reads other pupils' progress
-   as a classmate, a guardian and an administrator: the marker must not be in
-   any answer, any log line or any file but the pupil's own progress.
+   The word cards (`S.wordCards`, core/wordcard.js, #15) are the real slice.
+   This test also adds a FIXTURE slice to the list (free text, as #18/#38
+   will add to the cards), saves a pupil's progress carrying a marker in BOTH
+   through the real route, and then calls every server route that reads other
+   pupils' progress as a classmate, a guardian and an administrator: the
+   marker must not be in any answer, any log line or any file but the pupil's
+   own progress.
 
    The last test counts the places in server/ that read progress
    (`stateRec`, `allStates`, `store.state`). A new one fails it until the
@@ -50,6 +52,10 @@ const FIXTURE_SLICE = {
   ownText: true,
 };
 const CARDS = { "hestur|kk": `Dýr sem maður ríður á ${MARK}` };
+/* The real slice, with the marker in what the pupil chose on a card. */
+const WORD_CARDS = { "hestur|kk": { d: "2026-11-20", n: 1, r: 2, a: {
+  setning: { c: [`Ég á hest ${MARK}`], ok: true }, flokkur: { c: ["no"], ok: true } } } };
+const OWN = { [KEY]: CARDS, wordCards: WORD_CARDS };
 
 let base, dir, app;
 const logged = [];
@@ -137,8 +143,12 @@ after(async () => {
 });
 
 test("the fixture slice goes through migrate, merge and the server's check like any other", () => {
-  assert.deepEqual(ownTextKeys(), [KEY]);
-  const S = { ...fullProgress(), [KEY]: CARDS };
+  assert.deepEqual(ownTextKeys(), ["wordCards", KEY]);
+  const S = { ...fullProgress(), ...OWN };
+  assert.deepEqual(migrate(S).wordCards, WORD_CARDS);
+  assert.deepEqual(cleanState(S).wordCards, WORD_CARDS);
+  assert.equal("wordCards" in withoutOwnText(S), false);
+  assert.deepEqual(keepOwnText({ xp: 1, wordCards: {} }, S).wordCards, WORD_CARDS);
   assert.deepEqual(migrate(S)[KEY], CARDS);
   assert.deepEqual(mergeStates(null, migrate(S), migrate(fullProgress()))[KEY], CARDS);
   assert.deepEqual(cleanState(S)[KEY], CARDS);
@@ -152,8 +162,11 @@ test("the fixture slice goes through migrate, merge and the server's check like 
 test("the pupil's own text reaches the pupil, and nobody else", async () => {
   const pupil = await client().login("sol");
   const id = U.pupil.id;
-  const put = await pupil("PUT", `/state/${id}`, { ...fullProgress(), [KEY]: CARDS });
+  const put = await pupil("PUT", `/state/${id}`, { ...fullProgress(), ...OWN });
   assert.equal(put.status, 200, put.text);
+  assert.deepEqual((await pupil("GET", `/state/${id}`)).data.wordCards, WORD_CARDS, "the pupil's word cards were not stored");
+  assert.deepEqual((await pupil("GET", "/account/export")).data.progress.wordCards, WORD_CARDS,
+    "the pupil's own export has no word cards");
 
   /* Not vacuous: it was stored, and the pupil gets it back — synced, and in
      their own export. */
@@ -223,10 +236,13 @@ test("the pupil's own text reaches the pupil, and nobody else", async () => {
   const w1 = await umsjon("PUT", `/state/${id}`, adminCopy.data);
   assert.equal(w1.status, 200, w1.text);
   assert.ok((await pupil("GET", `/state/${id}`)).text.includes(MARK), "an administrator's write erased the pupil's text");
-  const w2 = await umsjon("PUT", `/state/${id}`, { ...adminCopy.data, [KEY]: { "hestur|kk": "skrifað af öðrum" } });
+  assert.equal("wordCards" in adminCopy.data, false, "the administrator was handed the word cards");
+  const w2 = await umsjon("PUT", `/state/${id}`, { ...adminCopy.data, [KEY]: { "hestur|kk": "skrifað af öðrum" },
+    wordCards: { "hestur|kk": { d: "2026-11-21", n: 5, r: 0, a: {} } } });
   assert.equal(w2.status, 200, w2.text);
   const after = await pupil("GET", `/state/${id}`);
   assert.deepEqual(after.data[KEY], CARDS, "an administrator's write replaced the pupil's text");
+  assert.deepEqual(after.data.wordCards, WORD_CARDS, "an administrator's write replaced the pupil's word cards");
 
   /* No log line, no file but the pupil's own progress. */
   assert.deepEqual(logged.filter((l) => l.includes(MARK)), [], "a log line carried the pupil's text");
