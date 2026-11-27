@@ -70,6 +70,8 @@
   "content/textar/fraedi-svefn.txt": "46c680c1418c3d9f795c06dbc9ac6594543d89d23ef1673bb2c1c36d2dede1d2",
   "content/textar/saga-afmaeliskakan.txt": "cdfd5b0bb597f55ead4702c450d6b01d9e536e91e53de40a12fd8d670a51f719",
   "content/textar/saga-bolti-a-thaki.txt": "22387b4dac947efbc7e38feede46899897e5a96e28b8340cd2ad85fc5a4b23c8",
+  "content/textar/saga-lykillinn.txt": "dd0b8ade2f936d1afade7fd0bbd22169860c74e0ca61f1788a781f9fdf7781da",
+  "content/textar/saga-snjokarlinn.txt": "d9f53ad255c8b56288bf0e04036765272b416ee63eb254f77252926e0cd60010",
   "content/textar/saga-straeto.txt": "b3ed89dc221386e92158dfc39fb0d945f699437beaf66e0435d033e6e65d45ff",
   "content/textar/saga-tyndur-hundur.txt": "667c495091b8d54e74464bdf7af3b97666a614c739a9d3913472e352417b6c97",
   "content/toluord/dagsetningar.tsv": "a1c95332f2dc18a4eb8369ef7fb496a37089eb7b9af4d6cd5ba0525e1dfa7a39",
@@ -85,7 +87,7 @@
   "data/lexicon.json": "c166ce4922c53d69526c93dbacea3372a5fbaa67b45304a4698405613df75fe0",
   "data/sentences.json": "1fbb7a55c19923732dfb61c149bb4c4ddd6452a047eee88e7953a9c50737a669",
   "data/data_bundle.js": "8166c111b2d39750a7ead280d6a5c6c25564f976bd7788e9b0f020f5c088c784",
-  "data/exercises.js": "1b085ce12e7958cd2e3f35373a8e8d2f65407486330d61711ea36ffc26eef8ed"
+  "data/exercises.js": "90403f1df1f85e6d057298dc1bb16f33885eaaa65059165d165769e4220db09b"
  },
  "counts": {
   "words": 7405,
