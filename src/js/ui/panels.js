@@ -678,7 +678,7 @@ function renderMyWords(app) {
     const at = key.lastIndexOf("|");
     const w = app.lex && app.lex.lookup ? app.lex.lookup(key.slice(0, at), key.slice(at + 1)) : null;
     const lemma = w ? w.o : key.slice(0, at);
-    return `<span class="chip word"${w && w.d ? ` title="${esc(w.d)}"` : ""}>${esc(lemma)}</span>`;
+    return `<span class="chip myword"${w && w.d ? ` title="${esc(w.d)}"` : ""}>${esc(lemma)}</span>`;
   };
   const now = wordsInLearning(app.S), known = wordsLearned(app.S).reverse();
   el.innerHTML = `<div class="collgroup">

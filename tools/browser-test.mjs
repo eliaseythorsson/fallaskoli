@@ -1373,6 +1373,16 @@ ok(coll.words > 0, "no words in the collection after a hundred answers");
 ok(coll.mystery > 0, "no hidden badges — everything is visible in advance");
 ok(/%/.test(coll.sub), "the collected-words percentage is missing");
 
+/* Issue #12: "Orðin mín" shows the six words in learning, and says nothing more. */
+const mine = await page.evaluate(() => ({
+  shown: [...document.querySelectorAll("#mywords .chip.myword")].map((e) => e.textContent.trim()),
+  saved: Object.values(window.FALLASKOLI.S.learning || {}).filter((r) => r.s === "l").length,
+  text: document.getElementById("pane-words").innerText,
+}));
+ok(mine.saved === 6, `${mine.saved} words in learning, not six`);
+ok(mine.shown.length === mine.saved, `Orðin mín shows ${mine.shown.length} words, ${mine.saved} are in learning`);
+ok(!/DLD|málþroska/i.test(mine.text), "the word pane names DLD");
+
 const shownWords = await page.$$eval(".chip.word", (els) => els.map((e) => e.textContent.trim()));
 const knownWords = await page.evaluate(() => Object.keys(window.FALLASKOLI.S.words).length);
 ok(shownWords.length <= knownWords,
