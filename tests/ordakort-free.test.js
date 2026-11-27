@@ -235,7 +235,9 @@ test("the graded meaning question and the two new types exist only with server g
     assert.equal(enabled(policy(false), t), false, id);
   }
   assert.equal(enabled(policy(false), typeById("or_merking")), true, "the app-graded one stays");
-  assert.deepEqual(CATALOGUE_IDS.slice(-4), ["or_eigin", "or_skyring", "or_setning", "or_tengsl"]);
+  /* At the end of the catalogue, after every type merged before them. */
+  assert.deepEqual(CATALOGUE_IDS.slice(-3), ["or_skyring", "or_setning", "or_tengsl"]);
+  assert.ok(CATALOGUE_IDS.indexOf("or_eigin") < CATALOGUE_IDS.indexOf("or_skyring"));
 });
 
 test("or_skyring asks about a word met in this session first, graded by the explanation's rubric", () => {

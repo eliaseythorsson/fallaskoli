@@ -473,9 +473,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 12 of 14 | 49 of 67 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Námsorð, Málbeiting, Lesskilningur |
-| 9. bekkur | 12 of 14 | 56 of 67 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 14 of 14 | 67 of 67 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
+| 8. bekkur | 12 of 14 | 52 of 70 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Námsorð, Málbeiting, Lesskilningur |
+| 9. bekkur | 12 of 14 | 59 of 70 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 14 of 14 | 70 of 70 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:

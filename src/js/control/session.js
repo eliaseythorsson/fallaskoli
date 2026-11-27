@@ -18,7 +18,7 @@ import { narrowPolicy } from "../core/policy.js";
 import { visitLevels } from "../core/difficulty.js";
 import { fillLearning, wordsInLearning, learningLevel, nextToLearn, owesCard, LEARNING_SIZE } from "../core/wordknowledge.js";
 import { cardDone, cardOf, saveCard } from "../core/wordcard.js";
-import { buildCard, EIGIN } from "../tasks/wordcard.js";
+import { buildCard } from "../tasks/wordcard.js";
 import { settle } from "../core/answer.js";
 import { serverQuestion, noReader } from "./serverask.js";
 import { openWordCard } from "../ui/wordcard.js";
