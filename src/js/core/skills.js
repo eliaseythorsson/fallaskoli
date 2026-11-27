@@ -50,6 +50,15 @@ export const SKILLS = [
      adult switches it on in the Stillingar og námsefni tab. */
   { id: "setningagerd", nm: "Setningagerðir",   cur: "10.b", ico: "🪜", placement: 12,
     ds: "Aðalsetning, aukasetning og nafnháttarsetning" },
+  /* Issue #19 (docs/DLD-PLAN.md §1, §5): the word track as a skill of its
+     own — the pupil's six words in learning (core/wordknowledge.js), with
+     its own þyngd, mastery and node on the Færnikort, on in every year and
+     one of the NEW_SKILLS that share Lota dagsins (core/today.js). Its
+     question types are those about a word in learning; the first are being
+     built (#11, #14, #15). Until one is filed here the skill has none, and
+     everything that plans questions passes it by (`skillHasTypes`). */
+  { id: "namsord",      nm: "Námsorð",          cur: "8.b", ico: "🌱", placement: 13,
+    ds: "Orðin sem þú ert að læra: merking og notkun" },
 ];
 
 export const SKILL_IDS = SKILLS.map((s) => s.id);

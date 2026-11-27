@@ -19,6 +19,7 @@
 import { $, esc } from "./dom.js";
 import { drawTeacherMap } from "./skillmap.js";
 import { SKILLS } from "../core/skills.js";
+import { skillHasTypes } from "../core/catalogue.js";
 import { patternById, UNREAD } from "../core/diagnosis.js";
 import { YEARS } from "../core/curriculum.js";
 import { utcDay as dayOf } from "../core/calendar.js";
@@ -128,7 +129,8 @@ export function targetOptionsHTML(worst = []) {
   const opt = (kind, id, nm) => `<option value="${esc(kind + ":" + id)}">${esc(nm)}</option>`;
   const order = [...worst.filter((id) => ASSIGNABLE_PATTERNS.some((p) => p.id === id)),
     ...ASSIGNABLE_PATTERNS.map((p) => p.id).filter((id) => !worst.includes(id))];
-  return `<optgroup label="Flokkar">${SKILLS.map((s) => opt("skill", s.id, s.nm)).join("")}</optgroup>
+  /* A skill with no question type yet (Námsorð before its first, #19) cannot be set. */
+  return `<optgroup label="Flokkar">${SKILLS.filter((s) => skillHasTypes(s.id)).map((s) => opt("skill", s.id, s.nm)).join("")}</optgroup>
     <optgroup label="Villumynstur${worst.length ? " (algengust í hópnum fyrst)" : ""}">${
       order.map((id) => opt("pattern", id, patternById(id).nm)).join("")}</optgroup>
     <optgroup label="Námskrá">${[...ASSIGNABLE_NODES].sort((a, b) => a.year - b.year)

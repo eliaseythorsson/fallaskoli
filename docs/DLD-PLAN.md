@@ -203,7 +203,11 @@ hræddur*) are taught directly, because work on story structure doesn't improve 
 by itself (§D). Pupils without the LLM get steps 1–3 only.
 
 **Share of Lota dagsins:** the three new skills (Námsorð, Lesskilningur, Frásögn)
-together take about 3 of its 10 questions.
+together take about 3 of its 10 questions. Built in #19: `NEW_SKILLS` and
+`NEW_SKILLS_SHARE` in `src/js/core/today.js`. The share is set aside first and
+the rest of the session is shared out by the old rule; only a new skill that is
+switched on and has a question type that may be asked counts, so with none the
+plan is exactly the old one. Adding a skill is one id in `NEW_SKILLS`.
 
 ## 6. LLM grading
 

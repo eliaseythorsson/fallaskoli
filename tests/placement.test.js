@@ -29,6 +29,7 @@ import { mergeStates } from "../src/js/core/merge.js";
 import { cleanState } from "../server/guard.mjs";
 import { createPolicy, presetPolicy, applyPreset, presetOf } from "../src/js/core/policy.js";
 import { presetContent } from "../src/js/core/curriculum.js";
+import { skillHasTypes } from "../src/js/core/catalogue.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { TASKS } from "../src/js/tasks/index.js";
 import { judge, retryAllowed } from "../src/js/core/answer.js";
@@ -40,7 +41,11 @@ import { TEXT, PLACEMENT_TOPIC } from "../src/js/ui/tour.js";
 const lex = buildLexicon(DATA);
 const T0 = 1_800_000_000_000;
 const year = (y) => createPolicy(null, presetPolicy(y));
-const YEAR8 = presetContent(8).skills, YEAR10 = presetContent(10).skills;
+/* The categories of a year the round can ask: not one with no question type
+   yet (Námsorð before its first, #19). The app hands the round the keys of
+   `placementTypes`, which leaves such a skill out by itself. */
+const askable = (y) => presetContent(y).skills.filter(skillHasTypes);
+const YEAR8 = askable(8), YEAR10 = askable(10);
 
 /** Answer a round with the outcomes in `seq` ("1"/"0"); the rest right. */
 function play(st, seq) {

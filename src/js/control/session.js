@@ -15,8 +15,8 @@ import { nextTask, makeView, withView, applyEffects, planOpening, nextOpening,
   scheduleReask, nextReask, typeById, enabled, TASKS } from "../tasks/index.js";
 import { planToday } from "../core/today.js";
 import { narrowPolicy } from "../core/policy.js";
-import { visitLevels, storedLevel } from "../core/difficulty.js";
-import { fillLearning, wordsInLearning, LEARNING_SKILL } from "../core/wordknowledge.js";
+import { visitLevels } from "../core/difficulty.js";
+import { fillLearning, wordsInLearning, learningLevel } from "../core/wordknowledge.js";
 import { maxOf } from "../core/mix.js";
 import { activePatterns, huntPreferFor, focusTypes, pickTargeted } from "../core/diagnosis.js";
 import { SKILL_IDS } from "../core/skills.js";
@@ -109,12 +109,12 @@ export function sessionControl() {
 
     /**
      * Keep six words in learning (#12, core/wordknowledge.js `fillLearning`),
-     * chosen at the saved þyngd of LEARNING_SKILL. Called when the app loads
+     * chosen at Námsorð's saved þyngd (`learningLevel`). Called when the app loads
      * and when a session starts; does nothing while the six are full.
      */
     fillLearning() {
       if (!this.S || !this.lex) return;
-      fillLearning(this.S, this.lex, { level: storedLevel(this.S, LEARNING_SKILL), today: todayKey() });
+      fillLearning(this.S, this.lex, { level: learningLevel(this.S), today: todayKey() });
     },
 
     /**

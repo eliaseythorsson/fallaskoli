@@ -84,6 +84,7 @@ export function lessonFor(task) {
     }
     case "fallstjorn": return first("fallstjorn");
     case "ordaford": return first("ordafordi");
+    case "namsord": return first("namsord", "ordafordi");
     /* item 28: the three year-10 pages. The cell says which question it is. */
     case "setningafraedi":
       return /^lidur:/.test(task.cell || "") ? first("lidir", "setningarhlutar") : first("setningarhlutar");
@@ -232,11 +233,15 @@ export function brokenTables(lex) {
 
 /**
  * Pages that teach and have nothing to practise, by decision rather than by
- * accident. Empty today: every page is the `lesson` of at least one
- * curriculum node with question types. A page added without a node fails
+ * accident. Apart from Námsorð's, every page is the `lesson` of at least
+ * one curriculum node with question types. A page added without a node fails
  * tests/lessons-practice.test.js until it gets one or is listed here.
  */
-export const READING_ONLY = new Set([]);
+export const READING_ONLY = new Set([
+  /* #19: Námsorð has no question type yet. The first of #11, #14 and #15
+     to file one under it takes this line out. */
+  "namsord",
+]);
 
 /** How many questions "Æfa þetta" asks. */
 export const PRACTICE_SIZE = 5;

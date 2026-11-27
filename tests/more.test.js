@@ -13,6 +13,7 @@ import { blankState, newSession } from "../src/js/core/state.js";
 import { TASKS, typeById } from "../src/js/tasks/index.js";
 import { ask, show } from "./helpers.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
+import { skillHasTypes } from "../src/js/core/catalogue.js";
 import { QUESTION_TYPES, createPolicy, narrowPolicy } from "../src/js/core/policy.js";
 import { mixGate, mixReport, maxOf, capOf } from "../src/js/core/mix.js";
 import { gradeForm } from "../src/js/core/grading.js";
@@ -89,8 +90,12 @@ test("every question type has a name for the settings, and every name a builder"
   QUESTION_TYPES.forEach((q) => assert.ok(SKILL_IDS.includes(q.skill), `${q.id}: skill ${q.skill}`));
 });
 
+/* A skill with no question type yet (Námsorð before its first, #19) has no
+   session to check; tests/skills-checklist.test.js holds which may be so. */
+const ASKED = SKILL_IDS.filter(skillHasTypes);
+
 test("every category offers at least three kinds of question", () => {
-  for (const id of SKILL_IDS) {
+  for (const id of ASKED) {
     const kinds = TASKS.filter((t) => (t.skill === id || (t.anyOf || []).includes(id)) && t.id !== "meaning");
     assert.ok(kinds.length >= 3, `${id}: only ${kinds.map((k) => k.id)}`);
   }
@@ -113,7 +118,7 @@ function session(skill, n) {
 }
 
 test("the mix rule holds in every category: three kinds or more, none over its share", () => {
-  for (const skill of SKILL_IDS) {
+  for (const skill of ASKED) {
     const available = TASKS.filter((t) => (t.skill === skill || (t.anyOf || []).includes(skill)) && t.id !== "meaning").map((t) => t.id);
     for (const n of [10, 15, 20]) {
       for (let r = 0; r < 4; r++) {

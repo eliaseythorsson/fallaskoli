@@ -10,6 +10,7 @@
    `blankState` and `migrate` only walk that list. */
 
 import { SKILL_IDS } from "./skills.js";
+import { skillHasTypes } from "./catalogue.js";
 import { createPolicy } from "./policy.js";
 import { serverGraderUp } from "./servergrader.js";
 import { overallLevel, skillLevel, easeOf } from "./progress.js";
@@ -497,10 +498,15 @@ export function distinctTail(list) {
   return n;
 }
 
+/** The enabled skills a pupil can answer a question of: not one that has
+    no question type yet (Námsorð before its first, #19), which would make
+    every badge that asks for "every skill" impossible. */
+const practisable = (S) => SKILL_IDS.filter((id) => S.enabled[id] !== false && skillHasTypes(id));
+
 /** Consecutive days back from today on which *every* enabled skill was
     answered. */
 export function allSkillsStreak(S, from = new Date()) {
-  const want = SKILL_IDS.filter((id) => S.enabled[id] !== false);
+  const want = practisable(S);
   if (!want.length) return 0;
   const full = (key) => {
     const sk = (S.days[key] || {}).sk || {};
@@ -558,15 +564,15 @@ export function badgeContext(S, sess, extra = {}, now = new Date()) {
 
     /* ---- multi-skill ---- */
     goal: S.goal || 10,
-    enabledSkills: SKILL_IDS.filter((id) => S.enabled[id] !== false),
+    enabledSkills: practisable(S),
     sessionSkills: (sess.skillsOk || []).length,
     daySkills: Object.keys(day.sk || {}).length,
     allSkillsDay: (() => {
-      const want = SKILL_IDS.filter((id) => S.enabled[id] !== false);
+      const want = practisable(S);
       return want.length > 0 && want.every((id) => (day.sk || {})[id] > 0);
     })(),
     allSkillsSession: (() => {
-      const want = SKILL_IDS.filter((id) => S.enabled[id] !== false);
+      const want = practisable(S);
       return want.length > 0 && want.every((id) => (sess.skillsOk || []).includes(id));
     })(),
     allSkillsStreak: allSkillsStreak(S, now),

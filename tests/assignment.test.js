@@ -12,6 +12,7 @@ import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
+import { skillHasTypes } from "../src/js/core/catalogue.js";
 import { narrowPolicy, blankPolicy } from "../src/js/core/policy.js";
 import { runPolicy } from "../src/js/core/run.js";
 import { seeded } from "../src/js/core/duel.js";
@@ -33,7 +34,9 @@ const typesOfSkill = (id) => new Set(TASKS.filter((t) => t.skill === id || (t.an
 
 /* Every target a teacher can pick. */
 const ALL = [
-  ...SKILL_IDS.map((id) => ({ kind: "skill", id })),
+  /* not a skill with no question type yet (Námsorð before its first, #19):
+     the teacher's list leaves it out */
+  ...SKILL_IDS.filter(skillHasTypes).map((id) => ({ kind: "skill", id })),
   ...ASSIGNABLE_PATTERNS.map((p) => ({ kind: "pattern", id: p.id })),
   ...ASSIGNABLE_NODES.map((n) => ({ kind: "node", id: n.id })),
   ...["8", "9", "10"].map((id) => ({ kind: "year", id })),
