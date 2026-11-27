@@ -40,6 +40,13 @@
                  question. `forcedCell` in tasks/shared.js reads the cell. A
                  builder that does not know the hook simply builds as usual,
                  and tasks/review.js keeps the question only if it matches.
+     learning    the words in learning (#12, core/wordknowledge.js
+                 `wordsInLearning`) as `wordKey`s, or null. Only ordinary
+                 practice passes them (control/session.js: Lota dagsins and
+                 a session the pupil chose). A duel and a live round (one seed,
+                 one question for many), a rescue drill (one given word) and a
+                 review (the missed word and form) pass none, and drill.js and
+                 review.js clear it themselves — see "Words in learning" below.
      cal         the calibration table (core/calibration.js), or null. Only
                  ordinary practice passes one — an empty table when the
                  server has published none. It does two things in
@@ -123,16 +130,50 @@
          The non-strict `mustAsk` word (the cloze's noun asked again), or
          null.
 
+     pickWord(lex, pool, skill, rng, classes, wider)
+     pickByWord(lex, items, wordOf, skill, rng, factor, wider)
+         `wider` (optional): every item that fits the frame, before the
+         builder's frequency cut. A word in learning from it may be asked
+         though it is rarer than the pool allows (#13, below). A builder
+         passes it only when the pool was cut by frequency alone, so
+         whatever is in `wider` fits the question as well as the pool does.
+
      wordBoost(wordKeys)
          A weight multiplier for a builder that chooses a SENTENCE (or an
          item) first — analysis, syntax, the cloze's sentence — by the
          words in it (`wordKey`s, core/state.js). 0 if one of them is the
-         word the last question asked in this type (`justAsked`), else 1:
-         #13 ("builders favour words in learning") raises it for words in
-         learning. A builder multiplies it into a weight it already has; it
-         must not turn a uniform `pick` into a `wpick` just to call it,
-         because the two read the same number differently and a seed would
-         stop meaning the same question.
+         word the last question asked in this type (`justAsked`), else 1.
+         A builder multiplies it into a weight it already has; it must not
+         turn a uniform `pick` into a `wpick` just to call it, because the
+         two read the same number differently and a seed would stop meaning
+         the same question. (The preference for words in learning is not a
+         multiplier: see `preferLearning`.)
+
+   ---- Words in learning (#13, docs/DLD-PLAN.md §1) ------------------------
+
+   In ordinary practice (the view's `learning` is set) a question that
+   COULD be about a word in learning is about one LEARNING_SHARE of the
+   time — a share, not a multiplier (owner, 2026-11-24): a multiplier gives
+   a word with weight 0.01 nothing and a word that is already common far
+   too much. It is decided in one place, for every category:
+
+     inLearning(wordKey)
+         Is this a word in learning that this view prefers? Never the word
+         the last question asked in this type (the spacing rule wins). False
+         in every view without `learning`.
+
+     preferLearning(items, isLearning, rng)
+         The items to draw from. When some items are about a word in
+         learning (`isLearning(item)`) and some are not, one number is drawn:
+         below LEARNING_SHARE the learning ones, otherwise the rest. In every
+         other case — no `learning` in the view, none of the items, or all of
+         them — `items` itself, and NO number is drawn: a duel, a drill, a
+         review or a pupil with no words in learning gets the questions a
+         seed always gave. `pickByWord` calls it for every word-first
+         builder; a sentence-first builder calls it on its sentences (or
+         items) with "has a word in learning that it could ask about", and
+         if the draw went to the learning side, asks about that word
+         (tasks/greining.js `taskParse`, obeygjanleg.js, fallstjorn.js).
 
    ---- The spacing rule (#10, docs/DLD-PLAN.md §1) -------------------------
 
@@ -170,12 +211,20 @@
          tests/spacing.test.js holds the rule over many seeded sessions.
 
    #10 changed `pickByWord`, `pickWord` and `wordBoost` without opening a
-   builder, and #13 changes the weight in the same places. tests/pickword.test.js pins what is here
+   builder, and #13 added the words in learning in the same places. tests/pickword.test.js pins what is here
    without building a question.                                              */
 
 import { effectivePolicy, todayKey, wordKey } from "../core/state.js";
 import { wordsOf } from "../core/wordknowledge.js";
 import { wpick, wordWeight } from "./shared.js";
+
+/** Of the questions in ordinary practice that could be about a word in
+    learning, the share that are (#13). Owner, 2026-11-24: about one in
+    three — often enough that the six words come round every session, in
+    every category whose frame takes them; seldom enough that practice is
+    still mostly the rest of the language, and that a pupil does not meet
+    *breyting* in every second question. */
+export const LEARNING_SHARE = 1 / 3;
 
 /** @this {any} @param {?readonly string[]} [classes] */
 function askedWord(classes = null) {
@@ -215,8 +264,42 @@ function repeatsLast(task) {
 /** The lexicon entry's `wordKey`, or null. */
 const keyOf = (x) => (x && x.o ? wordKey(x.o, x.c) : null);
 
+/** @this {any} @param {string|null|undefined} key */
+function inLearning(key) {
+  const L = this.learning;
+  return !!(key && L && L.includes(key) && !this.justAsked(key));
+}
+
+/** @this {any} @template T
+    @param {readonly T[]} items @param {(x: T) => boolean} isLearning @param {() => number} rng
+    @returns {readonly T[]} */
+function preferLearning(items, isLearning, rng) {
+  if (!this.learning || !items.length) return items;
+  const yes = items.filter(isLearning);
+  if (!yes.length || yes.length === items.length) return items;
+  return rng() < LEARNING_SHARE ? yes : items.filter((x) => !isLearning(x));
+}
+
 /** @this {any} */
-function pickByWord(lex, items, wordOf, skill, rng, factor = null) {
+function pickByWord(lex, items, wordOf, skill, rng, factor = null, wider = null) {
+  /* #13: a word in learning may come from outside the frequency pool, and
+     the learning side is drawn LEARNING_SHARE of the time. Nothing here
+     happens, and nothing is drawn, in a view without `learning`. */
+  if (this.learning) {
+    const isL = (x) => this.inLearning(keyOf(wordOf(x)));
+    if (wider) {
+      const have = new Set(items);
+      const extra = wider.filter((x) => !have.has(x) && isL(x));
+      if (extra.length) items = [...items, ...extra];
+    }
+    const all = items;
+    items = this.preferLearning(all, isL, rng);
+    /* The learning side: the words in learning come up about equally
+       often. `wordWeight` would ask *breyting* (rank 83) ten times as often
+       as *einstaklingur* (rank 246); among six words the pupil is meant to
+       learn, rarity is no reason to see one less. */
+    if (items !== all && isL(items[0])) return wpick(items, factor || (() => 1), rng) ?? null;
+  }
   const wf = factor
     ? (x) => wordWeight(lex, this, wordOf(x), skill) * factor(x)
     : (x) => wordWeight(lex, this, wordOf(x), skill);
@@ -232,12 +315,13 @@ function pickByWord(lex, items, wordOf, skill, rng, factor = null) {
 }
 
 /** @this {any} */
-function pickWord(lex, pool, skill, rng, classes) {
+function pickWord(lex, pool, skill, rng, classes, wider = null) {
   if (this.cannotAsk(classes)) return null;
   const asked = this.askedWord(classes);
   /* A strict word that the last question asked in this type: not now. */
   if (asked) return this.justAsked(keyOf(asked)) ? null : asked;
-  return this.pickByWord(lex, pool, (x) => x, skill, rng);
+  return this.pickByWord(lex, pool, (x) => x, skill, rng, null,
+    wider && classes ? wider.filter((x) => classes.includes(x.c)) : wider);
 }
 
 /** @this {any} @param {readonly (string|null)[]} [wordKeys] */
@@ -245,7 +329,8 @@ function wordBoost(wordKeys) {
   return wordKeys && wordKeys.some((k) => this.justAsked(k)) ? 0 : 1;
 }
 
-const METHODS = { askedWord, cannotAsk, retryWord, pickByWord, pickWord, wordBoost, justAsked, repeatsLast };
+const METHODS = { askedWord, cannotAsk, retryWord, pickByWord, pickWord, wordBoost, justAsked, repeatsLast,
+  inLearning, preferLearning };
 
 /** The one `mustAsk` of what a host passes. */
 function mustAskOf(mustAsk, drillWord, forcedNoun) {
@@ -256,7 +341,8 @@ function mustAskOf(mustAsk, drillWord, forcedNoun) {
 }
 
 export function makeView({ S, sess, policy = null, today = null, mustAsk = null, forcedNoun = null,
-  drillWord = null, typeId = null, mix = null, inRun = false, huntPrefer = null, force = null, cal = null }) {
+  drillWord = null, typeId = null, mix = null, inRun = false, huntPrefer = null, force = null, cal = null,
+  learning = null }) {
   return Object.freeze({
     S, sess,
     policy: policy || effectivePolicy(S),
@@ -268,11 +354,17 @@ export function makeView({ S, sess, policy = null, today = null, mustAsk = null,
     huntPrefer: huntPrefer || [],
     force: force ? Object.freeze({ ...force }) : null,
     cal: cal || null,
+    learning: learningOf(learning),
     ...METHODS,
   });
 }
 
+/** The words in learning as the view keeps them: a frozen list, or null
+    when there are none (so `if (view.learning)` is the whole test). */
+const learningOf = (L) => (L && L.length ? Object.freeze([...L]) : null);
+
 /** The same view with something changed — a new object; the old one stands.
     `mustAsk` is given as { word, strict } or null. */
 export const withView = (view, changes) => Object.freeze({ ...view, ...changes,
-  ...("mustAsk" in changes ? { mustAsk: mustAskOf(changes.mustAsk, null, null) } : {}) });
+  ...("mustAsk" in changes ? { mustAsk: mustAskOf(changes.mustAsk, null, null) } : {}),
+  ...("learning" in changes ? { learning: learningOf(changes.learning) } : {}) });
