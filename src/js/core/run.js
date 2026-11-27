@@ -209,7 +209,9 @@ export function countAnswer(r, cur, correct, chances, findings) {
     r.misses[f.p] = (r.misses[f.p] || 0) + 1;
     r.found.push({ p: f.p, ex: f.ex || null });
   });
-  r.items.push({ type: cur.typeId || cur.type, skill: cur.skill, ok: correct ?? null });
+  r.items.push({ type: cur.typeId || cur.type, skill: cur.skill, ok: correct ?? null,
+    /* #35: a Frásögn question's whole story, for the summary (lastStory) */
+    ...(Array.isArray(cur.story) ? { story: cur.story } : {}) });
   return true;
 }
 
@@ -267,6 +269,18 @@ export function summaryOf(r, report, xp, early, now) {
       ? { review: false, types: r.types, skills: r.skills, attrs: r.attrs, label: r.label, lesson: r.lesson }
       : null,
   };
+}
+
+/**
+ * The story a session with Frásögn in it ends with (issue #35, CONTEXT.md
+ * "Frásögn session"): the whole story of its last Frásögn question, or null
+ * when it had none.
+ * @param {{ items?: { story?: { t: string, p: string }[] }[] }} d  a run or its summary
+ * @returns {?{ t: string, p: string }[]}
+ */
+export function lastStory(d) {
+  const it = [...((d && d.items) || [])].reverse().find((x) => Array.isArray(x.story));
+  return it ? it.story : null;
 }
 
 /**
