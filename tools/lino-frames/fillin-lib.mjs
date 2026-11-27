@@ -331,7 +331,7 @@ export const STATUS = {
  *   rows  [{ word, lvl, text, form, why }]
  *   bank  Set of the bank's sentence texts
  * -> the rows, each with `error` (string) or null. A sentence the bank has
- * already would stop the build (build_sentences.py: the same text twice);
+ * already would stop the build (pipeline/build_sentences.py: the same text twice);
  * one written twice in the run is kept once.
  */
 export function precheck(rows, bank) {
