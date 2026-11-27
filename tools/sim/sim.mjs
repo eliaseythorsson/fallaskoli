@@ -57,7 +57,7 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
       const run = { topic, n: size, i: 0, items: [], focus: null, review: [], reask: [] };
       app.run = run;
       // as app.startRun: six words in learning (#12), preferred in ordinary practice (#13)
-      WK.fillLearning(S, lex, { level: DF.storedLevel(S, WK.LEARNING_SKILL), today: ST.todayKey() });
+      WK.fillLearning(S, lex, { level: WK.learningLevel(S), today: ST.todayKey() });
       // as app.startRun: the session opens with up to three due reviews (core/review.js)
       const skillsOnly = () => narrowPolicy(ST.effectivePolicy(S), { skills: SKILL_IDS.includes(topic) ? [topic] : null, types: null });
       if (review) run.review = planOpening(S, ST.todayKey(), size, skillsOnly(), null);

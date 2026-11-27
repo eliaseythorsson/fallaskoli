@@ -359,7 +359,7 @@ export function setPolicyFlag(policy, dim, key, value) {
  * the buttons cannot drift apart. Only the words are. A test pins what each
  * year adds, so these sentences are revisited when the nodes change. */
 const PRESET_TEXT = {
-  8: "Fallorð, sagnorð, óbeygjanleg orð, orðflokkagreining, fallstjórn, orðaforði og málbeiting.",
+  8: "Fallorð, sagnorð, óbeygjanleg orð, orðflokkagreining, fallstjórn, orðaforði, námsorð og málbeiting.",
   9: "Allt úr 8. bekk og að auki afturbeygt fornafn, samtengingar, forsetning eða atviksorð, ópersónulegar sagnir, sterkar og veikar sagnir, þolmynd og boðháttur.",
   10: "Allt úr 9. bekk og að auki setningafræði (setningarhlutar og liðir), setningagerðir, tegundir aukasetninga og bein og óbein ræða.",
 };

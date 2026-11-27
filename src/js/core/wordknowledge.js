@@ -144,7 +144,7 @@
 
 import { CATALOGUE_IDS, isRecall } from "./catalogue.js";
 import { add, num, obj, n, DAY, keys, later, counters, dayStr, isObj, pairs } from "./slicerules.js";
-import { hardReach } from "./difficulty.js";
+import { hardReach, levelRecord } from "./difficulty.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Task} Task */
@@ -386,7 +386,7 @@ const dayText = (day) => {
  * of the pupil's level by the rule word choice already uses
  * (core/difficulty.js `hardReach`: 1 at þyngd 1, everything from 5), in
  * LÍNO rank order, commonest first. The level is the saved þyngd of
- * LEARNING_SKILL; the caller reads it (control/session.js `fillLearning`).
+ * LEARNING_SKILL (`learningLevel`); the caller reads it (control/session.js `fillLearning`).
  *
  * THE SEAMS the next issues plug into:
  *   #13  word choice prefers `wordsInLearning(S)`.
@@ -396,7 +396,7 @@ const dayText = (day) => {
  *   #16  the learned rule calls `leaveLearning`; the next `fillLearning`
  *        puts a new word in its place.
  *   #17  a hard word comes back with `enterLearning` (a learned word may).
- *   #19  LEARNING_SKILL becomes the Námsorð skill.
+ *   #19  LEARNING_SKILL is the Námsorð skill; `learningLevel` reads its þyngd.
  * `enterLearning` and `leaveLearning` are the only writes; both are pure
  * apart from changing `S.learning`, with the day handed in.            */
 
@@ -408,10 +408,24 @@ export const LEARNING_SIZE = 6;
     they are grammar, practised in Óbeygjanleg orð, not vocabulary. */
 export const LEARNING_CLASSES = new Set(["kk", "kvk", "hk", "lo", "so", "ao"]);
 
-/** The skill whose saved þyngd chooses the words (core/difficulty.js). #19
-    makes the word track a skill of its own (Námsorð); until then it is
-    Orðaforði. */
-export const LEARNING_SKILL = "ordaford";
+/** The skill whose saved þyngd chooses the words (core/difficulty.js):
+    Námsorð, the word track's own skill (#19). */
+export const LEARNING_SKILL = "namsord";
+/** Whose þyngd stands in while Námsorð has none of its own: a pupil who has
+    not been placed since Námsorð came, nor answered a question of it
+    (#19). Without it, every such pupil would get þyngd 1's words. */
+const LEARNING_STAND_IN = "ordaford";
+
+/**
+ * The þyngd the words in learning are chosen at: Námsorð's saved level, or
+ * Orðaforði's while Námsorð has no saved level yet. The caller passes it to
+ * `fillLearning` (control/session.js, tools/sim/sim.mjs).
+ * @param {State} S @returns {number}
+ */
+export function learningLevel(S) {
+  const own = S && isObj(S.difficulty) && isObj(S.difficulty[LEARNING_SKILL]);
+  return levelRecord(S, own ? LEARNING_SKILL : LEARNING_STAND_IN).d;
+}
 
 /** The most records `S.learning` keeps: more than LÍNO-2 has words. */
 export const LEARNING_MAX = 3000;

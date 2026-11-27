@@ -8,6 +8,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { skillHasTypes } from "../src/js/core/catalogue.js";
 import { DATA } from "../data/data_bundle.js";
 import { buildLexicon } from "../src/js/core/lexicon.js";
 import { blankState, newSession, migrate, effectivePolicy } from "../src/js/core/state.js";
@@ -102,6 +103,7 @@ test("the node ids are pinned: saved progress will be keyed by them", () => {
     "gerd-adal-auka", "gerd-tegundir", "gr-ordflokkar",
     "lo-beyging", "lo-samraemi", "lo-stig",
     "mb-malsnid", "mb-raeda", "mb-sameina", "mb-smidja", "mb-umritun", "mb-villur",
+    "nams-ordin",
     "no-beyging", "no-foll", "no-kyn-tala",
     "ob-atviksord", "ob-flokkar", "ob-fs-ao", "ob-samtengingar", "ob-tengiord",
     "or-hljodbreytingar", "or-merking", "or-myndun", "or-ordhlutar", "or-ordtok",
@@ -303,8 +305,10 @@ for (const year of YEARS) {
     assert.ok(made > 400, `only ${made} of 500`);
     assert.deepEqual([...skills].filter((s) => !want.skills.includes(s)), []);
     assert.deepEqual([...seen].filter((t) => !want.types.includes(t)), [], "a type the year does not cover");
-    /* Every category of the year turns up, so no part of the preset is dead. */
-    assert.deepEqual(want.skills.filter((s) => !skills.has(s)), []);
+    /* Every category of the year turns up, so no part of the preset is dead —
+       but for a skill with no question type yet (Námsorð before its first,
+       #19), which the preset switches on so that it is on when one comes. */
+    assert.deepEqual(want.skills.filter((s) => !skills.has(s) && skillHasTypes(s)), []);
   });
 }
 

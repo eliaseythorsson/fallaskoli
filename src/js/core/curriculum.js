@@ -202,6 +202,13 @@ export const NODES = [
   { id: "or-hljodbreytingar", nm: "Hljóðbreytingar og skyldleiki orða", cat: "ordaford",
     year: 10, hv: "einkenni", types: [], lesson: null, cover: "none", item: 28 },
 
+  /* ---- Námsorð (#19): the six words in learning (core/wordknowledge.js) ----
+     No question type yet: #11 (the graded meaning question), #14 (the
+     recall gap) and #15 (the Orðakort) add theirs to `types` here when they
+     file them under Námsorð, and set `cover` to "full". */
+  { id: "nams-ordin", nm: "Orðin sem ég er að læra", cat: "namsord", year: 8,
+    hv: "fjolbreytt", types: [], lesson: "namsord", cover: "none", item: 28 },
+
   /* ---- Málbeiting ---- */
   { id: "mb-villur", nm: "Villuveiðar", cat: "malbeiting", year: 8, hv: "einkenni",
     types: ["villur"], lesson: "malbeiting", cover: "full" },
@@ -282,10 +289,21 @@ export const backlog = (item = null) =>
  * categories and types. */
 const TOP_LEVEL = { 8: 5, 9: 6, 10: 7 };
 
+/* A node that puts its category in a year: one with questions — or any
+   node of a skill that has no questions anywhere yet (Námsorð until its
+   first type, #19). Such a skill is switched on by the presets like the
+   rest, so it is on the day its first type arrives, and everything that
+   plans questions passes it by until then (core/catalogue.js
+   `skillHasTypes`). A planned category is never switched on. */
+const PLANNED = new Set(PLANNED_CATEGORIES.map((c) => c.id));
+const counts = (n) => !PLANNED.has(n.cat) &&
+  (n.types.length > 0 || !NODES.some((m) => m.cat === n.cat && m.types.length));
+
 /**
  * What a year covers, read off the nodes: a year includes everything from
  * the years below it. A category is in if any of its nodes that has
- * questions is; a type is in if any such node lists it.
+ * questions is (or, for a skill with none yet, any of its nodes); a type is
+ * in if any such node lists it.
  *
  * @param {number} year
  * @returns {?{ year: number, skills: string[], types: string[], topLevel: number }}
@@ -293,18 +311,17 @@ const TOP_LEVEL = { 8: 5, 9: 6, 10: 7 };
  */
 export function presetContent(year) {
   if (!YEARS.includes(year)) return null;
-  const live = NODES.filter((n) => n.year <= year && n.types.length);
+  const live = NODES.filter((n) => n.year <= year && counts(n));
   /* A node's types may come from another category (kyn og tala is asked
      inside the word-class analysis), so the categories are taken from the
      nodes and never from the types. */
-  const planned = new Set(PLANNED_CATEGORIES.map((c) => c.id));
-  const skills = [...new Set(live.map((n) => n.cat))].filter((c) => !planned.has(c));
+  const skills = [...new Set(live.map((n) => n.cat))];
   const types = [...new Set(live.flatMap((n) => n.types))];
   return { year, skills, types, topLevel: TOP_LEVEL[year] };
 }
 
 /** The label a category carries in the interface: the year it starts. */
 export function firstYearOf(cat) {
-  const live = NODES.filter((n) => n.cat === cat && n.types.length);
+  const live = NODES.filter((n) => n.cat === cat && counts(n));
   return live.length ? Math.min(...live.map((n) => n.year)) : null;
 }

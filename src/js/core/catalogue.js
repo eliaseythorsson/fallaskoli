@@ -543,6 +543,14 @@ const BY_ID = new Map(CATALOGUE.map((t) => [t.id, t]));
 /** @type {(id: string) => ?Readonly<CatalogueEntry>} */
 export const catalogueEntry = (id) => BY_ID.get(id) || null;
 
+/** Does any question type serve this skill (its own, or through `anyOf`)?
+    A skill can exist before its first type: Námsorð (#19) is on the map and
+    in the presets while its types are being built. Whatever plans or offers
+    questions — Lota dagsins, the topics a pupil picks, duels, the badges
+    that ask for every skill — passes such a skill by.
+    @type {(id: string) => boolean} */
+export const skillHasTypes = (id) => CATALOGUE.some((t) => t.skill === id || (t.anyOf || []).includes(id));
+
 /** Is answering this type recall (CONTEXT.md)? An unknown id is not.
     @type {(id: string) => boolean} */
 export const isRecall = (id) => !!(BY_ID.get(id) || {}).recall;

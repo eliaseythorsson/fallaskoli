@@ -54,10 +54,12 @@ const pct = (a, b) => (b ? Math.round((100 * a) / b) : 0);
     three of its skills). */
 const typesOfSkill = (id) => TASKS.filter((t) => t.skill === id || (t.anyOf || []).includes(id)).map((t) => t.id);
 
-/** The topics this child can pick: the switched-on skills, then the two others. */
+/** The topics this child can pick: the switched-on skills, then the two
+    others. A skill with no question type yet (Námsorð before its first,
+    #19) is not a topic: its session would have nothing to ask. */
 export function topics(app) {
   const P = effectivePolicy(app.S);
-  const list = SKILLS.filter((s) => P.skill(s.id)).map((s) => ({ ...s, skill: true }));
+  const list = SKILLS.filter((s) => P.skill(s.id) && typesOfSkill(s.id).length).map((s) => ({ ...s, skill: true }));
   if (list.length > 1) list.push({ ...MIXED });
   if (activePatterns(app.S, 3, (p) => usable(app, [p.id])).length) list.push({ ...MINE });
   return list;
