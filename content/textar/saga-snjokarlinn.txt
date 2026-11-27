@@ -1,0 +1,29 @@
+# Snjókarlinn — stutt saga með öllum sex hlutum sögukortsins (einn þáttur).
+# Skrifuð fyrir Frásögn (mál #35): sagan er líka röðuð og hluti hennar
+# falinn, svo að hver setning á að segja eitt skref og röðin á að sjást
+# af efninu. Hér kemur markmiðið á undan vandanum.
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er
+#   (aðstæður, vandi, markmið, tilraun, útkoma, viðbrögð),
+#   Hún{Katla} og hún{Katla} segja til hvers fornafnið vísar,
+#   ? [samantekt] er spurning með svörin í línunum fyrir neðan:
+#   + er rétta samantektin, - [hluti] röng samantekt og hlutinn sem hún brýtur
+#   ([röð]: atburðirnir í rangri röð), ! er skýringin sem nemandinn les á eftir.
+#
+# þyngd: 2
+# tegund: saga
+# orð:
+
+[aðstæður] Um helgina var mikill snjór í garðinum hjá Kötlu.
+[markmið] Katla vildi búa til stærsta snjókarlinn í götunni.
+[vandi] En snjórinn var of þurr og hélst ekki saman.
+[tilraun] Hún{Katla} sótti vatn í fötu og bleytti snjóinn.
+[útkoma] Þá hélst snjórinn saman og snjókarlinn varð næstum jafn hár og hún{Katla}.
+[viðbrögð] Katla var mjög stolt og tók mynd af snjókarlinum.
+
+? [samantekt] Hvaða samantekt passar við söguna?
++ Snjórinn var of þurr, en Katla bleytti hann með vatni og bjó til stóran snjókarl.
+- [útkoma] Katla bleytti snjóinn með vatni, en snjókarlinn datt samt í sundur.
+- [röð] Katla bleytti snjóinn fyrst og ákvað svo að búa til snjókarl.
+! Snjórinn er of þurr (vandi), Katla bleytir hann með vatni (tilraun) og þá verður snjókarlinn stór (útkoma). Rétta samantektin segir frá þessu í réttri röð.
