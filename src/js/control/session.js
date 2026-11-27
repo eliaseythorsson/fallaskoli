@@ -19,7 +19,6 @@ import { visitLevels } from "../core/difficulty.js";
 import { fillLearning, wordsInLearning, learningLevel, nextToLearn, LEARNING_SIZE } from "../core/wordknowledge.js";
 import { cardDone, saveCard } from "../core/wordcard.js";
 import { buildCard, EIGIN } from "../tasks/wordcard.js";
-import { enabled, typeById } from "../tasks/registry.js";
 import { settle } from "../core/answer.js";
 import { serverQuestion, noReader } from "./serverask.js";
 import { openWordCard } from "../ui/wordcard.js";
