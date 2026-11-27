@@ -41,6 +41,7 @@ import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
+import { STORY_PARTS } from "../src/js/core/storymap.js";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const p = (...x) => path.join(root, ...x);
@@ -153,21 +154,30 @@ export function textItem(rel, src) {
       questions.push({ mark: m[1], q, a: a || "", w, why: "", line: i + 1 });
       return;
     }
+    /* #31: a question's answers on the lines below it (+ right, - [brot] wrong) */
+    if (/^[+-] /.test(line) && questions.length) {
+      const q = questions[questions.length - 1];
+      if (line[0] === "+") q.a = line.slice(2).trim(); else q.w.push(line.slice(2).trim());
+      return;
+    }
+    /* #31: an episode of a longer story */
+    if (/^=\s*\d+\.\s*þáttur$/.test(line)) { sentences.push({ episode: line.replace(/^=\s*/, "") }); return; }
     const m = /^\[([^\]]*)\]\s*(.*)$/.exec(line);
     if (!first) first = i + 1;
     sentences.push({ mark: m ? m[1] : "", written: m ? m[2] : line });
   });
   const clean = (t) => t.replace(/\{[^{}]*\}/g, "");
+  const said = sentences.filter((s) => !s.episode);
   const q0 = questions[0] || { q: "", a: "", w: [], why: "" };
   return {
     kind: "textar", list: "Textar: sögur og fræðitextar", file: rel, line: first || 1,
     level: head["þyngd"] || "", levelName: "þyngd",
-    text: sentences.map((s) => clean(s.written)).join(" "),
+    text: said.map((s) => clean(s.written)).join(" "),
     answer: q0.a, answerLabel: `Spurning: ${q0.q} — rétt svar`, explain: q0.why,
     fields: [["tegund", head["tegund"] || ""], ["orð", head["orð"] || ""],
       ["röng svör", q0.w.join(" · ")]].filter(([, v]) => v),
     body: [
-      ...sentences.map((s) => ["li", `[${s.mark}] ${s.written}`]),
+      ...sentences.map((s) => (s.episode ? ["q", s.episode] : ["li", `[${s.mark}] ${s.written}`])),
       ...questions.slice(1).flatMap((q) => [["q", `${q.q} — ${q.a} (röng svör: ${q.w.join(" · ")})`], ["p", q.why]]),
     ],
     above: above.filter((x) => x.trim()),
@@ -288,6 +298,7 @@ function lessonBody(L) {
     if (b.warn) out.push(["warn", b.warn]);
     for (const x of b.ex || []) out.push(["ex", x]);
     for (const x of b.list || []) out.push(["li", x]);
+    if (b.storymap) out.push(["li", "Sögukortið: " + STORY_PARTS.map((x) => `${x.nm}${x.also ? " (" + x.also + ")" : ""} — ${x.ask}`).join(" · ")]);
     if (b.table) out.push(["table", `Tafla úr BÍN: ${b.w}${b.c ? " (" + b.c + ")" : ""}`
       + `${b.num ? ", " + b.num : ""}${b.deg ? ", " + b.deg : ""}${b.tenses ? ", " + [].concat(b.tenses).join(" ") : ""}`
       + `${b.cap ? " — " + b.cap : ""}`]);

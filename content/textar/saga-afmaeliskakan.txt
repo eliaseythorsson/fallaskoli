@@ -1,0 +1,33 @@
+# Afmæliskakan — saga í tveimur þáttum.
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   = 1. þáttur og = 2. þáttur skipta sögunni í þætti; hver þáttur hefur
+#   sinn vanda, sína tilraun og sína útkomu,
+#   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er,
+#   henni{Mamma}, hún{Elísa} og hennar{Elísa} segja til hvers fornafnið vísar,
+#   ? [samantekt] er spurning með svörin í línunum fyrir neðan:
+#   + er rétta samantektin, - [hluti] röng samantekt og hlutinn sem hún brýtur
+#   ([röð]: atburðirnir í rangri röð), ! er skýringin sem nemandinn les á eftir.
+#
+# þyngd: 3
+# tegund: saga
+# orð:
+
+= 1. þáttur
+[aðstæður] Mamma Elísu átti afmæli á laugardaginn.
+[markmið] Elísa ætlaði að baka köku handa henni{Mamma}.
+[vandi] En þegar hún{Elísa} opnaði skápinn var ekkert hveiti til.
+[tilraun] Elísa hljóp út í búð og keypti hveiti.
+[útkoma] Hún{Elísa} kom heim og bakaði kökuna.
+= 2. þáttur
+[vandi] Kakan var of lengi í ofninum og brann.
+[tilraun] Elísa skar brunna hlutann af og setti krem yfir kökuna.
+[útkoma] Enginn sá að kakan hafði brunnið.
+[viðbrögð] Mamma hennar{Elísa} varð mjög glöð og sagði að kakan væri frábær.
+
+? [samantekt] Hvaða samantekt passar við söguna?
++ Elísa þurfti fyrst að kaupa hveiti og svo brann kakan, en hún bjargaði kökunni og mamma hennar var ánægð.
+- [röð] Elísa bakaði kökuna fyrst og fór svo út í búð að kaupa hveiti.
+- [útkoma] Elísa þurfti að kaupa hveiti og kakan brann, svo hún gaf mömmu sinni blóm í staðinn.
+- [viðbrögð] Elísa bakaði köku handa mömmu sinni, en mamma hennar vildi ekki borða hana.
+! Í fyrri þættinum vantar hveiti og Elísa kaupir það. Í seinni þættinum brennur kakan, en Elísa bjargar henni og mamma hennar er ánægð. Rétta samantektin segir frá báðum þáttunum í réttri röð.

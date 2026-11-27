@@ -139,6 +139,7 @@ export const NODE_PATTERNS = {
   "gerd-adal-auka": ["setningagerd"],
   "gerd-tegundir": ["aukasetn_tegund", "svo_ad"],
   "les-adalatridi": ["adalatridi"],
+  "les-sogukort": ["sogukort"],
 };
 
 /** Patterns of no single node: read from every written form. "Ógreint" (a

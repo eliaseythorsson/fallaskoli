@@ -13,7 +13,9 @@ import { LESSONS, lessonById, lessonFor, buildTable, brokenTables, TERM_LESSON,
          markRead, readCount } from "../src/js/core/lessons.js";
 
 const lex = buildLexicon(DATA);
-const BLOCKS = new Set(["h", "p", "list", "ex", "tip", "warn", "table"]);
+const BLOCKS = new Set(["h", "p", "list", "ex", "tip", "warn", "table",
+  /* issue #31: the six icons of the story map (ui/storyicons.js) */
+  "storymap"]);
 
 test("twenty pages, unique ids, a skill each, only known kinds of block", () => {
   assert.ok(LESSONS.length >= 15);

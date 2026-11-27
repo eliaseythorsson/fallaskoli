@@ -530,4 +530,24 @@ export const EXAMPLES = {
     how: "Aðalatriðið nær yfir alla söguna: vandann og hvernig fór. *Vinur Kára á samloku* er bara smáatriði.",
     forms: [],
   },
+  /* issue #31: the story map. The stories are not in content/textar/
+     either (tests/storymap.test.js). */
+  les_hluti: {
+    q: "*Óli ætlaði að hjóla í skólann. En dekkið á hjólinu var sprungið. Hann gekk því í skólann.* Í hvaða setningu kemur vandinn fram?",
+    a: "En dekkið á hjólinu var sprungið.",
+    how: "Vandinn er það sem fer úrskeiðis og kemur sögunni af stað. *Óli ætlaði að hjóla* er markmiðið, það sem hann vildi. *Hann gekk* er það sem hann gerði í staðinn.",
+    forms: [],
+  },
+  les_kort: {
+    q: "Settu setningarnar á sögukortið: *Lína var úti að leika sér. Allt í einu byrjaði að rigna. Hún hljóp inn í húsið. Hún slapp við að blotna.*",
+    a: "aðstæður · vandi · tilraun · útkoma",
+    how: "Spyrðu um hverja setningu: hvaða spurningu svarar hún? Hver og hvar? Það eru aðstæður. Hvað gerist? Það er vandinn. Hvað gerir hún? Það er tilraun. Hvernig fer? Það er útkoman.",
+    forms: [],
+  },
+  les_samantekt: {
+    q: "*Óli ætlaði að hjóla í skólann en dekkið var sprungið. Hann gekk og kom of seint.* Hvaða samantekt passar við söguna?",
+    a: "Óli gat ekki hjólað af því að dekkið var sprungið, svo hann gekk og kom of seint.",
+    how: "Samantektin fylgir sögukortinu: vandinn (sprungið dekk), tilraunin (hann gekk) og útkoman (of seint). Samantekt sem breytir einhverjum hluta, eða röðinni, er röng.",
+    forms: [],
+  },
 };

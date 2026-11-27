@@ -1330,11 +1330,23 @@ export const LESSONS = [
       ] },
       { p: "Aðalatriðið er: *Kári gleymir nestinu en vinur hans hjálpar honum.* Að vinurinn átti samloku er smáatriði. Það segir bara frá einu af því sem kemur fyrir í sögunni." },
       { warn: "Svar getur verið satt og samt ekki aðalatriðið. Það getur líka hljómað vel en staðið hvergi í textanum. Lestu textann aftur og gáðu." },
+      /* issue #31: the story map, with its six icons (ui/storyicons.js) */
+      { h: "Sögukortið" },
+      { p: "Flestar sögur eru byggðar eins. Sögukortið hefur sex hluti, og hver hluti svarar einni spurningu:" },
+      { storymap: true },
+      { ex: [
+        "Lína var úti að leika sér. Allt í einu byrjaði að rigna. Hún hljóp inn í húsið. Hún slapp við að blotna.",
+      ] },
+      { p: "*Lína var úti að leika sér* segir hver og hvar: **aðstæður**. *Allt í einu byrjaði að rigna* er **vandinn**. *Hún hljóp inn í húsið* er **tilraunin**, það sem hún gerði. *Hún slapp við að blotna* er **útkoman**." },
+      { p: "Lengri saga getur haft tvo eða þrjá **þætti**. Í hverjum þætti kemur upp nýr vandi, persónan reynir eitthvað og það fer einhvern veginn." },
+      { tip: "Góð samantekt sögu segir frá vandanum, tilrauninni og útkomunni, í sömu röð og í sögunni." },
     ],
     check: [
       { q: "Hvað er aðalatriði texta?", a: "Það sem allur textinn fjallar um." },
       { q: "Hvað gera smáatriðin?", a: "Þau segja meira um aðalatriðið: útskýra það eða gefa dæmi." },
       { q: "Hvað segir aðalatriði sögu?", a: "Hver lenti í hvaða vanda og hvernig fór." },
+      { q: "Hverjir eru sex hlutar sögukortsins?", a: "Aðstæður, vandi, markmið, tilraun, útkoma og viðbrögð." },
+      { q: "Hvað er markmið í sögu?", a: "Það sem persónan vill eða ætlar sér." },
     ],
     related: ["ordafordi", "obeygjanleg"],
   },

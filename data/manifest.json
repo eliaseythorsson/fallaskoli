@@ -23,9 +23,9 @@
   "pipeline/build_bundle.py": "a83cb6fbcb6bcbba2b7c6baf9cfd0d21db4a81e179c34f2713349382d98a3f6b",
   "pipeline/irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
   "pipeline/exercises.py": "211b2b431ba7ca6a561f273b719b33a96fc7d6c7cd7c832b8745f5240cecbee2",
-  "pipeline/build_exercises.py": "6df2f8fdcf34d5f1084ed218b385eabce9df73b812c7a0e98df5f55925cd0ee7",
+  "pipeline/build_exercises.py": "f91d5d007f3f15470927f63ca6a641821819d5628a5b42506fdeb3c21718e3ea",
   "pipeline/adj_classes.py": "30dcdd1a715ac73c9325bcc327a043a78cd452cd9aa9164d934b25b565255b10",
-  "pipeline/content_io.py": "9ce1b29b48434e17fe8436f3da45963333ce73cc9713a48e1c8b490b16944f13",
+  "pipeline/content_io.py": "9e29db63cd1ff8e944dc46578ba8e2b483be70770826d5993543a4ba43669d04",
   "pipeline/who_did.py": "1abfd3de384d81f7015f2c65ca007fb527f838f34a52034b6a513e931c8e3a46",
   "pipeline/clause_shape.py": "c621aff33c85e96bf2a85df4adb288a74d2d07b640f7afeefeb6055b210104f0",
   "sources/lino2.csv": "4e9450d6bd1f6230f9377d61e33b0b49e479dbb24fc94a697d13ed9dbf8378fc",
@@ -68,8 +68,10 @@
   "content/setningar/lino-rammar.tsv": "708274f00619d26ed82548decb9507955c994b5482cccddea7f7ce62395042d5",
   "content/setningar/setningar.tsv": "46c70350f104acde12a6db2ce60c79a7d11746f528eb8bcc22f28d0e2f3af0c6",
   "content/textar/fraedi-svefn.txt": "46c680c1418c3d9f795c06dbc9ac6594543d89d23ef1673bb2c1c36d2dede1d2",
+  "content/textar/saga-afmaeliskakan.txt": "cdfd5b0bb597f55ead4702c450d6b01d9e536e91e53de40a12fd8d670a51f719",
+  "content/textar/saga-bolti-a-thaki.txt": "22387b4dac947efbc7e38feede46899897e5a96e28b8340cd2ad85fc5a4b23c8",
   "content/textar/saga-straeto.txt": "b3ed89dc221386e92158dfc39fb0d945f699437beaf66e0435d033e6e65d45ff",
-  "content/textar/saga-tyndur-hundur.txt": "ecf2b1517f7ba2634873c04985fe643fc5a0f206060990e10bf5f91e30b8ae99",
+  "content/textar/saga-tyndur-hundur.txt": "667c495091b8d54e74464bdf7af3b97666a614c739a9d3913472e352417b6c97",
   "content/toluord/dagsetningar.tsv": "a1c95332f2dc18a4eb8369ef7fb496a37089eb7b9af4d6cd5ba0525e1dfa7a39",
   "content/toluord/fleirtoluord-hopar.tsv": "3c99a58dcbc23364f4f7d6beaedfe7ad269328f093860b6c32c8af28a12ba5a8",
   "content/toluord/fleirtoluord-rammar.tsv": "43a0246a7394636bcc27dc56488a8c138857fcce9217f6f0d6bf6feeadbaafd4",
@@ -83,7 +85,7 @@
   "data/lexicon.json": "c166ce4922c53d69526c93dbacea3372a5fbaa67b45304a4698405613df75fe0",
   "data/sentences.json": "1fbb7a55c19923732dfb61c149bb4c4ddd6452a047eee88e7953a9c50737a669",
   "data/data_bundle.js": "8166c111b2d39750a7ead280d6a5c6c25564f976bd7788e9b0f020f5c088c784",
-  "data/exercises.js": "236a2e63b5ebaf265b378370f7b6104317477f6ed9d7cb261f6623bd84e7dd78"
+  "data/exercises.js": "1b085ce12e7958cd2e3f35373a8e8d2f65407486330d61711ea36ffc26eef8ed"
  },
  "counts": {
   "words": 7405,

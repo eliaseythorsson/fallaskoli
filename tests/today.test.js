@@ -295,25 +295,26 @@ test("#30: Lesskilningur is one of the new skills, and has its part of the share
   }
 });
 
-test("NEW_SKILL_MAX: Lesskilningur alone takes one slot of the share, not all three; the rest goes back", () => {
+test("NEW_SKILL_MAX: Lesskilningur alone takes two slots of the share, not all three; the rest goes back", () => {
   /* While Námsorð has no question type, Lesskilningur was the only new skill
      that counted, and took the whole share: the main idea of its three
-     texts, every day. */
-  assert.equal(NEW_SKILL_MAX.lesskilningur, 1);
+     texts, every day. #30's fix capped it at one; #31 gave it four types and
+     19 items on five texts, and the cap is two. */
+  assert.equal(NEW_SKILL_MAX.lesskilningur, 2);
   const P8 = createPolicy(null, presetPolicy(8));
-  const cases = [[{}, [0, 0, 9]], [{ due: 3, active: ["thf_thgf"] }, [3, 4, 2]], [{ due: 8 }, [5, 0, 4]]];
+  const cases = [[{}, [0, 0, 8]], [{ due: 3, active: ["thf_thgf"] }, [2, 3, 3]], [{ due: 8 }, [3, 0, 5]]];
   for (const [o, [review, pattern, ordinary]] of cases) {
     const S = pupil(o);
     const plan = planWithNewSkills(S, P8, D0, { canType: canType(P8), newSkills: ["lesskilningur"] });
     const got = newOf(plan);
     assert.equal(plan.n, TODAY_SIZE);
-    assert.equal(plan.counts.newSkill, 1);
-    assert.equal(got.filter((id) => id === "lesskilningur").length, 1, got.join(","));
-    /* The two slots it could not take are shared out by the base rule, as
-       a session of nine would be. */
+    assert.equal(plan.counts.newSkill, 2);
+    assert.equal(got.filter((id) => id === "lesskilningur").length, 2, got.join(","));
+    /* The slot it could not take is shared out by the base rule, as a
+       session of eight would be. */
     assert.deepEqual([plan.counts.review, plan.counts.pattern, plan.counts.fresh - plan.counts.newSkill],
       [review, pattern, ordinary]);
-    assert.deepEqual(shares(9, o.due || 0, (o.active || []).length), { review, pattern, fresh: ordinary });
+    assert.deepEqual(shares(8, o.due || 0, (o.active || []).length), { review, pattern, fresh: ordinary });
   }
   /* A skill without a cap beside it still fills the share: three slots,
      Lesskilningur one of them. */
@@ -323,10 +324,10 @@ test("NEW_SKILL_MAX: Lesskilningur alone takes one slot of the share, not all th
     ["lesskilningur", "ordaford", "ordaford"]);
 });
 
-test("#30: with Lesskilningur switched off, or its type, it takes no share", () => {
+test("#30: with Lesskilningur switched off, or its types, it takes no share", () => {
   const P8 = createPolicy(null, presetPolicy(8));
   const off = narrowPolicy(P8, { skills: SKILL_IDS.filter((id) => id !== "lesskilningur") });
   assert.ok(!newOf(planWithNewSkills(pupil(), off, D0, { canType: canType(off) })).includes("lesskilningur"));
-  const noType = planWithNewSkills(pupil(), P8, D0, { canType: (id) => id !== "les_adal" && canType(P8)(id) });
+  const noType = planWithNewSkills(pupil(), P8, D0, { canType: (id) => !id.startsWith("les_") && canType(P8)(id) });
   assert.ok(!newOf(noType).includes("lesskilningur"));
 });

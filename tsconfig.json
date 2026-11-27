@@ -19,6 +19,7 @@
     "src/js/types.d.ts",
     "src/js/core/answer.js",
     "src/js/core/catalogue.js",
+    "src/js/core/storymap.js",
     "src/js/core/review.js",
     "src/js/core/wordknowledge.js",
     "src/js/core/wordcard.js",
