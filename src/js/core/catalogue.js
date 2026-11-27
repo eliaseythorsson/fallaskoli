@@ -535,6 +535,33 @@ const LIST = [
     renderer: "choice", weight: 4, recall: false, grader: "app",
     tags: ["sogukort"],
     bands: [1] },
+  /* #38 (DLD-PLAN §1 "Meaning question", §6): the meaning question
+     "Hvað þýðir orðið?" graded — the server reads the explanation against
+     the ÍNO definition (the same rubric as or_eigin). Asked about a word
+     met in this session first, as the free-text `meaning` is, so it counts
+     where the bonus did not. Server grading only; or_merking, the one the
+     app grades, is unchanged for everybody. */
+  { id: "or_skyring", skill: "ordaford",
+    nm: "Hvað þýðir orðið? (lesið yfir)",
+    ds: "Merking orðs úr lotunni skrifuð með eigin orðum og lesin yfir á þjóninum",
+    renderer: "meaning", weight: 6, recall: false, grader: "server",
+    tags: [],
+    bands: [1] },
+  /* #38: the Orðakort's other two free-text steps, also asked in practice
+     (DLD-PLAN §1 "The intensive phase": the pupil's own sentence). Server
+     grading only. The word is shown: not recall. */
+  { id: "or_setning", skill: "ordaford",
+    nm: "Mín setning",
+    ds: "Setning um eigið líf með orðinu, lesin yfir á þjóninum",
+    renderer: "meaning", weight: 4, recall: false, grader: "server",
+    tags: [],
+    bands: [1] },
+  { id: "or_tengsl", skill: "ordaford",
+    nm: "Þrjú skyld orð",
+    ds: "Þrjú orð sem tengjast orðinu og hvernig hvert tengist því, lesin yfir á þjóninum",
+    renderer: "meaning", weight: 2, recall: false, grader: "server",
+    tags: [],
+    bands: [1] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when
