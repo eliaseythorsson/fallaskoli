@@ -23,7 +23,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { migrate } from "../src/js/core/state.js";
 import { entriesOf, totalsOf, wordRecord, drillRecord, wordsWithHistory, wordKeysMet,
-  isRecallEntry, learningStatus, RESET_BEFORE, RIGHT, WRONG } from "../src/js/core/wordknowledge.js";
+  isRecallEntry, learningStatus, checkLearned, RESET_BEFORE, RIGHT, WRONG } from "../src/js/core/wordknowledge.js";
 import { statusOf, STATUS_LABEL } from "../src/js/core/wordhealth.js";
 import { catalogueEntry } from "../src/js/core/catalogue.js";
 
@@ -47,6 +47,12 @@ function keysFor(S, word) {
   return [...all].filter((k) => k.split("|")[0] === word).sort();
 }
 
+/** The learned rule (#16) for a word in learning, or null. */
+function ruleOf(S, key) {
+  const r = checkLearned(S, key);
+  return r ? { status: r.status, why: r.why } : null;
+}
+
 /**
  * Everything about one word or lemma in a saved progress.
  * @param {any} file   the parsed JSON file
@@ -65,6 +71,8 @@ export function wordHistory(file, word) {
       totals: totalsOf(S, key),
       rescue: drillRecord(S, key) || null,
       learning: learningStatus(S, key),
+      /* #16: for a word in learning, how far it is from learned. */
+      rule: ruleOf(S, key),
       entries: entriesOf(S, key).map((e) => ({
         day: e.day, type: e.type, name: (catalogueEntry(e.type) || {}).nm || null,
         outcome: e.outcome === RIGHT ? "right" : e.outcome === WRONG ? "wrong" : "seen",
@@ -97,6 +105,7 @@ export function formatHistory(h) {
     out.push(`  entries  ${w.entries.length}: ${w.totals.c} right, ${w.totals.w} wrong, ` +
       `${w.entries.filter((e) => e.outcome === "seen").length} seen`);
     if (w.learning) out.push(`  learning ${w.learning.status}: ${w.learning.why}`);
+    if (w.rule) out.push(`  learned? ${w.rule.status}: ${w.rule.why}`);
     if (w.rescue)
       out.push(`  rescue   ${w.rescue.p} passed, ${w.rescue.f} endured, last ${w.rescue.last || "-"}`);
     if (w.entries.length) {

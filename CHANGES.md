@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Lært orð: úr orðunum sex í upprifjun (#16)
+- **Orð telst lært** þegar nemandinn hefur svarað því rétt í að minnsta kosti fjórum gerðum spurninga, þar
+  af einni þar sem hann sér ekki orðið heldur þarf að muna það (nú „Orð í eyðu“), á að minnsta kosti tveimur
+  dögum, og síðustu þrjú svör um orðið eru rétt. Aðeins svör frá því að orðið kom í hópinn telja.
+  Mörkin eru fremst í `src/js/core/wordknowledge.js`, hvert með rökum.
+- Reglan er metin við hvert svar. Lært orð færist strax undir „Ég kann“ í Orðunum mínum og fer í
+  upprifjunarröðina (1 → 3 → 7 → 21 dagur), þar sem það er spurt í „Orð í eyðu“. Nýtt orð kemur
+  í staðinn þegar næsta lota hefst, á eftir orðakortinu sínu.
+- `node tools/word-history.mjs` sýnir hve langt orð í námi á eftir, t.d. „rétt í 2 af 4 gerðum spurninga,
+  þar af 1 án þess að sjá orðið, á 1 af 2 dögum; síðustu 3 svör rétt“.
+
 ### Orðakort: fyrstu kynni af orði (#15)
 - **Orð kemst ekki í hóp orðanna sex fyrr en nemandinn hefur lokið orðakortinu þess.** Kortið kemur á undan
   lotu sem nemandinn velur sjálfur (Lota dagsins, lota úr valinu), eitt í einu, og því er ekki hægt að loka.
