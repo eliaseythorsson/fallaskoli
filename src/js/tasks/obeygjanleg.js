@@ -30,10 +30,17 @@ const INDECL = { atviksorð: "ao", forsetning: "fs", samtenging: "st",
                  upphrópun: "uh", nafnháttarmerki: "nhm" };
 
 export function taskIndecl(lex, view, rng) {
+  const idxOf = (s) => s.tok.map((t, j) => (INDECL[t.c] ? j : -1)).filter((j) => j >= 0);
   for (let k = 0; k < 40; k++) {
-    const s = pick(sentPool(lex, view, "obeygjanleg"), rng);
-    const idx = s.tok.map((t, j) => (INDECL[t.c] ? j : -1)).filter((j) => j >= 0);
+    /* #13: a sentence with an adverb in learning, a share of the time
+       (tasks/view.js `preferLearning`), and then that word. */
+    const pool = sentPool(lex, view, "obeygjanleg");
+    const learning = (s) => (j) => view.inLearning(tokenKey(lex, s.tok[j]));
+    const side = view.preferLearning(pool, (s) => idxOf(s).some(learning(s)), rng);
+    const s = pick(side, rng);
+    let idx = idxOf(s);
     if (!idx.length) continue;
+    if (side !== pool && idx.some(learning(s))) idx = idx.filter(learning(s));
     const i = pick(idx, rng);
     return built({
       type: "indecl", skill: "obeygjanleg", s, i, t: s.tok[i],

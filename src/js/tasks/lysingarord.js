@@ -62,8 +62,11 @@ export function tableAdj(lex, view, rng) {
      nothing to read "með greini" off (*algjör* in the weak masculine). The
      table is drawn from the adjectives that have a helper noun; the others
      are asked in sentences, and here only when a review asks for them. */
-  const withNoun = topByRank(lex.adjectives, 0.38).filter((x) => x.h && ["KK", "KVK", "HK"].some((k) => adjectiveHelperLemma(x, k)));
-  const adj = view.pickWord(lex, withNoun.length ? withNoun : topByRank(lex.adjectives, 0.38), "lysingarord", rng, ["lo"]);
+  const helped = (x) => x.h && ["KK", "KVK", "HK"].some((k) => adjectiveHelperLemma(x, k));
+  const withNoun = topByRank(lex.adjectives, 0.38).filter(helped);
+  /* An adjective in learning with a helper noun may be rarer than the pool (#13). */
+  const adj = view.pickWord(lex, withNoun.length ? withNoun : topByRank(lex.adjectives, 0.38), "lysingarord", rng, ["lo"],
+    lex.adjectives.filter(helped));
   /* null: the spacing rule (#10) left no word to ask in this type now */
   if (!adj) return null;
   /* A review (tasks/review.js) asks for the table its cell is in: that
@@ -158,7 +161,7 @@ export function taskReverse(lex, view, rng) {
     const p = pick(pools, rng);
     const bag = only ? [only] : topByRank(lex.byClass[p.cls] || [], 0.35);
     if (!bag.length) continue;
-    const w = only || view.pickByWord(lex, bag, (x) => x, p.skill, rng);
+    const w = only || view.pickByWord(lex, bag, (x) => x, p.skill, rng, null, lex.byClass[p.cls] || []);
     if (!w) continue;     // the spacing rule (#10) left none in this bag
 
     /* Only forms with a single analysis inside their own paradigm —
@@ -412,7 +415,9 @@ export function framedAdjective(lex, view, rng, want, { place = null, fc = null,
   const all = fits(f);
   /* the commonest adjectives at a low band; the rest come in a step at a time */
   const near = fc || fw ? all : all.filter((a) => adjLevel(a) <= Math.max(1, b));
-  const w = view.pickByWord(lex, near.length ? near : all.slice(0, 12), (x) => x, "lysingarord", rng);
+  /* `all` fits the frame; `near` only cuts it by level, so a word in
+     learning from `all` may be asked (#13). */
+  const w = view.pickByWord(lex, near.length ? near : all.slice(0, 12), (x) => x, "lysingarord", rng, null, all);
   /* null: the spacing rule (#10) left no word to ask in this type now */
   if (!w) return null;
   const { s, i } = textSentence(f.t);
