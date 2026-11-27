@@ -263,7 +263,7 @@ test("the question: a gap, the letter, the right form first, and nothing that na
     assert.equal(t.shown[0], t.answers[0]);
     const letter = [...normalise(tok.w)][0];
     assert.ok(t.hint.includes(`**${letter}**`), t.hint);
-    assert.match(t.hint, /^Hvaða orð vantar\? Það er eitt af orðunum þínum\. Það byrjar á \*\*.\*\*\.$/u);
+    assert.match(t.hint, /^Hvaða orð vantar\? Það er eitt af orðunum sem þú ert að læra\. Það byrjar á \*\*.\*\*\.$/u);
     /* before the answer nothing shows the word: not the cue, not the hint */
     const w = entry(t.word);
     assert.equal(t.cue, null);
@@ -288,7 +288,7 @@ test("without the letter once recalled — but only where no other word in learn
     const t = build(p, seed).task;
     (stages[t.word] ||= new Set()).add(t.stage);
     if (t.stage === "bare") {
-      assert.equal(t.hint, "Hvaða orð vantar? Það er eitt af orðunum þínum.");
+      assert.equal(t.hint, "Hvaða orð vantar? Það er eitt af orðunum sem þú ert að læra.");
       assert.match(t.retryWhy, /^Það byrjar á \*\*.\*\*\.$/u, "a second try gets the letter");
     }
   }
@@ -353,7 +353,16 @@ test("a review or a drill asks for its word: one in learning or learned, and not
   for (let seed = 0; seed < 10; seed++) assert.equal(build(p, seed, strict("lofa|so")).task.word, "lofa|so");
   /* learned: still asked by name, never on its own turn */
   leaveLearning(p.S, "lofa|so", TODAY);
-  assert.equal(build(p, 1, strict("lofa|so")).task.word, "lofa|so");
+  const byName = build(p, 1, strict("lofa|so")).task;
+  assert.equal(byName.word, "lofa|so");
+  /* it is no longer "a word you are learning": the question says "one of
+     your words", and every other verb under Orðin mín is a rival */
+  assert.match(byName.hint, /^Hvaða orð vantar\? Það er eitt af orðunum þínum\./u);
+  assert.deepEqual(rivalsOf(lex, p.S, entry("lofa|so")).map((o) => o.o), ["útskýra"]);
+  /* a word in learning does not count a learned one as a rival: the
+     question names only the words being learned */
+  leaveLearning(p.S, "völlur|kk", TODAY);
+  assert.deepEqual(rivalsOf(lex, p.S, entry("hugmynd|kvk")), []);
   for (let seed = 0; seed < 60; seed++) assert.notEqual(build(p, seed).task.word, "lofa|so");
   /* a word that was never the pupil's */
   assert.equal(build(p, 1, strict("tillaga|kvk")), null);

@@ -4,9 +4,10 @@
    The first question type that is RECALL (CONTEXT.md): the word is produced,
    not seen. Filed under Orðaforði as `or_eyda` (tasks/ordaford.js BUILDERS).
 
-   The pupil is told one thing: "one of your words is missing here". The
-   words are the ones under *Orðin mín*; that is what makes a gap have ONE
-   answer, and everything below follows from it.
+   The pupil is told one thing: "one of the words you are learning is
+   missing here". The words are the ones under *Ég er að læra* in Orðin mín;
+   that is what makes a gap have ONE answer, and everything below follows
+   from it.
 
    ---- which word -----------------------------------------------------------
 
@@ -113,6 +114,11 @@
    asked with the letter: unambiguous comes first. In practice a pupil with
    three nouns among the six meets the nouns with the letter until one of
    them is learned; a lone verb, adjective or adverb loses it at once.
+   The question says which words it means: "one of the words you are
+   learning" (the heading *Ég er að læra* in Orðin mín), so a word the pupil
+   has already learned, which would fit as well, is not a right answer the
+   question marks wrong. A learned word asked for by name (a review or a
+   drill) is "one of your words", and then the learned words are rivals too.
 
    ---- with the letter, or without (`recallStage`) ----------------------------
 
@@ -125,7 +131,7 @@
 
 import { normalise } from "../core/grading.js";
 import { wordKey } from "../core/state.js";
-import { entriesOf, isRecallEntry, isJudged, RIGHT, WRONG, wordsInLearning, wordsLearned,
+import { entriesOf, isRecallEntry, isJudged, RIGHT, WRONG, wordsInLearning, wordsLearned, isInLearning,
          LEARNING_SKILL, LEARNING_CLASSES } from "../core/wordknowledge.js";
 import { built, FX } from "./effects.js";
 import { frameIndex, acceptsNoun, fillFrame, frameKey, sharesStem } from "./frames.js";
@@ -155,7 +161,8 @@ export const LETTER_BACK_AFTER = 1;
 export const RECALL_CELL = "orð:eyða";
 
 /* The Icelandic the pupil reads. */
-const ASK = "Hvaða orð vantar? Það er eitt af orðunum þínum.";
+const ASK_LEARNING = "Hvaða orð vantar? Það er eitt af orðunum sem þú ert að læra.";
+const ASK_MINE = "Hvaða orð vantar? Það er eitt af orðunum þínum.";
 const letterLine = (letter) => `Það byrjar á **${letter}**.`;
 
 /* ---------- with the letter, or without --------------------------------------- */
@@ -367,11 +374,14 @@ export function recallGaps(lex, w) {
 
 /* ---------- no other word fits as well ------------------------------------------ */
 
-/** The pupil's other words in learning of the same word class as `w`, as
-    lexicon entries: the words that might fit a gap of `w` as well. */
+/** The pupil's other words of the same word class as `w`, as lexicon
+    entries: the words that might fit a gap of `w` as well. The words in
+    learning; and the learned words too when `w` is not in learning (the
+    question then says "one of your words", and those are under Orðin mín). */
 export function rivalsOf(lex, S, w) {
   const mine = wordKey(w.o, w.c);
-  return wordsInLearning(S).filter((k) => k !== mine).map((k) => entryOf(lex, k))
+  const keys = isInLearning(S, mine) ? wordsInLearning(S) : [...wordsInLearning(S), ...wordsLearned(S)];
+  return keys.filter((k) => k !== mine).map((k) => entryOf(lex, k))
     .filter((o) => o && broadClass(o.c) === broadClass(w.c));
 }
 
@@ -451,6 +461,7 @@ export function recallGap(lex, view, rng) {
   const low = Math.max(band, Math.min(...pool.map((x) => x.g.lvl)));
   const { g, stage } = pick(pool.filter((x) => x.g.lvl <= low), rng);
 
+  const ask = isInLearning(S, wordKey(w.o, w.c)) ? ASK_LEARNING : ASK_MINE;
   const cap = /^\p{Lu}/u.test(g.s.tok[g.i].w);
   const letter = firstLetter(g.answers[0]);
   const answers = cap ? g.answers.map(cap1) : g.answers;
@@ -461,7 +472,7 @@ export function recallGap(lex, view, rng) {
        not the other forms that are accepted there. */
     shown: answers.slice(0, g.own),
     title: "Orð í eyðu", stage,
-    hint: stage === "letter" ? `${ASK} ${letterLine(letter)}` : ASK,
+    hint: stage === "letter" ? `${ask} ${letterLine(letter)}` : ask,
     /* After the answer, under the sentence with the right form in it: the
        word itself, labelled "orðið". A second try must not be shown it
        (ui/render-more.js `submitGap`), so it gets the letter instead — or,

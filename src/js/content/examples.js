@@ -309,7 +309,7 @@ export const EXAMPLES = {
   /* The word is not one a pupil can have in learning (*hestur* is not on
      LÍNO-2), so the example never gives a real question away. */
   or_eyda: {
-    q: "Á túninu stendur ___. Hvaða orð vantar? Það er eitt af orðunum þínum. Það byrjar á **h**.",
+    q: "Á túninu stendur ___. Hvaða orð vantar? Það er eitt af orðunum sem þú ert að læra. Það byrjar á **h**.",
     a: "hestur",
     how: "Hugsaðu um orðin sem þú ert að læra: hvert þeirra passar í eyðuna og byrjar á *h*? Skrifaðu orðið eins og það á að vera í setningunni.",
     forms: ["hestur|kk|NFET=hestur"],
