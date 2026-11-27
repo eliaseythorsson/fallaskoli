@@ -46,7 +46,7 @@ const year = (y) => createPolicy(null, presetPolicy(y));
    the level, which has nothing to place (Lesskilningur with its first three
    texts, #30). The app hands the round the keys of `placementTypes`, which
    leaves both out by itself. */
-const FLAT = SKILL_IDS.filter((s) => TASKS.filter((t) => t.skill === s).every((t) => t.bands.length === 1));
+const FLAT = SKILL_IDS.filter((s) => skillHasTypes(s) && TASKS.filter((t) => t.skill === s).every((t) => t.bands.length === 1));
 const askable = (y) => presetContent(y).skills.filter((s) => skillHasTypes(s) && !FLAT.includes(s));
 const YEAR8 = askable(8), YEAR10 = askable(10);
 

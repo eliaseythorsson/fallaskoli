@@ -53,9 +53,9 @@ test("every question type the curriculum can switch is registered, under the sam
   assert.equal(typeById("ekki-til"), null);
 });
 
-test("one file per category: the thirteen skills, each type in the file of its skill", () => {
+test("one file per category: the fourteen skills, each type in the file of its skill", () => {
   assert.deepEqual(Object.keys(CATEGORIES).sort(), [...SKILL_IDS].sort());
-  assert.equal(SKILL_IDS.length, 13);
+  assert.equal(SKILL_IDS.length, 14);
   const dir = new URL("../src/js/tasks/", import.meta.url);
   for (const id of SKILL_IDS) {
     assert.ok(existsSync(new URL(id + ".js", dir)), `src/js/tasks/${id}.js is missing`);
