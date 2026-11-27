@@ -110,7 +110,7 @@ export function openWordCard(card, onDone) {
   hideTip();
   const scrim = document.createElement("div");
   scrim.className = "scrim wcscrim";
-  scrim.innerHTML = `<div class="modal sheetmodal wcard" role="dialog" aria-modal="true" aria-label="Orðakort: ${esc(card.lemma)}">
+  scrim.innerHTML = `<div class="modal sheetmodal okort" role="dialog" aria-modal="true" aria-label="Orðakort: ${esc(card.lemma)}">
     <div class="wchead"><p class="eyebrow"><span>Orðakort · nýtt orð</span><b class="wcstep"></b></p>
       <h3 class="wcword">${esc(card.lemma)}</h3></div>
     <div class="sheetbody wcbody"></div></div>`;
