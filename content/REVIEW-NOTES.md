@@ -19,7 +19,8 @@ athugasemd finni atriði):
 LÍNO-2-pör sem bíða dóms (`review/lino-rammar/<keyrsla>/yfirferd.tsv`, sjá
 `tools/lino-frames/README.md`) eru ekki skráð hér. Síðan sýnir þau fremst og
 merkir þau sjálf „þarf að athuga“ þar til já eða nei stendur við þau í
-skránni.
+skránni. Sama gildir um nýjar setningar fyrir LÍNO-2-orð sem bíða dóms
+(`review/lino-setningar/<keyrsla>/yfirferd.tsv`).
 
 Athugasemdir í síðasta hlutanum, „Utan síðunnar“, eiga við texta sem er ekki
 á yfirlitssíðunni (texta í viðmótinu, persónuverndartilkynninguna) og standa

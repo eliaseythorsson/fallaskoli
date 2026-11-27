@@ -1,0 +1,22 @@
+{
+ "_fake": "Written by hand by the agent that built tools/lino-frames/fillin.mjs (issue #23), NOT by Claude. The usage numbers are made up. Not a judgement or a sentence anyone should use.",
+ "response": {
+  "type": "message",
+  "id": "msg_fake_heldur.st",
+  "model": "claude-fable-5-2",
+  "role": "assistant",
+  "content": [
+   {
+    "type": "text",
+    "text": "{\"sentences\":[{\"level\":3,\"text\":\"Við fórum ekki í bíó heldur í sund.\",\"form\":\"heldur\",\"why\":\"contrast after a negation\"},{\"level\":2,\"text\":\"Hann hló ekki heldur brosti.\",\"form\":\"heldur\",\"why\":\"contrast after a negation\"}],\"note\":\"\"}"
+   }
+  ],
+  "stop_reason": "end_turn",
+  "usage": {
+   "input_tokens": 140,
+   "cache_creation_input_tokens": 0,
+   "cache_read_input_tokens": 5000,
+   "output_tokens": 1080
+  }
+ }
+}

@@ -32,7 +32,18 @@ program cannot vouch for it; a wrong sentence is worse than a missing one.
 
 Input: [{"id", "text", "frame", "lemma", "gender", "mark", "slot"}] on stdin.
 Output: [{"id", "ok", "why"}] on stdout; `why` is Icelandic, for the owner.
+
+A NEW SENTENCE (issue #23, tools/lino-frames/fillin.mjs) is an item with
+"kind": "written" and no frame: {"id", "kind", "text", "level", "lemma",
+"slot"}. It has nothing to be compared with, so it goes through the build's
+own checks instead, the ones every bank sentence meets on ./build.sh: the
+parse and the guard (annotate), the length its level allows
+(build_sentences.check_lengths) and the numeral predicative
+(check_numeral_predicative). Whether the word stands in it, once, as the app
+reads it, is fillin-lib.mjs `judge`'s business: it gets the record (`rec`).
 """
+import contextlib
+import io
 import json
 import os
 import sys
@@ -87,6 +98,25 @@ def compare(item, rec, frame, hard):
     return True, ""
 
 
+def check_written(item, rec, hard, build_sentences):
+    """The verdict on a new sentence, by the build's own checks. The two
+    whole-bank checks print and raise SystemExit; here they get one record,
+    say nothing on stdout, and their message is the reason."""
+    if rec is None:
+        return False, "Greynir þáttar ekki setninguna"
+    if hard:
+        return False, "vörðurinn (parse_guard): " + "; ".join(hard)
+    for check in (build_sentences.check_lengths, build_sentences.check_numeral_predicative):
+        printed = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(printed):
+                check([rec])
+        except SystemExit as e:
+            detail = [l.strip() for l in printed.getvalue().splitlines() if l.startswith("   ")]
+            return False, "smíðin myndi stoppa: %s" % (detail[0] if detail else e)
+    return True, ""
+
+
 def main():
     items = json.load(sys.stdin)
     os.chdir(ROOT)                       # build_sentences opens data/ by relative path
@@ -95,6 +125,17 @@ def main():
     _g, _b, guard = build_sentences.engines()
     out = []
     for it in items:
+        if it.get("kind") == "written":
+            before = len(guard.hard)
+            try:
+                rec = build_sentences.annotate(it["level"], it["text"], it.get("slot"),
+                                               "none" if it.get("slot") else None)
+            except SystemExit as e:
+                out.append({"id": it["id"], "ok": False, "why": "smíðin myndi stoppa: %s" % e, "rec": None})
+                continue
+            ok, why = check_written(it, rec, guard.hard[before:], build_sentences)
+            out.append({"id": it["id"], "ok": ok, "why": why, "rec": rec})
+            continue
         frame = frames.get(it["frame"])
         if frame is None:
             out.append({"id": it["id"], "ok": False, "why": "ramminn er ekki í data/sentences.json"})
