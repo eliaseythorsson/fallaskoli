@@ -123,7 +123,9 @@ export function nextTask(lex, view, rng) {
     view = withView(view, { mustAsk: null });
   }
   const P = view.policy;
-  const all = TASKS.filter((t) => enabled(P, t) && weightOf(t, view) > 0);
+  /* `ready` (tasks/registry.js): a type that can build nothing for this
+     pupil takes no share of the choice. */
+  const all = TASKS.filter((t) => enabled(P, t) && weightOf(t, view) > 0 && (!t.ready || t.ready(view)));
   if (!all.length) return null;
   /* v6.11: inside a session, the mix rule (core/mix.js) — at least three
      kinds of question, none over ~40%, tables over 30%, analysis over 35%.

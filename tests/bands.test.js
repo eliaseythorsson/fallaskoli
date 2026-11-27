@@ -23,6 +23,8 @@ import { TASKS, typeById, makeView } from "../src/js/tasks/index.js";
 import { nearBand, itemsForBand, classRankLevel } from "../src/js/tasks/shared.js";
 import { impersonalItems } from "../src/js/tasks/fallstjorn.js";
 
+import { giveWords } from "./learner.js";
+
 const lex = buildLexicon(DATA);
 const allOn = {};
 SKILL_IDS.forEach((id) => { allOn[id] = true; });
@@ -30,8 +32,8 @@ const policyWith = (levels = {}) =>
   createPolicy(null, { skills: allOn, types: {}, levels, attrs: {}, safeVocab: null });
 const POLICY = policyWith();
 
-function viewAt(band, { policy = POLICY, exSeen = [] } = {}) {
-  const S = blankState();
+function viewAt(band, { policy = POLICY, exSeen = [], typeId = "" } = {}) {
+  const S = giveWords(blankState(), typeId);
   const sess = newSession(S);
   Object.keys(sess.diff).forEach((k) => { sess.diff[k] = band; });
   sess.exSeen = exSeen;
@@ -42,7 +44,7 @@ const N = 120;
 function meanLevel(spec, band) {
   let sum = 0, n = 0;
   for (let k = 0; k < N; k++) {
-    const b = spec.build(lex, viewAt(band), seeded(5000 + k));
+    const b = spec.build(lex, viewAt(band, { typeId: spec.id }), seeded(5000 + k));
     if (!b) continue;
     sum += b.task.lvl; n++;
   }

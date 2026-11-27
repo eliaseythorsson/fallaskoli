@@ -40,6 +40,7 @@ import { RENDER } from "../src/js/ui/render.js";
 import "../src/js/ui/render-more.js";
 import "../src/js/ui/hver.js";
 
+import { OWN_WORD_TYPES, giveWords } from "./learner.js";
 const lex = buildLexicon(DATA);
 
 /* ---------- pupils ------------------------------------------------------- */
@@ -285,9 +286,14 @@ function realTasks(pupil, n = 6, diffs = [2, 4, 6]) {
   const out = [];
   for (const diff of diffs) {
     const ctx = builderCtx(pupil, diff);
+    /* a type that asks about the pupil's words in learning meets a pupil
+       who has some (tests/learner.js) */
+    const learner = freshPupil();
+    giveWords(learner.S);
+    const own = builderCtx(learner, diff);
     for (const spec of TASKS) {
       for (let made = 0, tries = 0; made < n / diffs.length && tries < 40; tries++) {
-        const t = show(ctx, spec.build);
+        const t = show(OWN_WORD_TYPES.has(spec.id) ? own : ctx, spec.build);
         if (!t) continue;
         t.typeId = spec.id;
         out.push(t);

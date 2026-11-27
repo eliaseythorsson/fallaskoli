@@ -31,6 +31,7 @@ import { pickTargeted } from "../src/js/core/diagnosis.js";
 import { wordsOf } from "../src/js/core/wordknowledge.js";
 import { TASKS, typeById, nextTask, buildTask, drillTask, DRILL_PLAN, makeView, withView, applyEffects, FX }
   from "../src/js/tasks/index.js";
+import { giveWords } from "./learner.js";
 
 const lex = buildLexicon(DATA);
 const TODAY = "2026-03-10";
@@ -52,12 +53,13 @@ const daysAgo = (n) => {
 };
 
 /** A state and a session with a past: words met, cells missed, vocabulary
-    asked on other days, hand-written items remembered. `band` is the session
+    asked on other days, hand-written items remembered, six words in learning
+    (tests/learner.js: a type that asks about them builds nothing without). `band` is the session
     difficulty of every skill. Not frozen. */
 function pupil(band, seed = 1) {
   const g = seeded(4000 + seed);
   const ri = (n) => Math.floor(g() * n);
-  const S = blankState();
+  const S = giveWords(blankState());
   SKILL_IDS.forEach((id) => { S.enabled[id] = true; S.skills[id].xp = skillNeed(1 + ri(6)); });
   for (let k = 0; k < 300; k++) {
     const w = lex.all[ri(lex.all.length)];

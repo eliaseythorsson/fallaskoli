@@ -19,13 +19,14 @@ import { gradeForm } from "../src/js/core/grading.js";
 import { diagnose, runReport, chancesIn } from "../src/js/core/diagnosis.js";
 import { bonusVerdict } from "../src/js/ui/render-more.js";
 import { impersonalItems } from "../src/js/tasks/fallstjorn.js";
+import { giveWords } from "./learner.js";
 
 const lex = buildLexicon(DATA);
 const NEW = TASKS.filter((t) => t.build && !["fill", "verbslot", "verb", "parse", "revform", "govern", "indecl",
   "syntax", "clause", "tbl_no", "tbl_lo", "tbl_so", "tbl_fn", "tbl_to", "meaning", "umritun", "smidja", "villur"].includes(t.id));
 
-function ctxFor(skill = null, diff = 2) {
-  const S = blankState();
+function ctxFor(skill = null, diff = 2, typeId = "") {
+  const S = giveWords(blankState(), typeId);
   SKILL_IDS.forEach((id) => { S.enabled[id] = true; });
   const sess = newSession(S);
   Object.keys(sess.diff).forEach((k) => { sess.diff[k] = diff; });
@@ -71,7 +72,7 @@ test("every new question type can be built, and every task it builds is intact",
   for (const spec of NEW) {
     let built = 0;
     for (let k = 0; k < 60; k++) {
-      const ctx = ctxFor(null, 1 + (k % 5));
+      const ctx = ctxFor(null, 1 + (k % 5), spec.id);
       const t = show(ctx, spec.build);
       if (!t) continue;
       built++;

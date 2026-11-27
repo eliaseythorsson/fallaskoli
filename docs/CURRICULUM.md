@@ -174,7 +174,7 @@ evidence above. Later years keep practising it.
 | `fs-forsetningar` | Fallstjórn forsetninga | Orðflokkar | Fallstjórn | Hvaða falli stýrir orðið? (`govern`); Forsetning + nafnorð (`fs_fsno`) | Fallstjórn (`fallstjorn`) | yes |
 | `fs-hreyfing` | Hreyfing eða kyrrstaða | Orðflokkar | Fallstjórn | Hreyfing eða kyrrstaða (`fs_hreyf`) | Fallstjórn (`fallstjorn`) | yes |
 | `fs-sagnir` | Fallstjórn sagna | Orðflokkar | Fallstjórn | Hvaða falli stýrir orðið? (`govern`); Sögn stýrir falli (`fs_sogn`) | Fallstjórn (`fallstjorn`) | yes |
-| `or-merking` | Merking orða, samheiti og andheiti | Fjölbreytt málnotkun | Orðaforði | Hvað þýðir orðið? (`meaning`); Samheiti og andheiti (`or_heiti`); Orð í samhengi (`or_samhengi`); Hvert á ekki heima? (`or_utundan`) | Að útskýra orð með eigin orðum (`ordafordi`) | yes |
+| `or-merking` | Merking orða, samheiti og andheiti | Fjölbreytt málnotkun | Orðaforði | Hvað þýðir orðið? (`meaning`); Samheiti og andheiti (`or_heiti`); Orð í samhengi (`or_samhengi`); Hvert á ekki heima? (`or_utundan`); Hvaða orð vantar? (`or_eyda`) | Að útskýra orð með eigin orðum (`ordafordi`) | yes |
 | `or-myndun` | Orðmyndun með forskeytum og viðskeytum | Sköpunarkraftur | Orðaforði | Orðmyndun (`or_myndun`) | Að útskýra orð með eigin orðum (`ordafordi`) | yes |
 | `or-ordtok` | Orðtök, málshættir og föst orðasambönd | Orðtök og málshættir | Orðaforði | none yet | none yet | **no** |
 | `mb-villur` | Villuveiðar | Einkenni málsins | Málbeiting | Villuveiðar (`villur`) | Málfræðin í notkun (`malbeiting`) | yes |
@@ -458,9 +458,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 10 of 12 | 42 of 60 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
-| 9. bekkur | 10 of 12 | 49 of 60 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 12 of 12 | 60 of 60 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
+| 8. bekkur | 10 of 12 | 43 of 61 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
+| 9. bekkur | 10 of 12 | 50 of 61 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 12 of 12 | 61 of 61 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:

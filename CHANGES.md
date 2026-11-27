@@ -10,6 +10,19 @@
 - Engin breyting í einvígi, beinni kennslustund, björgunaræfingu eða upprifjun; svörin þar teljast
   áfram í orðaþekkingu.
 
+### Hvaða orð vantar? Orð í námi skrifað í eyðu (#14)
+- **Ný spurningagerð í Orðaforða, sú fyrsta sem er upprifjun**: eitt af orðunum sem nemandinn er að læra
+  (Orðin mín) vantar í setningu og nemandinn skrifar það. Fyrst sést fyrsti stafurinn; þegar orðið hefur
+  einu sinni verið skrifað rétt hverfur hann, og kemur aftur eftir rangt svar. Svarskjárinn sýnir réttu
+  myndina, setninguna alla og orðið sjálft.
+- **Rétt svar er aldrei talið rangt**: setningin biður um myndina sem í henni stendur, en aðrar myndir
+  orðsins sem eru jafnréttar þar teljast líka réttar (*Ég sagði frá breytingu / breytingunni / breytingum*).
+  Setning er ekki notuð ef orðið stendur tvisvar í henni eða ef ekki er hægt að segja til um hvaða myndir
+  eru réttar. Ef annað orð í námi í sama orðflokki gæti staðið í eyðunni sést fyrsti stafurinn alltaf.
+  Reglurnar eru efst í `src/js/tasks/recall.js`.
+- Gerðin kemur aðeins hjá nemanda sem á orð í námi sem stendur í nothæfri setningu í setningabankanum,
+  og aldrei í einvígi.
+
 ### Orðin mín: sex orð í námi (#12)
 - **Hver nemandi hefur alltaf sex orð af LÍNO-2 í námi**, valin eftir röð á listanum (algengustu fyrst)
   innan þyngdar nemandans í Orðaforða. Undir Orðasafni sér nemandinn „Orðin mín“: orðin sem hann er að

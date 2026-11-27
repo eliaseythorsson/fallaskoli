@@ -23,11 +23,14 @@ import { blankState, newSession, record } from "../src/js/core/state.js";
 import { SKILL_IDS } from "../src/js/core/skills.js";
 import { seeded } from "../src/js/core/duel.js";
 import { skillNeed } from "../src/js/core/progress.js";
+import { giveWords } from "./learner.js";
 
 export const seedsOf = (n, base = 0) => Array.from({ length: n }, (_, k) => base + k + 1);
 
-export function pupilAt(lex, band, seed) {
-  const S = blankState();
+/** `typeId`: the type the pupil is made for — one that asks about the
+    pupil's words in learning gets a pupil who has some (tests/learner.js). */
+export function pupilAt(lex, band, seed, typeId = "") {
+  const S = giveWords(blankState(), typeId);
   SKILL_IDS.forEach((id) => { S.enabled[id] = true; });
   if (seed % 2 === 1) {
     const g = seeded(7000 + seed);
