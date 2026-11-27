@@ -323,10 +323,10 @@ test("NEW_SKILL_MAX: Lesskilningur alone takes one slot of the share, not all th
     ["lesskilningur", "ordaford", "ordaford"]);
 });
 
-test("#30: with Lesskilningur switched off, or its type, it takes no share", () => {
+test("#30: with Lesskilningur switched off, or its types, it takes no share", () => {
   const P8 = createPolicy(null, presetPolicy(8));
   const off = narrowPolicy(P8, { skills: SKILL_IDS.filter((id) => id !== "lesskilningur") });
   assert.ok(!newOf(planWithNewSkills(pupil(), off, D0, { canType: canType(off) })).includes("lesskilningur"));
-  const noType = planWithNewSkills(pupil(), P8, D0, { canType: (id) => id !== "les_adal" && canType(P8)(id) });
+  const noType = planWithNewSkills(pupil(), P8, D0, { canType: (id) => !id.startsWith("les_") && canType(P8)(id) });
   assert.ok(!newOf(noType).includes("lesskilningur"));
 });

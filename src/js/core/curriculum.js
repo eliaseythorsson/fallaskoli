@@ -250,6 +250,9 @@ export const NODES = [
      what it is mainly about is not tied to a year. */
   { id: "les-adalatridi", nm: "Aðalatriði texta", cat: "lesskilningur", year: 8,
     hv: "lesskilningur", types: ["les_adal"], lesson: "lesskilningur", cover: "full" },
+  /* issue #31: MAIN's story map — the parts of a story, and a summary that follows them */
+  { id: "les-sogukort", nm: "Sögukort: hlutar sögu", cat: "lesskilningur", year: 8,
+    hv: "lesskilningur", types: ["les_hluti", "les_kort", "les_samantekt"], lesson: "lesskilningur", cover: "full" },
 
   /* ---- Stafsetning og greinarmerki: a criterion with no category yet ---- */
   { id: "st-n-nn", nm: "n eða nn", cat: "stafsetning", year: 8, hv: "stafsetning",

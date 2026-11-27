@@ -91,6 +91,35 @@ skoða sérstaklega:
   nóttu* er almenn ráðlegging um svefn unglinga. Tölurnar ætti að bera saman
   við ráðleggingar embættis landlæknis.
 
+## Sögukortið: nýjar sögur, samantektir og dæmi (Lesskilningur)
+Skrá: `content/textar/saga-bolti-a-thaki.txt`, `content/textar/saga-afmaeliskakan.txt`
+Leita: `Hvaða samantekt passar við söguna?`, `Lína var úti að leika sér.`, `Óli ætlaði að hjóla í skólann`, `Sögukortið: Aðstæður`, `Hverjir eru sex hlutar sögukortsins?`
+Úr: feat/31-story-map (atriði 31)
+
+Sögurnar tvær, samantektirnar (rétt og röng) við þær og söguna um hundinn,
+skýringarnar, dæmin á Lesefnissíðunni og sýnidæmin eru samin af gervigreind
+og hafa ekki verið lesin af móðurmálshafa. Þetta ætti að skoða sérstaklega:
+
+- *Bjarki sparkaði of fast og boltinn fór upp á þak* og *lofaði að sparka ekki
+  svona fast aftur*: eðlilegt mál?
+- *Mamma Elísu átti afmæli á laugardaginn*, *En þegar hún opnaði skápinn var
+  ekkert hveiti til*, *Elísa skar brunna hlutann af og setti krem yfir
+  kökuna*, *Enginn sá að kakan hafði brunnið*: eðlilegt?
+- Hver röng samantekt á að brjóta sögukortið á einum stað (hlutinn stendur í
+  hornklofa í skránni, t.d. `[útkoma]`). Er einhver röng samantekt samt hægt
+  að lesa sem rétta? Er rétta samantektin alltaf sú eina sem passar?
+- *Þáttur* sem heiti á hluta lengri sögu (á ensku *episode* í MAIN): er það
+  orðið sem kennarar nota, eða ætti að standa *kafli* eða *atburðarás*?
+- Heiti hlutanna sex og spurningin sem hver svarar (Lesefnissíðan,
+  *Sögukortið*): *Aðstæður — Hver? Hvar? Hvenær?*, *Vandi (kveikja) — Hvað
+  gerist? Hvaða vandi kemur upp?*, *Markmið — Hvað vill persónan?*,
+  *Tilraun — Hvað gerir persónan?*, *Útkoma — Hvernig fer?*, *Viðbrögð
+  (tilfinning) — Hvernig líður persónunni á eftir?* Eru þetta heitin í
+  íslensku gerð MAIN (Hrafnhildur Ragnarsdóttir 2020)? Þau voru ekki borin
+  saman við hana.
+- Í *Lína var úti að leika sér … Hún slapp við að blotna* er síðasta setningin
+  útkoman: er það skýrt?
+
 # Utan síðunnar
 
 Texti sem er ekki á yfirlitssíðunni. Skráin er nefnd við hvert atriði.
@@ -223,3 +252,22 @@ Lesefnissíðan *Að finna aðalatriðið í texta* (src/js/content/lessons.js,
 src/js/core/skills.js (*Að finna aðalatriðið í stuttum sögum og fræðitextum*)
 og fyrirsagnirnar *Um hvað er textinn?* og *Um hvað er sagan?* í
 src/js/tasks/lesskilningur.js.
+
+## Sögukortið: textar í spurningunum sjálfum
+Úr: feat/31-story-map (atriði 31)
+
+Texti sem forritið býr til í spurningum um sögukortið
+(src/js/tasks/lesskilningur.js, src/js/core/storymap.js) og er því ekki á
+yfirlitssíðunni: fyrirsagnirnar *Hvar er vandinn?*, *Hvar er markmiðið?*,
+*Sögukortið* og *Samantekt sögunnar*; spurningarnar *Í hvaða setningu kemur
+vandinn fram?*, *Í hvaða setningu í 2. þætti kemur markmiðið fram?*, *Hér er
+2. þáttur sögunnar. Á hvaða stað í sögukortinu er hver setning?*; skýringarnar
+*Vandinn er það sem gerist og kemur sögunni af stað, oft eitthvað sem fer
+úrskeiðis*, *Markmiðið er það sem persónan vill eða ætlar sér*, *Í sögukortinu
+er þessi setning tilraun: Hvað gerir persónan?*, *Þessi setning er ekki einn af
+hlutum sögukortsins*; við ranga samantekt *Þessi samantekt passar ekki við
+útkomuna í sögunni* (með *aðstæðurnar, vandann, markmiðið, tilraunina,
+útkomuna, viðbrögðin*) og *Í þessari samantekt gerast hlutirnir í annarri röð
+en í sögunni*. Einnig reglan *Sögukortið* í src/js/core/diagnosis.js, heiti
+hnútsins *Sögukort: hlutar sögu* og lýsingar spurningategundanna þriggja í
+src/js/core/catalogue.js.

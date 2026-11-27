@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Sögukortið í Lesskilningi (#31)
+- **Sögukortið**: sex hlutar sögu — aðstæður, vandi (kveikja), markmið, tilraun, útkoma og viðbrögð
+  (tilfinning) — hver með sína mynd. Heitin og myndirnar eru skilgreind á einum stað
+  (`core/storymap.js`, `ui/storyicons.js`) og Frásögn notar þær síðar. Lesefnissíðan sýnir kortið.
+- **Þrjár nýjar spurningategundir í Lesskilningi**: *Hvar er vandinn?* (í hvaða setningu kemur vandinn
+  eða markmiðið fram), *Sögukortið* (hver setning á sinn stað í kortinu) og *Samantekt sögunnar* (veldu
+  samantektina sem fylgir kortinu; við ranga samantekt stendur hvaða hluta hún brýtur).
+- Textasniðið fær **þætti** (`= 1. þáttur`) í lengri sögum og **samantektir** með svörin í línum
+  (`+` rétt, `- [hluti]` rangt). Byggingin stöðvast, með skrá og línu, ef merki vísar ekki í söguna.
+- Tvær nýjar sögur, önnur í tveimur þáttum, og samantekt við söguna um týnda hundinn.
+
 ### Lota dagsins: Lesskilningur tekur eina spurningu, ekki þrjár
 - Meðan Námsorð hefur enga spurningagerð var Lesskilningur eini nýi flokkurinn sem taldist og fékk allar
   þrjár spurningarnar sem nýju flokkarnir deila: aðalatriði allra þriggja textanna, á hverjum degi.
@@ -9,6 +20,7 @@
   Lesskilningur: 1). Það sem hann tekur ekki skiptist á hinn hluta lotunnar eins og áður.
 - Annarsmálshamurinn setur nú skýringu á orð setningar í spurningunni „Germynd, miðmynd eða
   þolmynd?“ og í setningum þar sem liður er undirstrikaður; þar voru orðin áður án skýringa.
+
 
 ### Lært orð: úr orðunum sex í upprifjun (#16)
 - **Orð telst lært** þegar nemandinn hefur svarað því rétt í að minnsta kosti fjórum gerðum spurninga, þar

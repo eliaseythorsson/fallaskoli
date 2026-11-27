@@ -92,11 +92,9 @@ test("every question type has a name for the settings, and every name a builder"
 
 /* A skill with no question type yet (Námsorð before its first, #19) has no
    session to check; tests/skills-checklist.test.js holds which may be so. */
-/* Lesskilningur began as a tracer with one question type on three texts
-   (issue #30). The story map (#31), subject texts (#32) and pronoun reference
-   (#33) add its other kinds; whoever adds the third takes it off this list,
-   and the two rules below hold it like every other category. */
-const ONE_KIND_SO_FAR = new Set(["lesskilningur"]);
+/* Lesskilningur began as a tracer with one question type (issue #30); the
+   story map (#31) gave it four, and it is held like every other category. */
+const ONE_KIND_SO_FAR = new Set([]);
 
 const ASKED = SKILL_IDS.filter(skillHasTypes);
 

@@ -514,6 +514,27 @@ const LIST = [
     renderer: "meaning", weight: 4, recall: false, grader: "server",
     tags: [],
     bands: [1] },
+  /* #31: the story map — MAIN's six parts (core/storymap.js) and their
+     icons (ui/storyicons.js), marked in the text files. Few stories yet, so
+     none follows the band (tasks/lesskilningur.js `FEW`). */
+  { id: "les_hluti", skill: "lesskilningur",
+    nm: "Hvar er vandinn?",
+    ds: "Í hvaða setningu sögunnar kemur vandinn eða markmiðið fram?",
+    renderer: "choice", weight: 5, recall: false, grader: "app",
+    tags: ["sogukort"],
+    bands: [1] },
+  { id: "les_kort", skill: "lesskilningur",
+    nm: "Sögukortið",
+    ds: "Hver setning sögunnar á sinn stað í sögukortinu: aðstæður, vandi, markmið, tilraun, útkoma, viðbrögð",
+    renderer: "sort", weight: 5, recall: false, grader: "app",
+    tags: ["sogukort"],
+    bands: [1] },
+  { id: "les_samantekt", skill: "lesskilningur",
+    nm: "Samantekt sögunnar",
+    ds: "Veldu samantektina sem fylgir sögukortinu",
+    renderer: "choice", weight: 5, recall: false, grader: "app",
+    tags: ["sogukort"],
+    bands: [1] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when
