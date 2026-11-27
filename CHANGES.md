@@ -9,6 +9,12 @@
 - Hópurinn er vistaður í framvindunni (`S.learning`), sameinaður milli tækja, hreinsaður á þjóninum og
   fylgir útflutningi. `tools/word-history.mjs` sýnir stöðu orðs í hópnum.
 
+### LÍNO-2-nafnorð í römmum: tillögur utan smíðinnar (#21)
+- **Nýtt verkfæri, `tools/lino-frames/run.mjs`**, sem smíðin keyrir aldrei: það finnur í hvaða nafnorðaramma
+  hvert LÍNO-2-nafnorð má fara málfræðinnar vegna, spyr Claude (Opus 5.5) eins orðs í einu hvar merkingin gengur
+  upp, og skrifar tillögur (`candidates.tsv`) og kostnaðarskýrslu. Önnur orð listans fara á lista fyrir
+  viðbótina (#23). Ekkert breytist í forritinu; tillögurnar fara aðeins í `lino-rammar.tsv` eftir yfirlestur.
+
 ## v6.15.0
 
 ### Færri GitHub Actions-mínútur
