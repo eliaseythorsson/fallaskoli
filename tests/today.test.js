@@ -16,7 +16,7 @@ import { createPolicy, narrowPolicy, presetPolicy } from "../src/js/core/policy.
 import { keyFor, addDays, dueEntries } from "../src/js/core/review.js";
 import { activePatterns, focusTypes, huntPreferFor, pickTargeted, targets } from "../src/js/core/diagnosis.js";
 import { planToday as planWithNewSkills, shares, freshSkills, todayLine, TODAY_SIZE, CORE, NEW_PUPIL, FRESH_PER, freshSpread,
-  NEW_SKILLS, NEW_SKILLS_SHARE } from "../src/js/core/today.js";
+  NEW_SKILLS, NEW_SKILLS_SHARE, NEW_SKILL_MAX } from "../src/js/core/today.js";
 import { typeById, enabled, nextTask, makeView, withView, nextOpening } from "../src/js/tasks/index.js";
 import { seeded } from "../src/js/core/duel.js";
 
@@ -288,11 +288,39 @@ test("#30: Lesskilningur is one of the new skills, and has its part of the share
   for (const S of [pupil(), pupil({ due: 3, active: ["thf_thgf"] }), pupil({ due: 8 })]) {
     const plan = planWithNewSkills(S, P8, D0, { canType: canType(P8) });
     assert.equal(plan.n, TODAY_SIZE);
-    assert.equal(plan.counts.newSkill, Math.round(TODAY_SIZE * NEW_SKILLS_SHARE));
+    assert.ok(plan.counts.newSkill >= 1 && plan.counts.newSkill <= Math.round(TODAY_SIZE * NEW_SKILLS_SHARE));
     const got = newOf(plan);
     assert.ok(got.includes("lesskilningur"), got.join(","));
     assert.equal(got.filter((id) => NEW_SKILLS.includes(id)).length, plan.counts.newSkill, got.join(","));
   }
+});
+
+test("NEW_SKILL_MAX: Lesskilningur alone takes one slot of the share, not all three; the rest goes back", () => {
+  /* While Námsorð has no question type, Lesskilningur was the only new skill
+     that counted, and took the whole share: the main idea of its three
+     texts, every day. */
+  assert.equal(NEW_SKILL_MAX.lesskilningur, 1);
+  const P8 = createPolicy(null, presetPolicy(8));
+  const cases = [[{}, [0, 0, 9]], [{ due: 3, active: ["thf_thgf"] }, [3, 4, 2]], [{ due: 8 }, [5, 0, 4]]];
+  for (const [o, [review, pattern, ordinary]] of cases) {
+    const S = pupil(o);
+    const plan = planWithNewSkills(S, P8, D0, { canType: canType(P8), newSkills: ["lesskilningur"] });
+    const got = newOf(plan);
+    assert.equal(plan.n, TODAY_SIZE);
+    assert.equal(plan.counts.newSkill, 1);
+    assert.equal(got.filter((id) => id === "lesskilningur").length, 1, got.join(","));
+    /* The two slots it could not take are shared out by the base rule, as
+       a session of nine would be. */
+    assert.deepEqual([plan.counts.review, plan.counts.pattern, plan.counts.fresh - plan.counts.newSkill],
+      [review, pattern, ordinary]);
+    assert.deepEqual(shares(9, o.due || 0, (o.active || []).length), { review, pattern, fresh: ordinary });
+  }
+  /* A skill without a cap beside it still fills the share: three slots,
+     Lesskilningur one of them. */
+  const both = planWithNewSkills(pupil(), POLICY, D0, { canType: canType(POLICY), newSkills: ["ordaford", "lesskilningur"] });
+  assert.equal(both.counts.newSkill, 3);
+  assert.deepEqual(newOf(both).filter((id) => id === "ordaford" || id === "lesskilningur").sort(),
+    ["lesskilningur", "ordaford", "ordaford"]);
 });
 
 test("#30: with Lesskilningur switched off, or its type, it takes no share", () => {

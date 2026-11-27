@@ -130,7 +130,11 @@ async function tap(selector) {
  * program survives more than one session; the figure should be well under the
  * ceiling for any seed.                                                       */
 const SEED = Number(process.env.SEED || 20250818);
-await page.evaluateOnNewDocument((seed) => {
+/* Every page opened below with `browser.newPage()` draws from the real
+   Math.random unless it is seeded too — which is how "item 45" came to fail
+   on one run in thirty: its page met a different question every run. A page
+   whose checks depend on which questions come is seeded with this. */
+const seedRandom = (p, seed) => p.evaluateOnNewDocument((seed) => {
   let s = seed >>> 0;
   Math.random = () => {
     /* mulberry32 — short, evenly distributed and good enough for a test. */
@@ -140,7 +144,8 @@ await page.evaluateOnNewDocument((seed) => {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-}, SEED);
+}, seed);
+await seedRandom(page, SEED);
 
 /* ---------- pretending to be Safari 16.3 --------------------------------
  *
@@ -1066,13 +1071,35 @@ await page.waitForFunction("document.querySelector('#task .card')", { timeout: 4
   });
   ok(focused === "nextrow", `focus went to "${focused}" after the last badge window, not to the summary's buttons`);
 
-  /* The next Enter does what the focused button says: a new session begins. */
+  /* The next Enter does what the focused button says. Which button is first
+     depends on what this pupil's long session left behind (ui/session.js
+     `renderSummary`): a pattern to practise, a weak word to rescue
+     (🛟 Bjarga orðinu …), then "↻ Önnur lota". So the check reads the
+     button first. A session the pupil chooses — "again", or practising the
+     pattern — opens with the Orðakort that is due (#15); a rescue drill is
+     about one word the pupil already has and has none. Until #82 (a new
+     question type, so the seeded session met other questions) the session
+     left no weak word and the first button was a session; since then it
+     leaves one (*mynda*), and the old check, which expected a card from
+     whatever button was first, failed on a correct program. */
   await new Promise((r) => setTimeout(r, 600));
+  const first = await page.evaluate(() => {
+    const e = document.activeElement;
+    return { next: e && e.dataset ? e.dataset.next || (e.dataset.lesson ? "lesson" : null) : null,
+      due: window.FALLASKOLI.cardDue() };
+  });
   await page.keyboard.press("Enter");
   await new Promise((r) => setTimeout(r, 600));
-  /* #15: this pupil has no word in learning yet, so the session they asked
-     for opens with a card — the Enter worked — and starts when it is done. */
-  ok(await finishCard(), "Enter on the summary's first button did not bring the Orðakort that is due");
+  if (first.next === "again" || first.next === "focus") {
+    /* #15: this pupil has no word in learning yet, so the session they asked
+       for opens with a card — the Enter worked — and starts when it is done. */
+    ok(!!first.due && await finishCard(), `Enter on the summary's first button (${first.next}) did not bring the Orðakort that is due (${first.due})`);
+  } else if (first.next === "drill") {
+    const drill = await page.evaluate(() => ({ drill: !!window.FALLASKOLI.drill, card: !!document.querySelector(".okort") }));
+    ok(drill.drill && !drill.card, `Enter on "Bjarga orðinu" did not start its drill (or brought an Orðakort): ${JSON.stringify(drill)}`);
+  } else {
+    ok(false, `the summary's first button is "${first.next}", which this check does not know`);
+  }
   await dismissModals();
   ok(await page.evaluate(() => !!window.FALLASKOLI.run || !!window.FALLASKOLI.cur),
     "Enter on the summary's first button did nothing — the mouse was still required");
@@ -3268,6 +3295,9 @@ await page.setViewport({ width: 1100, height: 900 });
   const page = await browser.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  /* Seeded: which questions come decides what is checked (see seedRandom).
+     The SEED of the run, so `SEED=n` replays a failure here too. */
+  await seedRandom(page, SEED + 45);
   await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 1 });
   await page.goto(FILE, { waitUntil: "domcontentloaded" });
   await startPractice(page, 15000);
@@ -3293,9 +3323,15 @@ await page.setViewport({ width: 1100, height: 900 });
     const c = A.cur;
     if (c.type === "umritun" && (c.fromTok || c.linesTok)) return c.fromTok || c.linesTok.flat();
     if (c.type === "umritun" && (c.from || c.lines)) return [];
-    /* A sort question is about every word it asks to sort: none is glossed. */
-    const about = new Set([c.i, ...(c.type === "sort" && c.items ? c.items.map((x) => x.j) : [])]);
-    return c.s ? c.s.tok.filter((t, j) => !about.has(j)) : [];
+    /* A sort question is about every word it asks to sort, a verb-phrase
+       question (Germynd, miðmynd eða þolmynd?) about every word it marks:
+       none is glossed. */
+    const about = new Set([c.i, ...(c.type === "sort" && c.items ? c.items.map((x) => x.j) : []), ...(c.marks || [])]);
+    const own = c.s ? c.s.tok.filter((t, j) => !about.has(j)) : [];
+    /* Two sentences with the same word (Forsetning eða atviksorð?): the
+       second is glossed as the first is. */
+    const two = c.second && c.second.s ? c.second.s.tok.filter((t, j) => j !== c.second.i) : [];
+    return own.concat(two);
   }`;
   /* Answer until a question shows a sentence with a content word in it. */
   const toSentence = () => page.evaluate((SHOWN) => {
