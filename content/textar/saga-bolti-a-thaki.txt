@@ -1,0 +1,27 @@
+# Boltinn á þakinu — saga með öllum sex hlutum sögukortsins (einn þáttur).
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er
+#   (aðstæður, vandi, markmið, tilraun, útkoma, viðbrögð),
+#   Þau{Anna og Bjarki} og hann{húsvörðinn} segja til hvers fornafnið vísar,
+#   ? [samantekt] er spurning með svörin í línunum fyrir neðan:
+#   + er rétta samantektin, - [hluti] röng samantekt og hlutinn sem hún brýtur,
+#   ! er skýringin sem nemandinn les á eftir.
+#
+# þyngd: 2
+# tegund: saga
+# orð:
+
+[aðstæður] Anna og Bjarki voru í fótbolta á skólalóðinni.
+[vandi] Bjarki sparkaði of fast og boltinn fór upp á þak.
+[markmið] Þau{Anna og Bjarki} vildu ná boltanum niður.
+[tilraun] Anna sótti húsvörðinn og bað hann{húsvörðinn} um hjálp.
+[útkoma] Húsvörðurinn náði í stiga og sótti boltann.
+[viðbrögð] Bjarki þakkaði honum{Húsvörðurinn} fyrir og lofaði að sparka ekki svona fast aftur.
+
+? [samantekt] Hvaða samantekt passar við söguna?
++ Boltinn fór upp á þak, en Anna fékk húsvörðinn til að sækja hann.
+- [útkoma] Boltinn fór upp á þak og krakkarnir fengu hann aldrei aftur.
+- [vandi] Bjarki meiddi sig í fótbolta og húsvörðurinn hjálpaði honum.
+- [tilraun] Boltinn fór upp á þak og Bjarki klifraði sjálfur upp til að sækja hann.
+! Í sögunni fer boltinn upp á þak (vandi), Anna biður húsvörðinn um hjálp (tilraun) og hann sækir boltann (útkoma). Rétta samantektin segir frá þessu þrennu, eins og það gerðist.

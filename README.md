@@ -262,6 +262,10 @@ src/js/core/review.js the review queue: every wrong answer goes in with a
                       forced). Also what is one entry, the cap, the expiry
                       and the merge between devices — each choice explained
                       at the top of the file
+src/js/core/storymap.js  the story map (#31): MAIN's six parts of a story,
+                      their names and the question each answers, defined once
+                      for Lesskilningur and Frásögn; ui/storyicons.js draws
+                      their six icons
 src/js/core/today.js  "Lota dagsins", the picker's main button: plans ten
                       questions — the due reviews, then the active error
                       patterns, then new material spread over several skills
@@ -615,8 +619,29 @@ is the text's id). No TABs and no columns — it reads as the text does:
   (`Hún{kona}` finds *konan*). The pupil never sees the braces.
 - **A question** is a line `? [mark] Question? | right | wrong | wrong`: the
   right answer first (the app shuffles them), then two or three wrong ones.
-  The mark says what is asked for; so far only `[aðalatriði]`, what the whole
-  text is mainly about. **Its explanation** is the next line, `! …`.
+  The mark says what is asked for: `[aðalatriði]`, what the whole text is
+  mainly about, or `[samantekt]`, the summary that follows the story map. **Its explanation** is the next line, `! …`.
+- **Episodes** (issue #31): a longer story (þyngd 3 and up) may be told in
+  two or three episodes. A line `= 1. þáttur`, `= 2. þáttur` stands before
+  each episode's first sentence; every episode has its own `vandi`,
+  `tilraun` and `útkoma`. A story without such lines is one episode.
+- **A summary question** (issue #31) has its answers on the lines below it,
+  because a summary is too long for one line:
+
+  ```
+  ? [samantekt] Hvaða samantekt passar við söguna?
+  + Boltinn fór upp á þak, en Anna fékk húsvörðinn til að sækja hann.
+  - [útkoma] Boltinn fór upp á þak og krakkarnir fengu hann aldrei aftur.
+  - [vandi] Bjarki meiddi sig í fótbolta og húsvörðurinn hjálpaði honum.
+  - [röð] … (the events in another order)
+  ! Í sögunni fer boltinn upp á þak (vandi), …
+  ```
+
+  `+` is the right summary (first, and only one), each `-` a wrong one that
+  names the part of the story map it breaks — a part the story has — or
+  `[röð]`, the order of events. The pupil is told, after a wrong pick,
+  which part it was. Only a *saga* has one. Any question may be written
+  this way (without marks on its wrong answers, outside a summary).
 - **Þyngd is length:** 2–3 sentences at þyngd 1, a paragraph (4–9 sentences)
   at 2–3, 150–300 words at 4–5. A story must have `vandi` and `útkoma` at
   þyngd 1; `aðstæður`, `vandi`, `tilraun` and `útkoma` at 2–3; all six parts
@@ -632,7 +657,10 @@ not a word earlier in the text or that BÍN gives another grammatical gender
 or number than the pronoun (*steinninn … hann*; *Jón og Sara* is *þau*), a
 word of `# orð:` that is not on LÍNO-2 or not in the text, and a question
 without exactly one right answer (the first; two or three wrong ones, no two
-the same) or without its explanation. Then `pipeline/build_exercises.py`
+the same) or without its explanation — and on story-map marks that do not
+point at the story: episodes out of order, before þyngd 3, more than three or
+one lacking a part, and a wrong summary that breaks a part the story does not
+have. Then `pipeline/build_exercises.py`
 has every sentence of every text parsed by Greynir and checked by BÍN and
 the parse guard exactly as a sentence of the bank is, and checks the words
 of the questions; a sentence that does not parse stops the build too. The
