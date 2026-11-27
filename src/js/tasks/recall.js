@@ -132,10 +132,17 @@
 import { normalise } from "../core/grading.js";
 import { wordKey } from "../core/state.js";
 import { entriesOf, isRecallEntry, isJudged, RIGHT, WRONG, wordsInLearning, wordsLearned, isInLearning,
-         LEARNING_SKILL, LEARNING_CLASSES } from "../core/wordknowledge.js";
+         LEARNING_CLASSES } from "../core/wordknowledge.js";
+import { catalogueEntry } from "../core/catalogue.js";
 import { built, FX } from "./effects.js";
 import { frameIndex, acceptsNoun, fillFrame, frameKey, sharesStem } from "./frames.js";
 import { pick, wpick, askable, bandFor, levelFor, cap1, forcedCell } from "./shared.js";
+
+/* The skill the question is filed under, its þyngd and its XP: the
+   catalogue's, so the task never disagrees with its declaration. #19 made
+   Námsorð the word track's skill; moving or_eyda there is its catalogue
+   line, its BUILDERS entry and the node `nams-ordin` (tasks/namsord.js). */
+const SKILL = /** @type {string} */ ((catalogueEntry("or_eyda") || {}).skill);
 
 /* ---------- the constants ---------------------------------------------------- */
 
@@ -457,7 +464,7 @@ export function recallGap(lex, view, rng) {
      no harder than the session's level, or the easiest there is. */
   let pool = chosen.gaps;
   if (pool.some((x) => x.wanted)) pool = pool.filter((x) => x.wanted);
-  const band = bandFor(view, LEARNING_SKILL);
+  const band = bandFor(view, SKILL);
   const low = Math.max(band, Math.min(...pool.map((x) => x.g.lvl)));
   const { g, stage } = pick(pool.filter((x) => x.g.lvl <= low), rng);
 
@@ -466,7 +473,7 @@ export function recallGap(lex, view, rng) {
   const letter = firstLetter(g.answers[0]);
   const answers = cap ? g.answers.map(cap1) : g.answers;
   return built({
-    type: "gap", skill: LEARNING_SKILL, s: g.s, i: g.i, cue: null,
+    type: "gap", skill: SKILL, s: g.s, i: g.i, cue: null,
     answers, m: g.m, paradigm: g.m ? w.forms : null,
     /* What the verdict shows as "the right form": the sentence's own cell,
        not the other forms that are accepted there. */
