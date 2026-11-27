@@ -84,6 +84,12 @@
   upp, og skrifar tillögur (`candidates.tsv`) og kostnaðarskýrslu. Önnur orð listans fara á lista fyrir
   viðbótina (#23). Ekkert breytist í forritinu; tillögurnar fara aðeins í `lino-rammar.tsv` eftir yfirlestur.
 
+### Textar og Lesskilningur (#30)
+- **Nýr flokkur, Lesskilningur**, á Færnikortinu og kveiktur í 8., 9. og 10. bekk. Fyrsta spurningagerðin, *Um hvað er textinn?*, sýnir stutta sögu eða fræðitexta og spyr um aðalatriðið. Þrír textar til að byrja með; ný Lesefnissíða, *Að finna aðalatriðið í texta*.
+- **Textar eru venjulegar textaskrár**, ein á hvern texta í `content/textar/`: stuttur haus (`# þyngd:`, `# tegund:`, `# orð:`), ein setning í línu með merki fremst (`[vandi] …`, `[aðalatriði] …`), vísun fornafns í slaufusviga (`Hún{Sara}`) og spurningar sem línur (`? [aðalatriði] Spurning? | rétt | rangt | rangt`, skýringin í næstu línu á eftir `!`). Sniðið er í README, „Efnið“.
+- **Smíðin athugar textana**: einn lesari í `pipeline/content_io.py` (`texts()`) stöðvar smíðina með skrá og línu ef haus vantar, texti er of langur eða stuttur fyrir þyngdina, sögu vantar hluta sögukortsins, fornafn og orðið sem það vísar til eru ekki í sama kyni og tölu í BÍN, orð í `# orð:` er ekki á LÍNO-2 eða ekki í textanum, eða spurning hefur ekki nákvæmlega eitt rétt svar. Hver setning er greind með Greyni og borin saman við BÍN eins og setningar bankans. Textarnir eru á yfirlitssíðunni.
+- **Lota dagsins**: ein af nýju spurningunum er úr Lesskilningi (sú síðasta). Stöðuprófið spyr ekki úr flokki sem fylgir ekki þyngd enn.
+
 ## v6.15.0
 
 ### Færri GitHub Actions-mínútur

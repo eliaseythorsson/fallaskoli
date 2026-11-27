@@ -20,6 +20,8 @@
    What it reads, and nothing else:
      content/**\/*.tsv           the items (the same files the build reads,
                                  parsed the way pipeline/content_io.py parses them)
+     content/textar/*.txt        the texts of Lesskilningur (issue #30), one
+                                 card each: the text, its marks, its questions
      src/js/content/lessons.js   the Lesefni pages (left in JavaScript: the
      src/js/content/examples.js  app imports them as they are)
      content/REVIEW-NOTES.md     the notes
@@ -53,6 +55,7 @@ export const KINDS = [
   ["obeygjanleg", "Óbeygjanleg orð"],
   ["ordafordi", "Orðaforði"],
   ["setningafraedi", "Setningafræði"],
+  ["textar", "Textar: Lesskilningur"],
   ["lesefni", "Lesefni"],
   ["synidaemi", "Sýnidæmi"],
 ];
@@ -118,6 +121,59 @@ function itemFromRow(rel, kind, list, header, r) {
        is the wrong form the pupil is shown */
     answer: c["svar"] || c["villa"] || "", answerLabel: "villa" in c ? "Nemandinn sér" : "Svar",
   };
+}
+
+/* ---------- the texts (issue #30) -----------------------------------------
+   content/textar/*.txt, one text per file: a header in comments (# þyngd:,
+   # tegund:, # orð:), one sentence per line with its mark in front, pronoun
+   referents in braces, then questions (?) and their explanations (!). The
+   format and every check on it are pipeline/content_io.py `texts`; this only
+   lays a file out for a reader. A text is ONE card: the text as the pupil
+   reads it, then each sentence with its mark and its referents as written,
+   then the questions. */
+export const TEXT_DIR = "content/textar";
+
+/** One text file as a card. */
+export function textItem(rel, src) {
+  const head = {}, sentences = [], questions = [], above = [];
+  let first = 0;
+  src.split("\n").forEach((raw, i) => {
+    const line = raw.replace(/\r$/, "").trim();
+    if (!line) return;
+    const h = /^#\s*(þyngd|tegund|orð)\s*:\s*(.*)$/.exec(line);
+    if (h) { head[h[1]] = h[2].trim(); return; }
+    if (line.startsWith("#")) { if (!sentences.length) above.push(line.replace(/^# ?/, "")); return; }
+    if (line.startsWith("!")) { if (questions.length) questions[questions.length - 1].why = line.slice(1).trim(); return; }
+    if (line.startsWith("?")) {
+      const m = /^\?\s*\[([^\]]*)\]\s*(.*)$/.exec(line) || [null, "", line.slice(1).trim()];
+      const [q, a, ...w] = m[2].split("|").map((c) => c.trim());
+      questions.push({ mark: m[1], q, a: a || "", w, why: "", line: i + 1 });
+      return;
+    }
+    const m = /^\[([^\]]*)\]\s*(.*)$/.exec(line);
+    if (!first) first = i + 1;
+    sentences.push({ mark: m ? m[1] : "", written: m ? m[2] : line });
+  });
+  const clean = (t) => t.replace(/\{[^{}]*\}/g, "");
+  const q0 = questions[0] || { q: "", a: "", w: [], why: "" };
+  return {
+    kind: "textar", list: "Textar: sögur og fræðitextar", file: rel, line: first || 1,
+    level: head["þyngd"] || "", levelName: "þyngd",
+    text: sentences.map((s) => clean(s.written)).join(" "),
+    answer: q0.a, answerLabel: `Spurning: ${q0.q} — rétt svar`, explain: q0.why,
+    fields: [["tegund", head["tegund"] || ""], ["orð", head["orð"] || ""],
+      ["röng svör", q0.w.join(" · ")]].filter(([, v]) => v),
+    body: [
+      ...sentences.map((s) => ["li", `[${s.mark}] ${s.written}`]),
+      ...questions.slice(1).flatMap((q) => [["q", `${q.q} — ${q.a} (röng svör: ${q.w.join(" · ")})`], ["p", q.why]]),
+    ],
+    above: above.filter((x) => x.trim()),
+  };
+}
+
+async function textFiles() {
+  if (!existsSync(p(TEXT_DIR))) return [];
+  return (await readdir(p(TEXT_DIR))).filter((n) => n.endsWith(".txt")).sort().map((n) => TEXT_DIR + "/" + n);
 }
 
 /* ---------- a word allowed into one frame (issue #20) --------------------
@@ -248,6 +304,10 @@ export async function collect({ queueDir = QUEUE_DIR } = {}) {
       items.push(rel === PAIRS_FILE ? pairItem(it, r.cells, data) : it);
     }
   }
+
+  const texts = await textFiles();
+  for (const rel of texts) items.push(textItem(rel, await readFile(p(rel), "utf8")));
+  if (texts.length) lists.push({ file: TEXT_DIR, title: "Textar: sögur og fræðitextar", n: texts.length });
 
   const lessonsRel = "src/js/content/lessons.js", examplesRel = "src/js/content/examples.js";
   const { LESSONS } = await import(pathToFileURL(p(lessonsRel)).href);
