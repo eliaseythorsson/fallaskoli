@@ -126,8 +126,10 @@
  *
  * 10. PRIVACY: no text the pupil typed. The history goes out with the
  *     pupil's own export and is erased with the account (it is part of the
- *     progress file); docs/PRIVACY.md names it. Teachers and guardians see
- *     nothing new.
+ *     progress file); docs/PRIVACY.md names it. Teachers and guardians saw
+ *     nothing of it until #17: the guardian's view of one pupil now lists
+ *     the words that are hard, each with its reason and no date
+ *     (`hardWords`, docs/PRIVACY.md §1a).
  *
  * 11. PURE MOVE: a pupil sees no difference (tools/task-snapshot.mjs).
  *
@@ -206,6 +208,30 @@ export const LEARNED_DAYS = 2;
     right: a word just missed is not known, however many types it was once
     right in. */
 export const LEARNED_LAST = 3;
+
+/* Hard words (#17, docs/DLD-PLAN.md §1 "Hard words", `hardRule` below): a
+   word is hard after HARD_WRONG wrong answers about it, in any question
+   types, within HARD_DAYS days. It stops being hard when its last
+   HARD_CLEAR judged answers since then were right, on a later day. */
+
+/** This many wrong answers … (owner, docs/DLD-PLAN.md §1). One miss is a
+    slip and two can be one bad afternoon; the third, across whatever
+    question types asked about the word, says the word itself is the trouble
+    — and three answers are also the fewest word health judges a word on
+    (core/wordhealth.js `shakyMinSeen`). */
+export const HARD_WRONG = 3;
+/** … within this many days, counted back from the day of the last of them,
+    that day included (owner). Two weeks is two school weeks: misses further
+    apart than that are forgetting between meetings, which the review queue
+    (1 → 3 → 7 → 21 days) is already there for. */
+export const HARD_DAYS = 14;
+/** A hard word stops being hard when this many of its judged answers since
+    it became hard, the last ones, were right — the learned rule's own line
+    (LEARNED_LAST), because "the last three right" is what the program
+    already takes as a word that is held — and at least one of them on a
+    later day than the day it became hard: the three questions of "Þrjár í
+    röð" the same afternoon are short-term memory (see LEARNED_DAYS). */
+export const HARD_CLEAR = LEARNED_LAST;
 
 /* ---------- writing ------------------------------------------------------- */
 
@@ -355,8 +381,9 @@ export const isJudged = (entry) => !!entry && (entry.outcome === RIGHT || entry.
  *                 entries since the word entered the six, e.g.
  *                 `because("learned", "rétt í 4 gerðum spurninga, þar af 1
  *                 upprifjun, á 2 dögum; síðustu 3 svör rétt")`
- *   later         hard (#17) lives in this section and returns the same
- *                 shape, built with the helpers below
+ *   hard          hard · not-hard: `hardRule` below (#17), from all the
+ *                 word's entries, e.g. `because("hard", "3 röng svör innan
+ *                 14 daga, í 2 gerðum spurninga; ekkert svar síðan")`
  *
  * `node tools/word-history.mjs <progress.json> <word>` prints a word's
  * entries with its status and reason (README, "Why does the app think that
@@ -405,6 +432,9 @@ const dayText = (day) => {
  *   d  the day the word got that status
  *   n  how many times its status has changed (1 when it first enters). Two
  *      devices: the record with more changes wins (`mergeLearning`).
+ *   c  only on a word in learning that came back because it was hard (#17,
+ *      `comeBack`): how many times its Orðakort must have been done; the
+ *      card is due again until it has (`owesCard`)
  *
  * CHOOSING (`learningCandidates`): the LÍNO-2 words (`w.lino`, issue #9) of
  * the classes in LEARNING_CLASSES that the lexicon has — the vocabulary
@@ -422,7 +452,8 @@ const dayText = (day) => {
  *        first that may not stops the filling, and `nextToLearn` names it.
  *   #16  the learned rule calls `leaveLearning`; the next `fillLearning`
  *        puts a new word in its place.
- *   #17  a hard word comes back with `enterLearning` (a learned word may).
+ *   #17  a hard word comes back with `comeBack` (through `enterLearning`;
+ *        a learned word may), and owes its Orðakort again (`owesCard`).
  *   #19  LEARNING_SKILL is the Námsorð skill; `learningLevel` reads its þyngd.
  * `enterLearning` and `leaveLearning` are the only writes; both are pure
  * apart from changing `S.learning`, with the day handed in.            */
@@ -489,7 +520,8 @@ export function learningStatus(S, word) {
   const r = learningOf(S)[word];
   if (!r) return null;
   if (r.s === IN_LEARNING)
-    return because("learning", `eitt af ${LEARNING_SIZE} orðum sem verið er að læra, frá ${dayText(r.d)}`);
+    return because("learning", `eitt af ${LEARNING_SIZE} orðum sem verið er að læra, frá ${dayText(r.d)}`
+      + (num(r.c) > 0 ? "; kom aftur af því að það var erfitt" : ""));
   if (r.s === LEARNED) return because("learned", `lært ${dayText(r.d)}`);
   return because("put-back", `tekið úr hópnum ${dayText(r.d)} án þess að vera lært; getur komið aftur`);
 }
@@ -628,6 +660,198 @@ export function noteLearned(S, today) {
   return out;
 }
 
+/* ---------- hard words (#17, docs/DLD-PLAN.md §1 "Hard words") --------------
+ *
+ * ANY word — not only the LÍNO-2 words of the intensive phase — is hard for a
+ * pupil after HARD_WRONG wrong answers about it, in whatever question types,
+ * within HARD_DAYS days (CONTEXT.md "Hard word"). The rule reads the word's
+ * entries: the same history, through the same readers, as everything else
+ * in this module (#42). "Seen, not judged" entries count for nothing
+ * (decision 7). The constants and their reasons are at the top of the file.
+ *
+ * A DETECTION is the wrong answer that makes the HARD_WRONG-th within the
+ * window. Only wrong answers AFTER the last detection count toward the next
+ * one, so the fourth miss the same week is not a second detection on its
+ * own: it takes HARD_WRONG new ones. `hardDetections` replays the entries
+ * from the start, so the detections are worked out from the history alone
+ * and nothing about them is saved. What the program does about one:
+ *
+ *   first detection    "Þrjár í röð" on the word, offered at once under the
+ *                      verdict (control/drill.js `offerWordStreak`); outside
+ *                      a session, the rescue drill offer on it
+ *   second and later   back to the intensive phase (`comeBack`): the word
+ *                      enters the words in learning today, its learned rule
+ *                      counts from today, and its Orðakort is due again
+ *                      before the next session (`owesCard`). A word that is
+ *                      in learning already, or of a class that is never in
+ *                      learning (LEARNING_CLASSES: pronouns, prepositions,
+ *                      conjunctions …), gets "Þrjár í röð" again instead
+ *
+ * A word STOPS being hard when, since its last detection, its last
+ * HARD_CLEAR judged answers were right and at least one of them came on a
+ * later day (HARD_CLEAR at the top). It stays hard however long it is not
+ * asked: nothing has shown that it is held. Its detections are never
+ * forgotten, so a word that was hard once and is hard again goes back to the
+ * intensive phase: "Þrjár í röð" was tried and did not hold.
+ *
+ * WHEN: on every answer, in core/answer.js `settle`, right after the
+ * learned rule (`noteHard`); only a word that was answered wrong just now
+ * can have a new detection. The guardian's view of one pupil lists the
+ * words that are hard (`hardWords`, server/server.mjs /teacher/skillmap);
+ * the pupil is shown no label, no list, no mode.                          */
+
+/** "1 rangt svar", "3 röng svör". @param {number} k */
+const wrongText = (k) => `${k} ${k % 10 === 1 && k % 100 !== 11 ? "rangt svar" : "röng svör"}`;
+
+/**
+ * Every detection in a word's entries, oldest first: the index of the entry
+ * that made it, its day, and the question types of the HARD_WRONG wrong
+ * answers. Pure.
+ * @param {WordEntry[]} entries  oldest first
+ * @returns {{at: number, day: string, types: string[]}[]}
+ */
+export function hardDetections(entries) {
+  const list = entries || [];
+  const out = [];
+  /** @type {number[]} the wrong answers since the last detection */
+  let wrongs = [];
+  for (let i = 0; i < list.length; i++) {
+    const e = list[i];
+    if (!e || e.outcome !== WRONG || !DAY.test(String(e.day))) continue;
+    const start = daysBefore(e.day, HARD_DAYS - 1);
+    wrongs = [...wrongs.filter((k) => list[k].day >= start), i];
+    if (wrongs.length < HARD_WRONG) continue;
+    out.push({ at: i, day: e.day, types: [...new Set(wrongs.map((k) => list[k].type))] });
+    wrongs = [];
+  }
+  return out;
+}
+
+/**
+ * The hard-word rule over a word's entries, oldest first: `hard` or
+ * `not-hard`, with its reason (#43). The reason never names a day: the
+ * guardian reads it, and the notice promises that a teacher does not see
+ * when a pupil practises (docs/PRIVACY.md §1a). Pure.
+ * @param {WordEntry[]} entries
+ * @param {DayKey} [today]  for a word never hard: the window its misses are
+ *   counted in ends today (default: the day of its last entry)
+ * @returns {WordStatus & {times: number, fresh: boolean}}
+ *   `times`: how many detections; `fresh`: the last entry made the last one
+ */
+export function hardRule(entries, today) {
+  const list = entries || [];
+  const det = hardDetections(list);
+  if (!det.length) {
+    const end = today && DAY.test(String(today)) ? today : (list.length ? list[list.length - 1].day : "");
+    const start = end ? daysBefore(end, HARD_DAYS - 1) : "";
+    const k = list.filter((e) => e.outcome === WRONG && e.day >= start && e.day <= end).length;
+    return { ...because("not-hard", `${k ? wrongText(k) : "ekkert rangt svar"} síðustu ${HARD_DAYS} daga; `
+      + `orð er erfitt eftir ${HARD_WRONG} röng svör`), times: 0, fresh: false };
+  }
+  const last = det[det.length - 1];
+  const after = list.slice(last.at + 1).filter(isJudged);
+  const tail = after.slice(-HARD_CLEAR);
+  const right = tail.filter((e) => e.outcome === RIGHT).length;
+  const cleared = tail.length === HARD_CLEAR && right === HARD_CLEAR && tail.some((e) => e.day > last.day);
+  const t = last.types.length;
+  const what = `${wrongText(HARD_WRONG)} innan ${HARD_DAYS} daga, í ${t} ${typesText(t)} spurninga`
+    + (det.length > 1 ? ` (${det.length}. skiptið)` : "");
+  const since = cleared ? `síðan síðustu ${HARD_CLEAR} svör rétt`
+    : !after.length ? "ekkert svar síðan"
+    : tail.length < HARD_CLEAR ? `síðan ${right} af ${answersText(tail.length)} rétt`
+    : right === HARD_CLEAR ? `síðan síðustu ${HARD_CLEAR} svör rétt, en öll sama dag`
+    : `síðan ${lastRightText(right, HARD_CLEAR)}`;
+  return { ...because(cleared ? "not-hard" : "hard", `${cleared ? "var erfitt: " : ""}${what}; ${since}`),
+    times: det.length, fresh: last.at === list.length - 1 };
+}
+
+/** Is the word hard now? Its status with the reason (#43). Pure.
+    @param {State} S @param {string} word @param {DayKey} [today] */
+export const hardStatus = (S, word, today) => hardRule(entriesOf(S, word), today);
+
+/**
+ * Every word that is hard for this pupil now, the one hard most often
+ * first, then by word: what the guardian's view of the pupil lists. Pure.
+ * @param {State} S
+ * @returns {{word: string, lemma: string, times: number, why: string}[]}
+ */
+export function hardWords(S) {
+  const out = [];
+  for (const word of wordsWithHistory(S)) {
+    const r = hardStatus(S, word);
+    if (r.status === "hard") out.push({ word, lemma: word.split("|")[0], times: r.times, why: r.why });
+  }
+  return out.sort((a, b) => b.times - a.times || (a.word < b.word ? -1 : a.word > b.word ? 1 : 0));
+}
+
+/** May a hard word go back to the intensive phase now? Of a class the
+    words in learning have (LEARNING_CLASSES), and not in learning already. */
+const canComeBack = (S, word) => LEARNING_CLASSES.has(String(word).split("|")[1]) && !isInLearning(S, word);
+
+/**
+ * A word detected hard a second time goes back to the intensive phase today
+ * (`enterLearning`, the seam #12 left for this): its learned rule counts
+ * from today, and its Orðakort is owed again — `c` on its record is the
+ * number of times the card must have been done (`owesCard`). The six stay
+ * six: if they were full, the word that entered last (not one that came
+ * back hard itself) is put back and enters again when there is room — its
+ * card is done, so it does not wait for one. Changes `S.learning`.
+ * @param {State} S @param {string} word @param {DayKey} today
+ * @param {number} cardsDone  how many times the word's card has been done
+ * @returns {boolean} whether it came back
+ */
+export function comeBack(S, word, today, cardsDone) {
+  if (!canComeBack(S, word) || !enterLearning(S, word, today)) return false;
+  S.learning[word].c = Math.min(1000, Math.max(0, Math.floor(num(cardsDone))) + 1);
+  const now = wordsInLearning(S);
+  if (now.length > LEARNING_SIZE) {
+    const book = learningOf(S);
+    const out = now.filter((k) => k !== word)
+      .sort((a, b) => (num(book[a].c) > 0 ? 1 : 0) - (num(book[b].c) > 0 ? 1 : 0)
+        || (book[a].d > book[b].d ? -1 : book[a].d < book[b].d ? 1 : a > b ? -1 : 1))
+      .slice(0, now.length - LEARNING_SIZE);
+    for (const k of out) setLearning(S, k, PUT_BACK, today);
+  }
+  return true;
+}
+
+/**
+ * Does this word, in learning after coming back hard, still owe its
+ * Orðakort? @param {State} S @param {string} word
+ * @param {number} cardsDone  how many times its card has been done
+ */
+export function owesCard(S, word, cardsDone) {
+  const r = learningOf(S)[word];
+  return !!r && r.s === IN_LEARNING && num(r.c) > num(cardsDone);
+}
+
+/**
+ * The hard-word rule after an answer (see WHEN above): for every word the
+ * answer's entries were wrong about, a detection made by this very answer
+ * is acted on — the second and later send the word back to the intensive
+ * phase (`comeBack`) here; the first is handed back for the screen to offer
+ * "Þrjár í röð". Changes `S.learning` only.
+ * @param {State} S
+ * @param {{word: string, outcome: string}[]} made  the entries just written (`noteWords`)
+ * @param {DayKey} today
+ * @param {(word: string) => number} [cardsDone]  how many times a word's card has been done
+ * @returns {{word: string, times: number, action: "streak"|"learning", why: string}[]}
+ */
+export function noteHard(S, made, today, cardsDone = () => 0) {
+  const out = [];
+  if (!DAY.test(String(today))) return out;
+  const seen = new Set();
+  for (const { word, outcome } of made || []) {
+    if (outcome !== WRONG || seen.has(word)) continue;
+    seen.add(word);
+    const r = hardStatus(S, word, today);
+    if (!r.fresh) continue;
+    const back = r.times > 1 && comeBack(S, word, today, cardsDone(word));
+    out.push({ word, times: r.times, action: back ? "learning" : "streak", why: r.why });
+  }
+  return out;
+}
+
 /**
  * The words that would enter next, in the order they would: see CHOOSING
  * above. Pure. `lex` is the pupil's lexicon (core/lexicon.js).
@@ -671,10 +895,12 @@ export function fillLearning(S, lex, { level, today, ready = () => true }) {
     .filter((w) => typeof w.lino === "number").map((w) => [`${w.o}|${w.c}`, w.lino]));
   const now = wordsInLearning(S);
   if (now.length > LEARNING_SIZE) {
-    /* Keep the first to enter; on the same day the commoner word. */
+    /* Keep a word that came back hard (#17, `comeBack`), then the first to
+       enter; on the same day the commoner word. */
+    const book = learningOf(S), back = (k) => (num(book[k].c) > 0 ? 0 : 1);
     const keep = [...now].sort((a, b) => {
-      const da = learningOf(S)[a].d, db = learningOf(S)[b].d;
-      return da < db ? -1 : da > db ? 1 : (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity) || (a < b ? -1 : 1);
+      const da = book[a].d, db = book[b].d;
+      return back(a) - back(b) || (da < db ? -1 : da > db ? 1 : (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity) || (a < b ? -1 : 1));
     });
     for (const k of keep.slice(LEARNING_SIZE)) { setLearning(S, k, PUT_BACK, today); putBack.push(k); }
     return { entered, putBack };
@@ -924,6 +1150,8 @@ export function sanitiseLearning(raw) {
     if (Object.keys(out).length >= LEARNING_MAX) break;
     if (!isWordKey(k) || !isObj(v) || !LEARNING_STATES.has(v.s) || !DAY.test(String(v.d))) continue;
     out[k] = { s: v.s, d: v.d, n: Math.max(1, n(v.n, 1000)) };
+    /* `c`: a word that came back hard owes its card this many times (#17). */
+    if (v.s === IN_LEARNING && n(v.c, 1000) > 0) out[k].c = n(v.c, 1000);
   }
   return out;
 }

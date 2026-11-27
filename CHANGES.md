@@ -10,6 +10,21 @@
 - Annarsmálshamurinn setur nú skýringu á orð setningar í spurningunni „Germynd, miðmynd eða
   þolmynd?“ og í setningum þar sem liður er undirstrikaður; þar voru orðin áður án skýringa.
 
+### Erfið orð (#17)
+- **Orð verður erfitt** fyrir nemanda þegar hann hefur svarað rangt um það þrisvar á 14 dögum, í hvaða
+  gerð spurninga sem er. Þetta gildir um öll orð, ekki aðeins LÍNO-2-orðin. Aðeins röng svör eftir síðasta
+  skipti telja til þess næsta. Mörkin eru fremst í `src/js/core/wordknowledge.js`, hvert með rökum.
+- **Í fyrsta sinn** er boðið upp á „Þrjár í röð“ um orðið strax undir svarinu, eins og eftir villumynstur:
+  þrjár spurningar um orðið sjálft, sem teljast ekki með í lotunni. Utan lotu er boðin björgun á orðinu.
+- **Í annað sinn** fer orðið aftur í orðin sem verið er að læra (ef það er nafnorð, lýsingarorð,
+  sagnorð eða atviksorð og er ekki þar fyrir), og orðakortið kemur aftur á undan næstu lotu. Ef hópurinn
+  var fullur víkur orðið sem kom síðast inn og kemur aftur þegar pláss losnar.
+- Orð hættir að vera erfitt þegar síðustu þrjú svör um það eru rétt, að minnsta kosti eitt þeirra á
+  seinni degi en orðið varð erfitt.
+- **Forsjáraðili sér erfiðu orðin** undir færnikorti nemandans í Skólastofunni, hvert með ástæðu en
+  engri dagsetningu. Nemandinn sér engan mun: hvorki lista né merkingu. `docs/PRIVACY.md` §1a.
+- `node tools/word-history.mjs` sýnir hvort orð er erfitt og hvers vegna.
+
 ### Lært orð: úr orðunum sex í upprifjun (#16)
 - **Orð telst lært** þegar nemandinn hefur svarað því rétt í að minnsta kosti fjórum gerðum spurninga, þar
   af einni þar sem hann sér ekki orðið heldur þarf að muna það (nú „Orð í eyðu“), á að minnsta kosti tveimur

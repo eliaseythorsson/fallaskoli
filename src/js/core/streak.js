@@ -69,6 +69,21 @@ export function startStreak(p, from = {}) {
     t: from.t || null, sk: from.sk || null };
 }
 
+/**
+ * A new run of three on one WORD (#17): the first time a word is hard
+ * (core/wordknowledge.js `noteHard`), three questions on it straight away —
+ * the rescue drill's kinds of question for its word class (tasks/drill.js
+ * `wordStreakTasks`), three of them rather than ten to twenty. No rule comes
+ * first: a word has no rule, and the miss is on the screen. `nm` is the word
+ * as the line names it. Nothing is queued when they end: the miss that made
+ * the word hard is already in the review queue (core/answer.js).
+ * @param {string} word  a `wordKey` @param {string} nm
+ */
+export function startWordStreak(word, nm) {
+  return { p: null, w: word, nm: nm || String(word).split("|")[0], n: STREAK_N, i: 0, c: 0,
+    marks: [], intro: false, done: false, t: null, sk: null };
+}
+
 /** One of the three answered. A question with no right answer does not count. */
 export function stepStreak(st, ok) {
   if (!st || st.done || (ok !== true && ok !== false)) return st;
