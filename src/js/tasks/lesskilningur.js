@@ -319,9 +319,6 @@ export const BUILDERS = {
   les_hluti: { build: taskStoryPart },
   les_kort: { build: taskStoryMap },
   les_samantekt: { build: taskSummary },
-  }, [FX.exSeen(x.key)]);
-}
-
   les_setning: { build: taskMainSentence },
   les_smaatridi: { build: taskDetails },
   les_kjarni: { build: taskGist },

@@ -5,7 +5,7 @@
    These tests hold:
    - the reader (pipeline/content_io.py) reads a `? [kjarni]` question: the
      right answer first, then exactly one wrong answer of each kind
-     (þröngt, vítt, rangt), and stops with the file and the line otherwise;
+     ([þröngt], [vítt], [rangt]) on the lines below it, and stops with the file and the line otherwise;
    - the three types take their answers from the marks of the file:
      les_setning the [aðalatriði] sentence, les_smaatridi the [smáatriði]
      sentences (with an [annað] one to leave out), les_kjarni the [kjarni]
@@ -59,38 +59,43 @@ except content_io.ContentError as e:
 }
 
 const F = "# þyngd: 1\n# tegund: fræðitexti\n# orð:\n[aðalatriði] Jón á hund.\n[smáatriði] Hundurinn heitir Snati.\n";
-const gist = (cells) => F + `? [kjarni] Hvað er best? | ${cells}\n! Skýring.\n`;
+/** A gist question on line 6, its answers on the lines below. */
+const gist = (...lines) => F + "? [kjarni] Hvað er best?\n" + lines.map((l) => l + "\n").join("") + "! Skýring.\n";
+const ONE_EACH = ["+ Jón á hund sem heitir Snati.", "- [vítt] Fólk á dýr.", "- [rangt] Jón á kött.", "- [þröngt] Hundurinn heitir Snati."];
 
-test("a [kjarni] question: the right answer, then one wrong answer of each kind, the kinds kept apart",
+test("a [kjarni] question: a block, the right answer, then one wrong answer of each kind, the kinds kept apart",
   { skip: py ? false : "no Python 3" }, () => {
-    const { text, err } = readOne(gist("Jón á hund sem heitir Snati. | vítt: Fólk á dýr. | rangt: Jón á kött. | þröngt: Hundurinn heitir Snati."));
+    const { text, err } = readOne(gist(...ONE_EACH));
     assert.equal(err, undefined);
     const q = text.spurningar[0];
     assert.equal(q.mark, "kjarni");
     assert.equal(q.a, "Jón á hund sem heitir Snati.");
     assert.deepEqual(q.w, ["Fólk á dýr.", "Jón á kött.", "Hundurinn heitir Snati."], "the kind is not part of the answer");
-    assert.deepEqual(q.kinds, ["vítt", "rangt", "þröngt"]);
+    assert.deepEqual(q.br, ["vítt", "rangt", "þröngt"]);
   });
 
 test("a [kjarni] question that breaks the rule stops with the file and the line", { skip: py ? false : "no Python 3" }, () => {
-  const at = (body, re) => {
+  const at = (body, line, re) => {
     const { err } = readOne(body);
     assert.ok(err, "read without complaint:\n" + body);
-    assert.match(err, /^ERR content\/textar\/prufa\.txt:6: /, err);
+    assert.match(err, new RegExp(`^ERR content/textar/prufa\\.txt:${line}: `), err);
     assert.match(err, re, err);
   };
-  const ONE_EACH = /eitt af hverri tegund/;
-  at(gist("Rétt. | þröngt: A. | vítt: B."), /eitt rétt svar \(fremst\) og tvö eða þrjú röng|eitt af hverri tegund/);
-  at(gist("Rétt. | þröngt: A. | þröngt: B. | rangt: C."), ONE_EACH);
-  at(gist("Rétt. | þröngt: A. | vítt: B. | C."), ONE_EACH);
-  at(gist("Rétt. | þröngt: A. | breitt: B. | rangt: C."), ONE_EACH);
-  at(gist("Rétt. | þröngt: A. | vítt: | rangt: C."), ONE_EACH);
-  at(gist("þröngt: Rétt. | þröngt: A. | vítt: B. | rangt: C."), /rétta svarið \(fremst\) á ekki að hafa „þröngt:“/);
-  at(gist("Rétt. | þröngt: A. | vítt: A. | rangt: C."), /sama svarið stendur tvisvar/);
-  /* an [aðalatriði] question is as it was: no kinds */
+  const EACH = /eitt rangt svar af hverri tegund/;
+  at(gist(ONE_EACH[0], ONE_EACH[1], ONE_EACH[2]), 6, EACH);
+  at(gist(ONE_EACH[0], "- [þröngt] A.", "- [þröngt] B.", "- [rangt] C."), 6, EACH);
+  at(gist(ONE_EACH[0], "- [þröngt] A.", "- [vítt] B.", "- C."), 10, /segir fremst hvernig hún er röng/);
+  at(gist(ONE_EACH[0], "- [þröngt] A.", "- [breitt] B.", "- [rangt] C."), 9, /segir fremst hvernig hún er röng/);
+  at(gist(ONE_EACH[0], "- [þröngt] A.", "- [vítt] A.", "- [rangt] C."), 6, /sama svarið stendur tvisvar/);
+  at(F + "? [kjarni] Hvað er best? | Rétt. | A. | B. | C.\n! Skýring.\n", 6, /kjarni er skrifaður með svörin í línunum fyrir neðan/);
+  at(F.replace("# tegund: fræðitexti", "# tegund: saga").replace(/\[aðalatriði\]|\[smáatriði\]/g, (m) => (m === "[aðalatriði]" ? "[vandi]" : "[útkoma]"))
+    + "? [kjarni] Hvað er best?\n" + ONE_EACH.map((l) => l + "\n").join("") + "! Skýring.\n", 6, /bara spurður um fræðitexta/);
+  /* a mark on a wrong answer of an [aðalatriði] question is still refused */
+  at(F + "? [aðalatriði] Um hvað?\n+ Um hund.\n- [þröngt] Um kött.\n- Um hest.\n! Skýring.\n", 8, /bara notað í samantekt og kjarna/);
+  /* an [aðalatriði] question on one line is as it was */
   const plain = readOne(F + "? [aðalatriði] Um hvað? | Um hund. | Um kött. | Um hest.\n! Skýring.\n");
   assert.equal(plain.err, undefined);
-  assert.equal(plain.text.spurningar[0].kinds, undefined);
+  assert.deepEqual(plain.text.spurningar[0].br, []);
 });
 
 /* ---------- what the build made of the files --------------------------------- */
@@ -102,7 +107,7 @@ test("subject texts with gist questions, its kinds one of each", () => {
   for (const q of gists) {
     assert.deepEqual([...q.br].sort(), ["rangt", "vítt", "þröngt"]);
     assert.equal(q.w.length, 3);
-    assert.ok(q.w.every((w) => !/^(þröngt|vítt|rangt):/.test(w)));
+    assert.ok(q.w.every((w) => !/^\[/.test(w)));
   }
   /* the main idea is not always the first sentence, or "tap the first" would do */
   assert.ok(new Set(SUBJECT.map((tx) => tx.s.findIndex((s) => s.p === "aðalatriði"))).size >= 3);

@@ -193,7 +193,7 @@ evidence above. Later years keep practising it.
 | `mb-smidja` | Setningasmiðja | Einkenni málsins | Málbeiting | Setningasmiðja (`smidja`) | Málfræðin í notkun (`malbeiting`) | yes |
 | `mb-umritun` | Umritun | Einkenni málsins | Málbeiting | Umritun (`umritun`) | Málfræðin í notkun (`malbeiting`) | yes |
 | `mb-sameina` | Að sameina og skipta setningum | Einkenni málsins | Málbeiting | Sameina og skipta setningum (`sameina`) | Málfræðin í notkun (`malbeiting`) | yes |
-| `les-adalatridi` | Aðalatriði texta | Lesskilningur | Lesskilningur | Um hvað er textinn? (`les_adal`) | Að finna aðalatriðið í texta (`lesskilningur`) | yes |
+| `les-adalatridi` | Aðalatriði texta | Lesskilningur | Lesskilningur | Um hvað er textinn? (`les_adal`); Hvar er aðalatriðið? (`les_setning`); Hvað styður aðalatriðið? (`les_smaatridi`); Besta samantektin (`les_kjarni`) | Að finna aðalatriðið í texta (`lesskilningur`) | yes |
 | `les-sogukort` | Sögukort: hlutar sögu | Lesskilningur | Lesskilningur | Hvar er vandinn? (`les_hluti`); Sögukortið (`les_kort`); Samantekt sögunnar (`les_samantekt`) | Að finna aðalatriðið í texta (`lesskilningur`) | yes |
 | `fras-bygging` | Bygging sögu: röð og hlutar | Sköpunarkraftur | Frásögn | Raðaðu sögunni (`fr_rod`); Hvað vantar í söguna? (`fr_vantar`); Hvaða setning vantar? (`fr_setning`) | Að byggja upp sögu (`frasogn`) | yes |
 | `st-n-nn` | n eða nn | Stafsetning og greinarmerkjasetning | Stafsetning og greinarmerki | none yet | none yet | **no** |
