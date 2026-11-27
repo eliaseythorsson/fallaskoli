@@ -481,10 +481,13 @@ function drawSlots(app, t, j, ins) {
 /* The words of a tap question, clickable; with the structure drawn when the
    question has it (item 26: lid_finna). */
 const tapWord = (tok, j) => `<span class="pickw" data-j="${j}" role="button" tabindex="0" aria-pressed="false">${esc(tok.w)}</span>`;
+/* `readtext` (Lesskilningur, issue #32): each token is a whole sentence of a
+   text; a `still` one is shown marked and is not tapped. */
 const tapSentence = (t) => {
   const coded = codedHTML(t, tapWord);
-  return `<p class="sentence${coded != null ? " coded" : ""}" id="picker">${coded != null ? coded
-    : t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w : `${j ? " " : ""}${tapWord(tok, j)}`).join("")}</p>`;
+  return `<p class="sentence${coded != null ? " coded" : ""}${t.readtext ? " readtext" : ""}" id="picker">${coded != null ? coded
+    : t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w
+      : `${j ? " " : ""}${tok.still ? `<span class="target">${esc(tok.w)}</span>` : tapWord(tok, j)}`).join("")}</p>`;
 };
 
 function wireTap(t) {
@@ -524,7 +527,7 @@ function submitTap(app) {
   const t = app.cur;
   const jd = judge(t, { sel: [...t.sel], ...(t.hinted ? { hinted: true } : {}) }, app);
   if (jd.pending) {
-    $("verdict").innerHTML = `<div class="verdict neutral"><p>Smelltu á að minnsta kosti eitt orð.</p></div>`;
+    $("verdict").innerHTML = `<div class="verdict neutral"><p>Smelltu á að minnsta kosti ${esc(t.unit || "eitt orð")}.</p></div>`;
     return;
   }
   const want = new Set(t.targets);

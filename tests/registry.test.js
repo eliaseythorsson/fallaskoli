@@ -163,7 +163,9 @@ test("the order of the catalogue is the order a seed means", () => {
     "les_hluti", "les_kort", "les_samantekt",
     /* #38, then #35 */
     "or_skyring", "or_setning", "or_tengsl",
-    "fr_rod", "fr_vantar", "fr_setning"];
+    "fr_rod", "fr_vantar", "fr_setning",
+    /* #32 */
+    "les_setning", "les_smaatridi", "les_kjarni"];
   assert.deepEqual(CATALOGUE.map((t) => t.id).slice(0, PINNED.length), PINNED,
     "the catalogue was reordered: new types go at the end of core/catalogue.js");
   assert.deepEqual(TASKS.map((t) => t.id), CATALOGUE.map((t) => t.id));

@@ -1,0 +1,27 @@
+# Jöklarnir minnka — stuttur fræðitexti (ein efnisgrein). Aðalatriðið stendur fremst.
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [aðalatriði] er setningin sem segir um hvað textinn er (nákvæmlega ein),
+#   [smáatriði] eru setningarnar sem styðja hana,
+#   [annað] er setning sem segir frá öðru og styður ekki aðalatriðið,
+#   ? er spurning (rétta svarið fremst) og ! skýringin sem nemandinn les á eftir.
+#   [kjarni] er spurning um bestu samantektina: + rétta svarið, svo - [tegund]
+#   fyrir hvert rangt svar: þröngt (bara smáatriði), vítt (of almennt),
+#   rangt (stangast á við textann).
+#
+# þyngd: 2
+# tegund: fræðitexti
+# orð:
+
+[aðalatriði] Jöklarnir á Íslandi hafa minnkað mikið síðustu hundrað ár.
+[smáatriði] Loftið er orðið hlýrra og því bráðna jöklarnir hraðar en áður.
+[smáatriði] Sumir litlir jöklar eru alveg horfnir.
+[annað] Margir fara í gönguferðir á jökla með leiðsögumanni.
+[smáatriði] Vísindamenn telja að jöklarnir haldi áfram að minnka.
+
+? [kjarni] Hvaða setning segir best í stuttu máli hvað stendur í textanum?
++ Jöklar á Íslandi verða sífellt minni af því að loftið er orðið hlýrra.
+- [þröngt] Sumir litlir jöklar eru horfnir.
+- [vítt] Náttúran breytist með tímanum.
+- [rangt] Jöklar á Íslandi stækka af því að það snjóar meira en áður.
+! Allur textinn fjallar um að jöklarnir minnka og hvers vegna. Rétta svarið segir bæði. Setningin um gönguferðirnar segir frá öðru og á ekki heima í samantekt.

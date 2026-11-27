@@ -214,7 +214,7 @@ sentence is the vandi, what was the markmið; fill the story map; choose the sum
 that follows the map; at higher þyngd, stories of 2–3 episodes.
 
 **Subject texts: main idea and gist** (Stevens 2019, §C; summarising rules after
-Brown & Day 1983, to be added to DLD-RESEARCH): which sentence is the main idea →
+Brown & Day 1983, DLD-RESEARCH §C; built in #32): which sentence is the main idea →
 which 2–3 details support it → the best gist sentence of four → write a gist of at
 most about 15 words (LLM).
 
@@ -304,4 +304,3 @@ Each step is one or more PRs and can be released on its own, following CLAUDE.md
 - Genuinely ambiguous pronoun items: the owner will try them out.
 - The exact share of LÍNO-2 nouns, and the real cost of §2, will be known after
   the mechanical filter.
-- Brown & Day (1983) still to be added to DLD-RESEARCH.md with a citation.

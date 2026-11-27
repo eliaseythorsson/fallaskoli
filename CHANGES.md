@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Lesskilningur: aðalatriði, smáatriði og samantekt í fræðitextum (#32)
+- **Þrjár nýjar spurningagerðir um fræðitexta:** „Hvar er aðalatriðið?“ (smellt á setninguna sem segir
+  aðalatriðið), „Hvað styður aðalatriðið?“ (smellt á smáatriðin; ein setning fjallar um annað og á ekki
+  heima með þeim) og „Besta samantektin“ (ein setning af fjórum). Röngu samantektirnar eru ein of þröng,
+  ein of víð og ein röng, og eftir rangt val segir forritið hvers vegna (eftir reglum Brown & Day, 1983).
+- Svörin koma úr merkjunum í textaskránni; ný spurning `? [kjarni]` þar sem hvert rangt svar er merkt `[þröngt]`, `[vítt]` eða `[rangt]`
+  (README, „Efnið“). Þrír nýir fræðitextar (lundinn, jöklarnir, hreyfing) og nýr kafli á Lesefnissíðunni.
+
 ### Orðakortið kemur aftur í upprifjun (#18)
 - **Stundum, eftir upprifjun á lærðu orði,** opnast orðakort nemandans sjálfs: skýringin, það sem hann
   valdi á kortinu (með rétta svarinu þar sem hans var rangt), það sem hann skrifaði á kortið ef það var

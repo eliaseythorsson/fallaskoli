@@ -29,6 +29,19 @@
    A sentence of a story with episodes carries `e` (1–3); a summary question
    carries `br`, what each wrong summary breaks (a part, or "röð").
 
+   Subject texts (issue #32) give three more, from the marks:
+
+     les_setning     which sentence of a subject text is its main idea:
+                     tap it in the text (the [aðalatriði] mark)
+     les_smaatridi   which sentences support the main idea: tap them all
+                     (the [smáatriði] marks; an [annað] sentence is the
+                     distractor, so only texts that have one are asked)
+     les_kjarni      the best gist sentence of four: a [kjarni] question,
+                     whose three wrong answers are one too narrow, one too
+                     broad, one that contradicts or invents (its `br`:
+                     þröngt / vítt / rangt) — the app says which, after
+                     Brown & Day (1983)
+
    The pronoun references (`ref`) are there for #33. */
 
 import { EX } from "../../../data/exercises.js";
@@ -191,6 +204,112 @@ export function taskSummary(lex, view, rng) {
   }, [FX.exSeen(x.key)]);
 }
 
+/* ---------- subject texts: main idea, details, gist (issue #32) ----------
+
+   Stevens 2019 and Brown & Day 1983 (docs/DLD-RESEARCH.md): find the
+   sentence that says what the text is about, tell the sentences that support
+   it from one that does not, then pick the summary that is neither too
+   narrow, nor too broad, nor wrong. The answers are the marks of the file;
+   the reader (pipeline/content_io.py) has checked them. */
+
+const SUBJECT = (EX.textar || []).filter((tx) => tx.k === "fræðitexti");
+
+/** The text as a `tap` question's sentence: each SENTENCE is one token to
+    tap. `still`: the token that is shown marked and cannot be tapped. */
+const tappableText = (tx, still = -1) => ({
+  t: tx.s.map((s) => s.t).join(" "),
+  tok: tx.s.map((s, j) => (j === still ? { w: s.t, still: true } : { w: s.t })),
+});
+
+const MAIN_SENTENCE = SUBJECT.map((tx) => ({ tx, lvl: tx.lvl, key: `les:${tx.id}:adal` }));
+/* details: two or more, and one sentence that is not one, to leave out */
+const DETAILS = SUBJECT
+  .filter((tx) => tx.s.filter((s) => s.p === "smáatriði").length >= 2 && tx.s.some((s) => s.p === "annað"))
+  .map((tx) => ({ tx, lvl: tx.lvl, key: `les:${tx.id}:smaatridi` }));
+const GIST = SUBJECT.flatMap((tx) => tx.q
+  .map((q, n) => ({ tx, q, n, lvl: tx.lvl, key: `les:${tx.id}#${n}` }))
+  .filter((x) => x.q.k === "kjarni" && Array.isArray(x.q.br)));
+
+/** One of `items` for this pupil: the one a review asks for, else one near
+    their band they have not just seen. */
+function pickItem(view, rng, items, cell) {
+  const want = forcedItem(view);
+  if (!cellWanted(view, cell)) return null;
+  return want ? items.find((y) => y.key === want) || null
+    : pick(itemsForBand(view, "lesskilningur", items, (y) => y.key, FEW), rng) || null;
+}
+
+const ORDINAL_DAT = ["fyrstu", "annarri", "þriðju", "fjórðu", "fimmtu", "sjöttu", "sjöundu", "áttundu", "níundu"];
+const COUNT_FEM = { 2: "tvær", 3: "þrjár", 4: "fjórar" };
+
+/** Which sentence is the main idea? The whole text, each sentence a button.
+    @param {any} lex @param {View} view @param {() => number} rng */
+export function taskMainSentence(lex, view, rng) {
+  const x = pickItem(view, rng, MAIN_SENTENCE, "adalsetning");
+  if (!x) return null;
+  const at = x.tx.s.findIndex((s) => s.p === "aðalatriði");
+  const where = at === x.tx.s.length - 1 ? "Hér stendur það aftast og dregur textann saman."
+    : at === 0 ? "Hér stendur það fremst."
+    : `Hér stendur það í ${ORDINAL_DAT[at]} setningunni.`;
+  return built({
+    type: "tap", skill: "lesskilningur", i: -1, readtext: true,
+    s: tappableText(x.tx), targets: [at],
+    cls: "aðalatriði", whole: true, what: "Aðalatriðið", unit: "eina setningu",
+    title: "Hvar er aðalatriðið?",
+    question: "Smelltu á setninguna sem segir aðalatriði textans: það sem allur textinn fjallar um.",
+    why: `Aðalatriðið er setningin sem hinar setningarnar segja nánar frá. Það stendur oft fremst, en ekki alltaf. ${where}`,
+    base: 10, lvl: levelFor(view.policy, x.lvl), cell: "adalsetning", word: null,
+    item: x.key, tags: ["les"], miss: ["adalatridi"],
+  }, [FX.exSeen(x.key)]);
+}
+
+/** Which sentences support the main idea? The main idea is shown marked;
+    the pupil taps every detail and leaves out the sentence about something
+    else. @param {any} lex @param {View} view @param {() => number} rng */
+export function taskDetails(lex, view, rng) {
+  const x = pickItem(view, rng, DETAILS, "smaatridi");
+  if (!x) return null;
+  const main = x.tx.s.findIndex((s) => s.p === "aðalatriði");
+  const targets = x.tx.s.map((s, j) => (s.p === "smáatriði" ? j : -1)).filter((j) => j >= 0);
+  const n = COUNT_FEM[targets.length] || String(targets.length);
+  return built({
+    type: "tap", skill: "lesskilningur", i: -1, readtext: true,
+    s: tappableText(x.tx, main), targets,
+    cls: "smáatriði", whole: true, what: "Smáatriðin", unit: "eina setningu",
+    title: "Hvað styður aðalatriðið?",
+    question: `Aðalatriðið er merkt. Smelltu á þær ${n} setningar sem styðja það.`,
+    why: "Smáatriðin segja nánar frá aðalatriðinu: þau gefa dæmi, ástæður eða skýringar. Setning sem segir frá öðru styður það ekki, þótt hún fjalli um sama efni, og á ekki heima í samantekt.",
+    base: 10, lvl: levelFor(view.policy, x.lvl), cell: "smaatridi", word: null,
+    item: x.key, tags: ["les"], miss: ["adalatridi"],
+  }, [FX.exSeen(x.key)]);
+}
+
+/** Why a wrong gist does not fit, by its kind (GIST_KINDS in
+    pipeline/content_io.py; Brown & Day 1983). */
+export const GIST_WHY_NOT = Object.freeze({
+  "þröngt": "Þetta er bara eitt smáatriði. Góð samantekt nær yfir allan textann.",
+  "vítt": "Þetta er of almennt. Það gæti átt við marga aðra texta og segir ekki hvað stendur í þessum.",
+  "rangt": "Þetta segir textinn ekki. Góð samantekt bætir engu við og stangast ekki á við textann.",
+});
+
+/** The best gist sentence of four. @param {any} lex @param {View} view @param {() => number} rng */
+export function taskGist(lex, view, rng) {
+  const x = pickItem(view, rng, GIST, "kjarni");
+  if (!x) return null;
+  /** @type {Record<string, string>} */
+  const whyNot = {};
+  x.q.w.forEach((w, k) => { whyNot[w] = GIST_WHY_NOT[x.q.br[k]]; });
+  return built({
+    type: "choice", skill: "lesskilningur", i: -1,
+    text: x.tx.s.map((s) => s.t), kind: x.tx.k,
+    title: "Besta samantektin",
+    question: x.q.q,
+    options: shuffle([x.q.a, ...x.q.w], rng), answer: x.q.a, why: x.q.why, whyNot,
+    base: 10, lvl: levelFor(view.policy, x.lvl), cell: "kjarni", word: null,
+    item: x.key, tags: ["les"], miss: ["adalatridi"],
+  }, [FX.exSeen(x.key)]);
+}
+
 /** The builders of this category, by question type id. What each type is —
    its name, renderer, tags, bands and weight — is declared in
    core/catalogue.js; tasks/registry.js joins the two.
@@ -200,4 +319,10 @@ export const BUILDERS = {
   les_hluti: { build: taskStoryPart },
   les_kort: { build: taskStoryMap },
   les_samantekt: { build: taskSummary },
+  }, [FX.exSeen(x.key)]);
+}
+
+  les_setning: { build: taskMainSentence },
+  les_smaatridi: { build: taskDetails },
+  les_kjarni: { build: taskGist },
 };

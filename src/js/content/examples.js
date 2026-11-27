@@ -590,4 +590,24 @@ export const EXAMPLES = {
     how: "Setningin í eyðunni verður að passa við setninguna á undan (rigningin) og á eftir (hún slapp við að blotna). Lestu söguna með setningunni og gáðu hvort hún hangir saman.",
     forms: [],
   },
+  /* issue #32: subject texts. The hvalir text of the Lesefni page, not one
+     of content/textar/. */
+  les_setning: {
+    q: "*Hvalir anda með lungum. Þeir gefa afkvæmum sínum mjólk. Hvalir eru því spendýr en ekki fiskar.* Hvaða setning er aðalatriðið?",
+    a: "Hvalir eru því spendýr en ekki fiskar.",
+    how: "Hinar tvær setningarnar segja hvers vegna hvalir eru spendýr. Aðalatriðið stendur hér aftast og dregur textann saman.",
+    forms: [],
+  },
+  les_smaatridi: {
+    q: "*Hvalir eru spendýr. Þeir anda með lungum. Sumir fara í hvalaskoðun. Þeir gefa afkvæmum mjólk.* Hvaða setningar styðja aðalatriðið?",
+    a: "Þeir anda með lungum. Þeir gefa afkvæmum mjólk.",
+    how: "Þær sýna að hvalir eru spendýr. *Sumir fara í hvalaskoðun* segir frá öðru og styður það ekki.",
+    forms: [],
+  },
+  les_kjarni: {
+    q: "Texti segir að hvalir anda með lungum og gefa afkvæmum mjólk, og séu því spendýr. Hvaða samantekt er best?",
+    a: "Hvalir eru spendýr af því að þeir anda með lungum og gefa afkvæmum mjólk.",
+    how: "*Hvalir anda með lungum* er of þröngt, *Mörg dýr lifa í sjónum* of vítt og *Hvalir eru fiskar* rangt.",
+    forms: [],
+  },
 };

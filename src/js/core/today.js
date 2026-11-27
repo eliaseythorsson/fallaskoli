@@ -53,7 +53,7 @@
        0     no             0 / 0 / 7 / 3
 
    One new skill never takes more than its NEW_SKILL_MAX of the share
-   (Lesskilningur: two, while it has five texts); the
+   (Lesskilningur: two, while it has eight texts); the
    slots it cannot take are not set aside, and the rest of the session is
    shared out over them by the rule above.
 
@@ -134,6 +134,11 @@ export const NEW_SKILLS_SHARE = 0.3;
     stories as Lesskilningur; one story a day is what the plan asks for
     (one whole story in every Frásögn session, DLD-PLAN §5), and two would
     bring the same six stories back too often.
+    #32: seven types now (and the main-idea sentence, details and gist of
+    the subject texts), on eight texts: still two. More types on the same
+    few texts means more questions per text, not more texts; three a
+    session would read most of the eight every day. Raise it with the
+    texts (DLD-PLAN §4 asks for about twenty).
     @type {Readonly<Record<string, number>>} */
 export const NEW_SKILL_MAX = Object.freeze({ lesskilningur: 2, frasogn: 1 });
 

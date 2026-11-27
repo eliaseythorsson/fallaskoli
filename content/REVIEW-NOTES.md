@@ -144,6 +144,41 @@ og röðin að sjást af efninu. Þetta ætti að skoða sérstaklega:
   sama hluta sögukortsins ef hægt er. Setning sem byrjar á fornafni er
   aldrei notuð þannig. Getur einhver slík setning samt passað í eyðuna?
 
+## Fræðitextar: aðalatriði, smáatriði og samantekt
+Skrá: `content/textar/fraedi-lundinn.txt`, `content/textar/fraedi-joklar.txt`, `content/textar/fraedi-hreyfing.txt`
+Leita: `Góð samantekt`, `Hvalir eru því spendýr en ekki fiskar.`, `Sumir fara í hvalaskoðun`, `Mörg dýr lifa í sjónum`
+Úr: feat/32-subject-texts (atriði 32)
+
+Þrír nýir fræðitextar, spurningarnar um bestu samantektina, röngu svörin og
+skýringarnar, nýi kaflinn á Lesefnissíðunni og sýnidæmin eru samin af
+gervigreind og hafa ekki verið lesin af móðurmálshafa. Þetta ætti að skoða
+sérstaklega:
+
+- Í hverjum texta er ein setning merkt `[annað]`: hún fjallar um sama efni en
+  styður ekki aðalatriðið (*Margir ferðamenn koma til landsins til að taka
+  myndir af lundum*, *Margir fara í gönguferðir á jökla með leiðsögumanni*,
+  *Flestir vita að hreyfing styrkir vöðvana og hjartað*). Er það nógu skýrt að
+  hún styðji ekki aðalatriðið? Sú síðasta er erfiðust: hún er um hreyfingu, en
+  aðalatriðið er hugurinn.
+- Hvert rangt svar við „Hvaða setning segir best …“ á að vera **eitt** af þrennu:
+  of þröngt (eitt smáatriði), of vítt (á við hvaða texta sem er) eða rangt.
+  Getur eitthvert þeirra líka talist góð samantekt? Er *Náttúran breytist með
+  tímanum* nógu greinilega „of vítt“?
+- Orðalag sem Greynir réð ekki við var einfaldað: *Jöklarnir á Íslandi hafa
+  minnkað mikið síðustu hundrað ár* (frekar en *árin*), *holur í grónar
+  brekkur* (frekar en *grasi grónar*), *Fólk sem hreyfir sig reglulega á oft
+  auðveldara með að einbeita sér*. Er það eðlilegt?
+- *Á vorin koma þeir í stórum hópum til Íslands* og *Lundar eru úti á opnu hafi
+  allan veturinn*: rétt um lundann? *Lundinn er því sjófugl sem kemur aðeins í
+  land til að verpa*: er *því* eðlilegt í lokasetningu?
+- *Jöklarnir á Íslandi hafa minnkað mikið síðustu hundrað ár* og *Sumir litlir
+  jöklar eru alveg horfnir*: staðreyndir sem ætti að bera saman við heimild
+  (t.d. Veðurstofu Íslands).
+- Skýringarnar sem forritið sýnir við röngu svörin (*Þetta er bara eitt
+  smáatriði …*, *Þetta er of almennt …*, *Þetta segir textinn ekki …*) og
+  spurningarnar *Hvar er aðalatriðið?*, *Hvað styður aðalatriðið?* og *Besta
+  samantektin* (í `src/js/tasks/lesskilningur.js` og `src/js/core/catalogue.js`).
+
 # Utan síðunnar
 
 Texti sem er ekki á yfirlitssíðunni. Skráin er nefnd við hvert atriði.
