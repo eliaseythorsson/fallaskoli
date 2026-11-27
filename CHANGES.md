@@ -33,6 +33,17 @@
   Reglurnar eru efst í `src/js/tasks/recall.js`.
 - Gerðin kemur aðeins hjá nemanda sem á orð í námi sem stendur í nothæfri setningu í setningabankanum,
   og aldrei í einvígi.
+### LÍNO-2-pör: sjálfsprófun, annað álit og yfirferð eiganda (#22)
+- **Nýtt verkfæri, `tools/lino-frames/check.mjs`**, sem smíðin keyrir aldrei: það setur hvert par úr
+  `candidates.tsv` (#21) í rammann í myndinni sem BÍN gefur, þáttar setninguna með Greyni og `parse_guard`
+  eins og setningar bankans, og lætur Claude (Fable 5.2) lesa hverja setningu sem stenst. Pörin sem líkönin
+  tvö eru ósammála um, og slembiúrtak úr hinum (5%, þó aldrei færri en 20), fara í
+  `review/lino-rammar/<keyrsla>/yfirferd.tsv`, þar sem eigandinn skrifar já eða nei.
+- **Yfirlitssíðan (`dist/review.html`) sýnir þessi pör fremst** og merkir þau „þarf að athuga“ þar til dómur
+  stendur í skránni.
+- **`tools/lino-frames/accept.mjs`** les dómana. Ef meira en 5% úrtaksins fær nei er keyrslan merkt til
+  endurgerðar og ólesnu pörin fara ekki inn; annars bætast samþykktu pörin við
+  `content/setningar/lino-rammar.tsv`, sem smíðin les eins og áður. Ekkert breytist í forritinu fyrr en þá.
 
 ### Orðin mín: sex orð í námi (#12)
 - **Hver nemandi hefur alltaf sex orð af LÍNO-2 í námi**, valin eftir röð á listanum (algengustu fyrst)

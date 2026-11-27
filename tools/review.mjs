@@ -26,7 +26,11 @@
      data/data_bundle.js         only for the words allowed into one frame
                                  each (content/setningar/lino-rammar.tsv): the
                                  page shows the sentence as the pupil will
-                                 read it, with the word in the form BÍN gives  */
+                                 read it, with the word in the form BÍN gives
+     review/lino-rammar/*\/yfirferd.tsv
+                                 the pairs waiting for the owner's verdict
+                                 (issue #22): written outside the build by the
+                                 LÍNO-2 self-check; usually there are none  */
 
 import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -38,6 +42,7 @@ const p = (...x) => path.join(root, ...x);
 
 /* What each folder of content/ is, as the page names it, in the page's order. */
 export const KINDS = [
+  ["yfirferd", "LÍNO-2: pör til yfirferðar"],
   ["setningar", "Setningabankinn"],
   ["villuveidar", "Villuveiðar"],
   ["malbeiting", "Málbeiting: sameina og skipta"],
@@ -160,6 +165,39 @@ function pairItem(it, cells, data) {
   return it;
 }
 
+/* ---------- pairs waiting for the owner's verdict (issue #22) -------------
+   The LÍNO-2 self-check (outside the build) leaves, per batch, a file of
+   sentences the owner must judge: the pairs its two models disagree on and a
+   random sample of the rest. The verdict is written in that file (its header
+   says how), not on this page; the page is where the sentences are read, each
+   with its file and line, and the ones not judged yet are marked "þarf að
+   athuga" by a note this module makes itself (a note in REVIEW-NOTES.md could
+   not: its phrases would find nothing as soon as the queue is empty). */
+export const QUEUE_DIR = "review/lino-rammar";
+export const QUEUE_FILE = "yfirferd.tsv";
+
+async function queueFiles(dir) {
+  const abs = path.resolve(root, dir);            // a test's folder is outside the repository
+  if (!existsSync(abs)) return [];
+  return (await readdir(abs, { withFileTypes: true }))
+    .filter((e) => e.isDirectory() && existsSync(path.join(abs, e.name, QUEUE_FILE)))
+    .map((e) => path.join(abs, e.name, QUEUE_FILE)).sort();
+}
+
+/** The note that flags every pair still without a verdict, or null. */
+export function queueNote(items) {
+  if (!items.some((it) => it.pending)) return null;
+  return {
+    title: "LÍNO-2-par sem bíður dóms", find: [], files: [], outside: false,
+    from: "sjálfsprófun LÍNO-2-orðanna (mál #22)",
+    body: "Forritið setti orðið í rammann, í myndinni sem BÍN gefur, og enginn hefur lesið setninguna. "
+      + "Skrifaðu **já** eða **nei** í dálkinn „dómur“ í skránni sem er nefnd hér fyrir neðan (línunúmerið "
+      + "stendur þar líka). Efst í skránni stendur hvað tekur við. Merkingarnar „Í lagi“ og „Athuga“ á "
+      + "þessari síðu geymast aðeins í vafranum og koma ekki í stað dómsins í skránni.",
+    match: (it) => !!it.pending,
+  };
+}
+
 /** A Lesefni page as lines of text, in the order the app shows them. */
 function lessonBody(L) {
   const out = [];
@@ -184,10 +222,20 @@ const lineOf = (src, needle) => {
   return i < 0 ? 0 : src.slice(0, i).split("\n").length;
 };
 
-/** Every hand-written item, in the page's order. */
-export async function collect() {
+/** Every hand-written item, in the page's order. `queueDir` is where the
+    batches waiting for the owner are (a test passes its own). */
+export async function collect({ queueDir = QUEUE_DIR } = {}) {
   const items = [];
   const lists = [];
+  for (const file of await queueFiles(queueDir)) {
+    const { header, rows } = parseTsv(await readFile(file, "utf8"));
+    const rel = path.relative(root, file).split(path.sep).join("/");
+    const title = `LÍNO-2: pör til yfirferðar (keyrsla ${rel.split("/").at(-2)})`;
+    lists.push({ file: rel, title, n: rows.length });
+    for (const r of rows) {
+      items.push({ ...itemFromRow(rel, "yfirferd", title, header, r), pending: !r.cells["dómur"] });
+    }
+  }
   const order = (rel) => KINDS.findIndex(([k]) => k === rel.split("/")[1]);
   const files = (await tsvFiles()).sort((a, b) => order(a) - order(b) || (a < b ? -1 : a > b ? 1 : 0));
   for (const rel of files) {
@@ -287,6 +335,8 @@ export function attachNotes(items, notes) {
       n.hits[f] = 0;
       for (const it of items) if (it.file === f) { n.items.add(it.id); n.hits[f]++; }
     }
+    /* a note the page makes itself (queueNote) names its items by a test */
+    if (n.match) for (const it of items) if (n.match(it)) n.items.add(it.id);
     for (const id of n.items) items[id].notes.push(k);
     n.items = [...n.items];
   });
@@ -549,9 +599,11 @@ export function renderHtml({ items, lists }, notes, when = new Date()) {
 
 /* ---------- CLI --------------------------------------------------------- */
 
-export async function build(out = p("dist", "review.html")) {
-  const col = await collect();
-  const notes = attachNotes(col.items, parseNotes(await readFile(p("content", "REVIEW-NOTES.md"), "utf8")));
+export async function build(out = p("dist", "review.html"), opts = {}) {
+  const col = await collect(opts);
+  const written = parseNotes(await readFile(p("content", "REVIEW-NOTES.md"), "utf8"));
+  const queued = queueNote(col.items);
+  const notes = attachNotes(col.items, queued ? [queued, ...written] : written);
   await mkdir(path.dirname(out), { recursive: true });
   await writeFile(out, renderHtml(col, notes), "utf8");
   return { out, col, notes };

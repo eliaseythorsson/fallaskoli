@@ -16,6 +16,11 @@ athugasemd finni atriði):
 - `Úr:` hvaðan athugasemdin kemur (grein og atriði gagnrýninnar)
 - svo textinn sjálfur
 
+LÍNO-2-pör sem bíða dóms (`review/lino-rammar/<keyrsla>/yfirferd.tsv`, sjá
+`tools/lino-frames/README.md`) eru ekki skráð hér. Síðan sýnir þau fremst og
+merkir þau sjálf „þarf að athuga“ þar til já eða nei stendur við þau í
+skránni.
+
 Athugasemdir í síðasta hlutanum, „Utan síðunnar“, eiga við texta sem er ekki
 á yfirlitssíðunni (texta í viðmótinu, persónuverndartilkynninguna) og standa
 þar aðeins sem listi.
