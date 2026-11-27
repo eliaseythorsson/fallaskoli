@@ -92,7 +92,7 @@ export function filter(lino, lex, exclude = new Set()) {
     const key = pairWord(w, lex.nouns);
     const base = { o: w.o, c: w.c, lino: w.lino };
     if (exclude.has(w.o)) {
-      fillIn.push({ ...base, why: "nafnorð á EXCLUDE (noun_classes.py): fer ekki í ramma", sentences: count(w.o, w.c) });
+      fillIn.push({ ...base, why: "nafnorð á EXCLUDE (pipeline/noun_classes.py): fer ekki í ramma", sentences: count(w.o, w.c) });
       continue;
     }
     const eligible = [], already = [];
