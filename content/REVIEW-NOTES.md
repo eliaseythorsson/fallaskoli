@@ -172,3 +172,12 @@ fór í úlpu af því að það var kalt úti.* (þegar sameinaða setningin by
 *af því að*) og *Rétt — en þetta hljómar eðlilegra í þessari röð: Hurðin var
 opin. Ég sá það.* (þegar skýringarsetningu er skipt í öfugri röð). Eru þeir
 vinsamlegir og auðskildir?
+
+## Orðakortið: rangar skýringar og atkvæðaskipting
+Úr: feat/15-ordakort (#15)
+
+`src/js/content/wordcards.js` (hvaða ÍNO-skýringar eru rangir valkostir) og
+`src/js/content/syllables.js` (samskeyti í atkvæðaskiptingu). Listarnir voru
+lesnir við gerð þeirra, en ekki af móðurmálshafa. `node tools/wordcards.mjs 330`
+prentar kortin. Gæti einhver röng skýring átt við orðið? Er einhver
+skipting röng?
