@@ -2,8 +2,9 @@
  * review they sometimes see their own card again and add to it").
  *
  *   1. which reviews bring the card back: only a review of a LEARNED word
- *      whose card the pupil has, one time in REVISIT_RATE, drawn from the
- *      builder's random source (no clock, no Math.random);
+ *      whose card the pupil has, one time in REVISIT_RATE, drawn from a
+ *      generator seeded by the review entry (no clock, no Math.random, and
+ *      the session's random source untouched);
  *   2. what the card shows: what the pupil chose and wrote, read off the
  *      same card, and the self-rating as it stands now;
  *   3. what the pupil adds is kept: a newer rating and/or a sentence of
@@ -68,28 +69,36 @@ test("the rate is stated, and is 'sometimes': more than never, well under always
   assert.ok(REVISIT_RATE > 0 && REVISIT_RATE <= 0.5, String(REVISIT_RATE));
 });
 
+/* The same review on another day or at another stage: a new draw. */
+const at = (entry, k) => ({ ...entry, due: `2026-${String(1 + (k % 12)).padStart(2, "0")}-${String(1 + (k % 28)).padStart(2, "0")}`, s: k % 4 });
+
 test("a review of a learned word with a card brings the card back about one time in REVISIT_RATE", () => {
   const { S, entry } = pupil();
   const view = viewOf(S);
   let built = 0, back = 0;
-  for (let seed = 1; seed <= 150; seed++) {
-    const b = reviewTask(lex, view, seeded(seed), entry);
+  for (let k = 0; k < 240; k++) {
+    const b = reviewTask(lex, view, seeded(k + 1), at(entry, k * 7 + 3));
     if (!b) continue;
     built++;
     assert.equal(b.task.word, WORD);
     if (b.task.revisit) { back++; assert.equal(b.task.revisit, WORD); }
   }
-  assert.ok(built >= 140, `built ${built}`);
+  assert.ok(built >= 200, `built ${built}`);
   const share = back / built;
-  assert.ok(Math.abs(share - REVISIT_RATE) < 0.12, `came back ${back} of ${built}`);
+  assert.ok(Math.abs(share - REVISIT_RATE) < 0.1, `came back ${back} of ${built}`);
 });
 
-test("the same seed, the same decision: it is the builder's random source, not the clock", () => {
+test("the decision is the entry's own: the same review, the same answer, whatever the random source or the clock", () => {
   const { S, entry } = pupil();
   const view = viewOf(S);
-  for (let seed = 1; seed <= 30; seed++) {
-    const a = reviewTask(lex, view, seeded(seed), entry), b = reviewTask(lex, view, seeded(seed), entry);
-    assert.equal(!!(a && a.task.revisit), !!(b && b.task.revisit));
+  for (let k = 0; k < 20; k++) {
+    const e = at(entry, k);
+    const seen = new Set();
+    for (let seed = 1; seed <= 8; seed++) {
+      const b = reviewTask(lex, view, seeded(seed), e);
+      if (b) seen.add(!!b.task.revisit);
+    }
+    assert.ok(seen.size <= 1, `entry ${e.due}/${e.s} decided both ways`);
   }
   /* reviewTask writes nothing: the card and the queue are as they were. */
   const before = JSON.stringify(S);
@@ -97,25 +106,25 @@ test("the same seed, the same decision: it is the builder's random source, not t
   assert.equal(JSON.stringify(S), before);
 });
 
-test("no card back, and no extra draw, for a word not learned, a word without a card, or another review", () => {
+test("no card back for a word not learned, a word without a card, or another review — and no question changes", () => {
   for (const opts of [{ learned: false }, { card: false }]) {
     const { S, entry } = pupil(opts);
     const view = viewOf(S);
-    for (let seed = 1; seed <= 40; seed++) {
-      const plain = counting(seed);
-      const b = reviewTask(lex, view, plain, entry);
+    for (let k = 0; k < 40; k++) {
+      const b = reviewTask(lex, view, seeded(k + 1), at(entry, k));
       if (b) assert.equal(b.task.revisit, undefined, JSON.stringify(opts));
     }
   }
-  /* The draw is the last thing taken: with the card, a build takes exactly
-     one draw more than without it — every other question is built as before. */
+  /* The session's random source is not touched: with the card or without
+     it, the same draws are taken and the same question is built. */
   const withCard = pupil(), without = pupil({ card: false });
-  for (let seed = 1; seed <= 20; seed++) {
-    const a = counting(seed), b = counting(seed);
-    const x = reviewTask(lex, viewOf(withCard.S), a, withCard.entry);
-    const y = reviewTask(lex, viewOf(without.S), b, without.entry);
+  for (let k = 0; k < 30; k++) {
+    const a = counting(k + 1), b = counting(k + 1);
+    const x = reviewTask(lex, viewOf(withCard.S), a, at(withCard.entry, k));
+    const y = reviewTask(lex, viewOf(without.S), b, at(without.entry, k));
     assert.equal(!!x, !!y);
-    if (x) { assert.equal(a.n, b.n + 1); assert.deepEqual({ ...x.task, revisit: undefined }, { ...y.task, revisit: undefined }); }
+    assert.equal(a.n, b.n);
+    if (x) assert.deepEqual({ ...x.task, revisit: undefined }, { ...y.task, revisit: undefined });
   }
   /* A session's repeat of a missed noun is not a review of a learned word. */
   const { S } = pupil();

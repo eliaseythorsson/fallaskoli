@@ -91,8 +91,8 @@ export const SENTENCE_LEN = CHOICE_LEN;
  * meets each of their cards again once or twice — often enough that the card
  * is a notebook they come back to and see their own progress in (the rating
  * then and now), seldom enough that a review stays one quick question and the
- * card does not become a chore that is clicked through. Drawn from the
- * builder's random source (tasks/review.js), never the clock.
+ * card does not become a chore that is clicked through. Drawn from a
+ * generator seeded by the review entry (tasks/review.js), never the clock.
  */
 export const REVISIT_RATE = 1 / 3;
 const STEP_ID = /^[a-z][a-z0-9_]{0,23}$/;

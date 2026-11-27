@@ -12,7 +12,8 @@
   Þær fylgja samstillingu milli tækja (viðbætur beggja tækja haldast), útflutningi nemandans og
   eyðast með aðganginum. Aðeins nemandinn sér þær (`docs/PRIVACY.md` §1g).
 - **Ekki í hvert sinn:** einu sinni af hverjum þremur (`REVISIT_RATE` í `src/js/core/wordcard.js`, með
-  rökum), dregið úr slembigjafa smiðsins (`tasks/review.js`), aldrei úr klukkunni.
+  rökum). Það ræðst af upprifjunarfærslunni sjálfri (lykli, gjalddaga og þrepi, `tasks/review.js`),
+  aldrei af klukkunni: sama upprifjun fær alltaf sama svar, og engin önnur spurning breytist.
 
 ### Orðakortið með frjálsum texta, og merkingarspurningin lesin yfir (#38)
 - **Fyrir nemanda sem stjórnandinn hefur kveikt á** („Leyfa spurningar sem þjónninn les“) eru skref 3–5

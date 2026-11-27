@@ -4363,9 +4363,8 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
 /* ---------- Issue #18: the Orðakort back in a review ---------------------
  *
  * A pupil who did útskýra's card and learned the word has its review due.
- * Some reviews (one in REVISIT_RATE, from the builder's random source) are
- * marked to bring the card back: the session is started until the review
- * that opens it is so marked. Answered and "Áfram": the pupil's own card
+ * Some reviews (one in REVISIT_RATE, decided by the review entry) are
+ * marked to bring the card back: the entry's day is moved until it is one. Answered and "Áfram": the pupil's own card
  * opens, with what they chose; a sentence without the word is refused; a
  * new rating and a sentence are kept, the card's own answers are not
  * touched, and the session goes on. A second Áfram does not open it again. */
@@ -4392,7 +4391,13 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
     A.S.review.items.push({ k, t: "or_eyda", sk: "ordaford", p: null, c: null, w: WORD, i: null, s: 0,
       due: today, add: today, last: today, l: 0, ok: 0 });
     let tries = 0, marked = 0, reviews = 0;
+    /* Whether a review brings the card back is decided by the entry itself
+       (its day due and stage, tasks/review.js): the same review is moved a
+       day earlier until it is one that does. */
+    const item = A.S.review.items[0];
     for (; tries < 40; tries++) {
+      const day = new Date(d.getFullYear(), d.getMonth(), d.getDate() - tries);
+      item.due = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
       A.run = null; A.runDone = null; A.cur = null;
       A.startRun("blandad", 5);
       if (A.cur && A.cur.review === k) reviews++;
@@ -4400,7 +4405,7 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
     }
     return { tries, reviews, marked, type: A.cur && A.cur.typeId, answer: A.cur && A.cur.answers && A.cur.answers[0] };
   }, WORD);
-  ok(set.marked === 1 && set.type === "or_eyda", "#18: no review of the learned word brought its card back in 40 sessions: " + JSON.stringify(set));
+  ok(set.marked === 1 && set.type === "or_eyda", "#18: no review of the learned word brought its card back on 40 days: " + JSON.stringify(set));
   if (set.marked) {
     await p.type("#ans", set.answer);
     await p.click("#check");

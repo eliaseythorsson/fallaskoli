@@ -40,18 +40,25 @@ import { withView } from "./view.js";
 import { typeById, enabled } from "./registry.js";
 import { cardOf, REVISIT_RATE } from "../core/wordcard.js";
 import { learningStatus } from "../core/wordknowledge.js";
+import { seeded } from "../core/duel.js";
 
 /**
  * Should this review be followed by the pupil's own Orðakort (#18)? Only a
  * review of a LEARNED word (its entry names the word, `w:` — core/review.js
  * `queueWord`) whose card the pupil has, and then one time in REVISIT_RATE.
- * The draw is taken from the builder's random source, and only for such a
- * review, so every other question is built exactly as before.
+ * The draw is a generator SEEDED BY THE ENTRY — its key, the day it fell due
+ * and its stage — not the builder's random source: the same review gives the
+ * same answer however often it is built (a reload does not draw again), each
+ * new review of the word is a new draw, and no other question is built any
+ * differently (the random source the session shares is not touched).
  */
-function revisits(S, entry, rng) {
-  return !!entry.w && typeof entry.k === "string" && entry.k.startsWith("w:")
-    && !!cardOf(S, entry.w) && (learningStatus(S, entry.w) || {}).status === "learned"
-    && rng() < REVISIT_RATE;
+function revisits(S, entry) {
+  if (!entry.w || typeof entry.k !== "string" || !entry.k.startsWith("w:")
+    || !cardOf(S, entry.w) || (learningStatus(S, entry.w) || {}).status !== "learned") return false;
+  const key = `${entry.k}|${entry.due}|${entry.s}`;
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return seeded(h >>> 0)() < REVISIT_RATE;
 }
 
 /* How many times a builder is asked before a step is given up. A builder
@@ -128,7 +135,7 @@ export function reviewTask(lex, view, rng, entry, { avoid = null, wordFirst = fa
     else {
       task.review = entry.k; task.reviewHit = hit;
       /* The word's card comes back after the answer (control/session.js `revisitNext`). */
-      if (revisits(view.S, entry, rng)) task.revisit = entry.w;
+      if (revisits(view.S, entry)) task.revisit = entry.w;
     }
     /* What the session knows once the question has been shown — as
        tasks/next.js adds for every question it chooses. */
