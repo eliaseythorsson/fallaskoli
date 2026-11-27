@@ -79,7 +79,15 @@ test("items 11 and 12: strong pupils are served clearly higher levels than weak 
      questions average level 2.3 and the weak ones' 1.6; session difficulty
      2.3 against 1.1. */
   const late = (n) => logOf(n).filter((x) => x.d >= 7);
-  const lv = (n) => mean(late(n).map((x) => x.lvl));
+  /* #11: the level is read over four pairs (seeds 100–103), not the shared
+     two. or_merking reordered every draw again and the pair at seed 100 went
+     from 2.01/1.59 to 1.95/1.94, so the two pairs read 0.19; the four read
+     0.50 before and 0.42 after (2.13/1.63 → 2.17/1.75), and over eight pairs
+     the gap is 0.47 before and 0.43 after. or_merking itself is served at
+     level 1.00 to the weak pupils and 2.14 to the strong. */
+  const more = Object.fromEntries(Object.entries(ABILITY).map(([name, ability]) => [name,
+    [2, 3].map((k) => run({ ability, days: 14, perDay: 2, seed: 100 + k, builderRng: seeded(900 + k) }))]));
+  const lv = (n) => mean([...late(n), ...more[n].flatMap((r) => r.log).filter((x) => x.d >= 7)].map((x) => x.lvl));
   /* #27: a margin of 0.3, not 0.4. This is one pair of pupils, and the pairs
      differ widely: over eight pairs (seeds 100–107) the strong pupils' mean
      level is 1.6–2.5 and the weak ones' 1.5–2.2. A new question type reorders
