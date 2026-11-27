@@ -1,0 +1,25 @@
+{
+ "_fake": "Hand-written by the agent that built issue #21, NOT an answer from Claude. The usage numbers are made up from the prompt length (3 characters per token) to show the report's shape.",
+ "id": "msg_fake_06",
+ "type": "message",
+ "role": "assistant",
+ "model": "claude-opus-5-5",
+ "content": [
+  {
+   "type": "text",
+   "text": "{\"frames\":[]}"
+  }
+ ],
+ "stop_reason": "end_turn",
+ "stop_sequence": null,
+ "usage": {
+  "input_tokens": 240,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 15162,
+  "cache_creation": {
+   "ephemeral_5m_input_tokens": 0,
+   "ephemeral_1h_input_tokens": 0
+  },
+  "output_tokens": 250
+ }
+}
