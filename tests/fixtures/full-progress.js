@@ -137,5 +137,10 @@ export function fullProgress() {
       "piltur|kk": { c: 1, w: 1, e: [["2026-11-17", "fill", "r"], ["2026-11-18", "villur", "w"]] },
       "sætur|lo": { c: 1, w: 0, e: [["2026-11-18", "lo_stig", "r"]] },
     },
+    learning: {
+      "hluti|kk": { s: "l", d: "2026-11-17", n: 1 },
+      "áhrif|hk": { s: "k", d: "2026-11-19", n: 2 },
+      "breyting|kvk": { s: "o", d: "2026-11-18", n: 2 },
+    },
   };
 }

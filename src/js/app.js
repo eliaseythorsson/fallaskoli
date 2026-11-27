@@ -717,6 +717,7 @@ async function init() {
   /* Before `newSession`, which reads `idleDaysOf` off `lastActive`. */
   noteLogin(app.S);
   app.sess = newSession(app.S);
+  app.fillLearning();                    // six words in learning (#12)
   loadSocial();                          // not awaited; the interface fills in later
 
   /* Consecutive multi-skill sessions: the figure is updated when the *next*

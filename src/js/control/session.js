@@ -15,7 +15,8 @@ import { nextTask, makeView, withView, applyEffects, planOpening, nextOpening,
   scheduleReask, nextReask, typeById, enabled, TASKS } from "../tasks/index.js";
 import { planToday } from "../core/today.js";
 import { narrowPolicy } from "../core/policy.js";
-import { visitLevels } from "../core/difficulty.js";
+import { visitLevels, storedLevel } from "../core/difficulty.js";
+import { fillLearning, LEARNING_SKILL } from "../core/wordknowledge.js";
 import { maxOf } from "../core/mix.js";
 import { activePatterns, huntPreferFor, focusTypes, pickTargeted } from "../core/diagnosis.js";
 import { SKILL_IDS } from "../core/skills.js";
@@ -107,6 +108,16 @@ export function sessionControl() {
     },
 
     /**
+     * Keep six words in learning (#12, core/wordknowledge.js `fillLearning`),
+     * chosen at the saved þyngd of LEARNING_SKILL. Called when the app loads
+     * and when a session starts; does nothing while the six are full.
+     */
+    fillLearning() {
+      if (!this.S || !this.lex) return;
+      fillLearning(this.S, this.lex, { level: storedLevel(this.S, LEARNING_SKILL), today: todayKey() });
+    },
+
+    /**
      * Begin a session. `focus`: pattern ids, for a session aimed at them.
      * `opts.review: false` starts it without the reviews a session otherwise
      * opens with (core/review.js) — for a caller whose few questions are all
@@ -127,6 +138,7 @@ export function sessionControl() {
       if (this.sess && this.sess.visitDay !== todayKey())
         Object.assign(this.sess, visitLevels(this.S, todayKey()));
       this.streak = null; this.streakOffer = null;
+      this.fillLearning();
       /* Today's session (item 21) is planned slot by slot: its reviews are the
          opening, and `plan` is what each question after them is about. */
       const today = topic === RUN.TOPIC.TODAY ? this.todayPlan(n) : null;

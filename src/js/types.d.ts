@@ -180,6 +180,8 @@ export interface State {
   tour: TourRecord | null;
   /** One history per word (issue #8, core/wordknowledge.js). */
   wordKnowledge: WordKnowledge;
+  /** The six words in learning and the words learned (issue #12, core/wordknowledge.js). */
+  learning: Learning;
 }
 
 /* ---------- word knowledge (core/wordknowledge.js) -------------------------- */
@@ -192,6 +194,13 @@ export interface WordHistory { c: number; w: number; e: SavedWordEntry[] }
 
 /** `S.wordKnowledge`: per word key ("hestur|kk"). */
 export type WordKnowledge = Record<string, WordHistory>;
+
+/** One word's place in the intensive phase: "l" in learning, "k" learned,
+    "o" put back; the day it got that status; how many times it changed. */
+export interface LearningRecord { s: "l" | "k" | "o" | string; d: DayKey; n: number }
+
+/** `S.learning`: per word key ("hluti|kk"). */
+export type Learning = Record<string, LearningRecord>;
 
 /** A word entry as `entriesOf` hands it out. */
 export interface WordEntry { day: DayKey; type: string; outcome: string }
