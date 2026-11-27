@@ -1,0 +1,22 @@
+# Týndi hundurinn — saga með öllum sex hlutum sögukortsins.
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er
+#   (aðstæður, vandi, markmið, tilraun, útkoma, viðbrögð),
+#   þau{Jón og Sara} og hans{hund} segja til hvers fornafnið vísar,
+#   ? er spurning (rétta svarið fremst) og ! skýringin sem nemandinn les á eftir.
+#
+# þyngd: 3
+# tegund: saga
+# orð:
+
+[aðstæður] Jón og Sara gengu heim úr skólanum.
+[vandi] Við búðina sáu þau{Jón og Sara} lítinn hund sem var einn og skalf af kulda.
+[markmið] Þau{Jón og Sara} vildu finna eiganda hans{hund}.
+[tilraun] Sara skoðaði hálsólina og fann þar símanúmer.
+[tilraun] Hún{Sara} hringdi í númerið og sagði hvar hundurinn væri.
+[útkoma] Stuttu síðar kom gömul kona hlaupandi og tók hundinn í fangið.
+[viðbrögð] Hún{kona} var svo glöð að hún{kona} fór næstum því að gráta.
+
+? [aðalatriði] Um hvað er sagan aðallega? | Tveir krakkar finna týndan hund og hjálpa honum að komast aftur heim. | Sara finnur símanúmer á hálsól. | Gömul kona fer að gráta fyrir utan búð. | Hundar þola illa kulda.
+! Rétta svarið nær yfir alla söguna: vandann, það sem krakkarnir gerðu og hvernig fór. Hin svörin eru smáatriði úr sögunni eða standa ekki í henni.

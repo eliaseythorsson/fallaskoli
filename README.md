@@ -140,7 +140,10 @@ What the build does, in order:
    looked up in BÍN → `data/exercises.js`. The sentences of „Hver gerði hvað?“
    (`content/setningafraedi/hver-gerdi-hvad.tsv`) are parsed and guarded here as
    bank sentences are, and `pipeline/who_did.py` refuses any whose parse does not
-   give the gerandi and the þolandi the file gives
+   give the gerandi and the þolandi the file gives. The texts of
+   `content/textar/*.txt` are read by the one reader for texts
+   (`pipeline/content_io.py` `texts`, where every check on the format is) and
+   every sentence of them is parsed and guarded here in the same way
 5. `tools/manifest.mjs` — a fingerprint of all of the above. If anything
    changed since the last accepted build the build stops and lists the change;
    `--accept` records it. This is what stops a parser upgrade from quietly
@@ -362,7 +365,8 @@ src/js/tasks/         the question builders, one file per category:
                       nafnord.js, lysingarord.js, sagnord.js, fornofn.js,
                       toluord.js, obeygjanleg.js, greining.js, fallstjorn.js,
                       ordaford.js, setningafraedi.js, malbeiting.js,
-                      setningagerd.js, each exporting its BUILDERS by type
+                      setningagerd.js, lesskilningur.js (the texts of
+                      content/textar/, issue #30), each exporting its BUILDERS by type
                       id. What a question type is — skill, name, renderer,
                       diagnosis tags, steps of difficulty, recall, grader —
                       is declared once in src/js/core/catalogue.js, whose
@@ -502,6 +506,7 @@ content/villuveidar/villur.tsv      the real errors of Villuveiðar
 content/malbeiting/sameina.tsv      pairs for Sameina og skipta: two short sentences and one joined
 content/lysingarord/ …/ordafordi/   exercise items and frames, by category
 content/setningafraedi/             „Hver gerði hvað?“: sentences with who did what to whom
+content/textar/*.txt                the texts of Lesskilningur: one short story or subject text per file
 content/REVIEW-NOTES.md             what a native reader should check first
 ```
 
@@ -578,9 +583,66 @@ the two models disagree on and a random sample of the rest before the owner
 after the owner's verdicts does anything reach the file, and only if the sample
 was clean enough (`tools/lino-frames/README.md`).
 
+**Texts.** A text for Lesskilningur is not a line in a list: it is one plain
+text file, `content/textar/<name>.txt` (the name, of `a–z`, `0–9` and hyphens,
+is the text's id). No TABs and no columns — it reads as the text does:
+
+```
+# Sara missir af strætó                      a comment: any line that starts with #
+# þyngd: 1                                   the header: three comment lines "# name: value"
+# tegund: saga                               saga | fræðitexti
+# orð:                                       the LÍNO-2 words the text carries (may be empty)
+
+[vandi] Sara vaknaði of seint og missti af strætó.
+[tilraun] Hún{Sara} hljóp alla leið í skólann.
+[útkoma] Hún{Sara} kom samt of seint í fyrsta tímann.
+
+? [aðalatriði] Um hvað er sagan? | Sara missir af strætó og kemur of seint í skólann. | Sara er fljót að hlaupa. | Strætó kemur alltaf of seint.
+! Sagan segir frá vanda Söru: hún missti af strætó. …
+```
+
+- **One sentence per line, its mark in front.** In a *saga* the mark is the
+  part of the story map the sentence is: `[aðstæður]` (who, where, when),
+  `[vandi]` (or `[kveikja]`: what sets the story off), `[markmið]` (what
+  someone wants), `[tilraun]` (what they do about it), `[útkoma]` (how it
+  ends) and `[viðbrögð]` (or `[tilfinning]`: how someone feels about it). In a
+  *fræðitexti* it is `[aðalatriði]` — the one sentence that says what the
+  text is about — or `[smáatriði]`, a sentence that supports it. `[annað]`
+  is a sentence that is none of these, in either kind.
+- **A pronoun's referent in braces, straight after the pronoun:** `Hún{Sara}`,
+  `hans{hund}`, `Þau{Jón og Sara}`. What stands in the braces is the word as
+  it stands earlier in the text, or another form of the same noun
+  (`Hún{kona}` finds *konan*). The pupil never sees the braces.
+- **A question** is a line `? [mark] Question? | right | wrong | wrong`: the
+  right answer first (the app shuffles them), then two or three wrong ones.
+  The mark says what is asked for; so far only `[aðalatriði]`, what the whole
+  text is mainly about. **Its explanation** is the next line, `! …`.
+- **Þyngd is length:** 2–3 sentences at þyngd 1, a paragraph (4–9 sentences)
+  at 2–3, 150–300 words at 4–5. A story must have `vandi` and `útkoma` at
+  þyngd 1; `aðstæður`, `vandi`, `tilraun` and `útkoma` at 2–3; all six parts
+  at 4–5. A subject text has exactly one `aðalatriði` and at least one
+  `smáatriði` at þyngd 1, two at 2–3, three at 4–5.
+
+`pipeline/content_io.py` has one reader for texts, `texts()`, beside `rows()`
+and `groups()`, and every check on the format is in it; the build only uses
+what it returns. It stops, with the file and the line, on a header line
+missing or wrong, a text too long or short for its þyngd, an unknown mark, a
+story-map part the þyngd requires and the story lacks, a referent that is
+not a word earlier in the text or that BÍN gives another grammatical gender
+or number than the pronoun (*steinninn … hann*; *Jón og Sara* is *þau*), a
+word of `# orð:` that is not on LÍNO-2 or not in the text, and a question
+without exactly one right answer (the first; two or three wrong ones, no two
+the same) or without its explanation. Then `pipeline/build_exercises.py`
+has every sentence of every text parsed by Greynir and checked by BÍN and
+the parse guard exactly as a sentence of the bank is, and checks the words
+of the questions; a sentence that does not parse stops the build too. The
+texts come out as `EX.textar` in `data/exercises.js`, each sentence with its
+tokens, its part and its pronoun references. Every text is a card on the
+review page.
+
 **The review page.** `node tools/review.mjs` (also run by `./build.sh`) writes
 `dist/review.html`: one self-contained page with every hand-written item —
-the files above, the 24 Lesefni pages and the worked examples — each with its
+the files above, the texts, the Lesefni pages and the worked examples — each with its
 answer, explanation, level and file:line. It filters by kind, level, text and
 by *þarf að athuga*: the items a note in `content/REVIEW-NOTES.md` is about,
 with the note beside them. A reader marks items *Í lagi* or *Athuga*, writes a
