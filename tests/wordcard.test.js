@@ -37,8 +37,13 @@ const CARDS = new Map(ALL.map((w) => [key(w), buildCard(lex, key(w))]));
 const step = (card, id) => card.steps.find((s) => s.id === id) || null;
 const done = (answers = {}) => ({ rating: 1, answers });
 
-/* A line of the meaning list as #11's build writes it (EX.meaningChoice). */
+/* A line of the meaning list as #11's build writes it (EX.meaningChoice).
+   The real list has lines for LÍNO-2 words since #11; a test that makes its
+   own line takes the word's real one out. */
 const withMeaning = (item) => ({ ...EX, meaningChoice: [item] });
+const NO_LIST = { ...EX, meaningChoice: [] };
+/* The word's real line, if it has one that the card uses. */
+const lineOf = (w) => senseOf(w, EX).item;
 
 /* ---------- 1. before the word enters ------------------------------------- */
 
@@ -109,13 +114,14 @@ test("the same word always gets the same card, and building it uses no Math.rand
 test("lesa: the definition is a meaning, each sentence holds a BÍN form of the word, the table is BÍN's", () => {
   let defs = 0, sentences = 0;
   for (const [k, card] of CARDS) {
-    const w = entry(k), r = step(card, "lesa");
-    if (r.def) { defs++; assert.equal(isGrammarGloss(r.def), false, k); assert.equal(r.def, w.d.trim(), k); }
+    const w = entry(k), r = step(card, "lesa"), line = lineOf(w);
+    if (r.def) { defs++; assert.equal(isGrammarGloss(r.def), false, k); assert.equal(r.def, line ? line.d.trim() : w.d.trim(), k); }
     for (const s of r.sentences) {
       sentences++;
       const form = s.text.slice(s.at[0], s.at[1]).toLowerCase();
       assert.ok(Object.values(w.forms).flat().some((f) => f.toLowerCase() === form), `${k}: "${form}" is no form of the word`);
-      assert.equal(s.text, w.x, `${k}: without the meaning list the one sentence is ÍNO's example`);
+      /* ÍNO's example, or the right sentence of the word's line (#11). */
+      assert.ok(s.src === "ÍNO" ? s.text === w.x : !!line && s.text === line.r, `${k}: "${s.text}" is neither ÍNO's example nor the list's`);
     }
     assert.deepEqual(r.syllables, syllablesOf(w.o));
     if (r.table) for (const row of r.table.rows) for (const cell of row.slice(1)) {
@@ -161,6 +167,11 @@ test("skyring: the right explanation is ÍNO's; the two wrong ones are read pair
     const w = entry(k), wrong = [entry(a), entry(b)];
     assert.ok(w && typeof w.lino === "number" && w.ds === "ino", `${k}: not a LÍNO-2 word with an ÍNO definition`);
     const s = step(CARDS.get(k), "skyring");
+    /* A word whose line of the meaning list (#11) names another sense than
+       ÍNO's first: the card is about that sense, and the pair was read
+       against the first, so the step is dropped. */
+    const line = lineOf(w);
+    if (line && line.d.trim() !== w.d.trim()) { assert.equal(s, null, `${k}: a pair read against another sense`); continue; }
     assert.ok(s, `${k} is on the list but its card has no explanation step`);
     n++;
     assert.deepEqual(s.answer, [k]);
@@ -272,8 +283,10 @@ test("setning: from the word's line of the meaning list (#11), and only then", (
   /* A line without a definition, with fewer than two wrong sentences, or
      whose right sentence does not hold the word: no step, and the card is
      what it was. */
+  const bare = buildCard(lex, "breyting|kvk", { ex: NO_LIST });
+  assert.equal(step(bare, "setning"), null);
   for (const bad of [{ ...item, d: null }, { ...item, w: item.w.slice(0, 1) }, { ...item, r: "Hér er orðið ekki." }])
-    assert.deepEqual(buildCard(lex, "breyting|kvk", { ex: withMeaning(bad) }), CARDS.get("breyting|kvk"));
+    assert.deepEqual(buildCard(lex, "breyting|kvk", { ex: withMeaning(bad) }), bare);
   assert.deepEqual(senseOf(w, {}).sentences.map((x) => x.src), ["ÍNO"]);
 });
 
