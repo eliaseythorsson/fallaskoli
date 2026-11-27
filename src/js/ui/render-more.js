@@ -136,7 +136,10 @@ function drawGap(app, t, j, val) {
   const { v, xpFull, plain } = j.detail;
   const ok = j.ok, xp = j.xp;
   if (t.tip) $("hint").disabled = true;
-  const right = t.answers.slice(0, 2).map(esc).join(" / ");
+  /* `shown` (tasks/recall.js): the forms to show as right, when the task
+     accepts more than it asks for. */
+  const shown = t.shown || t.answers;
+  const right = shown.slice(0, 2).map(esc).join(" / ");
   const solved = solvedSentence(t, t.answers[0]);
   /* `plain` of any wrong try: the note is about the mistake, whichever try. */
   const plainTyped = plain ? val.trim()
@@ -148,7 +151,7 @@ function drawGap(app, t, j, val) {
     ${slipNote(v.slip, xp, xpFull)}${whyBox(t.why, t.whyLabel)}
     <p class="streakline">${app.S.run} í röð${multLine(app, xp)}. Enter fyrir næstu.</p></div>`
     : `<div class="verdict ${ok ? v.klass : "no"}">${ok ? retryRightHTML(xp) : `<h3>${cheer(CHEERS_NO)}</h3>`}
-    ${compareHTML(t, t.tries || [])}
+    ${compareHTML(t, t.tries || [], { right: shown })}
     ${plainTyped ? `<div class="why"><b>athugið</b>${fmt(`*${t.answers[0]}* — ekki *${plainTyped.trim()}*: orðið á eftir er aðeins til í fleirtölu.`)}</div>` : ""}
     ${ok ? slipNote(v.slip, xp, xp) : nearNote(v)}${solved}${whyBox(t.why, t.whyLabel)}
     ${ok ? RETRY_STILL_MISS : ""}

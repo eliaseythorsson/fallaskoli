@@ -284,9 +284,10 @@ const standsOnce = (s, i, w) => !s.tok.some((x, j) => j !== i && x.l
 /**
  * The forms of `w` that are right in the gap at token `i` of `s`: see "which
  * forms are right" at the top. Pure.
- * @returns {?{m: ?string, answers: string[]}}  `answers[0]` is the form the
- *   sentence has; `m` its BÍN mark (null for an adverb). Null: the sentence
- *   is not used.
+ * @returns {?{m: ?string, answers: string[], own: number}}  `answers[0]` is
+ *   the form the sentence has; the first `own` are the forms of its cell
+ *   (BÍN's variants), the rest other cells that are right there; `m` is the
+ *   BÍN mark (null for an adverb). Null: the sentence is not used.
  */
 export function gapForms(lex, s, i, w) {
   const t = s && s.tok[i];
@@ -295,7 +296,7 @@ export function gapForms(lex, s, i, w) {
   const typed = normalise(t.w);
   if (w.c === "ao") {
     if (t.c !== "atviksorð" || !formsOf(w).has(typed)) return null;
-    return { m: null, answers: [typed] };
+    return { m: null, answers: [typed], own: 1 };
   }
   if (!t.m || !(w.forms[t.m] || []).some((f) => normalise(f) === typed)) return null;
   const cells = NOUN.has(w.c) ? nounCells(lex, s, i) : w.c === "lo" ? adjectiveCells(s, i)
@@ -304,17 +305,21 @@ export function gapForms(lex, s, i, w) {
   /* The sentence's own form first, then BÍN's variants of its cell, then the
      other cells that are right here. */
   const answers = [typed];
-  for (const m of cells) for (const f of w.forms[m] || []) {
-    const k = normalise(f);
-    if (k && !/\s/.test(k) && !answers.includes(k)) answers.push(k);
+  let own = 1;
+  for (const m of cells) {
+    for (const f of w.forms[m] || []) {
+      const k = normalise(f);
+      if (k && !/\s/.test(k) && !answers.includes(k)) answers.push(k);
+    }
+    if (m === t.m) own = answers.length;
   }
-  return { m: t.m, answers };
+  return { m: t.m, answers, own };
 }
 
 /* ---------- the sentences a word can be asked in ------------------------------- */
 
-/** @typedef {{s: any, i: number, m: ?string, answers: string[], lvl: number,
-               key: string}} RecallGap */
+/** @typedef {{s: any, i: number, m: ?string, answers: string[], own: number,
+               lvl: number, key: string}} RecallGap */
 
 const GAPS = new WeakMap();        // lexicon -> Map(wordKey -> RecallGap[])
 
@@ -338,7 +343,7 @@ export function recallGaps(lex, w) {
   const add = (s, i, bank) => {
     const f = !texts.has(s.t + "\t" + i) && gapForms(lex, s, i, w);
     texts.add(s.t + "\t" + i);
-    if (f) out.push({ s, i, m: f.m, answers: f.answers, lvl: bank.lvl, key: frameKey(bank) });
+    if (f) out.push({ s, i, m: f.m, answers: f.answers, own: f.own, lvl: bank.lvl, key: frameKey(bank) });
   };
   if (w.c === "ao") {
     for (const s of lex.sentences || [])
@@ -448,9 +453,13 @@ export function recallGap(lex, view, rng) {
 
   const cap = /^\p{Lu}/u.test(g.s.tok[g.i].w);
   const letter = firstLetter(g.answers[0]);
+  const answers = cap ? g.answers.map(cap1) : g.answers;
   return built({
     type: "gap", skill: LEARNING_SKILL, s: g.s, i: g.i, cue: null,
-    answers: cap ? g.answers.map(cap1) : g.answers, m: g.m, paradigm: g.m ? w.forms : null,
+    answers, m: g.m, paradigm: g.m ? w.forms : null,
+    /* What the verdict shows as "the right form": the sentence's own cell,
+       not the other forms that are accepted there. */
+    shown: answers.slice(0, g.own),
     title: "Orð í eyðu", stage,
     hint: stage === "letter" ? `${ASK} ${letterLine(letter)}` : ASK,
     /* After the answer, under the sentence with the right form in it: the

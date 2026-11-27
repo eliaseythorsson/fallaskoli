@@ -51,6 +51,8 @@ function pupil(words = LEARNER_WORDS, band = 3) {
 const viewOf = (p, extra = {}) => makeView({ S: p.S, sess: p.sess, policy: POLICY, today: TODAY, typeId: "or_eyda", ...extra });
 const build = (p, seed = 1, extra = {}) => recallGap(lex, viewOf(p, extra), seeded(seed));
 
+const w0 = (t) => entry(t.word);
+
 /** Write an answer about `word` into Word knowledge as type `type`. */
 const note = (S, word, outcome, type = "or_eyda", day = "2026-11-21") => {
   (S.wordKnowledge[word] ||= { c: 0, w: 0, e: [] }).e.push([day, type, outcome]);
@@ -255,6 +257,10 @@ test("the question: a gap, the letter, the right form first, and nothing that na
     const tok = t.s.tok[t.i];
     assert.equal(normalise(t.answers[0]), normalise(tok.w));
     assert.equal(t.answers[0], tok.w, "the answer is shown as the sentence has it, capital and all");
+    /* the verdict shows the forms of the sentence's cell, not everything accepted */
+    assert.deepEqual(t.shown, t.m ? w0(t).forms[t.m].map((f) => (t.cap ? f[0].toUpperCase() + f.slice(1) : f))
+      .filter((f) => t.answers.includes(f)) : [tok.w]);
+    assert.equal(t.shown[0], t.answers[0]);
     const letter = [...normalise(tok.w)][0];
     assert.ok(t.hint.includes(`**${letter}**`), t.hint);
     assert.match(t.hint, /^Hvaða orð vantar\? Það er eitt af orðunum þínum\. Það byrjar á \*\*.\*\*\.$/u);
