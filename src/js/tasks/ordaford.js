@@ -10,6 +10,8 @@
      or_utundan   the odd one out
      or_eyda      recall: one of the pupil's words in learning typed into a
                   sentence gap (tasks/recall.js, issue #14)
+     or_merking   the graded meaning question (#11): which of three
+                  sentences uses the word with the right meaning
 
    Which word comes up: the window of rarity per band is `pickVocab` in
    tasks/shared.js. There is no wait in days (#10): the one rule is the
@@ -204,6 +206,52 @@ function nearVocab(view, rng, items, lvlOf, wordOf, maxBand = 5, floor = VOCAB_F
   /* every item of the window on the band's own rank, so `pickVocab` keeps
      them all in its first tier */
   return pickVocab(view, rng, near, () => RANK_CAP[b], wordOf, maxBand);
+}
+
+/* The graded meaning question (#11, DLD-PLAN §1 "Meaning question"): the
+   word, and three sentences that all hold it. In one it means what it
+   means; in the other two it stands where another word belongs (*Hún hellti
+   afleiðingu í glasið*). A pupil who knows the word sees one sentence and two
+   pieces of nonsense; one who does not sees three sentences that look alike.
+
+   Every sentence is written down, item by item, in
+   content/ordafordi/merking.tsv — nothing is put together here. v6.11 tried
+   to make "this noun does not fit this sentence" out of noun classes for
+   or_samhengi and reading the output killed it (see `ordContext` above), and
+   the lists of nouns that "cannot fit" a word-in-context frame, read back as
+   sentences, hold *Ég keypti sokka í blómabúðinni* — odd, and no misuse of
+   *sokkur*. So the everyday nouns here are the pairs from those lists that
+   ARE category errors, picked by hand (the build holds each to the list it
+   came from), and the LÍNO-2 words have sentences of their own.
+
+   Recognition, not recall (CONTEXT.md): the word is shown. The free-text
+   "Hvað þýðir orðið?" (`taskMeaning`) is still the rescue drill's and, once
+   the server grades it (#48), the session's; this is the one the app can
+   judge, so it counts.
+
+   The window is the items nearest the band by level, at least MEANING_FLOOR
+   of them: everyday nouns at þyngd 1–2, the common academic words from 3,
+   the abstract ones and the verbs from 4. */
+const MEANING_FLOOR = 12;
+export function ordMeaning(lex, view, rng) {
+  const P = view.policy;
+  const v = nearVocab(view, rng, EX.meaningChoice, (y) => y.lvl, (y) => wordKey(y.o, y.c), 5, MEANING_FLOOR);
+  if (!v) return null;
+  const x = v.x;
+  const wrong = shuffle(x.w, rng).slice(0, 2);
+  const entry = lex.lookup(x.o, x.c);
+  const notHere = `Hér stendur *${x.o}* þar sem annað orð á heima, svo að setningin gefur enga merkingu.`;
+  return built({
+    type: "choice", skill: "ordaford", s: null,
+    title: "Merking orðs", question: `Í hvaða setningu er orðið *${x.o}* notað rétt?`,
+    options: shuffle([x.r, ...wrong], rng), answer: x.r,
+    /* The definition is the item's own (`x.d`, the sense the right sentence
+       means), never the word's first sense — as in `ordContext`. */
+    why: (x.d ? `*${x.o}*: ${x.d}. ` : "") + "Í hinum tveimur setningunum passar orðið ekki.",
+    whyNot: Object.fromEntries(wrong.map((w) => [w, notHere])),
+    base: 8, lvl: levelFor(P, x.lvl), cell: "orð:merking", word: wordKey(x.o, x.c),
+    tags: ["vocab"], miss: ["merking"], bonus: entry || null,
+  });
 }
 
 /* Word formation, every pair checked in the lexicon (both words in BÍN) and,
@@ -482,4 +530,5 @@ export const BUILDERS = {
   or_myndun: { build: ordFormation },
   or_utundan: { build: ordOdd },
   or_eyda: { build: recallGap, ready: recallReady },
+  or_merking: { build: ordMeaning },
 };

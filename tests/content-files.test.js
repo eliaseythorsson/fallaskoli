@@ -121,6 +121,7 @@ print(json.dumps(out))`);
     ANTONYM_PAIRS: lines("ordafordi/andheiti.tsv"),
     WORD_IN_CONTEXT: lines("ordafordi/samhengi.tsv"),
     WORD_IN_CONTEXT_FRAMES: lines("ordafordi/samhengi-rammar.tsv"),
+    MEANING_CHOICE: lines("ordafordi/merking.tsv"),
     _WHO_DID: lines("setningafraedi/hver-gerdi-hvad.tsv"),
   };
   for (const [k, n] of Object.entries(want)) assert.equal(got[k], n, k);

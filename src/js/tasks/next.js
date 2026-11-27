@@ -150,7 +150,9 @@ export function nextTask(lex, view, rng) {
   /* ×1.3: measured over 1,500 questions in v6.11, when a wait of days
      after each showing turned some of its turns down, this landed Orðaforði
      at or a little above the average skill. The wait is gone (#10); the
-     factor is kept until the meaning question's share is set (DLD-PLAN §1). */
+     factor stays for the free-text question outside a session. Inside one
+     it has no turn (weightInRun 0); the meaning question that counts there
+     is or_merking (#11), an ordinary type with an ordinary weight. */
   const meaningW = shares.length ? 1.3 * shares.reduce((a, b) => a + b, 0) / shares.length : 4;
 
   const tried = new Set();

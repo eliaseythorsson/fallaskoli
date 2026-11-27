@@ -1,0 +1,128 @@
+# Orðaforði: merking orðs í setningu
+#
+# Spurt er: „Í hvaða setningu er orðið notað rétt?“ Nemandinn sér þrjár setningar með
+# sama orðinu. Í einni þeirra er orðið notað í réttri merkingu. Í hinum tveimur stendur
+# það þar sem annað orð á heima, svo að setningin verður merkingarlaus.
+#
+# Reglur við skráningu:
+#   - Rétta setningin á að vera eðlileg íslenska og sýna hvað orðið merkir.
+#   - Röng setning á að vera rétt beygð og rétt upp byggð; það eina sem er að henni er
+#     MERKINGIN. Hún má ekki ganga upp í neinni merkingu orðsins, hvorki í gríni né
+#     líkingamáli. Ef Íslendingur gæti hikað, slepptu setningunni.
+#   - Ekki nota „með“ á undan orði um fólk („með íbúa“ getur þýtt „ásamt íbúa“).
+#   - Orðið sjálft þarf að standa í hverri setningu, í hvaða beygingarmynd sem er.
+#     Smíðin (./build.sh) athugar það í BÍN og stoppar ef orðið finnst ekki.
+#
+# Dálkar:
+#   þyngd       1–5
+#   orð         orðið í uppflettimynd
+#   orðflokkur  kk, kvk eða hk (nafnorð eftir kyni), so (sagnorð), lo (lýsingarorð)
+#   merking     hvaða merking orðsins í Íslenskri nútímamálsorðabók (ÍNO) á við í réttu
+#               setningunni: númer merkingarinnar (1, 2, 3 …), eða - ef engin þeirra á
+#               við (þá er engin skýring sýnd). Skylt ef orðið hefur fleiri en eina
+#               merkingu í ÍNO; autt þýðir annars eina merking orðsins.
+#   uppruni     samhengi = allar setningarnar eru úr „Orð í samhengi“ (samhengi.tsv og
+#               samhengi-rammar.tsv): rétta setningin þar sem orðið er svarið eða passar,
+#               þær röngu þar sem orðið er skráð sem rangt eða „passar ekki“. Smíðin
+#               stoppar ef setning finnst ekki þar.
+#               ný = setningarnar voru skrifaðar fyrir þessa skrá.
+#   setning     setningin þar sem orðið er notað RÉTT
+#   rangt 1     setning þar sem orðið passar ekki
+#   rangt 2     önnur slík
+#   rangt 3     sú þriðja (má vera autt); forritið velur tvær af röngu setningunum
+#
+# Línur sem byrja á # eru athugasemdir; forritið les þær ekki. Dálkarnir eru
+# aðskildir með TAB-staf. Í README.md, kaflanum „Efnið“, stendur hvernig
+# breyting á skránni er prófuð og skoðuð.
+#
+# ---- Athugasemdir forritara (á ensku) / notes for developers ----
+#
+# The graded meaning question (issue #11, or_merking in tasks/ordaford.js):
+# which of three sentences uses the word with the right meaning.
+# (level, word, class, sense, origin, right, wrong, wrong, [wrong])
+# A wrong sentence is a category error — an everyday sentence with the word
+# standing where another word belongs — never a subtler misuse: whether
+# "Rigningin var afleiðing flóðsins" is wrong is an argument, and an item a
+# pupil can argue with is worse than none.
+# origin "samhengi": pipeline/build_exercises.py holds every sentence to the
+# word-in-context lists (the word is that item's answer, or one of the nouns
+# its author listed as impossible there), so nothing in those rows is new
+# Icelandic. origin "ný": the right sentence must parse (Greynir); every
+# sentence must hold a BÍN form of the word and only words BÍN knows.
+# Level: 1 everyday nouns; 3 common LÍNO-2 words; 4 the more abstract ones,
+# and every verb and adjective.
+#
+
+þyngd	orð	orðflokkur	merking	uppruni	setning	rangt 1	rangt 2	rangt 3
+# ---- hversdagsleg nafnorð; allar setningarnar úr „Orð í samhengi“ ----
+1	mjólk	kvk	1	samhengi	Ég drakk glas af mjólk með matnum.	Hún skrifaði á töfluna með mjólk.	Pabbi lagaði mjólkina með skrúfjárni.	Ég hengdi úlpuna á mjólkina í forstofunni.
+1	bók	kvk		samhengi	Hann las bók áður en hann fór að sofa.	Kokkurinn skar laukinn með bók.	Bóndinn rak bækurnar inn í fjárhúsið.	Mig klæjaði eftir að bókin stakk mig.
+1	hamar	kk	1	samhengi	Hann negldi naglann með hamri.	Ég borðaði hamar í morgunmat.	Ég drakk hamar úr glasi.	Ég las hamar fyrir litlu systur mína.
+1	stóll	kk	1	samhengi	Pabbi lagaði stólinn með skrúfjárni.	Ég drakk stól úr bolla.	Á veturna fellur stóll af himni.	Bóndinn mjólkaði stólana á hverjum morgni.
+1	sokkur	kk		samhengi	Ég þvoði sokkana í þvottavélinni.	Hann negldi naglann með sokk.	Ég hringdi í mömmu úr sokk mínum.	Ég drakk sokk úr glasi.
+1	koddi	kk		samhengi	Ég lagði höfuðið á koddann og sofnaði.	Ég vaknaði þegar koddinn hringdi.	Ég skrifaði nafnið mitt með kodda.	Ég mældi hitann með kodda.
+1	ísskápur	kk		samhengi	Ég setti mjólkina inn í ísskápinn svo hún skemmdist ekki.	Ég synti tíu ferðir í ísskápnum.	Hún spilaði á ísskáp á tónleikunum.	Kötturinn elti ísskáp úti í garði.
+1	sápa	kvk		samhengi	Ég þvoði mér um hendurnar með sápu.	Kýrin gefur okkur sápu.	Ég saumaði gatið með nál og sápu.
+1	penni	kk		samhengi	Ég skrifaði bréfið með penna.	Hann negldi naglann með penna.	Mamma bakaði penna í ofninum.	Hún skar brauðið með pennanum.
+1	kaka	kvk		samhengi	Ég keypti köku í bakaríinu.	Það var kalt svo ég fór í köku.	Ég stakk kökunni í samband.	Smiðurinn negldi kökurnar saman.
+1	súpa	kvk		samhengi	Við borðuðum súpu í kvöldmat.	Það var kalt svo ég fór í súpu.	Pabbi lagaði súpuna með skrúfjárni.	Smiðurinn negldi súpurnar saman.
+1	gaffall	kk	1	samhengi	Ég þvoði gafflana í uppþvottavélinni.	Ég las gaffal fyrir litlu systur mína.	Það var kalt svo ég fór í gaffal.	Ég hringdi í mömmu úr gaffli mínum.
+1	snjór	kk	1	samhengi	Á veturna fellur snjór af himni.	Pabbi lagaði snjóinn með skrúfjárni.	Hún hengdi snjóinn upp á snúru til þerris.	Við fórum með snjóinn til dýralæknisins.
+1	blýantur	kk		samhengi	Ég skrifaði nafnið mitt með blýanti.	Kokkurinn skar laukinn með blýanti.	Við borðuðum blýant í kvöldmat.	Mamma eldaði blýant handa okkur.
+1	bíll	kk		samhengi	Ég fór með bílinn í viðgerð.	Ég drakk glas af bíl með matnum.	Bóndinn mjólkaði bílana á hverjum morgni.	Fuglinn byggði sér bíl í trénu.
+1	sími	kk		samhengi	Ég hringdi í mömmu úr síma mínum.	Mamma vökvaði símana í garðinum.	Bóndinn rak símana af fjallinu.
+1	brauð	hk		samhengi	Ég keypti brauð í bakaríinu.	Ég drakk brauð úr glasi.	Hún spilaði á brauð á tónleikunum.	Hundurinn gelti að brauðinu sem kom með bréfin.
+1	sundlaug	kvk		samhengi	Ég synti tíu ferðir í sundlauginni.	Fuglinn byggði sér sundlaug í trénu.	Í sundlauginni eru margar bækur sem má fá lánaðar.
+1	epli	hk		samhengi	Ég fékk mér epli úr ísskápnum.	Ég stakk eplinu í samband.	Smiðurinn negldi eplin saman.	Við kveiktum á eplunum þegar dimmt var orðið.
+# ---- algeng orð af LÍNO-2 (námsorðalistanum); nýjar setningar ----
+3	hugmynd	kvk	2	ný	Hún fékk góða hugmynd að afmælisgjöf.	Ég burstaði tennurnar með hugmynd.	Hugmyndin gelti alla nóttina.
+3	vandamál	hk		ný	Við leystum vandamálið með því að tala saman.	Hún prjónaði sér vandamál úr ull.	Ég drakk vandamál með matnum.	Vandamálið át allt grasið á túninu.
+3	svæði	hk		ný	Það má ekki tjalda á þessu svæði.	Hann drakk svæði með matnum.	Hún greiddi sér með svæði.	Svæðið hringdi í mig í gærkvöldi.
+3	breyting	kvk		ný	Það varð mikil breyting á veðrinu um helgina.	Hann sópaði gólfið með breytingu.	Breytingin mjálmaði fyrir utan dyrnar.	Ég drakk breytingu úr bolla.
+3	áhrif	hk		ný	Veðrið hefur mikil áhrif á skapið.	Ég borðaði áhrif í morgunmat.	Hann læsti hurðinni með áhrifum.	Áhrifin syntu yfir ána.
+3	upphaf	hk		ný	Við misstum af upphafi myndarinnar.	Hann sagaði upphafið í tvennt.	Ég fór í upphaf því að það var kalt.	Upphafið gelti á köttinn.
+3	aðstoð	kvk		ný	Ég bað kennarann um aðstoð við heimanámið.	Aðstoðin flaug yfir húsið.	Hún prjónaði aðstoð úr ull.	Ég hjólaði á aðstoð í skólann.
+3	heilsa	kvk		ný	Hreyfing og góður svefn eru mikilvæg fyrir heilsuna.	Ég hengdi heilsuna á snagann.	Hún bakaði heilsu í ofninum.
+3	hraði	kk		ný	Bíllinn ók á miklum hraða eftir veginum.	Hraðinn sofnaði í sófanum.	Ég braut hraðann saman og setti hann í vasann.	Hún borðaði hraða með skeið.
+3	íbúi	kk		ný	Allir íbúar hússins komu á fundinn.	Hún hellti íbúum í skálina.	Íbúinn bráðnaði í sólinni.
+3	hlutverk	hk	2	ný	Hann fékk stórt hlutverk í skólaleikritinu.	Ég hellti hlutverki í glasið.	Hlutverkið mjálmaði og vildi komast inn.	Við grilluðum hlutverk í kvöldmat.
+3	árangur	kk		ný	Hún æfði sig á hverjum degi og náði góðum árangri.	Árangurinn gelti á köttinn.	Ég hengdi árangurinn á snagann.	Hann drakk árangur úr glasi.
+3	ábyrgð	kvk	1	ný	Þú berð ábyrgð á hundinum á meðan við erum í burtu.	Ég hellti ábyrgð yfir pönnukökurnar.	Ábyrgðin hljóp út á völlinn.
+3	aðferð	kvk		ný	Kennarinn sýndi okkur nýja aðferð til að reikna dæmið.	Ég borðaði aðferð með skeið.	Aðferðin datt af hjólinu og meiddi sig.	Hann hellti aðferð í bollann.
+3	tillaga	kvk		ný	Bekkurinn samþykkti tillögu Önnu um að fara í sund.	Tillagan gelti alla nóttina.	Hún prjónaði tillögu úr ull.	Ég drakk kalda tillögu með matnum.
+3	hefð	kvk		ný	Það er hefð í fjölskyldunni að borða hangikjöt á jólunum.	Hefðin synti í tjörninni.	Ég fór í hefð því að það var kalt.	Hann drakk hefð úr glasi.
+3	frelsi	hk		ný	Fuglinn fékk frelsi þegar búrið var opnað.	Ég skar frelsið í sneiðar.	Frelsið gelti á köttinn.	Hún greiddi sér með frelsi.
+3	menntun	kvk		ný	Góð menntun hjálpar fólki að fá vinnu.	Hún bakaði menntun í ofninum.	Menntunin beit mig í fingurinn.	Ég hengdi menntunina upp á snúru.
+3	áætlun	kvk		ný	Við gerðum áætlun um hvað við ætluðum að gera í sumarfríinu.	Áætlunin gelti á köttinn.	Ég drakk áætlun úr bolla.	Hann smurði áætlun á brauðið.
+3	samningur	kk		ný	Leikmaðurinn skrifaði undir samning við nýtt félag.	Samningurinn gelti alla nóttina.	Hún greiddi sér með samningi.
+# ---- óhlutstæðari orð af LÍNO-2; nýjar setningar ----
+4	afleiðing	kvk		ný	Flóðið var afleiðing af mikilli rigningu.	Hún hellti afleiðingu í glasið.	Afleiðingin gelti á póstinn.	Ég fór í hlýja afleiðingu því að það var kalt úti.
+4	einstaklingur	kk		ný	Hver einstaklingur í bekknum fékk sitt eigið verkefni.	Hún hellti einstaklingi í glasið.	Ég smurði einstaklingi á brauðið.
+4	heimild	kvk	2	ný	Nemandinn notaði bókina sem heimild í ritgerðinni.	Hann smurði heimild á brauðið.	Heimildin synti yfir ána.	Ég fór í heimild því að það rigndi.
+4	skilyrði	hk	-	ný	Hann fékk að fara með því skilyrði að hann kæmi heim fyrir tíu.	Við tjölduðum uppi á skilyrðinu.	Hún klippti skilyrðið með skærum.	Ég drakk skilyrði úr bolla.
+4	samhengi	hk	2	ný	Það er auðveldara að skilja orð þegar maður sér það í samhengi.	Samhengið vaknaði snemma og fór út að hlaupa.	Hún skar samhengið í sneiðar.	Ég smurði samhengi á brauðið.
+4	merking	kvk	1	ný	Ég fletti upp merkingu orðsins í orðabók.	Hún sauð merkingu í potti.	Merkingin hljóp hraðar en hundurinn.
+4	forsenda	kvk		ný	Góður svefn er forsenda þess að manni líði vel.	Forsendan flaug yfir húsið.	Ég drakk forsendu úr glasi.
+4	viðhorf	hk		ný	Hann hefur jákvætt viðhorf til skólans.	Ég negldi viðhorfið á vegginn.	Viðhorfið synti í tjörninni.	Hún hellti viðhorfi í bollann.
+4	orsök	kvk		ný	Lögreglan rannsakar orsök slyssins.	Hann klifraði upp í orsökina.	Hún skar orsökina í sneiðar.	Orsökin mjálmaði fyrir utan dyrnar.
+4	staðreynd	kvk		ný	Það er staðreynd að jörðin snýst um sólina.	Staðreyndin gelti á póstinn.	Ég hjólaði á staðreynd í skólann.	Hún drakk staðreynd úr glasi.
+4	skortur	kk		ný	Í landinu er skortur á hreinu vatni.	Hann batt skortinn við staurinn.	Skorturinn mjálmaði fyrir utan dyrnar.	Ég borðaði skort í morgunmat.
+4	magn	hk	1	ný	Í gosi er mikið magn af sykri.	Magnið hringdi í mig í gærkvöldi.	Hún klæddi sig í hlýtt magn.
+4	kynslóð	kvk	1	ný	Amma mín er af annarri kynslóð en ég.	Ég sópaði gólfið með kynslóð.	Hún hellti kynslóð í bollann.
+4	vísbending	kvk		ný	Lögreglan fann vísbendingu sem leiddi hana að þjófnum.	Ég drakk vísbendingu með matnum.	Vísbendingin synti yfir ána.
+4	fyrirmynd	kvk		ný	Stóra systir mín er fyrirmynd mín í íþróttum.	Ég hellti fyrirmynd í glasið.	Hún sauð fyrirmynd í potti.
+4	samvinna	kvk		ný	Með góðri samvinnu kláraði hópurinn verkefnið á einum degi.	Samvinnan mjálmaði fyrir utan dyrnar.	Ég hellti samvinnu í glasið.	Hann klifraði upp í samvinnuna.
+4	áhætta	kvk		ný	Það fylgir því mikil áhætta að hjóla án hjálms.	Áhættan mjálmaði fyrir utan dyrnar.	Ég drakk áhættu úr bolla.
+4	frásögn	kvk		ný	Við hlustuðum á frásögn afa af ferðinni til Grænlands.	Frásögnin synti yfir ána.	Ég smurði frásögn á brauðið.
+4	einkenni	hk		ný	Hiti og hósti eru algeng einkenni flensu.	Ég hellti einkennum í glasið.	Einkennin hlupu út á völlinn.
+4	notkun	kvk		ný	Notkun síma er bönnuð í kennslustundum.	Notkunin mjálmaði fyrir utan dyrnar.	Ég borðaði notkun í morgunmat.
+# ---- sagnorð af LÍNO-2; nýjar setningar. Í röngu setningunum stendur sögnin þar sem önnur sögn á heima ----
+4	útskýra	so		ný	Kennarinn útskýrði dæmið fyrir bekknum.	Ég útskýrði tennurnar fyrir svefninn.	Hann útskýrði boltann í markið.
+4	safna	so		ný	Hann safnar frímerkjum frá mörgum löndum.	Hún safnaði hurðinni á eftir sér.	Ég safnaði yfir götuna á grænu ljósi.
+4	vernda	so		ný	Hjálmurinn verndar höfuðið ef maður dettur.	Hann verndaði heim eftir skóla.	Fuglinn verndaði yfir húsið.
+4	flokka	so		ný	Við flokkum ruslið í pappír, plast og gler.	Ég flokkaði heim úr skólanum.	Barnið flokkaði vært í rúminu sínu.
+4	hvetja	so	1	ný	Þjálfarinn hvatti liðið áfram allan leikinn.	Hún hvatti heim eftir æfinguna.	Snjórinn hvatti í sólinni.
+4	staðfesta	so	1	ný	Læknirinn staðfesti að handleggurinn væri brotinn.	Ég staðfesti yfir girðinguna.	Hundurinn staðfesti á eftir kettinum.
+# ---- lýsingarorð af LÍNO-2; nýjar setningar ----
+4	sjaldgæfur	lo		ný	Þessi fugl er mjög sjaldgæfur á Íslandi.	Ég var svo sjaldgæfur að ég borðaði þrjár brauðsneiðar.	Súpan var of sjaldgæf svo ég blés á hana.
+4	daglegur	lo		ný	Göngutúrinn er hluti af daglegu lífi afa.	Hnífurinn var svo daglegur að hann skar ekki brauðið.	Ég varð daglegur af því að borða of mikið.
