@@ -640,6 +640,15 @@ texts come out as `EX.textar` in `data/exercises.js`, each sentence with its
 tokens, its part and its pronoun references. Every text is a card on the
 review page.
 
+**New sentences for the LÍNO-2 words.** A LÍNO-2 word the app can show in
+fewer than five sentences (most verbs, adjectives and adverbs on the list, and
+the nouns no frame takes) gets new fixed sentences from a pass outside the build
+that asks Claude to write them by the rules above, given to it word for word.
+Each one is parsed and guarded as the build would, and every one that passes
+goes before the owner (`review/lino-setningar/<run>/yfirferd.tsv`, on the review
+page). Only those the owner says yes to are appended to `setningar.tsv`
+(`tools/lino-frames/README.md`, "The fill-in").
+
 **The review page.** `node tools/review.mjs` (also run by `./build.sh`) writes
 `dist/review.html`: one self-contained page with every hand-written item —
 the files above, the texts, the Lesefni pages and the worked examples — each with its

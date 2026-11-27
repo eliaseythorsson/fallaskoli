@@ -32,7 +32,10 @@
      review/lino-rammar/*\/yfirferd.tsv
                                  the pairs waiting for the owner's verdict
                                  (issue #22): written outside the build by the
-                                 LÍNO-2 self-check; usually there are none  */
+                                 LÍNO-2 self-check; usually there are none
+     review/lino-setningar/*\/yfirferd.tsv
+                                 new sentences for the LÍNO-2 words waiting for
+                                 the owner's verdict (issue #23), the same way  */
 
 import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -44,7 +47,7 @@ const p = (...x) => path.join(root, ...x);
 
 /* What each folder of content/ is, as the page names it, in the page's order. */
 export const KINDS = [
-  ["yfirferd", "LÍNO-2: pör til yfirferðar"],
+  ["yfirferd", "LÍNO-2: til yfirferðar"],
   ["setningar", "Setningabankinn"],
   ["villuveidar", "Villuveiðar"],
   ["malbeiting", "Málbeiting: sameina og skipta"],
@@ -231,6 +234,11 @@ function pairItem(it, cells, data) {
    not: its phrases would find nothing as soon as the queue is empty). */
 export const QUEUE_DIR = "review/lino-rammar";
 export const QUEUE_FILE = "yfirferd.tsv";
+/* New sentences for the LÍNO-2 words (issue #23): every one Fable 5.2 wrote
+   that passed the build's checks waits here for the owner, in a file of the
+   same kind. Same page section; its own note, since what is to be judged is
+   a whole new sentence, not a word put into a frame. */
+export const FILLIN_DIR = "review/lino-setningar";
 
 async function queueFiles(dir) {
   const abs = path.resolve(root, dir);            // a test's folder is outside the repository
@@ -242,7 +250,7 @@ async function queueFiles(dir) {
 
 /** The note that flags every pair still without a verdict, or null. */
 export function queueNote(items) {
-  if (!items.some((it) => it.pending)) return null;
+  if (!items.some((it) => it.pending && it.queue !== "setningar")) return null;
   return {
     title: "LÍNO-2-par sem bíður dóms", find: [], files: [], outside: false,
     from: "sjálfsprófun LÍNO-2-orðanna (mál #22)",
@@ -250,7 +258,22 @@ export function queueNote(items) {
       + "Skrifaðu **já** eða **nei** í dálkinn „dómur“ í skránni sem er nefnd hér fyrir neðan (línunúmerið "
       + "stendur þar líka). Efst í skránni stendur hvað tekur við. Merkingarnar „Í lagi“ og „Athuga“ á "
       + "þessari síðu geymast aðeins í vafranum og koma ekki í stað dómsins í skránni.",
-    match: (it) => !!it.pending,
+    match: (it) => !!it.pending && it.queue !== "setningar",
+  };
+}
+
+/** The note that flags every new sentence still without a verdict, or null. */
+export function fillinNote(items) {
+  if (!items.some((it) => it.pending && it.queue === "setningar")) return null;
+  return {
+    title: "Ný LÍNO-2-setning sem bíður dóms", find: [], files: [], outside: false,
+    from: "viðbót við LÍNO-2-orðin (mál #23)",
+    body: "Fable 5.2 skrifaði setninguna fyrir orð sem var í færri en fimm setningum. Greynir og "
+      + "parse_guard stóðust hana, en enginn hefur lesið hana. Skrifaðu **já** eða **nei** í dálkinn "
+      + "„dómur“ í skránni sem er nefnd hér fyrir neðan (línunúmerið stendur þar líka). Efst í skránni "
+      + "stendur hvað tekur við. Merkingarnar „Í lagi“ og „Athuga“ á þessari síðu geymast aðeins í "
+      + "vafranum og koma ekki í stað dómsins í skránni.",
+    match: (it) => !!it.pending && it.queue === "setningar",
   };
 }
 
@@ -280,16 +303,19 @@ const lineOf = (src, needle) => {
 
 /** Every hand-written item, in the page's order. `queueDir` is where the
     batches waiting for the owner are (a test passes its own). */
-export async function collect({ queueDir = QUEUE_DIR } = {}) {
+export async function collect({ queueDir = QUEUE_DIR, fillinDir = FILLIN_DIR } = {}) {
   const items = [];
   const lists = [];
-  for (const file of await queueFiles(queueDir)) {
-    const { header, rows } = parseTsv(await readFile(file, "utf8"));
-    const rel = path.relative(root, file).split(path.sep).join("/");
-    const title = `LÍNO-2: pör til yfirferðar (keyrsla ${rel.split("/").at(-2)})`;
-    lists.push({ file: rel, title, n: rows.length });
-    for (const r of rows) {
-      items.push({ ...itemFromRow(rel, "yfirferd", title, header, r), pending: !r.cells["dómur"] });
+  const queues = [[queueDir, "rammar", "LÍNO-2: pör til yfirferðar"], [fillinDir, "setningar", "LÍNO-2: nýjar setningar til yfirferðar"]];
+  for (const [dir, queue, name] of queues) {
+    for (const file of await queueFiles(dir)) {
+      const { header, rows } = parseTsv(await readFile(file, "utf8"));
+      const rel = path.relative(root, file).split(path.sep).join("/");
+      const title = `${name} (keyrsla ${rel.split("/").at(-2)})`;
+      lists.push({ file: rel, title, n: rows.length });
+      for (const r of rows) {
+        items.push({ ...itemFromRow(rel, "yfirferd", title, header, r), pending: !r.cells["dómur"], queue });
+      }
     }
   }
   const order = (rel) => KINDS.findIndex(([k]) => k === rel.split("/")[1]);
@@ -662,8 +688,8 @@ export function renderHtml({ items, lists }, notes, when = new Date()) {
 export async function build(out = p("dist", "review.html"), opts = {}) {
   const col = await collect(opts);
   const written = parseNotes(await readFile(p("content", "REVIEW-NOTES.md"), "utf8"));
-  const queued = queueNote(col.items);
-  const notes = attachNotes(col.items, queued ? [queued, ...written] : written);
+  const queued = [queueNote(col.items), fillinNote(col.items)].filter(Boolean);
+  const notes = attachNotes(col.items, [...queued, ...written]);
   await mkdir(path.dirname(out), { recursive: true });
   await writeFile(out, renderHtml(col, notes), "utf8");
   return { out, col, notes };

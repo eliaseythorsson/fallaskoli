@@ -28,6 +28,19 @@
   spurt úr honum: hann er ekki í Lotu dagsins, í vali á lotu, í stöðumati, í einvígi, í verkefnum
   kennara né í merkjum sem krefjast allra flokka.
 
+### Nýjar setningar fyrir LÍNO-2-orð sem bankinn á fáar (#23)
+- **Nýtt verkfæri, `tools/lino-frames/fillin.mjs`**, sem smíðin keyrir aldrei: fyrir hvert LÍNO-2-orð sem
+  forritið getur sýnt í færri en 5 setningum (sagnir, lýsingarorð, atviksorð og samtengingar líka; 1.718 orð
+  nú) skrifar Claude (Fable 5.2) a.m.k. 2 nýjar setningar eftir reglum setningabankans, sem fylgja
+  fyrirmælunum orðrétt. Hver setning er þáttuð með Greyni og `parse_guard` eins og setningar bankans og
+  hafnað, með ástæðu, ef hún stenst ekki, ef lengdin hæfir ekki þyngdinni eða ef orðið stendur ekki í
+  henni einu sinni.
+- **Eigandinn les hverja setningu sem stenst** (`review/lino-setningar/<keyrsla>/yfirferd.tsv`, fremst á
+  yfirlitssíðunni). `tools/lino-frames/fillin-accept.mjs` bætir þeim sem fá já aftast í
+  `content/setningar/setningar.tsv`; ekkert breytist í forritinu fyrr en þá.
+- Skýrsla segir hve margar setningar hvert orð hafði fyrir og eftir, og hve mörg orð fá eyðu í „Hvaða orð
+  vantar?“ (#14: nú hafa aðeins 46 af orðunum 1.718 nothæfa eyðu).
+
 ### „Hvað þýðir orðið?“ telur og kemur oftar (#11)
 - **Ný spurningagerð í Orðaforða, „Merking orðs í setningu“** (`or_merking`): nemandinn sér orð og þrjár
   setningar með því og velur þá þar sem orðið er notað rétt. Í hinum tveimur stendur orðið þar sem annað orð
