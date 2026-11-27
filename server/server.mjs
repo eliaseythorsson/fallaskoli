@@ -79,6 +79,9 @@ import { DUEL, validTopic, validSize, duelSkills, duelLevel, topicLevel, dataPri
 import { judge } from "../src/js/core/answer.js";
 import { blankState, newSession } from "../src/js/core/state.js";
 import { nextTask, buildTask, makeView, applyEffects } from "../src/js/tasks/index.js";
+/* #37: Claude reads an explanation in the pupil's own words, when the key is set. */
+import { claudePlugs } from "./reader-claude.mjs";
+import { eiginRubric } from "./rubric-eigin.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 /** The question types of a category, from the registry — for the patterns an
@@ -101,8 +104,9 @@ export function createApp({
   /* For the tests: a clock and limits for the live rounds (server/live.mjs). */
   liveOptions = {},
   /* The text reader's plugs for server-graded questions (server/grading.mjs).
-     None on a real server yet (#37); the tests hand in the fake plug. */
-  graderPlugs = {},
+     null: Claude when ANTHROPIC_API_KEY is set (#37), else none. The tests
+     hand in the fake plug. */
+  graderPlugs = null,
 } = {}) {
   const store = createStore(dataDir);
   const lex = buildLexicon(DATA);
@@ -1531,7 +1535,12 @@ export function createApp({
 
   /* Server-graded questions (#48): GET /grader, POST /grader/read. Who may,
      the limits, and that the text is forgotten: server/grading.mjs. */
-  createGrading({ plugs: graderPlugs, ceilingFor }).routes({ on, json, readBody, needUser });
+  /* #37: the names a plug strips — everyone in the pupil's group. */
+  const namesAround = async (u) => (await store.users()).filter((x) => groupOf(x) === groupOf(u))
+    .flatMap((x) => [x.name, x.username]).filter((x) => typeof x === "string" && x);
+  createGrading({ plugs: graderPlugs ?? claudePlugs(env, [eiginRubric(lex)],
+    { logFile: path.join(dataDir, "claude-cost.jsonl") }), ceilingFor, namesFor: namesAround })
+    .routes({ on, json, readBody, needUser });
 
   on("GET", "/admin/policy", async (req, res) => {
     if (!(await needAdmin(req, res, "canAdminUsers"))) return;

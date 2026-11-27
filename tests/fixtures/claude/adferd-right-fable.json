@@ -1,0 +1,28 @@
+{
+  "recorded": "HAND-WRITTEN in the exact shape of a Messages API response: no API key existed where #37 was built. Replace with a real recording: node tools/record-grading.mjs (see its header).",
+  "model": "fable",
+  "effort": "low",
+  "word": "aðferð|kvk",
+  "names": [],
+  "text": "Aðferð er hvernig maður gerir eitthvað, til dæmis aðferðin við að baka köku.",
+  "response": {
+    "id": "msg_01HandWrittenFable000004",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-fable-5-2",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"findings\": [{\"point\": \"merking\", \"met\": true, \"quote\": \"hvernig maður gerir eitthvað\"}, {\"point\": \"eigin\", \"met\": true, \"quote\": \"aðferðin við að baka köku\"}]}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 735,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 121
+    }
+  }
+}

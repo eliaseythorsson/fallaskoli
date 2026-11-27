@@ -28,10 +28,13 @@
  * writes anybody's progress. tests/grading-server.test.js holds both.
  *
  * ---- the readers ----------------------------------------------------------------
- * `plugs` are the text reader's plugs by kind (server/reader.mjs). Today
- * none is configured on a real server — Claude comes with #37 — so `up` is
- * false everywhere and server-graded questions stay hidden. Tests hand in the
- * fake plug (server/reader-fake.mjs). */
+ * `plugs` are the text reader's plugs by kind (server/reader.mjs). On a real
+ * server that is Claude (server/reader-claude.mjs, #37) for `or_eigin`, and
+ * only when ANTHROPIC_API_KEY is set; without it `up` is false everywhere and
+ * server-graded questions stay hidden. Tests hand in the fake plug
+ * (server/reader-fake.mjs) or the Claude plug with recorded answers.
+ * `namesFor(user)`: the names of the people the server knows around this
+ * pupil, which a plug strips before sending (`context.names`). */
 
 import { createReader } from "./reader.mjs";
 import { serverGradingOn } from "../src/js/core/policy.js";
@@ -54,7 +57,7 @@ const SAY = {
   failed: "Ekki tókst að lesa svarið yfir.",
 };
 
-export function createGrading({ plugs = {}, ceilingFor, timeoutMs = GRADER.timeoutMs }) {
+export function createGrading({ plugs = {}, ceilingFor, namesFor = async () => [], timeoutMs = GRADER.timeoutMs }) {
   const reader = createReader({ plugs, maxChars: GRADER.maxChars, maxQueue: GRADER.maxQueue, timeoutMs });
   const kinds = Object.keys(plugs);
   /* Per account, the reads of the last hour (in memory: a restart forgives). */
@@ -87,7 +90,9 @@ export function createGrading({ plugs = {}, ceilingFor, timeoutMs = GRADER.timeo
       if (!kinds.includes(kind)) return refuse(json, res, "off");
       if (!text || text.length > GRADER.maxChars) return refuse(json, res, "failed");
       if (!allowed(u.id)) return refuse(json, res, "busy");
-      const out = await reader.read(kind, text, context);
+      /* The names a plug strips before the text leaves the server (#37): the
+         server's own list, never one the page sent. */
+      const out = await reader.read(kind, text, { ...(context || {}), names: await namesFor(u) });
       /* A fault is answered by its code; nothing is logged, least of all the text. */
       if (out.fault) return refuse(json, res, out.fault);
       return json(res, 200, { findings: out.findings });
