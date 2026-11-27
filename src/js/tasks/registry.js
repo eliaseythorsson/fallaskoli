@@ -43,6 +43,7 @@ import { BUILDERS as malbeiting } from "./malbeiting.js";
 import { BUILDERS as setningagerd } from "./setningagerd.js";
 import { BUILDERS as namsord } from "./namsord.js";
 import { BUILDERS as lesskilningur } from "./lesskilningur.js";
+import { BUILDERS as frasogn } from "./frasogn.js";
 
 /** @typedef {import("../types").TaskType} TaskType */
 /** @typedef {import("../types").Builder} Builder */
@@ -53,7 +54,7 @@ import { BUILDERS as lesskilningur } from "./lesskilningur.js";
 const BUILDERS = {
   nafnord, lysingarord, sagnord, fornofn, toluord, obeygjanleg, greining,
   fallstjorn, ordaford, setningafraedi, malbeiting, setningagerd, namsord,
-  lesskilningur,
+  lesskilningur, frasogn,
 };
 
 /** What is wrong with the catalogue and the builders together, as sentences;
