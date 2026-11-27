@@ -23,19 +23,22 @@
  *         setning: { c: ["Breytingin tók langan tíma."], ok: true },
  *         skyld:   { c: ["umskipti"], ok: false },
  *         flokkur: { c: ["no"], ok: true },
+ *         eigin:   { c: [], ok: true, t: "Þegar eitthvað verður …" },
  *       },
  *     }, …
  *   }
  *   c   what the pupil chose the FIRST time they answered the step, as the
  *       ids of the options (a word key, a sentence, a lemma, a class)
  *   ok  whether that was right
+ *   t   (#37, a free-text step) what the pupil wrote — the text that was
+ *       judged: the revision, or the first answer if they kept it. `ok` is
+ *       the server-read verdict; false when it could not be read
  *
  * A step the card did not have for this word (not enough checked material)
  * has no answer. A step this program does not know is KEPT as long as its
  * answer has the shape above: #18 (adding to your own card) and #37/#38 (the
  * free-text "in my own words" step) add steps, and an older copy of the
- * program on another device must not delete them. Free text will need a
- * field of its own beside `c` (and a line in `cleanAnswer`).
+ * program on another device must not delete them. Free text is `t`.
  *
  * THE SLICE IS THE PUPIL'S OWN TEXT (`ownText: true`, #49, ADR 0003,
  * docs/PRIVACY.md §1g): only the pupil can read it; it leaves the account
@@ -56,6 +59,9 @@ export const RATINGS = Object.freeze(["aldrei", "heyrt", "nota"]);
     handful of chosen options. */
 export const CARDS_MAX = 3000;      // more than LÍNO-2 has words
 const STEPS_MAX = 16, CHOICES_MAX = 8, CHOICE_LEN = 200;
+/** The longest text a free-text step keeps: what the server reads at most
+    (server/grading.mjs GRADER.maxChars). */
+export const TEXT_LEN = 1200;
 const STEP_ID = /^[a-z][a-z0-9_]{0,23}$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -69,7 +75,9 @@ function cleanAnswer(raw) {
   if (!isObj(raw) || !Array.isArray(raw.c)) return null;
   const c = raw.c.filter((x) => typeof x === "string" && x.length > 0 && x.length <= CHOICE_LEN)
     .slice(0, CHOICES_MAX);
-  return { c, ok: raw.ok === true };
+  /* What the pupil wrote in a free-text step (#37). */
+  const t = typeof raw.t === "string" ? raw.t.trim().slice(0, TEXT_LEN) : "";
+  return t ? { c, ok: raw.ok === true, t } : { c, ok: raw.ok === true };
 }
 
 /** One card, or null. @returns {WordCardRecord | null} */

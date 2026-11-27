@@ -205,7 +205,7 @@ export interface LearningRecord { s: "l" | "k" | "o" | string; d: DayKey; n: num
 export type Learning = Record<string, LearningRecord>;
 
 /** One answer on a word card: the ids of the options chosen first, and whether that was right. */
-export interface WordCardAnswer { c: string[]; ok: boolean }
+export interface WordCardAnswer { c: string[]; ok: boolean; t?: string }
 
 /** A finished word card: the day, how many times it was done, the
     self-rating (0 aldrei heyrt · 1 heyrt það · 2 get notað það), and the
