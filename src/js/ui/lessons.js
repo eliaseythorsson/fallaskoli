@@ -10,6 +10,7 @@ import { QUESTION_TYPES } from "../core/policy.js";
 import { SKILLS, skillName } from "../core/skills.js";
 import { $, esc, fmt, hideTip } from "./dom.js";
 import { setGlossContext } from "../core/glossary.js";
+import { storyMapHTML } from "./storyicons.js";
 
 function tableHTML(t) {
   return `<figure class="lsntable">
@@ -27,6 +28,7 @@ function blockHTML(app, b) {
   if (b.ex) return `<div class="lsnex"><b class="lsnlabel">Dæmi</b><ul>${b.ex.map((x) => `<li>${fmt(x, { gloss: false })}</li>`).join("")}</ul></div>`;
   if (b.tip) return `<div class="lsntip"><b class="lsnlabel">Minnisregla</b>${fmt(b.tip)}</div>`;
   if (b.warn) return `<div class="lsnwarn"><b class="lsnlabel">Varastu</b>${fmt(b.warn)}</div>`;
+  if (b.storymap) return storyMapHTML();      // issue #31: the six icons of the story map
   if (b.table) { const t = buildTable(app.lex, b); return t ? tableHTML(t) : ""; }
   return "";
 }

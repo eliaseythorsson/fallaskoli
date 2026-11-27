@@ -1793,6 +1793,11 @@ body.liveon{overflow:hidden}
 .sentence.coded{line-height:1.5}
 /* a whole text above a question (Lesskilningur, issue #30): smaller than one sentence, and a gap under it */
 .sentence.readtext{font-size:clamp(18px,2.6vw,22px);line-height:1.55;margin-bottom:.8em;max-width:38em}
+/* the story map (issue #31): icons beside part names, sentences as options, the map on the Lesefni page */
+.storyicon{vertical-align:-.25em;flex:none}.storypart{display:inline-flex;align-items:center;gap:.3em}
+.opts.sentopts{flex-direction:column;align-items:stretch}.opts.sentopts button{border-radius:10px;text-align:left}
+.sortrows.long .sortrow{flex-direction:column;align-items:flex-start;gap:6px}
+.storymap{list-style:none;padding:0;display:grid;gap:6px}.storymap li{display:flex;align-items:center;gap:.5em;flex-wrap:wrap}.storyask{color:var(--slate)}
 .sc{display:inline-flex;flex-direction:column;align-items:center;max-width:100%;margin:0 3px;--c:var(--slate)}
 .sc-w{padding:0 2px 1px;border-bottom:3px solid var(--c)}
 .sc-name,.sc-cname{font-family:var(--body);font-size:11.5px;font-weight:600;letter-spacing:.02em;line-height:1.25;
