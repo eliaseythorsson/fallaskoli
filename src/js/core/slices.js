@@ -63,7 +63,8 @@
  *             day may have (tomorrow, for time zones). Drops, never rejects:
  *             a child's real progress is never refused for one odd key.
  *   ownText   true if the slice holds text the pupil wrote in their own
- *             words (the Orðakort word cards, #15/#18). See below.
+ *             words: the Orðakort word cards (core/wordcard.js, #15/#18).
+ *             See below.
  *
  * A slice sees only itself. A check that reads two slices (XP may not rise
  * faster than the days' records; the showcase holds only badges the pupil
@@ -130,6 +131,7 @@ import { enabledSlice, policySlice, allowedSlice } from "./policy.js";
 import { settingsSlice } from "./settings.js";
 import { daysSlice, goalSlice, weekGoalSlice, lastActiveSlice } from "./days.js";
 import { wordKnowledgeSlice, wordsSlice, drillsSlice, drillDaysSlice, learningSlice } from "./wordknowledge.js";
+import { wordCardsSlice } from "./wordcard.js";
 
 /** @typedef {import("../types").Slice} Slice */
 /** @typedef {import("../types").CleanContext} CleanContext */
@@ -204,6 +206,7 @@ export const SLICES = [
   tourSlice,
   wordKnowledgeSlice,
   learningSlice,
+  wordCardsSlice,
 ];
 
 /** The keys of the slices that hold the pupil's own text. @returns {string[]} */
