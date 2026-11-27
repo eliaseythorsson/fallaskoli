@@ -56,7 +56,7 @@ export function drillTask(lex, view, rng, entry, turn = 0) {
   const slot = turn > DRILL_MEANING_TURN ? turn - 1 : turn;
   /* The drilled word is the only word there is; a noun left waiting by an
      earlier cloze has no say here, and is let go when the question is shown. */
-  const dv = withView(view, { mustAsk: { word: entry, strict: true } });
+  const dv = withView(view, { mustAsk: { word: entry, strict: true }, learning: null });
   for (let k = 0; k < plan.length * 3; k++) {
     const id = plan[(slot + k) % plan.length];
     const spec = typeById(id);

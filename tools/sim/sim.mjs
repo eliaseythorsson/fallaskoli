@@ -56,6 +56,8 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
     for (let r = 0; r < sessions; r++) {
       const run = { topic, n: size, i: 0, items: [], focus: null, review: [], reask: [] };
       app.run = run;
+      // as app.startRun: six words in learning (#12), preferred in ordinary practice (#13)
+      WK.fillLearning(S, lex, { level: DF.storedLevel(S, WK.LEARNING_SKILL), today: ST.todayKey() });
       // as app.startRun: the session opens with up to three due reviews (core/review.js)
       const skillsOnly = () => narrowPolicy(ST.effectivePolicy(S), { skills: SKILL_IDS.includes(topic) ? [topic] : null, types: null });
       if (review) run.review = planOpening(S, ST.todayKey(), size, skillsOnly(), null);
@@ -70,11 +72,11 @@ export function simulate({ ability = 0.75, learn = 0.004, days = 30, perDay = 2,
         const t0 = performance.now();
         // as app.pickTask: pure builders, the effects of the one question that is shown
         const view = makeView({ S, sess: app.sess, policy: app.policy, forcedNoun: app.forcedNoun,
-          mix: { n: size, counts }, inRun: true, huntPrefer: DG.huntPreferFor(ids) });
+          mix: { n: size, counts }, inRun: true, huntPrefer: DG.huntPreferFor(ids), learning: WK.wordsInLearning(S) });
         const effects = new Map();
         const build = () => { const b = nextTask(lex, view, appRng); if (!b) return null; effects.set(b.task, b.effects); return b.task; };
         // as app.pickTask: a due review first, then a noun whose turn has come, then the rest
-        const rv = withView(view, { policy: skillsOnly(), mix: null });
+        const rv = withView(view, { policy: skillsOnly(), mix: null, learning: null });
         const due = review ? (nextOpening(lex, rv, appRng, run) || nextReask(lex, rv, appRng, run, (counts.fill || 0) + 1 <= maxOf("fill", size))) : null;
         const t = due ? due.task : app.forcedNoun ? build() : DG.pickTargeted(build, ids, { p: 0.4, tries: 5, rnd: appRng });
         if (t) applyEffects(app, due ? due.effects : effects.get(t));
