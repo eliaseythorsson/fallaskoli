@@ -53,7 +53,7 @@
        0     no             0 / 0 / 7 / 3
 
    One new skill never takes more than its NEW_SKILL_MAX of the share
-   (Lesskilningur: one, while it has one question type on three texts); the
+   (Lesskilningur: two, while it has five texts); the
    slots it cannot take are not set aside, and the rest of the session is
    shared out over them by the rule above.
 
@@ -124,10 +124,14 @@ export const NEW_SKILLS_SHARE = 0.3;
     was the only new skill that counted and took all three slots — the main
     idea of every text, every day, the same three questions. One a session
     is one text a day. The slots it cannot take go back to the rest of the
-    session. Raise it when the skill has more to ask (more texts, #32; more
-    types, #31). A skill not named here may take the whole share.
+    session. Raise it when the skill has more to ask (more texts, #32).
+    A skill not named here may take the whole share.
+    #31: four types now (main idea, vandi/markmið, story map, summary), 19
+    items on five texts: two a session, two different questions, and still
+    one slot of the three for the others. Not three: with five texts the
+    same stories would come back every day.
     @type {Readonly<Record<string, number>>} */
-export const NEW_SKILL_MAX = Object.freeze({ lesskilningur: 1 });
+export const NEW_SKILL_MAX = Object.freeze({ lesskilningur: 2 });
 
 /** How many skills `fresh` new questions are spread over. */
 export const freshSpread = (fresh) => Math.max(FRESH_MIN, Math.ceil(Math.max(0, fresh) / FRESH_PER));
