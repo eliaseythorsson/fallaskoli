@@ -23,6 +23,10 @@
    (the type is switched off, the word has left the lexicon) the answer is
    null and the entry waits; it is never asked as some unrelated question.
 
+   Now and then a review of a learned word is marked `revisit`: when it has
+   been answered, the pupil sees their own Orðakort of the word again and may
+   add to it (#18, `revisits` below).
+
    Like every builder this is pure: build(…) → { task, effects } or null, and
    the effects are applied by whoever shows the task. The three functions at
    the bottom keep a SESSION's plan (which reviews it opens with, which noun
@@ -34,6 +38,21 @@ import { openingReviews, entryByKey, reaskAt } from "../core/review.js";
 import { built, FX } from "./effects.js";
 import { withView } from "./view.js";
 import { typeById, enabled } from "./registry.js";
+import { cardOf, REVISIT_RATE } from "../core/wordcard.js";
+import { learningStatus } from "../core/wordknowledge.js";
+
+/**
+ * Should this review be followed by the pupil's own Orðakort (#18)? Only a
+ * review of a LEARNED word (its entry names the word, `w:` — core/review.js
+ * `queueWord`) whose card the pupil has, and then one time in REVISIT_RATE.
+ * The draw is taken from the builder's random source, and only for such a
+ * review, so every other question is built exactly as before.
+ */
+function revisits(S, entry, rng) {
+  return !!entry.w && typeof entry.k === "string" && entry.k.startsWith("w:")
+    && !!cardOf(S, entry.w) && (learningStatus(S, entry.w) || {}).status === "learned"
+    && rng() < REVISIT_RATE;
+}
 
 /* How many times a builder is asked before a step is given up. A builder
    that knows the hook answers the first time; the numbers are for those that
@@ -106,7 +125,11 @@ export function reviewTask(lex, view, rng, entry, { avoid = null, wordFirst = fa
     const { task } = b;
     task.typeId = spec.id;
     if (mark === "reask") task.reask = true;
-    else { task.review = entry.k; task.reviewHit = hit; }
+    else {
+      task.review = entry.k; task.reviewHit = hit;
+      /* The word's card comes back after the answer (control/session.js `revisitNext`). */
+      if (revisits(view.S, entry, rng)) task.revisit = entry.w;
+    }
     /* What the session knows once the question has been shown — as
        tasks/next.js adds for every question it chooses. */
     const words = [task.n, task.w, task.v].filter(Boolean).map((x) => x.o);

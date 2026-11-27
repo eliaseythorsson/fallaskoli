@@ -237,3 +237,72 @@ export function openWordCard(card, onDone, opts = {}) {
   show();
   return { el: scrim };
 }
+
+/**
+ * The pupil's own card, back after a review of a learned word (#18): what
+ * they chose and wrote, read only, and two things they may add — a newer
+ * self-rating, and a sentence of their own with the word (which must hold
+ * a form of it). `onDone({ rating, sentence })` when they go on ("Áfram"),
+ * `onDone(null)` on Escape. Unlike the first card this one may be left: the
+ * additions are the pupil's to make or not.
+ * @param {any} view  tasks/wordcard.js `revisitCard`
+ * @param {(add: {rating: number, sentence: string} | null) => void} onDone
+ */
+export function openRevisit(view, onDone) {
+  hideTip();
+  const scrim = document.createElement("div");
+  scrim.className = "scrim wcscrim";
+  const mark = (ok) => `<span class="wcmark ${ok ? "ok" : "no"}" aria-label="${ok ? "rétt" : "rangt"}">${ok ? "✓" : "✗"}</span>`;
+  const picks = view.picks.map((p) => `<li><p class="wcq">${text(p.question)}</p>
+      <p class="wcpick">${esc(p.chosen.join(", "))} ${mark(p.ok)}${p.right.length ? ` <span class="wcright">Rétt: ${esc(p.right.join(", "))}</span>` : ""}</p></li>`).join("");
+  scrim.innerHTML = `<div class="modal sheetmodal okort okrevisit" role="dialog" aria-modal="true" aria-label="Orðakortið þitt: ${esc(view.lemma)}" tabindex="-1">
+    <div class="wchead"><p class="eyebrow"><span>Orðakortið þitt</span></p>
+      <h3 class="wcword">${esc(view.lemma)}</h3></div>
+    <div class="sheetbody wcbody" data-step="aftur">
+      ${view.def ? `<section class="wcsec"><h4>Skýring</h4><p class="wcdef">${esc(view.def)}</p></section>` : ""}
+      ${picks ? `<section class="wcsec"><h4>Það sem þú valdir</h4><ul class="wcpicks">${picks}</ul></section>` : ""}
+      ${view.own ? `<section class="wcsec"><h4>Með þínum orðum</h4><p class="wcown">${esc(view.own)}</p></section>` : ""}
+      ${view.mine.length ? `<section class="wcsec"><h4>Setningarnar þínar</h4><ul class="wcex wcmine">${
+        view.mine.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></section>` : ""}
+      <section class="wcsec"><h4>Bættu við</h4>
+        <p class="wcq">${text(view.question)}</p>
+        <div class="wcopts" role="group">${view.options.map((o, k) =>
+          `<button type="button" data-k="${k}" aria-pressed="${k === view.rating}">${esc(o.text)}</button>`).join("")}</div>
+        <p class="wcnote">Síðast valdir þú: <b>${esc(view.options[view.rating].text)}</b></p>
+        <p class="wcq"><label for="wcsentence">${text(view.ask)}</label> <span class="wcnote">Má sleppa.</span></p>
+        <textarea id="wcsentence" class="wctext" rows="2" maxlength="200" aria-label="Setningin þín"></textarea>
+        <p class="wcmsg" aria-live="polite"></p>
+      </section>
+      <div class="answer"><button type="button" class="go" data-wc="next">Áfram →</button></div>
+    </div></div>`;
+  document.body.appendChild(scrim);
+  let rating = view.rating;
+  const buttons = [...scrim.querySelectorAll(".wcopts button")];
+  buttons.forEach((b) => {
+    b.onclick = () => {
+      rating = +b.dataset.k;
+      buttons.forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    };
+  });
+  const close = (add) => {
+    document.removeEventListener("keydown", key, true);
+    scrim.remove();
+    onDone(add);
+  };
+  /* Escape leaves the card without adding; the other windows' Escape is not this one's. */
+  const key = (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(null); } };
+  document.addEventListener("keydown", key, true);
+  const box = /** @type {HTMLTextAreaElement} */ (scrim.querySelector("textarea"));
+  /** @type {HTMLButtonElement} */ (scrim.querySelector("[data-wc=next]")).onclick = () => {
+    const sentence = box.value.trim().replace(/\s+/g, " ");
+    if (sentence && !view.fits(sentence)) {
+      scrim.querySelector(".wcmsg").innerHTML = text(`Orðið *${view.lemma}* þarf að vera í setningunni — eða hafðu reitinn auðan.`);
+      box.focus();
+      return;
+    }
+    close({ rating, sentence });
+  };
+  /* Not a button: an Enter still held from the question must not answer here. */
+  /** @type {HTMLElement} */ (scrim.querySelector(".okrevisit")).focus();
+  return { el: scrim };
+}

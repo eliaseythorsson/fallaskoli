@@ -17,11 +17,11 @@ import { planToday } from "../core/today.js";
 import { narrowPolicy } from "../core/policy.js";
 import { visitLevels } from "../core/difficulty.js";
 import { fillLearning, wordsInLearning, learningLevel, nextToLearn, owesCard, LEARNING_SIZE } from "../core/wordknowledge.js";
-import { cardDone, cardOf, saveCard } from "../core/wordcard.js";
-import { buildCard } from "../tasks/wordcard.js";
+import { cardDone, cardOf, saveCard, addToCard } from "../core/wordcard.js";
+import { buildCard, revisitCard } from "../tasks/wordcard.js";
 import { settle } from "../core/answer.js";
 import { serverQuestion, noReader } from "./serverask.js";
-import { openWordCard } from "../ui/wordcard.js";
+import { openWordCard, openRevisit } from "../ui/wordcard.js";
 import { maxOf } from "../core/mix.js";
 import { activePatterns, huntPreferFor, focusTypes, pickTargeted } from "../core/diagnosis.js";
 import { SKILL_IDS } from "../core/skills.js";
@@ -180,6 +180,30 @@ export function sessionControl() {
         ask: (task) => serverQuestion(task, { read: this.serverRead || noReader, pupil: this }),
         settle: (task, j) => settle(this.S, newSession(this.S), task, j),
       });
+    },
+
+    /**
+     * The pupil's own card, back after a review of a learned word (#18): the
+     * review was marked `revisit` when it was built (tasks/review.js, one in
+     * REVISIT_RATE). Called first thing in `next` (app.js): once the question
+     * has been answered, the card opens instead of the next question, and
+     * when the pupil goes on what they added is kept and `next` runs again.
+     * True when the card was opened.
+     */
+    revisitNext() {
+      const t = this.cur;
+      if (!t || !t.revisit || !t.closed || t.revisited || this.cardOpen || !this.lex) return false;
+      t.revisited = true;
+      const word = t.revisit;
+      const view = revisitCard(this.lex, word, cardOf(this.S, word));
+      if (!view) return false;
+      this.cardOpen = true;
+      openRevisit(view, (add) => {
+        this.cardOpen = false;
+        if (add && addToCard(this.S, word, add, todayKey())) this.save(true);
+        this.next();
+      });
+      return true;
     },
 
     /** A session the pupil chose — the picker, Lota dagsins, "again" on the

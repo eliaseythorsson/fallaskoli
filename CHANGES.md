@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Orðakortið kemur aftur í upprifjun (#18)
+- **Stundum, eftir upprifjun á lærðu orði,** opnast orðakort nemandans sjálfs: skýringin, það sem hann
+  valdi á kortinu (með rétta svarinu þar sem hans var rangt), skýringin með hans eigin orðum ef hún er
+  til, og setningarnar sem hann hefur bætt við áður.
+- **Nemandinn má bæta við:** metið á því hve vel hann þekkir orðið núna, og eigin setningu með orðinu
+  (hún þarf að innihalda einhverja mynd orðsins). Hvort tveggja má sleppa; Escape lokar kortinu.
+  Viðbæturnar geymast á kortinu (`x` í `S.wordCards`), með deginum; fyrsta matið og svörin breytast ekki.
+  Þær fylgja samstillingu milli tækja (viðbætur beggja tækja haldast), útflutningi nemandans og
+  eyðast með aðganginum. Aðeins nemandinn sér þær (`docs/PRIVACY.md` §1g).
+- **Ekki í hvert sinn:** einu sinni af hverjum þremur (`REVISIT_RATE` í `src/js/core/wordcard.js`, með
+  rökum), dregið úr slembigjafa smiðsins (`tasks/review.js`), aldrei úr klukkunni.
+
 ### Orðakortið með frjálsum texta, og merkingarspurningin lesin yfir (#38)
 - **Fyrir nemanda sem stjórnandinn hefur kveikt á** („Leyfa spurningar sem þjónninn les“) eru skref 3–5
   á Orðakortinu frjáls texti sem þjónninn lætur Claude lesa yfir eftir matskvarða: skýringin með eigin

@@ -107,6 +107,14 @@ synonym group, but `tengsl` needs no material, so it is on every card of a
 switched-on pupil, and "Senda" waits for all three words. A thin answer gets
 one follow-up question and one revision (`core/answer.js`).
 
+*The card back in a review, as built (#18).* One review in three of a learned word
+(`REVISIT_RATE`, drawn from the builder's random source in `tasks/review.js`) is
+followed, after its answer, by the pupil's own card: the definition, what they
+chose (with the right answer where theirs was not), their own explanation if they
+wrote one, and the sentences they added before. They may add a newer self-rating
+and a sentence of their own that holds the word; both are optional and kept on the
+card with the day (`x`), the first rating and answers untouched.
+
 **The intensive phase.** The word comes up in many question types, mixed together,
 grammar included: recall in a sentence gap (first-letter hint, then none), choosing
 the meaning, a synonym or antonym, choosing the sentence that fits, inflection,

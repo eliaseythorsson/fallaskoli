@@ -103,6 +103,9 @@
  * here, placed before the structured step it replaces; core/wordcard.js keeps
  * any step's answer by its id.
  *
+ * When a review of a learned word brings the card back (#18), `revisitCard`
+ * puts together what the pupil chose and wrote, read off this same card.
+ *
  * Pure: no state, no clock, no random source of its own (the generator is seeded by the word).
  */
 
@@ -112,7 +115,7 @@ import { syllablesOf } from "../core/syllables.js";
 import { EXPLAIN_LIST } from "../content/wordcards.js";
 import { seeded } from "../core/duel.js";
 import { CLASSNAME, GENDERS } from "../core/marks.js";
-import { RATINGS } from "../core/wordcard.js";
+import { RATINGS, ratingNow } from "../core/wordcard.js";
 import { synonymsOf, antonymsOf } from "./ordaford.js";
 import { shuffle, cap1 } from "./shared.js";
 
@@ -642,6 +645,47 @@ export function buildCard(lex, word, { ex = EX, free = false, eigin = false } = 
   for (const [free, structured] of Object.entries(REPLACES))
     if (steps.some((s) => s.id === free)) steps = steps.filter((s) => s.id !== structured);
   return { word, lemma: w.o, cls: w.c, steps };
+}
+
+/* ---------- the card coming back in a review (#18) ------------------------ */
+
+/**
+ * The pupil's own card as it comes back after a review of a learned word
+ * (tasks/review.js marks the review, ui/wordcard.js `openRevisit` draws it):
+ * the definition, what they chose in each step — the options' texts, read
+ * off the same card (`buildCard` is the same for the same word), with the
+ * right one where theirs was not — what they wrote in their own words, the
+ * sentences they added before, and the self-rating then and now. Null when
+ * the word or the card is gone. Pure.
+ * @param {any} lex @param {string} word  a `wordKey`
+ * @param {import("../types").WordCardRecord | null} saved  core/wordcard.js `cardOf`
+ * @param {{ex?: any}} [o]
+ */
+export function revisitCard(lex, word, saved, { ex = EX } = {}) {
+  const card = saved ? buildCard(lex, word, { ex }) : null;
+  if (!card || !saved) return null;
+  const read = card.steps.find((s) => s.id === "lesa");
+  const textOf = (step, id) => (step.options.find((o) => o.id === id) || {}).text || null;
+  const picks = card.steps.filter((s) => s.kind === "choice" && saved.a[s.id]).map((s) => {
+    const a = saved.a[s.id];
+    const chosen = a.c.map((id) => textOf(s, id)).filter(Boolean);
+    return { id: s.id, question: s.question, chosen, ok: a.ok,
+      right: a.ok ? [] : s.answer.map((id) => textOf(s, id)).filter(Boolean) };
+  }).filter((p) => p.chosen.length);
+  const own = saved.a.eigin && saved.a.eigin.t ? saved.a.eigin.t : null;
+  const w = lex.lookup(card.lemma, card.cls);
+  return {
+    word, lemma: card.lemma,
+    def: read ? read.def : null, source: read ? read.source : null,
+    picks, own,
+    mine: (saved.x || []).filter((x) => x.s).map((x) => x.s),
+    rating: ratingNow(saved),
+    question: `Hversu vel þekkir þú orðið *${card.lemma}* núna?`,
+    options: RATINGS.map((id) => ({ id, text: RATING_TEXT[id] })),
+    ask: `Skrifaðu þína eigin setningu með orðinu *${card.lemma}*.`,
+    /** Does the sentence hold a form of the word? */
+    fits: (text) => !!formIn(w, text),
+  };
 }
 
 /**

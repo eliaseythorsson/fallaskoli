@@ -4360,6 +4360,103 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
   await p.close();
 }
 
+/* ---------- Issue #18: the Orðakort back in a review ---------------------
+ *
+ * A pupil who did útskýra's card and learned the word has its review due.
+ * Some reviews (one in REVISIT_RATE, from the builder's random source) are
+ * marked to bring the card back: the session is started until the review
+ * that opens it is so marked. Answered and "Áfram": the pupil's own card
+ * opens, with what they chose; a sentence without the word is refused; a
+ * new rating and a sentence are kept, the card's own answers are not
+ * touched, and the session goes on. A second Áfram does not open it again. */
+{
+  const p = await browser.newPage();
+  const errors = [];
+  p.on("pageerror", (e) => errors.push(e.message));
+  await p.setViewport({ width: 1100, height: 900 });
+  await p.goto(FILE, { waitUntil: "domcontentloaded" });
+  await p.waitForFunction("window.FALLASKOLI && window.FALLASKOLI.sess && document.querySelector('#task .card')", { timeout: 20000 });
+  const WORD = "útskýra|so";
+  const set = await p.evaluate((WORD) => {
+    const A = window.FALLASKOLI;
+    document.querySelectorAll(".scrim").forEach((s) => s.remove());
+    const d = new Date(), pad = (x) => String(x).padStart(2, "0");
+    const today = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    A.S.wordCards[WORD] = { d: today, n: 1, r: 1, a: { flokkur: { c: ["no"], ok: false } } };
+    A.S.learning[WORD] = { s: "k", d: today, n: 1 };
+    const k = "w:or_eyda|" + WORD;
+    A.S.review.items.push({ k, t: "or_eyda", sk: "ordaford", p: null, c: null, w: WORD, i: null, s: 0,
+      due: today, add: today, last: today, l: 0, ok: 0 });
+    let tries = 0, marked = 0, reviews = 0;
+    for (; tries < 40; tries++) {
+      A.run = null; A.runDone = null; A.cur = null;
+      A.startRun("blandad", 5);
+      if (A.cur && A.cur.review === k) reviews++;
+      if (A.cur && A.cur.review === k && A.cur.revisit === WORD) { marked++; break; }
+    }
+    return { tries, reviews, marked, type: A.cur && A.cur.typeId, answer: A.cur && A.cur.answers && A.cur.answers[0] };
+  }, WORD);
+  ok(set.marked === 1 && set.type === "or_eyda", "#18: no review of the learned word brought its card back in 40 sessions: " + JSON.stringify(set));
+  if (set.marked) {
+    await p.type("#ans", set.answer);
+    await p.click("#check");
+    const opened = await p.evaluate(() => {
+      const A = window.FALLASKOLI;
+      const before = { cur: A.cur, i: A.run && A.run.i };
+      document.getElementById("check").click();          // Áfram
+      const card = document.querySelector(".okrevisit");
+      return { open: !!card, same: A.cur === before.cur, word: card && card.querySelector(".wcword").textContent,
+        eyebrow: card && card.querySelector(".eyebrow").textContent,
+        def: card && card.querySelector(".wcdef") ? card.querySelector(".wcdef").textContent : "",
+        picks: card ? [...card.querySelectorAll(".wcpick")].map((x) => x.textContent.replace(/\s+/g, " ").trim()) : [],
+        pressed: card ? [...card.querySelectorAll(".wcopts button[aria-pressed=true]")].map((b) => b.textContent) : [],
+        text: card ? card.innerText : "" };
+    });
+    ok(opened.open && opened.same && opened.word === "útskýra" && /Orðakortið þitt/.test(opened.eyebrow),
+      "#18: Áfram after the review did not open the pupil's own card: " + JSON.stringify(opened));
+    ok(opened.def.length > 5, "#18: the card has no definition: " + opened.def);
+    ok(opened.picks.length === 1 && /^Nafnorð ✗ Rétt: Sagnorð$/.test(opened.picks[0]),
+      "#18: what the pupil chose is not shown with the right answer: " + JSON.stringify(opened.picks));
+    ok(opened.pressed.join() === "Ég hef heyrt það", "#18: the rating that stands is not marked: " + opened.pressed.join());
+    ok(!/DLD|málþroska/i.test(opened.text), "#18: the card names DLD");
+
+    const refused = await p.evaluate(() => {
+      const card = document.querySelector(".okrevisit");
+      card.querySelector("textarea").value = "Ég fór út í dag.";
+      card.querySelector("[data-wc=next]").click();
+      return { still: !!document.querySelector(".okrevisit"), msg: card.querySelector(".wcmsg").textContent };
+    });
+    ok(refused.still && /þarf að vera í setningunni/.test(refused.msg), "#18: a sentence without the word was taken: " + JSON.stringify(refused));
+
+    const kept = await p.evaluate((WORD) => {
+      const A = window.FALLASKOLI;
+      const card = document.querySelector(".okrevisit");
+      card.querySelectorAll(".wcopts button")[2].click();
+      card.querySelector("textarea").value = "Kennarinn  útskýrði dæmið.";
+      const cur = A.cur;
+      card.querySelector("[data-wc=next]").click();
+      const stored = (JSON.parse(localStorage.getItem("fallaskoli.v5." + A.S.profile.id) || "{}").wordCards || {})[WORD];
+      return { open: !!document.querySelector(".okrevisit"), moved: A.cur !== cur, card: A.S.wordCards[WORD], stored };
+    }, WORD);
+    const x = (kept.card && kept.card.x) || [];
+    ok(!kept.open && kept.moved, "#18: the session did not go on after the card: " + JSON.stringify({ open: kept.open, moved: kept.moved }));
+    ok(x.length === 1 && x[0].r === 2 && x[0].s === "Kennarinn útskýrði dæmið." && kept.card.r === 1 && kept.card.n === 1
+      && kept.card.a.flokkur.c[0] === "no", "#18: the additions were not kept beside the card: " + JSON.stringify(kept.card));
+    ok(kept.stored && kept.stored.x && kept.stored.x.length === 1, "#18: the additions are not in the saved progress");
+
+    /* Shown once: the next question's Áfram does not bring it back. */
+    const again = await p.evaluate(() => {
+      const A = window.FALLASKOLI;
+      A.cur.closed = true;
+      document.getElementById("check").click();
+      return !!document.querySelector(".okrevisit");
+    });
+    ok(!again, "#18: the card came back on the next question");
+  }
+  ok(errors.length === 0, "#18: errors on the card back in a review: " + errors.join(" | "));
+  await p.close();
+}
+
 await browser.close();
 
 console.log(`\n${checks} checks, ${problems.length} problems`);
