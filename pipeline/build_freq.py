@@ -57,6 +57,14 @@ RERANK={'kk','kvk','hk','lo','so','ao'}
 INO_XML='sources/islensk_nutimamalsordabok_2026-02.xml'
 INO_COARSE=('niðrandi','gróft')
 
+# Lists of exercises.py whose sentences attest no word. MEANING_CHOICE (the
+# graded meaning question, issue #11) is two-thirds nonsense on purpose —
+# *Hún hellti afleiðingu í glasið* — and what a wrong sentence "uses" is no
+# sign of what a pupil reads. Leaving the list out also keeps a new question
+# type's content from re-ranking the lexicon: with it in, 21 words were
+# lifted and 3,140 ranks moved, and every seed-pinned test moved with them.
+NOT_ATTESTING={'MEANING_CHOICE'}
+
 def school_lemmas(best):
     """(lemma, class) pairs the hand-written school material attests.
     `best`: (lemma, class) -> corpus score, to read an ambiguous form."""
@@ -70,7 +78,7 @@ def school_lemmas(best):
     txt=[]
     for m in (sentences,exercises,definitions):
         for k,v in sorted(vars(m).items()):
-            if k.startswith('_') or callable(v) or hasattr(v,'__file__'): continue
+            if k.startswith('_') or callable(v) or hasattr(v,'__file__') or k in NOT_ATTESTING: continue
             strings(v,txt)
     out=set()
     for t in sorted({t for x in txt for t in re.findall('[a-záðéíóúýþæö]+',x.lower())}):

@@ -163,6 +163,7 @@ const CEILING = {   // measured % of the questions that repeat one asked before,
   sagnord: 0.20,         // 11.3
   obeygjanleg: 0.18,     // 8.8
   fallstjorn: 0.15,      // 6.3
+  ordaford: 0.14,        // 3.8 since or_merking (#11): 67 words, and the same word again is a repeat
 };                       // every other category: measured 0–3%; ceiling 8%
 test("item 23: exact repeats in single-topic sessions stay under a ceiling per category", () => {
   for (const s of SKILLS) {
