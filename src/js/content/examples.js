@@ -608,6 +608,8 @@ export const EXAMPLES = {
     q: "Texti segir að hvalir anda með lungum og gefa afkvæmum mjólk, og séu því spendýr. Hvaða samantekt er best?",
     a: "Hvalir eru spendýr af því að þeir anda með lungum og gefa afkvæmum mjólk.",
     how: "*Hvalir anda með lungum* er of þröngt, *Mörg dýr lifa í sjónum* of vítt og *Hvalir eru fiskar* rangt.",
+    forms: [],
+  },
   /* issue #36: step 3, a gap inside a story sentence */
   fr_tengiord: {
     q: "*Gummi svaf yfir sig. ___ missti hann af strætó.* Af því að, þess vegna eða en?",
