@@ -8,6 +8,8 @@
      or_samhengi  the one noun of four that makes sense in the sentence
      or_myndun    word formation: ó-, -ari/-andi, -ing/-un, -lega, -ni
      or_utundan   the odd one out
+     or_eyda      recall: one of the pupil's words in learning typed into a
+                  sentence gap (tasks/recall.js, issue #14)
 
    Which word comes up: the window of rarity per band is `pickVocab` in
    tasks/shared.js. There is no wait in days (#10): the one rule is the
@@ -20,6 +22,7 @@ import { isGrammarGloss } from "../core/definitions.js";
 import { built, FX } from "./effects.js";
 import { pick, wpick, shuffle, bandFor, levelFor, cap1, textSentence, pickVocab, pickAskable, nearBand, RANK_CAP, CLASS_RANK_CAP,
          classRankLevel } from "./shared.js";
+import { recallGap, recallReady } from "./recall.js";
 
 /* ================= Word meaning ========================================== */
 
@@ -478,4 +481,5 @@ export const BUILDERS = {
   or_samhengi: { build: ordContext },
   or_myndun: { build: ordFormation },
   or_utundan: { build: ordOdd },
+  or_eyda: { build: recallGap, ready: recallReady },
 };

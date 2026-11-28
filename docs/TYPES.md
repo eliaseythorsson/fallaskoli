@@ -92,7 +92,7 @@ The pure modules, where the shared shapes matter most:
   until the UI work in progress (the guided tour, L2 mode, the layout items)
   has merged, so that type annotations do not become merge conflicts.
 - **The category files** under `tasks/` (`nafnord.js` … `setningagerd.js`,
-  `cloze.js`, `tap.js`, `frames.js`, `drill.js`, `review.js`, `next.js`,
+  `cloze.js`, `tap.js`, `frames.js`, `recall.js`, `drill.js`, `review.js`, `next.js`,
   `view.js`, `effects.js`, `explain.js`, `index.js`). The registry already
   holds their `BUILDERS` to `Builder`. Their `build` functions are the
   next step: each returns a `Built`.

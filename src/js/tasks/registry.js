@@ -10,6 +10,12 @@
                tasks/view.js and tasks/effects.js.
      drill     (optional) (lex, view, rng, entry) → the same, about one given
                word: the form the type takes in a rescue drill.
+     ready     (optional) (view) → false when the type can build nothing for
+               this pupil whatever the seed (recall: no word in learning,
+               tasks/recall.js). tasks/next.js then leaves it out of the
+               weighted choice, so it takes no share of the draw: a duel,
+               built against a blank pupil, gets from a seed exactly the
+               questions it got before the type existed. Cheap and pure.
 
    This file puts the two together and refuses to start if they disagree: a
    declaration without a builder, a builder without a declaration, or a
@@ -67,6 +73,7 @@ export function registryFaults(catalogue = CATALOGUE, builders = BUILDERS) {
       else if (t.skill !== skill) faults.push(`${at}: the catalogue files ${id} under ${t.skill}, so its builder belongs in tasks/${t.skill}.js`);
       if (!b || typeof b.build !== "function") faults.push(`${at}: no build function`);
       if (b && b.drill != null && typeof b.drill !== "function") faults.push(`${at}: drill is not a function`);
+      if (b && b.ready != null && typeof b.ready !== "function") faults.push(`${at}: ready is not a function`);
     }
   }
   for (const t of declared.values()) {
@@ -89,7 +96,8 @@ export function registryFaults(catalogue = CATALOGUE, builders = BUILDERS) {
     @type {readonly Readonly<TaskType>[]} */
 export const TASKS = Object.freeze(CATALOGUE.map((t) => {
   const b = BUILDERS[t.skill][t.id];
-  return Object.freeze({ ...t, build: b.build, ...(b.drill ? { drill: b.drill } : {}) });
+  return Object.freeze({ ...t, build: b.build, ...(b.drill ? { drill: b.drill } : {}),
+    ...(b.ready ? { ready: b.ready } : {}) });
 }));
 
 /** The types of each category, in catalogue order.

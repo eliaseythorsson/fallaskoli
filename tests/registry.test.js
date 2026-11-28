@@ -22,15 +22,18 @@ import "../src/js/ui/hver.js";
 import { TASKS, CATEGORIES, typeById, enabled, weightOf, makeView } from "../src/js/tasks/index.js";
 import { registryFaults } from "../src/js/tasks/registry.js";
 import { CATALOGUE, catalogueFaults, isRecall, graderOf } from "../src/js/core/catalogue.js";
+import { giveWords } from "./learner.js";
 
 const lex = buildLexicon(DATA);
 const allOn = {};
 SKILL_IDS.forEach((id) => { allOn[id] = true; });
 const POLICY = createPolicy(null, { skills: allOn, types: {}, levels: {}, attrs: {}, safeVocab: null });
 
-/** A new pupil with every skill's session difficulty at `band`. */
-function viewAt(band) {
-  const S = blankState();
+/** A new pupil with every skill's session difficulty at `band` — with words
+    in learning when the type `id` is built only for such a pupil
+    (tests/learner.js). */
+function viewAt(band, id = "") {
+  const S = giveWords(blankState(), id);
   const sess = newSession(S);
   Object.keys(sess.diff).forEach((k) => { sess.diff[k] = band; });
   return makeView({ S, sess, policy: POLICY, today: "2026-01-15" });
@@ -110,14 +113,16 @@ test("registryFaults: a declaration without a builder, a builder without a decla
   assert.match(registryFaults([ok], {}).join(" | "), /import that file's BUILDERS in tasks\/registry\.js/);
 });
 
-test("recall and grader are declared on every type: no recall and no server grading yet", () => {
+test("recall and grader are declared on every type: one recall type, no server grading yet", () => {
   for (const t of CATALOGUE) {
     assert.equal(typeof t.recall, "boolean", `${t.id}: recall`);
     assert.ok(["app", "server"].includes(t.grader), `${t.id}: grader`);
   }
-  /* #14 adds the first recall type and the first server-graded type comes
-     after #47; until then every type is the browser's and none is recall. */
-  assert.deepEqual(CATALOGUE.filter((t) => t.recall).map((t) => t.id), []);
+  /* #14 added the first recall type (tasks/recall.js); the first
+     server-graded type comes after #47, and until then every type is the
+     browser's. */
+  assert.deepEqual(CATALOGUE.filter((t) => t.recall).map((t) => t.id), ["or_eyda"]);
+  assert.equal(isRecall("or_eyda"), true);
   assert.deepEqual(CATALOGUE.filter((t) => t.grader !== "app").map((t) => t.id), []);
   assert.equal(isRecall("fill"), false);
   assert.equal(isRecall("ekki-til"), false);
@@ -145,7 +150,9 @@ test("the order of the catalogue is the order a seed means", () => {
     "fn_flokkar", "no_beyging", "so_beyging", "so_mynd", "so_bodhattur",
     "gerd_tegund", "setn_lidir", "lid_finna", "raeda",
     /* #28, #27, then #29 */
-    "ob_tengiord", "ob_skilja", "hver_gerdi", "sameina"];
+    "ob_tengiord", "ob_skilja", "hver_gerdi", "sameina",
+    /* #14 */
+    "or_eyda"];
   assert.deepEqual(CATALOGUE.map((t) => t.id).slice(0, PINNED.length), PINNED,
     "the catalogue was reordered: new types go at the end of core/catalogue.js");
   assert.deepEqual(TASKS.map((t) => t.id), CATALOGUE.map((t) => t.id));
@@ -180,7 +187,7 @@ const text = (t) => {
   return JSON.stringify(rest);
 };
 const buildAt = (spec, band, seed) => {
-  const b = spec.build(lex, viewAt(band), seeded(1000 + seed));
+  const b = spec.build(lex, viewAt(band, spec.id), seeded(1000 + seed));
   return b ? b.task : null;
 };
 const BUILT = new Map();          // id -> [band 1..7] -> [text per seed]

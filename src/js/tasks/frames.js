@@ -144,7 +144,7 @@ export function nounDescribedBy(lex, s, i) {
 /* A compound repeats the word it is made of: "Ferðin féll niður vegna
    gönguferðarinnar", "Krakkarnir fóru í ferðina án ferðamannanna". Only
    stems of four letters or more, so *ár* is not found in *árbók*. */
-const sharesStem = (a, b) => {
+export const sharesStem = (a, b) => {
   const [short, long] = a.length <= b.length ? [a, b] : [b, a];
   return short.length >= 4 && long.includes(short);
 };

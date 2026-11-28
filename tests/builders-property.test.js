@@ -8,7 +8,7 @@
    so the question can be rebuilt:
 
        TASKS-entry.build(lex, makeView({ S, sess }), seeded(seed))
-       with pupilAt(lex, band, seed) from tests/property.js.
+       with pupilAt(lex, band, seed, type) from tests/property.js.
 
    The properties:
      1  a builder is not starved: it builds a question at most bands, most seeds
@@ -36,6 +36,7 @@ import { TASKS, makeView, withView } from "../src/js/tasks/index.js";
 import { reviewTask } from "../src/js/tasks/review.js";
 import { rightResponse, wrongResponse } from "./helpers.js";
 import { seedsOf, pupilAt, forAll } from "./property.js";
+import { OWN_WORD_TYPES } from "./learner.js";
 
 const lex = buildLexicon(DATA);
 const SEEDS = seedsOf(30);
@@ -47,7 +48,7 @@ const attempts = [];   // { type, band, seed, built }
 for (const T of TASKS) {
   for (const band of T.bands) {
     for (const seed of SEEDS) {
-      const { S, sess } = pupilAt(lex, band, seed);
+      const { S, sess } = pupilAt(lex, band, seed, T.id);
       const view = makeView({ S, sess, today: TODAY });
       const before = JSON.stringify([S, sess]);
       const b = T.build(lex, view, seeded(seed));
@@ -84,7 +85,7 @@ test("building is pure: the state and the session are as they were, and a seed b
   /* same seed, same question (every fifth case: it is a rebuild each) */
   const sample = cases.filter((_, k) => k % 5 === 0);
   forAll(sample, (c) => {
-    const { S, sess } = pupilAt(lex, c.band, c.seed);
+    const { S, sess } = pupilAt(lex, c.band, c.seed, c.type);
     const again = c.T.build(lex, makeView({ S, sess, today: TODAY }), seeded(c.seed));
     const key = (t) => JSON.stringify(t, (k, v) => (k === "forms" ? undefined : v));
     if (!again) return "built the first time and not the second";
@@ -185,9 +186,17 @@ test("every typed answer the judge accepts is a BÍN form of the cell asked", ()
     CURRENT = c.type;
     if (["fill", "verb", "verbslot", "gap"].includes(t.type)) {
       if (!t.answers || !t.answers.length) return "no accepted answer";
-      for (const a of t.answers) {
+      /* Recall in a gap (tasks/recall.js) gives no instruction about number,
+         article or tense, so it also accepts the word's other forms that are
+         right in the sentence: its first answer is the form of the cell, the
+         rest are forms of the word (which cells, tests/recall.test.js holds). */
+      const open = OWN_WORD_TYPES.has(c.type);
+      for (const [k, a] of t.answers.entries()) {
         looked++;
-        if (!isFormOf(a, t.m, entries, t.paradigm)) return `"${a}" is not a form of ${t.m || "any word"} of ${t.word || "the item"}`;
+        if (open && k) {
+          if (!entries.some((w) => Object.values(w.forms).flat().some((f) => key(f) === key(a))))
+            return `"${a}" is not a form of ${t.word}`;
+        } else if (!isFormOf(a, t.m, entries, t.paradigm)) return `"${a}" is not a form of ${t.m || "any word"} of ${t.word || "the item"}`;
         if (!judge(t, { text: a }).ok) return `the judge does not accept its own answer "${a}"`;
       }
     } else if (t.type === "slots") {

@@ -391,12 +391,15 @@ export interface CatalogueEntry {
 export interface TaskType extends CatalogueEntry {
   build: (lex: Lexicon, view: View, rng: Rng) => Built | null;
   drill?: (lex: Lexicon, view: View, rng: Rng, entry: any) => Built | null;
+  /** False when nothing can be built for this pupil (tasks/registry.js). */
+  ready?: (view: View) => boolean;
 }
 
 /** What a category file exports for each of its types: `BUILDERS[id]`. */
 export interface Builder {
   build: TaskType["build"];
   drill?: TaskType["drill"];
+  ready?: TaskType["ready"];
 }
 
 /* ---------- judging (core/answer.js) ---------------------------------------- */

@@ -467,6 +467,21 @@ const LIST = [
     renderer: "umritun", weight: 6, recall: false, grader: "app",
     tags: [],
     bands: [1, 2, 3] },
+  /* #14: the first RECALL type (CONTEXT.md). One of the pupil's words in
+     learning, typed into a gap in a sentence — with its first letter until
+     the word has been recalled once, then without (tasks/recall.js). Built
+     only for a pupil who has such a word in a sentence that can be used, so
+     a duel, which is built against a blank pupil, never holds it. The band
+     chooses the sentence: none harder than the session's level if the word
+     has one. The tags are the marks of the forms asked for; a miss is filed
+     under no vocabulary pattern, because a wrong case is not a wrong word. */
+  { id: "or_eyda", skill: "ordaford",
+    nm: "Hvaða orð vantar?",
+    ds: "Eitt af orðunum þínum (Orðin mín) skrifað í eyðu í setningu — fyrst með fyrsta stafnum, síðan án hans",
+    renderer: "gap", weight: 6, recall: true, grader: "app",
+    tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun", "num",
+      "verb:agree", "verb:tense", "verb:vh"],
+    bands: [1, 2, 3, 4, 5, 6, 7] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when
