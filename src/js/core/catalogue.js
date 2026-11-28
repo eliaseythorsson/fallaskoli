@@ -640,6 +640,17 @@ const LIST = [
     renderer: "meaning", weight: 3, recall: false, grader: "server",
     tags: [],
     bands: [1] },
+  /* les_visun (issue #33): which word a pronoun points at, tapped in the
+     text — the answer from the referent mark of the file, the other options
+     from the build (pipeline/pronoun_options.py). From þyngd 2 of the TEXT
+     every option agrees with the pronoun, so meaning decides; the text's
+     þyngd, not the band, says which (tasks/lesskilningur.js `SAME_FROM`). */
+  { id: "les_visun", skill: "lesskilningur",
+    nm: "Til hvers vísar fornafnið?",
+    ds: "Smelltu á orðið sem fornafn eins og hann, hún eða þau vísar til í texta",
+    renderer: "tap", weight: 4, recall: false, grader: "app",
+    tags: ["visun"],
+    bands: [1] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when

@@ -258,6 +258,9 @@ export const NODES = [
   /* issue #31: MAIN's story map — the parts of a story, and a summary that follows them */
   { id: "les-sogukort", nm: "Sögukort: hlutar sögu", cat: "lesskilningur", year: 8,
     hv: "lesskilningur", types: ["les_hluti", "les_kort", "les_samantekt", "les_saga_eigin"], lesson: "lesskilningur", cover: "full" },
+  /* issue #33: what a pronoun points at, across sentences */
+  { id: "les-visun", nm: "Til hvers vísar fornafnið?", cat: "lesskilningur", year: 8,
+    hv: "lesskilningur", types: ["les_visun"], lesson: "lesskilningur", cover: "full" },
 
   /* ---- Frásögn (issue #35, docs/DLD-PLAN.md §5) ---- */
   /* Year 8, so in every preset. Under Sköpunarkraftur: the criterion that

@@ -620,7 +620,13 @@ is the text's id). No TABs and no columns — it reads as the text does:
 - **A pronoun's referent in braces, straight after the pronoun:** `Hún{Sara}`,
   `hans{hund}`, `Þau{Jón og Sara}`. What stands in the braces is the word as
   it stands earlier in the text, or another form of the same noun
-  (`Hún{kona}` finds *konan*). The pupil never sees the braces.
+  (`Hún{kona}` finds *konan*). The pupil never sees the braces. The marks
+  are the answers of *Til hvers vísar fornafnið?* (`les_visun`, issue #33);
+  the build finds the other options itself (`pipeline/pronoun_options.py`):
+  at þyngd 1 nouns of another gender or number, from þyngd 2 the story's
+  other characters of the same gender and number, so that only the meaning
+  tells them apart. A pronoun with nothing to choose between is not asked,
+  so a story needs two characters of one gender for the harder question.
 - **A question** is a line `? [mark] Question? | right | wrong | wrong`: the
   right answer first (the app shuffles them), then two or three wrong ones.
   The mark says what is asked for: `[aðalatriði]`, what the whole text is

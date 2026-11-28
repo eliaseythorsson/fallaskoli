@@ -1348,6 +1348,16 @@ export const LESSONS = [
       { p: "*Lína var úti að leika sér* segir hver og hvar: **aðstæður**. *Allt í einu byrjaði að rigna* er **vandinn**. *Hún hljóp inn í húsið* er **tilraunin**, það sem hún gerði. *Hún slapp við að blotna* er **útkoman**." },
       { p: "Lengri saga getur haft tvo eða þrjá **þætti**. Í hverjum þætti kemur upp nýr vandi, persónan reynir eitthvað og það fer einhvern veginn." },
       { tip: "Góð samantekt sögu segir frá vandanum, tilrauninni og útkomunni, í sömu röð og í sögunni." },
+      /* issue #33: pronoun reference */
+      { h: "Til hvers vísar fornafnið?" },
+      { p: "Í sögu er ekki alltaf sagt *Kári, Kári, Kári*. Í staðinn kemur fornafn: *hann*, *hún*, *það*, *þeir*, *þær* eða *þau*. Til að skilja söguna þarftu að vita til hvers fornafnið vísar." },
+      { p: "Fornafnið er í **sama kyni og tölu** og orðið sem það vísar til. *Sara missti af strætó. Hún hljóp í skólann.* Hér getur *hún* bara vísað til *Söru*, því að *strætó* er karlkyn." },
+      { p: "Stundum passa fleiri en eitt orð. Þá ræður **merkingin**." },
+      { ex: [
+        "Kári og Jón fóru í sund. Kári gleymdi handklæðinu, svo að Jón lánaði honum sitt.",
+      ] },
+      { p: "Bæði *Kári* og *Jón* eru karlkyn, eins og *honum*. En Jón lánar ekki sjálfum sér. Það er Kári sem gleymdi handklæðinu, svo að *honum* vísar til **Kára**." },
+      { tip: "Lestu setninguna aftur og settu nafnið í stað fornafnsins. Passar það við það sem gerist í sögunni?" },
     ],
     check: [
       { q: "Hvað er aðalatriði texta?", a: "Það sem allur textinn fjallar um." },
@@ -1357,6 +1367,8 @@ export const LESSONS = [
       { q: "Hvað segir aðalatriði sögu?", a: "Hver lenti í hvaða vanda og hvernig fór." },
       { q: "Hverjir eru sex hlutar sögukortsins?", a: "Aðstæður, vandi, markmið, tilraun, útkoma og viðbrögð." },
       { q: "Hvað er markmið í sögu?", a: "Það sem persónan vill eða ætlar sér." },
+      { q: "Í hvaða kyni og tölu er fornafn?", a: "Í sama kyni og tölu og orðið sem það vísar til." },
+      { q: "Hvað gerir þú ef tvö orð passa við fornafnið?", a: "Þú lest aftur og hugsar um merkinguna: hver gerir hvað." },
     ],
     related: ["ordafordi", "obeygjanleg"],
   },
