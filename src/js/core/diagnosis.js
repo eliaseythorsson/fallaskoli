@@ -180,7 +180,7 @@ export const PATTERNS = [
   /* issue #30: the main idea of a short text */
   { id: "adalatridi", ok: "aðalatriði texta", nm: "Aðalatriði texta",
     rule: "**Aðalatriðið** er það sem **allur** textinn fjallar um. Smáatriði stendur bara í einni setningu. Spyrðu: um hvað eru flestar setningarnar?",
-    lesson: "lesskilningur", tags: ["les"], types: ["les_adal"] },
+    lesson: "lesskilningur", tags: ["les"], types: ["les_adal", "les_setning", "les_smaatridi", "les_kjarni"] },
   /* issue #31: the parts of a story (core/storymap.js) */
   { id: "sogukort", ok: "sögukortið", nm: "Sögukortið",
     rule: "Saga hefur sex hluti: **aðstæður** (hver, hvar, hvenær), **vanda** sem kemur sögunni af stað, **markmið** (hvað persónan vill), **tilraun** (hvað hún gerir), **útkomu** (hvernig fer) og **viðbrögð** (hvernig henni líður). Spyrðu um hverja setningu: hvaða spurningu svarar hún?",

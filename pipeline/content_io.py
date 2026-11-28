@@ -208,8 +208,9 @@ def groups(rel, key_col, columns):
 #                  Two or three joined by "og" for a plural: "Þau{Jón og Sara}".
 #   a question     "? [mark] Question? | right | wrong | wrong" — the right
 #                  answer FIRST (the app shuffles), then two or three wrong.
-#                  The mark says what the question asks for; today that is
-#                  only aðalatriði (the main idea of the whole text).
+#                  The mark says what the question asks for: aðalatriði
+#                  (the main idea of the whole text), or one of the two
+#                  block questions below (samantekt, kjarni).
 #   an explanation "! …" on the line after a question: what the pupil reads
 #                  once the answer is in.
 #   a question     (issue #31) the same, with its answers on the lines below
@@ -222,6 +223,14 @@ def groups(rel, key_col, columns):
 #                  A summary question (samantekt) is always a block, in a
 #                  story, and each wrong summary names what it breaks: a part
 #                  the story has, or röð (the order of events is changed).
+#                  A gist question (kjarni, issue #32) is a block too, in a
+#                  subject text: the best one-sentence summary, then exactly
+#                  three wrong ones, one of each kind (GIST_KINDS):
+#                      ? [kjarni] Hvaða setning segir best …?
+#                      + the right summary
+#                      - [þröngt] one detail, not the whole text
+#                      - [vítt] so general it fits any text
+#                      - [rangt] contradicts the text or invents
 #   an episode     (issue #31) "= 1. þáttur", "= 2. þáttur": a longer story
 #                  has two or three episodes, each with its own vandi,
 #                  tilraun and útkoma. The line stands before the episode's
@@ -266,7 +275,7 @@ STORY_PARTS = ("aðstæður", "vandi", "markmið", "tilraun", "útkoma", "viðbr
 STORY_MARKS = dict([(p, p) for p in STORY_PARTS] + [("kveikja", "vandi"), ("tilfinning", "viðbrögð")])
 IDEA_MARKS = {"aðalatriði": "aðalatriði", "smáatriði": "smáatriði"}
 OTHER_MARK = "annað"
-QUESTION_MARKS = ("aðalatriði", "samantekt")
+QUESTION_MARKS = ("aðalatriði", "samantekt", "kjarni")
 # What a wrong summary may say it breaks: a part of the story map, or the
 # order of events.
 ORDER_MARK = "röð"
@@ -275,6 +284,12 @@ ORDER_MARK = "röð"
 EPISODES_FROM = 3
 EPISODES_MAX = 3
 EPISODE_NEEDS = ("vandi", "tilraun", "útkoma")
+
+# What a wrong gist (kjarni, issue #32) is wrong by — one of each, so that the
+# app can say why (Brown & Day 1983, docs/DLD-RESEARCH.md §C).
+GIST_KINDS = ("þröngt",   # too narrow: one detail, not the whole text
+              "vítt",     # too broad: true of many texts, says nothing of this one
+              "rangt")    # contradicts the text, or says what it does not
 
 # What a þyngd asks of a text: how long it is, and which parts it must have.
 #   TEXT_LENGTH   þyngd -> (unit, fewest, most)
@@ -507,6 +522,9 @@ def read_text(path, rel, lookup=None, lino=None):
             if not q.endswith("?"):
                 bad("spurningin á að enda á spurningarmerki / the question ends in ?")
             block = not options
+            if mark == "kjarni" and not block:
+                bad("kjarni er skrifaður með svörin í línunum fyrir neðan (+ rétt, - [þröngt/vítt/rangt] rangt) / "
+                    "a gist question has its answers on the lines below")
             if mark == "samantekt" and not block:
                 bad("samantekt er skrifuð með svörin í línunum fyrir neðan (+ rétt, - [brot] rangt) / "
                     "a summary question has its answers on the lines below")
@@ -539,8 +557,15 @@ def read_text(path, rel, lookup=None, lino=None):
                             % (brot, ", ".join(STORY_MARKS), ORDER_MARK))
                     q["br"].append((STORY_MARKS.get(brot, brot), no))
                     body = bm.group(2).strip()
+                elif q["mark"] == "kjarni":
+                    if not bm or bm.group(1).strip() not in GIST_KINDS:
+                        bad("röng samantekt í [kjarni] segir fremst hvernig hún er röng: - [þröngt] …, - [vítt] …, "
+                            "- [rangt] … / a wrong gist names its kind")
+                    q["br"].append((bm.group(1).strip(), no))
+                    body = bm.group(2).strip()
                 elif bm:
-                    bad("merki á röngu svari er bara notað í samantekt / only a wrong summary carries a mark")
+                    bad("merki á röngu svari er bara notað í samantekt og kjarna / "
+                        "only a wrong summary or gist carries a mark")
                 q["w"].append(body)
             if not body:
                 bad("tómt svar / an empty answer")
@@ -689,6 +714,12 @@ def read_text(path, rel, lookup=None, lino=None):
                 if brot != ORDER_MARK and brot not in have:
                     stop(no, "röng samantekt brýtur [%s], en sagan hefur engan þann hluta / "
                              "the wrong summary breaks a part the story does not have" % brot)
+        if q["mark"] == "kjarni":
+            if kind != "fræðitexti":
+                stop(q["line"], "kjarni er bara spurður um fræðitexta / a gist question is for a subject text")
+            if sorted(b for b, _no in q["br"]) != sorted(GIST_KINDS):
+                stop(q["line"], "[kjarni]: eitt rangt svar af hverri tegund, [þröngt], [vítt] og [rangt] / "
+                                "a gist question has one wrong answer of each kind")
         q["br"] = [b for b, _no in q["br"]]
         del q["block"], q["last"]
 
@@ -718,7 +749,9 @@ def texts(lookup=None, folder=None):
                     without episodes (and in a subject text) (#31)
       spurningar  [{line, mark, q, a (the right answer), w (the wrong ones), why,
                     br (a summary question: what each wrong one breaks — a
-                    story-map part or "röð", in the order of w; else [])}]
+                    story-map part or "röð", in the order of w; a gist
+                    question (kjarni): the kind of each, þröngt / vítt /
+                    rangt; else [])}]
 
     `lookup` is BÍN (see the head of this section); `texts.bin_checked` says
     afterwards whether the two BÍN checks ran."""

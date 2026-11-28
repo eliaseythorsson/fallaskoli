@@ -71,8 +71,10 @@ test("Frásögn is a skill of every year, with its node, pattern, lesson and exa
   for (const id of TYPES) assert.ok(EXAMPLES[id], `${id}: a worked example`);
 });
 
-test("the three types are the last of the catalogue, graded by the app", () => {
-  assert.deepEqual(CATALOGUE_IDS.slice(-3), TYPES);
+test("the three types are declared in merge order at the end of the catalogue, graded by the app", () => {
+  /* right after #38's or_tengsl; #32's subject-text types came after them */
+  const at = CATALOGUE_IDS.indexOf("or_tengsl") + 1;
+  assert.deepEqual(CATALOGUE_IDS.slice(at, at + 3), TYPES);
   for (const id of TYPES) {
     const c = catalogueEntry(id);
     assert.deepEqual([c.skill, c.grader, c.recall, c.tags, c.bands], ["frasogn", "app", false, ["fras"], [1]], id);

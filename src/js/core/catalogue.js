@@ -585,6 +585,29 @@ const LIST = [
     renderer: "choice", weight: 4, recall: false, grader: "app",
     tags: ["fras"],
     bands: [1] },
+  /* les_setning, les_smaatridi, les_kjarni (issue #32): subject texts —
+     the main-idea sentence, the details that support it, the best gist of
+     four (tasks/lesskilningur.js). Few texts yet, so the band is not
+     followed. les_adal asks what a text is about in a question written for
+     it; les_setning asks which SENTENCE says it, from the marks. */
+  { id: "les_setning", skill: "lesskilningur",
+    nm: "Hvar er aðalatriðið?",
+    ds: "Smelltu á setninguna sem segir aðalatriði fræðitexta",
+    renderer: "tap", weight: 4, recall: false, grader: "app",
+    tags: ["les"],
+    bands: [1] },
+  { id: "les_smaatridi", skill: "lesskilningur",
+    nm: "Hvað styður aðalatriðið?",
+    ds: "Smelltu á smáatriðin sem styðja aðalatriði fræðitexta",
+    renderer: "tap", weight: 4, recall: false, grader: "app",
+    tags: ["les"],
+    bands: [1] },
+  { id: "les_kjarni", skill: "lesskilningur",
+    nm: "Besta samantektin",
+    ds: "Veldu þá setningu af fjórum sem segir best í stuttu máli hvað stendur í textanum",
+    renderer: "choice", weight: 4, recall: false, grader: "app",
+    tags: ["les"],
+    bands: [1] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when

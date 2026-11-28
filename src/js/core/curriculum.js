@@ -248,9 +248,12 @@ export const NODES = [
 
   /* ---- Lesskilningur (issue #30, docs/DLD-PLAN.md §4) ---- */
   /* Year 8, so in the presets of all three years: reading a short text for
-     what it is mainly about is not tied to a year. */
+     what it is mainly about is not tied to a year. #32 adds the subject-text
+     types (main-idea sentence, details, gist) to the same node: they test
+     the same error pattern, and a pattern sits on one node. */
   { id: "les-adalatridi", nm: "Aðalatriði texta", cat: "lesskilningur", year: 8,
-    hv: "lesskilningur", types: ["les_adal"], lesson: "lesskilningur", cover: "full" },
+    hv: "lesskilningur", types: ["les_adal", "les_setning", "les_smaatridi", "les_kjarni"],
+    lesson: "lesskilningur", cover: "full" },
   /* issue #31: MAIN's story map — the parts of a story, and a summary that follows them */
   { id: "les-sogukort", nm: "Sögukort: hlutar sögu", cat: "lesskilningur", year: 8,
     hv: "lesskilningur", types: ["les_hluti", "les_kort", "les_samantekt"], lesson: "lesskilningur", cover: "full" },

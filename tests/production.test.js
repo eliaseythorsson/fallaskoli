@@ -268,7 +268,9 @@ test("v6.10: an agreement error may be mended at either end, when one word does 
 test("the production questions come out of nextTask, intact, and under their own skill", () => {
   const ctx = ctxWith();
   const seen = {};
-  for (let i = 0; i < 2500; i++) {
+  /* 5000 draws, not 2500: every new type takes a little of the mix, and by
+     #32 villur was about 41 in 2500 (124 in 7500) — on the old bound of 40. */
+  for (let i = 0; i < 5000; i++) {
     const t = ask(ctx);
     seen[t.typeId] = (seen[t.typeId] || 0) + 1;
     if (["villur", "smidja", "umritun"].includes(t.typeId)) {
@@ -276,7 +278,7 @@ test("the production questions come out of nextTask, intact, and under their own
       assert.ok(t.base > 0 && t.lvl >= 1);
     }
   }
-  for (const id of ["villur", "smidja", "umritun"]) assert.ok(seen[id] > 40, `${id}: ${seen[id]}`);
+  for (const id of ["villur", "smidja", "umritun"]) assert.ok(seen[id] > 60, `${id}: ${seen[id]}`);
   /* "More production, less recognition": the three together beat the
      analysis question. */
   assert.ok(seen.villur + seen.smidja + seen.umritun > seen.parse, JSON.stringify(seen));
