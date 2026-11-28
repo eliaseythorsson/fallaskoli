@@ -396,7 +396,7 @@ test("it comes up in ordinary practice for a pupil with words, and never for one
     }
     return n;
   };
-  assert.ok(count(pupil()) >= 3);
+  assert.ok(count(pupil()) >= 6);
   const blank = pupil([]);
   assert.equal(count(blank), 0);
 });
