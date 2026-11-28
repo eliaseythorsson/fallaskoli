@@ -52,6 +52,10 @@ export const CRITERIA = [
   { id: "ordtok",     flokkur: "Mál og málnotkun", nm: "Orðtök og málshættir", scope: "part" },
   { id: "gogn",       flokkur: "Mál og málnotkun", nm: "Gögn og hjálpartæki", scope: "outside" },
   { id: "stafsetning", flokkur: "Ritun", nm: "Stafsetning og greinarmerkjasetning", scope: "part" },
+  /* Issue #30: the texts of Lesskilningur. The heading and the section are
+     the aðalnámskrá's; the wording was read in a school's plan, not on the
+     official page (docs/CURRICULUM.md says so beside it). */
+  { id: "lesskilningur", flokkur: "Lestur og bókmenntir", nm: "Lesskilningur", scope: "part" },
 ];
 
 export const YEARS = [8, 9, 10];
@@ -240,6 +244,12 @@ export const NODES = [
     types: ["clause", "gerd_finna", "gerd_upphaf"], lesson: "setningagerdir", cover: "full" },
   { id: "gerd-tegundir", nm: "Tegundir aukasetninga", cat: "setningagerd", year: 10,
     hv: "einkenni", types: ["gerd_tegund"], lesson: "aukasetningar", cover: "full" },
+
+  /* ---- Lesskilningur (issue #30, docs/DLD-PLAN.md §4) ---- */
+  /* Year 8, so in the presets of all three years: reading a short text for
+     what it is mainly about is not tied to a year. */
+  { id: "les-adalatridi", nm: "Aðalatriði texta", cat: "lesskilningur", year: 8,
+    hv: "lesskilningur", types: ["les_adal"], lesson: "lesskilningur", cover: "full" },
 
   /* ---- Stafsetning og greinarmerki: a criterion with no category yet ---- */
   { id: "st-n-nn", nm: "n eða nn", cat: "stafsetning", year: 8, hv: "stafsetning",

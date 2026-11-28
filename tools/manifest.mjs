@@ -70,7 +70,8 @@ function contentFiles() {
     for (const e of readdirSync(p(rel), { withFileTypes: true })) {
       const r = rel + "/" + e.name;
       if (e.isDirectory()) walk(r);
-      else if (e.name.endsWith(".tsv")) out.push(r);
+      /* .txt: the texts of content/textar/ (issue #30), one file per text */
+      else if (e.name.endsWith(".tsv") || (rel === "content/textar" && e.name.endsWith(".txt"))) out.push(r);
     }
   };
   if (existsSync(p("content"))) walk("content");

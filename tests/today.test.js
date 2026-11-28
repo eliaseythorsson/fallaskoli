@@ -15,11 +15,16 @@ import { SKILL_IDS } from "../src/js/core/skills.js";
 import { createPolicy, narrowPolicy, presetPolicy } from "../src/js/core/policy.js";
 import { keyFor, addDays, dueEntries } from "../src/js/core/review.js";
 import { activePatterns, focusTypes, huntPreferFor, pickTargeted, targets } from "../src/js/core/diagnosis.js";
-import { planToday, shares, freshSkills, todayLine, TODAY_SIZE, CORE, NEW_PUPIL, FRESH_PER, freshSpread } from "../src/js/core/today.js";
+import { planToday as planWithNewSkills, shares, freshSkills, todayLine, TODAY_SIZE, CORE, NEW_PUPIL, FRESH_PER, freshSpread,
+  NEW_SKILLS, NEW_SKILLS_SHARE } from "../src/js/core/today.js";
 import { typeById, enabled, nextTask, makeView, withView, nextOpening } from "../src/js/tasks/index.js";
 import { seeded } from "../src/js/core/duel.js";
 
 const D0 = "2026-11-16";
+/* The tests here are about the base rule (reviews, patterns, new material),
+   so they plan without the new skills' share; tests/namsord.test.js holds the
+   share, and the tests at the end hold Lesskilningur in it (issue #30). */
+const planToday = (S, P, now, o = {}) => planWithNewSkills(S, P, now, { newSkills: [], ...o });
 const allOn = {};
 SKILL_IDS.forEach((id) => { allOn[id] = true; });
 const POLICY = createPolicy(null, { skills: allOn, types: {}, levels: {}, attrs: {}, safeVocab: null });
@@ -273,4 +278,27 @@ test("S6: three new questions are three skills, one each, as before", () => {
   assert.equal(plan.counts.fresh, 3);
   assert.equal(new Set(newOf(plan)).size, 3);
   assert.deepEqual([freshSpread(0), freshSpread(3), freshSpread(5), freshSpread(8), freshSpread(10)], [3, 3, 3, 4, 5]);
+});
+
+/* ---------- issue #30: Lesskilningur takes part in the new skills' share ---------- */
+
+test("#30: Lesskilningur is one of the new skills, and has its part of the share", () => {
+  assert.ok(NEW_SKILLS.includes("lesskilningur"));
+  const P8 = createPolicy(null, presetPolicy(8));
+  for (const S of [pupil(), pupil({ due: 3, active: ["thf_thgf"] }), pupil({ due: 8 })]) {
+    const plan = planWithNewSkills(S, P8, D0, { canType: canType(P8) });
+    assert.equal(plan.n, TODAY_SIZE);
+    assert.equal(plan.counts.newSkill, Math.round(TODAY_SIZE * NEW_SKILLS_SHARE));
+    const got = newOf(plan);
+    assert.ok(got.includes("lesskilningur"), got.join(","));
+    assert.equal(got.filter((id) => NEW_SKILLS.includes(id)).length, plan.counts.newSkill, got.join(","));
+  }
+});
+
+test("#30: with Lesskilningur switched off, or its type, it takes no share", () => {
+  const P8 = createPolicy(null, presetPolicy(8));
+  const off = narrowPolicy(P8, { skills: SKILL_IDS.filter((id) => id !== "lesskilningur") });
+  assert.ok(!newOf(planWithNewSkills(pupil(), off, D0, { canType: canType(off) })).includes("lesskilningur"));
+  const noType = planWithNewSkills(pupil(), P8, D0, { canType: (id) => id !== "les_adal" && canType(P8)(id) });
+  assert.ok(!newOf(noType).includes("lesskilningur"));
 });

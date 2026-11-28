@@ -110,7 +110,7 @@ export const NEW_PUPIL = 100;
 
 /** The skills docs/DLD-PLAN.md adds, which share one part of the session
     (see the head of this file). A new such skill is one more id here. */
-export const NEW_SKILLS = ["namsord"];
+export const NEW_SKILLS = ["namsord", "lesskilningur"];
 /** The part of the session the new skills share: about 3 of 10. */
 export const NEW_SKILLS_SHARE = 0.3;
 

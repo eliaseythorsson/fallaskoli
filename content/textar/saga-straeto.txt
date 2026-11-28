@@ -1,0 +1,17 @@
+# Sara missir af strætó — stutt saga (þrjár setningar).
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er,
+#   Hún{Sara} segir til hvers fornafnið vísar,
+#   ? er spurning (rétta svarið fremst) og ! skýringin sem nemandinn les á eftir.
+#
+# þyngd: 1
+# tegund: saga
+# orð:
+
+[vandi] Sara vaknaði of seint og missti af strætó.
+[tilraun] Hún{Sara} hljóp alla leið í skólann.
+[útkoma] Hún{Sara} kom samt of seint í fyrsta tímann.
+
+? [aðalatriði] Um hvað er sagan? | Sara missir af strætó og kemur of seint í skólann. | Sara er fljót að hlaupa. | Strætó kemur alltaf of seint.
+! Sagan segir frá vanda Söru: hún missti af strætó. Hún hljóp í skólann en kom samt of seint. Hin svörin standa ekki í sögunni.

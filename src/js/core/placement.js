@@ -15,8 +15,10 @@
    Twelve to fifteen questions, one skill after another (`placementPlan`):
    every skill once, in the order a pupil knows them, and then the three
    inflection skills — nouns, verbs, adjectives — a second time. With the ten
-   categories of year 8 that is thirteen questions; with the two that year 10
-   adds, fifteen.
+   categories of year 8 that can be placed that is thirteen questions; with
+   the two that year 10 adds, fifteen. A skill whose questions do not follow
+   the level yet (Lesskilningur with its first few texts, issue #30) has
+   nothing to place and is not asked (`placementTypes`).
 
    ONE level runs through the whole round, not one per skill: with one or two
    questions in a skill there is nothing a staircase of its own could settle
@@ -117,9 +119,14 @@ export const PLACEMENT_SKIP = new Set(["table", "villur", "meaning"]);
 /**
  * The question types the round may ask, per skill: { skill: [typeId …] }.
  * A type that serves several skills (`anyOf`) is left out — its questions
- * would be counted for a skill that was not the one asked.
+ * would be counted for a skill that was not the one asked. So is a whole
+ * skill none of whose types follows the level (`bands: [1]` on every one,
+ * core/catalogue.js): an answer there says nothing about where to begin, and
+ * the skill has one level to begin at anyway. It starts like any skill that
+ * could not be asked, and joins the round by itself the day one of its types
+ * declares a second band.
  *
- * @param {object[]} types  tasks/registry.js TASKS: { id, skill, renderer, anyOf? }
+ * @param {object[]} types  tasks/registry.js TASKS: { id, skill, renderer, bands?, anyOf? }
  * @param {object} P        the effective policy (core/policy.js createPolicy)
  */
 export function placementTypes(types, P) {
@@ -129,6 +136,8 @@ export function placementTypes(types, P) {
     if (!P.skill(t.skill) || !P.type(t.id)) continue;
     (out[t.skill] ||= []).push(t.id);
   }
+  const flat = (id) => { const t = (types || []).find((x) => x.id === id); return !!t && Array.isArray(t.bands) && t.bands.length === 1; };
+  for (const skill of Object.keys(out)) if (out[skill].every(flat)) delete out[skill];
   return out;
 }
 

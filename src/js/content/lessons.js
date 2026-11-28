@@ -1309,4 +1309,33 @@ export const LESSONS = [
     ],
     related: ["hattur", "malbeiting", "aukasetningar"],
   },
+  /* ------------------------------------------- (issue #30, Lesskilningur) */
+  {
+    id: "lesskilningur",
+    skill: "lesskilningur",
+    nm: "Að finna aðalatriðið í texta",
+    lead: "Þegar þú lest texta þarftu ekki að muna hvert orð. Þú þarft að vita um hvað textinn er. Það kallast aðalatriði textans.",
+    blocks: [
+      { h: "Aðalatriði og smáatriði" },
+      { p: "**Aðalatriðið** er það sem allur textinn fjallar um. **Smáatriði** segja meira um aðalatriðið: þau útskýra það eða gefa dæmi." },
+      { ex: [
+        "Hvalir eru spendýr en ekki fiskar. Þeir anda með lungum og þurfa að koma upp á yfirborðið til að anda. Þeir fæða lifandi afkvæmi og gefa þeim mjólk.",
+      ] },
+      { p: "Hér er aðalatriðið að **hvalir eru spendýr**. Hinar setningarnar eru smáatriði. Þær segja hvernig hvalir anda og hvernig þeir ala upp afkvæmi sín, og það sýnir að þeir eru spendýr." },
+      { tip: "Spyrðu þig: Um hvað eru **flestar** setningarnar? Ef svarið á bara við eina setningu er það smáatriði." },
+      { h: "Aðalatriði í sögu" },
+      { p: "Í sögu gerist eitthvað. Aðalatriðið segir í stuttu máli **hver** lenti í **hvaða vanda** og **hvernig fór**." },
+      { ex: [
+        "Kári gleymdi nestinu sínu heima. Vinur hans gaf honum helminginn af samlokunni sinni.",
+      ] },
+      { p: "Aðalatriðið er: *Kári gleymir nestinu en vinur hans hjálpar honum.* Að vinurinn átti samloku er smáatriði. Það segir bara frá einu af því sem kemur fyrir í sögunni." },
+      { warn: "Svar getur verið satt og samt ekki aðalatriðið. Það getur líka hljómað vel en staðið hvergi í textanum. Lestu textann aftur og gáðu." },
+    ],
+    check: [
+      { q: "Hvað er aðalatriði texta?", a: "Það sem allur textinn fjallar um." },
+      { q: "Hvað gera smáatriðin?", a: "Þau segja meira um aðalatriðið: útskýra það eða gefa dæmi." },
+      { q: "Hvað segir aðalatriði sögu?", a: "Hver lenti í hvaða vanda og hvernig fór." },
+    ],
+    related: ["ordafordi", "obeygjanleg"],
+  },
 ];

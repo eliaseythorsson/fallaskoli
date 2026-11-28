@@ -42,9 +42,12 @@ const lex = buildLexicon(DATA);
 const T0 = 1_800_000_000_000;
 const year = (y) => createPolicy(null, presetPolicy(y));
 /* The categories of a year the round can ask: not one with no question type
-   yet (Námsorð before its first, #19). The app hands the round the keys of
-   `placementTypes`, which leaves such a skill out by itself. */
-const askable = (y) => presetContent(y).skills.filter(skillHasTypes);
+   yet (Námsorð before its first, #19), and not one none of whose types follows
+   the level, which has nothing to place (Lesskilningur with its first three
+   texts, #30). The app hands the round the keys of `placementTypes`, which
+   leaves both out by itself. */
+const FLAT = SKILL_IDS.filter((s) => skillHasTypes(s) && TASKS.filter((t) => t.skill === s).every((t) => t.bands.length === 1));
+const askable = (y) => presetContent(y).skills.filter((s) => skillHasTypes(s) && !FLAT.includes(s));
 const YEAR8 = askable(8), YEAR10 = askable(10);
 
 /** Answer a round with the outcomes in `seq` ("1"/"0"); the rest right. */
@@ -108,6 +111,13 @@ test("the round asks only what the policy allows", () => {
   assert.ok(!("setningafraedi" in types8) && !("setningagerd" in types8));
   const allowed = new Set(presetContent(8).types);
   for (const id of Object.values(types8).flat()) assert.ok(allowed.has(id), id + " is not year-8 material");
+  /* Issue #30: Lesskilningur is on in year 8, and the round does not ask it —
+     its one type builds the same questions at every þyngd, so an answer
+     places nothing. It is asked by itself once a type of it has bands. */
+  assert.deepEqual(FLAT, ["lesskilningur"]);
+  assert.ok(presetContent(8).skills.includes("lesskilningur") && !("lesskilningur" in types8));
+  const banded = TASKS.map((t) => (t.id === "les_adal" ? { ...t, bands: [1, 3] } : t));
+  assert.deepEqual(placementTypes(banded, year(8)).lesskilningur, ["les_adal"]);
   /* A ceiling that allows one category: one category is asked. */
   const cap = { skills: Object.fromEntries(SKILL_IDS.map((id) => [id, id === "nafnord"])), types: {}, levels: {} };
   assert.deepEqual(Object.keys(placementTypes(TASKS, createPolicy(cap, presetPolicy(8)))), ["nafnord"]);
