@@ -546,6 +546,20 @@ function submitTap(app) {
   /* `what`: the heading over the right words, where the name of the class
      does not take the article *-in* (item 28: *forsetningarliðurinn*). */
   const what = t.what || (t.whole ? `${t.cls}in` : `${t.cls}${t.targets.length > 1 ? "" : ""}`);
+  /* `readtext` (#32): each token is a sentence — listed one to a line. */
+  const sents = (js) => `<ul class="exlist">${js.map((j) => `<li>${esc(t.s.tok[j].w)}</li>`).join("")}</ul>`;
+  if (t.readtext) {
+    conclude(app, t, jd, () => {
+      $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
+    <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
+    <p><b>${esc(what)}:</b></p>${sents(t.targets)}
+    ${missed.length ? `<p>Þú misstir af:</p>${sents(missed)}` : ""}
+    ${extra.length ? `<p>Ekki ${esc(t.cls)}:</p>${sents(extra)}` : ""}
+    ${whyBox(t.why)}
+    <p class="streakline">Enter fyrir næstu.</p></div>`;
+    });
+    return;
+  }
   conclude(app, t, jd, () => {
     $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
