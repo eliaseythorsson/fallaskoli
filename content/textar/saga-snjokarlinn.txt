@@ -10,17 +10,30 @@
 #   ? [samantekt] er spurning með svörin í línunum fyrir neðan:
 #   + er rétta samantektin, - [hluti] röng samantekt og hlutinn sem hún brýtur
 #   ([röð]: atburðirnir í rangri röð), ! er skýringin sem nemandinn les á eftir.
+#   _orð_ í setningu er eyða (mál #36): nemandinn velur orðið sem passar.
+#   ~ [tengiorð] eða ~ [hugarástand] í línunni fyrir neðan segir hvers konar
+#   eyða það er og hvers vegna rétta orðið passar; hver ~ lína þar á eftir er
+#   rangur kostur og ástæðan fyrir því að hann passar ekki (rangt | af hverju ekki).
 #
 # þyngd: 2
 # tegund: saga
 # orð:
 
 [aðstæður] Um helgina var mikill snjór í garðinum hjá Kötlu.
-[markmið] Katla vildi búa til stærsta snjókarlinn í götunni.
-[vandi] En snjórinn var of þurr og hélst ekki saman.
+[markmið] Katla _vildi_ búa til stærsta snjókarlinn í götunni.
+~ [hugarástand] *Vildi* segir hvert markmið Kötlu var. Seinna í sögunni sækir hún vatn og bleytir snjóinn til að geta búið snjókarlinn til.
+~ vildi ekki | Katla sótti vatn og bleytti snjóinn til að snjórinn héldist saman. Það gerir enginn sem vill ekki búa til snjókarl.
+~ nennti ekki að | Katla sótti vatn og bleytti snjóinn til að snjórinn héldist saman. Sá sem nennir ekki að búa til snjókarl leggur ekki svona mikið á sig.
+[vandi] _En_ snjórinn var of þurr og hélst ekki saman.
+~ [tengiorð] *En* tengir andstæður: Katla vildi búa til snjókarl, en snjórinn hélst ekki saman.
+~ Þess vegna | Á eftir *þess vegna* kemur sögnin strax (*þess vegna var snjórinn*). Hér kemur *snjórinn* á undan sögninni.
+~ Af því að | *Af því að* segir hvers vegna. En þurri snjórinn var ekki ástæðan fyrir því að Katla vildi búa til snjókarl: hann var vandinn.
 [tilraun] Hún{Katla} sótti vatn í fötu og bleytti snjóinn.
 [útkoma] Þá hélst snjórinn saman og snjókarlinn varð næstum jafn hár og hún{Katla}.
-[viðbrögð] Katla var mjög stolt og tók mynd af snjókarlinum.
+[viðbrögð] Katla var mjög _stolt_ og tók mynd af snjókarlinum.
+~ [hugarástand] *Stolt* passar: snjókarlinn varð næstum jafn hár og Katla, og hún hafði búið hann til sjálf.
+~ hrædd | Ekkert í sögunni gerir Kötlu hrædda. Snjókarlinn tókst vel.
+~ reið | Snjókarlinn tókst vel, svo að Katla hafði enga ástæðu til að vera reið.
 
 ? [samantekt] Hvaða samantekt passar við söguna?
 + Snjórinn var of þurr, en Katla bleytti hann með vatni og bjó til stóran snjókarl.
