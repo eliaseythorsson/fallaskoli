@@ -210,7 +210,11 @@ export interface WordCardAnswer { c: string[]; ok: boolean; t?: string }
 /** A finished word card: the day, how many times it was done, the
     self-rating (0 aldrei heyrt · 1 heyrt það · 2 get notað það), and the
     answers by step id (core/wordcard.js). */
-export interface WordCardRecord { d: DayKey; n: number; r: number; a: Record<string, WordCardAnswer> }
+/** What the pupil added when the card came back in a review (#18): a newer
+    self-rating and/or a sentence of their own. */
+export interface WordCardAdd { d: DayKey; r?: number; s?: string }
+
+export interface WordCardRecord { d: DayKey; n: number; r: number; a: Record<string, WordCardAnswer>; x?: WordCardAdd[] }
 
 /** `S.wordCards`: per word key ("breyting|kvk"). */
 export type WordCards = Record<string, WordCardRecord>;
