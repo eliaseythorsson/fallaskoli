@@ -165,8 +165,10 @@ test("EX.textar: the episodes and what each wrong summary breaks reach the app",
 
 /* ---------- the three types ------------------------------------------------------- */
 
-test("the three types are declared at the end of the catalogue, on their node, with their pattern", () => {
-  assert.deepEqual(CATALOGUE_IDS.slice(-3), TYPES);
+test("the three types are declared in merge order at the end of the catalogue, on their node, with their pattern", () => {
+  /* in merge order: right after #37's or_eigin; #38's types came after them */
+  const at = CATALOGUE_IDS.indexOf("or_eigin") + 1;
+  assert.deepEqual(CATALOGUE_IDS.slice(at, at + 3), TYPES);
   for (const id of TYPES) {
     const c = catalogueEntry(id);
     assert.deepEqual([c.skill, c.grader, c.recall, c.tags], ["lesskilningur", "app", false, ["sogukort"]], id);

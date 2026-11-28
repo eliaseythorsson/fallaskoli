@@ -19,6 +19,7 @@ import http from "node:http";
 
 import { createApp } from "../server/server.mjs";
 import { hashPassword, newId } from "../server/auth.mjs";
+import { fakePlug } from "../server/reader-fake.mjs";
 
 /* v6.10: practice comes in sessions picked on the Æfa tab. The program now
    opens on the picker, with no question; the checks below drive one long
@@ -1555,6 +1556,152 @@ async function closeWindows(page) {
     ok((await app.store.writing()).length === 0, "item 46: a text was stored with keeping off");
   }
   await P.ctx.close();
+}
+
+/* ---------- #38: the Orðakort with free text, read by the server ----------
+
+   Its own server with the FAKE plug for the three rubrics (no Claude, no
+   key), and a pupil the administrator switched on. The pupil's first card
+   comes before the session they chose; steps 3–5 are free text: the
+   explanation, my sentence, three related words. Step 5 is there, "Senda"
+   waits for all three words, a thin answer gets one question and one
+   revision, and what was written is kept on the pupil's own card. */
+{
+  const gdir = await fs.mkdtemp(path.join(os.tmpdir(), "fallaskoli-38-"));
+  const reads = [];
+  const quoteOf = (text) => text.split(/\s+/).slice(0, 2).join(" ");
+  const plugs = {
+    or_eigin: fakePlug({ answer: (text) => { reads.push(["or_eigin", text]);
+      return { findings: [{ point: "merking", met: true, quote: quoteOf(text) }, { point: "eigin", met: true, quote: quoteOf(text) }] }; } }),
+    or_setning: fakePlug({ answer: (text) => { reads.push(["or_setning", text]);
+      return { findings: [{ point: "notkun", met: true, quote: quoteOf(text) }, { point: "eigin", met: true, quote: quoteOf(text) }] }; } }),
+    /* Thin until every word says how it connects. */
+    or_tengsl: fakePlug({ answer: (text) => { reads.push(["or_tengsl", text]);
+      const how = text.split("\n").every((ln) => ln.includes(" – "));
+      return { findings: [{ point: "tengsl", met: true, quote: text.split("\n")[0] },
+        { point: "hvernig", met: how, ...(how ? { quote: text.split("\n")[1] } : {}) }] }; } }),
+  };
+  const gapp = createApp({ dataDir: path.join(gdir, "data"), htmlFile: HTML, secureCookies: false, env: {}, graderPlugs: plugs });
+  await gapp.store.init();
+  const { salt, hash } = await hashPassword("lykilordid-mitt");
+  let pupil;
+  await gapp.store.updateUsers((users) => {
+    pupil = { id: newId(), username: "kortnemi", name: "kortnemi", role: "learner", status: "active",
+      salt, hash, group: "default", share: { board: false, minutes: false },
+      consent: { by: "self", over16: true, at: new Date().toISOString(), how: "admin" } };
+    users.push(pupil);
+    return users;
+  });
+  await gapp.store.updatePolicies((p) => ({ ...p, [pupil.id]: { serverGrading: true } }));
+  await new Promise((r) => gapp.server.listen(0, "127.0.0.1", r));
+  const GB = "http://127.0.0.1:" + gapp.server.address().port;
+
+  const G = await fresh();
+  await login(G.page, "kortnemi", GB);
+  await G.page.waitForFunction(() => !!window.FALLASKOLI.serverRead, { timeout: 15000 })
+    .catch(() => ok(false, "#38: the switched-on pupil's app did not find the grader"));
+  /* The session the pupil chooses: the card first. */
+  const card = await G.page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.drill = null; A.drillDone = null; A.cur = null;
+    A.startChosen("blandad", 5);
+    const c = document.querySelector(".okort");
+    return { open: !!c, word: c ? c.querySelector(".wcword").textContent : "", due: A.cardDue() };
+  });
+  ok(card.open, "#38: no Orðakort before the chosen session: " + JSON.stringify(card));
+  const steps = [];
+  const stepNow = () => G.page.evaluate(() => {
+    const b = document.querySelector(".okort .wcbody");
+    return b ? { id: b.dataset.step, rows: b.querySelectorAll(".linkrow").length, box: !!b.querySelector("textarea"),
+      def: !!b.querySelector(".wcdef"), send: b.querySelector("[data-wc=send]")?.disabled ?? null } : null;
+  });
+  for (let guard = 0; guard < 12; guard++) {
+    const st = await stepNow();
+    if (!st) break;
+    steps.push(st.id);
+    if (st.id === "lesa") { await G.page.click(".okort [data-wc=next]"); continue; }
+    if (st.id === "mat") { await G.page.click(".okort .wcopts button"); continue; }
+    if (st.rows || st.box) {
+      ok(!st.def, `#38: the definition is on the screen during ${st.id}`);
+      if (st.rows) {
+        ok(st.rows === 3 && st.send === true, "#38: step 5 is not three rows with 'Senda' waiting: " + JSON.stringify(st));
+        /* Two words: still waiting. Three: it may go — thin, without the how. */
+        await G.page.type(".okort .linkrow:nth-child(1) .linkword", "breyta");
+        await G.page.type(".okort .linkrow:nth-child(2) .linkword", "umskipti");
+        ok(await G.page.$eval(".okort [data-wc=send]", (b) => b.disabled), "#38: 'Senda' with two words of three");
+        await G.page.type(".okort .linkrow:nth-child(3) .linkword", "stöðugleiki");
+        ok(!(await G.page.$eval(".okort [data-wc=send]", (b) => b.disabled)), "#38: 'Senda' still waits with three words");
+        await G.page.click(".okort [data-wc=send]");
+        await G.page.waitForSelector(".okort [data-wc=keep]", { timeout: 15000 })
+          .catch(() => ok(false, "#38: a thin step 5 got no follow-up question"));
+        const ask = await G.page.$eval(".okort .ask", (e) => e.textContent).catch(() => "");
+        ok(/Hvernig tengist hvert orðanna þriggja/.test(ask), "#38: the follow-up is not the rubric's own question: " + ask);
+        for (const [k, how] of [[1, "sögnin"], [2, "merkir það sama"], [3, "hið gagnstæða"]])
+          await G.page.type(`.okort .linkrow:nth-child(${k}) .linkhow`, how);
+        await G.page.click(".okort [data-wc=send]");
+      } else {
+        await G.page.type(".okort .wctext", "Þetta er svarið mitt um orðið");
+        await G.page.click(".okort [data-wc=send]");
+      }
+      await G.page.waitForSelector(".okort [data-wc=next]", { timeout: 15000 })
+        .catch(() => ok(false, `#38: step ${st.id} did not end`));
+      const after = await G.page.$eval(".okort .wcafter", (e) => e.innerText).catch(() => "");
+      ok(/Aðalatriðið er komið/.test(after), `#38: step ${st.id} was not judged right: ${after}`);
+      await G.page.click(".okort [data-wc=next]");
+      continue;
+    }
+    /* A choice step that is left (word class, gender). */
+    await G.page.evaluate(() => {
+      const b = document.querySelector(".okort .wcbody");
+      const o = [...b.querySelectorAll(".wcopts button")];
+      o[o.length - 1].click();
+      b.querySelector("[data-wc=check]")?.click();
+    });
+    await G.page.click(".okort [data-wc=next]");
+  }
+  ok(steps.includes("tengsl") && steps.includes("eigin") && !steps.includes("skyring") && !steps.includes("skyld") && !steps.includes("setning"),
+    "#38: the steps of a switched-on pupil's card: " + steps.join(","));
+  const saved = await G.page.evaluate((w) => {
+    const A = window.FALLASKOLI;
+    const k = Object.keys(A.S.wordCards)[0];
+    return { k, card: A.S.wordCards[k], run: !!A.run, open: !!document.querySelector(".okort") };
+  }, card.word);
+  const t = saved.card && saved.card.a.tengsl;
+  ok(!saved.open && saved.run, "#38: the session did not start after the card: " + JSON.stringify({ open: saved.open, run: saved.run }));
+  ok(t && t.c.join() === "breyta,umskipti,stöðugleiki" && /^1\. breyta – sögnin\n2\. umskipti – merkir það sama\n3\. stöðugleiki – hið gagnstæða$/.test(t.t) && t.ok === true,
+    "#38: step 5 was not kept on the card: " + JSON.stringify(saved.card));
+  ok(reads.filter(([k]) => k === "or_tengsl").length === 2, "#38: step 5 was not read twice (one revision): " + JSON.stringify(reads));
+  if (steps.includes("min")) ok(saved.card.a.min && saved.card.a.min.t === "Þetta er svarið mitt um orðið", "#38: my sentence was not kept");
+
+  /* In practice: a session of the related-words type alone draws the same
+     three rows in the question card, and the server reads them once. */
+  const before = reads.length;
+  await G.page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    A.startRun("ordaford", 2, null, { types: ["or_tengsl"], skills: ["ordaford"], review: false });
+  });
+  await G.page.waitForFunction(() => !!document.querySelector("#task .linkrow"), { timeout: 10000 }).catch(() => {});
+  const q = await G.page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    return { type: A.cur && A.cur.typeId, rows: document.querySelectorAll("#task .linkrow").length,
+      text: document.getElementById("task").innerText.slice(0, 200) };
+  });
+  ok(q.type === "or_tengsl" && q.rows === 3, "#38: the related-words question in practice: " + JSON.stringify(q));
+  if (q.rows === 3) {
+    for (const [k, w] of [[1, "a"], [2, "b"], [3, "c"]]) {
+      await G.page.type(`#task .linkrow:nth-child(${k}) .linkword`, w);
+      await G.page.type(`#task .linkrow:nth-child(${k}) .linkhow`, "tengist því");
+    }
+    await G.page.click("#check");
+    await G.page.waitForFunction(() => /Aðalatriðið er komið/.test(document.getElementById("verdict").innerText), { timeout: 15000 })
+      .catch(() => ok(false, "#38: the related-words question in practice was not judged"));
+    ok(reads.length === before + 1 && reads.at(-1)[1] === "1. a – tengist því\n2. b – tengist því\n3. c – tengist því",
+      "#38: what practice sent: " + JSON.stringify(reads.slice(before)));
+  }
+  await G.ctx.close();
+  await new Promise((r) => gapp.server.close(r));
+  await fs.rm(gdir, { recursive: true, force: true });
 }
 
 await browser.close();

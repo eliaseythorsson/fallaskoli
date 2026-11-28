@@ -1,6 +1,7 @@
 /* The Orðakort: what the card of one word shows and asks (issue #15,
- * docs/DLD-PLAN.md §1 "First meeting"). The structured version: nothing here
- * is read by a model, and nothing the pupil types.
+ * docs/DLD-PLAN.md §1 "First meeting"). The structured version reads nothing
+ * the pupil types; with server grading on for the pupil, steps 3–5 of the
+ * plan are free text read on the server (#37, #38: `eigin`, `min`, `tengsl`).
  *
  * `buildCard(lex, word)` → the card, a list of STEPS in the order they are
  * taken. What the pupil answered is kept by core/wordcard.js.
@@ -18,6 +19,19 @@
  *   eigin     (#37) only for a pupil with server grading on: the word
  *             explained in their own words, read on the server against the
  *             card's ÍNO definition (`eiginTask`); it replaces `skyring`
+ *   min       (#38) the same pupils: a sentence of their own, about their own
+ *             life, that uses the word (`setningTask`); it replaces `setning`
+ *   tengsl    (#38) the same pupils: three words related to the word, and
+ *             how each one connects (`tengslTask`); it replaces `skyld`.
+ *             STEP 5 IS NEVER SKIPPED (DLD-PLAN §1): the structured `skyld`
+ *             is dropped for a word in no synonym group, but `tengsl` needs no
+ *             material and is on every card of such a pupil
+ *
+ * The three free-text steps have the same shape: a task of their own
+ * question type (core/catalogue.js, `grader: "server"`), a rubric whose
+ * labels and one follow-up question are OUR words, and a server rubric
+ * (server/rubric-*.mjs) that says what each point means for the model. At
+ * most one follow-up question and one revision (core/answer.js).
  *
  * ---- every option is checked, or the step is dropped ---------------------
  *
@@ -262,15 +276,120 @@ export function eiginTask(w, { ex = EX } = {}) {
   };
 }
 
-/* With server grading on for this pupil (`ctx.eigin`) the pupil explains
+/* With server grading on for this pupil (`ctx.free`) the pupil explains
    the word in their own words, and the structured choice of the right
    explanation (`skyring`) is left out (DLD-PLAN §1: steps 3–5 are free text
    with the LLM on). The definition is not on the screen while they write. */
-function stepOwn({ w, ex, eigin }) {
-  const task = eigin ? eiginTask(w, { ex }) : null;
+function stepOwn({ w, ex, free }) {
+  const task = free ? eiginTask(w, { ex }) : null;
   if (!task) return null;
   return { id: "eigin", kind: "server", task, def: task.def,
-    question: `Hvað merkir orðið *${w.o}*? Segðu það með þínum eigin orðum.` };
+    question: `Hvað merkir orðið *${w.o}*? Segðu það með þínum eigin orðum.`,
+    note: "Það er engin ein rétt leið til að útskýra orð." };
+}
+
+/* ---------- min, tengsl: my sentence, three related words (#38) ------------ */
+
+/** The type ids of the card's other two free-text steps (core/catalogue.js). */
+export const SETNING = "or_setning";
+export const TENGSL = "or_tengsl";
+
+/**
+ * The rubric of the pupil's own sentence. `notkun` is the main point: the
+ * word is used with its meaning. Our words, as for `eiginRubric`.
+ * @param {string} lemma
+ */
+export const setningRubric = (lemma) => ({
+  main: "notkun",
+  points: [
+    { id: "notkun", label: "Orðið er notað rétt",
+      ask: `Hvað merkir orðið ${lemma}? Geturðu notað það þannig að merkingin sjáist í setningunni?` },
+    { id: "eigin", label: "Setningin er um þitt eigið líf",
+      ask: "Geturðu tengt setninguna við eitthvað úr þínu eigin lífi, til dæmis eitthvað sem þú hefur gert eða séð?" },
+  ],
+});
+
+/**
+ * The rubric of the three related words. `tengsl` is the main point: the
+ * three words really are related to the word.
+ * @param {string} lemma
+ */
+export const tengslRubric = (lemma) => ({
+  main: "tengsl",
+  points: [
+    { id: "tengsl", label: "Orðin þrjú tengjast orðinu",
+      ask: `Hvaða orð tengjast orðinu ${lemma} í raun og veru? Hugsaðu um orð sem merkja svipað, hið gagnstæða eða eru af sama stofni.` },
+    { id: "hvernig", label: "Þú segir hvernig hvert orð tengist",
+      ask: `Hvernig tengist hvert orðanna þriggja orðinu ${lemma}? Skrifaðu það við hvert orð.` },
+  ],
+});
+
+/** How many related words step 5 asks for. */
+export const LINKS = 3;
+/** The longest related word, and the longest "how", a box takes. */
+export const LINK_WORD_LEN = 40, LINK_HOW_LEN = 300;
+
+/**
+ * The three related words as ONE text, the text the server reads and the
+ * quote check holds the findings to: a numbered line per word, "1. orð –
+ * hvernig". Null until every one of the three words is there: step 5 is
+ * three words, never fewer.
+ * @param {{word?: string, how?: string}[]} rows
+ */
+export function linksText(rows) {
+  const clean = (s, n) => String(s || "").replace(/\s+/g, " ").trim().slice(0, n);
+  const list = (rows || []).slice(0, LINKS).map((r) => ({ word: clean(r && r.word, LINK_WORD_LEN), how: clean(r && r.how, LINK_HOW_LEN) }));
+  if (list.length < LINKS || list.some((r) => !r.word)) return null;
+  return list.map((r, k) => `${k + 1}. ${r.word}${r.how ? ` – ${r.how}` : ""}`).join("\n");
+}
+
+/**
+ * The pupil's own sentence with the word, graded against the card's sense:
+ * null without a trusted ÍNO definition, as `eiginTask`.
+ * @param {any} w  a lexicon entry @param {{ex?: any}} [o]
+ */
+export function setningTask(w, { ex = EX } = {}) {
+  const t = eiginTask(w, { ex });
+  if (!t) return null;
+  return { ...t, typeId: SETNING, base: 10,
+    read: { kind: SETNING, context: { word: t.word } },
+    rubric: setningRubric(w.o),
+    prompt: { eyebrow: "Mín setning", question: `Skrifaðu setningu um þitt eigið líf þar sem þú notar orðið *${w.o}*.`,
+      hint: "Þú þarft ekki að nefna nein nöfn.", placeholder: "" } };
+}
+
+/**
+ * Three words related to the word, and how each connects. Every word of
+ * the lexicon has it — it needs no material — so step 5 is never skipped.
+ * The definition, when the card has a trusted one, is shown after the
+ * reading; the server looks the sense up again by the word key.
+ * @param {any} w  a lexicon entry @param {{ex?: any}} [o]
+ */
+export function tengslTask(w, { ex = EX } = {}) {
+  if (!w) return null;
+  const sense = senseOf(w, ex);
+  const word = `${w.o}|${w.c}`;
+  return {
+    type: "meaning", typeId: TENGSL, grader: "server", skill: "ordaford",
+    n: w, word, base: 12, lvl: 1,
+    def: sense.def && sense.ino ? sense.def : null,
+    read: { kind: TENGSL, context: { word } },
+    rubric: tengslRubric(w.o),
+    links: LINKS,
+    prompt: { eyebrow: "Skyld orð", question: `Skrifaðu þrjú orð sem tengjast orðinu *${w.o}* og segðu hvernig hvert þeirra tengist því.`,
+      hint: "Til dæmis orð sem merkir svipað, orð sem merkir hið gagnstæða eða orð af sama stofni." },
+  };
+}
+
+function stepMine({ w, ex, free }) {
+  const task = free ? setningTask(w, { ex }) : null;
+  return task ? { id: "min", kind: "server", task, def: task.def, question: task.prompt.question, note: task.prompt.hint } : null;
+}
+
+function stepLinks({ w, ex, free }) {
+  const task = free ? tengslTask(w, { ex }) : null;
+  return task ? { id: "tengsl", kind: "server", task, def: task.def, links: task.links,
+    question: task.prompt.question, note: task.prompt.hint } : null;
 }
 
 /* ---------- skyring: the right explanation -------------------------------- */
@@ -490,31 +609,38 @@ export const STEPS = [
   { id: "mat", build: stepRate },
   { id: "eigin", build: stepOwn },
   { id: "skyring", build: stepExplain },
+  { id: "min", build: stepMine },
   { id: "setning", build: stepSentence },
+  { id: "tengsl", build: stepLinks },
   { id: "skyld", build: stepRelated },
   { id: "flokkur", build: stepClass },
   { id: "kyn", build: stepGender },
 ];
 
+/** Each free-text step and the structured step it takes the place of. */
+export const REPLACES = Object.freeze({ eigin: "skyring", min: "setning", tengsl: "skyld" });
+
 /**
  * The card of one word, or null for a word the lexicon does not have.
  * @param {any} lex  the pupil's lexicon (core/lexicon.js)
  * @param {string} word  a `wordKey`, "breyting|kvk"
- * @param {{ex?: any, eigin?: boolean}} [o]  `ex`: the exercise lists (data/exercises.js), for a
- *   test. `eigin`: the pupil may have their own explanation read by the
- *   server (core/policy.js: the type `or_eigin` is on for them).
+ * @param {{ex?: any, free?: boolean, eigin?: boolean}} [o]  `ex`: the exercise lists
+ *   (data/exercises.js), for a test. `free`: server grading is on for this
+ *   pupil (core/policy.js), so steps 3–5 are free text read by the server
+ *   (`eigin` is the name #37 gave it, still understood).
  * @returns {{word: string, lemma: string, cls: string, steps: any[]} | null}
  */
-export function buildCard(lex, word, { ex = EX, eigin = false } = {}) {
+export function buildCard(lex, word, { ex = EX, free = false, eigin = false } = {}) {
   const at = String(word || "").lastIndexOf("|");
   const w = at > 0 ? lex.lookup(word.slice(0, at), word.slice(at + 1)) : null;
   if (!w || `${w.o}|${w.c}` !== word) return null;
-  const ctx = { lex, w, key: word, ex, eigin, sense: senseOf(w, ex) };
+  const ctx = { lex, w, key: word, ex, free: free || eigin, sense: senseOf(w, ex) };
   /* Each step draws from its own stream, so adding a step later does not
      change the options of the others. */
   let steps = STEPS.map((s) => s.build({ ...ctx, rng: rngFor(`${word}/${s.id}`) })).filter(Boolean);
-  /* The free-text step replaces the structured one after it (#37). */
-  if (steps.some((s) => s.id === "eigin")) steps = steps.filter((s) => s.id !== "skyring");
+  /* A free-text step replaces the structured one after it (#37, #38). */
+  for (const [free, structured] of Object.entries(REPLACES))
+    if (steps.some((s) => s.id === free)) steps = steps.filter((s) => s.id !== structured);
   return { word, lemma: w.o, cls: w.c, steps };
 }
 
