@@ -20,6 +20,7 @@ the blanks and the short explanations.
 import json, re, sys, itertools, collections
 from islenska import Bin
 import exercises as X
+import pronoun_options as PO
 import government as GOV
 import noun_classes as NC
 
@@ -1457,11 +1458,16 @@ def gap_item(g, s_text, where):
     if not ok: return None
     return {"k": g["k"], "t": g["t"], "a": g["a"], "w": g["w"], "why": g["why"], "no": g["no"]}
 
+def bin_words(w):
+    """BÍN as content_io.py and pronoun_options.py ask it: [(lemma, class, mark)]."""
+    return [(e.ord, e.ofl, e.mark) for e in b.lookup(w)[1]]
+
+
 def text_items():
     import build_sentences as BS
     _g, _b, guard = BS.engines()
     try:
-        read = CIO.texts(lambda w: [(e.ord, e.ofl, e.mark) for e in b.lookup(w)[1]])
+        read = CIO.texts(bin_words)
     except CIO.ContentError as e:
         fail(str(e)); return []
     items = []
@@ -1504,8 +1510,22 @@ def text_items():
                          "the parse does not read the marked word as a pronoun"); bad = True
                 si, first, n = r["to"]
                 to_at = sents[si][1]
-                refs.append({"i": j, "to": [si, to_at[first], to_at[first + n - 1]]})
+                to = [si, to_at[first], to_at[first + n - 1]]
+                if not any(t.get("c") == "nafnorð" for t in sents[si][0]["tok"][to[1]:to[2] + 1]):
+                    fail(f"{where}: Greynir greinir „{r['ref']}“ ekki sem nafnorð / "
+                         "the parse reads no noun in the referent"); bad = True
+                refs.append({"i": j, "to": to})
             if refs: out["ref"] = refs
+        # the other words each pronoun could point at, for les_visun (issue #33,
+        # pipeline/pronoun_options.py): characters of the same gender and
+        # number (`same`), nouns of another (`other`)
+        toks = [o["tok"] for o, _a, _s in sents]
+        marked = [r["to"] for o, _a, _s in sents for r in o.get("ref", [])]
+        for k, (o, _a, _s) in enumerate(sents):
+            for r in o.get("ref", []):
+                same, other = PO.options(bin_words, toks, k, r, marked)
+                if same: r["same"] = same
+                if other: r["other"] = other
         for q in tx["spurningar"]:
             where = f"{tx.file}:{q['line']} ({q['q']})"
             for t in [q["q"], q["a"], q["why"]] + q["w"]:
