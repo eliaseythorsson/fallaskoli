@@ -23,7 +23,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { migrate } from "../src/js/core/state.js";
 import { entriesOf, totalsOf, wordRecord, drillRecord, wordsWithHistory, wordKeysMet,
-  isRecallEntry, learningStatus, checkLearned, RESET_BEFORE, RIGHT, WRONG } from "../src/js/core/wordknowledge.js";
+  isRecallEntry, learningStatus, checkLearned, hardStatus, RESET_BEFORE, RIGHT, WRONG } from "../src/js/core/wordknowledge.js";
 import { statusOf, STATUS_LABEL } from "../src/js/core/wordhealth.js";
 import { catalogueEntry } from "../src/js/core/catalogue.js";
 
@@ -73,6 +73,8 @@ export function wordHistory(file, word) {
       learning: learningStatus(S, key),
       /* #16: for a word in learning, how far it is from learned. */
       rule: ruleOf(S, key),
+      /* #17: is it hard, and how many times has it been. */
+      hard: (({ status, why, times }) => ({ status, why, times }))(hardStatus(S, key)),
       entries: entriesOf(S, key).map((e) => ({
         day: e.day, type: e.type, name: (catalogueEntry(e.type) || {}).nm || null,
         outcome: e.outcome === RIGHT ? "right" : e.outcome === WRONG ? "wrong" : "seen",
@@ -106,6 +108,8 @@ export function formatHistory(h) {
       `${w.entries.filter((e) => e.outcome === "seen").length} seen`);
     if (w.learning) out.push(`  learning ${w.learning.status}: ${w.learning.why}`);
     if (w.rule) out.push(`  learned? ${w.rule.status}: ${w.rule.why}`);
+    if (w.hard && (w.hard.times || w.entries.length))
+      out.push(`  hard?    ${w.hard.status}: ${w.hard.why}`);
     if (w.rescue)
       out.push(`  rescue   ${w.rescue.p} passed, ${w.rescue.f} endured, last ${w.rescue.last || "-"}`);
     if (w.entries.length) {

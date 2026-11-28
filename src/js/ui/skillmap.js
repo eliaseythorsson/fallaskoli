@@ -38,6 +38,7 @@ import { nodeById } from "../core/curriculum.js";
 import { lessonById } from "../core/lessons.js";
 import { patternById } from "../core/diagnosis.js";
 import { LABELS, masteryLine } from "../core/mastery.js";
+import { HARD_WRONG, HARD_DAYS } from "../core/wordknowledge.js";
 import { effectivePolicy } from "../core/state.js";
 import { weakWords } from "../core/wordhealth.js";
 import {
@@ -446,12 +447,29 @@ export function renderSkillMap(app) {
   };
 }
 
+/**
+ * Skólastofan, under one pupil's map (#17): the words that are hard for the
+ * pupil (core/wordknowledge.js `hardWords`), each with its reason. The pupil
+ * never sees this list or the word "erfitt"; the guardian is told so.
+ * @param {{lemma: string, cls: string, why: string}[]} hard @param {string} name
+ */
+export function hardWordsHTML(hard, name) {
+  const list = Array.isArray(hard) ? hard : [];
+  return `<div class="chartbox hardwords"><h4>Erfið orð</h4>
+    <p class="sub faint">Orð sem ${esc(name)} hefur svarað rangt ${HARD_WRONG} sinnum á ${HARD_DAYS} dögum, í hvaða spurningum sem er.
+      Þá eru strax boðnar þrjár spurningar um orðið („Þrjár í röð“). Verði það aftur erfitt fer það í orðin sem verið er að læra, með orðakorti.
+      ${esc(name)} sér ekki þennan lista.</p>
+    ${list.length ? `<ul>${list.map((h) => `<li><b>${esc(h.lemma)}</b> <small class="faint">(${esc(h.cls)}) ${esc(h.why)}</small></li>`).join("")}</ul>`
+    : `<p class="faint">Ekkert orð er erfitt núna.</p>`}</div>`;
+}
+
 /** Skólastofan: the map of one pupil, from the server's `teacherMap`. */
 export function drawTeacherMap(el, data) {
   if (!el) return;
   const view = data.map;
   el.innerHTML = (data.pupil.practised ? "" : `<p class="sub faint">${esc(data.pupil.name)} hefur ekki æft sig enn — kortið er autt.</p>`) + mapHTML(view, { teacher: true, title: "Færnikort · " + data.pupil.name, wide: isWide() }) +
-    (view.loose.length ? `<div class="chartbox">${loosePatternsHTML(view.loose)}</div>` : "");
+    (view.loose.length ? `<div class="chartbox">${loosePatternsHTML(view.loose)}</div>` : "") +
+    (data.hard ? hardWordsHTML(data.hard, data.pupil.name) : "");
   wireMap(el, { view });
 }
 

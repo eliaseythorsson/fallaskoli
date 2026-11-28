@@ -162,3 +162,37 @@ export function streakTasks(lex, view, rng, p, from = {}, n = 3) {
   }
   return out;
 }
+
+/* ---------- "Þrjár í röð" on one word (#17) ---------------------------------
+ *
+ * The first time a word is hard (core/wordknowledge.js `noteHard`), three
+ * questions on that word: the rescue drill's own questions (`drillTask`,
+ * the word asked by name, strict), three of them, without its meaning
+ * question, which has no wrong answer and so could not count as one of
+ * the three. */
+
+/**
+ * All three at once, or null if three cannot be built — the offer is made
+ * only when they are there (control/drill.js `offerWordStreak`). Pure like
+ * the rest: nothing is applied until a question is shown.
+ * @param entry  the word's lexicon entry
+ */
+export function wordStreakTasks(lex, view, rng, entry, n = 3) {
+  const out = [];
+  const key = entry ? wordKey(entry.o, entry.c) : null;
+  let v = view;
+  const plan = DRILL_PLAN[entry && entry.c] || [];
+  for (let turn = 0; out.length < n && turn < n + plan.length + 1; turn++) {
+    if (turn === DRILL_MEANING_TURN) continue;
+    const b = drillTask(lex, v, rng, entry, turn);
+    if (!b || b.task.word !== key) continue;
+    b.task.drill = false;
+    b.task.streak = key;
+    out.push(b);
+    /* Each is built against the one before it, as the session will have it
+       then (the spacing rule, #10). */
+    const last = b.effects.find((e) => e.op === "last");
+    if (last) v = withView(v, { sess: { ...v.sess, lastAsked: { type: last.type, words: last.words } } });
+  }
+  return out.length === n ? out : null;
+}

@@ -293,7 +293,8 @@ export function renderRunBar(app) {
    at the question it was on. */
 function streakBar(app, el) {
   const st = app.streak, r = app.run;
-  const p = patternById(st.p) || { nm: "" };
+  /* A pattern's name, or the word's (#17). */
+  const p = st.w ? { nm: st.nm } : patternById(st.p) || { nm: "" };
   const open = app.cur && app.cur.streak && !app.cur.closed ? 1 : 0;
   const shown = st.intro ? 0 : Math.min(st.n, st.i + open);
   const dots = [];
@@ -321,7 +322,8 @@ function streakBar(app, el) {
 
 /**
  * Under the verdict of a diagnosed wrong answer (control/drill.js `offerStreak`): the
- * offer of three questions on the pattern just named. Áfram keeps the focus,
+ * offer of three questions on the pattern just named — or, the first time a
+ * word is hard (#17, `offerWordStreak`), on that word. Áfram keeps the focus,
  * so Enter still simply goes on — the three are offered, never imposed.
  */
 export function showStreakOffer(app, p) {
@@ -415,7 +417,7 @@ export function renderSummary(app) {
   /* v6.13 (item 36): "Þrjár í röð" that went well. Not one that did not:
      the pupil chose to do extra work, and that is not a thing to list. */
   (d.streaks || []).filter((x) => x.n === STREAK_N && x.c >= x.n - 1).forEach((x) => {
-    const p = patternById(x.p);
+    const p = x.w ? { nm: x.w } : patternById(x.p);
     if (p) good.push(`<li>Þrjár í röð um <b>${esc(p.ok || p.nm)}</b>: ${x.c === x.n ? "allar réttar" : `${x.c} af ${x.n} rétt`}.</li>`);
   });
   if (!good.length && d.c) good.push(`<li>${d.c} ${d.c === 1 ? "rétt svar" : "rétt svör"} — og hvert rangt svar segir okkur hvað á að æfa næst.</li>`);
