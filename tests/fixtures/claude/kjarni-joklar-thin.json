@@ -1,0 +1,29 @@
+{
+  "recorded": "HAND-WRITTEN in the exact shape of a Messages API response: no API key existed where #39 was built. Replace with a real recording: node tools/record-grading.mjs --kind ... --texti ... (see its header).",
+  "model": "opus",
+  "effort": "low",
+  "kind": "les_kjarni_eigin",
+  "texti": "fraedi-joklar",
+  "names": [],
+  "text": "Sumir litlir jöklar eru horfnir og það er út af mengun frá bílum.",
+  "response": {
+    "id": "msg_01HandWrittenTexti000002",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-opus-5-5",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"findings\":[{\"point\":\"adal\",\"met\":false,\"quote\":\"Sumir litlir jöklar eru horfnir\"},{\"point\":\"rett\",\"met\":false,\"quote\":\"út af mengun frá bílum\"},{\"point\":\"eigin\",\"met\":true,\"quote\":\"jöklar hverfa\"}]}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 1015,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 104
+    }
+  }
+}

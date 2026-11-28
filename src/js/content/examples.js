@@ -623,4 +623,18 @@ export const EXAMPLES = {
     how: "Lestu það sem kemur á undan (Lína vann) og á eftir (hún sýndi verðlaunin). Sá sem vinnur og sýnir verðlaunin sín er stoltur. Ekkert í sögunni gerir hana reiða eða hrædda.",
     forms: [],
   },
+  /* issue #39: shown only to a pupil whose answers the server reads. The
+     hvalir text and a story that is not one of content/textar/. */
+  les_kjarni_eigin: {
+    q: "*Hvalir anda með lungum. Þeir gefa afkvæmum sínum mjólk. Hvalir eru því spendýr en ekki fiskar.* Hvað er aðalatriðið?",
+    a: "Hvalir eru spendýr af því að þeir anda með lungum og gefa ungunum mjólk.",
+    how: "Segðu í einni stuttri setningu um hvað allur textinn fjallar, ekki bara eitt smáatriði, og afritaðu ekki setningu úr honum. Þú færð gátlista og eina spurningu og mátt bæta svarið einu sinni.",
+    forms: [],
+  },
+  les_saga_eigin: {
+    q: "Óli týnir húfunni sinni í frímínútum. Hann leitar á skólalóðinni og spyr kennarann, og húfan finnst í óskilamunum. Segðu söguna stutt.",
+    a: "Óli týnir húfunni sinni, leitar að henni og finnur hana í óskilamunum.",
+    how: "Segðu hver vandinn var, hvað persónan gerði og hvernig fór, í sömu röð og í sögunni. Ekki afrita setningar úr sögunni.",
+    forms: [],
+  },
 };

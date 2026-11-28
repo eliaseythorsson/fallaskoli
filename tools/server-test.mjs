@@ -1704,6 +1704,82 @@ async function closeWindows(page) {
   await fs.rm(gdir, { recursive: true, force: true });
 }
 
+/* ---------- #39: a text's main idea in the pupil's own words ------------------
+
+   Its own server with the FAKE plug, a pupil switched on. A Lesskilningur
+   session of the gist type alone: the text is on the screen above the box,
+   the server is told only the text's id, a thin answer gets the rubric's
+   own question and one revision, and the verdict shows the text's main
+   idea. Nothing written is kept in the progress. */
+{
+  const gdir = await fs.mkdtemp(path.join(os.tmpdir(), "fallaskoli-39-"));
+  const reads = [];
+  const plugs = {
+    /* Thin until the answer says "hlýrra". */
+    les_kjarni_eigin: fakePlug({ answer: (text, { context }) => {
+      reads.push([text, context]);
+      const main = /hlýrra|minnka|hlýn/.test(text);
+      const q = text.split(/\s+/).slice(0, 2).join(" ");
+      return { findings: [{ point: "adal", met: main, quote: q }, { point: "rett", met: true, quote: q },
+        { point: "eigin", met: true, quote: q }] };
+    } }),
+  };
+  const gapp = createApp({ dataDir: path.join(gdir, "data"), htmlFile: HTML, secureCookies: false, env: {}, graderPlugs: plugs });
+  await gapp.store.init();
+  const { salt, hash } = await hashPassword("lykilordid-mitt");
+  let pupil;
+  await gapp.store.updateUsers((users) => {
+    pupil = { id: newId(), username: "lesnemi", name: "lesnemi", role: "learner", status: "active",
+      salt, hash, group: "default", share: { board: false, minutes: false },
+      consent: { by: "self", over16: true, at: new Date().toISOString(), how: "admin" } };
+    users.push(pupil);
+    return users;
+  });
+  await gapp.store.updatePolicies((p) => ({ ...p, [pupil.id]: { serverGrading: true } }));
+  await new Promise((r) => gapp.server.listen(0, "127.0.0.1", r));
+  const GB = "http://127.0.0.1:" + gapp.server.address().port;
+
+  const G = await fresh();
+  await login(G.page, "lesnemi", GB);
+  await G.page.waitForFunction(() => !!window.FALLASKOLI.serverRead, { timeout: 15000 })
+    .catch(() => ok(false, "#39: the switched-on pupil's app did not find the grader"));
+  await G.page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    A.run = null; A.runDone = null; A.cur = null;
+    A.startRun("lesskilningur", 2, null, { types: ["les_kjarni_eigin"], skills: ["lesskilningur"], review: false });
+  });
+  await G.page.waitForFunction(() => !!document.querySelector("#task #freetext"), { timeout: 10000 }).catch(() => {});
+  const q = await G.page.evaluate(() => {
+    const A = window.FALLASKOLI;
+    return { type: A.cur && A.cur.typeId, id: A.cur && A.cur.read && A.cur.read.context.texti,
+      text: document.querySelector("#task .readtext")?.innerText || "", first: A.cur && A.cur.text && A.cur.text[0] };
+  });
+  ok(q.type === "les_kjarni_eigin" && q.first && q.text.includes(q.first),
+    "#39: the gist question does not show its text: " + JSON.stringify(q));
+  if (q.type === "les_kjarni_eigin") {
+    await G.page.type("#task #freetext", "Textinn er um náttúruna");
+    await G.page.click("#check");
+    await G.page.waitForSelector("#keepanswer", { timeout: 15000 })
+      .catch(() => ok(false, "#39: a thin gist got no follow-up question"));
+    const ask = await G.page.$eval("#verdict .ask", (e) => e.textContent).catch(() => "");
+    ok(/Um hvað fjalla flestar setningarnar/.test(ask), "#39: the follow-up is not the rubric's own question: " + ask);
+    await G.page.$eval("#task #freetext", (b) => { b.value = ""; });
+    await G.page.type("#task #freetext", "Jöklarnir minnka af því að loftið er orðið hlýrra");
+    await G.page.click("#check");
+    await G.page.waitForFunction(() => /Aðalatriðið er komið/.test(document.getElementById("verdict").innerText), { timeout: 15000 })
+      .catch(() => ok(false, "#39: the revised gist was not judged right"));
+    const v = await G.page.$eval("#verdict", (e) => e.innerText).catch(() => "");
+    ok(/Aðalatriðið í textanum/.test(v), "#39: the verdict does not show the text's main idea: " + v);
+    ok(reads.length === 2 && reads.every(([, c]) => c && c.texti === q.id && !("text" in c)),
+      "#39: what the server was told: " + JSON.stringify(reads.map(([, c]) => c)));
+    const kept = await G.page.evaluate(() => JSON.stringify(window.FALLASKOLI.S) + JSON.stringify(window.FALLASKOLI.run || {}));
+    ok(!kept.includes("loftið er orðið hlýrra") && !kept.includes("um náttúruna"), "#39: the answer is kept in the progress");
+  }
+  await G.ctx.close();
+  await new Promise((r) => gapp.server.close(r));
+  await fs.rm(gdir, { recursive: true, force: true });
+}
+
 await browser.close();
 await new Promise((r) => app.server.close(r));
 await fs.rm(dir, { recursive: true, force: true });

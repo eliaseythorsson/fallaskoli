@@ -1,0 +1,29 @@
+{
+  "recorded": "HAND-WRITTEN in the exact shape of a Messages API response: no API key existed where #39 was built. Replace with a real recording: node tools/record-grading.mjs --kind ... --texti ... (see its header).",
+  "model": "opus",
+  "effort": "low",
+  "kind": "les_kjarni_eigin",
+  "texti": "fraedi-joklar",
+  "names": [],
+  "text": "Jöklarnir á Íslandi hafa minnkað mikið síðustu hundrað ár.",
+  "response": {
+    "id": "msg_01HandWrittenTexti000003",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-opus-5-5",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"findings\":[{\"point\":\"adal\",\"met\":true,\"quote\":\"Jöklarnir á Íslandi hafa minnkað mikið\"},{\"point\":\"rett\",\"met\":true,\"quote\":\"hafa minnkað mikið síðustu hundrað ár\"},{\"point\":\"eigin\",\"met\":true,\"quote\":\"Jöklarnir á Íslandi hafa minnkað\"}]}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 1008,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 99
+    }
+  }
+}

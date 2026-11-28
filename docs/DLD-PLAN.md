@@ -283,6 +283,16 @@ Orðakort's free-text step in place of the choice of explanation. Settings:
 `FALLASKOLI_CLAUDE_EFFORT` (`low`). Zero data retention is an organisation-level
 arrangement with Anthropic, and Fable 5.2 cannot run under it (PRIVACY.md §1h).
 
+*As built (#39).* The gist and the story summary are `les_kjarni_eigin` and
+`les_saga_eigin` (Lesskilningur, server grading only). The rubrics
+(`server/rubric-kjarni.mjs`, `server/rubric-saga.mjs`) grade against the
+text's own marks, read by the server from its build data by the text's id:
+gist — `adal` (main), `rett` (nothing invented), `eigin`; summary — `adal`
+(the problem and how it ended, main), `hlutar` (the attempt, in order), `rett`,
+`eigin`. A whole sentence of the text, or eight words of it in a row, copied
+is not `eigin`, decided on the server whatever the model says. The story's own
+names are not stripped. Nothing the pupil wrote is kept.
+
 ## Build order
 
 Each step is one or more PRs and can be released on its own, following CLAUDE.md
