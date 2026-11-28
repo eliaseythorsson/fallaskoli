@@ -624,7 +624,9 @@ is the text's id). No TABs and no columns — it reads as the text does:
 - **A question** is a line `? [mark] Question? | right | wrong | wrong`: the
   right answer first (the app shuffles them), then two or three wrong ones.
   The mark says what is asked for: `[aðalatriði]`, what the whole text is
-  mainly about, or `[samantekt]`, the summary that follows the story map. **Its explanation** is the next line, `! …`.
+  mainly about, `[samantekt]`, the summary that follows the story map, or
+  `[kjarni]`, the best one-sentence gist of a subject text. **Its
+  explanation** is the next line, `! …`.
 - **Episodes** (issue #31): a longer story (þyngd 3 and up) may be told in
   two or three episodes. A line `= 1. þáttur`, `= 2. þáttur` stands before
   each episode's first sentence; every episode has its own `vandi`,
@@ -645,7 +647,31 @@ is the text's id). No TABs and no columns — it reads as the text does:
   names the part of the story map it breaks — a part the story has — or
   `[röð]`, the order of events. The pupil is told, after a wrong pick,
   which part it was. Only a *saga* has one. Any question may be written
-  this way (without marks on its wrong answers, outside a summary).
+  this way (without marks on its wrong answers, outside a summary or gist).
+- **A gist question** (`[kjarni]`, issue #32) is the same kind of block, in
+  a *fræðitexti*: the best one-sentence summary of the text, then exactly
+  three wrong ones, one of each kind — `[þröngt]` (too narrow: one detail,
+  not the whole text), `[vítt]` (too broad: true of many texts) and
+  `[rangt]` (contradicts the text or says what it does not). The kinds
+  follow Brown & Day's summarising rules (docs/DLD-RESEARCH.md §C); after a
+  wrong pick the app says which kind of wrong it was.
+
+  ```
+  ? [kjarni] Hvaða setning segir best í stuttu máli hvað stendur í textanum?
+  + Jöklar á Íslandi verða sífellt minni af því að loftið er orðið hlýrra.
+  - [þröngt] Sumir litlir jöklar eru horfnir.
+  - [vítt] Náttúran breytist með tímanum.
+  - [rangt] Jöklar á Íslandi stækka af því að það snjóar meira en áður.
+  ! Allur textinn fjallar um að jöklarnir minnka og hvers vegna. …
+  ```
+- **Subject-text questions from the marks** (issue #32). In a *fræðitexti*
+  the marks are the answers of two more question types, with no question
+  line: which sentence is the main idea (the `[aðalatriði]` one — put it
+  first, last or in the middle, so that "the first sentence" is not always
+  right), and which sentences support it (every `[smáatriði]`). The second
+  is asked only of a text with at least two `[smáatriði]` and one `[annað]`,
+  a sentence on the same subject that does not support the main idea, for
+  the pupil to leave out.
 - **Þyngd is length:** 2–3 sentences at þyngd 1, a paragraph (4–9 sentences)
   at 2–3, 150–300 words at 4–5. A story must have `vandi` and `útkoma` at
   þyngd 1; `aðstæður`, `vandi`, `tilraun` and `útkoma` at 2–3; all six parts
@@ -659,12 +685,13 @@ missing or wrong, a text too long or short for its þyngd, an unknown mark, a
 story-map part the þyngd requires and the story lacks, a referent that is
 not a word earlier in the text or that BÍN gives another grammatical gender
 or number than the pronoun (*steinninn … hann*; *Jón og Sara* is *þau*), a
-word of `# orð:` that is not on LÍNO-2 or not in the text, and a question
+word of `# orð:` that is not on LÍNO-2 or not in the text, a question
 without exactly one right answer (the first; two or three wrong ones, no two
 the same) or without its explanation — and on story-map marks that do not
 point at the story: episodes out of order, before þyngd 3, more than three or
 one lacking a part, and a wrong summary that breaks a part the story does not
-have. Then `pipeline/build_exercises.py`
+have; and a gist question that is not in a subject text or lacks one wrong
+answer of each kind. Then `pipeline/build_exercises.py`
 has every sentence of every text parsed by Greynir and checked by BÍN and
 the parse guard exactly as a sentence of the bank is, and checks the words
 of the questions; a sentence that does not parse stops the build too. The

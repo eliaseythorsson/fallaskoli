@@ -246,7 +246,9 @@ test("EX.textar: every text of content/textar/, every sentence parsed, every par
     assert.ok(tx.q.length >= 1);
     for (const q of tx.q) {
       /* #31 added the summary question, a story's only */
-      assert.ok(q.k === "aðalatriði" || (q.k === "samantekt" && tx.k === "saga"), q.k);
+      /* … and #32 the gist question, a subject text's only */
+      assert.ok(q.k === "aðalatriði" || (q.k === "samantekt" && tx.k === "saga")
+        || (q.k === "kjarni" && tx.k === "fræðitexti"), q.k);
       assert.ok(q.w.length >= 2 && q.w.length <= 3 && !q.w.includes(q.a) && q.why);
     }
   }
@@ -292,9 +294,9 @@ test("Lesskilningur is a skill of year 8, on by default, on the map and in every
     assert.ok(presetContent(y).types.includes("les_adal"), y + ". bekkur");
   }
   const node = nodeById("les-adalatridi");
-  assert.deepEqual([node.cat, node.year, node.types, node.lesson, node.cover], ["lesskilningur", 8, ["les_adal"], "lesskilningur", "full"]);
+  assert.deepEqual([node.cat, node.year, node.types, node.lesson, node.cover], ["lesskilningur", 8, ["les_adal", "les_setning", "les_smaatridi", "les_kjarni"], "lesskilningur", "full"]);
   assert.deepEqual(patternsOfNode(node), ["adalatridi"]);
-  assert.deepEqual(patternById("adalatridi").types, ["les_adal"]);
+  assert.ok(patternById("adalatridi").types.includes("les_adal"));
 });
 
 test("les_adal is declared at the end of the catalogue: a choice, graded by the app, not recall", () => {

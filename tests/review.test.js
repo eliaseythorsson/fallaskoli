@@ -649,7 +649,11 @@ test("item 19: after a wrong cloze the noun is not the next question; it comes b
     assert.ok(!(next.type === "fill" && next.word === missed.t.word), "the very next question is another one");
     const back = asked.filter((x) => x.t.reask);
     const shareLeft = asked.slice(0, missed.i + 6).filter((x) => x.t.typeId === "fill").length < maxOf("fill", 15);
-    if (!back.length) { assert.ok(!shareLeft, "only the mix rule may let it go"); continue; }
+    /* The noun may come back in an ordinary question before its re-ask is
+       due; the re-ask then finds it just asked (not the same word twice in a
+       row, #10) and lets it go. Seed 14 does this since #32 moved the draws. */
+    const cameAnyway = asked.slice(missed.i + 2, missed.i + 6).some((x) => x.t.type === "fill" && x.t.word === missed.t.word);
+    if (!back.length) { assert.ok(!shareLeft || cameAnyway, "only the mix rule, or the noun asked again, may let it go"); continue; }
     checked++;
     assert.equal(back.length, 1);
     const gap = back[0].i - missed.i;

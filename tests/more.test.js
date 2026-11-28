@@ -92,15 +92,11 @@ test("every question type has a name for the settings, and every name a builder"
 
 /* A skill with no question type yet (Námsorð before its first, #19) has no
    session to check; tests/skills-checklist.test.js holds which may be so. */
-/* Lesskilningur began as a tracer with one question type (issue #30); the
-   story map (#31) gave it four, and it is held like every other category. */
-const ONE_KIND_SO_FAR = new Set([]);
 
 const ASKED = SKILL_IDS.filter(skillHasTypes);
 
 test("every category offers at least three kinds of question", () => {
   for (const id of ASKED) {
-    if (ONE_KIND_SO_FAR.has(id)) continue;
     const kinds = TASKS.filter((t) => (t.skill === id || (t.anyOf || []).includes(id)) && t.id !== "meaning");
     assert.ok(kinds.length >= 3, `${id}: only ${kinds.map((k) => k.id)}`);
   }
@@ -129,7 +125,6 @@ test("the mix rule holds in every category: three kinds or more, none over its s
       for (let r = 0; r < 4; r++) {
         const types = session(skill, n);
         assert.equal(types.length, n, `${skill}: a session of ${n} stopped at ${types.length}`);
-        if (ONE_KIND_SO_FAR.has(skill)) continue;      // the session is whole; there is nothing to mix
         const rep = mixReport(types, available);
         assert.ok(rep.kinds >= 3, `${skill} ×${n}: only ${rep.kinds} kinds — ${JSON.stringify(rep.counts)}`);
         assert.deepEqual(rep.over, [], `${skill} ×${n}: over the cap — ${JSON.stringify(rep.counts)}`);

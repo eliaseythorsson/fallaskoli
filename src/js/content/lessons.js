@@ -1323,6 +1323,14 @@ export const LESSONS = [
       ] },
       { p: "Hér er aðalatriðið að **hvalir eru spendýr**. Hinar setningarnar eru smáatriði. Þær segja hvernig hvalir anda og hvernig þeir ala upp afkvæmi sín, og það sýnir að þeir eru spendýr." },
       { tip: "Spyrðu þig: Um hvað eru **flestar** setningarnar? Ef svarið á bara við eina setningu er það smáatriði." },
+      { p: "Aðalatriðið stendur oft í fyrstu setningunni, en **ekki alltaf**. Stundum kemur það í lokin og dregur textann saman. Stundum er fyrsta setningin bara inngangur." },
+      { p: "Sumar setningar segja frá **öðru**: þær fjalla um sama efni en styðja ekki aðalatriðið. Í texta um hvali gæti staðið *Margir fara í hvalaskoðun*. Það segir ekkert um hvort hvalir séu spendýr." },
+      { h: "Góð samantekt" },
+      { p: "Samantekt segir aðalatriðið í einni setningu. Góð samantekt er:" },
+      { p: "**Ekki of þröng.** Hún nær yfir allan textann, ekki bara eitt smáatriði. *Hvalir anda með lungum* er of þröngt." },
+      { p: "**Ekki of víð.** Hún segir hvað stendur í **þessum** texta. *Mörg dýr lifa í sjónum* gæti átt við hvaða texta sem er." },
+      { p: "**Rétt.** Hún bætir engu við og stangast ekki á við textann. *Hvalir eru fiskar* er rangt." },
+      { p: "Góð samantekt um hvalina: *Hvalir eru spendýr af því að þeir anda með lungum og gefa afkvæmum mjólk.*" },
       { h: "Aðalatriði í sögu" },
       { p: "Í sögu gerist eitthvað. Aðalatriðið segir í stuttu máli **hver** lenti í **hvaða vanda** og **hvernig fór**." },
       { ex: [
@@ -1344,6 +1352,8 @@ export const LESSONS = [
     check: [
       { q: "Hvað er aðalatriði texta?", a: "Það sem allur textinn fjallar um." },
       { q: "Hvað gera smáatriðin?", a: "Þau segja meira um aðalatriðið: útskýra það eða gefa dæmi." },
+      { q: "Stendur aðalatriðið alltaf fremst?", a: "Nei. Það getur líka staðið í miðjum texta eða í lokin." },
+      { q: "Hvað er að samantekt sem er of þröng?", a: "Hún segir bara eitt smáatriði, ekki allan textann." },
       { q: "Hvað segir aðalatriði sögu?", a: "Hver lenti í hvaða vanda og hvernig fór." },
       { q: "Hverjir eru sex hlutar sögukortsins?", a: "Aðstæður, vandi, markmið, tilraun, útkoma og viðbrögð." },
       { q: "Hvað er markmið í sögu?", a: "Það sem persónan vill eða ætlar sér." },

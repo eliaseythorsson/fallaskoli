@@ -1,0 +1,28 @@
+# Hreyfing og hugurinn — stuttur fræðitexti (ein efnisgrein). Aðalatriðið er
+# önnur setningin: sú fyrsta segir það sem flestir vita áður.
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [aðalatriði] er setningin sem segir um hvað textinn er (nákvæmlega ein),
+#   [smáatriði] eru setningarnar sem styðja hana,
+#   [annað] er setning sem segir frá öðru og styður ekki aðalatriðið,
+#   ? er spurning (rétta svarið fremst) og ! skýringin sem nemandinn les á eftir.
+#   [kjarni] er spurning um bestu samantektina: + rétta svarið, svo - [tegund]
+#   fyrir hvert rangt svar: þröngt (bara smáatriði), vítt (of almennt),
+#   rangt (stangast á við textann).
+#
+# þyngd: 3
+# tegund: fræðitexti
+# orð:
+
+[annað] Flestir vita að hreyfing styrkir vöðvana og hjartað.
+[aðalatriði] En hreyfing er líka góð fyrir hugann.
+[smáatriði] Eftir góða gönguferð líður flestum betur en áður.
+[smáatriði] Hreyfing getur dregið úr kvíða og streitu.
+[smáatriði] Fólk sem hreyfir sig reglulega á oft auðveldara með að einbeita sér.
+
+? [kjarni] Hvaða setning segir best í stuttu máli hvað stendur í textanum?
++ Hreyfing er ekki bara góð fyrir líkamann heldur líka fyrir hugann.
+- [þröngt] Eftir gönguferð líður fólki betur.
+- [vítt] Það skiptir máli að lifa heilbrigðu lífi.
+- [rangt] Hreyfing styrkir vöðvana en hefur engin áhrif á hugann.
+! Fyrsta setningin segir það sem flestir vita. Önnur setningin segir það sem textinn fjallar um, og hinar setningarnar styðja hana. Rétta svarið nær yfir þetta.

@@ -112,14 +112,14 @@ test("the round asks only what the policy allows", () => {
   const allowed = new Set(presetContent(8).types);
   for (const id of Object.values(types8).flat()) assert.ok(allowed.has(id), id + " is not year-8 material");
   /* Issue #30: Lesskilningur is on in year 8, and the round does not ask it —
-     its one type builds the same questions at every þyngd, so an answer
+     its types (#30, #32) build the same questions at every þyngd, so an answer
      places nothing. It is asked by itself once a type of it has bands. */
   assert.deepEqual(FLAT, ["lesskilningur", "frasogn"]);
   assert.ok(presetContent(8).skills.includes("lesskilningur") && !("lesskilningur" in types8));
   /* #35: Frásögn likewise */
   assert.ok(presetContent(8).skills.includes("frasogn") && !("frasogn" in types8));
   const banded = TASKS.map((t) => (t.id === "les_adal" ? { ...t, bands: [1, 3] } : t));
-  assert.deepEqual(placementTypes(banded, year(8)).lesskilningur, ["les_adal", "les_hluti", "les_kort", "les_samantekt"]);
+  assert.deepEqual(placementTypes(banded, year(8)).lesskilningur, ["les_adal", "les_hluti", "les_kort", "les_samantekt", "les_setning", "les_smaatridi", "les_kjarni"]);
   /* A ceiling that allows one category: one category is asked. */
   const cap = { skills: Object.fromEntries(SKILL_IDS.map((id) => [id, id === "nafnord"])), types: {}, levels: {} };
   assert.deepEqual(Object.keys(placementTypes(TASKS, createPolicy(cap, presetPolicy(8)))), ["nafnord"]);
