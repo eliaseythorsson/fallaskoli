@@ -245,7 +245,8 @@ test("EX.textar: every text of content/textar/, every sentence parsed, every par
     if (tx.k === "fræðitexti") assert.equal(tx.s.filter((s) => s.p === "aðalatriði").length, 1, tx.id);
     assert.ok(tx.q.length >= 1);
     for (const q of tx.q) {
-      assert.equal(q.k, "aðalatriði");
+      /* #31 added the summary question, a story's only */
+      assert.ok(q.k === "aðalatriði" || (q.k === "samantekt" && tx.k === "saga"), q.k);
       assert.ok(q.w.length >= 2 && q.w.length <= 3 && !q.w.includes(q.a) && q.why);
     }
   }
@@ -297,7 +298,7 @@ test("Lesskilningur is a skill of year 8, on by default, on the map and in every
 });
 
 test("les_adal is declared at the end of the catalogue: a choice, graded by the app, not recall", () => {
-  /* after every type before it; #37's or_eigin came after it */
+  /* after every type before it; #37's or_eigin and #31's story-map types came after it */
   assert.equal(CATALOGUE_IDS.indexOf("les_adal"), CATALOGUE_IDS.indexOf("or_merking") + 1);
   const c = catalogueEntry("les_adal");
   assert.deepEqual([c.skill, c.renderer, c.grader, c.recall], ["lesskilningur", "choice", "app", false]);
@@ -335,7 +336,8 @@ test("les_adal: the whole text, the question as written, one right answer among 
     }
     assert.ok(judge(t, { picked: null }).pending, "no pick is no answer");
   }
-  assert.equal(seen.size, EX.textar.length, "every text is asked");
+  assert.equal(seen.size, EX.textar.filter((x) => x.q.some((q) => q.k === "aðalatriði")).length,
+    "every text with a main-idea question is asked");
   assert.equal(first.size, 2, "the right answer is not always first");
 });
 
@@ -348,7 +350,7 @@ test("les_adal: a text is remembered when it is shown, and a review brings back 
   assert.equal(fx[0].key, b.task.item);
   applyEffects(ctx, b.effects);
   assert.deepEqual(ctx.sess.exSeen, [b.task.item]);
-  for (const tx of EX.textar) {
+  for (const tx of EX.textar.filter((x) => x.q[0].k === "aðalatriði")) {
     const item = `les:${tx.id}#0`;
     for (let k = 0; k < 5; k++)
       assert.equal(spec.build(lex, freshView(1, { force: { item } }), () => k / 5).task.item, item);

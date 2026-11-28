@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Sögukortið í Lesskilningi (#31)
+- **Sögukortið**: sex hlutar sögu — aðstæður, vandi (kveikja), markmið, tilraun, útkoma og viðbrögð
+  (tilfinning) — hver með sína mynd. Heitin og myndirnar eru skilgreind á einum stað
+  (`core/storymap.js`, `ui/storyicons.js`) og Frásögn notar þær síðar. Lesefnissíðan sýnir kortið.
+- **Þrjár nýjar spurningategundir í Lesskilningi**: *Hvar er vandinn?* (í hvaða setningu kemur vandinn
+  eða markmiðið fram), *Sögukortið* (hver setning á sinn stað í kortinu) og *Samantekt sögunnar* (veldu
+  samantektina sem fylgir kortinu; við ranga samantekt stendur hvaða hluta hún brýtur).
+- Textasniðið fær **þætti** (`= 1. þáttur`) í lengri sögum og **samantektir** með svörin í línum
+  (`+` rétt, `- [hluti]` rangt). Byggingin stöðvast, með skrá og línu, ef merki vísar ekki í söguna.
+- Tvær nýjar sögur, önnur í tveimur þáttum, og samantekt við söguna um týnda hundinn.
+- Lesskilningur má nú taka **tvær** af spurningunum þremur sem nýju flokkarnir deila í Lotu dagsins
+  (`NEW_SKILL_MAX`), af því að hann hefur fjórar gerðir spurninga; sú þriðja fer til hinna.
+
 ### Lota dagsins: Lesskilningur tekur eina spurningu, ekki þrjár
 - Meðan Námsorð hefur enga spurningagerð var Lesskilningur eini nýi flokkurinn sem taldist og fékk allar
   þrjár spurningarnar sem nýju flokkarnir deila: aðalatriði allra þriggja textanna, á hverjum degi.

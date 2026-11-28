@@ -101,7 +101,7 @@ test("the node ids are pinned: saved progress will be keyed by them", () => {
     "fn-afturbeygt", "fn-flokkar", "fn-greinir", "fn-personu",
     "fs-forsetningar", "fs-hreyfing", "fs-operson", "fs-sagnir",
     "gerd-adal-auka", "gerd-tegundir", "gr-ordflokkar",
-    "les-adalatridi",
+    "les-adalatridi", "les-sogukort",
     "lo-beyging", "lo-samraemi", "lo-stig",
     "mb-malsnid", "mb-raeda", "mb-sameina", "mb-smidja", "mb-umritun", "mb-villur",
     "nams-ordin",

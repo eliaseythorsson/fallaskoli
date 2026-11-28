@@ -1101,7 +1101,8 @@ JUDGES.sort = (t, response, hist) => {
   t.items.forEach((it, k) => { if (picks[k] !== it.cls) wrong.push({ it, said: picks[k] }); });
   const ok = !wrong.length;
   const hinted = !!response.hinted;     // item 26: the structure hint, half XP
-  const ids = ok ? [] : t.tags.includes("syn") ? ["setningalidir"]
+  /* `miss`: the builder names the pattern (issue #31: the story map), as in tap. */
+  const ids = ok ? [] : t.miss ? t.miss : t.tags.includes("syn") ? ["setningalidir"]
     : wrong.some((x) => AO_FS.includes(x.it.cls) && AO_FS.includes(x.said))
       ? ["ao_fs"] : ["ordflokkur"];
   return result(t, {

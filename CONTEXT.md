@@ -115,4 +115,11 @@ What a whole text is mainly about; in a subject text one sentence says it, and t
 _Avoid_: topic, theme, gist (a gist is the pupil's own short summary)
 
 **Story map**:
-The six parts of an episode used throughout the program: aðstæður, kveikja/vandi, markmið, tilraun, útkoma, viðbrögð/tilfinning.
+The six parts of an episode used throughout the program: aðstæður, kveikja/vandi, markmið, tilraun, útkoma, viðbrögð/tilfinning. Each has one icon (src/js/ui/storyicons.js); the parts are defined once in src/js/core/storymap.js.
+
+**Episode** (þáttur):
+One run through the story map in a longer story: its own vandi, tilraun and útkoma. A story of þyngd 3 or more may have two or three.
+
+**Summary** (samantekt):
+A short retelling of a whole story that follows its story map; a wrong summary breaks one part of the map or the order of events.
+_Avoid_: gist (the pupil's own words), main idea (what a text is mainly about)

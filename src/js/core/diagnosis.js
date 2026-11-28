@@ -181,6 +181,10 @@ export const PATTERNS = [
   { id: "adalatridi", ok: "aðalatriði texta", nm: "Aðalatriði texta",
     rule: "**Aðalatriðið** er það sem **allur** textinn fjallar um. Smáatriði stendur bara í einni setningu. Spyrðu: um hvað eru flestar setningarnar?",
     lesson: "lesskilningur", tags: ["les"], types: ["les_adal"] },
+  /* issue #31: the parts of a story (core/storymap.js) */
+  { id: "sogukort", ok: "sögukortið", nm: "Sögukortið",
+    rule: "Saga hefur sex hluti: **aðstæður** (hver, hvar, hvenær), **vanda** sem kemur sögunni af stað, **markmið** (hvað persónan vill), **tilraun** (hvað hún gerir), **útkomu** (hvernig fer) og **viðbrögð** (hvernig henni líður). Spyrðu um hverja setningu: hvaða spurningu svarar hún?",
+    lesson: "lesskilningur", tags: ["sogukort"], types: ["les_hluti", "les_kort", "les_samantekt"] },
   { id: "merking", ok: "merkingu orða", nm: "Merking orða",
     rule: "Lestu alla setninguna og spyrðu: hvað passar við merkinguna? Ef þú ert ekki viss, flettu orðinu upp — 📖 hnappurinn er við hverja spurningu.",
     lesson: "ordafordi", tags: ["vocab"], types: ["or_heiti", "or_samhengi", "or_utundan", "or_merking"] },

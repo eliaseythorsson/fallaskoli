@@ -1424,6 +1424,7 @@ def text_items():
                      f"{s['words']} / {covered}"); bad = True; continue
             out = {k: rec[k] for k in ("t", "tok", "cl", "ph", "ku") if k in rec}
             out["p"] = s["part"]
+            if s["e"]: out["e"] = s["e"]          # the episode, in a story that has them (#31)
             sents.append((out, at, s))
         if bad: continue
         for (out, at, s) in sents:
@@ -1446,7 +1447,8 @@ def text_items():
         if bad: continue
         items.append({"id": tx["id"], "lvl": tx["þyngd"], "k": tx["tegund"], "orð": tx["orð"],
                       "s": [o for o, _a, _s in sents],
-                      "q": [{"k": q["mark"], "q": q["q"], "a": q["a"], "w": q["w"], "why": q["why"]}
+                      "q": [{"k": q["mark"], "q": q["q"], "a": q["a"], "w": q["w"], "why": q["why"],
+                             **({"br": q["br"]} if q["br"] else {})}
                             for q in tx["spurningar"]]})
         print("   texti þ%d %-10s %-22s %d setningar, %d spurning(ar), %d vísanir fornafna; orð: %s"
               % (tx["þyngd"], tx["tegund"], tx["id"], len(sents), len(tx["spurningar"]),

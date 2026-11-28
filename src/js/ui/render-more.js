@@ -13,6 +13,7 @@ import { RENDER, sentenceHTML, wordHTML, whyBox, conclude, enterToSubmit, skillT
 import { judge, judgeBonus, settle, bonusVerdict, BONUS_XP } from "../core/answer.js";
 import { $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO, freshEnter } from "./dom.js";
 import { codedOn, codedHTML, hintButtonHTML, shownNoteHTML, wireHint, endHint } from "./hint.js";
+import { storyIconHTML, storyPartHTML } from "./storyicons.js";
 
 const eyebrow = (t) =>
   `<p class="eyebrow"><span>${esc(t.title)}</span>${skillTag(t)}<b>þyngd ${t.lvl}</b></p>`;
@@ -175,11 +176,14 @@ function drawGap(app, t, j, val) {
 const textBlock = (h) => (Array.isArray(h.text) && h.text.length
   ? `<p class="sentence readtext">${h.text.map(esc).join(" ")}</p>` : "");
 
+/* `part`: the question is about one part of the story map (issue #31), and
+   its icon stands before it. `sentOpts`: the options are whole sentences, one
+   under the other, in the story's order. */
 const choiceHalf = (h, n) => `
     ${textBlock(h)}${questionSentence(h)}
     ${h.gloss ? `<p class="gloss choicegloss">💬 ${fmt(h.gloss)}</p>` : ""}
-    <p class="gloss">${fmt(h.question)}</p>
-    <div class="qrow"><div class="opts" data-q="${n}">
+    <p class="gloss">${h.part ? storyIconHTML(h.part) + " " : ""}${fmt(h.question)}</p>
+    <div class="qrow"><div class="opts${h.sentOpts ? " sentopts" : ""}" data-q="${n}">
       ${h.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>`;
 
 /* Why the option the pupil picked does not fit (issue #28): a builder that
@@ -559,17 +563,22 @@ const sortSentence = (t) => {
     : `${j ? " " : ""}${marked.has(j) ? `<span class="target">${esc(tok.w)}</span>` : wordHTML(tok)}`).join("")}</p>`;
 };
 
+/* `icons`: the buckets are the parts of the story map (issue #31), each
+   drawn with its icon. `long`: the items are sentences, each above its
+   buttons. */
+const bucketFace = (t, b) => (t.icons ? storyPartHTML(b) : esc(b));
+
 RENDER.sort = function (app) {
   const t = app.cur;
   t.picks = {};
   $("task").innerHTML = `
   <div class="card">
     ${eyebrow(t)}
-    ${sortSentence(t)}
+    ${textBlock(t)}${sortSentence(t)}
     ${shownNoteHTML(t)}
     <p class="gloss">${fmt(t.question)}</p>
-    <div class="sortrows">${t.items.map((it, k) => `<div class="sortrow"><span class="sortw forms">${esc(it.w)}</span>
-      <div class="opts" data-q="${k}">${t.buckets.map((b) => `<button type="button" data-v="${esc(b)}">${esc(b)}</button>`).join("")}</div></div>`).join("")}</div>
+    <div class="sortrows${t.long ? " long" : ""}">${t.items.map((it, k) => `<div class="sortrow"><span class="sortw${t.long ? "" : " forms"}">${esc(it.w)}</span>
+      <div class="opts" data-q="${k}">${t.buckets.map((b) => `<button type="button" data-v="${esc(b)}">${bucketFace(t, b)}</button>`).join("")}</div></div>`).join("")}</div>
     <div class="answer"><button class="go" id="check">Athuga</button>${hintButtonHTML(t)}</div>
     <div id="verdict"></div>
   </div>`;
@@ -609,7 +618,7 @@ function submitSort(app) {
   conclude(app, t, j, () => {
     $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : `${good} af ${t.items.length} rétt`}</h3>
-    ${wrong.length ? `<ul class="exlist">${wrong.map((x) => `<li><span class="forms">${esc(x.it.w)}</span> er <b>${esc(x.it.cls)}</b>, ekki ${esc(x.said)}.</li>`).join("")}</ul>` : ""}
+    ${wrong.length ? `<ul class="exlist">${wrong.map((x) => `<li><span class="forms">${esc(x.it.w)}</span> er <b>${t.icons ? storyPartHTML(x.it.cls) : esc(x.it.cls)}</b>, ekki ${t.icons ? storyPartHTML(x.said) : esc(x.said)}.</li>`).join("")}</ul>` : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
   });
 }

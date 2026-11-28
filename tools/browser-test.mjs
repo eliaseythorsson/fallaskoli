@@ -3461,7 +3461,11 @@ await page.setViewport({ width: 1100, height: 900 });
   const found = await p2.evaluate(() => {
     const A = window.FALLASKOLI;
     for (let k = 0; k < 80; k++) {
-      if (document.querySelector("#task .card .sentence .blank") && document.getElementById("l2speak")) return true;
+      /* A sentence of a few words: a conjugation slot ("ég ___") has a blank
+         too, but too little to read aloud for the check below. Which comes
+         first depends on the seeded stream (#31's types moved it there). */
+      const sent = document.querySelector("#task .card .sentence");
+      if (sent && sent.querySelector(".blank") && sent.textContent.trim().length > 8 && document.getElementById("l2speak")) return true;
       A.finish({ correct: true }); A.next();
     }
     return !!document.getElementById("l2speak");

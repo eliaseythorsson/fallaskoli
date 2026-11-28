@@ -212,6 +212,20 @@ def groups(rel, key_col, columns):
 #                  only aðalatriði (the main idea of the whole text).
 #   an explanation "! …" on the line after a question: what the pupil reads
 #                  once the answer is in.
+#   a question     (issue #31) the same, with its answers on the lines below
+#   in a block     instead of after bars — for answers too long for one line:
+#                      ? [samantekt] Hvaða samantekt passar við söguna?
+#                      + the right answer (first, and only one)
+#                      - [útkoma] a wrong one, with the part of the story map
+#                      - [röð] it breaks: here the útkoma, there the order
+#                      ! the explanation
+#                  A summary question (samantekt) is always a block, in a
+#                  story, and each wrong summary names what it breaks: a part
+#                  the story has, or röð (the order of events is changed).
+#   an episode     (issue #31) "= 1. þáttur", "= 2. þáttur": a longer story
+#                  has two or three episodes, each with its own vandi,
+#                  tilraun and útkoma. The line stands before the episode's
+#                  first sentence; a story without one is one episode.
 #
 # `texts()` is the ONE reader, and every check on a text is here; the build
 # (pipeline/build_exercises.py) only consumes what it returns, and adds what
@@ -230,7 +244,11 @@ def groups(rel, key_col, columns):
 #   * every word of `# orð:` is on LÍNO-2 (sources/lino2.csv, when the file
 #     is there) and is in the text, in some form BÍN knows;
 #   * a question has exactly one right answer: the first, with two or three
-#     wrong ones beside it, no two the same, and an explanation.
+#     wrong ones beside it, no two the same, and an explanation;
+#   * the story-map marks point at the story's sentences (issue #31): a
+#     story's episodes are numbered 1, 2, 3 in order, only from þyngd
+#     EPISODES_FROM, each has the parts EPISODE_NEEDS; a wrong summary names a
+#     part the story has (or röð).
 #
 # BÍN is asked through `lookup(word) -> [(lemma, class, mark), …]`, so that a
 # test can hand in a few words written out by hand. Left out, it is BÍN
@@ -248,7 +266,15 @@ STORY_PARTS = ("aðstæður", "vandi", "markmið", "tilraun", "útkoma", "viðbr
 STORY_MARKS = dict([(p, p) for p in STORY_PARTS] + [("kveikja", "vandi"), ("tilfinning", "viðbrögð")])
 IDEA_MARKS = {"aðalatriði": "aðalatriði", "smáatriði": "smáatriði"}
 OTHER_MARK = "annað"
-QUESTION_MARKS = ("aðalatriði",)
+QUESTION_MARKS = ("aðalatriði", "samantekt")
+# What a wrong summary may say it breaks: a part of the story map, or the
+# order of events.
+ORDER_MARK = "röð"
+
+# Episodes (issue #31): two or three, from this þyngd, each with these parts.
+EPISODES_FROM = 3
+EPISODES_MAX = 3
+EPISODE_NEEDS = ("vandi", "tilraun", "útkoma")
 
 # What a þyngd asks of a text: how long it is, and which parts it must have.
 #   TEXT_LENGTH   þyngd -> (unit, fewest, most)
@@ -411,6 +437,18 @@ def _lino_words():
     return {lemma for lemma, _cls, _rank in lino.load(path)}
 
 
+def _answers_ok(q, stop):
+    """One right answer first and two or three wrong ones, no two the same —
+    the same for a question on one line and one with its answers below."""
+    options = ([q["a"]] if q["a"] else []) + q["w"]
+    if not 3 <= len(options) <= 4:
+        stop(q["line"], "spurning á að hafa eitt rétt svar (fremst) og tvö eða þrjú röng, en hér eru %d svör / "
+                        "one right answer first, then two or three wrong ones" % len(options))
+    if len({o.lower().rstrip(".") for o in options}) != len(options):
+        stop(q["line"], "sama svarið stendur tvisvar, svo rétta svarið er ekki eitt / "
+                        "the same answer twice: there must be exactly one right answer")
+
+
 def read_text(path, rel, lookup=None, lino=None):
     """One text file -> a Row (see `texts`). `rel` is the name errors use;
     `lino` the lemmas of LÍNO-2, or None for "not checked"."""
@@ -419,7 +457,7 @@ def read_text(path, rel, lookup=None, lino=None):
         raise ContentError("%s:%d: %s" % (rel, no, why))
 
     head, head_line = {}, {}
-    sentences, questions = [], []
+    sentences, questions, episodes = [], [], []
     last = 0
     with open(path, encoding="utf-8") as f:
         raw_lines = f.read().split("\n")
@@ -446,12 +484,13 @@ def read_text(path, rel, lookup=None, lino=None):
             if k not in head:
                 bad("hausinn vantar „# %s:“ á undan textanum / the header line is missing" % k)
         if line.startswith("!"):
-            if not questions or questions[-1]["line"] != no - 1 or questions[-1]["why"]:
+            if not questions or questions[-1]["last"] != no - 1 or questions[-1]["why"]:
                 bad("skýring (!) á að standa í línunni á eftir spurningu / an explanation follows its question")
             why = line[1:].strip()
             if not why:
                 bad("tóm skýring / an empty explanation")
             questions[-1]["why"] = why
+            _answers_ok(questions[-1], stop)
             continue
         if line.startswith("?"):
             m = re.fullmatch(r"\?\s*\[([^\]]*)\]\s*(.*)", line)
@@ -467,22 +506,72 @@ def read_text(path, rel, lookup=None, lino=None):
             q, options = cells[0], cells[1:]
             if not q.endswith("?"):
                 bad("spurningin á að enda á spurningarmerki / the question ends in ?")
-            if not 3 <= len(options) <= 4:
-                bad("spurning á að hafa eitt rétt svar (fremst) og tvö eða þrjú röng, en hér eru %d svör / "
-                    "one right answer first, then two or three wrong ones" % len(options))
-            if len({o.lower().rstrip(".") for o in options}) != len(options):
-                bad("sama svarið stendur tvisvar, svo rétta svarið er ekki eitt / "
-                    "the same answer twice: there must be exactly one right answer")
-            questions.append({"line": no, "mark": mark, "q": q, "a": options[0], "w": options[1:], "why": ""})
+            block = not options
+            if mark == "samantekt" and not block:
+                bad("samantekt er skrifuð með svörin í línunum fyrir neðan (+ rétt, - [brot] rangt) / "
+                    "a summary question has its answers on the lines below")
+            questions.append({"line": no, "last": no, "mark": mark, "q": q, "block": block,
+                              "a": options[0] if options else "", "w": options[1:], "br": [], "why": ""})
+            if not block:
+                _answers_ok(questions[-1], stop)
+            continue
+        if line[0] in "+-" and line[1:2] == " ":
+            q = questions[-1] if questions else None
+            if not q or not q["block"] or q["last"] != no - 1 or q["why"]:
+                bad("svar (+ eða -) á að standa beint undir spurningu sem hefur ekki svör eftir strikum / "
+                    "an answer line follows its question or the answer before it")
+            body = line[2:].strip()
+            if line[0] == "+":
+                if q["a"] or q["w"]:
+                    bad("rétta svarið (+) stendur fremst og bara eitt / the right answer comes first, and only one")
+                q["a"] = body
+            else:
+                if not q["a"]:
+                    bad("rétta svarið (+) stendur fremst, á undan þeim röngu / the right answer comes first")
+                bm = re.fullmatch(r"\[([^\]]*)\] (.+)", body)
+                if q["mark"] == "samantekt":
+                    if not bm:
+                        bad("röng samantekt segir fremst hvað hún brýtur: - [útkoma] …, - [röð] … / "
+                            "a wrong summary names what it breaks")
+                    brot = bm.group(1).strip()
+                    if brot != ORDER_MARK and brot not in STORY_MARKS:
+                        bad("óþekkt brot [%s]; þekkt: %s, %s / unknown break"
+                            % (brot, ", ".join(STORY_MARKS), ORDER_MARK))
+                    q["br"].append((STORY_MARKS.get(brot, brot), no))
+                    body = bm.group(2).strip()
+                elif bm:
+                    bad("merki á röngu svari er bara notað í samantekt / only a wrong summary carries a mark")
+                q["w"].append(body)
+            if not body:
+                bad("tómt svar / an empty answer")
+            q["last"] = no
+            continue
+        m = re.fullmatch(r"=\s*(\d+)\.\s*þáttur", line)
+        if m or line.startswith("="):
+            if not m:
+                bad("þáttur er skrifaður „= 1. þáttur“ / an episode line is \"= 1. þáttur\"")
+            if questions:
+                bad("setningar textans eiga að standa á undan spurningunum / the sentences come before the questions")
+            n = int(m.group(1))
+            if n != len(episodes) + 1:
+                bad("þættirnir eru tölusettir 1, 2, 3 í röð; hér átti að standa „= %d. þáttur“ / "
+                    "episodes are numbered 1, 2, 3 in order" % (len(episodes) + 1))
+            if n == 1 and sentences:
+                bad("„= 1. þáttur“ stendur á undan fyrstu setningunni / the first episode line comes before the first sentence")
+            if n > 1 and (not sentences or sentences[-1]["e"] != n - 1):
+                bad("þáttur %d hefur enga setningu / episode %d has no sentence" % (n - 1, n - 1))
+            episodes.append(no)
             continue
         m = re.fullmatch(r"\[([^\]]*)\] (.+)", line)
         if not m:
-            bad("lína á að vera setning með merki fremst ([vandi] …), spurning (? …), skýring (! …) "
-                "eða athugasemd (# …) / not a sentence with its mark, a question, an explanation or a comment")
+            bad("lína á að vera setning með merki fremst ([vandi] …), spurning (? …), skýring (! …), "
+                "þáttur (= 1. þáttur) eða athugasemd (# …) / not a sentence with its mark, a question, "
+                "an explanation, an episode or a comment")
         if questions:
             bad("setningar textans eiga að standa á undan spurningunum / the sentences come before the questions")
         text, words, refs = _sentence(m.group(2), rel, bad)
-        sentences.append({"line": no, "mark": m.group(1).strip(), "t": text, "words": words, "refs": refs})
+        sentences.append({"line": no, "mark": m.group(1).strip(), "t": text, "words": words, "refs": refs,
+                          "e": len(episodes)})
 
     for k in ("þyngd", "tegund", "orð"):
         if k not in head:
@@ -535,6 +624,26 @@ def read_text(path, rel, lookup=None, lino=None):
             stop(head_line["þyngd"], "fræðitexti á þyngd %d á að hafa að minnsta kosti %d [smáatriði] / "
                                      "too few details for its þyngd" % (lvl, DETAILS_MIN[lvl]))
 
+    # the episodes (issue #31): numbered in order, only in a longer story,
+    # each with the parts an episode has
+    if episodes:
+        if kind != "saga":
+            stop(episodes[0], "bara saga skiptist í þætti / only a story has episodes")
+        if lvl < EPISODES_FROM:
+            stop(episodes[0], "saga skiptist fyrst í þætti á þyngd %d / episodes start at þyngd %d"
+                 % (EPISODES_FROM, EPISODES_FROM))
+        if not 2 <= len(episodes) <= EPISODES_MAX:
+            stop(episodes[-1], "saga með þáttum hefur 2 eða %d þætti, en hér eru %d / "
+                               "a story with episodes has two or three" % (EPISODES_MAX, len(episodes)))
+        for n, at in enumerate(episodes, 1):
+            mine = [s["part"] for s in sentences if s["e"] == n]
+            if not mine:
+                stop(at, "þáttur %d hefur enga setningu / episode %d has no sentence" % (n, n))
+            missing = [p for p in EPISODE_NEEDS if p not in mine]
+            if missing:
+                stop(at, "hver þáttur hefur %s — í þætti %d vantar: %s / an episode lacks a part"
+                     % (", ".join(EPISODE_NEEDS), n, ", ".join(missing)))
+
     # the pronouns: the referent stands earlier, in the same gender and number
     for si, s in enumerate(sentences):
         out = []
@@ -573,6 +682,15 @@ def read_text(path, rel, lookup=None, lino=None):
     for q in questions:
         if not q["why"]:
             stop(q["line"], "spurninguna vantar skýringu í næstu línu (! …) / the question has no explanation")
+        if q["mark"] == "samantekt":
+            if kind != "saga":
+                stop(q["line"], "samantekt eftir sögukorti er bara spurð um sögu / a summary question is for a story")
+            for brot, no in q["br"]:
+                if brot != ORDER_MARK and brot not in have:
+                    stop(no, "röng samantekt brýtur [%s], en sagan hefur engan þann hluta / "
+                             "the wrong summary breaks a part the story does not have" % brot)
+        q["br"] = [b for b, _no in q["br"]]
+        del q["block"], q["last"]
 
     r = Row()
     r.file, r.line = rel, 1
@@ -596,7 +714,11 @@ def texts(lookup=None, folder=None):
                     the referent as written; `to` = (sentence, first word,
                     number of words) of where it stands. Words are counted
                     without punctuation.
-      spurningar  [{line, mark, q, a (the right answer), w (the wrong ones), why}]
+                  e: the episode the sentence is in, 1–3, or 0 in a story
+                    without episodes (and in a subject text) (#31)
+      spurningar  [{line, mark, q, a (the right answer), w (the wrong ones), why,
+                    br (a summary question: what each wrong one breaks — a
+                    story-map part or "röð", in the order of w; else [])}]
 
     `lookup` is BÍN (see the head of this section); `texts.bin_checked` says
     afterwards whether the two BÍN checks ran."""

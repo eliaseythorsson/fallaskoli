@@ -4,7 +4,9 @@
 #   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er
 #   (aðstæður, vandi, markmið, tilraun, útkoma, viðbrögð),
 #   þau{Jón og Sara} og hans{hund} segja til hvers fornafnið vísar,
-#   ? er spurning (rétta svarið fremst) og ! skýringin sem nemandinn les á eftir.
+#   ? er spurning (rétta svarið fremst) og ! skýringin sem nemandinn les á eftir;
+#   ? [samantekt] hefur svörin í línunum fyrir neðan: + rétta samantektin,
+#   - [hluti] röng samantekt og hlutinn sem hún brýtur.
 #
 # þyngd: 3
 # tegund: saga
@@ -20,3 +22,10 @@
 
 ? [aðalatriði] Um hvað er sagan aðallega? | Tveir krakkar finna týndan hund og hjálpa honum að komast aftur heim. | Sara finnur símanúmer á hálsól. | Gömul kona fer að gráta fyrir utan búð. | Hundar þola illa kulda.
 ! Rétta svarið nær yfir alla söguna: vandann, það sem krakkarnir gerðu og hvernig fór. Hin svörin eru smáatriði úr sögunni eða standa ekki í henni.
+
+? [samantekt] Hvaða samantekt passar við söguna?
++ Jón og Sara fundu hund sem var einn, hringdu í númerið á hálsólinni og eigandinn kom og sótti hann.
+- [útkoma] Jón og Sara fundu hund sem var einn og fóru með hann heim til sín, af því að enginn átti hann.
+- [tilraun] Jón og Sara fundu hund sem var einn og fóru með hann á lögreglustöðina, þar sem eigandinn sótti hann.
+- [viðbrögð] Jón og Sara hjálpuðu hundinum að komast heim, en eigandinn varð reiður við þau.
+! Krakkarnir finna hund sem er einn (vandi), hringja í númerið á hálsólinni (tilraun) og eigandinn kemur og sækir hann (útkoma). Konan verður mjög glöð (viðbrögð). Rétta samantektin fylgir þessu.
