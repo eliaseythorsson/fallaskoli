@@ -1,0 +1,19 @@
+{
+ "_fake": "NOT an answer from Claude. Written by hand by the agent that built issue #22, to show the shape of the output. The usage numbers are made up.",
+ "type": "message",
+ "role": "assistant",
+ "model": "claude-fable-5-2",
+ "stop_reason": "end_turn",
+ "content": [
+  {
+   "type": "text",
+   "text": "{\"sentences\":[{\"n\":1,\"ok\":true,\"why\":\"a change can be the cause\"},{\"n\":2,\"ok\":true,\"why\":\"a teacher can explain a change\"}]}"
+  }
+ ],
+ "usage": {
+  "input_tokens": 620,
+  "cache_creation_input_tokens": 0,
+  "cache_read_input_tokens": 0,
+  "output_tokens": 300
+ }
+}

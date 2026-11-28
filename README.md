@@ -565,8 +565,12 @@ as an unknown frame or word does. The word need not be on LÍNO-2; the build
 reports which are. The review page shows each pair as the sentence it makes.
 `pipeline/frame_allow.py` has the rules. Candidate pairs for the LÍNO-2 nouns
 come from an authoring pass outside the build that asks Claude, one noun at a
-time, which frames make sense (`tools/lino-frames/README.md`); a person decides
-what goes into the file.
+time, which frames make sense. A self-check, also outside the build, fills each
+pair in, parses the sentence, has a second model read it, and puts every pair
+the two models disagree on and a random sample of the rest before the owner
+(`review/lino-rammar/<run>/yfirferd.tsv`, shown first on the review page). Only
+after the owner's verdicts does anything reach the file, and only if the sample
+was clean enough (`tools/lino-frames/README.md`).
 
 **The review page.** `node tools/review.mjs` (also run by `./build.sh`) writes
 `dist/review.html`: one self-contained page with every hand-written item —
@@ -577,7 +581,9 @@ with the note beside them. A reader marks items *Í lagi* or *Athuga*, writes a
 comment, and *Sækja athugasemdir* downloads the marks as a text file; nothing
 leaves the browser. To flag something new for a native reader, add a note to
 `content/REVIEW-NOTES.md` with `Leita:` phrases from the items (the tests fail if a
-phrase stops finding one).
+phrase stops finding one). LÍNO-2 pairs waiting for the owner's verdict
+(above) are on the page too, marked *þarf að athuga* until their file has a
+*já* or *nei* for them.
 
 **What is still in code.** The Lesefni pages and the worked examples
 (`src/js/content/lessons.js`, `examples.js`) are plain data in JavaScript that

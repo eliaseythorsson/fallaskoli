@@ -1,0 +1,114 @@
+[
+ {
+  "frame": "Þetta gerðist allt vegna bílsins.",
+  "text": "Þetta gerðist allt vegna breytingarinnar.",
+  "lemma": "breyting",
+  "mark": "EFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.",
+  "text": "Kennarinn útskýrði breytinguna fyrir bekknum í rólegheitum.",
+  "lemma": "breyting",
+  "mark": "ÞFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.",
+  "text": "Kennarinn útskýrði starfið fyrir bekknum í rólegheitum.",
+  "lemma": "starf",
+  "mark": "ÞFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Við bíðum eftir svari frá skólanum.",
+  "text": "Við bíðum eftir heimild frá skólanum.",
+  "lemma": "heimild",
+  "mark": "ÞGFET",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.",
+  "text": "Kennarinn útskýrði hugmyndina fyrir bekknum í rólegheitum.",
+  "lemma": "hugmynd",
+  "mark": "ÞFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.",
+  "text": "Kennarinn útskýrði hlutverkið fyrir bekknum í rólegheitum.",
+  "lemma": "hlutverk",
+  "mark": "ÞFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Kennarinn útskýrði dæmið aftur svo allir skildu það.",
+  "text": "Kennarinn útskýrði hlutverkið aftur svo allir skildu það.",
+  "lemma": "hlutverk",
+  "mark": "ÞFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Þetta er saga um vináttu.",
+  "text": "Þetta er saga um þjóð.",
+  "lemma": "þjóð",
+  "mark": "ÞFET",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Þetta gerðist allt vegna bílsins.",
+  "text": "Þetta gerðist allt vegna tillögunnar.",
+  "lemma": "tillaga",
+  "mark": "EFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.",
+  "text": "Kennarinn útskýrði tillöguna fyrir bekknum í rólegheitum.",
+  "lemma": "tillaga",
+  "mark": "ÞFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Þetta gerðist allt vegna bílsins.",
+  "text": "Þetta gerðist allt vegna samningsins.",
+  "lemma": "samningur",
+  "mark": "EFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.",
+  "text": "Kennarinn útskýrði samninginn fyrir bekknum í rólegheitum.",
+  "lemma": "samningur",
+  "mark": "ÞFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Þetta gerðist allt vegna bílsins.",
+  "text": "Þetta gerðist allt vegna þróunarinnar.",
+  "lemma": "þróun",
+  "mark": "EFETgr",
+  "ok": true,
+  "why": ""
+ },
+ {
+  "frame": "Kennarinn útskýrði dæmið fyrir bekknum í rólegheitum.",
+  "text": "Kennarinn útskýrði þróunina fyrir bekknum í rólegheitum.",
+  "lemma": "þróun",
+  "mark": "ÞFETgr",
+  "ok": true,
+  "why": ""
+ }
+]
