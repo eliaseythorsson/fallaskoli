@@ -64,7 +64,8 @@ test("Frásögn is a skill of every year, with its node, pattern, lesson and exa
     assert.ok(presetContent(y).skills.includes("frasogn"), `${y}. bekkur`);
     for (const id of TYPES) assert.ok(presetContent(y).types.includes(id), `${y}: ${id}`);
   }
-  assert.deepEqual(nodeById("fras-bygging").types, TYPES);
+  /* and #40's written steps 4–6, for switched-on pupils */
+  assert.deepEqual(nodeById("fras-bygging").types, [...TYPES, "fr_hluti", "fr_hlidstaed", "fr_eigin"]);
   assert.deepEqual(NODE_PATTERNS["fras-bygging"], ["sogubygging"]);
   assert.deepEqual(patternById("sogubygging").types, TYPES);
   assert.ok(LESSONS.find((l) => l.id === "frasogn" && l.skill === "frasogn"));

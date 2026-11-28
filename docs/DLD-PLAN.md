@@ -242,6 +242,18 @@ Connectives for cause and time and words for inner states (*hélt, vildi, varð
 hræddur*) are taught directly, because work on story structure doesn't improve them
 by itself (§D). Pupils without the LLM get steps 1–3 only.
 
+*As built (#40).* Steps 4–6 are `fr_hluti`, `fr_hlidstaed` and `fr_eigin`
+(`grader: "server"`, renderer `meaning` with the story above the box), unlocked at þyngd 4, 5 and 6
+(`STEP_FROM` in `src/js/tasks/frasogn.js`). Step 4 takes out the same gaps
+as step 2's missing part (one part, the only one of its kind, of a story
+with all six); step 5's frames are the one-episode stories with all six
+parts. The rubric (`server/rubric-frasogn.mjs`): the six parts by their own
+ids (so the checklist shows their icons), `heild` (a problem, an attempt and
+an outcome in an order that holds; the main point), `tengiord`,
+`hugarastand`, and for step 5 `ny` (a new story, not the model retold). The
+follow-up is the question of the first part still missing. Nothing the
+pupil writes is kept.
+
 **Share of Lota dagsins:** the three new skills (Námsorð, Lesskilningur, Frásögn)
 together take about 3 of its 10 questions. Built in #19: `NEW_SKILLS` and
 `NEW_SKILLS_SHARE` in `src/js/core/today.js`. The share is set aside first and

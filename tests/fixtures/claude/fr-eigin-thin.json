@@ -1,0 +1,29 @@
+{
+  "recorded": "HAND-WRITTEN in the exact shape of a Messages API response: no API key existed where #40 was built. Replace with a real recording: node tools/record-grading.mjs --kind fr_eigin --context '{}' --text ... (see its header).",
+  "model": "opus",
+  "effort": "low",
+  "kind": "fr_eigin",
+  "context": {},
+  "names": [],
+  "text": "Einu sinni var strákur sem týndi boltanum sínum í garðinum. Hann leitaði undir runnunum. Hann fann boltann bak við tré.",
+  "response": {
+    "id": "msg_01HandWrittenFrasogn000004",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-opus-5-5",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"findings\": [{\"point\": \"heild\", \"met\": true, \"quote\": \"týndi boltanum sínum\"}, {\"point\": \"aðstæður\", \"met\": true, \"quote\": \"Einu sinni var strákur\"}, {\"point\": \"vandi\", \"met\": true, \"quote\": \"týndi boltanum sínum í garðinum\"}, {\"point\": \"markmið\", \"met\": false, \"quote\": \"\"}, {\"point\": \"tilraun\", \"met\": true, \"quote\": \"Hann leitaði undir runnunum\"}, {\"point\": \"útkoma\", \"met\": true, \"quote\": \"Hann fann boltann bak við tré\"}, {\"point\": \"viðbrögð\", \"met\": false, \"quote\": \"\"}, {\"point\": \"tengiord\", \"met\": false, \"quote\": \"\"}, {\"point\": \"hugarastand\", \"met\": true, \"quote\": \"hann var mjög glaður\"}]}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 1100,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 230
+    }
+  }
+}

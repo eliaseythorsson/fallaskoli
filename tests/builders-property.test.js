@@ -264,6 +264,7 @@ test("judge(task, the right answer) is right, and every wrong option is wrong", 
   forAll(cases, (c) => {
     const t = c.task;
     if (t.type === "meaning") return;                        // there is no wrong answer
+    if (t.grader === "server") return;                       // read on the server (#40): no answer key
     const j = judge(t, rightResponse(t));
     right++;
     if (j.ok !== true) return `the right answer was judged ${j.ok} (${j.verdict})`;

@@ -24,6 +24,7 @@ import { serverQuestion, noReader } from "../control/serverask.js";
 import { serverGraderLost } from "../core/servergrader.js";
 import { $, fmt, esc } from "./dom.js";
 import { linksText, LINK_WORD_LEN, LINK_HOW_LEN } from "../tasks/wordcard.js";
+import { storyIconHTML } from "./storyicons.js";
 
 const asks = new WeakMap();
 
@@ -59,11 +60,13 @@ export function linksFrom(root) {
   return { rows, text: linksText(rows) };
 }
 
+/** The checklist: a point whose id is a part of the story map (Frásögn,
+    issue #40) has its icon, so the parts a story has are the icons ticked. */
 export function checklistHTML(list) {
   if (!list || !list.length) return "";
   return `<ul class="checklist" style="list-style:none;padding-left:0">${list.map((p) => `<li class="${p.met ? "met" : "open"}">
     <span aria-hidden="true">${p.met ? "✓" : "○"}</span>
-    <span class="sr-only">${p.met ? "Komið:" : "Vantar:"}</span> ${fmt(p.label || "")}</li>`).join("")}</ul>`;
+    <span class="sr-only">${p.met ? "Komið:" : "Vantar:"}</span> ${storyIconHTML(p.id) && storyIconHTML(p.id) + " "}${fmt(p.label || "")}</li>`).join("")}</ul>`;
 }
 
 /** The verdict of a settled server-graded question. */

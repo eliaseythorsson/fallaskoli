@@ -118,10 +118,11 @@ export const PLACEMENT_SKIP = new Set(["table", "villur", "meaning"]);
 
 /** Types that do not follow the level but are unlocked by it: nothing
     below a þyngd, the same questions from it up (Frásögn step 3, #36,
-    tasks/frasogn.js STEP3_FROM). Their second band is a door, not a
-    measure, so the round counts them as flat: an answer there places
-    nothing, and a round must not grow by a skill for them. */
-export const UNLOCKED_BY_THYNGD = new Set(["fr_tengiord", "fr_innra"]);
+    tasks/frasogn.js STEP3_FROM; steps 4–6, #40, STEP_FROM). Their second
+    band is a door, not a measure, so the round counts them as flat: an
+    answer there places nothing, and a round must not grow by a skill for
+    them. */
+export const UNLOCKED_BY_THYNGD = new Set(["fr_tengiord", "fr_innra", "fr_hluti", "fr_hlidstaed", "fr_eigin"]);
 
 /**
  * The question types the round may ask, per skill: { skill: [typeId …] }.

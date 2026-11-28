@@ -644,4 +644,24 @@ export const EXAMPLES = {
     how: "Bæði *Kári* og *Jón* eru karlkyn, eins og *honum*. En Jón lánar ekki sjálfum sér, svo að *honum* er Kári.",
     forms: [],
   },
+  /* issue #40: steps 4–6, shown only to a pupil whose answers the server
+     reads. The Lína and Gummi stories, not one of content/textar/. */
+  fr_hluti: {
+    q: "*Lína var úti að leika sér. Allt í einu byrjaði að rigna. ……… Hún slapp við að blotna.* Hér vantar tilraunina: hvað gerir persónan?",
+    a: "Lína hljóp heim eins hratt og hún gat.",
+    how: "Lestu það sem kemur á undan (rigningin) og á eftir (hún slapp við að blotna) og skrifaðu hvað Lína gerði. Þú færð gátlista og eina spurningu og mátt bæta svarið einu sinni.",
+    forms: [],
+  },
+  fr_hlidstaed: {
+    q: "*Gummi vaknaði of seint. Hann hljóp alla leiðina og náði strætó. Hann var feginn.* Skrifaðu nýja sögu með sama sniði.",
+    a: "Sara gleymdi nestinu heima. Hún hringdi í ömmu sína, sem kom með það. Hún varð glöð.",
+    how: "Hver setning sögunnar á sinn hluta í sögukortinu. Skrifaðu nýja sögu, um aðrar persónur og annan vanda, með sömu hlutum í sömu röð.",
+    forms: [],
+  },
+  fr_eigin: {
+    q: "Skrifaðu þína eigin sögu með sögukortið sem gátlista.",
+    a: "Tumi týndi hundinum sínum í fjörunni. Hann vildi finna hann áður en dimmdi, svo hann leitaði alls staðar. Loks fann hann hundinn sofandi undir bát og varð mjög feginn.",
+    how: "Farðu yfir hlutana sex: hver, hvar og hvenær; hvaða vandi kemur upp; hvað persónan vill; hvað hún gerir; hvernig fer; og hvernig henni líður á eftir. Orð eins og *þegar* og *þess vegna* tengja atburðina.",
+    forms: [],
+  },
 };

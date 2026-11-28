@@ -418,6 +418,42 @@ Cost: roughly 2–9 US cents a reading at the planned settings; add up
 `claude-cost.jsonl` to see the real figure. Limits: 120 readings an hour per
 pupil, 1,200 characters, 15 seconds a reading (`server/grading.mjs`).
 
+**Stories the pupil writes (Frásögn steps 4–6, issue #40).** For the same
+switched-on pupils, and under everything above, Claude also reads **a story
+the pupil wrote**: one missing part written into a short model story
+(*Skrifaðu hlutann sem vantar*), a new story on a model story's frame (*Ný
+saga með sama sniði*), and **the pupil's own story** (*Þín eigin saga*). It
+ticks the story map's six parts, whether the order holds, connectives and
+words for inner states.
+
+- **What is sent:** the pupil's text (at most 1,200 characters), names
+  stripped as above, and the rubric. For the first two, the browser sends
+  only *which* model story (and which sentence is missing); the server adds
+  that story from its own data — the program's own text, nothing about the
+  pupil — and the names of that story's characters are left in the pupil's
+  text (as for #39's summaries); every other name is stripped. For the
+  pupil's own story, nothing but the text and the rubric.
+- **Copying:** in a new story on a model's frame, a whole sentence of the
+  model, or eight of its words in a row, is decided on the server to be no
+  new story (#39's copy check), whatever the model says.
+- **A pupil's own story can be personal.** Children write about their
+  family, friends, holidays, worries. The step says *Persónurnar mega heita
+  hvað sem er, en notaðu ekki nöfn fólks sem þú þekkir* (the characters may
+  be called anything, but do not use the names of people you know), every
+  name of the pupil's group and every capitalised word inside a sentence is
+  stripped anyway, and nothing else about the pupil goes with it. What the
+  story *tells* is not stripped: that is why it is behind the
+  administrator's per-pupil switch and the notice paragraph.
+- **What is kept: nothing.** Not on the server (one request, in memory), and
+  **not in the pupil's progress either**: unlike a word card, a story is not
+  saved anywhere. Progress records only that the question was answered,
+  whether it was right, and the XP, as for any question. At Anthropic:
+  nothing, under zero data retention (30 days for Fable 5.2).
+- **The notice paragraph** (item 3 above) must mention stories, including
+  the pupil's own, before a pupil is switched on for them. Anthropic's row in
+  §4 covers them: they are "what pupils you switched on wrote in their own
+  words".
+
 ---
 
 ## 2. Record of processing (Art. 30) — *vinnsluskrá*
@@ -553,6 +589,7 @@ Note each request and what you did; a line in a notebook is enough.
 | An answer Claude read — explanation, own sentence, related words, a text's main idea, a story's summary (§1h) | Not on the server: one request in memory. On the pupil's own word card, as their progress (not the main idea or the summary: those nowhere). At Anthropic: nothing, under zero data retention (30 days for Fable 5.2) | Automatic, given §1h's arrangement |
 | The cost log of Claude readings | Anonymous lines (day, model, tokens, price); until you delete `claude-cost.jsonl` | You |
 | A text written in Ritun vikunnar | Not kept, unless the group's guardian switched keeping on: then at most 12 per pupil and 60 days (`WRITING.keepPerPupil`, `WRITING.keepDays`, printed in the notice) | Automatic; switching keeping or the check off erases the group's texts at once |
+| A story a pupil wrote for Frásögn steps 4–6 (§1h, #40) | Not on the server and not in progress: one request in memory, then gone. At Anthropic: nothing, under zero data retention (30 days for Fable 5.2) | Automatic, given §1h's arrangement |
 
 ---
 
@@ -632,6 +669,7 @@ the honest answer to "what could go wrong" is short enough to write down here:
 | Somebody flooding the count to make the program easier or harder | Caps per account per day and per number; shrinkage; a quarter step a week, one level at most; accounts held for review are not counted |
 | The host misusing data | DPA; EEA region; nothing but this app on the machine |
 | A pupil's own words sent to an outside model (§1h) | Off unless the administrator switches one pupil on; names stripped; nothing kept on the server; zero data retention at Anthropic; the model only ticks a rubric and writes nothing the pupil reads |
+| A pupil's own story, which may tell something personal, sent to an outside model (§1h, #40) | Behind the same per-pupil switch; the step asks for no real names and they are stripped; only the program's model story goes with it; nothing kept anywhere, not even in the pupil's progress |
 
 If you would rather be certain, Persónuvernd publishes a list of processing that
 requires an assessment; check it against the above.
