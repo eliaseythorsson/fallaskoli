@@ -29,7 +29,9 @@
    Each wrong option has its reason in the file (`whyNot`), as in ob_tengiord.
    Step 3 is unlocked by þyngd: below STEP3_FROM these two build nothing,
    and the skill's questions are steps 1 and 2 (bands [1, 3] in the
-   catalogue). A review of an item already met is built at any þyngd.
+   catalogue). A review of an item already met is built at any þyngd, and
+   so is step 3 in a session that may not ask steps 1 and 2 (a teacher's
+   assignment of node fras-tengsl).
 
    With nine stories none of the types follows the band further (bands: [1],
    as tasks/lesskilningur.js `FEW`); the policy's levels still apply. */
@@ -172,6 +174,12 @@ export function taskMissingSentence(lex, view, rng) {
     unlocked by þyngd, after steps 1 and 2). */
 export const STEP3_FROM = 3;
 
+/** Is step 3 still shut? Below STEP3_FROM, while steps 1 and 2 are there to
+    be done. A session that may ask neither (a teacher who set exactly this
+    node, a curriculum without them) has no path to follow, so no door. */
+const STEPS_1_2 = ["fr_rod", "fr_vantar", "fr_setning"];
+const locked = (view) => bandFor(view, SKILL) < STEP3_FROM && STEPS_1_2.some((id) => view.policy.type(id));
+
 /** Every gap of a kind ("tengi" | "innra") in every story. */
 const gapItems = (k) => STORIES.flatMap((tx) => tx.s.map((s, j) => ({ tx, j, g: s.g }))
   .filter((x) => x.g && x.g.k === k)
@@ -190,7 +198,7 @@ const GAP_ASK = {
     with ___, its options; the reason for each wrong one (`whyNot`). */
 function gapTask(view, rng, items, k) {
   const want = forcedItem(view);
-  if (!want && bandFor(view, SKILL) < STEP3_FROM) return null;
+  if (!want && locked(view)) return null;
   const ask = GAP_ASK[k];
   const mine = items.filter(() => cellWanted(view, ask.cell));
   const x = want ? items.find((y) => y.key === want)

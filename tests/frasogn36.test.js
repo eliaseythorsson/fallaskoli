@@ -30,7 +30,8 @@ import { createPolicy, presetPolicy } from "../src/js/core/policy.js";
 import { storyLinesHTML } from "../src/js/ui/storyicons.js";
 import { TASKS } from "../src/js/tasks/index.js";
 import { FRASOGN_ITEMS, STEP3_FROM } from "../src/js/tasks/frasogn.js";
-import { buildFresh } from "./pools.js";
+import { buildFresh, freshView, poolLex } from "./pools.js";
+import { seeded } from "../src/js/core/duel.js";
 import { collect } from "../tools/review.mjs";
 import { EXAMPLES } from "../src/js/content/examples.js";
 import { LESSONS } from "../src/js/content/lessons.js";
@@ -168,6 +169,16 @@ test("unlocked by þyngd: nothing below 3, and Frásögn's level may now reach i
   for (const id of TYPES) {
     for (let band = 1; band < STEP3_FROM; band++) assert.deepEqual(buildFresh(id, band, 40), [], `${id} at þyngd ${band}`);
     assert.ok(buildFresh(id, STEP3_FROM, 40).length > 0, `${id} at þyngd ${STEP3_FROM}`);
+  }
+  /* no door where there is no path: a session that may ask only step 3 (a
+     teacher's assignment of node fras-tengsl) builds it at any þyngd */
+  const only = createPolicy(null, { ...presetPolicy(8), types: Object.fromEntries(TASKS.filter((t) => t.skill === "frasogn")
+    .map((t) => [t.id, TYPES.includes(t.id)])) });
+  const lex = poolLex();
+  for (const id of TYPES) {
+    const spec = TASKS.find((t) => t.id === id);
+    assert.equal(spec.build(lex, freshView(1), seeded(1)), null, `${id} at þyngd 1`);
+    assert.ok(spec.build(lex, freshView(1, { policy: only }), seeded(1)), `${id} alone at þyngd 1`);
   }
   const ranges = levelRanges(createPolicy(null, presetPolicy(8)), TASKS, []);
   assert.ok(ranges.frasogn[1] >= STEP3_FROM, `Frásögn's range ${ranges.frasogn}`);

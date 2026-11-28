@@ -37,6 +37,7 @@ import { reviewTask } from "../src/js/tasks/review.js";
 import { rightResponse, wrongResponse } from "./helpers.js";
 import { seedsOf, pupilAt, forAll } from "./property.js";
 import { OWN_WORD_TYPES } from "./learner.js";
+import { UNLOCKED_BY_THYNGD } from "../src/js/core/placement.js";
 
 const lex = buildLexicon(DATA);
 const SEEDS = seedsOf(30);
@@ -71,7 +72,10 @@ test("no type is starved at a band it declares (item 13): it builds on most seed
     by[k] ||= { n: 0, ok: 0 };
     by[k].n++; if (a.built) by[k].ok++;
   }
-  const starved = Object.entries(by).filter(([, v]) => v.ok / v.n < 0.5).map(([k, v]) => `${k}: ${v.ok}/${v.n}`);
+  /* Frásögn step 3 (#36) is shut below its second band, by design: its
+     band 1 is a door, not a level (core/placement.js UNLOCKED_BY_THYNGD) */
+  const shut = (k) => { const [id, , , b] = k.split(" "); return UNLOCKED_BY_THYNGD.has(id) && +b < TASKS.find((T) => T.id === id).bands[1]; };
+  const starved = Object.entries(by).filter(([k, v]) => v.ok / v.n < 0.5 && !shut(k)).map(([k, v]) => `${k}: ${v.ok}/${v.n}`);
   assert.deepEqual(starved, []);
   assert.equal(Object.keys(by).length, TASKS.reduce((n, T) => n + T.bands.length, 0));
 });
