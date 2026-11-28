@@ -182,6 +182,31 @@ export const WORDS_MAX = 30000;
     (core/wordhealth.js `HEALTH.keep`). */
 export const RECENT_KEEP = 12;
 
+/* The learned rule (#16, docs/DLD-PLAN.md §1 "Learned", `learnedRule`
+   below): a word in learning is learned when, since it entered the six, it
+   has been answered right in LEARNED_TYPES question types, LEARNED_RECALL
+   of them recall, on LEARNED_DAYS days, and its last LEARNED_LAST answers
+   were right. */
+
+/** Right in this many different question types (catalogue ids). A word met
+    in one shape only (a cloze, say) may be a word whose form the pupil
+    knows and whose meaning they do not; four shapes ask about its meaning,
+    its forms and its use. */
+export const LEARNED_TYPES = 4;
+/** … of which at least this many are recall (catalogue `recall: true`):
+    producing the word, not only recognising it, is what retrieval practice
+    builds and what a pupil with DLD most lacks (docs/DLD-RESEARCH.md,
+    Leonard 2019/2021: the advantage is largest for word forms). */
+export const LEARNED_RECALL = 1;
+/** On this many different days: an answer the same afternoon is short-term
+    memory (core/review.js, critique 19). One night between is the smallest
+    sign that the word was kept (McGregor 2020: a 1-day review helps). */
+export const LEARNED_DAYS = 2;
+/** The last this many judged answers about the word, of any type, all
+    right: a word just missed is not known, however many types it was once
+    right in. */
+export const LEARNED_LAST = 3;
+
 /* ---------- writing ------------------------------------------------------- */
 
 /**
@@ -326,10 +351,12 @@ export const isJudged = (entry) => !!entry && (entry.outcome === RIGHT || entry.
  *                 purpose (#42, decision 1)
  *   in learning   learning · learned · put-back: `learningStatus` below,
  *                 from `S.learning` (#12)
- *   later         the learned rule (#16) and hard (#17) live in this
- *                 section and return the same shape, built with the
- *                 helpers below, e.g. `because("learned", "rétt í 4 gerðum
- *                 (1 upprifjun) á 3 dögum, síðustu 3 rétt")`
+ *   learned       learning · learned: `learnedRule` below (#16), from the
+ *                 entries since the word entered the six, e.g.
+ *                 `because("learned", "rétt í 4 gerðum spurninga, þar af 1
+ *                 upprifjun, á 2 dögum; síðustu 3 svör rétt")`
+ *   later         hard (#17) lives in this section and returns the same
+ *                 shape, built with the helpers below
  *
  * `node tools/word-history.mjs <progress.json> <word>` prints a word's
  * entries with its status and reason (README, "Why does the app think that
@@ -497,6 +524,108 @@ export function leaveLearning(S, word, today) {
   if (!DAY.test(String(today)) || !isInLearning(S, word)) return false;
   setLearning(S, word, LEARNED, today);
   return true;
+}
+
+/* ---------- the learned rule (#16, docs/DLD-PLAN.md §1 "Learned") ----------
+ *
+ * A word leaves the six when, counting only the entries written since it
+ * entered (the day of its `S.learning` record, that day included):
+ *
+ *   - it was answered right in LEARNED_TYPES different question types,
+ *     told apart by catalogue id (two answers in `or_eyda` are one type; an
+ *     id the catalogue no longer has counts for nothing);
+ *   - at least LEARNED_RECALL of those types are recall, by the catalogue's
+ *     `recall` flag read now (decision 4);
+ *   - its right answers fall on at least LEARNED_DAYS different days;
+ *   - its last LEARNED_LAST judged answers, of any type, were all right.
+ *
+ * "Seen, not judged" entries count for nothing (decision 7). The thresholds
+ * and their reasons are at the top of the file.
+ *
+ * WHEN IT IS ASKED: on every answer, in core/answer.js `settle`, right after
+ * the answer's entries are written (`noteLearned`). That is the one moment
+ * the rule's answer can change — it reads nothing but the entries — and the
+ * one path every answer takes, so a word moves the moment it has earned it
+ * and "Ég kann" is right at once. All six words are checked, not only the
+ * one just answered, so a word that earned it on another device moves on
+ * the first answer after the merge. The new word does NOT enter there:
+ * `settle` has no lexicon, and a word may enter only after its Orðakort
+ * (#15), which is shown before a session. The next `fillLearning` (when a
+ * session starts, or the app loads) brings it in, card first.            */
+
+/** "1 gerð", "2 gerðum" (dative, after "í" / "af N"). */
+const typesText = (k) => (k % 10 === 1 && k % 100 !== 11 ? "gerð" : "gerðum");
+/** "1 degi", "2 dögum" (dative). */
+const daysText = (k) => (k % 10 === 1 && k % 100 !== 11 ? "degi" : "dögum");
+
+/**
+ * The learned rule over a word's entries (those since it entered the six),
+ * oldest first: `learned` with what earned it, or `learning` with how far
+ * it has come against each line. Pure.
+ * @param {WordEntry[]} entries
+ * @returns {WordStatus & {recallType: string | null}}
+ *   `recallType`: the recall type the word was last answered right in, or
+ *   null — the question its review is asked in (core/answer.js).
+ */
+export function learnedRule(entries) {
+  const judged = (entries || []).filter(isJudged);
+  const right = judged.filter((e) => e.outcome === RIGHT && KNOWN_TYPES.has(e.type));
+  const types = new Set(right.map((e) => e.type));
+  const recall = [...types].filter((t) => isRecall(t));
+  const days = new Set(right.map((e) => e.day)).size;
+  const last = judged.slice(-LEARNED_LAST);
+  const lastRight = last.filter((e) => e.outcome === RIGHT).length;
+  const lastOk = last.length === LEARNED_LAST && lastRight === LEARNED_LAST;
+  const recallRight = right.filter((e) => isRecall(e.type));
+  const recallType = recallRight.length ? recallRight[recallRight.length - 1].type : null;
+
+  const learned = types.size >= LEARNED_TYPES && recall.length >= LEARNED_RECALL
+    && days >= LEARNED_DAYS && lastOk;
+  const t = types.size, r = recall.length;
+  /* A line that is met names the number; one that is not, the number
+     against the line ("2 af 4"). */
+  const typePart = t >= LEARNED_TYPES
+    ? `rétt í ${t} ${typesText(t)} spurninga`
+    : `rétt í ${t} af ${LEARNED_TYPES} ${typesText(LEARNED_TYPES)} spurninga`;
+  const recallPart = r ? `þar af ${r} án þess að sjá orðið` : "engin þeirra án þess að sjá orðið";
+  const dayPart = days >= LEARNED_DAYS ? `á ${days} ${daysText(days)}`
+    : `á ${days} af ${LEARNED_DAYS} ${daysText(LEARNED_DAYS)}`;
+  const lastPart = lastOk ? `síðustu ${LEARNED_LAST} svör rétt`
+    : !judged.length ? "ekkert svar enn"
+    : last.length < LEARNED_LAST ? `aðeins ${answersText(last.length)}`
+    : lastRightText(lastRight, LEARNED_LAST);
+  return { ...because(learned ? "learned" : "learning",
+    `${typePart}, ${recallPart}, ${dayPart}; ${lastPart}`), recallType };
+}
+
+/**
+ * The learned rule for a word in learning, over its entries since the day
+ * it entered; null for a word not in learning. Pure.
+ * @param {State} S @param {string} word
+ * @returns {(WordStatus & {recallType: string | null}) | null}
+ */
+export function checkLearned(S, word) {
+  if (!isInLearning(S, word)) return null;
+  const since = learningOf(S)[word].d;
+  return learnedRule(entriesOf(S, word).filter((e) => e.day >= since));
+}
+
+/**
+ * Every word in learning that the rule says is learned leaves the six today
+ * (`leaveLearning`). Called by core/answer.js `settle` after `noteWords`
+ * (see "When it is asked" above). Changes `S.learning`.
+ * @param {State} S @param {DayKey} today
+ * @returns {{word: string, recallType: string | null, why: string}[]} the words that left
+ */
+export function noteLearned(S, today) {
+  const out = [];
+  if (!DAY.test(String(today))) return out;
+  for (const word of wordsInLearning(S)) {
+    const r = checkLearned(S, word);
+    if (r && r.status === "learned" && leaveLearning(S, word, today))
+      out.push({ word, recallType: r.recallType, why: r.why });
+  }
+  return out;
 }
 
 /**

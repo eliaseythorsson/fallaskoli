@@ -142,10 +142,10 @@ import { record, tallyAnswer, dayRec, dayStreak, todayKey, answerShape, wordKey 
 import { bumpDiff, bandOf } from "./difficulty.js";
 import { noteTypeAnswer } from "./mastery.js";
 import { noteNodeAnswer, partsOf } from "./skillmap.js";
-import { noteReview } from "./review.js";
+import { noteReview, queueWord } from "./review.js";
 import { noteReviewsPassed } from "./mending.js";
-import { noteWords } from "./wordknowledge.js";
-import { graderOf } from "./catalogue.js";
+import { noteWords, noteLearned } from "./wordknowledge.js";
+import { catalogueEntry, graderOf } from "./catalogue.js";
 
 /** @typedef {import("../types").State} State */
 /** @typedef {import("../types").Session} Session */
@@ -1571,8 +1571,19 @@ export function settle(S, sess, task, j, { ms = 0 } = {}) {
      the bonus sentence returned above (no `finish`), so only a first try is
      an entry. A duel's and a live round's answers count. */
   noteWords(S, task, j, todayKey());
+  /* The learned rule (#16, core/wordknowledge.js `noteLearned`): a word in
+     learning that has now earned it leaves the six and joins the review
+     queue, asked in the recall type it was last right in. Here, because the
+     entries just written are all the rule reads. The new word comes in at
+     the next session start, after its Orðakort (#15). */
+  const learned = noteLearned(S, todayKey());
+  for (const { word, recallType } of learned) {
+    if (!recallType) continue;
+    queueWord(S, { w: word, t: recallType, sk: (catalogueEntry(recallType) || {}).skill || null }, todayKey());
+  }
   /** @type {Record<string, any>} */
   const out = { ...j.finish, findings: j.findings, review };
+  if (learned.length) out.learned = learned.map((x) => x.word);
   /* The badges for a quick or a curious answer read its time and its shape
      together; both only when the answer was right. */
   if ("answer" in j.finish) out.answerMs = j.ok ? ms : 0;
