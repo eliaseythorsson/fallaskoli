@@ -140,7 +140,7 @@ every year.
 | Orðtök og málshættir | Mál og málnotkun | partly | 1 | 0 | 0 |
 | Gögn og hjálpartæki | Mál og málnotkun | no: outside what a drill program does | 0 | 0 | 0 |
 | Stafsetning og greinarmerkjasetning | Ritun | partly | 4 | 0 | 0 |
-| Lesskilningur | Lestur og bókmenntir | partly | 2 | 2 | 2 |
+| Lesskilningur | Lestur og bókmenntir | partly | 3 | 3 | 3 |
 <!-- curriculum:criteria:end -->
 
 Reading the table: *Orðflokkar* is the app's home ground. *Einkenni málsins*
@@ -195,6 +195,7 @@ evidence above. Later years keep practising it.
 | `mb-sameina` | Að sameina og skipta setningum | Einkenni málsins | Málbeiting | Sameina og skipta setningum (`sameina`) | Málfræðin í notkun (`malbeiting`) | yes |
 | `les-adalatridi` | Aðalatriði texta | Lesskilningur | Lesskilningur | Um hvað er textinn? (`les_adal`); Hvar er aðalatriðið? (`les_setning`); Hvað styður aðalatriðið? (`les_smaatridi`); Besta samantektin (`les_kjarni`); Aðalatriðið með þínum orðum (`les_kjarni_eigin`) | Að finna aðalatriðið í texta (`lesskilningur`) | yes |
 | `les-sogukort` | Sögukort: hlutar sögu | Lesskilningur | Lesskilningur | Hvar er vandinn? (`les_hluti`); Sögukortið (`les_kort`); Samantekt sögunnar (`les_samantekt`); Sagan með þínum orðum (`les_saga_eigin`) | Að finna aðalatriðið í texta (`lesskilningur`) | yes |
+| `les-visun` | Til hvers vísar fornafnið? | Lesskilningur | Lesskilningur | Til hvers vísar fornafnið? (`les_visun`) | Að finna aðalatriðið í texta (`lesskilningur`) | yes |
 | `fras-bygging` | Bygging sögu: röð og hlutar | Sköpunarkraftur | Frásögn | Raðaðu sögunni (`fr_rod`); Hvað vantar í söguna? (`fr_vantar`); Hvaða setning vantar? (`fr_setning`) | Að byggja upp sögu (`frasogn`) | yes |
 | `fras-tengsl` | Tengiorð og orð um hugsanir í sögu | Sköpunarkraftur | Frásögn | Tengiorð í sögu (`fr_tengiord`); Hvað vildi persónan, hvernig leið henni? (`fr_innra`) | Að byggja upp sögu (`frasogn`) | yes |
 | `st-n-nn` | n eða nn | Stafsetning og greinarmerkjasetning | Stafsetning og greinarmerki | none yet | none yet | **no** |
@@ -475,9 +476,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 13 of 15 | 62 of 80 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Námsorð, Málbeiting, Lesskilningur, Frásögn |
-| 9. bekkur | 13 of 15 | 69 of 80 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 15 of 15 | 80 of 80 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
+| 8. bekkur | 13 of 15 | 63 of 81 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Námsorð, Málbeiting, Lesskilningur, Frásögn |
+| 9. bekkur | 13 of 15 | 70 of 81 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 15 of 15 | 81 of 81 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:

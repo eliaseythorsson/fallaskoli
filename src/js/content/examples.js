@@ -637,4 +637,11 @@ export const EXAMPLES = {
     how: "Segðu hver vandinn var, hvað persónan gerði og hvernig fór, í sömu röð og í sögunni. Ekki afrita setningar úr sögunni.",
     forms: [],
   },
+  /* issue #33: the example of the Lesefni page, not one of content/textar/ */
+  les_visun: {
+    q: "*Kári og Jón fóru í sund. Kári gleymdi handklæðinu, svo að Jón lánaði honum sitt.* Til hvers vísar *honum*?",
+    a: "Kára",
+    how: "Bæði *Kári* og *Jón* eru karlkyn, eins og *honum*. En Jón lánar ekki sjálfum sér, svo að *honum* er Kári.",
+    forms: [],
+  },
 };

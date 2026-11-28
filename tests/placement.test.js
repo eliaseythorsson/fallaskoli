@@ -124,7 +124,7 @@ test("the round asks only what the policy allows", () => {
   assert.deepEqual(TASKS.filter((t) => t.skill === "frasogn" && t.bands.length > 1).map((t) => t.id),
     [...UNLOCKED_BY_THYNGD]);
   const banded = TASKS.map((t) => (t.id === "les_adal" ? { ...t, bands: [1, 3] } : t));
-  assert.deepEqual(placementTypes(banded, year(8)).lesskilningur, ["les_adal", "les_hluti", "les_kort", "les_samantekt", "les_setning", "les_smaatridi", "les_kjarni"]);
+  assert.deepEqual(placementTypes(banded, year(8)).lesskilningur, ["les_adal", "les_hluti", "les_kort", "les_samantekt", "les_setning", "les_smaatridi", "les_kjarni", "les_visun"]);
   /* A ceiling that allows one category: one category is asked. */
   const cap = { skills: Object.fromEntries(SKILL_IDS.map((id) => [id, id === "nafnord"])), types: {}, levels: {} };
   assert.deepEqual(Object.keys(placementTypes(TASKS, createPolicy(cap, presetPolicy(8)))), ["nafnord"]);

@@ -227,8 +227,8 @@ test("les_kort: each sentence of the map to its part, the six parts with their i
     wrongIs(t, { picks: { ...right, 0: other } });
   }
   assert.ok(seen.has("les:saga-afmaeliskakan/kort/1") && seen.has("les:saga-afmaeliskakan/kort/2"));
-  /* five stories, one of them in two episodes (#35 added two, #36 two more) */
-  assert.equal(seen.size, 9, [...seen].join(", "));
+  /* nine stories, one of them in two episodes (#35 added two, #36 two more, #33 two) */
+  assert.equal(seen.size, 11, [...seen].join(", "));
 });
 
 test("les_samantekt: the whole story, the summaries as written, why each wrong one breaks the map", () => {

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Lesskilningur: til hvers vísar fornafnið? (#33)
+- **Ný spurningagerð, „Til hvers vísar fornafnið?“:** textinn er sýndur fram að setningunni með
+  fornafninu (*hann, hún, honum, þau …*), fornafnið er merkt og nemandinn smellir á orðið sem það vísar
+  til. Svarið er merkið í textaskránni (`Hún{Sara}`); hin orðin finnur smíðin sjálf, með Greyni og BÍN.
+- **Kynið fyrst, svo merkingin:** í texta af þyngd 1 eru hin orðin í öðru kyni eða tölu en fornafnið
+  (*Hún … Sara*, ekki *strætó*). Frá þyngd 2 eru þau allt persónur sögunnar í sama kyni og tölu, svo að
+  merkingin ein sker úr (*Pétur lánaði honum* — ekki sjálfum sér, svo Gunnari). Fornafn sem ekkert er
+  að velja á milli er ekki spurt um.
+- Smíðin stöðvar nú líka ef Greynir les ekkert nafnorð í því sem fornafn vísar til. Tvær nýjar sögur með
+  tveimur persónum af sama kyni, nýr kafli á Lesefnissíðunni, nýr hnútur og villugreiningarregla.
+
 ### Aðalatriði og samantekt með eigin orðum, lesin yfir (#39)
 - **Fyrir nemanda sem stjórnandinn hefur kveikt á** („Leyfa spurningar sem þjónninn les“) fær
   Lesskilningur tvær nýjar spurningagerðir sem þjónninn lætur Claude lesa yfir eftir matskvarða:

@@ -52,7 +52,11 @@
    The browser sends the text's id and the answer, never the text or its
    marks: the server reads both from its own build data.
 
-   The pronoun references (`ref`) are there for #33. */
+   Pronoun reference (issue #33) gives one more, from the referent marks
+   (`ref`, with the other words the build found beside each — `same`,
+   `other`):
+
+     les_visun       which word a pronoun points at: tap it in the text */
 
 import { EX } from "../../../data/exercises.js";
 import { built, FX } from "./effects.js";
@@ -104,7 +108,7 @@ export function taskMainIdea(lex, view, rng) {
    and over. Until a type has more items than this, it does not follow the
    band (its catalogue entry says bands: [1]); the policy's levels still
    apply. */
-const FEW = 24;   /* 12 until #36: two more stories gave les_hluti 13 items */
+const FEW = 24;   /* 12 until #36 and #33: their four stories gave les_hluti 17 items */
 
 /** The stories, each cut into its episodes: [{ tx, ep (1–3, or 0 for a
     story without episodes), s: [{ s, k }] (the sentence and its place in the
@@ -429,6 +433,105 @@ export function taskOwnSummary(lex, view, rng) {
   });
 }
 
+/* ---------- pronoun reference (issue #33) ----------------------------------
+
+   Til hvers vísar fornafnið? The text up to the pronoun's sentence, the
+   pronoun marked, and only the candidate words tappable: the referent and up
+   to three others. The answer is the mark of the file (`Hann{Jón}`); the
+   others are found by the build (pipeline/pronoun_options.py) and stored on
+   the reference:
+
+     same    the text's characters in the pronoun's gender and number
+     other   nouns in another gender or number
+
+   Which of the two the question offers depends on the text's þyngd
+   (DLD-PLAN §4: "at higher þyngd there are same-gender distractors"):
+
+     þyngd 1      `other`: the form of the pronoun is enough (*Hún* … *Sara*,
+                  not *strætó*) — the first lesson, that a pronoun follows
+                  the grammatical gender of what it points at;
+     þyngd 2 and up   `same` only: every option agrees with the pronoun, so the
+                  pupil must read for meaning (*Pétur lánaði honum* — not
+                  Pétur himself, so Gunnar).
+
+   A reference with no option of the kind its þyngd asks for is not asked
+   (*Hann{Ari}* while Ari is the only boy in the story). One question per
+   referent and sentence: the second *hún* of *Hún var svo glöð að hún …*
+   asks nothing new. Genuinely ambiguous pronouns are not asked at all; the
+   texts are written so that the meaning settles every mark. */
+
+/** From this þyngd the options agree with the pronoun (`same`). */
+export const SAME_FROM = 2;
+
+const VISUN = (EX.textar || []).flatMap((tx) => tx.s.flatMap((s, si) => {
+  const seen = new Set();
+  return (s.ref || []).flatMap((r) => {
+    const to = r.to.join(".");
+    if (seen.has(to)) return [];
+    seen.add(to);
+    const others = ((tx.lvl >= SAME_FROM ? r.same : r.other) || []).slice(0, 3);
+    if (!others.length) return [];
+    return [{ tx, si, r, others, same: tx.lvl >= SAME_FROM, lvl: tx.lvl, key: `les:${tx.id}/vis/${si}.${r.i}` }];
+  });
+}));
+
+const KYN = { KK: "karlkyni", KVK: "kvenkyni", HK: "hvorugkyni" };
+
+/** The words of a span [sentence, first, last] of a text, as one string. */
+const spanWords = (tx, [k, a, b]) => tx.s[k].tok.slice(a, b + 1).map((t) => t.w).join(" ");
+
+/** The text up to the pronoun's sentence as tap tokens: each option one
+    token (a span of several words joined), the pronoun `still` (marked),
+    every other word `plain`. Returns the tokens and the index of each
+    option's token, in the order of `spans`.
+    @param {any} tx @param {number} upTo @param {number[][]} spans @param {number[]} pro */
+function referenceTokens(tx, upTo, spans, pro) {
+  /** @type {{w: string, still?: boolean, plain?: boolean}[]} */
+  const tok = [];
+  const at = spans.map(() => -1);
+  for (let k = 0; k <= upTo; k++) {
+    const words = tx.s[k].tok;
+    for (let j = 0; j < words.length; j++) {
+      const n = spans.findIndex(([sk, a]) => sk === k && a === j);
+      if (n >= 0) {
+        at[n] = tok.length;
+        tok.push({ w: spanWords(tx, spans[n]) });
+        j = spans[n][2];
+      } else if (k === pro[0] && j === pro[1]) tok.push({ w: words[j].w, still: true });
+      else tok.push({ w: words[j].w, plain: true });
+    }
+  }
+  return { tok, at };
+}
+
+/** Which word does the pronoun point at?
+    @param {any} lex @param {View} view @param {() => number} rng */
+export function taskPronounReference(lex, view, rng) {
+  const x = pickItem(view, rng, VISUN, "visun");
+  if (!x) return null;
+  const pro = x.tx.s[x.si].tok[x.r.i];
+  const p = pro.w.toLowerCase();
+  const order = shuffle([x.r.to, ...x.others], rng);
+  const { tok, at } = referenceTokens(x.tx, x.si, order, [x.si, x.r.i]);
+  const answer = spanWords(x.tx, x.r.to);
+  const [g, n] = (pro.m || "").split("-");
+  const form = `í ${KYN[g] || "sama kyni"} og ${/FT/.test(n || "") ? "fleirtölu" : "eintölu"}`;
+  const why = x.same
+    ? `${order.length === 2 ? "Bæði" : "Öll"} orðin sem þú gast smellt á eru ${form}, eins og *${p}*. Þá segir kynið ekki til hvers fornafnið vísar, heldur merkingin: hugsaðu um hver gerir hvað. Hér vísar *${p}* til orðsins *${answer}*.`
+    : `Fornafnið *${p}* er ${form}, eins og *${answer}*. ${order.length === 2 ? "Hitt orðið er ekki í sama kyni og tölu, svo að fornafnið getur ekki vísað til þess."
+      : "Hin orðin eru ekki í sama kyni og tölu, svo að fornafnið getur ekki vísað til þeirra."}`;
+  return built({
+    type: "tap", skill: "lesskilningur", i: -1,
+    s: { t: tok.map((t) => t.w).join(" "), tok }, targets: [at[order.indexOf(x.r.to)]],
+    cls: "rétt", whole: true, what: `„${p}“ vísar til`, unit: "eitt orð",
+    title: "Til hvers vísar fornafnið?",
+    question: `Til hvers vísar fornafnið **${p}**? Smelltu á orðið.`,
+    why,
+    base: 10, lvl: levelFor(view.policy, x.lvl), cell: "visun", word: null,
+    item: x.key, tags: ["visun"], miss: ["visun"],
+  }, [FX.exSeen(x.key)]);
+}
+
 /** The builders of this category, by question type id. What each type is —
    its name, renderer, tags, bands and weight — is declared in
    core/catalogue.js; tasks/registry.js joins the two.
@@ -443,4 +546,5 @@ export const BUILDERS = {
   les_kjarni: { build: taskGist },
   les_kjarni_eigin: { build: taskOwnGist },
   les_saga_eigin: { build: taskOwnSummary },
+  les_visun: { build: taskPronounReference },
 };

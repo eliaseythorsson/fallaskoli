@@ -482,12 +482,13 @@ function drawSlots(app, t, j, ins) {
    question has it (item 26: lid_finna). */
 const tapWord = (tok, j) => `<span class="pickw" data-j="${j}" role="button" tabindex="0" aria-pressed="false">${esc(tok.w)}</span>`;
 /* `readtext` (Lesskilningur, issue #32): each token is a whole sentence of a
-   text; a `still` one is shown marked and is not tapped. */
+   text; a `still` one is shown marked and is not tapped. A `plain` one
+   (#33, les_visun) is read and not tapped: only the options are words to tap. */
 const tapSentence = (t) => {
   const coded = codedHTML(t, tapWord);
   return `<p class="sentence${coded != null ? " coded" : ""}${t.readtext ? " readtext" : ""}" id="picker">${coded != null ? coded
     : t.s.tok.map((tok, j) => PUNCT.has(tok.w) ? tok.w
-      : `${j ? " " : ""}${tok.still ? `<span class="target">${esc(tok.w)}</span>` : tapWord(tok, j)}`).join("")}</p>`;
+      : `${j ? " " : ""}${tok.still ? `<span class="target">${esc(tok.w)}</span>` : tok.plain ? esc(tok.w) : tapWord(tok, j)}`).join("")}</p>`;
 };
 
 function wireTap(t) {

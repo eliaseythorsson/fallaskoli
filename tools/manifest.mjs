@@ -61,6 +61,8 @@ const INPUTS = [
   "pipeline/frame_allow.py",
   /* Issue #36: the gaps in a story (content/textar/), read by pipeline/content_io.py */
   "pipeline/story_gaps.py",
+  /* Issue #33: the other words a pronoun could point at (EX.textar … ref.same / ref.other) */
+  "pipeline/pronoun_options.py",
   ...contentFiles(),
 ];
 
