@@ -4383,7 +4383,11 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
     document.querySelectorAll(".scrim").forEach((s) => s.remove());
     const d = new Date(), pad = (x) => String(x).padStart(2, "0");
     const today = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    A.S.wordCards[WORD] = { d: today, n: 1, r: 1, a: { flokkur: { c: ["no"], ok: false } } };
+    /* A card with a choice, and two free-text steps (#38) as a pupil with
+       server grading on keeps them. */
+    A.S.wordCards[WORD] = { d: today, n: 1, r: 1, a: { flokkur: { c: ["no"], ok: false },
+      min: { c: [], ok: true, t: "Ég útskýrði leikinn fyrir bróður mínum." },
+      tengsl: { c: ["skýra", "útskýring", "flækja"], ok: true, t: "1. skýra – svipað\n2. útskýring – sami stofn\n3. flækja" } } };
     A.S.learning[WORD] = { s: "k", d: today, n: 1 };
     const k = "w:or_eyda|" + WORD;
     /* Only this review is due, so it is the one the session opens with. */
@@ -4419,6 +4423,7 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
         def: card && card.querySelector(".wcdef") ? card.querySelector(".wcdef").textContent : "",
         picks: card ? [...card.querySelectorAll(".wcpick")].map((x) => x.textContent.replace(/\s+/g, " ").trim()) : [],
         pressed: card ? [...card.querySelectorAll(".wcopts button[aria-pressed=true]")].map((b) => b.textContent) : [],
+        own: card ? [...card.querySelectorAll("[data-own]")].map((x) => x.dataset.own + ":" + x.querySelectorAll(".wcown").length + ":" + x.querySelector("h4").textContent) : [],
         text: card ? card.innerText : "" };
     });
     ok(opened.open && opened.same && opened.word === "útskýra" && /Orðakortið þitt/.test(opened.eyebrow),
@@ -4426,6 +4431,7 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
     ok(opened.def.length > 5, "#18: the card has no definition: " + opened.def);
     ok(opened.picks.length === 1 && /^Nafnorð ✗ Rétt: Sagnorð$/.test(opened.picks[0]),
       "#18: what the pupil chose is not shown with the right answer: " + JSON.stringify(opened.picks));
+    ok(opened.own.join() === "min:1:Mín setning,tengsl:3:Skyld orð", "#18: the free-text answers are not shown: " + opened.own.join());
     ok(opened.pressed.join() === "Ég hef heyrt það", "#18: the rating that stands is not marked: " + opened.pressed.join());
     ok(!/DLD|málþroska/i.test(opened.text), "#18: the card names DLD");
 
@@ -4450,7 +4456,7 @@ for (const [w, h] of [[390, 844], [1100, 900]]) {
     const x = (kept.card && kept.card.x) || [];
     ok(!kept.open && kept.moved, "#18: the session did not go on after the card: " + JSON.stringify({ open: kept.open, moved: kept.moved }));
     ok(x.length === 1 && x[0].r === 2 && x[0].s === "Kennarinn útskýrði dæmið." && kept.card.r === 1 && kept.card.n === 1
-      && kept.card.a.flokkur.c[0] === "no", "#18: the additions were not kept beside the card: " + JSON.stringify(kept.card));
+      && kept.card.a.flokkur.c[0] === "no" && kept.card.a.tengsl.c.length === 3, "#18: the additions were not kept beside the card: " + JSON.stringify(kept.card));
     ok(kept.stored && kept.stored.x && kept.stored.x.length === 1, "#18: the additions are not in the saved progress");
 
     /* Shown once: the next question's Áfram does not bring it back. */

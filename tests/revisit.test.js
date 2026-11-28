@@ -149,7 +149,7 @@ test("the card back: what the pupil chose, as text, with the right answer where 
   assert.deepEqual(v.picks[2], { id: "flokkur", question: "Hvaða orðflokki tilheyrir orðið *útskýra*?",
     chosen: ["Lýsingarorð"], ok: false, right: ["Sagnorð"] });
   assert.equal(v.rating, 1);
-  assert.equal(v.own, null);
+  assert.deepEqual(v.written, []);
   assert.deepEqual(v.mine, []);
   /* The sentence must hold a form of the word. */
   assert.equal(v.fits("Kennarinn útskýrir þetta vel."), true);
@@ -158,11 +158,33 @@ test("the card back: what the pupil chose, as text, with the right answer where 
   S.wordCards[WORD].a.eigin = { c: [], ok: true, t: "Að segja frá svo aðrir skilji." };
   addToCard(S, WORD, { rating: 2, sentence: "Ég útskýrði leikinn fyrir bróður mínum." }, D3);
   const w = revisitCard(lex, WORD, cardOf(S, WORD));
-  assert.equal(w.own, "Að segja frá svo aðrir skilji.");
+  assert.deepEqual(w.written, [{ id: "eigin", head: "Með þínum orðum", lines: ["Að segja frá svo aðrir skilji."] }]);
   assert.deepEqual(w.mine, ["Ég útskýrði leikinn fyrir bróður mínum."]);
   assert.equal(w.rating, 2);
   assert.equal(revisitCard(lex, WORD, null), null);
   assert.equal(revisitCard(lex, "ekkiorð|so", cardOf(S, WORD)), null);
+});
+
+test("a free-text card (#38): the explanation, the pupil's sentence and the three related words come back", () => {
+  const S = giveWords(blankState());
+  /* As ui/wordcard.js keeps a card done with server grading on: steps 3–5
+     are free text, and the structured steps they replace were not asked. */
+  saveCard(S, WORD, { rating: 0, answers: {
+    eigin: { c: [], ok: true, t: "Að segja frá svo aðrir skilji." },
+    min: { c: [], ok: false, t: "Ég útskýrði reglurnar fyrir systur minni." },
+    tengsl: { c: ["skýra", "útskýring", "flækja"], ok: true,
+      t: "1. skýra – merkir svipað\n2. útskýring – af sama stofni\n3. flækja – hið gagnstæða" },
+    flokkur: { c: ["so"], ok: true },
+  } }, D1);
+  const v = revisitCard(lex, WORD, cardOf(S, WORD));
+  assert.deepEqual(v.written, [
+    { id: "eigin", head: "Með þínum orðum", lines: ["Að segja frá svo aðrir skilji."] },
+    { id: "min", head: "Mín setning", lines: ["Ég útskýrði reglurnar fyrir systur minni."] },
+    { id: "tengsl", head: "Skyld orð", lines: ["1. skýra – merkir svipað", "2. útskýring – af sama stofni", "3. flækja – hið gagnstæða"] },
+  ]);
+  /* Of the choices, only what this card asked. */
+  assert.deepEqual(v.picks.map((p) => p.id), ["flokkur"]);
+  assert.equal(v.rating, 0);
 });
 
 /* ---------- 3. what is added is kept --------------------------------------- */

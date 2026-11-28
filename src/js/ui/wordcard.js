@@ -240,7 +240,8 @@ export function openWordCard(card, onDone, opts = {}) {
 
 /**
  * The pupil's own card, back after a review of a learned word (#18): what
- * they chose and wrote, read only, and two things they may add — a newer
+ * they chose and wrote (on a free-text card, #38: the explanation, their
+ * sentence and the three related words), read only, and two things they may add — a newer
  * self-rating, and a sentence of their own with the word (which must hold
  * a form of it). `onDone({ rating, sentence })` when they go on ("Áfram"),
  * `onDone(null)` on Escape. Unlike the first card this one may be left: the
@@ -261,7 +262,8 @@ export function openRevisit(view, onDone) {
     <div class="sheetbody wcbody" data-step="aftur">
       ${view.def ? `<section class="wcsec"><h4>Skýring</h4><p class="wcdef">${esc(view.def)}</p></section>` : ""}
       ${picks ? `<section class="wcsec"><h4>Það sem þú valdir</h4><ul class="wcpicks">${picks}</ul></section>` : ""}
-      ${view.own ? `<section class="wcsec"><h4>Með þínum orðum</h4><p class="wcown">${esc(view.own)}</p></section>` : ""}
+      ${view.written.map((w) => `<section class="wcsec" data-own="${esc(w.id)}"><h4>${esc(w.head)}</h4>${
+        w.lines.map((ln) => `<p class="wcown">${esc(ln)}</p>`).join("")}</section>`).join("")}
       ${view.mine.length ? `<section class="wcsec"><h4>Setningarnar þínar</h4><ul class="wcex wcmine">${
         view.mine.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></section>` : ""}
       <section class="wcsec"><h4>Bættu við</h4>

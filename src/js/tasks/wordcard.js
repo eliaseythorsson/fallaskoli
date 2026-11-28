@@ -649,12 +649,17 @@ export function buildCard(lex, word, { ex = EX, free = false, eigin = false } = 
 
 /* ---------- the card coming back in a review (#18) ------------------------ */
 
+/** The free-text steps (#37, #38) whose text the card shows again, with
+    their heads, in the card's order. */
+const WRITTEN = [["eigin", "Með þínum orðum"], ["min", "Mín setning"], ["tengsl", "Skyld orð"]];
+
 /**
  * The pupil's own card as it comes back after a review of a learned word
  * (tasks/review.js marks the review, ui/wordcard.js `openRevisit` draws it):
  * the definition, what they chose in each step — the options' texts, read
  * off the same card (`buildCard` is the same for the same word), with the
- * right one where theirs was not — what they wrote in their own words, the
+ * right one where theirs was not — what they wrote on a free-text card
+ * (their explanation, their sentence, the three related words), the
  * sentences they added before, and the self-rating then and now. Null when
  * the word or the card is gone. Pure.
  * @param {any} lex @param {string} word  a `wordKey`
@@ -672,12 +677,15 @@ export function revisitCard(lex, word, saved, { ex = EX } = {}) {
     return { id: s.id, question: s.question, chosen, ok: a.ok,
       right: a.ok ? [] : s.answer.map((id) => textOf(s, id)).filter(Boolean) };
   }).filter((p) => p.chosen.length);
-  const own = saved.a.eigin && saved.a.eigin.t ? saved.a.eigin.t : null;
+  /* What they wrote on a free-text card (#37, #38), step by step. The
+     related words are kept as one numbered text, a line per word. */
+  const written = WRITTEN.filter(([id]) => saved.a[id] && saved.a[id].t)
+    .map(([id, head]) => ({ id, head, lines: String(saved.a[id].t).split("\n").map((x) => x.trim()).filter(Boolean) }));
   const w = lex.lookup(card.lemma, card.cls);
   return {
     word, lemma: card.lemma,
     def: read ? read.def : null, source: read ? read.source : null,
-    picks, own,
+    picks, written,
     mine: (saved.x || []).filter((x) => x.s).map((x) => x.s),
     rating: ratingNow(saved),
     question: `Hversu vel þekkir þú orðið *${card.lemma}* núna?`,
