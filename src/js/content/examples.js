@@ -320,6 +320,12 @@ export const EXAMPLES = {
     how: "Finndu það sem þrjú orðanna eiga sameiginlegt: *hamar, sög* og *skrúfjárn* eru verkfæri. *epli* er ávöxtur.",
     forms: [],
   },
+  or_merking: {
+    q: "Í hvaða setningu er orðið *hugmynd* notað rétt? *Hugmyndin gelti alla nóttina. · Hún fékk góða hugmynd að afmælisgjöf. · Ég burstaði tennurnar með hugmynd.*",
+    a: "Hún fékk góða hugmynd að afmælisgjöf.",
+    how: "*Hugmynd* er það sem manni dettur í hug. Hugmynd geltir ekki og enginn burstar tennurnar með henni, svo að í hinum setningunum passar orðið ekki.",
+    forms: ["hugmynd|kvk|ÞFET=hugmynd"],
+  },
 
   /* ---- Málbeiting ---- */
   villur: {

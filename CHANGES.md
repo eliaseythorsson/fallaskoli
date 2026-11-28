@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### „Hvað þýðir orðið?“ telur og kemur oftar (#11)
+- **Ný spurningagerð í Orðaforða, „Merking orðs í setningu“** (`or_merking`): nemandinn sér orð og þrjár
+  setningar með því og velur þá þar sem orðið er notað rétt. Í hinum tveimur stendur orðið þar sem annað orð
+  á heima (*Hún hellti afleiðingu í glasið.*). Forritið dæmir svarið, svo að spurningin telur í lotunni.
+  Opna spurningin „Hvað þýðir orðið?“ er óbreytt (ódæmd, í björgunaræfingu og utan lotu).
+- **Hún kemur um þrefalt oftar en hver hinna spurningagerðanna í Orðaforða**: um 2–3% spurninga í blandaðri
+  lotu, þar sem opna spurningin kom aldrei sem eigin spurning.
+- **67 orð í `content/ordafordi/merking.tsv`**: 19 hversdagsleg nafnorð (þyngd 1–2) með setningum úr „Orð í
+  samhengi“ og 48 orð af LÍNO-2 (frá þyngd 3) með nýjum setningum, sem móðurmálshafi á eftir að lesa
+  (`content/REVIEW-NOTES.md`). Önnur orð fá ekki þessa spurningu fyrr en setningar hafa verið skrifaðar.
+
 ### Orðin í námi koma oftar (#13)
 - **Í venjulegri æfingu (Lota dagsins, lota sem nemandinn velur) er um þriðjungur þeirra spurninga sem
   gætu verið um orð í námi um eitt þeirra**, í öllum flokkum: beygingartöflum, eyðufyllingu, greiningu,

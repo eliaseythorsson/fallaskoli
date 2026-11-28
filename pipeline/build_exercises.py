@@ -1028,6 +1028,54 @@ for bonus, t, mark, fits, cannot in X.WORD_IN_CONTEXT_FRAMES:
                       "lvl": min(5, sentence_level(t) + bonus + rare), "d": d})
 out["wordInContext"] = items
 
+# The graded meaning question (issue #11, or_merking): which of three
+# sentences uses the word with the right meaning. What is checked here is
+# what a machine can check; that a wrong sentence is nonsense in every sense
+# of the word is the author's claim (content/ordafordi/merking.tsv).
+#   - the word is the lexicon's (the app files the answer under it);
+#   - every sentence holds a BÍN form of the word, only words BÍN knows, and
+#     nothing on the block list;
+#   - origin "samhengi": the right sentence is a word-in-context item with
+#     this word as its answer, each wrong one an item that lists the word as
+#     impossible there — so the row holds no new Icelandic;
+#   - origin "ný": every sentence parses — the wrong ones too, because
+#     what is wrong with them must be the meaning and nothing else.
+def _in_sentence(text, o, c):
+    return any(e.ord == o and e.ofl == c for w in WORD.findall(text) for e in b.lookup(w.lower())[1])
+_filled = lambda t, f: cap1(f) + t[3:] if t.startswith("___") else t.replace("___", f)
+_ctx_right = {(x["a"]["o"], x["a"]["c"], _filled(x["t"], x["a"]["f"])) for x in items if x["a"]}
+_ctx_wrong = {(w["o"], w["c"], _filled(x["t"], w["f"])) for x in items for w in x["w"]}
+meaning = []
+_meaning_words = set()
+for lvl, o, c, sense, origin, right, wrong in X.MEANING_CHOICE:
+    where = f"MEANING_CHOICE {o}"
+    level(lvl, where)
+    if (o, c) not in _LEX_BY:
+        fail(f"{where}: '{o}' ({c}) is not a word of the lexicon"); continue
+    if (o, c) in _meaning_words: fail(f"{where}: the word has two lines")
+    _meaning_words.add((o, c))
+    texts = [right] + wrong
+    if len(set(texts)) != len(texts): fail(f"{where}: the same sentence twice")
+    if len(wrong) < 2: fail(f"{where}: fewer than two wrong sentences")
+    for t in texts:
+        check_words(t, where)
+        if blocked_words(t): fail(f"{where}: a word on the block list ({t})")
+        if not _in_sentence(t, o, c): fail(f"{where}: no form of '{o}' ({c}) in '{t}'")
+    if origin == "samhengi":
+        if (o, c, right) not in _ctx_right:
+            fail(f"{where}: '{right}' is not a word-in-context sentence with '{o}' as its answer")
+        for t in wrong:
+            if (o, c, t) not in _ctx_wrong:
+                fail(f"{where}: '{t}' is not a word-in-context sentence that lists '{o}' as wrong")
+    elif origin == "ný":
+        for t in texts:
+            if not parses_once(t): fail(f"{where}: Greynir cannot parse '{t}'")
+    else:
+        fail(f"{where}: uppruni must be 'samhengi' or 'ný', not '{origin}'")
+    meaning.append({"o": o, "c": c, "lvl": lvl, "r": right, "w": wrong,
+                    "d": context_def(o, c, sense, where)})
+out["meaningChoice"] = meaning
+
 # Word formation that the app's lexicon cannot see (critique item 23): the
 # lexicon holds the adverbs a text has used, not the adverb every adjective
 # in *-legur* makes. For or_myndun: *rólegur – rólega*, the adjective one

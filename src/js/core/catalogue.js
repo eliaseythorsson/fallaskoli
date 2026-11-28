@@ -482,6 +482,16 @@ const LIST = [
     tags: ["adj", "agree:kyn", "case:EF", "case:NF", "case:ÞF", "case:ÞGF", "form", "noun", "num",
       "verb:agree", "verb:tense", "verb:vh"],
     bands: [1, 2, 3, 4, 5, 6, 7] },
+  /* #11 (DLD-PLAN §1 "Meaning question"): the meaning question the app can
+     grade, so it counts toward the session — the free-text `meaning` above
+     stays the ungraded one. Recognition: the word is shown. Its weight is
+     about three times that of each other Orðaforði type. */
+  { id: "or_merking", skill: "ordaford",
+    nm: "Merking orðs í setningu",
+    ds: "Í hvaða setningu af þremur er orðið notað rétt?",
+    renderer: "choice", weight: 10, recall: false, grader: "app",
+    tags: ["vocab"],
+    bands: [1, 3, 4] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when

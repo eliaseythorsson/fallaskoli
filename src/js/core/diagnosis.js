@@ -179,7 +179,7 @@ export const PATTERNS = [
     lesson: "obeygjanleg", tags: ["tengi"], types: ["ob_tengiord", "ob_skilja"] },
   { id: "merking", ok: "merkingu orða", nm: "Merking orða",
     rule: "Lestu alla setninguna og spyrðu: hvað passar við merkinguna? Ef þú ert ekki viss, flettu orðinu upp — 📖 hnappurinn er við hverja spurningu.",
-    lesson: "ordafordi", tags: ["vocab"], types: ["or_heiti", "or_samhengi", "or_utundan"] },
+    lesson: "ordafordi", tags: ["vocab"], types: ["or_heiti", "or_samhengi", "or_utundan", "or_merking"] },
   { id: "ordmyndun", ok: "orðmyndun", nm: "Orðmyndun",
     rule: "Forskeyti og viðskeyti breyta orðum: *ó-* snýr merkingunni við (*heppinn – óheppinn*), *-ari* er sá sem gerir (*kenna – kennari*), *-ing/-un* gera nafnorð úr sögn (*æfa – æfing*).",
     lesson: "ordafordi", tags: ["wordform"], types: ["or_myndun"] },

@@ -1,5 +1,5 @@
 {
- "version": "6.14.1",
+ "version": "6.15.0",
  "deps": {
   "islenska": "1.3.2",
   "reynir": "3.8.0",
@@ -17,13 +17,13 @@
   "pipeline/government.py": "855b64fe163a3548b4590e60503de2ca6a702a0e4ed053bea6552de6e104fe72",
   "pipeline/parse_guard.py": "e7fa87891c0a4cebec431c2aac84383a6c2b4cfa3b5ae07ecb679d4da4da6dea",
   "pipeline/parse_overrides.py": "8c247a4c2379695f21114ad2c37a4dfa1a853616787e473d976d761dbdfad03d",
-  "pipeline/build_freq.py": "a498bb7646c6b2279335d131b9d96576cb409025025fc3f0e2a18e6c1a5d0a5c",
+  "pipeline/build_freq.py": "2254def3286bfcb03498eafd75743cd5d893aa49f22089004cde86ec5c451fb3",
   "pipeline/build_lexicon.py": "920575308f4dd4673a56fa3cfe8ad59743e3e386b5e72b22dc5fa25a86bbd19c",
   "pipeline/build_sentences.py": "956df1d41b67c6ee90f3410b81acc5ecdf2f16f8ed28b505dc9462da55d9965d",
   "pipeline/build_bundle.py": "a83cb6fbcb6bcbba2b7c6baf9cfd0d21db4a81e179c34f2713349382d98a3f6b",
   "pipeline/irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
-  "pipeline/exercises.py": "2b9982816ad3d6c5e1344780fb994a3b1e1fbd76e2adab82c8a7ef2b72d8247c",
-  "pipeline/build_exercises.py": "1430aafdc50c6d8d3e407c11c39cfd4ccc665191cc264c46509d22e6f14c15b2",
+  "pipeline/exercises.py": "211b2b431ba7ca6a561f273b719b33a96fc7d6c7cd7c832b8745f5240cecbee2",
+  "pipeline/build_exercises.py": "92cdc545539b30eed27ad684213eca661671b99b8a04877438e2ac29d12a49e4",
   "pipeline/adj_classes.py": "30dcdd1a715ac73c9325bcc327a043a78cd452cd9aa9164d934b25b565255b10",
   "pipeline/content_io.py": "f70116a2eb0031119ab311329a3912fe144d943b9a74583c9aab8902ad7566fe",
   "pipeline/who_did.py": "1abfd3de384d81f7015f2c65ca007fb527f838f34a52034b6a513e931c8e3a46",
@@ -60,6 +60,7 @@
   "content/obeygjanleg/tengiord-skilningur.tsv": "3871b022c1c5c524e5eb8488ea28f4aad0ceb36098274fc562f6b9b52578874d",
   "content/obeygjanleg/tengiord.tsv": "e634b08d5fb10b08d465337036109d406ab56b6cdbdfeb9da2fd7ee7b96ab465",
   "content/ordafordi/andheiti.tsv": "450ea09dd5f9ba63d7f511fabb6e7f7801b4cfbc94093b9c8cd00d70f93b0aef",
+  "content/ordafordi/merking.tsv": "6fde635c70758d0f1e1db6885d3f9beef0c13b35d13c0e41ec1cfe9b343e6029",
   "content/ordafordi/samheiti.tsv": "8efa108707e6601d7c94769d23ae11cec564288e0ec6b792e433c421fc1f0f5e",
   "content/ordafordi/samhengi-rammar.tsv": "573b6e458888d14089f0ab4c49fbd65d61d2275bd219e019bf6e09c236bc8986",
   "content/ordafordi/samhengi.tsv": "5b49b7c62e6753cc024f9d23c40ec6108c7c12012a0000a419a5bbab9d3aec3b",
@@ -79,7 +80,7 @@
   "data/lexicon.json": "c166ce4922c53d69526c93dbacea3372a5fbaa67b45304a4698405613df75fe0",
   "data/sentences.json": "1fbb7a55c19923732dfb61c149bb4c4ddd6452a047eee88e7953a9c50737a669",
   "data/data_bundle.js": "8166c111b2d39750a7ead280d6a5c6c25564f976bd7788e9b0f020f5c088c784",
-  "data/exercises.js": "9a884ce8e7090eabcdd49b2eea5fc57a1ab593ede12abe1879ddf3388f2df7bb"
+  "data/exercises.js": "c6459494446caa471655061b403f82156674aeb134110552ba87501c3b884bb6"
  },
  "counts": {
   "words": 7405,

@@ -27,6 +27,34 @@ eru athugasemdirnar sem áttu við atriði á síðunni teknar út úr þessari 
 Nýjar athugasemdir um atriði á síðunni eru skrifaðar hér, á undan hlutanum
 „Utan síðunnar“. Sá hluti hefur EKKI verið lesinn og stendur áfram.
 
+## Merking orðs í setningu: nýjar setningar (#11)
+Skrá: `content/ordafordi/merking.tsv`
+Úr: feat/11-meaning-question (verk #11)
+
+Ný spurningagerð: „Í hvaða setningu er orðið notað rétt?“ Þrjár setningar með sama
+orðinu, ein rétt og tvær þar sem orðið stendur þar sem annað orð á heima.
+
+Línur með `samhengi` í dálkinum „uppruni“ eru settar saman úr setningum sem þegar
+voru í „Orð í samhengi“ og þarf ekki að lesa aftur. Línur með `ný` (48 orð af LÍNO-2)
+voru skrifaðar fyrir þessa skrá og enginn móðurmálshafi hefur lesið þær. Þrennt þarf
+að athuga við hverja línu:
+
+1. Er rétta setningin eðlileg íslenska, og sýnir hún hvað orðið merkir?
+2. Er hvor ranga setningin örugglega merkingarlaus, í öllum merkingum orðsins?
+   Ef hægt er að lesa hana sem grín eða líkingamál á hún að fara út.
+3. Er skýringin úr orðabókinni (dálkurinn „merking“) sú sem á við réttu setninguna?
+
+## Merking orðs í setningu: sagnorð og lýsingarorð (#11)
+Leita: `Hann verndaði heim eftir skóla.` `Snjórinn hvatti í sólinni.` `Barnið flokkaði vært í rúminu sínu.` `Ég staðfesti yfir girðinguna.` `Ég safnaði yfir götuna á grænu ljósi.` `Súpan var of sjaldgæf svo ég blés á hana.` `Hnífurinn var svo daglegur að hann skar ekki brauðið.`
+Úr: feat/11-meaning-question (verk #11)
+
+Í röngu setningunum við sagnorðin stendur sögnin þar sem önnur sögn á heima (*verndaði
+heim* fyrir *gekk heim*), svo að setningin er líka röng að byggingu, ekki bara að
+merkingu. Við lýsingarorðin er lýsingarorðið sett þar sem annað á heima (*sjaldgæf*
+fyrir *heit*). Þetta eru þær línur sem höfundurinn var síst viss um að ættu heima í
+spurningunni. Ef þær virka illa má eyða öllum línum með `so` og `lo`; nafnorðin standa
+ein og sér.
+
 # Utan síðunnar
 
 Texti sem er ekki á yfirlitssíðunni. Skráin er nefnd við hvert atriði.
