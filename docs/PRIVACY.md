@@ -380,15 +380,17 @@ practice: the explanation of a word (*Orð útskýrt með eigin orðum*, #37, an
 the graded meaning question *Hvað þýðir orðið? (lesið yfir)*, #38); **a
 sentence about the pupil's own life** that uses the word (*Mín setning*, #38);
 and **three words related to the word**, with how each connects (*Þrjú skyld
-orð*, #38).
+orð*, #38). Since #39 also, in Lesskilningur, **the main idea of a short subject
+text** in one sentence of the pupil's own (*Aðalatriðið með þínum orðum*) and
+**a short summary of a story** (*Sagan með þínum orðum*).
 
 | | |
 |---|---|
 | **Who** | Only a pupil the **administrator** switched on, one by one (the pupil's curriculum settings on the admin page: "Leyfa spurningar sem þjónninn les", `allowed.serverGrading`; missing means off, docs/adr/0004). Not a guardian, not a teacher, not a default. Everybody else never sees the question, and on a file or a plain host it does not exist. |
-| **What is sent** | The pupil's answer (at most 1,200 characters) — the explanation, the sentence, or the three words and how they connect, sent as one numbered text — with **names stripped** first: every name and username of an account in the pupil's group, and every word with a capital letter inside a sentence, is replaced by *[nafn1]*, *[nafn2]* … before it leaves the server (`server/reader-claude.mjs` `stripNames`). With it: the word, its class and its definition from the dictionary (ÍNO) where it has one, and the rubric. **The sentence about the pupil's own life may say something personal** (a move, a family member, a hobby): the step tells the pupil they need not name anyone, names are stripped anyway, and nothing more about the pupil goes with it. **Never** the pupil's name, id, group, age or anything else from the account. |
+| **What is sent** | The pupil's answer (at most 1,200 characters) — the explanation, the sentence, or the three words and how they connect, sent as one numbered text — with **names stripped** first: every name and username of an account in the pupil's group, and every word with a capital letter inside a sentence, is replaced by *[nafn1]*, *[nafn2]* … before it leaves the server (`server/reader-claude.mjs` `stripNames`). With it: the word, its class and its definition from the dictionary (ÍNO) where it has one, and the rubric. For a text's main idea or a story's summary (#39): the text the pupil read (one of the program's own texts, `content/textar/`, read by the server from its own data — the browser sends only the text's id), with its marks and the summary written with it, and the rubric. The names of the story's own characters are not stripped (they are the program's, not the pupil's); every other name is. **The sentence about the pupil's own life may say something personal** (a move, a family member, a hobby): the step tells the pupil they need not name anyone, names are stripped anyway, and nothing more about the pupil goes with it. **Never** the pupil's name, id, group, age or anything else from the account. |
 | **From where** | From **this server**, with the key as a server secret. The browser never talks to Anthropic, and the key is never in the page. |
 | **What comes back** | For each point of the rubric: met or not, with a quote from the text. The server drops any claim whose quote is not in the pupil's text, and returns only that; right/wrong and XP are decided in the browser. Claude writes nothing the pupil reads: the checklist and the one follow-up question are the program's own words. |
-| **What is kept** | On the server: **nothing** of the text — held in memory for one request, written to no file and no log (`server/reader.mjs`). In the pupil's own progress: what they wrote on the card (the explanation, the sentence, the three words and their connections) as typed, on their word card (§1g: only the pupil sees it, in their export, erased with the account). A cost line per call, **anonymous**: the day, the model, the effort, the number of tokens and the price (`claude-cost.jsonl` in the data folder; no account, group or text). |
+| **What is kept** | On the server: **nothing** of the text — held in memory for one request, written to no file and no log (`server/reader.mjs`). In the pupil's own progress: what they wrote on the card (the explanation, the sentence, the three words and their connections) as typed, on their word card (§1g: only the pupil sees it, in their export, erased with the account). **A text's main idea and a story's summary (#39) are kept nowhere**, not in the progress either: only that the pupil was asked about that text (its id, like every Lesskilningur question), and whether the answer was right. A cost line per call, **anonymous**: the day, the model, the effort, the number of tokens and the price (`claude-cost.jsonl` in the data folder; no account, group or text). |
 | **At Anthropic** | Under Anthropic's commercial terms, what is sent through the API is not used to train models. **Zero data retention** — nothing stored after the answer — is an arrangement for the *organisation* the key belongs to; it is not something a request can ask for. See below. |
 | **Model** | Claude Opus 5.5 at low effort (default), or Claude Fable 5.2 (`FALLASKOLI_CLAUDE_MODEL=fable`). **Fable 5.2 requires 30-day retention at Anthropic and cannot run under zero data retention**: use it to compare on made-up texts, not for pupils, unless you accept and say that. |
 
@@ -404,7 +406,8 @@ orð*, #38).
    terms and data processing addendum, keep the copy, and add Anthropic to
    §2's recipients and transfers (a US company).
 3. **The notice.** A paragraph: which pupils, what is sent (their own
-   explanation, their own sentence and three related words, without names),
+   explanation, their own sentence and three related words, the main idea of a
+   text and the summary of a story they read, without names),
    to whom, that it is not kept by the server and not used for training, and
    that what they wrote on a word card stays on their own card.
    Then move `PRIVACY_VERSION` so those families consent again.
@@ -493,7 +496,7 @@ never be later than the notice that is live (a test holds it).
 |---|---|---|
 | **Fly.io, Inc.** | Runs the server and holds the disk | Sign their Data Processing Agreement: Fly dashboard → your organisation → *Compliance* / documents. Keep the PDF. |
 | Your domain registrar (if you use your own domain) | DNS only; sees no user data | Nothing |
-| **Anthropic** — only if you set `ANTHROPIC_API_KEY` (§1h) | Claude reads what pupils you switched on wrote in their own words (explanation, own sentence, related words), names stripped | Zero data retention for the key's organisation, their DPA, a paragraph in the notice — §1h, before the first pupil |
+| **Anthropic** — only if you set `ANTHROPIC_API_KEY` (§1h) | Claude reads what pupils you switched on wrote in their own words (explanation, own sentence, related words, a text's main idea, a story's summary), names stripped | Zero data retention for the key's organisation, their DPA, a paragraph in the notice — §1h, before the first pupil |
 
 **Do not add** analytics, error-tracking services, an email provider or font
 CDNs without adding them here, to §2 and to the notice. The content-security
@@ -547,7 +550,7 @@ Note each request and what you did; a line in a notebook is enough.
 | The anonymous counts of right and wrong answers | They fade: ×0.85 every week, and a count that has faded to nothing is dropped | Automatic |
 | The log of what calibration changed | The last 60 weekly runs; no people in it | Automatic |
 | A sampled wrong answer (only if a teacher switched it on) | 12 months (`SAMPLE.months`, printed in the notice), at most 500 at a time | Automatic; *Eyða sýninu* erases all at once |
-| An answer Claude read — explanation, own sentence, related words (§1h) | Not on the server: one request in memory. On the pupil's own word card, as their progress. At Anthropic: nothing, under zero data retention (30 days for Fable 5.2) | Automatic, given §1h's arrangement |
+| An answer Claude read — explanation, own sentence, related words, a text's main idea, a story's summary (§1h) | Not on the server: one request in memory. On the pupil's own word card, as their progress (not the main idea or the summary: those nowhere). At Anthropic: nothing, under zero data retention (30 days for Fable 5.2) | Automatic, given §1h's arrangement |
 | The cost log of Claude readings | Anonymous lines (day, model, tokens, price); until you delete `claude-cost.jsonl` | You |
 | A text written in Ritun vikunnar | Not kept, unless the group's guardian switched keeping on: then at most 12 per pupil and 60 days (`WRITING.keepPerPupil`, `WRITING.keepDays`, printed in the notice) | Automatic; switching keeping or the check off erases the group's texts at once |
 

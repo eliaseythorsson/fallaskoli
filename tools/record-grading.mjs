@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Record a real Claude answer for the grading tests (issues #37, #38).
+/* Record a real Claude answer for the grading tests (issues #37, #38, #39).
  *
  * The tests never call Claude (CI has no key, and must not spend money):
  * they feed the Claude plug (server/reader-claude.mjs) answers recorded
@@ -16,6 +16,14 @@
  * or_tengsl the three related words — give those as the browser sends them,
  * one numbered line each: --text $'1. breyta – …\n2. umskipti – …\n3. …'
  *
+ * #39: a text's main idea or a story's summary is about a TEXT, not a word:
+ *
+ *   ANTHROPIC_API_KEY=sk-… node tools/record-grading.mjs \
+ *     --kind les_kjarni_eigin|les_saga_eigin --texti fraedi-joklar \
+ *     --text "Jöklarnir á Íslandi …" --out tests/fixtures/claude/kjarni-joklar-right.json
+ *
+ * (the id is a file name of content/textar/, as the browser sends it).
+ *
  * It sends exactly what the server sends (the same rubric, the same name
  * stripping, the same request) and writes the fixture: what was asked
  * (`word`, `text`, `names`, `model`, `effort`) and the API's response body
@@ -30,17 +38,23 @@ import { claudePlug, claudeConfig } from "../server/reader-claude.mjs";
 import { eiginRubric } from "../server/rubric-eigin.mjs";
 import { setningRubric } from "../server/rubric-setning.mjs";
 import { tengslRubric } from "../server/rubric-tengsl.mjs";
+import { kjarniRubric } from "../server/rubric-kjarni.mjs";
+import { sagaRubric } from "../server/rubric-saga.mjs";
 
-const RUBRICS = { or_eigin: eiginRubric, or_setning: setningRubric, or_tengsl: tengslRubric };
+const RUBRICS = { or_eigin: eiginRubric, or_setning: setningRubric, or_tengsl: tengslRubric,
+  les_kjarni_eigin: () => kjarniRubric(), les_saga_eigin: () => sagaRubric() };
+/** The kinds that are about a text (--texti), not a word (--word). */
+const ABOUT_TEXT = ["les_kjarni_eigin", "les_saga_eigin"];
 
 const { values: a } = parseArgs({ options: {
   kind: { type: "string", default: "or_eigin" },
-  word: { type: "string" }, text: { type: "string" }, names: { type: "string", default: "" },
+  word: { type: "string" }, texti: { type: "string" }, text: { type: "string" }, names: { type: "string", default: "" },
   model: { type: "string", default: "opus" }, effort: { type: "string", default: "low" },
   out: { type: "string" },
 } });
-if (!a.word || !a.text || !a.out || !Object.hasOwn(RUBRICS, a.kind)) {
-  console.error(`Usage: node tools/record-grading.mjs [--kind ${Object.keys(RUBRICS).join("|")}] --word 'lemma|cls' --text '…' --out tests/fixtures/claude/x.json`);
+const aboutText = ABOUT_TEXT.includes(a.kind);
+if (!(aboutText ? a.texti : a.word) || !a.text || !a.out || !Object.hasOwn(RUBRICS, a.kind)) {
+  console.error(`Usage: node tools/record-grading.mjs [--kind ${Object.keys(RUBRICS).join("|")}] (--word 'lemma|cls' | --texti id) --text '…' --out tests/fixtures/claude/x.json`);
   process.exit(2);
 }
 const cfg = claudeConfig({ ...process.env, FALLASKOLI_CLAUDE_MODEL: a.model, FALLASKOLI_CLAUDE_EFFORT: a.effort });
@@ -57,7 +71,8 @@ const names = a.names ? a.names.split(",").map((s) => s.trim()).filter(Boolean) 
 const plug = claudePlug({ ...cfg, rubric: RUBRICS[a.kind](buildLexicon(DATA)), fetch: recording,
   log: (line) => console.error("cost:", JSON.stringify(line)) });
 try {
-  const out = await plug.read(a.text, { context: { word: a.word, names } });
+  const context = aboutText ? { texti: a.texti, names } : { word: a.word, names };
+  const out = await plug.read(a.text, { context });
   console.log(JSON.stringify(out.findings, null, 2));
 } catch (e) {
   console.error("The plug refused the answer:", e.code || e.message);
@@ -65,6 +80,7 @@ try {
 if (!response) process.exit(1);
 await writeFile(a.out, JSON.stringify({
   recorded: `Recorded ${new Date().toISOString().slice(0, 10)} with tools/record-grading.mjs`,
-  model: cfg.model, effort: cfg.effort, kind: a.kind, word: a.word, names, text: a.text, response,
+  model: cfg.model, effort: cfg.effort, kind: a.kind, ...(aboutText ? { texti: a.texti } : { word: a.word }),
+  names, text: a.text, response,
 }, null, 2) + "\n");
 console.error("Saved", a.out);

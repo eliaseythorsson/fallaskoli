@@ -1174,6 +1174,8 @@ RENDER.meaning = function (app) {
   $("task").innerHTML = `
   <div class="card">
     <p class="eyebrow"><span>${esc(p ? p.eyebrow : "Útskýrðu orðið með þínum eigin orðum")}</span>${skillTag(t)}</p>
+    ${/* #39: the text whose main idea or story the pupil writes in their own words */
+      Array.isArray(t.text) && t.text.length ? `<p class="sentence readtext">${t.text.map(esc).join(" ")}</p>` : ""}
     ${p ? `<p class="sentence">${fmt(p.question)}</p>`
       : `<p class="sentence">Hvað þýðir orðið <span class="target">${esc(n.o)}</span>?</p>`}
     <p class="gloss">${esc(p ? p.hint : "Skrifaðu heila setningu. Það er engin ein rétt leið til að útskýra orð.")}</p>
@@ -1205,6 +1207,10 @@ function submitMeaning(app) {
      ui/serverask.js. */
   if (j.pending === "server") return conclude(app, t, j, () => {
     document.querySelectorAll("#task textarea, #task input").forEach((b) => { /** @type {HTMLInputElement} */ (b).disabled = true; });
+    /* #39: once read, the text's own main idea or summary, beside the pupil's
+       — never a rewrite of what they wrote. */
+    if (t.after && t.after.text) $("verdict").insertAdjacentHTML("beforeend",
+      `<div class="why"><b>${esc(t.after.label)}</b>${esc(t.after.text)}</div>`);
   });
   if (j.pending) return;
   const xp = j.xp, effort = j.detail.effort;

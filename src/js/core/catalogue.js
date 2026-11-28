@@ -624,6 +624,22 @@ const LIST = [
     renderer: "choice", weight: 4, recall: false, grader: "app",
     tags: ["sogumal"],
     bands: [1, 3] },
+  /* #39 (DLD-PLAN §4, §6): the main idea of a subject text, and a story's
+     summary, in the pupil's own words — read on the server against the
+     text's marks (server/rubric-kjarni.mjs, server/rubric-saga.mjs). Server
+     grading only; few texts, so the band is not followed. */
+  { id: "les_kjarni_eigin", skill: "lesskilningur",
+    nm: "Aðalatriðið með þínum orðum",
+    ds: "Aðalatriði fræðitexta skrifað í einni setningu með eigin orðum og lesið yfir á þjóninum",
+    renderer: "meaning", weight: 3, recall: false, grader: "server",
+    tags: [],
+    bands: [1] },
+  { id: "les_saga_eigin", skill: "lesskilningur",
+    nm: "Sagan með þínum orðum",
+    ds: "Stutt samantekt sögu skrifuð með eigin orðum og lesin yfir á þjóninum",
+    renderer: "meaning", weight: 3, recall: false, grader: "server",
+    tags: [],
+    bands: [1] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when

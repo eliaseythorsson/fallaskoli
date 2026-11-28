@@ -275,7 +275,9 @@ test("item 63: where the same cell means the same answer, the two players' cells
      and in between it is a judgement. A type whose cells are single
      hand-written items (hardly ever two questions to a cell) must be in it:
      there the same cell is the same question. */
-  const measured = new Map(TASKS.filter((t) => t.skill !== "ordaford").map((t) => [t.id, []]));
+  /* Not a server-graded type (#39's are in Lesskilningur): no right answer
+     to compare, and never in a duel. */
+  const measured = new Map(TASKS.filter((t) => t.skill !== "ordaford" && t.grader !== "server").map((t) => [t.id, []]));
   for (const [level, diff] of [[1, 2.5], [3, 3.5]]) {
     const S = blankState();
     Object.keys(S.skills).forEach((k) => { S.skills[k].xp = skillNeed(level); });

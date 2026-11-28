@@ -252,11 +252,12 @@ export const NODES = [
      types (main-idea sentence, details, gist) to the same node: they test
      the same error pattern, and a pattern sits on one node. */
   { id: "les-adalatridi", nm: "Aðalatriði texta", cat: "lesskilningur", year: 8,
-    hv: "lesskilningur", types: ["les_adal", "les_setning", "les_smaatridi", "les_kjarni"],
+    hv: "lesskilningur", types: ["les_adal", "les_setning", "les_smaatridi", "les_kjarni",
+      "les_kjarni_eigin"],
     lesson: "lesskilningur", cover: "full" },
   /* issue #31: MAIN's story map — the parts of a story, and a summary that follows them */
   { id: "les-sogukort", nm: "Sögukort: hlutar sögu", cat: "lesskilningur", year: 8,
-    hv: "lesskilningur", types: ["les_hluti", "les_kort", "les_samantekt"], lesson: "lesskilningur", cover: "full" },
+    hv: "lesskilningur", types: ["les_hluti", "les_kort", "les_samantekt", "les_saga_eigin"], lesson: "lesskilningur", cover: "full" },
 
   /* ---- Frásögn (issue #35, docs/DLD-PLAN.md §5) ---- */
   /* Year 8, so in every preset. Under Sköpunarkraftur: the criterion that
