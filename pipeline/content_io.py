@@ -237,6 +237,10 @@ def groups(rel, key_col, columns):
 #                  has two or three episodes, each with its own vandi,
 #                  tilraun and útkoma. The line stands before the episode's
 #                  first sentence; a story without one is one episode.
+#   a gap          (issue #36) "_word_" in a sentence and "~" lines under it:
+#                  a connective or inner-state word for the pupil to choose.
+#                  Read and checked by pipeline/story_gaps.py (its header has
+#                  the format); read_text only hands it the lines.
 #
 # `texts()` is the ONE reader, and every check on a text is here; the build
 # (pipeline/build_exercises.py) only consumes what it returns, and adds what

@@ -672,6 +672,33 @@ is the text's id). No TABs and no columns — it reads as the text does:
   is asked only of a text with at least two `[smáatriði]` and one `[annað]`,
   a sentence on the same subject that does not support the main idea, for
   the pupil to leave out.
+- **A gap** (issue #36, Frásögn step 3): one sentence of a story may hide a
+  connective or a word for an inner state for the pupil to choose. The words
+  stand between underscores, and the gap's block on the lines right under
+  the sentence:
+
+  ```
+  [vandi] En _þegar_ hún{Elísa} opnaði skápinn var ekkert hveiti til.
+  ~ [tengiorð] *Þegar* segir hvenær: … (why the right word fits)
+  ~ af því að | *Af því að* segir hvers vegna. En … (a wrong option | why not)
+  ~ þess vegna | Á eftir *þess vegna* kemur sögnin strax …
+  ```
+
+  The first `~` line names the kind — `[tengiorð]`, one of issue #28's five
+  (*af því að, þess vegna, þegar, síðan, en*), or `[hugarástand]` (*vildi,
+  glöð, fegin* …) — and explains the right answer; each line after it is a
+  wrong option, written as it would stand in the gap, and the reason the
+  pupil reads if they pick it. Two or three wrong options. **Only one option
+  may fit**: a wrong one must fail by word order or by what the story says
+  before and after; one that could be argued is never offered.
+  `pipeline/story_gaps.py` reads the block and stops, with the file and the
+  line, on a gap without its block (or the other way round), an unknown
+  kind, too few or too many wrong options, an option twice, or one written
+  with another capital than the gap. The build then checks the five
+  connectives and #28's word-order rule (the verb straight after *þess
+  vegna* and *síðan*), that every inner-state option is a word for an inner
+  state in BÍN, and that the sentence still parses with each wrong
+  inner-state option in the gap — those fail by meaning, never by grammar.
 - **Þyngd is length:** 2–3 sentences at þyngd 1, a paragraph (4–9 sentences)
   at 2–3, 150–300 words at 4–5. A story must have `vandi` and `útkoma` at
   þyngd 1; `aðstæður`, `vandi`, `tilraun` and `útkoma` at 2–3; all six parts

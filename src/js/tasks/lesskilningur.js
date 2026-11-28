@@ -94,7 +94,7 @@ export function taskMainIdea(lex, view, rng) {
    and over. Until a type has more items than this, it does not follow the
    band (its catalogue entry says bands: [1]); the policy's levels still
    apply. */
-const FEW = 12;
+const FEW = 24;   /* 12 until #36: two more stories gave les_hluti 13 items */
 
 /** The stories, each cut into its episodes: [{ tx, ep (1–3, or 0 for a
     story without episodes), s: [{ s, k }] (the sentence and its place in the
