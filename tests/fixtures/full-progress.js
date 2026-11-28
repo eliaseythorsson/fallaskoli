@@ -149,7 +149,9 @@ export function fullProgress() {
       "hluti|kk": { d: "2026-11-17", n: 1, r: 1, a: {
         skyring: { c: ["hluti|kk"], ok: true }, flokkur: { c: ["so"], ok: false }, kyn: { c: ["kk"], ok: true } } },
       "áhrif|hk": { d: "2026-11-18", n: 2, r: 2, a: {
-        setning: { c: ["Veðrið hefur áhrif á skapið."], ok: true }, skyld: { c: ["líka", "sömuleiðis"], ok: true } } },
+        setning: { c: ["Veðrið hefur áhrif á skapið."], ok: true }, skyld: { c: ["líka", "sömuleiðis"], ok: true } },
+        /* #18: added when the card came back in a review. */
+        x: [{ d: "2026-11-19", r: 2 }, { d: "2026-11-20", s: "Tónlist hefur góð áhrif á mig." }] },
     },
   };
 }

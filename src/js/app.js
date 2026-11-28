@@ -194,6 +194,9 @@ const app = {
   /** Draw the next question. Never leaves the child with a blank screen. */
   next() {
     hideTip();
+    /* #18: a review of a learned word may bring the pupil's own card back
+       first (control/session.js); `next` runs again when it is closed. */
+    if (this.revisitNext()) return;
     this.refreshRanges();
     /* Kept for the 🚩 report: a child often notices a mistake only after
        pressing Áfram (ui/reports.js). */

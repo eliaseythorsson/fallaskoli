@@ -54,7 +54,9 @@ const FIXTURE_SLICE = {
 const CARDS = { "hestur|kk": `Dýr sem maður ríður á ${MARK}` };
 /* The real slice, with the marker in what the pupil chose on a card. */
 const WORD_CARDS = { "hestur|kk": { d: "2026-11-20", n: 1, r: 2, a: {
-  setning: { c: [`Ég á hest ${MARK}`], ok: true }, flokkur: { c: ["no"], ok: true } } } };
+  setning: { c: [`Ég á hest ${MARK}`], ok: true }, flokkur: { c: ["no"], ok: true } },
+  /* #18: a sentence the pupil added when the card came back in a review. */
+  x: [{ d: "2026-11-20", r: 1, s: `Hesturinn minn heitir ${MARK}` }] } };
 const OWN = { [KEY]: CARDS, wordCards: WORD_CARDS };
 
 let base, dir, app;
