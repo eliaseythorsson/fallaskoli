@@ -1,0 +1,30 @@
+# Nýi skólinn — stutt saga um tvær stelpur (einn þáttur).
+# Skrifuð fyrir spurninguna „Til hvers vísar fornafnið?“ (mál #33): báðar
+# stelpurnar eru í kvenkyni eintölu, svo að kynið segir ekki hvora
+# fornafnið á við. Það gerir merkingin: sú sem spyr spyr einhverja aðra
+# (*Lísa … spurði hana*), og það er Lísa sem byrjaði í nýja skólanum.
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er
+#   (aðstæður, vandi, markmið, tilraun, útkoma, viðbrögð),
+#   Hún{Lísa}, Hana{Lísa} og hana{Embla} segja til hvers fornafnið vísar,
+#   ? [samantekt] er spurning með svörin í línunum fyrir neðan:
+#   + er rétta samantektin, - [hluti] röng samantekt og hlutinn sem hún brýtur,
+#   ! er skýringin sem nemandinn les á eftir.
+#
+# þyngd: 2
+# tegund: saga
+# orð:
+
+[aðstæður] Lísa byrjaði í nýjum skóla eftir jólafríið.
+[vandi] Hún{Lísa} þekkti engan og var alltaf ein í frímínútum.
+[markmið] Hana{Lísa} langaði mikið að eignast vinkonu.
+[tilraun] Einn daginn gekk Lísa til stelpu sem hét Embla og spurði hana{Embla} hvort hún{Embla} vildi koma í fótbolta.
+[útkoma] Embla sagði já og þær urðu góðar vinkonur.
+[viðbrögð] Lísa var glöð, því að nú átti hún{Lísa} vinkonu í nýja skólanum.
+
+? [samantekt] Hvaða samantekt passar við söguna?
++ Lísa var ein í nýja skólanum, en hún bauð Emblu í fótbolta og eignaðist vinkonu.
+- [útkoma] Lísa bauð Emblu í fótbolta, en Embla vildi ekki vera með.
+- [tilraun] Lísa var ein í nýja skólanum þangað til kennarinn fann vinkonu handa henni.
+! Lísa er ein (vandi), hún spyr Emblu hvort hún vilji koma í fótbolta (tilraun) og þær verða vinkonur (útkoma). Rétta samantektin fylgir þessu.

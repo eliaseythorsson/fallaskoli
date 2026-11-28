@@ -23,7 +23,7 @@
   "pipeline/build_bundle.py": "a83cb6fbcb6bcbba2b7c6baf9cfd0d21db4a81e179c34f2713349382d98a3f6b",
   "pipeline/irregularity.py": "1a612176ed1f1d5f854be7b919fc2e3857820d719086690635682c0ac3c08864",
   "pipeline/exercises.py": "211b2b431ba7ca6a561f273b719b33a96fc7d6c7cd7c832b8745f5240cecbee2",
-  "pipeline/build_exercises.py": "22346536cf78cfb93553a314c40a7d11c84a2e1419b6715f336a28d68f390d3c",
+  "pipeline/build_exercises.py": "3671c0e04d510f47ae4fd8171516e6fcfcc689f8983f5c7a7ea6dbe5dae2ba2f",
   "pipeline/adj_classes.py": "30dcdd1a715ac73c9325bcc327a043a78cd452cd9aa9164d934b25b565255b10",
   "pipeline/content_io.py": "85b532256475e9dcebc659626208e785e46eaa95526dfb5a7ff51b8b9bac8146",
   "pipeline/who_did.py": "1abfd3de384d81f7015f2c65ca007fb527f838f34a52034b6a513e931c8e3a46",
@@ -32,6 +32,7 @@
   "pipeline/lino.py": "c532b6d9419d2fb8c70bf6b1454d627cf93139ab004f7ec2f36a6a57fe4328f4",
   "pipeline/frame_allow.py": "1882339d84eb52b4db7bbb87e5d506f81342e7fc8035c9689219cabe9222a540",
   "pipeline/story_gaps.py": "215e257355aa1cacbb44e066f11f20b2319d7cfa9f113da38991a19d2b033b2c",
+  "pipeline/pronoun_options.py": "00f354d97fb70e6b07886274bea6b4f10bea31b0cda0076521f3b396bcaeff8f",
   "content/fallstjorn/hreyfing-sett.tsv": "076a6ee92e32eecfe13cc27dccaedab43be938a6d65ad1549a9cdc1fe7bb481f",
   "content/fallstjorn/hreyfing.tsv": "e8c50725b1570b14a5627e244b54a99cc4258218c12e45db97eb8e9497d70b8a",
   "content/fallstjorn/opersonulegar-frumlog.tsv": "902efb7b382c3cc921e796b66c9961e948cb30b5e548a062be409e54d9e5f4a3",
@@ -76,9 +77,11 @@
   "content/textar/saga-bolti-a-thaki.txt": "22387b4dac947efbc7e38feede46899897e5a96e28b8340cd2ad85fc5a4b23c8",
   "content/textar/saga-hjolid.txt": "cb59a42902fb0f95b6e43e08b39d8e48c95f7b0334a99b87dbc212ee3693274f",
   "content/textar/saga-lykillinn.txt": "dd0b8ade2f936d1afade7fd0bbd22169860c74e0ca61f1788a781f9fdf7781da",
+  "content/textar/saga-nyi-skolinn.txt": "1065a34c8a32b7f4a6edea01fb484e387fbc690428f64a2a6537adc6e15c3a9f",
   "content/textar/saga-rafmagnid.txt": "5d5c4e3f21dc83a0215bbea7d52889af8ee1d3bcbdf06fb4e57906135209b790",
   "content/textar/saga-snjokarlinn.txt": "bf4fe9bba7c47f267a2d4341f94d50bfa0e8721669879d976503a0d1d5449bc0",
   "content/textar/saga-straeto.txt": "b3ed89dc221386e92158dfc39fb0d945f699437beaf66e0435d033e6e65d45ff",
+  "content/textar/saga-sundferdin.txt": "abf8637dcff21529f19430d374a6b80364dbb624dd0be0d284cc6f60397d3c89",
   "content/textar/saga-tyndur-hundur.txt": "667c495091b8d54e74464bdf7af3b97666a614c739a9d3913472e352417b6c97",
   "content/toluord/dagsetningar.tsv": "a1c95332f2dc18a4eb8369ef7fb496a37089eb7b9af4d6cd5ba0525e1dfa7a39",
   "content/toluord/fleirtoluord-hopar.tsv": "3c99a58dcbc23364f4f7d6beaedfe7ad269328f093860b6c32c8af28a12ba5a8",
@@ -93,7 +96,7 @@
   "data/lexicon.json": "c166ce4922c53d69526c93dbacea3372a5fbaa67b45304a4698405613df75fe0",
   "data/sentences.json": "1fbb7a55c19923732dfb61c149bb4c4ddd6452a047eee88e7953a9c50737a669",
   "data/data_bundle.js": "8166c111b2d39750a7ead280d6a5c6c25564f976bd7788e9b0f020f5c088c784",
-  "data/exercises.js": "6786450d34c2e17f67be7e960d1d034b0e40fbbcff265d22392813f64ca16ee6"
+  "data/exercises.js": "de602ac6ac34ebf8128fb38e20a929339a8b53bc2481c18f77ff09768cf433f5"
  },
  "counts": {
   "words": 7405,
