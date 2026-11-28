@@ -1,0 +1,22 @@
+{
+ "_fake": "Written by hand by the agent that built tools/lino-frames/fillin.mjs (issue #23), NOT by Claude. The usage numbers are made up. Not a judgement or a sentence anyone should use.",
+ "response": {
+  "type": "message",
+  "id": "msg_fake_auka.so",
+  "model": "claude-fable-5-2",
+  "role": "assistant",
+  "content": [
+   {
+    "type": "text",
+    "text": "{\"sentences\":[{\"level\":3,\"text\":\"Við jukum hraðann þegar við sáum rútuna.\",\"form\":\"jukum\",\"why\":\"increased speed\"},{\"level\":3,\"text\":\"Þjálfarinn sagði að æfingarnar myndu auka þolið.\",\"form\":\"auka\",\"why\":\"training increases stamina\"}],\"note\":\"\"}"
+   }
+  ],
+  "stop_reason": "end_turn",
+  "usage": {
+   "input_tokens": 140,
+   "cache_creation_input_tokens": 0,
+   "cache_read_input_tokens": 5000,
+   "output_tokens": 1080
+  }
+ }
+}

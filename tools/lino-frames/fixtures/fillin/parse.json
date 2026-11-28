@@ -1,0 +1,1274 @@
+[
+ {
+  "lemma": "einnig",
+  "level": 2,
+  "text": "Systir mín kemur einnig með okkur.",
+  "ok": true,
+  "why": "",
+  "rec": {
+   "lvl": 2,
+   "t": "Systir mín kemur einnig með okkur.",
+   "tok": [
+    {
+     "w": "Systir",
+     "l": "systir",
+     "c": "nafnorð",
+     "m": "NFET",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": "mín",
+     "l": "minn",
+     "c": "fornafn",
+     "m": "KVK-NFET",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fn"
+    },
+    {
+     "w": "kemur",
+     "l": "koma",
+     "c": "sagnorð",
+     "m": "GM-FH-NT-3P-ET",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so"
+    },
+    {
+     "w": "einnig",
+     "l": "einnig",
+     "c": "atviksorð",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "ao"
+    },
+    {
+     "w": "með",
+     "l": "með",
+     "c": "forsetning",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fs"
+    },
+    {
+     "w": "okkur",
+     "l": "ég",
+     "c": "fornafn",
+     "m": "ÞFFT",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "pfn",
+     "u": [
+      "fall"
+     ]
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": null,
+   "fixed": false,
+   "need": [],
+   "ph": [
+    {
+     "a": 0,
+     "b": 1,
+     "t": "nl"
+    },
+    {
+     "a": 2,
+     "b": 5,
+     "t": "sl"
+    }
+   ]
+  }
+ },
+ {
+  "lemma": "einnig",
+  "level": 3,
+  "text": "Við lásum söguna og horfðum einnig á myndina.",
+  "ok": true,
+  "why": "",
+  "rec": {
+   "lvl": 3,
+   "t": "Við lásum söguna og horfðum einnig á myndina.",
+   "tok": [
+    {
+     "w": "Við",
+     "l": "ég",
+     "c": "fornafn",
+     "m": "NFFT",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "pfn"
+    },
+    {
+     "w": "lásum",
+     "l": "lesa",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-1P-FT",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so"
+    },
+    {
+     "w": "söguna",
+     "l": "saga",
+     "c": "nafnorð",
+     "m": "ÞFETgr",
+     "r": "andlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": "og",
+     "l": "og",
+     "c": "samtenging",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "st"
+    },
+    {
+     "w": "horfðum",
+     "l": "horfa",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-1P-FT",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so",
+     "u": [
+      "háttur"
+     ]
+    },
+    {
+     "w": "einnig",
+     "l": "einnig",
+     "c": "atviksorð",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "ao"
+    },
+    {
+     "w": "á",
+     "l": "á",
+     "c": "forsetning",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fs",
+     "pg": "þf"
+    },
+    {
+     "w": "myndina",
+     "l": "mynd",
+     "c": "nafnorð",
+     "m": "ÞFETgr",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": null,
+   "fixed": false,
+   "need": [],
+   "ph": [
+    {
+     "a": 0,
+     "b": 0,
+     "t": "nl"
+    }
+   ]
+  }
+ },
+ {
+  "lemma": "hluti",
+  "level": 2,
+  "text": "Stór hluti bekkjarins fór í ferðina.",
+  "ok": true,
+  "why": "",
+  "rec": {
+   "lvl": 2,
+   "t": "Stór hluti bekkjarins fór í ferðina.",
+   "tok": [
+    {
+     "w": "Stór",
+     "l": "stór",
+     "c": "lýsingarorð",
+     "m": "FSB-KK-NFET",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "lo",
+     "u": [
+      "tala"
+     ]
+    },
+    {
+     "w": "hluti",
+     "l": "hluti",
+     "c": "nafnorð",
+     "m": "NFET",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": "bekkjarins",
+     "l": "bekkur",
+     "c": "nafnorð",
+     "m": "EFETgr",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": "fór",
+     "l": "fara",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-3P-ET",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so"
+    },
+    {
+     "w": "í",
+     "l": "í",
+     "c": "forsetning",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fs",
+     "pg": "þf"
+    },
+    {
+     "w": "ferðina",
+     "l": "ferð",
+     "c": "nafnorð",
+     "m": "ÞFETgr",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": 1,
+   "fixed": true,
+   "need": [],
+   "ph": [
+    {
+     "a": 0,
+     "b": 2,
+     "t": "nl"
+    },
+    {
+     "a": 3,
+     "b": 5,
+     "t": "sl"
+    },
+    {
+     "a": 4,
+     "b": 5,
+     "t": "fl"
+    }
+   ]
+  }
+ },
+ {
+  "lemma": "hluti",
+  "level": 3,
+  "text": "Ég las fyrsta hluta bókarinnar í gærkvöldi.",
+  "ok": true,
+  "why": "",
+  "rec": {
+   "lvl": 3,
+   "t": "Ég las fyrsta hluta bókarinnar í gærkvöldi.",
+   "tok": [
+    {
+     "w": "Ég",
+     "l": "ég",
+     "c": "fornafn",
+     "m": "NFET",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "pfn"
+    },
+    {
+     "w": "las",
+     "l": "lesa",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-1P-ET",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": [
+      "þf"
+     ],
+     "x": "so"
+    },
+    {
+     "w": "fyrsta",
+     "l": "fyrstur",
+     "c": "lýsingarorð",
+     "m": "FVB-KK-ÞFET",
+     "r": "andlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "lo",
+     "u": [
+      "tala",
+      "beyging"
+     ]
+    },
+    {
+     "w": "hluta",
+     "l": "hluti",
+     "c": "nafnorð",
+     "m": "ÞFET",
+     "r": "andlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no",
+     "u": [
+      "tala"
+     ]
+    },
+    {
+     "w": "bókarinnar",
+     "l": "bók",
+     "c": "nafnorð",
+     "m": "EFETgr",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": "í gærkvöldi",
+     "l": "í gærkvöldi",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "ao"
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": 3,
+   "fixed": true,
+   "need": [],
+   "ph": [
+    {
+     "a": 0,
+     "b": 0,
+     "t": "nl"
+    },
+    {
+     "a": 1,
+     "b": 5,
+     "t": "sl"
+    },
+    {
+     "a": 2,
+     "b": 4,
+     "t": "nl"
+    }
+   ]
+  }
+ },
+ {
+  "lemma": "mikilvægur",
+  "level": 2,
+  "text": "Svefn er mikilvægur fyrir heilsuna.",
+  "ok": true,
+  "why": "",
+  "rec": {
+   "lvl": 2,
+   "t": "Svefn er mikilvægur fyrir heilsuna.",
+   "tok": [
+    {
+     "w": "Svefn",
+     "l": "svefn",
+     "c": "nafnorð",
+     "m": "NFET",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": "er",
+     "l": "vera",
+     "c": "sagnorð",
+     "m": "GM-FH-NT-3P-ET",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so"
+    },
+    {
+     "w": "mikilvægur",
+     "l": "mikilvægur",
+     "c": "lýsingarorð",
+     "m": "FSB-KK-NFET",
+     "r": "sagnfylling",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "lo"
+    },
+    {
+     "w": "fyrir",
+     "l": "fyrir",
+     "c": "forsetning",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fs",
+     "pg": "þf"
+    },
+    {
+     "w": "heilsuna",
+     "l": "heilsa",
+     "c": "nafnorð",
+     "m": "ÞFETgr",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": null,
+   "fixed": false,
+   "need": [],
+   "ph": [
+    {
+     "a": 0,
+     "b": 0,
+     "t": "nl"
+    },
+    {
+     "a": 1,
+     "b": 4,
+     "t": "sl"
+    },
+    {
+     "a": 3,
+     "b": 4,
+     "t": "fl"
+    }
+   ]
+  }
+ },
+ {
+  "lemma": "mikilvægur",
+  "level": 3,
+  "text": "Það er mikilvægt að borða hollan mat á hverjum degi.",
+  "ok": false,
+  "why": "smíðin myndi stoppa: þyngd 3: 10 orð (hámark 9) — 'Það er mikilvægt að borða hollan mat á hverjum degi.'",
+  "rec": {
+   "lvl": 3,
+   "t": "Það er mikilvægt að borða hollan mat á hverjum degi.",
+   "tok": [
+    {
+     "w": "Það",
+     "l": "það",
+     "c": "fornafn",
+     "m": "HK-NFET",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "pfn",
+     "u": [
+      "fall"
+     ],
+     "rn": 1
+    },
+    {
+     "w": "er",
+     "l": "vera",
+     "c": "sagnorð",
+     "m": "GM-FH-NT-3P-ET",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so",
+     "u": [
+      "persóna"
+     ]
+    },
+    {
+     "w": "mikilvægt",
+     "l": "mikilvægur",
+     "c": "lýsingarorð",
+     "m": "FSB-HK-NFET",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "lo",
+     "u": [
+      "fall"
+     ],
+     "rn": 1
+    },
+    {
+     "w": "að",
+     "l": "að",
+     "c": "nafnháttarmerki",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "nhm"
+    },
+    {
+     "w": "borða",
+     "l": "borða",
+     "c": "sagnorð",
+     "m": "GM-NH",
+     "r": null,
+     "k": "aðalsetning",
+     "g": [
+      "þf"
+     ],
+     "x": "so",
+     "ra": [
+      "umsögn"
+     ],
+     "u": [
+      "tala",
+      "háttur",
+      "persóna"
+     ]
+    },
+    {
+     "w": "hollan",
+     "l": "hollur",
+     "c": "lýsingarorð",
+     "m": "FSB-KK-ÞFET",
+     "r": "andlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "lo"
+    },
+    {
+     "w": "mat",
+     "l": "matur",
+     "c": "nafnorð",
+     "m": "ÞFET",
+     "r": "andlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": "á",
+     "l": "á",
+     "c": "forsetning",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fs",
+     "pg": "þgf"
+    },
+    {
+     "w": "hverjum",
+     "l": "hver",
+     "c": "fornafn",
+     "m": "KK-ÞGFET",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fn",
+     "u": [
+      "tala"
+     ]
+    },
+    {
+     "w": "degi",
+     "l": "dagur",
+     "c": "nafnorð",
+     "m": "ÞGFET",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": null,
+   "fixed": false,
+   "need": [],
+   "ph": [
+    {
+     "a": 1,
+     "b": 9,
+     "t": "sl"
+    }
+   ]
+  }
+ },
+ {
+  "lemma": "auka",
+  "level": 3,
+  "text": "Við jukum hraðann þegar við sáum rútuna.",
+  "ok": true,
+  "why": "",
+  "rec": {
+   "lvl": 3,
+   "t": "Við jukum hraðann þegar við sáum rútuna.",
+   "tok": [
+    {
+     "w": "Við",
+     "l": "ég",
+     "c": "fornafn",
+     "m": "NFFT",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "pfn"
+    },
+    {
+     "w": "jukum",
+     "l": "auka",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-1P-FT",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so"
+    },
+    {
+     "w": "hraðann",
+     "l": "hraði",
+     "c": "nafnorð",
+     "m": "ÞFETgr",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no",
+     "rn": 1
+    },
+    {
+     "w": "þegar",
+     "l": "þegar",
+     "c": "samtenging",
+     "m": null,
+     "r": null,
+     "k": "aukasetning",
+     "g": null,
+     "x": "st"
+    },
+    {
+     "w": "við",
+     "l": "ég",
+     "c": "fornafn",
+     "m": "NFFT",
+     "r": "frumlag",
+     "k": "aukasetning",
+     "g": null,
+     "x": "pfn"
+    },
+    {
+     "w": "sáum",
+     "l": "sjá",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-1P-FT",
+     "r": "umsögn",
+     "k": "aukasetning",
+     "g": [
+      "þf"
+     ],
+     "x": "so"
+    },
+    {
+     "w": "rútuna",
+     "l": "rúta",
+     "c": "nafnorð",
+     "m": "ÞFETgr",
+     "r": "andlag",
+     "k": "aukasetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": null,
+   "fixed": false,
+   "need": [],
+   "cl": [
+    {
+     "a": 3,
+     "b": 6,
+     "t": "tíðarsetning"
+    }
+   ],
+   "ph": [
+    {
+     "a": 0,
+     "b": 0,
+     "t": "nl"
+    },
+    {
+     "a": 4,
+     "b": 4,
+     "t": "nl"
+    },
+    {
+     "a": 6,
+     "b": 6,
+     "t": "nl"
+    }
+   ]
+  }
+ },
+ {
+  "lemma": "auka",
+  "level": 3,
+  "text": "Þjálfarinn sagði að æfingarnar myndu auka þolið.",
+  "ok": true,
+  "why": "",
+  "rec": {
+   "lvl": 3,
+   "t": "Þjálfarinn sagði að æfingarnar myndu auka þolið.",
+   "tok": [
+    {
+     "w": "Þjálfarinn",
+     "l": "þjálfari",
+     "c": "nafnorð",
+     "m": "NFETgr",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": "sagði",
+     "l": "segja",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-3P-ET",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so"
+    },
+    {
+     "w": "að",
+     "l": "að",
+     "c": "samtenging",
+     "m": null,
+     "r": null,
+     "k": "aukasetning",
+     "g": null,
+     "x": "st"
+    },
+    {
+     "w": "æfingarnar",
+     "l": "æfing",
+     "c": "nafnorð",
+     "m": "NFFTgr",
+     "r": "frumlag",
+     "k": "aukasetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": "myndu",
+     "l": "munu",
+     "c": "sagnorð",
+     "m": "GM-VH-ÞT-3P-FT",
+     "r": "umsögn",
+     "k": "aukasetning",
+     "g": null,
+     "x": "so"
+    },
+    {
+     "w": "auka",
+     "l": "auka",
+     "c": "sagnorð",
+     "m": "GM-NH",
+     "r": null,
+     "k": "aukasetning",
+     "g": null,
+     "x": "so",
+     "ra": [
+      "umsögn"
+     ],
+     "u": [
+      "háttur"
+     ]
+    },
+    {
+     "w": "þolið",
+     "l": "þol",
+     "c": "nafnorð",
+     "m": "ÞFETgr",
+     "r": null,
+     "k": "aukasetning",
+     "g": null,
+     "x": "no",
+     "rn": 1
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": null,
+   "fixed": false,
+   "need": [],
+   "cl": [
+    {
+     "a": 2,
+     "b": 6,
+     "t": "skýringarsetning"
+    }
+   ],
+   "ph": [
+    {
+     "a": 0,
+     "b": 0,
+     "t": "nl"
+    },
+    {
+     "a": 3,
+     "b": 3,
+     "t": "nl"
+    }
+   ]
+  }
+ },
+ {
+  "lemma": "heldur",
+  "level": 3,
+  "text": "Við fórum ekki í bíó heldur í sund.",
+  "ok": true,
+  "why": "",
+  "rec": {
+   "lvl": 3,
+   "t": "Við fórum ekki í bíó heldur í sund.",
+   "tok": [
+    {
+     "w": "Við",
+     "l": "ég",
+     "c": "fornafn",
+     "m": "NFFT",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "pfn"
+    },
+    {
+     "w": "fórum",
+     "l": "fara",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-1P-FT",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so"
+    },
+    {
+     "w": "ekki",
+     "l": "ekki",
+     "c": "atviksorð",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "ao"
+    },
+    {
+     "w": "í",
+     "l": "í",
+     "c": "forsetning",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fs"
+    },
+    {
+     "w": "bíó",
+     "l": "bíó",
+     "c": "nafnorð",
+     "m": "ÞFET",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no",
+     "u": [
+      "fall",
+      "tala"
+     ]
+    },
+    {
+     "w": "heldur",
+     "l": "heldur",
+     "c": "samtenging",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "st"
+    },
+    {
+     "w": "í",
+     "l": "í",
+     "c": "forsetning",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fs",
+     "pg": "þf"
+    },
+    {
+     "w": "sund",
+     "l": "sund",
+     "c": "nafnorð",
+     "m": "ÞFET",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no",
+     "u": [
+      "tala"
+     ]
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": null,
+   "fixed": false,
+   "need": [],
+   "ph": [
+    {
+     "a": 0,
+     "b": 0,
+     "t": "nl"
+    },
+    {
+     "a": 6,
+     "b": 7,
+     "t": "fl"
+    }
+   ]
+  }
+ },
+ {
+  "lemma": "heldur",
+  "level": 2,
+  "text": "Hann hló ekki heldur brosti.",
+  "ok": true,
+  "why": "",
+  "rec": {
+   "lvl": 2,
+   "t": "Hann hló ekki heldur brosti.",
+   "tok": [
+    {
+     "w": "Hann",
+     "l": "hann",
+     "c": "fornafn",
+     "m": "KK-NFET",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "pfn"
+    },
+    {
+     "w": "hló",
+     "l": "hlæja",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-3P-ET",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so"
+    },
+    {
+     "w": "ekki",
+     "l": "ekki",
+     "c": "atviksorð",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "ao"
+    },
+    {
+     "w": "heldur",
+     "l": "heldur",
+     "c": "samtenging",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "st"
+    },
+    {
+     "w": "brosti",
+     "l": "brosa",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-3P-ET",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so",
+     "u": [
+      "háttur"
+     ]
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": null,
+   "fixed": false,
+   "need": [],
+   "ku": true,
+   "ph": [
+    {
+     "a": 0,
+     "b": 0,
+     "t": "nl"
+    }
+   ]
+  }
+ },
+ {
+  "lemma": "mæla",
+  "level": 3,
+  "text": "Læknirinn mælti með því að ég hvíldi mig.",
+  "ok": true,
+  "why": "",
+  "rec": {
+   "lvl": 3,
+   "t": "Læknirinn mælti með því að ég hvíldi mig.",
+   "tok": [
+    {
+     "w": "Læknirinn",
+     "l": "læknir",
+     "c": "nafnorð",
+     "m": "NFETgr",
+     "r": "frumlag",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "no"
+    },
+    {
+     "w": "mælti",
+     "l": "mæla",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-3P-ET",
+     "r": "umsögn",
+     "k": "aðalsetning",
+     "g": null,
+     "x": "so",
+     "u": [
+      "háttur"
+     ]
+    },
+    {
+     "w": "með",
+     "l": "með",
+     "c": "forsetning",
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fs",
+     "pg": "þgf"
+    },
+    {
+     "w": "því",
+     "l": "sá",
+     "c": "fornafn",
+     "m": "HK-ÞGFET",
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": "fn"
+    },
+    {
+     "w": "að",
+     "l": "að",
+     "c": "samtenging",
+     "m": null,
+     "r": null,
+     "k": "aukasetning",
+     "g": null,
+     "x": "st"
+    },
+    {
+     "w": "ég",
+     "l": "ég",
+     "c": "fornafn",
+     "m": "NFET",
+     "r": "frumlag",
+     "k": "aukasetning",
+     "g": null,
+     "x": "pfn"
+    },
+    {
+     "w": "hvíldi",
+     "l": "hvíla",
+     "c": "sagnorð",
+     "m": "GM-FH-ÞT-1P-ET",
+     "r": "umsögn",
+     "k": "aukasetning",
+     "g": null,
+     "x": "so",
+     "u": [
+      "háttur"
+     ]
+    },
+    {
+     "w": "mig",
+     "l": "ég",
+     "c": "fornafn",
+     "m": "ÞFET",
+     "r": null,
+     "k": "aukasetning",
+     "g": null,
+     "x": "pfn"
+    },
+    {
+     "w": ".",
+     "l": ".",
+     "c": null,
+     "m": null,
+     "r": null,
+     "k": "aðalsetning",
+     "g": null,
+     "x": ""
+    }
+   ],
+   "slot": null,
+   "fixed": false,
+   "need": [],
+   "ph": [
+    {
+     "a": 0,
+     "b": 0,
+     "t": "nl"
+    },
+    {
+     "a": 5,
+     "b": 5,
+     "t": "nl"
+    }
+   ]
+  }
+ }
+]

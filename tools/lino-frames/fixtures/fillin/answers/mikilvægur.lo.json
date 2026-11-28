@@ -1,0 +1,22 @@
+{
+ "_fake": "Written by hand by the agent that built tools/lino-frames/fillin.mjs (issue #23), NOT by Claude. The usage numbers are made up. Not a judgement or a sentence anyone should use.",
+ "response": {
+  "type": "message",
+  "id": "msg_fake_mikilvægur.lo",
+  "model": "claude-fable-5-2",
+  "role": "assistant",
+  "content": [
+   {
+    "type": "text",
+    "text": "{\"sentences\":[{\"level\":2,\"text\":\"Svefn er mikilvægur fyrir heilsuna.\",\"form\":\"mikilvægur\",\"why\":\"sleep matters for health\"},{\"level\":3,\"text\":\"Það er mikilvægt að borða hollan mat á hverjum degi.\",\"form\":\"mikilvægt\",\"why\":\"important to eat well\"}],\"note\":\"\"}"
+   }
+  ],
+  "stop_reason": "end_turn",
+  "usage": {
+   "input_tokens": 140,
+   "cache_creation_input_tokens": 0,
+   "cache_read_input_tokens": 5000,
+   "output_tokens": 1080
+  }
+ }
+}
