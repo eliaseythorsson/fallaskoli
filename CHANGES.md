@@ -4,8 +4,9 @@
 
 ### Orðakortið kemur aftur í upprifjun (#18)
 - **Stundum, eftir upprifjun á lærðu orði,** opnast orðakort nemandans sjálfs: skýringin, það sem hann
-  valdi á kortinu (með rétta svarinu þar sem hans var rangt), skýringin með hans eigin orðum ef hún er
-  til, og setningarnar sem hann hefur bætt við áður.
+  valdi á kortinu (með rétta svarinu þar sem hans var rangt), það sem hann skrifaði á kortið ef það var
+  með frjálsum texta (skýringin með eigin orðum, mín setning, skyldu orðin þrjú, #38) og setningarnar
+  sem hann hefur bætt við áður.
 - **Nemandinn má bæta við:** metið á því hve vel hann þekkir orðið núna, og eigin setningu með orðinu
   (hún þarf að innihalda einhverja mynd orðsins). Hvort tveggja má sleppa; Escape lokar kortinu.
   Viðbæturnar geymast á kortinu (`x` í `S.wordCards`), með deginum; fyrsta matið og svörin breytast ekki.
