@@ -21,7 +21,7 @@ import "../src/js/ui/render-more.js";
 import "../src/js/ui/hver.js";
 import { TASKS, CATEGORIES, typeById, enabled, weightOf, makeView } from "../src/js/tasks/index.js";
 import { registryFaults } from "../src/js/tasks/registry.js";
-import { CATALOGUE, catalogueFaults, isRecall, graderOf } from "../src/js/core/catalogue.js";
+import { CATALOGUE, catalogueFaults, isRecall, graderOf, skillHasTypes } from "../src/js/core/catalogue.js";
 import { giveWords } from "./learner.js";
 
 const lex = buildLexicon(DATA);
@@ -53,12 +53,14 @@ test("every question type the curriculum can switch is registered, under the sam
   assert.equal(typeById("ekki-til"), null);
 });
 
-test("one file per category: the twelve skills, each type in the file of its skill", () => {
+test("one file per category: the thirteen skills, each type in the file of its skill", () => {
   assert.deepEqual(Object.keys(CATEGORIES).sort(), [...SKILL_IDS].sort());
-  assert.equal(SKILL_IDS.length, 12);
+  assert.equal(SKILL_IDS.length, 13);
   const dir = new URL("../src/js/tasks/", import.meta.url);
   for (const id of SKILL_IDS) {
     assert.ok(existsSync(new URL(id + ".js", dir)), `src/js/tasks/${id}.js is missing`);
+    /* Námsorð (#19) has no type yet; tests/skills-checklist.test.js holds which skill may be so. */
+    if (!skillHasTypes(id)) continue;
     assert.ok(CATEGORIES[id].length >= 3, `${id}: fewer than three kinds of question (v6.11)`);
     CATEGORIES[id].forEach((t) => assert.equal(t.skill, id, `${t.id} is declared in ${id}.js`));
   }

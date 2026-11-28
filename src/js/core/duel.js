@@ -56,9 +56,12 @@ export const DUEL = {
   fair: { free: 1, perLevel: 0.05, cap: 0.3 },
 };
 
-/** The topics: every skill with right and wrong answers, and a mix of them. */
+/** The topics: every skill with right and wrong answers, and a mix of them.
+    Not Námsorð (#19): its questions are about the pupil's own words in
+    learning, and a duel is built against a blank pupil, who has none. */
+const NOT_DUELLED = new Set(["ordaford", "namsord"]);
 export const DUEL_TOPICS = [
-  ...SKILLS.filter((s) => s.id !== "ordaford").map((s) => ({ id: s.id, nm: s.nm, ico: s.ico })),
+  ...SKILLS.filter((s) => !NOT_DUELLED.has(s.id)).map((s) => ({ id: s.id, nm: s.nm, ico: s.ico })),
   { id: "blandad", nm: "Blandað", ico: "🎲" },
 ];
 const TOPIC_IDS = new Set(DUEL_TOPICS.map((t) => t.id));

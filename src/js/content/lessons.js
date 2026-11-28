@@ -867,6 +867,31 @@ export const LESSONS = [
     related: ["foll", "obeygjanleg", "setningarhlutar"],
   },
 
+  /* --------------------------------------------- Námsorð (#19) */
+  {
+    id: "namsord",
+    skill: "namsord",
+    nm: "Orðin sem þú ert að læra",
+    lead: "Í Orðunum mínum eru alltaf sex orð sem þú ert að læra. Þau koma oft fyrir í æfingunum þangað til þú kannt þau.",
+    blocks: [
+      { h: "Svona lærir þú orð" },
+      { list: [
+        "**Lestu orðið í setningu.** Hvað segir setningin þér um merkinguna?",
+        "**Segðu merkinguna með eigin orðum.** Þá sérðu hvort þú skilur orðið.",
+        "**Rifjaðu orðið upp sjálf(ur).** Orð festist betur ef þú þarft að muna það en ef þú sérð það bara.",
+        "**Notaðu orðið.** Búðu til setningu um eitthvað úr þínu eigin lífi.",
+      ] },
+      { h: "Þegar þú kannt orðið" },
+      { p: "Orð sem þú kannt færist í listann **Ég kann**, og nýtt orð kemur í staðinn." },
+      { tip: "Það er í lagi að giska og hafa rangt fyrir sér. Orðið kemur aftur og þá manstu það betur." },
+    ],
+    check: [
+      { q: "Hvað eru mörg orð í Orðunum mínum?", a: "Sex." },
+      { q: "Af hverju er betra að rifja orð upp en að sjá það bara?", a: "Það festist betur ef þú þarft að muna það sjálf(ur)." },
+    ],
+    related: ["ordafordi"],
+  },
+
   /* ----------------------------------------------------------------- 18 */
   {
     id: "ordafordi",

@@ -125,7 +125,7 @@ every year.
 | --- | --- | --- | --- | --- | --- |
 | Orðflokkar | Mál og málnotkun | yes: the app's main subject | 32 | 30 | 27 |
 | Einkenni málsins | Mál og málnotkun | yes: the app's main subject | 12 | 10 | 9 |
-| Fjölbreytt málnotkun | Mál og málnotkun | partly | 2 | 1 | 1 |
+| Fjölbreytt málnotkun | Mál og málnotkun | partly | 3 | 1 | 1 |
 | Sköpunarkraftur | Mál og málnotkun | partly | 1 | 1 | 1 |
 | Orðtök og málshættir | Mál og málnotkun | partly | 1 | 0 | 0 |
 | Gögn og hjálpartæki | Mál og málnotkun | no: outside what a drill program does | 0 | 0 | 0 |
@@ -177,6 +177,7 @@ evidence above. Later years keep practising it.
 | `or-merking` | Merking orða, samheiti og andheiti | Fjölbreytt málnotkun | Orðaforði | Hvað þýðir orðið? (`meaning`); Samheiti og andheiti (`or_heiti`); Orð í samhengi (`or_samhengi`); Hvert á ekki heima? (`or_utundan`); Hvaða orð vantar? (`or_eyda`); Merking orðs í setningu (`or_merking`) | Að útskýra orð með eigin orðum (`ordafordi`) | yes |
 | `or-myndun` | Orðmyndun með forskeytum og viðskeytum | Sköpunarkraftur | Orðaforði | Orðmyndun (`or_myndun`) | Að útskýra orð með eigin orðum (`ordafordi`) | yes |
 | `or-ordtok` | Orðtök, málshættir og föst orðasambönd | Orðtök og málshættir | Orðaforði | none yet | none yet | **no** |
+| `nams-ordin` | Orðin sem ég er að læra | Fjölbreytt málnotkun | Námsorð | none yet | Orðin sem þú ert að læra (`namsord`) | **no** |
 | `mb-villur` | Villuveiðar | Einkenni málsins | Málbeiting | Villuveiðar (`villur`) | Málfræðin í notkun (`malbeiting`) | yes |
 | `mb-smidja` | Setningasmiðja | Einkenni málsins | Málbeiting | Setningasmiðja (`smidja`) | Málfræðin í notkun (`malbeiting`) | yes |
 | `mb-umritun` | Umritun | Einkenni málsins | Málbeiting | Umritun (`umritun`) | Málfræðin í notkun (`malbeiting`) | yes |
@@ -273,6 +274,7 @@ cannot practise it on its own and the skill map cannot measure it.
 | `or-ordtok` | Orðtök, málshættir og föst orðasambönd | 8 | **missing** | **missing** |
 | `or-ordhlutar` | Orðhlutar og samsett orð | 10 | **missing** | **missing** |
 | `or-hljodbreytingar` | Hljóðbreytingar og skyldleiki orða | 10 | **missing** | **missing** |
+| `nams-ordin` | Orðin sem ég er að læra | 8 | **missing** | `namsord` |
 | `mb-malsnid` | Málsnið: talmál og ritmál | 9 | **missing** | **missing** |
 | `setn-ordarod` | Orðaröð | 10 | only inside `umritun` | `malbeiting` |
 | `st-n-nn` | n eða nn | 8 | **missing** | **missing** |
@@ -458,9 +460,9 @@ nodes are switched on and everything else off.
 <!-- curriculum:presets:start -->
 | Preset | Categories on | Question types on | Levels | What it adds |
 | --- | --- | --- | --- | --- |
-| 8. bekkur | 10 of 12 | 44 of 62 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Málbeiting |
-| 9. bekkur | 10 of 12 | 51 of 62 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
-| 10. bekkur | 12 of 12 | 62 of 62 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
+| 8. bekkur | 11 of 13 | 44 of 62 | 1–5 | Nafnorð, Lýsingarorð, Fornöfn og greinir, Töluorð, Sagnorð, Óbeygjanleg orð, Orðflokkagreining, Fallstjórn, Orðaforði, Námsorð, Málbeiting |
+| 9. bekkur | 11 of 13 | 51 of 62 | 1–6 | no new category; types `fn_aftur`, `so_bodhattur`, `so_mynd`, `so_beyging`, `ob_fsao`, `ob_st`, `fs_operson` |
+| 10. bekkur | 13 of 13 | 62 of 62 | 1–7 | Setningafræði, Setningagerðir; types `raeda`, `syntax`, `setn_hlut`, `setn_flokka`, `hver_gerdi`, `setn_lidir`, `lid_finna`, `clause`, `gerd_finna`, `gerd_upphaf`, `gerd_tegund` |
 <!-- curriculum:presets:end -->
 
 What a preset does not do, so nobody is surprised:

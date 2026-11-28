@@ -39,6 +39,28 @@
        ≥5    no             5 / 0 / 5
        0     no             0 / 0 / 10
 
+   ---- the new skills' share (docs/DLD-PLAN.md §5, #19) -------------------------
+
+   The skills the DLD plan adds — Námsorð now; Lesskilningur (#30) and
+   Frásögn (#35) by one line each in NEW_SKILLS — share about three of the
+   ten questions between them (NEW_SKILLS_SHARE). That share is set aside
+   FIRST, and the rest of the session is shared out by the rule above, so the
+   reviews, the patterns and ordinary new material all give a little:
+
+       due   patterns   →  reviews / patterns / new / new skills   (n = 10)
+       ≥3    yes            2 / 3 / 2 / 3
+       0     yes            0 / 4 / 3 / 3
+       0     no             0 / 0 / 7 / 3
+
+   Only the new skills that can be asked count (switched on, with a question
+   type that may be asked: `skillHasTypes`). With none — Námsorð before its
+   first type, or a policy that switches them off — nothing is set aside and
+   the plan is exactly the plan of the table above. The new skills' slots
+   are dealt round the new skills that count and spread among the ordinary
+   new slots, never two of them together where an ordinary slot is left to
+   put between. The new skills are never among the ordinary new material
+   (`freshSkills`), so their share is the whole of their part.
+
    ---- where new material comes from ------------------------------------------
 
    `freshSkills` orders the switched-on skills, and the new slots are dealt
@@ -86,6 +108,12 @@ export const CORE = ["nafnord", "sagnord", "lysingarord", "fornofn", "fallstjorn
 /** Fewer answers than this, in all skills together: a new pupil. */
 export const NEW_PUPIL = 100;
 
+/** The skills docs/DLD-PLAN.md adds, which share one part of the session
+    (see the head of this file). A new such skill is one more id here. */
+export const NEW_SKILLS = ["namsord"];
+/** The part of the session the new skills share: about 3 of 10. */
+export const NEW_SKILLS_SHARE = 0.3;
+
 /** How many skills `fresh` new questions are spread over. */
 export const freshSpread = (fresh) => Math.max(FRESH_MIN, Math.ceil(Math.max(0, fresh) / FRESH_PER));
 
@@ -124,23 +152,31 @@ export function shares(n, due, patterns) {
  *                      this type be asked under `P`? Default: `P.type`.
  *                      app.js passes the registry's `enabled`, which also
  *                      checks the type's skill.
+ * @param {readonly string[]} [opts.newSkills]  the new skills that share a
+ *                      part of the session (default NEW_SKILLS; a test passes
+ *                      a stand-in)
  * @returns {{ n: number, slots: TodaySlot[], reviews: string[], patterns: string[],
- *             counts: {review: number, pattern: number, fresh: number} }}
+ *             counts: {review: number, pattern: number, fresh: number, newSkill: number} }}
  *   slots     one per question, in order: { kind: "review", k } |
  *             { kind: "pattern", p } | { kind: "new", skill }
  *   reviews   the keys of the review slots, most urgent first
  *   patterns  the ids of the patterns worked on, worst first
- *   counts    { review, pattern, fresh }
+ *   counts    { review, pattern, fresh, newSkill }: `fresh` counts every new
+ *             question, the new skills' among them; `newSkill` those alone
  */
 /** @typedef {{kind: "review", k: string} | {kind: "pattern", p: string}
               | {kind: "new", skill: ?string}} TodaySlot */
-export function planToday(S, P, now, { n = TODAY_SIZE, canType = null } = {}) {
+export function planToday(S, P, now, { n = TODAY_SIZE, canType = null, newSkills = NEW_SKILLS } = {}) {
   const may = canType || ((id) => !!P && P.type(id));
+  n = Math.max(0, Math.floor(n || 0));
 
   const due = dueEntries(S, now, (e) => may(e.t));
   const pats = activePatterns(S, TODAY_PATTERNS, (p) => [...focusTypes([p.id])].some(may))
     .map((p) => p.id);
-  const counts = shares(n, due.length, pats.length);
+  const extra = askable(P, may, newSkills);
+  const newSkill = extra.length ? Math.round(n * NEW_SKILLS_SHARE) : 0;
+  const rest = shares(n - newSkill, due.length, pats.length);
+  const counts = { ...rest, fresh: rest.fresh + newSkill, newSkill };
 
   /** @type {TodaySlot[]} */
   const slots = [];
@@ -149,11 +185,41 @@ export function planToday(S, P, now, { n = TODAY_SIZE, canType = null } = {}) {
   /* The worst pattern first, and round the list: with two patterns and four
      slots each comes twice, never four of one and none of the other. */
   for (let k = 0; k < counts.pattern; k++) slots.push({ kind: "pattern", p: pats[k % pats.length] });
-  const fresh = freshSkills(S, P, may, freshSpread(counts.fresh));
-  for (let k = 0; k < counts.fresh; k++)
-    slots.push({ kind: "new", skill: fresh.length ? fresh[k % fresh.length] : null });
+  const fresh = freshSkills(S, P, may, freshSpread(rest.fresh), newSkills);
+  const ordinary = Array.from({ length: rest.fresh }, (_, k) => (fresh.length ? fresh[k % fresh.length] : null));
+  const added = Array.from({ length: newSkill }, (_, k) => extra[k % extra.length]);
+  spread(ordinary, added).forEach((skill) => slots.push({ kind: "new", skill }));
 
   return { n: slots.length, slots, reviews, patterns: pats.slice(0, Math.min(pats.length, counts.pattern)), counts };
+}
+
+/**
+ * The new skills that can be asked under `P`: switched on, with a question
+ * type that may be asked. A skill with no type at all (Námsorð before its
+ * first, core/catalogue.js `skillHasTypes`) is never one of them.
+ * @param {?Pick<import("../types").Policy, "skill"|"type">} P
+ * @param {(typeId: string) => boolean} may
+ * @param {readonly string[]} ids
+ * @returns {string[]}
+ */
+function askable(P, may, ids) {
+  if (!P) return [];
+  return ids.filter((id) => P.skill(id) && QUESTION_TYPES.some((q) => q.skill === id && may(q.id)));
+}
+
+/**
+ * Two lists as one, the shorter spread evenly through the longer:
+ * [a, a, a, a, a, a, a] and [b, b, b] give a b a a a b a a b a; [a, a] and
+ * [b, b, b] give b a b a b. No two of the shorter list stand together.
+ * @template T @param {T[]} a @param {T[]} b @returns {T[]}
+ */
+function spread(a, b) {
+  const len = a.length + b.length;
+  const [few, many] = b.length <= a.length ? [b, a] : [a, b];
+  const at = new Set(few.map((_, i) => Math.floor(((i + 0.5) * len) / few.length)));
+  const out = [];
+  for (let k = 0, i = 0, j = 0; k < len; k++) out.push(at.has(k) ? few[i++] : many[j++]);
+  return out;
 }
 
 /**
@@ -168,9 +234,10 @@ export function planToday(S, P, now, { n = TODAY_SIZE, canType = null } = {}) {
  * @param {?Pick<import("../types").Policy, "skill"|"type">} P
  * @param {((typeId: string) => boolean)|null} [canType]
  * @param {number} [limit]
+ * @param {readonly string[]} [newSkills]  left out: they have a share of their own
  * @returns {string[]}
  */
-export function freshSkills(S, P, canType = null, limit = 3) {
+export function freshSkills(S, P, canType = null, limit = 3, newSkills = NEW_SKILLS) {
   if (!P) return [];
   const may = canType || ((id) => P.type(id));
   const skills = (S && S.skills) || {};
@@ -178,7 +245,7 @@ export function freshSkills(S, P, canType = null, limit = 3) {
   const answers = Object.values(skills).reduce((a, v) => a + ((v && v.c) || 0) + ((v && v.w) || 0), 0);
   const core = (id) => (answers < NEW_PUPIL && CORE.includes(id) ? 0 : 1);
   return SKILL_IDS
-    .filter((id) => P.skill(id) && QUESTION_TYPES.some((q) => q.skill === id && may(q.id)))
+    .filter((id) => !newSkills.includes(id) && P.skill(id) && QUESTION_TYPES.some((q) => q.skill === id && may(q.id)))
     .map((id, at) => ({ id, at, xp: xp(id), core: core(id) }))
     .sort((a, b) => a.core - b.core || a.xp - b.xp || a.at - b.at)
     .slice(0, limit)

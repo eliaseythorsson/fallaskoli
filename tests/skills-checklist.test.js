@@ -68,8 +68,32 @@ function skillChecklist(id, src) {
   return out;
 }
 
+/* Skills whose question types are being built elsewhere, and what they wait
+   for. Such a skill may lack exactly what needs a type — the type, its error
+   pattern, its skill-map node's patterns — and nothing else. The first type
+   filed under it changes the list of what is missing, and this test then
+   says to take the line out. */
+const AWAITING_TYPES = {
+  namsord: "#11 (meaning), #14 (recall gap), #15 (Orðakort) file their types under Námsorð (#19)",
+};
+const NEEDS_A_TYPE = (id) => [
+  `${id} has no question type: add one at the end of src/js/core/catalogue.js`,
+  `${id} has no error pattern: add one that names its types in src/js/core/diagnosis.js`,
+  `${id} has no skill-map node with error patterns: add its node to NODE_PATTERNS in src/js/core/skillmap.js`,
+];
+
 test("every skill has what a skill needs", () => {
-  for (const s of SKILLS) assert.deepEqual(skillChecklist(s.id, REAL), [], s.id);
+  for (const s of SKILLS) {
+    if (AWAITING_TYPES[s.id]) continue;
+    assert.deepEqual(skillChecklist(s.id, REAL), [], s.id);
+  }
+});
+
+test("a skill still waiting for its question types lacks only what needs a type", () => {
+  for (const [id, why] of Object.entries(AWAITING_TYPES)) {
+    assert.deepEqual(skillChecklist(id, REAL), NEEDS_A_TYPE(id),
+      `${id} (${why}): if it has a type now, take it out of AWAITING_TYPES in this file`);
+  }
 });
 
 test("what is derived from core/skills.js really is", () => {
@@ -78,7 +102,9 @@ test("what is derived from core/skills.js really is", () => {
   assert.deepEqual([...PLACEMENT_ORDER].sort(), [...ids].sort(), "the placement round");
   /* the order the round has asked in since it was written (item 39) */
   assert.deepEqual(PLACEMENT_ORDER, ["nafnord", "sagnord", "lysingarord", "greining", "fornofn",
-    "fallstjorn", "toluord", "obeygjanleg", "ordaford", "malbeiting", "setningafraedi", "setningagerd"]);
+    "fallstjorn", "toluord", "obeygjanleg", "ordaford", "malbeiting", "setningafraedi", "setningagerd",
+    /* #19: last, and asked only once it has a question type (core/placement.js placementTypes) */
+    "namsord"]);
 });
 
 test("a skill with nothing filled in is told, file by file, what to add", () => {

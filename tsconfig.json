@@ -40,6 +40,7 @@
     "src/js/core/frametally.js",
     "src/js/core/settings.js",
     "src/js/core/hint.js",
+    "src/js/tasks/namsord.js",
     "src/js/tasks/registry.js",
     "src/js/tasks/shared.js"
   ]

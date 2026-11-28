@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Námsorð: orðaferillinn verður flokkur (#19)
+- **Nýr flokkur, Námsorð**, fyrir orðin sem nemandinn er að læra (Orðin mín). Hann er á Færnikortinu
+  með stig og vald eins og aðrir flokkar, er kveiktur í 8., 9. og 10. bekk og hefur eigin þyngd: orðin sex
+  eru valin eftir þyngd Námsorða (Orðaforða þar til Námsorð hafa eigin þyngd). Lesefni fær stutta síðu,
+  „Orðin sem þú ert að læra“.
+- **Lota dagsins tekur frá um 3 af 10 spurningum fyrir nýju flokkana** (`NEW_SKILLS`, `NEW_SKILLS_SHARE`
+  í `core/today.js`); Lesskilningur og Frásögn bætast í sama lista. Afgangurinn skiptist eins og áður.
+- Spurningagerðir um orð í námi (#11, #14) eru enn í Orðaforða og flytjast í Námsorð síðar. Þangað til er flokkurinn sýndur en aldrei
+  spurt úr honum: hann er ekki í Lotu dagsins, í vali á lotu, í stöðumati, í einvígi, í verkefnum
+  kennara né í merkjum sem krefjast allra flokka.
+
 ### „Hvað þýðir orðið?“ telur og kemur oftar (#11)
 - **Ný spurningagerð í Orðaforða, „Merking orðs í setningu“** (`or_merking`): nemandinn sér orð og þrjár
   setningar með því og velur þá þar sem orðið er notað rétt. Í hinum tveimur stendur orðið þar sem annað orð
