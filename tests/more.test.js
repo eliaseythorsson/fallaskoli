@@ -21,6 +21,7 @@ import { diagnose, runReport, chancesIn } from "../src/js/core/diagnosis.js";
 import { bonusVerdict } from "../src/js/ui/render-more.js";
 import { impersonalItems } from "../src/js/tasks/fallstjorn.js";
 import { giveWords } from "./learner.js";
+import { UNLOCKED_BY_THYNGD } from "../src/js/core/placement.js";
 
 const lex = buildLexicon(DATA);
 const NEW = TASKS.filter((t) => t.build && !["fill", "verbslot", "verb", "parse", "revform", "govern", "indecl",
@@ -73,7 +74,10 @@ test("every new question type can be built, and every task it builds is intact",
   for (const spec of NEW) {
     let built = 0;
     for (let k = 0; k < 60; k++) {
-      const ctx = ctxFor(null, 1 + (k % 5), spec.id);
+      /* A type unlocked by þyngd (core/placement.js UNLOCKED_BY_THYNGD:
+         Frásögn steps 3–6) is tried from its door up. */
+      const from = UNLOCKED_BY_THYNGD.has(spec.id) ? spec.bands[1] : 1;
+      const ctx = ctxFor(null, from + (k % Math.min(5, 8 - from)), spec.id);
       const t = show(ctx, spec.build);
       if (!t) continue;
       built++;
