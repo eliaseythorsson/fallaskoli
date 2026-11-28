@@ -255,6 +255,14 @@ export const NODES = [
   { id: "les-sogukort", nm: "Sögukort: hlutar sögu", cat: "lesskilningur", year: 8,
     hv: "lesskilningur", types: ["les_hluti", "les_kort", "les_samantekt"], lesson: "lesskilningur", cover: "full" },
 
+  /* ---- Frásögn (issue #35, docs/DLD-PLAN.md §5) ---- */
+  /* Year 8, so in every preset. Under Sköpunarkraftur: the criterion that
+     names using the language in writing, speech and skáldskapur; ordering a
+     story and finding its missing part are the first steps toward telling
+     one (steps 4–6, written stories, come with the server grader). */
+  { id: "fras-bygging", nm: "Bygging sögu: röð og hlutar", cat: "frasogn", year: 8,
+    hv: "skopun", types: ["fr_rod", "fr_vantar", "fr_setning"], lesson: "frasogn", cover: "full" },
+
   /* ---- Stafsetning og greinarmerki: a criterion with no category yet ---- */
   { id: "st-n-nn", nm: "n eða nn", cat: "stafsetning", year: 8, hv: "stafsetning",
     types: [], lesson: null, cover: "none", item: 28 },

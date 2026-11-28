@@ -64,6 +64,13 @@ export const SKILLS = [
      the placement round: it is the one question there with a text to read. */
   { id: "lesskilningur", nm: "Lesskilningur",   cur: "8.b", ico: "📖", placement: 14,
     ds: "Að finna aðalatriðið í stuttum sögum og fræðitextum" },
+  /* Issue #35 (docs/DLD-PLAN.md §5): telling stories with MAIN's six icons
+     — first ordering a story and finding what is missing, on the stories of
+     content/textar/. For every year, so year 8 and on by default; last in
+     the placement round, where its types (none follows the band) are not
+     asked. */
+  { id: "frasogn",      nm: "Frásögn",          cur: "8.b", ico: "🧩", placement: 15,
+    ds: "Að byggja upp sögu: röð atburða og hlutar sögukortsins" },
 ];
 
 export const SKILL_IDS = SKILLS.map((s) => s.id);

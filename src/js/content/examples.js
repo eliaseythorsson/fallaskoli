@@ -570,4 +570,24 @@ export const EXAMPLES = {
     how: "Samantektin fylgir sögukortinu: vandinn (sprungið dekk), tilraunin (hann gekk) og útkoman (of seint). Samantekt sem breytir einhverjum hluta, eða röðinni, er röng.",
     forms: [],
   },
+  /* issue #35: Frásögn. The stories are not in content/textar/ either
+     (tests/frasogn.test.js). */
+  fr_rod: {
+    q: "Raðaðu: *Hann kom samt of seint.* · *Gummi vaknaði of seint.* · *Hann hljóp alla leiðina.*",
+    a: "1. Gummi vaknaði of seint. 2. Hann hljóp alla leiðina. 3. Hann kom samt of seint.",
+    how: "Setning sem byrjar á *Hann* getur ekki verið fyrst: fyrst þarf að segja hver hann er. Svo spyrðu: hvað hlýtur að gerast á undan hverju?",
+    forms: [],
+  },
+  fr_vantar: {
+    q: "*Lína var úti að leika sér. Allt í einu byrjaði að rigna. ……… Hún slapp við að blotna.* Hvaða hluta sögukortsins vantar?",
+    a: "tilraun",
+    how: "Farðu yfir hlutana: aðstæður (Lína úti), vandi (rigning), útkoma (slapp við að blotna). Það sem Lína **gerði** stendur hvergi: tilraunina vantar.",
+    forms: [],
+  },
+  fr_setning: {
+    q: "*Lína var úti að leika sér. Allt í einu byrjaði að rigna. ……… Hún slapp við að blotna.* Hvaða setning á heima í eyðunni?",
+    a: "Hún hljóp inn í húsið.",
+    how: "Setningin í eyðunni verður að passa við setninguna á undan (rigningin) og á eftir (hún slapp við að blotna). Lestu söguna með setningunni og gáðu hvort hún hangir saman.",
+    forms: [],
+  },
 };

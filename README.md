@@ -370,7 +370,9 @@ src/js/tasks/         the question builders, one file per category:
                       toluord.js, obeygjanleg.js, greining.js, fallstjorn.js,
                       ordaford.js, setningafraedi.js, malbeiting.js,
                       setningagerd.js, lesskilningur.js (the texts of
-                      content/textar/, issue #30), each exporting its BUILDERS by type
+                      content/textar/, issue #30), frasogn.js (the stories
+                      of content/textar/ ordered and with a part taken out,
+                      issue #35), each exporting its BUILDERS by type
                       id. What a question type is — skill, name, renderer,
                       diagnosis tags, steps of difficulty, recall, grader —
                       is declared once in src/js/core/catalogue.js, whose
@@ -510,7 +512,7 @@ content/villuveidar/villur.tsv      the real errors of Villuveiðar
 content/malbeiting/sameina.tsv      pairs for Sameina og skipta: two short sentences and one joined
 content/lysingarord/ …/ordafordi/   exercise items and frames, by category
 content/setningafraedi/             „Hver gerði hvað?“: sentences with who did what to whom
-content/textar/*.txt                the texts of Lesskilningur: one short story or subject text per file
+content/textar/*.txt                the texts of Lesskilningur (its stories also Frásögn's): one short story or subject text per file
 content/REVIEW-NOTES.md             what a native reader should check first
 ```
 
@@ -587,7 +589,9 @@ the two models disagree on and a random sample of the rest before the owner
 after the owner's verdicts does anything reach the file, and only if the sample
 was clean enough (`tools/lino-frames/README.md`).
 
-**Texts.** A text for Lesskilningur is not a line in a list: it is one plain
+**Texts.** A text for Lesskilningur (and, if it is a story, for Frásögn, which
+orders it and takes a part out — so each sentence should tell one step, and its
+order should show in what it says) is not a line in a list: it is one plain
 text file, `content/textar/<name>.txt` (the name, of `a–z`, `0–9` and hyphens,
 is the text's id). No TABs and no columns — it reads as the text does:
 

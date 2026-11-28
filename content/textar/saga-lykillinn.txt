@@ -1,0 +1,29 @@
+# Lykillinn — stutt saga með öllum sex hlutum sögukortsins (einn þáttur).
+# Skrifuð fyrir Frásögn (mál #35): sagan er líka röðuð og hluti hennar
+# falinn, svo að hver setning á að segja eitt skref og röðin á að sjást
+# af efninu (fornöfn vísa aftur á bak, orsök kemur á undan afleiðingu).
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er
+#   (aðstæður, vandi, markmið, tilraun, útkoma, viðbrögð),
+#   Hann{Ari} og hans{Ari} segja til hvers fornafnið vísar,
+#   ? [samantekt] er spurning með svörin í línunum fyrir neðan:
+#   + er rétta samantektin, - [hluti] röng samantekt og hlutinn sem hún brýtur,
+#   ! er skýringin sem nemandinn les á eftir.
+#
+# þyngd: 2
+# tegund: saga
+# orð:
+
+[aðstæður] Ari kom fyrstur heim úr skólanum á föstudaginn.
+[vandi] Hann{Ari} fann ekki lykilinn sinn og komst ekki inn.
+[markmið] Hann{Ari} var svangur og vildi komast inn.
+[tilraun] Ari hringdi í pabba sinn og bað hann{pabba} um hjálp.
+[útkoma] Pabbi hans{Ari} kom stuttu síðar með annan lykil.
+[viðbrögð] Ari var feginn og ákvað að geyma lykilinn alltaf í töskunni.
+
+? [samantekt] Hvaða samantekt passar við söguna?
++ Ari fann ekki lykilinn sinn, en pabbi hans kom með annan lykil og opnaði fyrir honum.
+- [útkoma] Ari fann ekki lykilinn sinn og þurfti að bíða úti allan daginn.
+- [tilraun] Ari fann ekki lykilinn sinn og klifraði inn um glugga.
+! Ari finnur ekki lykilinn (vandi), hringir í pabba sinn (tilraun) og pabbi hans kemur með annan lykil (útkoma). Rétta samantektin fylgir þessu.

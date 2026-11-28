@@ -53,5 +53,19 @@ export const storyMapHTML = () => `<ol class="storymap">${STORY_PARTS.map((p) =>
   `<li>${storyIconHTML(p.id)}<b>${esc(p.nm)}</b>${p.also ? ` <span class="faint">(${esc(p.also)})</span>` : ""}` +
   `<span class="storyask">${esc(p.ask)}</span></li>`).join("")}</ol>`;
 
+/** A story as lines, one sentence each (Frásögn, issue #35). A line
+    `{ gap: true }` is where a sentence was taken out; with `p` the gap shows
+    its part's icon, labelled. @param {{ t?: string, p?: string, gap?: boolean }[]} lines */
+export const storyLinesHTML = (lines) => `<ol class="storylines">${lines.map((l) => (l.gap
+  ? `<li class="storygap">${l.p ? storyIconHTML(l.p, { label: true }) + " " : ""}<span class="gapmark">Hér vantar setningu</span></li>`
+  : `<li>${esc(l.t || "")}</li>`)).join("")}</ol>`;
+
+/** The whole story, in its order, each sentence with its part's icon: shown
+    when a Frásögn question has been answered and at the end of a session
+    with Frásögn in it (CONTEXT.md "Frásögn session").
+    @param {{ t: string, p: string }[]} story */
+export const wholeStoryHTML = (story) => `<div class="why wholestory"><b>sagan í heild</b><ol class="storylines">${story
+  .map((l) => `<li>${storyIconHTML(l.p, { label: true })} ${esc(l.t)}</li>`).join("")}</ol></div>`;
+
 /** For tests and tools: which parts have a drawing. */
 export const ICON_PARTS = Object.freeze(Object.keys(DRAW));

@@ -114,8 +114,10 @@ test("the round asks only what the policy allows", () => {
   /* Issue #30: Lesskilningur is on in year 8, and the round does not ask it —
      its one type builds the same questions at every þyngd, so an answer
      places nothing. It is asked by itself once a type of it has bands. */
-  assert.deepEqual(FLAT, ["lesskilningur"]);
+  assert.deepEqual(FLAT, ["lesskilningur", "frasogn"]);
   assert.ok(presetContent(8).skills.includes("lesskilningur") && !("lesskilningur" in types8));
+  /* #35: Frásögn likewise */
+  assert.ok(presetContent(8).skills.includes("frasogn") && !("frasogn" in types8));
   const banded = TASKS.map((t) => (t.id === "les_adal" ? { ...t, bands: [1, 3] } : t));
   assert.deepEqual(placementTypes(banded, year(8)).lesskilningur, ["les_adal", "les_hluti", "les_kort", "les_samantekt"]);
   /* A ceiling that allows one category: one category is asked. */
@@ -348,7 +350,8 @@ for (const said of [8, null]) {
     const gen = Object.fromEntries(Object.entries(runs).map(([k, rs]) => [k, mean(rs.map((r) => r.result.general))]));
     const say = JSON.stringify({ lvl, gen });
     /* Each a good three quarters of a level above the one below — measured:
-       about 1.4 / 2.7 / 3.9 with 8. bekkur said, 1.4 / 2.8 / 4.5 with none. */
+       about 1.4 / 2.7 / 3.9 with 8. bekkur said, 1.4 / 2.8 / 4.5 with none.
+       (#35: over the skills the round asked — tools/sim/placement.mjs.) */
     assert.ok(lvl.mid - lvl.weak >= 0.75, "weak and middle are not apart: " + say);
     assert.ok(lvl.strong - lvl.mid >= 0.75, "middle and strong are not apart: " + say);
     assert.ok(gen.mid - gen.weak >= 0.75 && gen.strong - gen.mid >= 0.75, say);
