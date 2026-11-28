@@ -25,7 +25,7 @@
   "pipeline/exercises.py": "211b2b431ba7ca6a561f273b719b33a96fc7d6c7cd7c832b8745f5240cecbee2",
   "pipeline/build_exercises.py": "f91d5d007f3f15470927f63ca6a641821819d5628a5b42506fdeb3c21718e3ea",
   "pipeline/adj_classes.py": "30dcdd1a715ac73c9325bcc327a043a78cd452cd9aa9164d934b25b565255b10",
-  "pipeline/content_io.py": "9e29db63cd1ff8e944dc46578ba8e2b483be70770826d5993543a4ba43669d04",
+  "pipeline/content_io.py": "63a3c2377705d82adb0fd154e9675df81d64aeefcd757efc5f15d30436969cf1",
   "pipeline/who_did.py": "1abfd3de384d81f7015f2c65ca007fb527f838f34a52034b6a513e931c8e3a46",
   "pipeline/clause_shape.py": "c621aff33c85e96bf2a85df4adb288a74d2d07b640f7afeefeb6055b210104f0",
   "sources/lino2.csv": "4e9450d6bd1f6230f9377d61e33b0b49e479dbb24fc94a697d13ed9dbf8378fc",
@@ -67,6 +67,9 @@
   "content/setningafraedi/hver-gerdi-hvad.tsv": "a1b734561ad8f9abdcb5e51f56d42a3bbe7be3c8733f75e393fa8556e9c0bac8",
   "content/setningar/lino-rammar.tsv": "708274f00619d26ed82548decb9507955c994b5482cccddea7f7ce62395042d5",
   "content/setningar/setningar.tsv": "46c70350f104acde12a6db2ce60c79a7d11746f528eb8bcc22f28d0e2f3af0c6",
+  "content/textar/fraedi-hreyfing.txt": "de422129baa42d3c84b93e4a98d46295e1a83dac74469ab174815e67f3b7cbe4",
+  "content/textar/fraedi-joklar.txt": "40ccb0261dad076f4220b10f00c01d26efbc30cf2a1c5a65f1b35f9eafbcc089",
+  "content/textar/fraedi-lundinn.txt": "9d5528e629210507c770db6cc671f1acd86eb7ed7faaae2cad7f810363085034",
   "content/textar/fraedi-svefn.txt": "46c680c1418c3d9f795c06dbc9ac6594543d89d23ef1673bb2c1c36d2dede1d2",
   "content/textar/saga-afmaeliskakan.txt": "cdfd5b0bb597f55ead4702c450d6b01d9e536e91e53de40a12fd8d670a51f719",
   "content/textar/saga-bolti-a-thaki.txt": "22387b4dac947efbc7e38feede46899897e5a96e28b8340cd2ad85fc5a4b23c8",
@@ -87,7 +90,7 @@
   "data/lexicon.json": "c166ce4922c53d69526c93dbacea3372a5fbaa67b45304a4698405613df75fe0",
   "data/sentences.json": "1fbb7a55c19923732dfb61c149bb4c4ddd6452a047eee88e7953a9c50737a669",
   "data/data_bundle.js": "8166c111b2d39750a7ead280d6a5c6c25564f976bd7788e9b0f020f5c088c784",
-  "data/exercises.js": "90403f1df1f85e6d057298dc1bb16f33885eaaa65059165d165769e4220db09b"
+  "data/exercises.js": "df5c46c8831de4145d4cf25c5d22721a5f399811565035ac3436c060818a5d8c"
  },
  "counts": {
   "words": 7405,
