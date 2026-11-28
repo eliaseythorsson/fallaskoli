@@ -23,7 +23,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { migrate } from "../src/js/core/state.js";
 import { entriesOf, totalsOf, wordRecord, drillRecord, wordsWithHistory, wordKeysMet,
-  isRecallEntry, RESET_BEFORE, RIGHT, WRONG } from "../src/js/core/wordknowledge.js";
+  isRecallEntry, learningStatus, RESET_BEFORE, RIGHT, WRONG } from "../src/js/core/wordknowledge.js";
 import { statusOf, STATUS_LABEL } from "../src/js/core/wordhealth.js";
 import { catalogueEntry } from "../src/js/core/catalogue.js";
 
@@ -41,7 +41,8 @@ export function progressOf(file) {
 /** The word keys a word argument names: itself if it is a key, else every key
     with that lemma. */
 function keysFor(S, word) {
-  const all = new Set([...wordsWithHistory(S), ...wordKeysMet(S), ...Object.keys(S.drills || {})]);
+  const all = new Set([...wordsWithHistory(S), ...wordKeysMet(S), ...Object.keys(S.drills || {}),
+    ...Object.keys(S.learning || {})]);
   if (word.includes("|")) return all.has(word) ? [word] : [];
   return [...all].filter((k) => k.split("|")[0] === word).sort();
 }
@@ -63,6 +64,7 @@ export function wordHistory(file, word) {
       record: rec ? { right: rec.c || 0, wrong: rec.w || 0, recent: rec.h || "" } : null,
       totals: totalsOf(S, key),
       rescue: drillRecord(S, key) || null,
+      learning: learningStatus(S, key),
       entries: entriesOf(S, key).map((e) => ({
         day: e.day, type: e.type, name: (catalogueEntry(e.type) || {}).nm || null,
         outcome: e.outcome === RIGHT ? "right" : e.outcome === WRONG ? "wrong" : "seen",
@@ -94,6 +96,7 @@ export function formatHistory(h) {
       : "  record   none");
     out.push(`  entries  ${w.entries.length}: ${w.totals.c} right, ${w.totals.w} wrong, ` +
       `${w.entries.filter((e) => e.outcome === "seen").length} seen`);
+    if (w.learning) out.push(`  learning ${w.learning.status}: ${w.learning.why}`);
     if (w.rescue)
       out.push(`  rescue   ${w.rescue.p} passed, ${w.rescue.f} endured, last ${w.rescue.last || "-"}`);
     if (w.entries.length) {
