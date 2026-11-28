@@ -175,7 +175,8 @@ test("the three types are declared in merge order at the end of the catalogue, o
     assert.ok(EXAMPLES[id], `${id}: a worked example`);
   }
   assert.equal(catalogueEntry("les_kort").renderer, "sort");
-  assert.deepEqual(nodeById("les-sogukort").types, TYPES);
+  /* #39 added the story summary in the pupil's own words to the node */
+  assert.deepEqual(nodeById("les-sogukort").types, [...TYPES, "les_saga_eigin"]);
   assert.deepEqual(patternById("sogukort").types, TYPES);
   for (const y of [8, 9, 10]) for (const id of TYPES) assert.ok(presetContent(y).types.includes(id), `${y}: ${id}`);
 });
