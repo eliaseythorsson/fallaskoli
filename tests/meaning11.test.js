@@ -231,7 +231,9 @@ test("or_merking: never the same word twice in a row", () => {
 test("in a session the graded meaning question comes several times as often as each other Orðaforði type; the free-text one never", () => {
   const counts = {};
   let total = 0;
-  for (let seed = 0; seed < 150; seed++) {
+  /* 600 sessions, not 150: the share is about 2%, and with 150 a new skill
+     that shifts the stream (#35) left 27 against a mean of 15 by chance. */
+  for (let seed = 0; seed < 600; seed++) {
     const base = freshView([1, 3, 4][seed % 3]);
     const host = { S: base.S, sess: base.sess, forcedNoun: null };
     const rng = seeded(9100 + seed);

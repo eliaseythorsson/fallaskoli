@@ -387,7 +387,9 @@ test("not the same word twice in a row (#10), through the view", () => {
 test("it comes up in ordinary practice for a pupil with words, and never for one without", () => {
   const count = (p) => {
     let n = 0;
-    for (let k = 0; k < 400; k++) {
+    /* 1000 builds: about 1.7% of them (measured over 4000 before and after
+       #35); with 400, a new skill that shifts the seeds left 2 by chance. */
+    for (let k = 0; k < 1000; k++) {
       const b = nextTask(lex, makeView({ S: p.S, sess: p.sess, policy: POLICY, today: TODAY }), seeded(k));
       assert.ok(b);
       if (b.task.typeId === "or_eyda") n++;
