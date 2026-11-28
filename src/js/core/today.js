@@ -115,7 +115,7 @@ export const NEW_PUPIL = 100;
 
 /** The skills docs/DLD-PLAN.md adds, which share one part of the session
     (see the head of this file). A new such skill is one more id here. */
-export const NEW_SKILLS = ["namsord", "lesskilningur"];
+export const NEW_SKILLS = ["namsord", "lesskilningur", "frasogn"];
 /** The part of the session the new skills share: about 3 of 10. */
 export const NEW_SKILLS_SHARE = 0.3;
 /** The most of that share one new skill may take in a session, for a skill
@@ -130,8 +130,12 @@ export const NEW_SKILLS_SHARE = 0.3;
     items on five texts: two a session, two different questions, and still
     one slot of the three for the others. Not three: with five texts the
     same stories would come back every day.
+    #35: Frásögn, one a session. Its three types work on the same six
+    stories as Lesskilningur; one story a day is what the plan asks for
+    (one whole story in every Frásögn session, DLD-PLAN §5), and two would
+    bring the same six stories back too often.
     @type {Readonly<Record<string, number>>} */
-export const NEW_SKILL_MAX = Object.freeze({ lesskilningur: 2 });
+export const NEW_SKILL_MAX = Object.freeze({ lesskilningur: 2, frasogn: 1 });
 
 /** How many skills `fresh` new questions are spread over. */
 export const freshSpread = (fresh) => Math.max(FRESH_MIN, Math.ceil(Math.max(0, fresh) / FRESH_PER));

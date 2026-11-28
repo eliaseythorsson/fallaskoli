@@ -562,6 +562,29 @@ const LIST = [
     renderer: "meaning", weight: 2, recall: false, grader: "server",
     tags: [],
     bands: [1] },
+  /* #35 (DLD-PLAN §5): Frásögn, steps 1 and 2 — order a story, find the
+     part or the sentence that is missing. The stories of content/textar/,
+     graded from their story-map marks; every question holds one whole
+     story and shows it, with the icons, once answered. Six stories, so none
+     follows the band (tasks/frasogn.js `FEW`). */
+  { id: "fr_rod", skill: "frasogn",
+    nm: "Raðaðu sögunni",
+    ds: "Setningar stuttrar sögu í rangri röð: gefðu hverri sitt númer",
+    renderer: "sort", weight: 5, recall: false, grader: "app",
+    tags: ["fras"],
+    bands: [1] },
+  { id: "fr_vantar", skill: "frasogn",
+    nm: "Hvað vantar í söguna?",
+    ds: "Einn hluta sögukortsins vantar: aðstæður, vanda, markmið, tilraun, útkomu eða viðbrögð",
+    renderer: "choice", weight: 4, recall: false, grader: "app",
+    tags: ["fras"],
+    bands: [1] },
+  { id: "fr_setning", skill: "frasogn",
+    nm: "Hvaða setning vantar?",
+    ds: "Veldu setninguna sem á heima í eyðunni í sögunni",
+    renderer: "choice", weight: 4, recall: false, grader: "app",
+    tags: ["fras"],
+    bands: [1] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when

@@ -13,7 +13,7 @@ import { RENDER, sentenceHTML, wordHTML, whyBox, conclude, enterToSubmit, skillT
 import { judge, judgeBonus, settle, bonusVerdict, BONUS_XP } from "../core/answer.js";
 import { $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO, freshEnter } from "./dom.js";
 import { codedOn, codedHTML, hintButtonHTML, shownNoteHTML, wireHint, endHint } from "./hint.js";
-import { storyIconHTML, storyPartHTML } from "./storyicons.js";
+import { storyIconHTML, storyPartHTML, storyLinesHTML, wholeStoryHTML } from "./storyicons.js";
 
 const eyebrow = (t) =>
   `<p class="eyebrow"><span>${esc(t.title)}</span>${skillTag(t)}<b>þyngd ${t.lvl}</b></p>`;
@@ -179,12 +179,15 @@ const textBlock = (h) => (Array.isArray(h.text) && h.text.length
 /* `part`: the question is about one part of the story map (issue #31), and
    its icon stands before it. `sentOpts`: the options are whole sentences, one
    under the other, in the story's order. */
+/* `lines` (Frásögn, issue #35): the story one sentence a line, with a gap
+   where one was taken out. `iconOpts`: the options are story-map parts,
+   each drawn with its icon. */
 const choiceHalf = (h, n) => `
-    ${textBlock(h)}${questionSentence(h)}
+    ${textBlock(h)}${Array.isArray(h.lines) ? storyLinesHTML(h.lines) : ""}${questionSentence(h)}
     ${h.gloss ? `<p class="gloss choicegloss">💬 ${fmt(h.gloss)}</p>` : ""}
     <p class="gloss">${h.part ? storyIconHTML(h.part) + " " : ""}${fmt(h.question)}</p>
     <div class="qrow"><div class="opts${h.sentOpts ? " sentopts" : ""}" data-q="${n}">
-      ${h.options.map((o, k) => `<button type="button" data-v="${k}">${esc(o)}</button>`).join("")}</div></div>`;
+      ${h.options.map((o, k) => `<button type="button" data-v="${k}">${h.iconOpts ? storyPartHTML(o) : esc(o)}</button>`).join("")}</div></div>`;
 
 /* Why the option the pupil picked does not fit (issue #28): a builder that
    knows gives `whyNot`, option → reason, and the reason for the one picked
@@ -261,8 +264,10 @@ function submitChoice(app) {
     $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : "Ekki alveg"}</h3>
     ${t.second ? pairBody()
-      : `${!t.mark && t.s && t.i >= 0 ? solvedSentence(t, t.answer) : `<p>Rétt svar: <span class="forms">${esc(t.answer)}</span>.</p>`}
+      : `${!t.mark && t.s && t.i >= 0 ? solvedSentence(t, t.answer)
+        : `<p>Rétt svar: <span class="forms">${t.iconOpts ? storyPartHTML(t.answer) : esc(t.answer)}</span>.</p>`}
     ${whyNotBox(t, ok)}${whyBox(t.why)}`}
+    ${Array.isArray(t.story) ? wholeStoryHTML(t.story) : ""}
     ${defs ? `<div class="why"><b>í orðabók</b><ul class="deflist">${defs}</ul></div>` : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
     bonusBox(app, t);
@@ -619,6 +624,7 @@ function submitSort(app) {
     $("verdict").innerHTML = `<div class="verdict ${ok ? "ok" : "no"}"><span class="xpop">+${xp} XP</span>
     <h3>${ok ? cheer(CHEERS_OK) : `${good} af ${t.items.length} rétt`}</h3>
     ${wrong.length ? `<ul class="exlist">${wrong.map((x) => `<li><span class="forms">${esc(x.it.w)}</span> er <b>${t.icons ? storyPartHTML(x.it.cls) : esc(x.it.cls)}</b>, ekki ${t.icons ? storyPartHTML(x.said) : esc(x.said)}.</li>`).join("")}</ul>` : ""}
+    ${Array.isArray(t.story) ? wholeStoryHTML(t.story) : ""}
     <p class="streakline">Enter fyrir næstu.</p></div>`;
   });
 }

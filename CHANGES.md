@@ -16,6 +16,18 @@
   rökum). Það ræðst af upprifjunarfærslunni sjálfri (lykli, gjalddaga og þrepi, `tasks/review.js`),
   aldrei af klukkunni: sama upprifjun fær alltaf sama svar, og engin önnur spurning breytist.
 
+### Frásögn: að raða sögu og finna það sem vantar (#35)
+- **Nýr flokkur, Frásögn**, á Færnikortinu og í öllum árgöngum, með sömu sex myndum sögukortsins og
+  Lesskilningur. Fyrstu tvö skrefin, bæði metin af forritinu eftir merkjum sögukortsins í textaskránum:
+  *Raðaðu sögunni* (setningar sögu í rangri röð fá hver sitt númer), *Hvað vantar í söguna?* (einn hluta
+  sögukortsins vantar; myndirnar sex eru svörin) og *Hvaða setning vantar?* (rétta setningin í eyðuna).
+- Hver spurning í Frásögn er um eina heila sögu, og þegar svarið er komið sést sagan öll, í réttri röð,
+  með mynd við hverja setningu. Yfirlit lotu sem hafði Frásögn í sér endar á síðustu sögunni.
+- Frásögn er einn af nýju flokkunum í Lotu dagsins og tekur þar **eina** spurningu (`NEW_SKILL_MAX`):
+  sögurnar eru sex og eiga ekki að koma aftur á hverjum degi.
+- Tvær nýjar stuttar sögur með öllum sex hlutum sögukortsins (Ari og lykillinn, Katla og snjókarlinn);
+  Lesskilningur fær þær líka. Ný Lesefnissíða: *Að byggja upp sögu*.
+
 ### Orðakortið með frjálsum texta, og merkingarspurningin lesin yfir (#38)
 - **Fyrir nemanda sem stjórnandinn hefur kveikt á** („Leyfa spurningar sem þjónninn les“) eru skref 3–5
   á Orðakortinu frjáls texti sem þjónninn lætur Claude lesa yfir eftir matskvarða: skýringin með eigin
@@ -32,6 +44,7 @@
   spurningar sem þjónninn les, fyrir nemanda sem kveikt er á.
 - Prófin nota handskrifuð svör á nákvæmu sniði Messages API (`tests/fixtures/claude/`);
   `tools/record-grading.mjs --kind or_setning|or_tengsl` tekur upp raunveruleg. Prófin kalla aldrei á Claude.
+
 ### Sögukortið í Lesskilningi (#31)
 - **Sögukortið**: sex hlutar sögu — aðstæður, vandi (kveikja), markmið, tilraun, útkoma og viðbrögð
   (tilfinning) — hver með sína mynd. Heitin og myndirnar eru skilgreind á einum stað

@@ -235,8 +235,10 @@ test("the graded meaning question and the two new types exist only with server g
     assert.equal(enabled(policy(false), t), false, id);
   }
   assert.equal(enabled(policy(false), typeById("or_merking")), true, "the app-graded one stays");
-  /* At the end of the catalogue, after every type merged before them. */
-  assert.deepEqual(CATALOGUE_IDS.slice(-3), ["or_skyring", "or_setning", "or_tengsl"]);
+  /* Together, after every type merged before them (#35's Frásögn types follow). */
+  const at = CATALOGUE_IDS.indexOf("or_skyring");
+  assert.deepEqual(CATALOGUE_IDS.slice(at, at + 3), ["or_skyring", "or_setning", "or_tengsl"]);
+  assert.ok(CATALOGUE_IDS.slice(at + 3).every((id) => id.startsWith("fr_")), CATALOGUE_IDS.slice(at + 3).join(","));
   assert.ok(CATALOGUE_IDS.indexOf("or_eigin") < CATALOGUE_IDS.indexOf("or_skyring"));
 });
 

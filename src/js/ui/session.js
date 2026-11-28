@@ -21,7 +21,8 @@ import { dueNow } from "./progress.js";
 import { dueLine } from "../core/review.js";
 import { todayLine } from "../core/today.js";
 import { STREAK_N } from "../core/streak.js";
-import { TOPIC } from "../core/run.js";
+import { TOPIC, lastStory } from "../core/run.js";
+import { wholeStoryHTML } from "./storyicons.js";
 import { targetName, KIND_NAME, dueText, assignmentPolicy } from "../core/assignment.js";
 import { writingOfferHTML, wireWritingOffer } from "./writing.js";
 
@@ -460,6 +461,8 @@ export function renderSummary(app) {
       <td>${p.standing.misses} af síðustu ${p.standing.seen} ${trendHTML(p.standing.trend)}</td></tr>`).join("")}</tbody></table>`
     : `<p class="faint">Engar villur til að greina í þessari lotu.</p>`;
 
+  /* #35: a session with Frásögn in it ends with one whole story */
+  const story = lastStory(d);
   const mins = Math.max(1, Math.round((d.ms || 0) / 60000));
   el.innerHTML = `<div class="card summary">
     <p class="eyebrow"><span>${d.early ? "Lotu hætt" : "Lotu lokið"} · ${topicIco(d.topic)} ${esc(d.label || topicName(d.topic))}</span><b>${mins} mín.</b></p>
@@ -473,6 +476,7 @@ export function renderSummary(app) {
     ${d.badges.length ? `<div class="sumbadges">${d.badges.map((b) => `<span class="runchip">${b.ico} ${esc(b.nm)}</span>`).join("")}</div>` : ""}
     ${(d.earlier || []).length ? `<p class="sumearlier">Unnið fyrr, utan lotunnar (t.d. í einvígi eða umferð): ${d.earlier.map((b) => `<span class="runchip">${b.ico} ${esc(b.nm)}</span>`).join(" ")}</p>` : ""}
     <section class="sumsec"><h3>✓ Það sem gekk vel</h3><ul>${good.join("")}</ul></section>
+    ${story ? `<section class="sumsec sumstory"><h3>📖 Sagan sem þú vannst með</h3>${wholeStoryHTML(story)}</section>` : ""}
     <section class="sumsec remember"><h3>💡 Eitt atriði til að muna</h3>${remember}</section>
     <section class="sumsec"><h3>→ Hvað næst?</h3><div class="answer nextrow">${next.join("")}</div></section>
     <section class="sumsec"><h3>🔎 Villugreining</h3>${diag}

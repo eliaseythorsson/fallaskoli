@@ -140,6 +140,7 @@ export const NODE_PATTERNS = {
   "gerd-tegundir": ["aukasetn_tegund", "svo_ad"],
   "les-adalatridi": ["adalatridi"],
   "les-sogukort": ["sogukort"],
+  "fras-bygging": ["sogubygging"],
 };
 
 /** Patterns of no single node: read from every written form. "Ógreint" (a

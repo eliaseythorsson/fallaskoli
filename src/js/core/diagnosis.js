@@ -185,6 +185,10 @@ export const PATTERNS = [
   { id: "sogukort", ok: "sögukortið", nm: "Sögukortið",
     rule: "Saga hefur sex hluti: **aðstæður** (hver, hvar, hvenær), **vanda** sem kemur sögunni af stað, **markmið** (hvað persónan vill), **tilraun** (hvað hún gerir), **útkomu** (hvernig fer) og **viðbrögð** (hvernig henni líður). Spyrðu um hverja setningu: hvaða spurningu svarar hún?",
     lesson: "lesskilningur", tags: ["sogukort"], types: ["les_hluti", "les_kort", "les_samantekt"] },
+  /* issue #35: building a story — its order and its six parts */
+  { id: "sogubygging", ok: "byggingu sögu", nm: "Bygging sögu",
+    rule: "Saga gerist í röð: fyrst **aðstæður** og **vandi**, svo **markmið** og **tilraun**, síðast **útkoma** og **viðbrögð**. Fornafn eins og *hann* eða *hún* vísar aftur til einhvers sem er búið að nefna, og orsök kemur á undan afleiðingu. Spyrðu: hvað hlýtur að hafa gerst fyrst?",
+    lesson: "frasogn", tags: ["fras"], types: ["fr_rod", "fr_vantar", "fr_setning"] },
   { id: "merking", ok: "merkingu orða", nm: "Merking orða",
     rule: "Lestu alla setninguna og spyrðu: hvað passar við merkinguna? Ef þú ert ekki viss, flettu orðinu upp — 📖 hnappurinn er við hverja spurningu.",
     lesson: "ordafordi", tags: ["vocab"], types: ["or_heiti", "or_samhengi", "or_utundan", "or_merking"] },

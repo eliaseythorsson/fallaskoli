@@ -1804,9 +1804,11 @@ body.liveon{overflow:hidden}
 /* a whole text above a question (Lesskilningur, issue #30): smaller than one sentence, and a gap under it */
 .sentence.readtext{font-size:clamp(18px,2.6vw,22px);line-height:1.55;margin-bottom:.8em;max-width:38em}
 /* the story map (issue #31): icons beside part names, sentences as options, the map on the Lesefni page */
-.storyicon{vertical-align:-.25em;flex:none}.storypart{display:inline-flex;align-items:center;gap:.3em}
+.storyicon{vertical-align:-.25em;flex:none;display:inline-block;width:1.25em;height:1.25em}.storypart{display:inline-flex;align-items:center;gap:.3em}
 .opts.sentopts{flex-direction:column;align-items:stretch}.opts.sentopts button{border-radius:10px;text-align:left}
 .sortrows.long .sortrow{flex-direction:column;align-items:flex-start;gap:6px}
+.storylines{padding-left:1.8em;margin:.2em 0 .8em;max-width:38em;line-height:1.5}.storylines li{margin:.2em 0}
+.storygap .gapmark{display:inline-block;min-width:12em;border-bottom:2px dashed currentColor;color:var(--slate);font-style:italic}
 .storymap{list-style:none;padding:0;display:grid;gap:6px}.storymap li{display:flex;align-items:center;gap:.5em;flex-wrap:wrap}.storyask{color:var(--slate)}
 .sc{display:inline-flex;flex-direction:column;align-items:center;max-width:100%;margin:0 3px;--c:var(--slate)}
 .sc-w{padding:0 2px 1px;border-bottom:3px solid var(--c)}

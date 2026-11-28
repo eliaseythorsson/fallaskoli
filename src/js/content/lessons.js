@@ -1350,4 +1350,37 @@ export const LESSONS = [
     ],
     related: ["ordafordi", "obeygjanleg"],
   },
+  /* ------------------------------------------------ (issue #35, Frásögn) */
+  /* The example story is not one of content/textar/: the pupil is asked
+     about those (tests/frasogn.test.js). */
+  {
+    id: "frasogn",
+    skill: "frasogn",
+    nm: "Að byggja upp sögu",
+    lead: "Góð saga er sögð í réttri röð og hefur alla hluta sögukortsins. Þá skilur sá sem les eða hlustar hvað gerðist.",
+    blocks: [
+      { h: "Sögukortið" },
+      { p: "Saga hefur sex hluti, og hver hluti svarar einni spurningu:" },
+      { storymap: true },
+      { h: "Röð atburða" },
+      { p: "Atburðir sögu gerast í röð. Þrennt hjálpar þér að finna hana:" },
+      { p: "**Fornöfn vísa aftur á bak.** Setning sem byrjar á *Hann* eða *Hún* getur ekki verið fyrst, því fyrst þarf að segja hver það er." },
+      { p: "**Orsök kemur á undan afleiðingu.** Fyrst týnist eitthvað, svo er leitað að því." },
+      { p: "**Lítil orð segja hvernig setningarnar tengjast:** *en*, *þá*, *svo*, *stuttu síðar*." },
+      { ex: [
+        "Dísa átti að passa litla bróður sinn í búðinni. Allt í einu var hann horfinn. Dísa bað konu á kassanum um hjálp. Þær fundu hann hjá sælgætinu. Dísa var mjög fegin.",
+      ] },
+      { p: "*Dísa átti að passa litla bróður sinn* segir hver og hvar: **aðstæður**. *Allt í einu var hann horfinn* er **vandinn**. *Dísa bað konu á kassanum um hjálp* er **tilraunin**. *Þær fundu hann* er **útkoman** og *Dísa var mjög fegin* eru **viðbrögðin**. Markmiðið stendur ekki í sögunni, en það sést: Dísa vill finna bróður sinn." },
+      { h: "Hvað vantar?" },
+      { p: "Ef einn hlutann vantar verður sagan skrýtin. Ef útkomuna vantar veistu ekki hvernig fór. Ef vandann vantar skilurðu ekki af hverju persónan gerir það sem hún gerir." },
+      { tip: "Farðu yfir hlutana sex í huganum: Hver og hvar? Hvað gerðist? Hvað vildi persónan? Hvað gerði hún? Hvernig fór? Hvernig leið henni? Það sem þú finnur ekki er það sem vantar." },
+    ],
+    check: [
+      { q: "Af hverju getur setning sem byrjar á *Hann* ekki verið fyrsta setning sögu?", a: "Af því að fyrst þarf að segja hver hann er." },
+      { q: "Hvort kemur á undan, orsök eða afleiðing?", a: "Orsökin." },
+      { q: "Hvaða hluta sögunnar vantar ef þú veist ekki hvernig fór?", a: "Útkomuna." },
+      { q: "Hvaða hluta vantar ef þú veist ekki hvað persónan gerði?", a: "Tilraunina." },
+    ],
+    related: ["lesskilningur"],
+  },
 ];

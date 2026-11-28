@@ -39,6 +39,9 @@ _Avoid_: difficulty, level (level is earned by XP)
 The day's suggested practice session of ten questions across skills.
 _Avoid_: daily quiz
 
+**Frásögn session**:
+Any practice session with at least one Frásögn question in it: one the pupil starts on Frásögn, or the Frásögn question of Lota dagsins or of a mixed session. Every Frásögn question holds one whole story and shows it, with its icons, once answered; the session's summary ends with the last of those stories.
+
 **Recall**:
 Producing a word oneself from its meaning or a sentence gap, without seeing it. Typing an inflected form of a word that is shown is not recall.
 

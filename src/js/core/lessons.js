@@ -93,6 +93,7 @@ export function lessonFor(task) {
     case "malbeiting":
       return task.kind === "indirect" ? first("raeda", "malbeiting") : first("malbeiting");
     case "lesskilningur": return first("lesskilningur");
+    case "frasogn": return first("frasogn", "lesskilningur");
     default: return null;
   }
 }
