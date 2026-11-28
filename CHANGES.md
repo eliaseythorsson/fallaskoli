@@ -2,12 +2,26 @@
 
 ## Unreleased
 
+### Orðin í námi koma oftar (#13)
+- **Í venjulegri æfingu (Lota dagsins, lota sem nemandinn velur) er um þriðjungur þeirra spurninga sem
+  gætu verið um orð í námi um eitt þeirra**, í öllum flokkum: beygingartöflum, eyðufyllingu, greiningu,
+  fallstjórn, samheitum og andheitum. Orð í námi má spyrja um þótt það sé sjaldgæfara en spurningin
+  tekur annars, ef það passar í rammann; orð sem passar hvergi er aldrei þvingað inn.
+- Engin breyting í einvígi, beinni kennslustund, björgunaræfingu eða upprifjun; svörin þar teljast
+  áfram í orðaþekkingu.
+
 ### Orðin mín: sex orð í námi (#12)
 - **Hver nemandi hefur alltaf sex orð af LÍNO-2 í námi**, valin eftir röð á listanum (algengustu fyrst)
   innan þyngdar nemandans í Orðaforða. Undir Orðasafni sér nemandinn „Orðin mín“: orðin sem hann er að
   læra og orðin sem hann kann. Ekkert annað breytist enn; næstu skref (#13, #15, #16) nota hópinn.
 - Hópurinn er vistaður í framvindunni (`S.learning`), sameinaður milli tækja, hreinsaður á þjóninum og
   fylgir útflutningi. `tools/word-history.mjs` sýnir stöðu orðs í hópnum.
+
+### LÍNO-2-nafnorð í römmum: tillögur utan smíðinnar (#21)
+- **Nýtt verkfæri, `tools/lino-frames/run.mjs`**, sem smíðin keyrir aldrei: það finnur í hvaða nafnorðaramma
+  hvert LÍNO-2-nafnorð má fara málfræðinnar vegna, spyr Claude (Opus 5.5) eins orðs í einu hvar merkingin gengur
+  upp, og skrifar tillögur (`candidates.tsv`) og kostnaðarskýrslu. Önnur orð listans fara á lista fyrir
+  viðbótina (#23). Ekkert breytist í forritinu; tillögurnar fara aðeins í `lino-rammar.tsv` eftir yfirlestur.
 
 ## v6.15.0
 

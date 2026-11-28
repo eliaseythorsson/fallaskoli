@@ -561,7 +561,10 @@ a pair the frame or BÍN contradicts (a pinned gender, í/á, a plural nobody
 says, a word already in the sentence) stops the build with the file and line,
 as an unknown frame or word does. The word need not be on LÍNO-2; the build
 reports which are. The review page shows each pair as the sentence it makes.
-`pipeline/frame_allow.py` has the rules.
+`pipeline/frame_allow.py` has the rules. Candidate pairs for the LÍNO-2 nouns
+come from an authoring pass outside the build that asks Claude, one noun at a
+time, which frames make sense (`tools/lino-frames/README.md`); a person decides
+what goes into the file.
 
 **The review page.** `node tools/review.mjs` (also run by `./build.sh`) writes
 `dist/review.html`: one self-contained page with every hand-written item —

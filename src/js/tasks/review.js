@@ -72,8 +72,9 @@ export function reviewTask(lex, view, rng, entry, { avoid = null, wordFirst = fa
   /* `asked`: the word to ask about, or null — the view's strict `mustAsk`
      (tasks/view.js); `force` holds the cell, the item and the sentence to avoid. */
   const attempt = (force, asked, tries, ok) => {
+    /* No preference for words in learning (#13): a review asks for what was missed. */
     const v = withView(view, { force: force ? Object.freeze(force) : null, typeId: spec.id,
-      mustAsk: asked ? { word: asked, strict: true } : null });
+      mustAsk: asked ? { word: asked, strict: true } : null, learning: null });
     for (let k = 0; k < tries; k++) {
       const b = asked && spec.drill ? spec.drill(lex, v, rng, asked) : spec.build(lex, v, rng);
       if (!b) continue;

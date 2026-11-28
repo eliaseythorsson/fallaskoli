@@ -344,11 +344,18 @@ export interface View {
   readonly huntPrefer: string[];
   readonly force: { cell?: string | null; item?: string | null; avoid?: any } | null;
   readonly cal: any;
-  /** The word to ask about, from `pool`, or null (tasks/view.js). */
-  pickWord(lex: Lexicon, pool: readonly any[], skill: string, rng: Rng, classes: readonly string[]): any;
+  /** The words in learning (`wordKey`s) in ordinary practice, else null (#13). */
+  readonly learning: readonly string[] | null;
+  /** The word to ask about, from `pool` (or a word in learning from `wider`), or null (tasks/view.js). */
+  pickWord(lex: Lexicon, pool: readonly any[], skill: string, rng: Rng, classes: readonly string[],
+    wider?: readonly any[] | null): any;
   /** One of `items`, weighted by the word each carries (tasks/view.js). */
   pickByWord<T>(lex: Lexicon, items: readonly T[], wordOf: (x: T) => any, skill: string, rng: Rng,
-    factor?: ((x: T) => number) | null): T | null;
+    factor?: ((x: T) => number) | null, wider?: readonly T[] | null): T | null;
+  /** Is this a word in learning this view prefers (#13)? */
+  inLearning(wordKey: string | null | undefined): boolean;
+  /** The side to draw from: the items about a word in learning LEARNING_SHARE of the time (#13). */
+  preferLearning<T>(items: readonly T[], isLearning: (x: T) => boolean, rng: Rng): readonly T[];
   /** The strict `mustAsk` word if of these classes (any if left out), else null. */
   askedWord(classes?: readonly string[] | null): any;
   /** A strict `mustAsk` word of a class not in `classes`. */
@@ -356,7 +363,7 @@ export interface View {
   /** The non-strict `mustAsk` word (a cloze asked again), or null. */
   retryWord(): any;
   /** A weight multiplier for a sentence by its words: 0 for the word the
-      last question asked in this type (#10), otherwise 1 until #13. */
+      last question asked in this type (#10), otherwise 1. */
   wordBoost(wordKeys?: readonly (string | null)[]): number;
   /** Did the last question ask this word in the type being built (#10)? */
   justAsked(wordKey: string | null | undefined): boolean;

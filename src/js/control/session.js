@@ -16,7 +16,7 @@ import { nextTask, makeView, withView, applyEffects, planOpening, nextOpening,
 import { planToday } from "../core/today.js";
 import { narrowPolicy } from "../core/policy.js";
 import { visitLevels, storedLevel } from "../core/difficulty.js";
-import { fillLearning, LEARNING_SKILL } from "../core/wordknowledge.js";
+import { fillLearning, wordsInLearning, LEARNING_SKILL } from "../core/wordknowledge.js";
 import { maxOf } from "../core/mix.js";
 import { activePatterns, huntPreferFor, focusTypes, pickTargeted } from "../core/diagnosis.js";
 import { SKILL_IDS } from "../core/skills.js";
@@ -204,6 +204,9 @@ export function sessionControl() {
         S: this.S, sess: this.sess, policy: this.policy, forcedNoun: this.forcedNoun,
         mix: { n: r.n, counts }, inRun: true, huntPrefer: huntPreferFor(ids),
         cal: this.viewCal(),
+        /* #13: ordinary practice — and only it — prefers the words in
+           learning (tasks/view.js). The review queue below clears it. */
+        learning: wordsInLearning(this.S),
       });
       const effects = new Map();
       /* Owner feedback 6.14: never the same question twice in a row. A node
@@ -229,7 +232,7 @@ export function sessionControl() {
          ordinary builders (tasks/review.js) and are outside the mix rule: there
          are at most three of the first, and the second is held to the share of
          clozes a session may have. */
-      const rv = withView(view, { policy: this.reviewPolicy(), mix: null });
+      const rv = withView(view, { policy: this.reviewPolicy(), mix: null, learning: null });
       let due = nextOpening(this.lex, rv, rng, r)
         || nextReask(this.lex, rv, rng, r, (counts.fill || 0) + 1 <= maxOf("fill", r.n));
       if (due && last && RUN.questionSig(due.task) === last) due = null;

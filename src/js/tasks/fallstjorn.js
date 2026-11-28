@@ -52,7 +52,8 @@ export function taskGovern(lex, view, rng) {
   let cands = governed(lex, sentPool(lex, view, "fallstjorn"));
   if (!cands.length) cands = governed(lex, lex.sentences.filter((s) => P.level(s.lvl)));
   if (!cands.length) return null;
-  const c = pick(cands, rng);
+  /* #13: the governing word in learning, a share of the time (tasks/view.js). */
+  const c = pick(view.preferLearning(cands, (x) => view.inLearning(tokenKey(lex, x.t)), rng), rng);
   const fall = c.fall || CASEWORD[c.t.g[0]];
   if (!fall) return null;
   return built({
