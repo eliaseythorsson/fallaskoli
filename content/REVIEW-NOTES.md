@@ -209,6 +209,41 @@ af gervigreind og hafa ekki verið lesin af móðurmálshafa. Í hverri eyðu á
 - *hélt* er kennt á Lesefnissíðunni en ekki spurt í eyðu: engin eyða fannst þar sem
   aðeins *hélt* passaði og öll röngu orðin væru rétt mynduð.
 
+## Til hvers vísar fornafnið? Tvær nýjar sögur og spurningarnar
+Skrá: `content/textar/saga-sprungid-dekk.txt`, `content/textar/saga-nyi-skolinn.txt`
+Leita: `Gunnar og Pétur hjóluðu alltaf saman í skólann.`, `Lísa byrjaði í nýjum skóla eftir jólafríið.`, `Kári gleymdi handklæðinu`, `Hún var svo glöð að hún fór næstum því að gráta.`, `En þegar hún opnaði skápinn var ekkert hveiti til.`
+Úr: feat/33-pronoun-reference (atriði 33)
+
+Tvær nýjar sögur, nýi kaflinn á Lesefnissíðunni og sýnidæmið eru samin af
+gervigreind og hafa ekki verið lesin af móðurmálshafa. Í spurningunni er
+nemandinn beðinn að smella á orðið sem fornafn vísar til. Frá þyngd 2 eru öll
+orðin sem hægt er að smella á í sama kyni og tölu og fornafnið (persónur
+sögunnar), svo að merkingin ein á að skera úr. Þetta ætti að skoða sérstaklega:
+
+- **Er svarið alltaf ótvírætt?** Engin spurning á að vera tvíræð. Þær sem eru
+  næst því: *Stuttu síðar kom gömul kona hlaupandi … Hún var svo glöð að hún
+  fór næstum því að gráta* (svarið *kona*, hitt orðið *Sara*), *Elísa ætlaði
+  að baka köku handa henni. En þegar hún opnaði skápinn …* (svarið *Elísa*,
+  hitt orðið *Mamma*) og *Lísa var glöð, því að nú átti hún vinkonu í nýja
+  skólanum* (svarið *Lísa*, hitt orðið *Embla*). Ef einhver þeirra er tvíræð
+  þarf að breyta setningunni í textaskránni.
+- *Pétur var með pumpu í töskunni og lánaði honum hana*: eðlileg orðaröð, eða
+  frekar *lánaði honum pumpuna*? *Gunnar pumpaði í dekkið*: eðlilegt?
+- *Einn daginn gekk Lísa til stelpu sem hét Embla og spurði hana hvort hún
+  vildi koma í fótbolta*: Greynir réð ekki við *til Emblu úr bekknum*, svo að
+  setningin varð svona. Eðlileg?
+- *Hana langaði mikið að eignast vinkonu* og *Hún þekkti engan og var alltaf
+  ein í frímínútum*: eðlilegt?
+- Skýringarnar sem forritið býr til (`src/js/tasks/lesskilningur.js`):
+  *Fornafnið hún er í kvenkyni og eintölu, eins og Sara. Hitt orðið er ekki í
+  sama kyni og tölu, svo að fornafnið getur ekki vísað til þess.* og *Bæði
+  orðin sem þú gast smellt á eru í karlkyni og eintölu, eins og honum. Þá segir
+  kynið ekki til hvers fornafnið vísar, heldur merkingin: hugsaðu um hver gerir
+  hvað. Hér vísar honum til orðsins Gunnari.* Orðin eru sýnd í þeirri mynd sem
+  þau standa í textanum (*Gunnari*, *pabba*). Fyrirsögnin og spurningin *Til
+  hvers vísar fornafnið? Smelltu á orðið.*, svarið *„honum“ vísar til: Gunnari*
+  og reglan *Til hvers vísar fornafnið?* í `src/js/core/diagnosis.js`.
+
 # Utan síðunnar
 
 Texti sem er ekki á yfirlitssíðunni. Skráin er nefnd við hvert atriði.
