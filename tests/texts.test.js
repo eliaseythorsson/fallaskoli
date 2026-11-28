@@ -234,8 +234,9 @@ test("EX.textar: every text of content/textar/, every sentence parsed, every par
     assert.equal(tx.s.length, written.length, tx.id);
     assert.ok(tx.lvl >= 1 && tx.lvl <= 5);
     tx.s.forEach((s, k) => {
-      /* the sentence is the line without its mark and its braces */
-      assert.equal(s.t, written[k].replace(/^\[[^\]]*\] /, "").replace(/\{[^{}]*\}/g, ""), tx.id);
+      /* the sentence is the line without its mark, its braces and a gap's
+         underscores (#36) */
+      assert.equal(s.t, written[k].replace(/^\[[^\]]*\] /, "").replace(/\{[^{}]*\}/g, "").replace(/_([^_]*)_/, "$1"), tx.id);
       assert.ok(!/[{}[\]]/.test(s.t));
       assert.ok((tx.k === "saga" ? STORY : IDEA).concat("annað").includes(s.p), `${tx.id}: ${s.p}`);
       /* parsed like a sentence of the bank: tokens with a word class, the text they spell */

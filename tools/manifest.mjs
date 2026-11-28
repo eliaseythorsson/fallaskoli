@@ -59,6 +59,8 @@ const INPUTS = [
   "sources/lino2.csv", "pipeline/lino.py",
   /* Issue #20: the words allowed into one frame each (content/setningar/lino-rammar.tsv) */
   "pipeline/frame_allow.py",
+  /* Issue #36: the gaps in a story (content/textar/), read by pipeline/content_io.py */
+  "pipeline/story_gaps.py",
   ...contentFiles(),
 ];
 

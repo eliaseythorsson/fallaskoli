@@ -24,6 +24,7 @@ import { nearBand, itemsForBand, classRankLevel } from "../src/js/tasks/shared.j
 import { impersonalItems } from "../src/js/tasks/fallstjorn.js";
 
 import { giveWords } from "./learner.js";
+import { UNLOCKED_BY_THYNGD } from "../src/js/core/placement.js";
 
 const lex = buildLexicon(DATA);
 const allOn = {};
@@ -57,6 +58,14 @@ test("a type that declares steps builds harder questions as the band rises", () 
   const flat = [];
   for (const spec of TASKS) {
     if (spec.bands.length === 1) continue;        // band-less, and registry.test.js holds it flat
+    /* Unlocked by þyngd (#36): nothing below the second band, the same from
+       it up — a door, not a slope (core/placement.js UNLOCKED_BY_THYNGD) */
+    if (UNLOCKED_BY_THYNGD.has(spec.id)) {
+      const from = spec.bands[1];
+      assert.equal(meanLevel(spec, from - 1), null, `${spec.id} builds below þyngd ${from}`);
+      assert.ok(meanLevel(spec, from) != null, `${spec.id} builds nothing at þyngd ${from}`);
+      continue;
+    }
     const m = [1, 2, 3, 4, 5].map((b) => meanLevel(spec, b));
     const top = Math.min(5, spec.bands[spec.bands.length - 1]);
     if (!(m[top - 1] > m[0])) flat.push(`${spec.id}: ${m.map((x) => x.toFixed(2)).join(" ")}`);

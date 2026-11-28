@@ -610,4 +610,17 @@ export const EXAMPLES = {
     how: "*Hvalir anda með lungum* er of þröngt, *Mörg dýr lifa í sjónum* of vítt og *Hvalir eru fiskar* rangt.",
     forms: [],
   },
+  /* issue #36: step 3, a gap inside a story sentence */
+  fr_tengiord: {
+    q: "*Gummi svaf yfir sig. ___ missti hann af strætó.* Af því að, þess vegna eða en?",
+    a: "Þess vegna",
+    how: "Á eftir *þess vegna* kemur sögnin strax (*missti*), og merkingin passar: hann svaf yfir sig og af þeirri ástæðu missti hann af strætó. Á eftir *af því að* og *en* kæmi frumlagið fyrst.",
+    forms: [],
+  },
+  fr_innra: {
+    q: "*Lína vann keppnina. Hún var mjög ___ og sýndi mömmu sinni verðlaunin.* Stolt, reið eða hrædd?",
+    a: "stolt",
+    how: "Lestu það sem kemur á undan (Lína vann) og á eftir (hún sýndi verðlaunin). Sá sem vinnur og sýnir verðlaunin sín er stoltur. Ekkert í sögunni gerir hana reiða eða hrædda.",
+    forms: [],
+  },
 };

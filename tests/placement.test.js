@@ -21,7 +21,7 @@ import {
   placementTypes, placementPlan, startPlacement, placementDone, placementQuestion,
   placementAnswer, placementDrop, placementResult, applyPlacement, SKILL_UP_MIN, shownBand,
   YEAR_FROM, yearOfLevel, suggestYear,
-  TOUR_STEPS, cleanTour, mergeTour, isNewPupil, shouldOfferTour, noteTour,
+  TOUR_STEPS, cleanTour, mergeTour, isNewPupil, shouldOfferTour, noteTour, UNLOCKED_BY_THYNGD,
 } from "../src/js/core/placement.js";
 import { MIN, MAX, storedLevel, levelRecord, cleanLevels, levelRanges, bumpDiff } from "../src/js/core/difficulty.js";
 import { blankState, migrate, newSession, effectivePolicy } from "../src/js/core/state.js";
@@ -46,7 +46,8 @@ const year = (y) => createPolicy(null, presetPolicy(y));
    the level, which has nothing to place (Lesskilningur with its first three
    texts, #30). The app hands the round the keys of `placementTypes`, which
    leaves both out by itself. */
-const FLAT = SKILL_IDS.filter((s) => skillHasTypes(s) && TASKS.filter((t) => t.skill === s).every((t) => t.bands.length === 1));
+const FLAT = SKILL_IDS.filter((s) => skillHasTypes(s) && TASKS.filter((t) => t.skill === s)
+  .every((t) => t.bands.length === 1 || UNLOCKED_BY_THYNGD.has(t.id)));
 const askable = (y) => presetContent(y).skills.filter((s) => skillHasTypes(s) && !FLAT.includes(s));
 const YEAR8 = askable(8), YEAR10 = askable(10);
 
@@ -118,6 +119,10 @@ test("the round asks only what the policy allows", () => {
   assert.ok(presetContent(8).skills.includes("lesskilningur") && !("lesskilningur" in types8));
   /* #35: Frásögn likewise */
   assert.ok(presetContent(8).skills.includes("frasogn") && !("frasogn" in types8));
+  /* #36: Frásögn step 3 declares bands [1, 3], but as a door (nothing below
+     þyngd 3), not a measure: the round still leaves Frásögn out. */
+  assert.deepEqual(TASKS.filter((t) => t.skill === "frasogn" && t.bands.length > 1).map((t) => t.id),
+    [...UNLOCKED_BY_THYNGD]);
   const banded = TASKS.map((t) => (t.id === "les_adal" ? { ...t, bands: [1, 3] } : t));
   assert.deepEqual(placementTypes(banded, year(8)).lesskilningur, ["les_adal", "les_hluti", "les_kort", "les_samantekt", "les_setning", "les_smaatridi", "les_kjarni"]);
   /* A ceiling that allows one category: one category is asked. */

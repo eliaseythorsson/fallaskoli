@@ -1,0 +1,60 @@
+# Nýja hjólið — saga með öllum sex hlutum sögukortsins (einn þáttur).
+# Skrifuð fyrir Frásögn (mál #36): í henni eru tengiorð og orð um
+# hugarástand, og í sumum setningum er eyða þar sem nemandinn velur orðið
+# sem passar. Í hverri eyðu passar aðeins eitt orð; ástæðan fyrir því að
+# hvert hinna passar ekki stendur við það.
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er
+#   (aðstæður, vandi, markmið, tilraun, útkoma, viðbrögð),
+#   hann{Daníel} og hans{Daníel} segja til hvers fornafnið vísar,
+#   _orð_ í setningu er eyða: nemandinn velur orðið sem passar.
+#   ~ [tengiorð] eða ~ [hugarástand] í línunni fyrir neðan segir hvers konar
+#   eyða það er og hvers vegna rétta orðið passar; hver ~ lína þar á eftir er
+#   rangur kostur og ástæðan fyrir því að hann passar ekki (rangt | af hverju ekki).
+#   ? [samantekt] er spurning með svörin í línunum fyrir neðan:
+#   + er rétta samantektin, - [hluti] röng samantekt og hlutinn sem hún brýtur
+#   ([röð]: atburðirnir í rangri röð), ! er skýringin sem nemandinn les á eftir.
+#
+# Reglur eyðanna (sömu og í content/obeygjanleg/tengiord.tsv):
+#   * Orð sem gæti líka gengið er ALDREI boðið. *Þegar* er ekki boðið með
+#     *af því að* eða *en*, *síðan* ekki með *þess vegna*.
+#   * Á eftir *þess vegna* og *síðan* kemur sögnin strax; á eftir *af því að*,
+#     *þegar* og *en* kemur frumlagið á undan sögninni.
+#   * Röngu orðin um hugarástand passa í setninguna en ekki við söguna:
+#     það sem stendur á undan eða á eftir útilokar þau.
+#
+# þyngd: 3
+# tegund: saga
+# orð:
+
+[aðstæður] Daníel hjólaði alltaf í skólann á nýja hjólinu sínu.
+[vandi] Einn morguninn sprakk dekkið á leiðinni.
+[vandi] _Þess vegna_ þurfti hann{Daníel} að teyma hjólið og kom of seint í skólann.
+~ [tengiorð] *Þess vegna* bendir á afleiðinguna: dekkið sprakk og af þeirri ástæðu þurfti Daníel að teyma hjólið.
+~ Af því að | Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að hann þurfti*. Hér kemur sögnin *þurfti* strax.
+~ En | Á eftir *en* kemur sögnin ekki strax: *en hann þurfti*, ekki *en þurfti hann*. Og hér er engin andstæða: sá sem er með sprungið dekk þarf að teyma hjólið.
+[markmið] Eftir skólann _vildi_ Daníel gera við dekkið sjálfur.
+~ [hugarástand] *Vildi* segir hvert markmið Daníels var: hann reyndi svo sjálfur að líma gatið.
+~ vildi ekki | Daníel reyndi sjálfur að líma gatið. Sá sem vill ekki gera við dekkið reynir það ekki.
+~ nennti ekki að | Daníel reyndi sjálfur að líma gatið. Sá sem nennir ekki að gera við dekkið reynir það ekki.
+[tilraun] Hann{Daníel} reyndi að líma gatið _en_ það tókst ekki.
+~ [tengiorð] *En* tengir andstæður: Daníel reyndi að líma gatið, en tilraunin mistókst.
+~ af því að | *Af því að* segir hvers vegna. En Daníel reyndi ekki að líma gatið vegna þess að það tókst ekki. Hann reyndi fyrst, og svo kom í ljós að það tókst ekki.
+~ þess vegna | Á eftir *þess vegna* kemur sögnin strax (*þess vegna tókst það ekki*). Hér kemur *það* á undan sögninni.
+[tilraun] _Síðan_ bað hann{Daníel} afa sinn um hjálp.
+~ [tengiorð] *Síðan* segir hvað gerðist næst: fyrst reyndi Daníel sjálfur og svo bað hann afa sinn um hjálp.
+~ Af því að | Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að hann bað*. Hér kemur sögnin *bað* strax.
+~ En | Á eftir *en* kemur sögnin ekki strax: *en hann bað*, ekki *en bað hann*.
+[útkoma] Afi hans{Daníel} skipti um slöngu og þá var hjólið eins og nýtt.
+[viðbrögð] Daníel varð _glaður_ og þakkaði afa sínum fyrir hjálpina.
+~ [hugarástand] *Glaður* passar: hjólið var orðið eins og nýtt og Daníel þakkaði afa sínum fyrir hjálpina.
+~ reiður | Hjólið var orðið eins og nýtt, svo að Daníel hafði enga ástæðu til að vera reiður. Og sá sem er reiður þakkar ekki fyrir hjálpina.
+~ fúll | Hjólið var orðið eins og nýtt, svo að Daníel hafði enga ástæðu til að vera fúll. Og sá sem er fúll þakkar ekki fyrir hjálpina.
+
+? [samantekt] Hvaða samantekt passar við söguna?
++ Dekkið á hjóli Daníels sprakk og hann reyndi að gera við það, en það var afi hans sem lagaði það.
+- [útkoma] Dekkið á hjóli Daníels sprakk og hann þurfti að kaupa nýtt hjól.
+- [tilraun] Dekkið á hjóli Daníels sprakk og hann fór með hjólið á verkstæði.
+- [röð] Daníel bað afa sinn fyrst um hjálp og reyndi svo sjálfur að líma gatið.
+! Dekkið springur (vandi), Daníel reynir að líma gatið og biður svo afa sinn um hjálp (tilraun) og afi hans skiptir um slöngu (útkoma). Rétta samantektin fylgir þessu.

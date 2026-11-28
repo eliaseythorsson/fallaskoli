@@ -1394,6 +1394,69 @@ out["combine"] = items
 # its underscore).
 import content_io as CIO
 
+# Gaps in a story (issue #36, Frásögn step 3; pipeline/story_gaps.py reads
+# them and checks their shape). What needs BÍN and Greynir is checked here,
+# with the file and the line of the gap's block:
+#   tengi  every option is one of issue #28's five connectives
+#          (exercises.CONNECTIVES), and the right one meets #28's word-order
+#          rule: the verb straight after *þess vegna* and *síðan*, the subject
+#          first after *af því að*, *þegar* and *en*;
+#   innra  every option holds a word for an inner state (INNER_STATES, by
+#          its BÍN lemma), and the sentence with each wrong option in the gap
+#          still parses: those options fail by meaning, never by grammar.
+# The words of every option, explanation and reason are words BÍN knows.
+INNER_STATES = {
+    "vilja", "halda", "ætla", "ákveða", "vona", "óttast", "langa", "nenna", "þora", "vita", "muna",
+    "gleyma", "hlakka", "kvíða", "skammast",
+    "glaður", "hræddur", "reiður", "leiður", "stoltur", "feginn", "fúll", "svekktur", "hissa",
+    "ánægður", "spenntur", "kvíðinn", "sorgmæddur", "þreyttur", "svangur", "öruggur", "rólegur",
+}
+
+def lemmas_of(word):
+    _, ms = b.lookup(word)
+    out = {e.ord for e in ms}
+    if not out:
+        _, ms = b.lookup(word.lower())
+        out = {e.ord for e in ms}
+    return out
+
+def gap_item(g, s_text, where):
+    """The gap as the app gets it, or None after a failure."""
+    ok = True
+    def no(msg):
+        nonlocal ok
+        fail(f"{where}: {msg}"); ok = False
+    opts = [g["a"]] + g["w"]
+    for t in opts + [g["why"]] + [g["no"][w] for w in g["w"]]:
+        check_words(re.sub(r"[*…]", " ", t), where)
+        if blocked_words(t): no(f"blocked word {blocked_words(t)}")
+    full = lambda o: g["t"].replace(CIO.story_gaps.BLANK, o)
+    if full(g["a"]) != s_text: no(f"the gap does not give back the sentence ({full(g['a'])})")
+    if g["k"] == "tengi":
+        for o in opts:
+            if o.lower() not in X.CONNECTIVES:
+                no(f"tengiorð: „{o}“ er ekki eitt af fimm tengiorðum máls #28 ({', '.join(X.CONNECTIVES)}) / "
+                   "not one of the five connectives")
+        after = re.search(r"___ ([^\s.,!?]+)", g["t"])
+        nxt = classes_of(after.group(1)) if after else set()
+        right = g["a"].lower()
+        if X.CONNECTIVES.get(right) and "so" not in nxt:
+            no(f"á eftir „{right}“ kemur sögnin strax, en „{after and after.group(1)}“ er ekki sögn / "
+               "after this connective the verb comes first")
+        if X.CONNECTIVES.get(right) is False and nxt == {"so"}:
+            no(f"á eftir „{right}“ kemur frumlagið á undan sögninni, en „{after.group(1)}“ er bara sögn / "
+               "after this connective the subject comes first")
+    else:
+        for o in opts:
+            if not any(lemmas_of(w) & INNER_STATES for w in WORD.findall(o)):
+                no(f"hugarástand: „{o}“ er ekki orð um hugarástand (INNER_STATES) / not an inner-state word")
+        for o in g["w"]:
+            if not parses_once(full(o)):
+                no(f"hugarástand: setningin með „{o}“ greinist ekki; rangt orð á að passa í setninguna "
+                   f"en ekki við söguna / the sentence with a wrong option must still parse ({full(o)})")
+    if not ok: return None
+    return {"k": g["k"], "t": g["t"], "a": g["a"], "w": g["w"], "why": g["why"], "no": g["no"]}
+
 def text_items():
     import build_sentences as BS
     _g, _b, guard = BS.engines()
@@ -1425,6 +1488,10 @@ def text_items():
             out = {k: rec[k] for k in ("t", "tok", "cl", "ph", "ku") if k in rec}
             out["p"] = s["part"]
             if s["e"]: out["e"] = s["e"]          # the episode, in a story that has them (#31)
+            if s["gap"]:                          # a gap for the pupil to fill (#36)
+                g = gap_item(s["gap"], s["t"], f"{tx.file}:{s['gap']['line']} ({s['t']})")
+                if g is None: bad = True; continue
+                out["g"] = g
             sents.append((out, at, s))
         if bad: continue
         for (out, at, s) in sents:
@@ -1450,9 +1517,9 @@ def text_items():
                       "q": [{"k": q["mark"], "q": q["q"], "a": q["a"], "w": q["w"], "why": q["why"],
                              **({"br": q["br"]} if q["br"] else {})}
                             for q in tx["spurningar"]]})
-        print("   texti þ%d %-10s %-22s %d setningar, %d spurning(ar), %d vísanir fornafna; orð: %s"
+        print("   texti þ%d %-10s %-22s %d setningar, %d spurning(ar), %d vísanir fornafna, %d eyður; orð: %s"
               % (tx["þyngd"], tx["tegund"], tx["id"], len(sents), len(tx["spurningar"]),
-                 sum(len(o.get("ref", [])) for o, _a, _s in sents),
+                 sum(len(o.get("ref", [])) for o, _a, _s in sents), sum("g" in o for o, _a, _s in sents),
                  ", ".join(tx["orð"]) or "—"))
     return items
 

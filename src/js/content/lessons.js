@@ -1384,12 +1384,32 @@ export const LESSONS = [
       { h: "Hvað vantar?" },
       { p: "Ef einn hlutann vantar verður sagan skrýtin. Ef útkomuna vantar veistu ekki hvernig fór. Ef vandann vantar skilurðu ekki af hverju persónan gerir það sem hún gerir." },
       { tip: "Farðu yfir hlutana sex í huganum: Hver og hvar? Hvað gerðist? Hvað vildi persónan? Hvað gerði hún? Hvernig fór? Hvernig leið henni? Það sem þú finnur ekki er það sem vantar." },
+      /* issue #36: taught directly (DLD-PLAN §5) — connectives and words for
+         inner states. The example story is not one of content/textar/. */
+      { h: "Orð sem tengja atburði" },
+      { p: "**Tengiorð** segja hvernig einn atburður tengist öðrum:" },
+      { p: "*af því að* segir **hvers vegna** · *þess vegna* segir **hvað leiddi af því** · *þegar* segir **hvenær** · *síðan* segir **hvað gerðist næst** · *en* tengir **andstæður**." },
+      { ex: [
+        "Gummi var seinn af því að hann svaf yfir sig.",
+        "Hann svaf yfir sig. Þess vegna var hann seinn.",
+        "Hann hljóp eins hratt og hann gat, en strætó var farinn.",
+      ] },
+      { p: "Á eftir *þess vegna* og *síðan* kemur **sögnin** strax: *Þess vegna var hann seinn.* Á eftir *af því að*, *þegar* og *en* kemur **frumlagið** fyrst: *af því að hann svaf.*" },
+      { h: "Orð um hugsanir og tilfinningar" },
+      { p: "Góð saga segir ekki bara hvað persónurnar **gera**, heldur líka hvað þær **vilja**, **halda** og **finna**:" },
+      { p: "*vildi* (markmið) · *hélt* (það sem persónan trúir, sem getur verið rangt) · *ákvað* · *varð hrædd* · *varð glaður* · *var fegin* (glöð af því að eitthvað slæmt er búið) · *var stoltur*." },
+      { ex: [
+        "Gummi hélt að strætó væri ekki farinn. Hann varð leiður þegar hann sá að hann var farinn.",
+      ] },
+      { tip: "Lestu það sem kemur á undan og á eftir. Ef persónan reynir mikið til að ná einhverju, þá vildi hún það. Ef allt fór vel er hún ekki reið eða hrædd." },
     ],
     check: [
       { q: "Af hverju getur setning sem byrjar á *Hann* ekki verið fyrsta setning sögu?", a: "Af því að fyrst þarf að segja hver hann er." },
       { q: "Hvort kemur á undan, orsök eða afleiðing?", a: "Orsökin." },
       { q: "Hvaða hluta sögunnar vantar ef þú veist ekki hvernig fór?", a: "Útkomuna." },
       { q: "Hvaða hluta vantar ef þú veist ekki hvað persónan gerði?", a: "Tilraunina." },
+      { q: "Hvort segir *af því að* eða *þess vegna* hvers vegna eitthvað gerðist?", a: "*Af því að*. *Þess vegna* segir hvað leiddi af því." },
+      { q: "Hvað er munurinn á *hélt* og *vissi*?", a: "Sá sem *hélt* eitthvað getur haft rangt fyrir sér. Það sem maður *vissi* var satt." },
     ],
     related: ["lesskilningur"],
   },

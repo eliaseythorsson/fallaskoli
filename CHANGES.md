@@ -24,6 +24,20 @@
   rökum). Það ræðst af upprifjunarfærslunni sjálfri (lykli, gjalddaga og þrepi, `tasks/review.js`),
   aldrei af klukkunni: sama upprifjun fær alltaf sama svar, og engin önnur spurning breytist.
 
+### Frásögn: tengiorð og orð um hugsanir í sögu (#36)
+- **Þriðja skrefið í Frásögn**, opnast á þyngd 3 (eftir skref 1 og 2): *Tengiorð í sögu* (veldu
+  *af því að, þess vegna, þegar, síðan* eða *en* í eyðu í setningu sögunnar) og *Hvað vildi persónan,
+  hvernig leið henni?* (veldu orðið um hugsun eða tilfinningu sem passar: *vildi, glöð, fegin* …).
+  Sagan öll sést, og við hvert rangt orð stendur hvers vegna það passar ekki.
+- **Eyðurnar eru merktar í textaskránum sjálfum** (`_orð_` og `~` línur, README „Efnið“). Smíðin
+  stöðvast, með skrá og línu, ef eyða passar ekki við línurnar sínar, og athugar tengiorðin, orðaröðina
+  á eftir þeim, orðin um hugarástand (BÍN) og að setningin greinist með hverju röngu orði um hugarástand.
+- Tvær nýjar sögur (Daníel og hjólið, Tómas og Una í rafmagnsleysinu), eyður í sögunum um afmæliskökuna
+  og snjókarlinn: 7 tengiorð og 7 orð um hugarástand. Lesefnissíðan *Að byggja upp sögu* kennir
+  tengiorðin og orðin um hugsanir og tilfinningar beint.
+- Frásögn getur nú hækkað upp í þyngd 3; stöðuprófið spyr hana áfram ekki
+  (`UNLOCKED_BY_THYNGD` í `core/placement.js`).
+
 ### Frásögn: að raða sögu og finna það sem vantar (#35)
 - **Nýr flokkur, Frásögn**, á Færnikortinu og í öllum árgöngum, með sömu sex myndum sögukortsins og
   Lesskilningur. Fyrstu tvö skrefin, bæði metin af forritinu eftir merkjum sögukortsins í textaskránum:
