@@ -81,11 +81,11 @@ export function copiedPart(answer, sentences) {
  * The rubric's `check`: the copy check on the `eigin` point (see the header).
  * @param {any[]} textar @param {string} kind
  */
-export const copyCheck = (textar, kind) => (findings, text, context) => {
+export const copyCheck = (textar, kind, point = "eigin") => (findings, text, context) => {
   const tx = textFor(textar, context, kind);
   const copied = tx ? copiedPart(text, tx.s.map((s) => s.t)) : null;
   if (!copied) return findings;
-  return [...findings.filter((f) => f.point !== "eigin"), { point: "eigin", met: false, quote: copied }];
+  return [...findings.filter((f) => f.point !== point), { point, met: false, quote: copied }];
 };
 
 /** What each point means. Same ids as `kjarniRubric` in tasks/lesskilningur.js. */

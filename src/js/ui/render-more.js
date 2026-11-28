@@ -693,3 +693,4 @@ function bonusBox(app, t) {
     if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); send(); }
   });
 }
+

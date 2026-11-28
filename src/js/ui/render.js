@@ -23,6 +23,7 @@ import { reportButtonHTML } from "./reports.js";
 import { awaitServer, serverVerdictHTML, linksFormHTML, linksFrom } from "./serverask.js";
 import { l2On, glossToken, decorateTask } from "./secondlang.js";
 import { codedOn, codedHTML, hintButtonHTML, wireHint, endHint } from "./hint.js";
+import { writeAboveHTML, writeAfterHTML } from "./storyicons.js";
 import {
   $, esc, fmt, wireKeys, cheer, CHEERS_OK, CHEERS_NO, CHEERS_TRY, hideTip,
   defBox, unlockDefBox, freshEnter, stopConfetti,
@@ -1176,11 +1177,12 @@ RENDER.meaning = function (app) {
     <p class="eyebrow"><span>${esc(p ? p.eyebrow : "Útskýrðu orðið með þínum eigin orðum")}</span>${skillTag(t)}</p>
     ${/* #39: the text whose main idea or story the pupil writes in their own words */
       Array.isArray(t.text) && t.text.length ? `<p class="sentence readtext">${t.text.map(esc).join(" ")}</p>` : ""}
+    ${writeAboveHTML(t) /* #40: Frásögn's written steps */}
     ${p ? `<p class="sentence">${fmt(p.question)}</p>`
       : `<p class="sentence">Hvað þýðir orðið <span class="target">${esc(n.o)}</span>?</p>`}
     <p class="gloss">${esc(p ? p.hint : "Skrifaðu heila setningu. Það er engin ein rétt leið til að útskýra orð.")}</p>
     <div style="margin-top:16px">${t.links ? linksFormHTML(n.o, t.links)
-      : `<textarea id="freetext" rows="3" placeholder="${esc(p ? (p.placeholder || "") : `${n.o} er…`)}"></textarea>`}</div>
+      : `<textarea id="freetext" rows="${t.rows || 3}"${t.max ? ` maxlength="${t.max}"` : ""} placeholder="${esc(p ? (p.placeholder || "") : `${n.o} er…`)}"></textarea>`}</div>
     <div class="keys" id="keys"></div>
     <div class="answer"><button class="go" id="check">Senda</button></div>
     <div id="verdict"></div>
@@ -1211,6 +1213,7 @@ function submitMeaning(app) {
        — never a rewrite of what they wrote. */
     if (t.after && t.after.text) $("verdict").insertAdjacentHTML("beforeend",
       `<div class="why"><b>${esc(t.after.label)}</b>${esc(t.after.text)}</div>`);
+    $("verdict").insertAdjacentHTML("beforeend", writeAfterHTML(t));   /* #40: the whole story */
   });
   if (j.pending) return;
   const xp = j.xp, effort = j.detail.effort;

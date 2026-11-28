@@ -651,6 +651,30 @@ const LIST = [
     renderer: "tap", weight: 4, recall: false, grader: "app",
     tags: ["visun"],
     bands: [1] },
+  /* #40 (DLD-PLAN §5, §6): Frásögn, steps 4–6 — the pupil writes, and the
+     server reads it against the story map (server/rubric-frasogn.mjs): one
+     part into a model story, a new story on a model's frame, their own
+     story. Server grading only (docs/adr/0004). Each unlocked by þyngd
+     after step 3: nothing below 4, 5 and 6 (tasks/frasogn.js STEP_FROM),
+     the same questions from there up. */
+  { id: "fr_hluti", skill: "frasogn",
+    nm: "Skrifaðu hlutann sem vantar",
+    ds: "Einn hluta sögukortsins vantar í sögu: skrifaðu hann, lesið yfir á þjóninum",
+    renderer: "meaning", weight: 4, recall: false, grader: "server",
+    tags: [],
+    bands: [1, 4] },
+  { id: "fr_hlidstaed", skill: "frasogn",
+    nm: "Ný saga með sama sniði",
+    ds: "Ný saga með sömu sex hlutum og fyrirmyndin, lesin yfir á þjóninum",
+    renderer: "meaning", weight: 3, recall: false, grader: "server",
+    tags: [],
+    bands: [1, 5] },
+  { id: "fr_eigin", skill: "frasogn",
+    nm: "Þín eigin saga",
+    ds: "Eigin saga með sögukortið sem gátlista, lesin yfir á þjóninum",
+    renderer: "meaning", weight: 3, recall: false, grader: "server",
+    tags: [],
+    bands: [1, 6] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when

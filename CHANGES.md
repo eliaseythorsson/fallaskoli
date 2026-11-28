@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Frásögn, skref 4–6: nemandinn skrifar, þjónninn les yfir (#40)
+- **Þrjár nýjar spurningagerðir í Frásögn,** aðeins fyrir nemendur sem umsjónarmaður hefur leyft að
+  þjónninn lesi yfir (aðrir sjá þær aldrei): „Skrifaðu hlutann sem vantar“ (einn hluta sögukortsins
+  vantar í sögu og táknið hans stendur í eyðunni), „Ný saga með sama sniði“ (saga með sögukortinu sínu,
+  og nemandinn skrifar nýja sögu með sömu sex hlutum) og „Þín eigin saga“ (táknin sex eru gátlisti).
+- Claude les textann á þjóninum eftir sögukortinu: hvaða hlutar eru komnir, hvort röðin gengur upp,
+  tengiorð og orð um hugsanir og tilfinningar. Þjónninn les fyrirmyndarsöguna sjálfur úr eigin gögnum;
+  vafrinn sendir aðeins hvaða saga og hvaða setning. Hver fullyrðing verður að vitna í texta nemandans.
+- **Endurgjöfin er gátlisti** þar sem tákn hlutanna sem eru komnir fá hak, og **ein spurning** um fyrsta
+  hlutann sem vantar. Nemandinn má bæta söguna einu sinni. Textanum er aldrei breytt fyrir hann, og XP
+  fæst fyrir að ljúka og bæta, ekki fyrir dóminn.
+- **Opnast eftir þyngd** á eftir skrefi 3: skref 4 frá þyngd 4, skref 5 frá 5 og skref 6 frá 6
+  (`STEP_FROM` í `src/js/tasks/frasogn.js`), á hnútnum *Bygging sögu: röð og hlutar*.
+- Ekkert sem nemandinn skrifar er geymt, hvorki á þjóninum né í framvindu hans (`docs/PRIVACY.md` §1h).
+
 ### Lesskilningur: til hvers vísar fornafnið? (#33)
 - **Ný spurningagerð, „Til hvers vísar fornafnið?“:** textinn er sýndur fram að setningunni með
   fornafninu (*hann, hún, honum, þau …*), fornafnið er merkt og nemandinn smellir á orðið sem það vísar
@@ -12,7 +27,6 @@
   að velja á milli er ekki spurt um.
 - Smíðin stöðvar nú líka ef Greynir les ekkert nafnorð í því sem fornafn vísar til. Tvær nýjar sögur með
   tveimur persónum af sama kyni, nýr kafli á Lesefnissíðunni, nýr hnútur og villugreiningarregla.
-
 ### Aðalatriði og samantekt með eigin orðum, lesin yfir (#39)
 - **Fyrir nemanda sem stjórnandinn hefur kveikt á** („Leyfa spurningar sem þjónninn les“) fær
   Lesskilningur tvær nýjar spurningagerðir sem þjónninn lætur Claude lesa yfir eftir matskvarða:
@@ -27,7 +41,6 @@
 - Svarið er hvergi geymt, hvorki á þjóninum né í framvindu nemandans (`docs/PRIVACY.md` §1h).
 - Prófin nota handskrifuð svör á nákvæmu sniði Messages API; `tools/record-grading.mjs --kind
   les_kjarni_eigin|les_saga_eigin --texti …` tekur upp raunveruleg. Prófin kalla aldrei á Claude.
-
 ### Lesskilningur: aðalatriði, smáatriði og samantekt í fræðitextum (#32)
 - **Þrjár nýjar spurningagerðir um fræðitexta:** „Hvar er aðalatriðið?“ (smellt á setninguna sem segir
   aðalatriðið), „Hvað styður aðalatriðið?“ (smellt á smáatriðin; ein setning fjallar um annað og á ekki
