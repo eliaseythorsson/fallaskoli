@@ -1,6 +1,6 @@
 # Changes
 
-## Unreleased
+## v6.16.0
 
 ### Frásögn, skref 4–6: nemandinn skrifar, þjónninn les yfir (#40)
 - **Þrjár nýjar spurningagerðir í Frásögn,** aðeins fyrir nemendur sem umsjónarmaður hefur leyft að
