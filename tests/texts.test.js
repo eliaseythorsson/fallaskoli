@@ -296,8 +296,9 @@ test("Lesskilningur is a skill of year 8, on by default, on the map and in every
   assert.deepEqual(patternById("adalatridi").types, ["les_adal"]);
 });
 
-test("les_adal is declared last in the catalogue: a choice, graded by the app, not recall", () => {
-  assert.equal(CATALOGUE_IDS[CATALOGUE_IDS.length - 1], "les_adal");
+test("les_adal is declared at the end of the catalogue: a choice, graded by the app, not recall", () => {
+  /* after every type before it; #37's or_eigin came after it */
+  assert.equal(CATALOGUE_IDS.indexOf("les_adal"), CATALOGUE_IDS.indexOf("or_merking") + 1);
   const c = catalogueEntry("les_adal");
   assert.deepEqual([c.skill, c.renderer, c.grader, c.recall], ["lesskilningur", "choice", "app", false]);
   assert.deepEqual(c.tags, ["les"]);

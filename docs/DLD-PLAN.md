@@ -250,6 +250,16 @@ plan is exactly the old one. Adding a skill is one id in `NEW_SKILLS`.
   a no-training, no-retention arrangement. Story and summary texts are not stored
   after grading. Word cards are kept in the pupil's own progress (§1).
 
+*As built (#37).* The Claude plug of the server's text reader
+(`server/reader-claude.mjs`, plain `fetch` to the Messages API, JSON schema
+output) with the explanation rubric in `server/rubric-eigin.mjs`: two points,
+`merking` (main) and `eigin`; the definition is looked up on the server by the
+word key. The first type is `or_eigin` (Orðaforði), which is also the
+Orðakort's free-text step in place of the choice of explanation. Settings:
+`ANTHROPIC_API_KEY` (a Fly secret), `FALLASKOLI_CLAUDE_MODEL` (`opus`/`fable`),
+`FALLASKOLI_CLAUDE_EFFORT` (`low`). Zero data retention is an organisation-level
+arrangement with Anthropic, and Fable 5.2 cannot run under it (PRIVACY.md §1h).
+
 ## Build order
 
 Each step is one or more PRs and can be released on its own, following CLAUDE.md

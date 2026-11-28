@@ -10,15 +10,23 @@
  * the first step (`read`) alone, so it is not there while the pupil chooses
  * the right explanation; it comes back in the feedback, after the answer.
  *
- * KINDS draws a step by its `kind`. A new kind of step (the free-text step
- * of #37/#38) is one more entry: `(el, step, done)` fills `el` and calls
- * `done(answer)` — `answer` is `{ c: [ids], ok }`, or null for a step that
- * has nothing to keep — when the pupil may go on.
+ * KINDS draws a step by its `kind`. A new kind of step is one more entry:
+ * `(el, step, done, opts)` fills `el` and calls `done(answer)` — `answer`
+ * is `{ c: [ids], ok }` (and `t`, the pupil's text, for a free-text step),
+ * or null for a step that has nothing to keep — when the pupil may go on.
+ *
+ * "server" (#37) is the free-text step: the pupil writes, the server reads
+ * it (`opts.ask(task)`, control/serverask.js: one automatic retry, one
+ * revision), and the final judgement is settled once (`opts.settle`) — XP
+ * for finishing and for revising, whatever the verdict. The definition is
+ * not on the screen while the pupil writes; it comes after the reading.
  */
 
 import { esc, fmt, hideTip } from "./dom.js";
 import { RATINGS } from "../core/wordcard.js";
 import { judgeStep } from "../tasks/wordcard.js";
+import { checklistHTML } from "./serverask.js";
+import { serverGraderLost } from "../core/servergrader.js";
 
 const text = (s) => fmt(s, { gloss: false });
 
@@ -33,6 +41,19 @@ function tableHTML(t) {
   const head = t.head ? `<thead><tr>${t.head.map((h) => `<th scope="col">${esc(h)}</th>`).join("")}</tr></thead>` : "";
   return `<table class="wctable">${head}<tbody>${t.rows.map(([label, ...cells]) =>
     `<tr><th scope="row">${esc(label)}</th>${cells.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+
+/** The end of the free-text step: the checklist (or "not judged"), the XP,
+    and the definition it was read against. */
+function ownVerdictHTML(j, step) {
+  const d = j.detail || {};
+  const xp = j.xp ? `<span class="xpop">+${j.xp} XP</span>` : "";
+  const head = j.verdict === "notjudged"
+    ? `<b>Ekki tókst að lesa svarið yfir.</b> Það er ekki þér að kenna.`
+    : `<b>${j.ok ? "Aðalatriðið er komið." : "Aðalatriðið vantar enn."}</b>`;
+  return `<div class="why wcwhy ${j.verdict === "notjudged" ? "" : j.ok ? "ok" : "no"}">${xp}${head}
+    ${checklistHTML(d.checklist)}
+    ${step.def ? `<p>Í orðabók: <b>${esc(step.def)}</b></p>` : ""}</div>`;
 }
 
 const KINDS = {
@@ -99,14 +120,72 @@ const KINDS = {
     const check = el.querySelector("[data-wc=check]");
     if (check) check.onclick = settle;
   },
+
+  /* Free text read by the server (#37). */
+  server(el, step, done, { last, ask, settle }) {
+    el.innerHTML = `<p class="wcq">${text(step.question)}</p>
+      <p class="wcnote">Það er engin ein rétt leið til að útskýra orð.</p>
+      <textarea class="wctext" rows="3" maxlength="1200" aria-label="Skýringin þín"></textarea>
+      <div class="answer"><button type="button" class="go" data-wc="send">Senda</button></div>
+      <div class="wcafter" aria-live="polite"></div>`;
+    const box = el.querySelector("textarea");
+    const send = /** @type {HTMLButtonElement} */ (el.querySelector("[data-wc=send]"));
+    const after = el.querySelector(".wcafter");
+    const q = ask(step.task);
+    let sent = "", first = null;
+    const say = (html) => {
+      const at = after.querySelector(".wcmsg");
+      if (at) at.innerHTML = html; else after.innerHTML = `<p class="wcmsg">${html}</p>`;
+    };
+    const finish = (j, kept) => {
+      settle(step.task, j);
+      if (j.verdict === "notjudged") serverGraderLost();
+      box.disabled = true;
+      send.parentElement.remove();
+      after.innerHTML = `${ownVerdictHTML(j, step)}
+        <div class="answer"><button type="button" class="go" data-wc="next">${last ? "Ljúka orðakorti →" : "Áfram →"}</button></div>`;
+      const next = /** @type {HTMLButtonElement} */ (after.querySelector("[data-wc=next]"));
+      /* Kept in the pupil's own card (core/wordcard.js): the text that was judged. */
+      next.onclick = () => done({ c: [], t: kept ? first : sent, ok: j.ok === true });
+      next.focus();
+    };
+    send.onclick = async () => {
+      sent = box.value.trim();
+      send.disabled = box.disabled = true;
+      say(`<span class="reading">Les svarið yfir …</span>`);
+      const r = await q.send({ text: sent });
+      if (!r) return;
+      send.disabled = box.disabled = false;
+      if (r.pending === "revise") {
+        first = sent;
+        after.innerHTML = `<div class="why wcwhy">${checklistHTML(r.detail.checklist)}
+          ${r.detail.ask ? `<p class="ask"><b>${esc(r.detail.ask)}</b></p>` : ""}
+          <p class="wcmsg">Þú mátt bæta svarið einu sinni: breyttu því og sendu aftur — eða haltu því eins og það er.</p>
+          <button type="button" class="ghost" data-wc="keep">Halda svarinu</button></div>`;
+        /** @type {HTMLButtonElement} */ (after.querySelector("[data-wc=keep]")).onclick = () => {
+          const k = q.keep(); if (k) finish(k, true);
+        };
+        box.focus();
+        return;
+      }
+      if (r.pending) {
+        say(r.verdict === "same" ? "Þetta er sama svarið og áðan. Breyttu því — eða smelltu á <b>Halda svarinu</b>."
+          : "Skrifaðu svarið í reitinn.");
+        return;
+      }
+      finish(r, false);
+    };
+  },
 };
 
 /**
  * Show a card. Returns `{ el }`, the window's element (for a test).
  * @param {{word: string, lemma: string, steps: any[]}} card  tasks/wordcard.js `buildCard`
- * @param {(done: {rating: number, answers: Record<string, {c: string[], ok: boolean}>}) => void} onDone
+ * @param {(done: {rating: number, answers: Record<string, {c: string[], ok: boolean, t?: string}>}) => void} onDone
+ * @param {{ask?: (task: any) => any, settle?: (task: any, j: any) => void}} [opts]  for a
+ *   "server" step: control/session.js `withCard`
  */
-export function openWordCard(card, onDone) {
+export function openWordCard(card, onDone, opts = {}) {
   hideTip();
   const scrim = document.createElement("div");
   scrim.className = "scrim wcscrim";
@@ -120,7 +199,7 @@ export function openWordCard(card, onDone) {
   document.addEventListener("keydown", key, true);
 
   const body = scrim.querySelector(".wcbody");
-  const steps = card.steps.filter((s) => KINDS[s.kind]);
+  const steps = card.steps.filter((s) => KINDS[s.kind] && (s.kind !== "server" || (opts.ask && opts.settle)));
   const result = { rating: 0, answers: {} };
   let i = 0;
   const show = () => {
@@ -135,7 +214,7 @@ export function openWordCard(card, onDone) {
       document.removeEventListener("keydown", key, true);
       scrim.remove();
       onDone(result);
-    }, { last: i === steps.length - 1 });
+    }, { last: i === steps.length - 1, ask: opts.ask, settle: opts.settle });
     body.scrollTop = 0;
     const first = body.querySelector("button:not([disabled])");
     if (first) first.focus();

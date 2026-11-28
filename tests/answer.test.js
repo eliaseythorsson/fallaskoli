@@ -35,7 +35,7 @@ import { diagnose } from "../src/js/core/diagnosis.js";
 import { TASKS } from "../src/js/tasks/index.js";
 import { show, ask } from "./helpers.js";
 import { judge, judgeBonus, settle, parseRows, judgeSyntax, askedCells, JUDGED_TYPES,
-         BONUS_XP } from "../src/js/core/answer.js";
+         BONUS_XP, serverGraded } from "../src/js/core/answer.js";
 import { RENDER } from "../src/js/ui/render.js";
 import "../src/js/ui/render-more.js";
 import "../src/js/ui/hver.js";
@@ -305,6 +305,10 @@ function realTasks(pupil, n = 6, diffs = [2, 4, 6]) {
 }
 
 const BANK = realTasks(freshPupil());
+/* The questions the browser judges alone. A server-graded one (#37,
+   or_eigin) waits for the server's reading first; its own tests are
+   tests/server-answers.test.js and tests/claude-plug.test.js. */
+const APP_BANK = BANK.filter((t) => !serverGraded(t));
 
 test("every renderer has a judge, and every builder makes a type that can be judged", () => {
   assert.deepEqual(Object.keys(RENDER).sort(), JUDGED_TYPES.slice().sort());
@@ -315,7 +319,7 @@ test("every renderer has a judge, and every builder makes a type that can be jud
 });
 
 test("every type: the right answer is right, earns the old XP, finds nothing", () => {
-  for (const t of BANK) {
+  for (const t of APP_BANK) {
     const pupil = freshPupil();
     const j = judge(t, rightResponse(t), pupil);
     const at = `${t.typeId} (${t.type})`;
@@ -747,7 +751,7 @@ test("judge changes neither the task, the response nor the pupil", () => {
 });
 
 test("settle: the XP, one tally per answer, the run, the time and the difficulty", () => {
-  for (const t of BANK) {
+  for (const t of APP_BANK) {
     for (const [kind, response] of [["right", rightResponse(t)], ["wrong", (wrongResponse(t) || {}).response]]) {
       if (!response) continue;
       const pupil = freshPupil(), { S, sess } = pupil;

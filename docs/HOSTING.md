@@ -227,6 +227,9 @@ All optional except the first two. Set them under `[env]` in `fly.toml`.
 | `FALLASKOLI_TRUST_PROXY` | Believe the proxy about the visitor's address | `1` in the container |
 | `FALLASKOLI_UID` | The user the server becomes after starting | `1000` in the container |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google login. Use `fly secrets set`, not `[env]`. Not recommended for children — see `docs/PRIVACY.md` §4 | off |
+| `ANTHROPIC_API_KEY` | Claude reads explanations in a pupil's own words, for pupils the administrator switches on one by one (#37). A secret: `fly secrets set ANTHROPIC_API_KEY=…`, never in `[env]` or a file. **Read `docs/PRIVACY.md` §1h first** (zero data retention, the notice, the processor) | off |
+| `FALLASKOLI_CLAUDE_MODEL` | `opus` (Claude Opus 5.5) or `fable` (Claude Fable 5.2, which cannot be used under zero data retention) | `opus` |
+| `FALLASKOLI_CLAUDE_EFFORT` | `low`, `medium` or `high` | `low` |
 
 ## If something goes wrong
 

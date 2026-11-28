@@ -15,7 +15,9 @@ import { lessonPractice } from "../src/js/core/lessons.js";
 import { EXAMPLES } from "../src/js/content/examples.js";
 import { NODES } from "../src/js/core/curriculum.js";
 const EXAMPLE_TYPES = new Set(Object.keys(EXAMPLES));
-const QT_COUNT = QUESTION_TYPES.length;
+/* A server-graded type (#37) has its switch only where server grading is on
+   for the pupil (ui/policyui.js); this browser has no server. */
+const QT_COUNT = QUESTION_TYPES.filter((t) => t.grader !== "server").length;
 
 /* v6.10: practice comes in sessions picked on the Æfa tab. The program now
    opens on the picker, with no question; the checks below drive one long
@@ -1324,7 +1326,7 @@ const switchCounts = await page.evaluate(() => ({
   levels: document.querySelectorAll('#policyeditor input[data-dim="levels"]').length,
   attrs: document.querySelectorAll('#policyeditor input[data-dim="attrs"]').length,
 }));
-ok(switchCounts.types === QT_COUNT, `${switchCounts.types} question-type switches, expected ${QT_COUNT} (v6.11: one per entry in QUESTION_TYPES)`);
+ok(switchCounts.types === QT_COUNT, `${switchCounts.types} question-type switches, expected ${QT_COUNT} (v6.11: one per entry in QUESTION_TYPES the app grades)`);
 ok(switchCounts.levels === 7, `${switchCounts.levels} difficulty switches, expected 7`);
 ok(switchCounts.attrs === 30, `${switchCounts.attrs} attribute switches, expected 30`);
 

@@ -10,7 +10,7 @@
    the program goes on calling `app.startRun(…)`, `app.run` and so on as
    before. */
 
-import { todayKey, effectivePolicy } from "../core/state.js";
+import { todayKey, effectivePolicy, newSession } from "../core/state.js";
 import { nextTask, makeView, withView, applyEffects, planOpening, nextOpening,
   scheduleReask, nextReask, typeById, enabled, TASKS } from "../tasks/index.js";
 import { planToday } from "../core/today.js";
@@ -18,7 +18,9 @@ import { narrowPolicy } from "../core/policy.js";
 import { visitLevels } from "../core/difficulty.js";
 import { fillLearning, wordsInLearning, learningLevel, nextToLearn, LEARNING_SIZE } from "../core/wordknowledge.js";
 import { cardDone, saveCard } from "../core/wordcard.js";
-import { buildCard } from "../tasks/wordcard.js";
+import { buildCard, EIGIN } from "../tasks/wordcard.js";
+import { settle } from "../core/answer.js";
+import { serverQuestion, noReader } from "./serverask.js";
 import { openWordCard } from "../ui/wordcard.js";
 import { maxOf } from "../core/mix.js";
 import { activePatterns, huntPreferFor, focusTypes, pickTargeted } from "../core/diagnosis.js";
@@ -147,7 +149,10 @@ export function sessionControl() {
       if (this.cardOpen) return;
       this.fillLearning();
       const word = this.cardDue();
-      const card = word ? buildCard(this.lex, word) : null;
+      /* #37: with server grading on for this pupil, the explanation in their
+         own words, read by the server, takes the place of the choice. */
+      const eigin = !!word && enabled(effectivePolicy(this.S), typeById(EIGIN));
+      const card = word ? buildCard(this.lex, word, { eigin }) : null;
       if (!card) { then(); return; }
       this.cardOpen = true;
       openWordCard(card, (done) => {
@@ -156,6 +161,13 @@ export function sessionControl() {
         this.fillLearning();
         this.save(true);          // a finished card is written at once
         then();
+      }, {
+        /* The free-text step: the same waiting, and the same one settle, as
+           a server-graded question in a session (control/serverask.js). It
+           is settled into a session of its own: the card comes before the
+           session the pupil chose. */
+        ask: (task) => serverQuestion(task, { read: this.serverRead || noReader, pupil: this }),
+        settle: (task, j) => settle(this.S, newSession(this.S), task, j),
       });
     },
 

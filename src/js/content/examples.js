@@ -326,6 +326,14 @@ export const EXAMPLES = {
     how: "*Hugmynd* er það sem manni dettur í hug. Hugmynd geltir ekki og enginn burstar tennurnar með henni, svo að í hinum setningunum passar orðið ekki.",
     forms: ["hugmynd|kvk|ÞFET=hugmynd"],
   },
+  /* #37: shown only to a pupil whose answers the server reads. *hamar* is
+     not on LÍNO-2, so the example gives no real question away. */
+  or_eigin: {
+    q: "Hvað merkir orðið *hamar*? Segðu það með þínum eigin orðum.",
+    a: "Hamar er verkfæri sem maður notar til að negla nagla.",
+    how: "Segðu aðalatriðið í merkingunni með þínum orðum, ekki bara orðið sjálft aftur. Þú færð gátlista og eina spurningu og mátt bæta svarið einu sinni.",
+    forms: [],
+  },
 
   /* ---- Málbeiting ---- */
   villur: {
