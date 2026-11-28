@@ -295,7 +295,7 @@ test("Lesskilningur is a skill of year 8, on by default, on the map and in every
     assert.ok(presetContent(y).types.includes("les_adal"), y + ". bekkur");
   }
   const node = nodeById("les-adalatridi");
-  assert.deepEqual([node.cat, node.year, node.types, node.lesson, node.cover], ["lesskilningur", 8, ["les_adal", "les_setning", "les_smaatridi", "les_kjarni"], "lesskilningur", "full"]);
+  assert.deepEqual([node.cat, node.year, node.types, node.lesson, node.cover], ["lesskilningur", 8, ["les_adal", "les_setning", "les_smaatridi", "les_kjarni", "les_kjarni_eigin"], "lesskilningur", "full"]);
   assert.deepEqual(patternsOfNode(node), ["adalatridi"]);
   assert.ok(patternById("adalatridi").types.includes("les_adal"));
 });

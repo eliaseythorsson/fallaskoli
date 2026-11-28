@@ -42,6 +42,16 @@
                      þröngt / vítt / rangt) — the app says which, after
                      Brown & Day (1983)
 
+   With server grading on for the pupil (issue #39; DLD-PLAN §4, §6), two
+   more, written in the pupil's own words and read on the server against
+   the text's marks (server/rubric-kjarni.mjs, server/rubric-saga.mjs):
+
+     les_kjarni_eigin  the main idea of a subject text, in one sentence
+     les_saga_eigin    a short summary of a story
+
+   The browser sends the text's id and the answer, never the text or its
+   marks: the server reads both from its own build data.
+
    The pronoun references (`ref`) are there for #33. */
 
 import { EX } from "../../../data/exercises.js";
@@ -310,6 +320,115 @@ export function taskGist(lex, view, rng) {
   }, [FX.exSeen(x.key)]);
 }
 
+/* ---------- in the pupil's own words, read on the server (issue #39) -------
+
+   Brown & Day's rules again, now written instead of picked: say what the
+   whole text is about (not one detail, not something that fits any text),
+   add nothing it does not say, and say it in your own words — not a
+   sentence of the text copied. The checklist lines and the one follow-up
+   question are OUR words (core/answer.js `checklistOf`); what each point
+   means for the model, and the copy check, are the server's. Nothing the
+   pupil writes here is kept, in progress or on the server (DLD-PLAN §6). */
+
+/** The type ids, which are also the kinds the server's reader knows. */
+export const KJARNI_EIGIN = "les_kjarni_eigin";
+export const SAGA_EIGIN = "les_saga_eigin";
+
+/** About how many words a gist is (DLD-PLAN §4: "at most about 15"). Said
+    to the pupil, not graded. */
+export const GIST_WORDS = 15;
+
+/** The rubric of a subject text's main idea. `adal` is the main point: it
+    alone decides right or wrong. */
+export const kjarniRubric = () => ({
+  main: "adal",
+  points: [
+    { id: "adal", label: "Aðalatriði textans er komið",
+      ask: "Um hvað fjalla flestar setningarnar í textanum? Hvað segja hinar setningarnar nánar frá?" },
+    { id: "rett", label: "Ekkert sem stendur ekki í textanum",
+      ask: "Lestu textann aftur. Stendur allt sem þú skrifaðir í honum?" },
+    { id: "eigin", label: "Með þínum eigin orðum",
+      ask: "Geturðu sagt þetta með þínum eigin orðum, í stað þess að afrita setningu úr textanum?" },
+  ],
+});
+
+/** The rubric of a story's summary. `adal` — the problem and how it
+    ended — is the main point. */
+export const sagaRubric = () => ({
+  main: "adal",
+  points: [
+    { id: "adal", label: "Þú segir frá vandanum og hvernig fór",
+      ask: "Hvaða vandi kom upp í sögunni, og hvernig fór að lokum?" },
+    { id: "hlutar", label: "Það helsta sem gerðist er með, í réttri röð",
+      ask: "Hvað gerðu persónurnar til að leysa vandann? Segðu frá því í sömu röð og í sögunni." },
+    { id: "rett", label: "Ekkert sem stendur ekki í sögunni",
+      ask: "Lestu söguna aftur. Stendur allt sem þú skrifaðir í henni?" },
+    { id: "eigin", label: "Með þínum eigin orðum",
+      ask: "Geturðu sagt þetta með þínum eigin orðum, í stað þess að afrita setningar úr sögunni?" },
+  ],
+});
+
+/** Every subject text (each has exactly one [aðalatriði]: the reader's rule). */
+const OWN_GIST = SUBJECT.map((tx) => ({ tx, lvl: tx.lvl, key: `les:${tx.id}:eigin` }));
+/** Stories of a paragraph or more (þyngd 2 and up): a story of two or three
+    sentences is retold by copying it. */
+const OWN_SUMMARY = (EX.textar || []).filter((tx) => tx.k === "saga" && tx.lvl >= 2)
+  .map((tx) => ({ tx, lvl: tx.lvl, key: `les:${tx.id}:endursogn` }));
+
+/** A question read on the server: the text above, a box below (the
+    `meaning` renderer with `text` and `prompt`). */
+function ownWords(view, x, { typeId, rubric, prompt, base, cell, after }) {
+  return built({
+    type: "meaning", typeId, grader: "server", skill: "lesskilningur", i: -1,
+    n: null, word: null,
+    text: x.tx.s.map((s) => s.t), kind: x.tx.k,
+    prompt,
+    /* What the server is told: which text — never the text, never its marks. */
+    read: { kind: typeId, context: { texti: x.tx.id } },
+    rubric,
+    /* Shown with the verdict, once the answer has been read. */
+    after,
+    base, lvl: levelFor(view.policy, x.lvl), cell, item: x.key,
+  }, [FX.exSeen(x.key)]);
+}
+
+/** The main idea of a subject text, in one sentence of the pupil's own.
+    @param {any} lex @param {View} view @param {() => number} rng */
+export function taskOwnGist(lex, view, rng) {
+  const x = pickItem(view, rng, OWN_GIST, "kjarni:eigin");
+  if (!x) return null;
+  const main = x.tx.s.find((s) => s.p === "aðalatriði");
+  return ownWords(view, x, {
+    typeId: KJARNI_EIGIN, rubric: kjarniRubric(), base: 10, cell: "kjarni:eigin",
+    prompt: {
+      eyebrow: "Aðalatriðið með þínum orðum",
+      question: "Hvað er aðalatriði textans? Skrifaðu það í einni setningu með þínum eigin orðum.",
+      hint: `Ekki meira en um ${GIST_WORDS} orð. Ekki afrita setningu úr textanum.`,
+      placeholder: "",
+    },
+    after: main ? { label: "Aðalatriðið í textanum", text: main.t } : null,
+  });
+}
+
+/** A story retold in short, in the pupil's own words.
+    @param {any} lex @param {View} view @param {() => number} rng */
+export function taskOwnSummary(lex, view, rng) {
+  const x = pickItem(view, rng, OWN_SUMMARY, "samantekt:eigin");
+  if (!x) return null;
+  /* The summary written with the story, if it has one (`? [samantekt]`). */
+  const model = x.tx.q.find((q) => q.k === "samantekt");
+  return ownWords(view, x, {
+    typeId: SAGA_EIGIN, rubric: sagaRubric(), base: 12, cell: "samantekt:eigin",
+    prompt: {
+      eyebrow: "Sagan með þínum orðum",
+      question: "Segðu frá sögunni í stuttu máli með þínum eigin orðum.",
+      hint: "Tvær til fjórar setningar: hver vandinn var, hvað persónurnar gerðu og hvernig fór. Ekki afrita setningar úr sögunni.",
+      placeholder: "",
+    },
+    after: model ? { label: "Ein leið til að segja söguna stutt", text: model.a } : null,
+  });
+}
+
 /** The builders of this category, by question type id. What each type is —
    its name, renderer, tags, bands and weight — is declared in
    core/catalogue.js; tasks/registry.js joins the two.
@@ -322,4 +441,6 @@ export const BUILDERS = {
   les_setning: { build: taskMainSentence },
   les_smaatridi: { build: taskDetails },
   les_kjarni: { build: taskGist },
+  les_kjarni_eigin: { build: taskOwnGist },
+  les_saga_eigin: { build: taskOwnSummary },
 };

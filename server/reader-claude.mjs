@@ -73,23 +73,30 @@ const WORD = /\p{L}+/gu;
 /**
  * The text with every name in it replaced: the words of `names` (any case,
  * with up to three letters of ending: *Jón*, *Jóni*, *Jóns*) and every word
- * with a capital letter that does not begin a sentence. `back(s)` gives a
- * quote its names again.
- * @param {string} text @param {string[]} [names]
+ * with a capital letter that does not begin a sentence — except the words
+ * of `keep` (and their endings). `back(s)` gives a quote its names again.
+ * @param {string} text @param {string[]} [names] @param {string[]} [keep]
  */
-export function stripNames(text, names = []) {
-  const known = new Set();
+export function stripNames(text, names = [], keep = []) {
   /* A name and its stem without the last letter (*jonni*, *jonn-a*); an
      ending that changes a vowel inside (*Anna*, *Önnu*) is not followed. */
-  for (const n of names || []) for (const w of String(n).toLowerCase().match(WORD) || []) {
-    if (w.length >= 3) known.add(w);
-    if (w.length >= 4) known.add(w.slice(0, -1));
-  }
-  const isKnown = (w) => {
-    const l = w.toLowerCase();
-    for (let k = 0; k <= 3 && k < l.length; k++) if (known.has(l.slice(0, l.length - k))) return true;
-    return false;
+  const stems = (list) => {
+    const set = new Set();
+    for (const n of list || []) for (const w of String(n).toLowerCase().match(WORD) || []) {
+      if (w.length >= 3) set.add(w);
+      if (w.length >= 4) set.add(w.slice(0, -1));
+    }
+    return (w) => {
+      const l = w.toLowerCase();
+      for (let k = 0; k <= 3 && k < l.length; k++) if (set.has(l.slice(0, l.length - k))) return true;
+      return false;
+    };
   };
+  const isKnown = stems(names);
+  /* `keep` (#39): the names of a text everybody reads — the story's
+     characters, *Jón og Sara* — are not the pupil's, and the model needs
+     them to see whether a summary follows the story. */
+  const isKept = stems(keep);
   const place = new Map();      // the word as written -> its placeholder
   let out = "", at = 0;
   for (const m of text.matchAll(WORD)) {
@@ -97,7 +104,7 @@ export function stripNames(text, names = []) {
     const before = text.slice(0, m.index).trimEnd();
     const starts = !before || /[.!?:;"“„]$/.test(before);
     const capital = w[0] !== w[0].toLowerCase();
-    if (!isKnown(w) && !(capital && !starts)) continue;
+    if (isKept(w) || (!isKnown(w) && !(capital && !starts))) continue;
     if (!place.has(w)) place.set(w, `[nafn${place.size + 1}]`);
     out += text.slice(at, m.index) + place.get(w);
     at = m.index + w.length;
@@ -171,11 +178,16 @@ export function costOf(model, usage) {
 /**
  * @param {{
  *   apiKey: string, model?: "opus"|"fable", effort?: string,
- *   rubric: { points: string[], prompt: (text: string, context: any) => ({system: string, user: string} | null) },
+ *   rubric: { points: string[], prompt: (text: string, context: any) => ({system: string, user: string} | null),
+ *             keep?: (context: any) => string[],
+ *             check?: (findings: object[], text: string, context: any) => object[] },
  *   fetch?: typeof fetch, log?: (line: object) => void, today?: () => string, maxTokens?: number,
  * }} opts
  *   `rubric`: what to ask (server/rubric-eigin.mjs) — `prompt` returns null
- *   for a context it cannot grade (an unknown word): "failed".
+ *   for a context it cannot grade (an unknown word): "failed". Optional
+ *   (#39, server/rubric-kjarni.mjs): `keep`, words not to strip as names
+ *   (a story's characters); `check`, the rubric's own finding on the text
+ *   as the pupil wrote it, after the model's (the copy check).
  *   `log`: where the cost of each call goes (server.mjs: a file of its own).
  */
 export function claudePlug({ apiKey, model = "opus", effort = "low", rubric, fetch: fetchFn = globalThis.fetch,
@@ -184,7 +196,7 @@ export function claudePlug({ apiKey, model = "opus", effort = "low", rubric, fet
   return {
     async read(text, { context = null, signal } = {}) {
       const names = context && Array.isArray(context.names) ? context.names : [];
-      const clean = stripNames(text, names);
+      const clean = stripNames(text, names, rubric.keep ? rubric.keep(context) : []);
       const p = rubric.prompt(clean.text, context);
       if (!p) throw fault("failed");
       let res;
@@ -209,7 +221,10 @@ export function claudePlug({ apiKey, model = "opus", effort = "low", rubric, fet
       try { body = await res.json(); } catch { throw fault("failed"); }
       /* Paid for whether or not it can be used: logged first. */
       log({ day: today(), model: m.id, effort, ...costOf(model, body && body.usage) });
-      return { findings: findingsOf(body, rubric.points, clean.back) };
+      const findings = findingsOf(body, rubric.points, clean.back);
+      /* A rubric's own check on the pupil's text as written (#39: a
+         sentence copied from the text is not the pupil's own words). */
+      return { findings: rubric.check ? rubric.check(findings, text, context) : findings };
     },
   };
 }

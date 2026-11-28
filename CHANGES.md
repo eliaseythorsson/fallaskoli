@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Aðalatriði og samantekt með eigin orðum, lesin yfir (#39)
+- **Fyrir nemanda sem stjórnandinn hefur kveikt á** („Leyfa spurningar sem þjónninn les“) fær
+  Lesskilningur tvær nýjar spurningagerðir sem þjónninn lætur Claude lesa yfir eftir matskvarða:
+  **Aðalatriðið með þínum orðum** (aðalatriði fræðitexta í einni setningu, um 15 orð) og
+  **Sagan með þínum orðum** (stutt samantekt sögu). Allir aðrir sjá þær aldrei.
+- Svarið er metið eftir merkjum textans sjálfs (aðalatriði, smáatriði, sögukortið). Vafrinn sendir
+  aðeins auðkenni textans og svarið; þjónninn les textann úr eigin gögnum.
+- Matskvarðinn: aðalatriðið (eða vandinn og hvernig fór), það helsta í réttri röð (saga), ekkert sem
+  stendur ekki í textanum, og eigin orð. **Setning úr textanum, eða átta orð í röð, afrituð orðrétt** er
+  ekki eigin orð, hvað sem líkanið segir. Gátlisti og ein spurning, ein endurbót, XP fyrir að ljúka og
+  bæta, eins og á Orðakortinu. Að lokum sést aðalatriði textans (eða samantektin sem fylgir sögunni).
+- Svarið er hvergi geymt, hvorki á þjóninum né í framvindu nemandans (`docs/PRIVACY.md` §1h).
+- Prófin nota handskrifuð svör á nákvæmu sniði Messages API; `tools/record-grading.mjs --kind
+  les_kjarni_eigin|les_saga_eigin --texti …` tekur upp raunveruleg. Prófin kalla aldrei á Claude.
+
 ### Lesskilningur: aðalatriði, smáatriði og samantekt í fræðitextum (#32)
 - **Þrjár nýjar spurningagerðir um fræðitexta:** „Hvar er aðalatriðið?“ (smellt á setninguna sem segir
   aðalatriðið), „Hvað styður aðalatriðið?“ (smellt á smáatriðin; ein setning fjallar um annað og á ekki
