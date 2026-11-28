@@ -141,6 +141,7 @@ export const NODE_PATTERNS = {
   "les-adalatridi": ["adalatridi"],
   "les-sogukort": ["sogukort"],
   "fras-bygging": ["sogubygging"],
+  "fras-tengsl": ["sogumal"],
 };
 
 /** Patterns of no single node: read from every written form. "Ógreint" (a

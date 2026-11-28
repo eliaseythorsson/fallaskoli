@@ -265,6 +265,10 @@ export const NODES = [
      one (steps 4–6, written stories, come with the server grader). */
   { id: "fras-bygging", nm: "Bygging sögu: röð og hlutar", cat: "frasogn", year: 8,
     hv: "skopun", types: ["fr_rod", "fr_vantar", "fr_setning"], lesson: "frasogn", cover: "full" },
+  /* #36: step 3 of the path — the words that hold a story together and say
+     what its people want and feel (DLD-PLAN §5: taught directly). */
+  { id: "fras-tengsl", nm: "Tengiorð og orð um hugsanir í sögu", cat: "frasogn", year: 8,
+    hv: "skopun", types: ["fr_tengiord", "fr_innra"], lesson: "frasogn", cover: "full" },
 
   /* ---- Stafsetning og greinarmerki: a criterion with no category yet ---- */
   { id: "st-n-nn", nm: "n eða nn", cat: "stafsetning", year: 8, hv: "stafsetning",

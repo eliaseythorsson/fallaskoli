@@ -1,0 +1,49 @@
+# Rafmagnið fer — saga með öllum sex hlutum sögukortsins (einn þáttur).
+# Skrifuð fyrir Frásögn (mál #36): í henni eru tengiorð og orð um
+# hugarástand, og í sumum setningum er eyða þar sem nemandinn velur orðið
+# sem passar. Í hverri eyðu passar aðeins eitt orð; ástæðan fyrir því að
+# hvert hinna passar ekki stendur við það.
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er
+#   (aðstæður, vandi, markmið, tilraun, útkoma, viðbrögð),
+#   hans{Tómas}, hún{Una} og henni{Una} segja til hvers fornafnið vísar,
+#   _orð_ í setningu er eyða: nemandinn velur orðið sem passar.
+#   ~ [tengiorð] eða ~ [hugarástand] í línunni fyrir neðan segir hvers konar
+#   eyða það er og hvers vegna rétta orðið passar; hver ~ lína þar á eftir er
+#   rangur kostur og ástæðan fyrir því að hann passar ekki (rangt | af hverju ekki).
+#   ? [samantekt] er spurning með svörin í línunum fyrir neðan:
+#   + er rétta samantektin, - [hluti] röng samantekt og hlutinn sem hún brýtur,
+#   ! er skýringin sem nemandinn les á eftir.
+#
+# Reglur eyðanna eru þær sömu og í saga-hjolid.txt.
+#
+# þyngd: 3
+# tegund: saga
+# orð:
+
+[aðstæður] Tómas og Una systir hans{Tómas} voru ein heima um kvöldið.
+[vandi] Allt í einu fór rafmagnið og það varð alveg dimmt í húsinu.
+[vandi] Una fór að gráta _af því að_ hún{Una} var hrædd í myrkrinu.
+~ [tengiorð] *Af því að* segir hvers vegna: Una grét vegna þess að hún var hrædd.
+~ þess vegna | Á eftir *þess vegna* kemur sögnin strax (*þess vegna var hún*). Hér kemur *hún* á undan sögninni.
+~ en | *En* tengir andstæður. Hér er engin andstæða: sá sem er hræddur í myrkrinu fer oft að gráta.
+[markmið] Tómas _vildi_ finna vasaljós handa henni{Una}.
+~ [hugarástand] *Vildi* segir hvert markmið Tómasar var: hann fór svo inn í eldhús og leitaði.
+~ vildi ekki | Tómas fór inn í eldhús og leitaði að vasaljósi. Sá sem vill ekki finna vasaljós leitar ekki að því.
+~ nennti ekki að | Tómas fór inn í eldhús og leitaði að vasaljósi. Sá sem nennir ekki að finna vasaljós leitar ekki að því.
+[tilraun] Hann{Tómas} fór varlega inn í eldhúsið og fann vasaljós í skúffu.
+[útkoma] _Síðan_ kveikti hann{Tómas} á vasaljósinu og þá varð bjart aftur.
+~ [tengiorð] *Síðan* segir hvað gerðist næst: fyrst fann Tómas vasaljósið og svo kveikti hann á því.
+~ Af því að | Á eftir *af því að* kemur frumlagið á undan sögninni: *af því að hann kveikti*. Hér kemur sögnin *kveikti* strax.
+~ En | Á eftir *en* kemur sögnin ekki strax: *en hann kveikti*, ekki *en kveikti hann*.
+[viðbrögð] Una varð _fegin_ og hætti að gráta.
+~ [hugarástand] *Fegin* passar: ljósið var komið aftur og Una hætti að gráta. Sá sem er feginn er glaður af því að eitthvað slæmt er búið.
+~ hrædd | Nú var orðið bjart aftur, svo að Una var ekki lengur hrædd. Og sá sem verður hræddur hættir ekki að gráta.
+~ reið | Bróðir hennar hafði fundið ljós handa henni. Una hafði enga ástæðu til að vera reið.
+
+? [samantekt] Hvaða samantekt passar við söguna?
++ Rafmagnið fór og Una varð hrædd, en Tómas fann vasaljós og þá varð bjart aftur.
+- [útkoma] Rafmagnið fór og Tómas fann ekkert vasaljós, svo að þau sátu í myrkrinu allt kvöldið.
+- [viðbrögð] Rafmagnið fór, en Tómas fann vasaljós og Una varð reið við hann.
+! Rafmagnið fer og Una verður hrædd (vandi), Tómas leitar að vasaljósi (tilraun) og finnur það (útkoma). Una verður fegin (viðbrögð). Rétta samantektin fylgir þessu.

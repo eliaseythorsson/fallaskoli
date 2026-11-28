@@ -18,19 +18,34 @@
    once more (core/run.js keeps it, ui/session.js draws it): CONTEXT.md,
    "Frásögn session".
 
-   With six stories none of the three types follows the band (bands: [1],
+   Step 3 (issue #36), from a gap marked in a story's file
+   (pipeline/story_gaps.py, README "Efnið"):
+
+     fr_tengiord  choose the connective in a story sentence: af því að,
+                  þess vegna, þegar, síðan, en (issue #28's five)
+     fr_innra     choose the word for what someone wants or feels there
+                  (vildi, varð glöð, var fegin …)
+
+   Each wrong option has its reason in the file (`whyNot`), as in ob_tengiord.
+   Step 3 is unlocked by þyngd: below STEP3_FROM these two build nothing,
+   and the skill's questions are steps 1 and 2 (bands [1, 3] in the
+   catalogue). A review of an item already met is built at any þyngd, and
+   so is step 3 in a session that may not ask steps 1 and 2 (a teacher's
+   assignment of node fras-tengsl).
+
+   With nine stories none of the types follows the band further (bands: [1],
    as tasks/lesskilningur.js `FEW`); the policy's levels still apply. */
 
 import { EX } from "../../../data/exercises.js";
 import { built, FX } from "./effects.js";
-import { pick, shuffle, levelFor, itemsForBand, forcedItem, cellWanted } from "./shared.js";
+import { pick, shuffle, levelFor, itemsForBand, forcedItem, cellWanted, bandFor } from "./shared.js";
 import { STORY_PART_IDS, storyPart } from "../core/storymap.js";
 
 /** @typedef {import("../types").View} View */
 
 const SKILL = "frasogn";
 /** Fewer items than this: every one at every band (tasks/shared.js). */
-const FEW = 40;
+const FEW = 80;   /* 40 until #36: two more stories gave fr_setning 59 items */
 
 /** The stories: every saga of content/textar/, whole (all its episodes). */
 const STORIES = (EX.textar || []).filter((tx) => tx.k === "saga");
@@ -153,8 +168,62 @@ export function taskMissingSentence(lex, view, rng) {
   }, [FX.exSeen(x.key)]);
 }
 
+/* ---------- step 3: connectives and inner-state words in a story ------- */
+
+/** The þyngd from which step 3 is asked (docs/DLD-PLAN.md §5: the path is
+    unlocked by þyngd, after steps 1 and 2). */
+export const STEP3_FROM = 3;
+
+/** Is step 3 still shut? Below STEP3_FROM, while steps 1 and 2 are there to
+    be done. A session that may ask neither (a teacher who set exactly this
+    node, a curriculum without them) has no path to follow, so no door. */
+const STEPS_1_2 = ["fr_rod", "fr_vantar", "fr_setning"];
+const locked = (view) => bandFor(view, SKILL) < STEP3_FROM && STEPS_1_2.some((id) => view.policy.type(id));
+
+/** Every gap of a kind ("tengi" | "innra") in every story. */
+const gapItems = (k) => STORIES.flatMap((tx) => tx.s.map((s, j) => ({ tx, j, g: s.g }))
+  .filter((x) => x.g && x.g.k === k)
+  .map((x) => ({ ...x, lvl: x.tx.lvl, key: `fr:${x.tx.id}/${k}/${x.j}` })));
+const CONNECTIVE_ITEMS = gapItems("tengi");
+const INNER_ITEMS = gapItems("innra");
+
+const GAP_ASK = {
+  tengi: { title: "Tengiorð í sögu", cell: "tengi",
+    question: "Hvaða orð tengir setninguna best við söguna? Lestu það sem kemur á undan og á eftir." },
+  innra: { title: "Hvað vildi persónan, hvernig leið henni?", cell: "innra",
+    question: "Hvaða orð passar við söguna á þessum stað? Hugsaðu um hvað hefur gerst og hvað gerist næst." },
+};
+
+/** One gap in a story: the story one sentence a line, the gapped sentence
+    with ___, its options; the reason for each wrong one (`whyNot`). */
+function gapTask(view, rng, items, k) {
+  const want = forcedItem(view);
+  if (!want && locked(view)) return null;
+  const ask = GAP_ASK[k];
+  const mine = items.filter(() => cellWanted(view, ask.cell));
+  const x = want ? items.find((y) => y.key === want)
+    : pick(itemsForBand(view, SKILL, mine, (y) => y.key, FEW), rng);
+  if (!x) return null;
+  const { g } = x;
+  return built({
+    type: "choice", skill: SKILL, i: -1,
+    lines: x.tx.s.map((s, j) => (j === x.j ? { t: g.t, blank: true } : { t: s.t })), kind: "saga",
+    title: ask.title, question: ask.question,
+    options: shuffle([g.a, ...g.w], rng), answer: g.a, why: g.why, whyNot: { ...g.no },
+    ...whole(x.tx),
+    base: 8, lvl: levelFor(view.policy, x.lvl), cell: ask.cell, word: null,
+    item: x.key, tags: ["sogumal"], miss: ["sogumal"],
+  }, [FX.exSeen(x.key)]);
+}
+
+/** @param {any} lex @param {View} view @param {() => number} rng */
+export const taskConnective = (lex, view, rng) => gapTask(view, rng, CONNECTIVE_ITEMS, "tengi");
+/** @param {any} lex @param {View} view @param {() => number} rng */
+export const taskInnerState = (lex, view, rng) => gapTask(view, rng, INNER_ITEMS, "innra");
+
 /** For tests and tools: the items of each type. */
-export const FRASOGN_ITEMS = Object.freeze({ fr_rod: ORDER_ITEMS, fr_vantar: PART_ITEMS, fr_setning: SENTENCE_ITEMS });
+export const FRASOGN_ITEMS = Object.freeze({ fr_rod: ORDER_ITEMS, fr_vantar: PART_ITEMS, fr_setning: SENTENCE_ITEMS,
+  fr_tengiord: CONNECTIVE_ITEMS, fr_innra: INNER_ITEMS });
 
 /** The builders of this category, by question type id. What each type is —
    its name, renderer, tags, bands and weight — is declared in
@@ -164,4 +233,6 @@ export const BUILDERS = {
   fr_rod: { build: taskOrder },
   fr_vantar: { build: taskMissingPart },
   fr_setning: { build: taskMissingSentence },
+  fr_tengiord: { build: taskConnective },
+  fr_innra: { build: taskInnerState },
 };

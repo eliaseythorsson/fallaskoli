@@ -179,6 +179,36 @@ sérstaklega:
   spurningarnar *Hvar er aðalatriðið?*, *Hvað styður aðalatriðið?* og *Besta
   samantektin* (í `src/js/tasks/lesskilningur.js` og `src/js/core/catalogue.js`).
 
+## Frásögn: eyður í sögum — tengiorð og orð um hugarástand (#36)
+Skrá: `content/textar/saga-hjolid.txt`, `content/textar/saga-rafmagnid.txt`
+Leita: `En _þegar_ hún`, `varð mjög _glöð_`, `Katla _vildi_ búa til`, `_En_ snjórinn var of þurr`, `Katla var mjög _stolt_`, `Gummi svaf yfir sig`, `Lína vann keppnina`, `Gummi var seinn af því að hann svaf yfir sig`
+Úr: feat/36-frasogn-connectives (atriði 36)
+
+Nýju sögurnar tvær (Daníel og hjólið, Tómas og Una í rafmagnsleysinu), eyðurnar
+í þeim og í sögunum um afmæliskökuna og snjókarlinn, Lesefnishlutarnir *Orð sem
+tengja atburði* og *Orð um hugsanir og tilfinningar* og sýnidæmin tvö eru samin
+af gervigreind og hafa ekki verið lesin af móðurmálshafa. Í hverri eyðu á
+**aðeins eitt** orð að passa. Þrennt þarf að athuga við hverja eyðu:
+
+1. Passar rétta orðið, og er setningin eðlileg með því?
+2. Er hvert rangt orð örugglega rangt hér, með sögunni allri í huga? Ef hægt er
+   að verja það á það að fara út.
+3. Er ástæðan sem stendur við ranga orðið (nemandinn les hana) rétt og skýr?
+
+Það sem höfundurinn var síst viss um:
+
+- *Una varð fegin og hætti að gráta* með *hrædd* og *reið* sem röngum orðum, og
+  *Katla var mjög stolt* með *hrædd* og *reið*: er nóg í sögunni til að útiloka þau?
+- *vildi ekki* og *nennti ekki að* sem röng orð við *vildi* (þrjár eyður): þau
+  eru útilokuð af því sem persónan gerir á eftir. Er það nógu skýrt?
+- *En* sem rangt orð þar sem sögnin kemur strax (*En þurfti hann*, *En bað hann*,
+  *En kveikti hann*) — sama rök og í tengiorðum máls #28.
+- *Af því að snjórinn var of þurr …* sem rangur kostur: setning sem stendur ein
+  með *af því að*.
+- *teyma hjólið*, *skipti um slöngu*, *Allt í einu fór rafmagnið*, *voru ein heima*.
+- *hélt* er kennt á Lesefnissíðunni en ekki spurt í eyðu: engin eyða fannst þar sem
+  aðeins *hélt* passaði og öll röngu orðin væru rétt mynduð.
+
 # Utan síðunnar
 
 Texti sem er ekki á yfirlitssíðunni. Skráin er nefnd við hvert atriði.
@@ -350,3 +380,14 @@ Einnig reglan *Bygging sögu* í src/js/core/diagnosis.js, heiti flokksins
 *Frásögn* og lýsing hans (*Að byggja upp sögu: röð atburða og hlutar
 sögukortsins*) í src/js/core/skills.js, heiti hnútsins *Bygging sögu: röð og
 hlutar* og lýsingar spurningategundanna þriggja í src/js/core/catalogue.js.
+
+## Frásögn: eyður í sögum — textar í spurningunum (#36)
+Úr: feat/36-frasogn-connectives (atriði 36)
+
+Fyrirsagnirnar *Tengiorð í sögu* og *Hvað vildi persónan, hvernig leið henni?*;
+spurningarnar *Hvaða orð tengir setninguna best við söguna? Lestu það sem kemur
+á undan og á eftir.* og *Hvaða orð passar við söguna á þessum stað? Hugsaðu um
+hvað hefur gerst og hvað gerist næst.* (src/js/tasks/frasogn.js); reglan
+*Tengiorð og hugsanir í sögu* (src/js/core/diagnosis.js), heiti hnútsins
+*Tengiorð og orð um hugsanir í sögu* (src/js/core/curriculum.js) og lýsingar
+tegundanna tveggja í src/js/core/catalogue.js.

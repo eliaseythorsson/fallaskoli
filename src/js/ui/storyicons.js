@@ -55,10 +55,14 @@ export const storyMapHTML = () => `<ol class="storymap">${STORY_PARTS.map((p) =>
 
 /** A story as lines, one sentence each (Frásögn, issue #35). A line
     `{ gap: true }` is where a sentence was taken out; with `p` the gap shows
-    its part's icon, labelled. @param {{ t?: string, p?: string, gap?: boolean }[]} lines */
+    its part's icon, labelled. A line `{ t, blank: true }` (issue #36) is a
+    sentence with one word or phrase missing, ___ in its text.
+    @param {{ t?: string, p?: string, gap?: boolean, blank?: boolean }[]} lines */
 export const storyLinesHTML = (lines) => `<ol class="storylines">${lines.map((l) => (l.gap
   ? `<li class="storygap">${l.p ? storyIconHTML(l.p, { label: true }) + " " : ""}<span class="gapmark">Hér vantar setningu</span></li>`
-  : `<li>${esc(l.t || "")}</li>`)).join("")}</ol>`;
+  : l.blank /* issue #36: a word missing inside the sentence, ___ in its text */
+    ? `<li class="storyblank">${esc(l.t || "").split("___").join('<span class="blank">?</span>')}</li>`
+    : `<li>${esc(l.t || "")}</li>`)).join("")}</ol>`;
 
 /** The whole story, in its order, each sentence with its part's icon: shown
     when a Frásögn question has been answered and at the end of a session

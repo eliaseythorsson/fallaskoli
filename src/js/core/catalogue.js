@@ -608,6 +608,22 @@ const LIST = [
     renderer: "choice", weight: 4, recall: false, grader: "app",
     tags: ["les"],
     bands: [1] },
+  /* #36 (DLD-PLAN §5): Frásögn, step 3 — a connective and a word for an
+     inner state, each in a gap marked in a story's file, with the reason
+     each wrong option fails. Unlocked by þyngd: nothing below 3
+     (tasks/frasogn.js STEP3_FROM), the same questions from 3 up. */
+  { id: "fr_tengiord", skill: "frasogn",
+    nm: "Tengiorð í sögu",
+    ds: "Veldu tengiorðið sem passar í söguna: af því að, þess vegna, þegar, síðan eða en",
+    renderer: "choice", weight: 4, recall: false, grader: "app",
+    tags: ["sogumal"],
+    bands: [1, 3] },
+  { id: "fr_innra", skill: "frasogn",
+    nm: "Hvað vildi persónan, hvernig leið henni?",
+    ds: "Veldu orðið um hugsanir eða tilfinningar sem passar í söguna: vildi, glöð, fegin …",
+    renderer: "choice", weight: 4, recall: false, grader: "app",
+    tags: ["sogumal"],
+    bands: [1, 3] },
 ];
 
 /** What is wrong with a list of declarations, as sentences; empty when

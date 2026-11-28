@@ -50,6 +50,8 @@ import itertools
 import os
 import re
 
+import story_gaps
+
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "content")
 EMPTY = "(ekkert)"
 
@@ -235,6 +237,10 @@ def groups(rel, key_col, columns):
 #                  has two or three episodes, each with its own vandi,
 #                  tilraun and útkoma. The line stands before the episode's
 #                  first sentence; a story without one is one episode.
+#   a gap          (issue #36) "_word_" in a sentence and "~" lines under it:
+#                  a connective or inner-state word for the pupil to choose.
+#                  Read and checked by pipeline/story_gaps.py (its header has
+#                  the format); read_text only hands it the lines.
 #
 # `texts()` is the ONE reader, and every check on a text is here; the build
 # (pipeline/build_exercises.py) only consumes what it returns, and adds what
@@ -498,6 +504,12 @@ def read_text(path, rel, lookup=None, lino=None):
         for k in ("þyngd", "tegund", "orð"):
             if k not in head:
                 bad("hausinn vantar „# %s:“ á undan textanum / the header line is missing" % k)
+        if line.startswith("~"):
+            # a gap's block (issue #36): pipeline/story_gaps.py
+            if questions:
+                bad("eyða og ~ línurnar hennar standa á undan spurningunum / a gap comes before the questions")
+            story_gaps.line(sentences, no, line, bad)
+            continue
         if line.startswith("!"):
             if not questions or questions[-1]["last"] != no - 1 or questions[-1]["why"]:
                 bad("skýring (!) á að standa í línunni á eftir spurningu / an explanation follows its question")
@@ -594,9 +606,10 @@ def read_text(path, rel, lookup=None, lino=None):
                 "an explanation, an episode or a comment")
         if questions:
             bad("setningar textans eiga að standa á undan spurningunum / the sentences come before the questions")
-        text, words, refs = _sentence(m.group(2), rel, bad)
+        body, gap = story_gaps.take(m.group(2), bad)
+        text, words, refs = _sentence(body, rel, bad)
         sentences.append({"line": no, "mark": m.group(1).strip(), "t": text, "words": words, "refs": refs,
-                          "e": len(episodes)})
+                          "e": len(episodes), "gap": gap and dict(gap, last=no)})
 
     for k in ("þyngd", "tegund", "orð"):
         if k not in head:
@@ -668,6 +681,9 @@ def read_text(path, rel, lookup=None, lino=None):
             if missing:
                 stop(at, "hver þáttur hefur %s — í þætti %d vantar: %s / an episode lacks a part"
                      % (", ".join(EPISODE_NEEDS), n, ", ".join(missing)))
+
+    # a gap for the pupil to fill, and its block (issue #36)
+    story_gaps.check(sentences, kind, stop)
 
     # the pronouns: the referent stands earlier, in the same gender and number
     for si, s in enumerate(sentences):
@@ -747,6 +763,10 @@ def texts(lookup=None, folder=None):
                     without punctuation.
                   e: the episode the sentence is in, 1–3, or 0 in a story
                     without episodes (and in a subject text) (#31)
+                  gap: None, or a gap for the pupil (#36, story_gaps.py):
+                    {k ("tengi" | "innra"), a (the right answer), t (the
+                    sentence with ___ for it), why, w (the wrong options),
+                    no ({wrong: why not}), line}
       spurningar  [{line, mark, q, a (the right answer), w (the wrong ones), why,
                     br (a summary question: what each wrong one breaks — a
                     story-map part or "röð", in the order of w; a gist

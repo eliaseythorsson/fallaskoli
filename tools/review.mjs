@@ -148,6 +148,15 @@ export function textItem(rel, src) {
     if (h) { head[h[1]] = h[2].trim(); return; }
     if (line.startsWith("#")) { if (!sentences.length) above.push(line.replace(/^# ?/, "")); return; }
     if (line.startsWith("!")) { if (questions.length) questions[questions.length - 1].why = line.slice(1).trim(); return; }
+    /* #36: a gap's block under its sentence — the kind and why the right word
+       fits, then each wrong option and why it does not */
+    if (line.startsWith("~") && sentences.length) {
+      const s = sentences[sentences.length - 1], body = line.slice(1).trim();
+      const k = /^\[([^\]]*)\]\s*(.*)$/.exec(body);
+      if (k) s.gap = { kind: k[1], why: k[2], wrong: [] };
+      else if (s.gap) s.gap.wrong.push(body.split("|").map((c) => c.trim()));
+      return;
+    }
     if (line.startsWith("?")) {
       const m = /^\?\s*\[([^\]]*)\]\s*(.*)$/.exec(line) || [null, "", line.slice(1).trim()];
       const [q, a, ...w] = m[2].split("|").map((c) => c.trim());
@@ -166,7 +175,7 @@ export function textItem(rel, src) {
     if (!first) first = i + 1;
     sentences.push({ mark: m ? m[1] : "", written: m ? m[2] : line });
   });
-  const clean = (t) => t.replace(/\{[^{}]*\}/g, "");
+  const clean = (t) => t.replace(/\{[^{}]*\}/g, "").replace(/_([^_]*)_/g, "$1");
   const said = sentences.filter((s) => !s.episode);
   const q0 = questions[0] || { q: "", a: "", w: [], why: "" };
   return {
@@ -177,7 +186,9 @@ export function textItem(rel, src) {
     fields: [["tegund", head["tegund"] || ""], ["orð", head["orð"] || ""],
       ["röng svör", q0.w.join(" · ")]].filter(([, v]) => v),
     body: [
-      ...sentences.map((s) => (s.episode ? ["q", s.episode] : ["li", `[${s.mark}] ${s.written}`])),
+      ...sentences.flatMap((s) => (s.episode ? [["q", s.episode]] : [["li", `[${s.mark}] ${s.written}`],
+        ...(s.gap ? [["p", `Eyða (${s.gap.kind}): ${s.gap.why}`],
+          ...s.gap.wrong.map(([w, why]) => ["p", `✗ ${w} — ${why || ""}`])] : [])])),
       ...questions.slice(1).flatMap((q) => [["q", `${q.q} — ${q.a} (röng svör: ${q.w.join(" · ")})`], ["p", q.why]]),
     ],
     above: above.filter((x) => x.trim()),

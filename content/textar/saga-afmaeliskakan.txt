@@ -8,6 +8,10 @@
 #   ? [samantekt] er spurning með svörin í línunum fyrir neðan:
 #   + er rétta samantektin, - [hluti] röng samantekt og hlutinn sem hún brýtur
 #   ([röð]: atburðirnir í rangri röð), ! er skýringin sem nemandinn les á eftir.
+#   _orð_ í setningu er eyða (mál #36): nemandinn velur orðið sem passar.
+#   ~ [tengiorð] eða ~ [hugarástand] í línunni fyrir neðan segir hvers konar
+#   eyða það er og hvers vegna rétta orðið passar; hver ~ lína þar á eftir er
+#   rangur kostur og ástæðan fyrir því að hann passar ekki (rangt | af hverju ekki).
 #
 # þyngd: 3
 # tegund: saga
@@ -16,14 +20,20 @@
 = 1. þáttur
 [aðstæður] Mamma Elísu átti afmæli á laugardaginn.
 [markmið] Elísa ætlaði að baka köku handa henni{Mamma}.
-[vandi] En þegar hún{Elísa} opnaði skápinn var ekkert hveiti til.
+[vandi] En _þegar_ hún{Elísa} opnaði skápinn var ekkert hveiti til.
+~ [tengiorð] *Þegar* segir hvenær: Elísa sá að það vantaði hveiti um leið og hún opnaði skápinn.
+~ af því að | *Af því að* segir hvers vegna. En það vantaði ekki hveiti af því að Elísa opnaði skápinn.
+~ þess vegna | Á eftir *þess vegna* kemur sögnin strax (*þess vegna opnaði hún*). Hér kemur *hún* á undan sögninni.
 [tilraun] Elísa hljóp út í búð og keypti hveiti.
 [útkoma] Hún{Elísa} kom heim og bakaði kökuna.
 = 2. þáttur
 [vandi] Kakan var of lengi í ofninum og brann.
 [tilraun] Elísa skar brunna hlutann af og setti krem yfir kökuna.
 [útkoma] Enginn sá að kakan hafði brunnið.
-[viðbrögð] Mamma hennar{Elísa} varð mjög glöð og sagði að kakan væri frábær.
+[viðbrögð] Mamma hennar{Elísa} varð mjög _glöð_ og sagði að kakan væri frábær.
+~ [hugarástand] *Glöð* passar: mamma Elísu sagði að kakan væri frábær, og enginn sá að hún hafði brunnið.
+~ reið | Sá sem er reiður segir ekki að kakan sé frábær. Og mamma Elísu sá ekki að kakan hafði brunnið.
+~ fúl | Sá sem er fúll segir ekki að kakan sé frábær. Mamma Elísu var ánægð með kökuna.
 
 ? [samantekt] Hvaða samantekt passar við söguna?
 + Elísa þurfti fyrst að kaupa hveiti og svo brann kakan, en hún bjargaði kökunni og mamma hennar var ánægð.

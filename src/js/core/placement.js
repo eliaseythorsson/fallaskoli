@@ -116,6 +116,13 @@ export const PLACEMENT_TWICE = PLACEMENT_ORDER.filter((id) => skillById(id).plac
    pupil's own words has no right answer to learn from. */
 export const PLACEMENT_SKIP = new Set(["table", "villur", "meaning"]);
 
+/** Types that do not follow the level but are unlocked by it: nothing
+    below a þyngd, the same questions from it up (Frásögn step 3, #36,
+    tasks/frasogn.js STEP3_FROM). Their second band is a door, not a
+    measure, so the round counts them as flat: an answer there places
+    nothing, and a round must not grow by a skill for them. */
+export const UNLOCKED_BY_THYNGD = new Set(["fr_tengiord", "fr_innra"]);
+
 /**
  * The question types the round may ask, per skill: { skill: [typeId …] }.
  * A type that serves several skills (`anyOf`) is left out — its questions
@@ -136,7 +143,8 @@ export function placementTypes(types, P) {
     if (!P.skill(t.skill) || !P.type(t.id)) continue;
     (out[t.skill] ||= []).push(t.id);
   }
-  const flat = (id) => { const t = (types || []).find((x) => x.id === id); return !!t && Array.isArray(t.bands) && t.bands.length === 1; };
+  const flat = (id) => { const t = (types || []).find((x) => x.id === id);
+    return !!t && Array.isArray(t.bands) && (t.bands.length === 1 || UNLOCKED_BY_THYNGD.has(id)); };
   for (const skill of Object.keys(out)) if (out[skill].every(flat)) delete out[skill];
   return out;
 }

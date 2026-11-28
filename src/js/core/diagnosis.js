@@ -189,6 +189,10 @@ export const PATTERNS = [
   { id: "sogubygging", ok: "byggingu sögu", nm: "Bygging sögu",
     rule: "Saga gerist í röð: fyrst **aðstæður** og **vandi**, svo **markmið** og **tilraun**, síðast **útkoma** og **viðbrögð**. Fornafn eins og *hann* eða *hún* vísar aftur til einhvers sem er búið að nefna, og orsök kemur á undan afleiðingu. Spyrðu: hvað hlýtur að hafa gerst fyrst?",
     lesson: "frasogn", tags: ["fras"], types: ["fr_rod", "fr_vantar", "fr_setning"] },
+  /* issue #36: connectives and inner-state words inside a story */
+  { id: "sogumal", ok: "tengiorð og hugsanir í sögu", nm: "Tengiorð og hugsanir í sögu",
+    rule: "**Tengiorð** sýna hvernig atburðir sögunnar tengjast: *af því að* segir hvers vegna, *þess vegna* hvað leiddi af því, *þegar* hvenær, *síðan* hvað gerðist næst og *en* tengir andstæður. **Orð um hugsanir og tilfinningar** segja hvað persóna vill, heldur eða finnur: *vildi, hélt, ákvað, varð hrædd, var fegin*. Lestu það sem kemur á undan og á eftir: hvað passar við söguna?",
+    lesson: "frasogn", tags: ["sogumal"], types: ["fr_tengiord", "fr_innra"] },
   { id: "merking", ok: "merkingu orða", nm: "Merking orða",
     rule: "Lestu alla setninguna og spyrðu: hvað passar við merkinguna? Ef þú ert ekki viss, flettu orðinu upp — 📖 hnappurinn er við hverja spurningu.",
     lesson: "ordafordi", tags: ["vocab"], types: ["or_heiti", "or_samhengi", "or_utundan", "or_merking"] },

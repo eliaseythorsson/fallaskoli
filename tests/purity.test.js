@@ -32,6 +32,8 @@ import { wordsOf } from "../src/js/core/wordknowledge.js";
 import { TASKS, typeById, nextTask, buildTask, drillTask, DRILL_PLAN, makeView, withView, applyEffects, FX }
   from "../src/js/tasks/index.js";
 import { giveWords } from "./learner.js";
+import { STEP3_FROM } from "../src/js/tasks/frasogn.js";
+const UNLOCKED = new Set(["fr_tengiord", "fr_innra"]);
 
 const lex = buildLexicon(DATA);
 const TODAY = "2026-03-10";
@@ -95,6 +97,8 @@ test("building a question changes nothing: every type, on a frozen state", () =>
         builtSome = true;
         assert.ok(b.task && Array.isArray(b.effects), `${spec.id}: a builder returns { task, effects }`);
       }
+      /* Frásögn step 3 (#36) is unlocked by þyngd: nothing below STEP3_FROM */
+      if (!builtSome && UNLOCKED.has(spec.id) && band < STEP3_FROM) continue;
       assert.ok(builtSome, `${spec.id} built nothing at band ${band}`);
     }
     assert.deepEqual(copy(p), before, `the state moved at band ${band}`);
