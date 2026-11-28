@@ -143,5 +143,11 @@ export function fullProgress() {
       "áhrif|hk": { s: "k", d: "2026-11-19", n: 2 },
       "breyting|kvk": { s: "o", d: "2026-11-18", n: 2 },
     },
+    wordCards: {
+      "hluti|kk": { d: "2026-11-17", n: 1, r: 1, a: {
+        skyring: { c: ["hluti|kk"], ok: true }, flokkur: { c: ["so"], ok: false }, kyn: { c: ["kk"], ok: true } } },
+      "áhrif|hk": { d: "2026-11-18", n: 2, r: 2, a: {
+        setning: { c: ["Veðrið hefur áhrif á skapið."], ok: true }, skyld: { c: ["líka", "sömuleiðis"], ok: true } } },
+    },
   };
 }

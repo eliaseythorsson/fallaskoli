@@ -69,6 +69,8 @@ The pure modules, where the shared shapes matter most:
 | `core/answer.js` | `judge`, `judgeRetry`, `judgeBonus`, `settle`, and the effects |
 | `core/review.js` | the review queue: `ReviewEntry`, `noteReview`, `dueEntries`, `dayOf` |
 | `core/wordknowledge.js` | one history per word (`WordKnowledge`, `WordEntry`): `noteWords`, `entriesOf`, `totalsOf`, the slice; a status with its reason (`WordStatus`, `because`) — `tools/word-history.mjs` prints both for one word (README) |
+| `core/wordcard.js` | the pupil's word cards (`WordCards`, `WordCardRecord`, `WordCardAnswer`): `saveCard`, `cardDone`, sanitise, merge, the slice (`ownText: true`, #15) |
+| `core/syllables.js` | syllables from hand-written joints: `syllabify`, `syllablesOf`, `syllableCount` (#15) |
 | `core/servergrader.js` | is the server's grader up for this visit (#48): `serverGraderUp`, `serverGraderLost` |
 | `control/serverask.js` | a server-graded question from first answer to its one settle (#48): `serverQuestion`, `readWithRetry` |
 | `core/difficulty.js` | saved levels (`LevelRecord`), `bumpDiff`, `levelRanges` (JSDoc only) |

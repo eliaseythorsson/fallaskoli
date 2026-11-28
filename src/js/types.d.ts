@@ -182,6 +182,8 @@ export interface State {
   wordKnowledge: WordKnowledge;
   /** The six words in learning and the words learned (issue #12, core/wordknowledge.js). */
   learning: Learning;
+  /** The pupil's word cards (issue #15, core/wordcard.js). THE PUPIL'S OWN TEXT. */
+  wordCards: WordCards;
 }
 
 /* ---------- word knowledge (core/wordknowledge.js) -------------------------- */
@@ -201,6 +203,17 @@ export interface LearningRecord { s: "l" | "k" | "o" | string; d: DayKey; n: num
 
 /** `S.learning`: per word key ("hluti|kk"). */
 export type Learning = Record<string, LearningRecord>;
+
+/** One answer on a word card: the ids of the options chosen first, and whether that was right. */
+export interface WordCardAnswer { c: string[]; ok: boolean }
+
+/** A finished word card: the day, how many times it was done, the
+    self-rating (0 aldrei heyrt · 1 heyrt það · 2 get notað það), and the
+    answers by step id (core/wordcard.js). */
+export interface WordCardRecord { d: DayKey; n: number; r: number; a: Record<string, WordCardAnswer> }
+
+/** `S.wordCards`: per word key ("breyting|kvk"). */
+export type WordCards = Record<string, WordCardRecord>;
 
 /** A word entry as `entriesOf` hands it out. */
 export interface WordEntry { day: DayKey; type: string; outcome: string }

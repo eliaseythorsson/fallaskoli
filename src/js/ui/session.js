@@ -196,7 +196,7 @@ export function renderPicker(app) {
       topic = b.dataset.topic;
       el.querySelectorAll(".topic").forEach((x) => x.setAttribute("aria-pressed", x === b));
     };
-    b.ondblclick = () => app.startRun(topic, size);
+    b.ondblclick = () => app.startChosen(topic, size);
   });
   el.querySelectorAll(".sizeb").forEach((b) => {
     b.onclick = () => {
@@ -204,10 +204,10 @@ export function renderPicker(app) {
       el.querySelectorAll(".sizeb").forEach((x) => x.setAttribute("aria-pressed", x === b));
     };
   });
-  $("runstart").onclick = () => app.startRun(topic, size,
+  $("runstart").onclick = () => app.startChosen(topic, size,
     topic === MINE.id ? act.map((p) => p.id) : null);
   const go = $("todaystart");
-  if (go) go.onclick = () => app.startRun(TODAY.id, plan.n);
+  if (go) go.onclick = () => app.startChosen(TODAY.id, plan.n);
   el.querySelectorAll("[data-assign]").forEach((b) => {
     b.onclick = () => app.startAssignment(b.dataset.assign);
   });
@@ -481,8 +481,12 @@ export function renderSummary(app) {
   el.querySelectorAll("[data-next]").forEach((b) => {
     b.onclick = () => {
       const what = b.dataset.next;
-      if (what === "focus") app.startRun(MINE.id, 10, [f.id]);
-      else if (what === "again") app.startRun(d.topic, d.n, d.focus, d.again || {});
+      /* #15: a session the pupil chooses opens with the Orðakort that is due;
+         "again" on a narrowed session (a Lesefni page, a node of the skill
+         map) repeats that session as it was, without one. */
+      if (what === "focus") app.startChosen(MINE.id, 10, [f.id]);
+      else if (what === "again" && d.again) app.startRun(d.topic, d.n, d.focus, d.again);
+      else if (what === "again") app.startChosen(d.topic, d.n, d.focus);
       else if (what === "assign") app.startAssignment(d.assignment.id);
       else if (what === "drill") { app.runDone = null; app.startDrill(b.dataset.key); }
       else { app.runDone = null; app.next(); }

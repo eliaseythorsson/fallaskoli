@@ -16,7 +16,10 @@ import { nextTask, makeView, withView, applyEffects, planOpening, nextOpening,
 import { planToday } from "../core/today.js";
 import { narrowPolicy } from "../core/policy.js";
 import { visitLevels } from "../core/difficulty.js";
-import { fillLearning, wordsInLearning, learningLevel } from "../core/wordknowledge.js";
+import { fillLearning, wordsInLearning, learningLevel, nextToLearn, LEARNING_SIZE } from "../core/wordknowledge.js";
+import { cardDone, saveCard } from "../core/wordcard.js";
+import { buildCard } from "../tasks/wordcard.js";
+import { openWordCard } from "../ui/wordcard.js";
 import { maxOf } from "../core/mix.js";
 import { activePatterns, huntPreferFor, focusTypes, pickTargeted } from "../core/diagnosis.js";
 import { SKILL_IDS } from "../core/skills.js";
@@ -110,11 +113,58 @@ export function sessionControl() {
     /**
      * Keep six words in learning (#12, core/wordknowledge.js `fillLearning`),
      * chosen at Námsorð's saved þyngd (`learningLevel`). Called when the app loads
-     * and when a session starts; does nothing while the six are full.
+     * and when a session starts; does nothing while the six are full. A word
+     * enters only when its Orðakort is done (#15): the filling stops at the
+     * first word without one, and `withCard` shows that card.
      */
     fillLearning() {
       if (!this.S || !this.lex) return;
-      fillLearning(this.S, this.lex, { level: learningLevel(this.S), today: todayKey() });
+      fillLearning(this.S, this.lex, { level: learningLevel(this.S), today: todayKey(),
+        ready: (word) => cardDone(this.S, word) });
+    },
+
+    /* ---- the Orðakort (#15, tasks/wordcard.js, ui/wordcard.js) ----
+       `cardOpen` is true while a card is on the screen. */
+    cardOpen: false,
+
+    /** The word whose card is due: the next word to enter the six, when
+        there is room for it and its card is not done. A `wordKey` or null. */
+    cardDue() {
+      if (!this.S || !this.lex || wordsInLearning(this.S).length >= LEARNING_SIZE) return null;
+      const word = nextToLearn(this.S, this.lex, learningLevel(this.S));
+      return word && !cardDone(this.S, word) ? word : null;
+    },
+
+    /**
+     * The card of the word that is due, and then `then`; straight to `then`
+     * when no card is due. ONE card at a time: a pupil does one before a
+     * session they chose, so a new pupil's six words arrive over six sessions
+     * (and sooner from "Orðin mín", which offers the next card). The card
+     * cannot be left (ui/wordcard.js); when it is finished it is saved, the
+     * word enters the six, and `then` runs.
+     */
+    withCard(then) {
+      if (this.cardOpen) return;
+      this.fillLearning();
+      const word = this.cardDue();
+      const card = word ? buildCard(this.lex, word) : null;
+      if (!card) { then(); return; }
+      this.cardOpen = true;
+      openWordCard(card, (done) => {
+        this.cardOpen = false;
+        saveCard(this.S, word, done, todayKey());
+        this.fillLearning();
+        this.save(true);          // a finished card is written at once
+        then();
+      });
+    },
+
+    /** A session the pupil chose — the picker, Lota dagsins, "again" on the
+        summary: the Orðakort that is due comes first (#15). Assignments,
+        lesson practice, the placement round, duels and live rounds start
+        with `startRun` and have no card. Same arguments as `startRun`. */
+    startChosen(topic, n, focus = null, opts = {}) {
+      this.withCard(() => this.startRun(topic, n, focus, opts));
     },
 
     /**

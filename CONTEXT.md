@@ -102,7 +102,7 @@ Text the pupil wrote in their own words (word cards). Only the pupil can read it
 _Avoid_: user content, submissions
 
 **Word card** (Orðakort):
-The pupil's notebook page for a word in learning: their own explanation, their own sentence and related words.
+The pupil's notebook page for a word in learning: their own explanation, their own sentence and related words. A word enters the six only when its card is done. In the structured version the pupil chooses among checked options instead of writing.
 
 ## Content
 
