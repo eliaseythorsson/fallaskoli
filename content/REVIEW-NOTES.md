@@ -210,8 +210,8 @@ af gervigreind og hafa ekki verið lesin af móðurmálshafa. Í hverri eyðu á
   aðeins *hélt* passaði og öll röngu orðin væru rétt mynduð.
 
 ## Til hvers vísar fornafnið? Tvær nýjar sögur og spurningarnar
-Skrá: `content/textar/saga-sprungid-dekk.txt`, `content/textar/saga-nyi-skolinn.txt`
-Leita: `Gunnar og Pétur hjóluðu alltaf saman í skólann.`, `Lísa byrjaði í nýjum skóla eftir jólafríið.`, `Kári gleymdi handklæðinu`, `Hún var svo glöð að hún fór næstum því að gráta.`, `En þegar hún opnaði skápinn var ekkert hveiti til.`
+Skrá: `content/textar/saga-sundferdin.txt`, `content/textar/saga-nyi-skolinn.txt`
+Leita: `Gunnar og Pétur fóru saman í sund eftir skóla.`, `Lísa byrjaði í nýjum skóla eftir jólafríið.`, `Kári gleymdi handklæðinu`, `Hún var svo glöð að hún fór næstum því að gráta.`, `En þegar hún opnaði skápinn var ekkert hveiti til.`
 Úr: feat/33-pronoun-reference (atriði 33)
 
 Tvær nýjar sögur, nýi kaflinn á Lesefnissíðunni og sýnidæmið eru samin af
@@ -227,8 +227,8 @@ sögunnar), svo að merkingin ein á að skera úr. Þetta ætti að skoða sér
   hitt orðið *Mamma*) og *Lísa var glöð, því að nú átti hún vinkonu í nýja
   skólanum* (svarið *Lísa*, hitt orðið *Embla*). Ef einhver þeirra er tvíræð
   þarf að breyta setningunni í textaskránni.
-- *Pétur var með pumpu í töskunni og lánaði honum hana*: eðlileg orðaröð, eða
-  frekar *lánaði honum pumpuna*? *Gunnar pumpaði í dekkið*: eðlilegt?
+- *Pétur átti nóg af peningum og lánaði honum fyrir miðanum* og *Daginn eftir
+  borgaði Gunnar honum til baka og bauð honum upp á ís*: eðlilegt?
 - *Einn daginn gekk Lísa til stelpu sem hét Embla og spurði hana hvort hún
   vildi koma í fótbolta*: Greynir réð ekki við *til Emblu úr bekknum*, svo að
   setningin varð svona. Eðlileg?
@@ -239,9 +239,9 @@ sögunnar), svo að merkingin ein á að skera úr. Þetta ætti að skoða sér
   sama kyni og tölu, svo að fornafnið getur ekki vísað til þess.* og *Bæði
   orðin sem þú gast smellt á eru í karlkyni og eintölu, eins og honum. Þá segir
   kynið ekki til hvers fornafnið vísar, heldur merkingin: hugsaðu um hver gerir
-  hvað. Hér vísar honum til orðsins Gunnari.* Orðin eru sýnd í þeirri mynd sem
-  þau standa í textanum (*Gunnari*, *pabba*). Fyrirsögnin og spurningin *Til
-  hvers vísar fornafnið? Smelltu á orðið.*, svarið *„honum“ vísar til: Gunnari*
+  hvað. Hér vísar honum til orðsins Gunnar.* Orðin eru sýnd í þeirri mynd sem
+  þau standa í textanum (*pabba*, *Emblu*). Fyrirsögnin og spurningin *Til
+  hvers vísar fornafnið? Smelltu á orðið.*, svarið *„honum“ vísar til: Gunnar*
   og reglan *Til hvers vísar fornafnið?* í `src/js/core/diagnosis.js`.
 
 # Utan síðunnar

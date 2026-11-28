@@ -96,10 +96,10 @@ test("EX.textar: every reference's other words stand before the pronoun, the sam
     same += (r.same || []).length;
   }));
   assert.ok(same >= 12, "the texts give the pupil characters to choose between: " + same);
-  const dekk = EX.textar.find((t) => t.id === "saga-sprungid-dekk");
-  const honum = dekk.s[2].ref.find((r) => dekk.s[2].tok[r.i].w === "honum");
-  assert.equal(spanWords(dekk, honum.to), "Gunnari");
-  assert.deepEqual(honum.same.map((sp) => spanWords(dekk, sp)), ["Pétur"]);
+  const swim = EX.textar.find((t) => t.id === "saga-sundferdin");
+  const honum = swim.s[2].ref.find((r) => swim.s[2].tok[r.i].w === "honum");
+  assert.equal(spanWords(swim, honum.to), "Gunnar");
+  assert.deepEqual(honum.same.map((sp) => spanWords(swim, sp)), ["Pétur"]);
 });
 
 /* ---------- the type ------------------------------------------------------- */
@@ -135,7 +135,7 @@ test("les_visun: the answer is the marked referent; the other options follow the
   }
   /* agreement at þyngd 1, meaning above it */
   assert.ok(items.has("les:saga-straeto/vis/1.0"));
-  assert.ok(items.has("les:saga-sprungid-dekk/vis/2.8"), [...items].join(" "));
+  assert.ok(items.has("les:saga-sundferdin/vis/2.7"), [...items].join(" "));
   assert.ok(items.has("les:saga-nyi-skolinn/vis/5.8"));
   /* Hann{Ari} while Ari is the only boy so far: nothing to choose between */
   assert.ok(!items.has("les:saga-lykillinn/vis/1.0"));
@@ -155,7 +155,8 @@ test("les_visun: the answer is the marked referent; the other options follow the
 });
 
 test("les_visun is declared at the end of the catalogue, with its node, pattern, lesson and example", () => {
-  assert.equal(CATALOGUE_IDS.indexOf("les_visun"), CATALOGUE_IDS.indexOf("les_kjarni") + 1);
+  /* in merge order: after #36's fr_tengiord, fr_innra and #39's les_kjarni_eigin, les_saga_eigin */
+  assert.equal(CATALOGUE_IDS.indexOf("les_visun"), CATALOGUE_IDS.indexOf("les_saga_eigin") + 1);
   const c = catalogueEntry("les_visun");
   assert.deepEqual([c.skill, c.renderer, c.grader, c.recall, c.tags, c.bands],
     ["lesskilningur", "tap", "app", false, ["visun"], [1]]);

@@ -1,0 +1,30 @@
+# Sundferðin — stutt saga um tvo stráka (einn þáttur).
+# Skrifuð fyrir spurninguna „Til hvers vísar fornafnið?“ (mál #33): báðir
+# strákarnir eru í karlkyni eintölu, svo að kynið segir ekki hvorn *honum*
+# á við. Það gerir merkingin: sá sem lánar eða býður gefur einhverjum
+# öðrum (*Pétur … lánaði honum*, ekki sjálfum sér).
+#
+# Snið textaskráa er útskýrt í README.md, „Efnið“:
+#   [merki] fremst í hverri setningu segir hvaða hluti sögukortsins hún er
+#   (aðstæður, vandi, markmið, tilraun, útkoma, viðbrögð),
+#   honum{Gunnar}, Þeir{Gunnar og Pétur} og honum{Pétur} segja til hvers
+#   fornafnið vísar,
+#   ? [samantekt] er spurning með svörin í línunum fyrir neðan:
+#   + er rétta samantektin, - [hluti] röng samantekt og hlutinn sem hún brýtur,
+#   ! er skýringin sem nemandinn les á eftir.
+#
+# þyngd: 2
+# tegund: saga
+# orð:
+
+[aðstæður] Gunnar og Pétur fóru saman í sund eftir skóla.
+[vandi] Við afgreiðsluna fann Gunnar ekki peningana sína.
+[tilraun] Pétur átti nóg af peningum og lánaði honum{Gunnar} fyrir miðanum.
+[útkoma] Þeir{Gunnar og Pétur} komust inn í laugina og syntu saman í heilan klukkutíma.
+[viðbrögð] Daginn eftir borgaði Gunnar honum{Pétur} til baka og bauð honum{Pétur} upp á ís.
+
+? [samantekt] Hvaða samantekt passar við söguna?
++ Gunnar fann ekki peningana sína, en Pétur lánaði honum fyrir miðanum og þeir syntu saman.
+- [útkoma] Gunnar fann ekki peningana sína og þurfti að fara heim án þess að synda.
+- [tilraun] Gunnar fann ekki peningana sína og hljóp heim að sækja þá.
+! Gunnar finnur ekki peningana (vandi), Pétur lánar honum fyrir miðanum (tilraun) og þeir komast í sund (útkoma). Rétta samantektin fylgir þessu.
