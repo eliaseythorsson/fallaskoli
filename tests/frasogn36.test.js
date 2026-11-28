@@ -145,8 +145,10 @@ test("the gaps in content/textar/: issue #28's connectives, and inner-state word
 
 /* ---------- the two types ------------------------------------------------------------ */
 
-test("the two types are the last of the catalogue, on their node, with their pattern, lesson and examples", () => {
-  assert.deepEqual(CATALOGUE_IDS.slice(-2), TYPES);
+test("the two types are declared in merge order at the end of the catalogue, on their node, with their pattern, lesson and examples", () => {
+  /* in merge order: right after #32's les_kjarni; #39's types came after them */
+  const at = CATALOGUE_IDS.indexOf("les_kjarni") + 1;
+  assert.deepEqual(CATALOGUE_IDS.slice(at, at + 2), TYPES);
   for (const id of TYPES) {
     const c = catalogueEntry(id);
     assert.deepEqual([c.skill, c.grader, c.recall, c.renderer, c.tags, c.bands],
