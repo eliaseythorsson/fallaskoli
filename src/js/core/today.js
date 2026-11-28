@@ -52,6 +52,11 @@
        0     yes            0 / 4 / 3 / 3
        0     no             0 / 0 / 7 / 3
 
+   One new skill never takes more than its NEW_SKILL_MAX of the share
+   (Lesskilningur: one, while it has one question type on three texts); the
+   slots it cannot take are not set aside, and the rest of the session is
+   shared out over them by the rule above.
+
    Only the new skills that can be asked count (switched on, with a question
    type that may be asked: `skillHasTypes`). With none — Námsorð before its
    first type, or a policy that switches them off — nothing is set aside and
@@ -113,6 +118,16 @@ export const NEW_PUPIL = 100;
 export const NEW_SKILLS = ["namsord", "lesskilningur"];
 /** The part of the session the new skills share: about 3 of 10. */
 export const NEW_SKILLS_SHARE = 0.3;
+/** The most of that share one new skill may take in a session, for a skill
+    with too little to ask to fill it. Lesskilningur has one question type
+    (les_adal, the main idea) on three texts: while Námsorð has no type it
+    was the only new skill that counted and took all three slots — the main
+    idea of every text, every day, the same three questions. One a session
+    is one text a day. The slots it cannot take go back to the rest of the
+    session. Raise it when the skill has more to ask (more texts, #32; more
+    types, #31). A skill not named here may take the whole share.
+    @type {Readonly<Record<string, number>>} */
+export const NEW_SKILL_MAX = Object.freeze({ lesskilningur: 1 });
 
 /** How many skills `fresh` new questions are spread over. */
 export const freshSpread = (fresh) => Math.max(FRESH_MIN, Math.ceil(Math.max(0, fresh) / FRESH_PER));
@@ -174,7 +189,8 @@ export function planToday(S, P, now, { n = TODAY_SIZE, canType = null, newSkills
   const pats = activePatterns(S, TODAY_PATTERNS, (p) => [...focusTypes([p.id])].some(may))
     .map((p) => p.id);
   const extra = askable(P, may, newSkills);
-  const newSkill = extra.length ? Math.round(n * NEW_SKILLS_SHARE) : 0;
+  const added = dealCapped(extra, extra.length ? Math.round(n * NEW_SKILLS_SHARE) : 0);
+  const newSkill = added.length;
   const rest = shares(n - newSkill, due.length, pats.length);
   const counts = { ...rest, fresh: rest.fresh + newSkill, newSkill };
 
@@ -187,7 +203,6 @@ export function planToday(S, P, now, { n = TODAY_SIZE, canType = null, newSkills
   for (let k = 0; k < counts.pattern; k++) slots.push({ kind: "pattern", p: pats[k % pats.length] });
   const fresh = freshSkills(S, P, may, freshSpread(rest.fresh), newSkills);
   const ordinary = Array.from({ length: rest.fresh }, (_, k) => (fresh.length ? fresh[k % fresh.length] : null));
-  const added = Array.from({ length: newSkill }, (_, k) => extra[k % extra.length]);
   spread(ordinary, added).forEach((skill) => slots.push({ kind: "new", skill }));
 
   return { n: slots.length, slots, reviews, patterns: pats.slice(0, Math.min(pats.length, counts.pattern)), counts };
@@ -205,6 +220,23 @@ export function planToday(S, P, now, { n = TODAY_SIZE, canType = null, newSkills
 function askable(P, may, ids) {
   if (!P) return [];
   return ids.filter((id) => P.skill(id) && QUESTION_TYPES.some((q) => q.skill === id && may(q.id)));
+}
+
+/**
+ * `want` slots dealt round `ids`, one each in turn, but never more to a skill
+ * than its NEW_SKILL_MAX; fewer than `want` when every skill is full.
+ * @param {string[]} ids @param {number} want @returns {string[]}
+ */
+function dealCapped(ids, want) {
+  const out = [], used = new Map();
+  const room = (id) => (used.get(id) || 0) < (NEW_SKILL_MAX[id] ?? Infinity);
+  while (out.length < want && ids.some(room)) {
+    for (const id of ids) {
+      if (out.length >= want) break;
+      if (room(id)) { out.push(id); used.set(id, (used.get(id) || 0) + 1); }
+    }
+  }
+  return out;
 }
 
 /**

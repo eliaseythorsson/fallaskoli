@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Lota dagsins: Lesskilningur tekur eina spurningu, ekki þrjár
+- Meðan Námsorð hefur enga spurningagerð var Lesskilningur eini nýi flokkurinn sem taldist og fékk allar
+  þrjár spurningarnar sem nýju flokkarnir deila: aðalatriði allra þriggja textanna, á hverjum degi.
+  Nú tekur einn nýr flokkur aldrei meira en sitt hámark (`NEW_SKILL_MAX` í `core/today.js`;
+  Lesskilningur: 1). Það sem hann tekur ekki skiptist á hinn hluta lotunnar eins og áður.
+- Annarsmálshamurinn setur nú skýringu á orð setningar í spurningunni „Germynd, miðmynd eða
+  þolmynd?“ og í setningum þar sem liður er undirstrikaður; þar voru orðin áður án skýringa.
+
 ### Lært orð: úr orðunum sex í upprifjun (#16)
 - **Orð telst lært** þegar nemandinn hefur svarað því rétt í að minnsta kosti fjórum gerðum spurninga, þar
   af einni þar sem hann sér ekki orðið heldur þarf að muna það (nú „Orð í eyðu“), á að minnsta kosti tveimur
