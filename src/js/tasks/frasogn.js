@@ -3,7 +3,7 @@
    the stories in content/textar/ (the same files Lesskilningur reads):
 
      fr_rod       order a scrambled short story: each sentence gets its place
-                  (1., 2., …) — the sort renderer, with places as buckets
+                  (1, 2, …) — the sort renderer, with places as buckets
      fr_vantar    one part of the story map is taken out of a story that has
                   all six; which part is missing? The six icons are the
                   options (choice renderer, `iconOpts`)
@@ -53,8 +53,9 @@ const withGap = (tx, k, icon) => tx.s.map((s, j) => (j === k
 const ORDER_ITEMS = STORIES.filter((tx) => tx.s.length >= 3)
   .map((tx) => ({ tx, lvl: tx.lvl, key: `fr:${tx.id}/rod` }));
 
-/** The places a sentence can have: "1.", "2.", … */
-const places = (n) => Array.from({ length: n }, (_, k) => `${k + 1}.`);
+/** The places a sentence can have: "1", "2", … (the verdict says "er 3,
+    ekki 2."). */
+const places = (n) => Array.from({ length: n }, (_, k) => `${k + 1}`);
 
 /** @param {any} lex @param {View} view @param {() => number} rng */
 export function taskOrder(lex, view, rng) {
@@ -63,7 +64,7 @@ export function taskOrder(lex, view, rng) {
   const x = want ? ORDER_ITEMS.find((y) => y.key === want)
     : pick(itemsForBand(view, SKILL, mine, (y) => y.key, FEW), rng);
   if (!x) return null;
-  const items = x.tx.s.map((s, k) => ({ w: s.t, cls: `${k + 1}.` }));
+  const items = x.tx.s.map((s, k) => ({ w: s.t, cls: `${k + 1}` }));
   /* scrambled, and never in the story's own order */
   let mixed = shuffle(items, rng);
   if (mixed.every((it, k) => it === items[k])) mixed = [...items.slice(1), items[0]];

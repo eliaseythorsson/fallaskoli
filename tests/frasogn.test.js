@@ -93,9 +93,9 @@ test("fr_rod: every story scrambled, each sentence to its place, graded by the s
     seen.add(t.item);
     const tx = holdsItsStory(t);
     assert.equal(t.type, "sort");
-    assert.deepEqual(t.buckets, tx.s.map((_, k) => `${k + 1}.`));
+    assert.deepEqual(t.buckets, tx.s.map((_, k) => `${k + 1}`));
     assert.deepEqual([...t.items].sort((a, b) => parseInt(a.cls) - parseInt(b.cls)).map((it) => it.w), tx.s.map((s) => s.t));
-    assert.ok(t.items.some((it, k) => it.cls !== `${k + 1}.`), "shown in the story's own order");
+    assert.ok(t.items.some((it, k) => it.cls !== `${k + 1}`), "shown in the story's own order");
     const right = Object.fromEntries(t.items.map((it, k) => [k, it.cls]));
     assert.equal(judge(t, { picks: right }).ok, true);
     assert.ok(judge(t, { picks: { 0: right[0] } }).pending, "every sentence placed first");
