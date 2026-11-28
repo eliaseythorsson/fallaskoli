@@ -115,7 +115,7 @@ test("registryFaults: a declaration without a builder, a builder without a decla
   assert.match(registryFaults([ok], {}).join(" | "), /import that file's BUILDERS in tasks\/registry\.js/);
 });
 
-test("recall and grader are declared on every type: one recall type, six server-graded", () => {
+test("recall and grader are declared on every type: one recall type, nine server-graded", () => {
   for (const t of CATALOGUE) {
     assert.equal(typeof t.recall, "boolean", `${t.id}: recall`);
     assert.ok(["app", "server"].includes(t.grader), `${t.id}: grader`);
@@ -123,11 +123,12 @@ test("recall and grader are declared on every type: one recall type, six server-
   /* #14 added the first recall type (tasks/recall.js); #37 the first
      server-graded one (the explanation in the pupil's own words); #38 the
      graded meaning question and the Orðakort's other two free-text steps;
-     #39 a text's main idea and a story's summary in the pupil's own words. */
+     #40 Frásögn steps 4–6. */
   assert.deepEqual(CATALOGUE.filter((t) => t.recall).map((t) => t.id), ["or_eyda"]);
   assert.equal(isRecall("or_eyda"), true);
   assert.deepEqual(CATALOGUE.filter((t) => t.grader !== "app").map((t) => t.id),
-    ["or_eigin", "or_skyring", "or_setning", "or_tengsl", "les_kjarni_eigin", "les_saga_eigin"]);
+    ["or_eigin", "or_skyring", "or_setning", "or_tengsl", "les_kjarni_eigin", "les_saga_eigin",
+      "fr_hluti", "fr_hlidstaed", "fr_eigin"]);
   assert.equal(graderOf("or_eigin"), "server");
   assert.equal(isRecall("fill"), false);
   assert.equal(isRecall("ekki-til"), false);
@@ -172,7 +173,9 @@ test("the order of the catalogue is the order a seed means", () => {
     /* #39 */
     "les_kjarni_eigin", "les_saga_eigin",
     /* #33 */
-    "les_visun"];
+    "les_visun",
+    /* #40 */
+    "fr_hluti", "fr_hlidstaed", "fr_eigin"];
   assert.deepEqual(CATALOGUE.map((t) => t.id).slice(0, PINNED.length), PINNED,
     "the catalogue was reordered: new types go at the end of core/catalogue.js");
   assert.deepEqual(TASKS.map((t) => t.id), CATALOGUE.map((t) => t.id));

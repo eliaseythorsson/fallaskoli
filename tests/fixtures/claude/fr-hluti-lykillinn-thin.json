@@ -1,0 +1,32 @@
+{
+  "recorded": "HAND-WRITTEN in the exact shape of a Messages API response: no API key existed where #40 was built. Replace with a real recording: node tools/record-grading.mjs --kind fr_hluti --context '{\"texti\": \"saga-lykillinn\", \"setning\": 2}' --text ... (see its header).",
+  "model": "opus",
+  "effort": "low",
+  "kind": "fr_hluti",
+  "context": {
+    "texti": "saga-lykillinn",
+    "setning": 2
+  },
+  "names": [],
+  "text": "Svo fór hann í bíó.",
+  "response": {
+    "id": "msg_01HandWrittenFrasogn000002",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-opus-5-5",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"findings\": [{\"point\": \"markmið\", \"met\": false, \"quote\": \"Svo fór hann í bíó\"}, {\"point\": \"samhengi\", \"met\": true, \"quote\": \"hann beið rólegur við dyrnar\"}]}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 960,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "output_tokens": 90
+    }
+  }
+}

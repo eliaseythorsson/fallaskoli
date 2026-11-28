@@ -33,7 +33,7 @@ import { TASKS, typeById, nextTask, buildTask, drillTask, DRILL_PLAN, makeView, 
   from "../src/js/tasks/index.js";
 import { giveWords } from "./learner.js";
 import { STEP3_FROM } from "../src/js/tasks/frasogn.js";
-const UNLOCKED = new Set(["fr_tengiord", "fr_innra"]);
+import { UNLOCKED_BY_THYNGD as UNLOCKED } from "../src/js/core/placement.js";
 
 const lex = buildLexicon(DATA);
 const TODAY = "2026-03-10";
@@ -97,8 +97,9 @@ test("building a question changes nothing: every type, on a frozen state", () =>
         builtSome = true;
         assert.ok(b.task && Array.isArray(b.effects), `${spec.id}: a builder returns { task, effects }`);
       }
-      /* Frásögn step 3 (#36) is unlocked by þyngd: nothing below STEP3_FROM */
-      if (!builtSome && UNLOCKED.has(spec.id) && band < STEP3_FROM) continue;
+      /* Frásögn steps 3–6 (#36, #40) are unlocked by þyngd: nothing below
+         the type's second band (STEP3_FROM, STEP_FROM) */
+      if (!builtSome && UNLOCKED.has(spec.id) && band < (spec.bands[1] ?? STEP3_FROM)) continue;
       assert.ok(builtSome, `${spec.id} built nothing at band ${band}`);
     }
     assert.deepEqual(copy(p), before, `the state moved at band ${band}`);

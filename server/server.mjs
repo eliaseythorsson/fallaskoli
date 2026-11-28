@@ -87,6 +87,7 @@ import { setningRubric } from "./rubric-setning.mjs";
 import { tengslRubric } from "./rubric-tengsl.mjs";
 import { kjarniRubric } from "./rubric-kjarni.mjs";
 import { sagaRubric } from "./rubric-saga.mjs";
+import { frasognRubrics } from "./rubric-frasogn.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 /** The question types of a category, from the registry — for the patterns an
@@ -1549,7 +1550,8 @@ export function createApp({
   const namesAround = async (u) => (await store.users()).filter((x) => groupOf(x) === groupOf(u))
     .flatMap((x) => [x.name, x.username]).filter((x) => typeof x === "string" && x);
   createGrading({ plugs: graderPlugs ?? claudePlugs(env, [eiginRubric(lex), setningRubric(lex), tengslRubric(lex),
-    kjarniRubric(), sagaRubric()],
+    kjarniRubric(), sagaRubric(),
+    ...frasognRubrics()],
     { logFile: path.join(dataDir, "claude-cost.jsonl") }), ceilingFor, namesFor: namesAround })
     .routes({ on, json, readBody, needUser });
 

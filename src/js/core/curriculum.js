@@ -268,7 +268,10 @@ export const NODES = [
      story and finding its missing part are the first steps toward telling
      one (steps 4–6, written stories, come with the server grader). */
   { id: "fras-bygging", nm: "Bygging sögu: röð og hlutar", cat: "frasogn", year: 8,
-    hv: "skopun", types: ["fr_rod", "fr_vantar", "fr_setning"], lesson: "frasogn", cover: "full" },
+    hv: "skopun", types: ["fr_rod", "fr_vantar", "fr_setning",
+      /* #40: steps 4–6, the same six parts written — server grading only,
+         so for any other pupil the node is steps 1 and 2 as before */
+      "fr_hluti", "fr_hlidstaed", "fr_eigin"], lesson: "frasogn", cover: "full" },
   /* #36: step 3 of the path — the words that hold a story together and say
      what its people want and feel (DLD-PLAN §5: taught directly). */
   { id: "fras-tengsl", nm: "Tengiorð og orð um hugsanir í sögu", cat: "frasogn", year: 8,

@@ -71,5 +71,22 @@ export const storyLinesHTML = (lines) => `<ol class="storylines">${lines.map((l)
 export const wholeStoryHTML = (story) => `<div class="why wholestory"><b>sagan í heild</b><ol class="storylines">${story
   .map((l) => `<li>${storyIconHTML(l.p, { label: true })} ${esc(l.t)}</li>`).join("")}</ol></div>`;
 
+/** A story as its frame (Frásögn step 5, issue #40): each sentence with
+    its part's icon, labelled, while the pupil writes a story on it.
+    @param {{ t: string, p: string }[]} story */
+export const storyFrameHTML = (story) => `<ol class="storylines storyframe">${story
+  .map((l) => `<li>${storyIconHTML(l.p, { label: true })} ${esc(l.t)}</li>`).join("")}</ol>`;
+
+/** What a written Frásögn question (steps 4–6, issue #40) shows above the
+    pupil's box: the story with its gap (`lines`), a model story's frame
+    (`frame`), or the six parts as a checklist (`map`). "" for any other
+    task. @param {any} t */
+export const writeAboveHTML = (t) => (Array.isArray(t.lines) ? storyLinesHTML(t.lines) : "")
+  + (Array.isArray(t.frame) ? storyFrameHTML(t.frame) : "") + (t.map ? storyMapHTML() : "");
+
+/** …and under the verdict once read: the whole story (never a rewrite of
+    the pupil's). @param {any} t */
+export const writeAfterHTML = (t) => (Array.isArray(t.story) ? wholeStoryHTML(t.story) : "");
+
 /** For tests and tools: which parts have a drawing. */
 export const ICON_PARTS = Object.freeze(Object.keys(DRAW));
